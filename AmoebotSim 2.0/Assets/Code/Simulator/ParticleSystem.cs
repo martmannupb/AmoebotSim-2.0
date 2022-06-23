@@ -26,8 +26,9 @@ public class ParticleSystem
         else
         {
             // Contracted
-            Vector2 neighborPos = ;
+            
         }
+        throw new System.NotImplementedException();
     }
 
 

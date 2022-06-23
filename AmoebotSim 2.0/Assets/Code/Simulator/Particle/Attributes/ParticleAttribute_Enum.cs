@@ -1,9 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class ParticleAttribute_Enum<T> : ParticleAttribute where T : System.Enum
 {
+    public override Type GetAttributeType()
+    {
+        throw new NotImplementedException();
+    }
+
     public override string ToString()
     {
         throw new System.NotImplementedException();
