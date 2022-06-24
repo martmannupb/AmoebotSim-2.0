@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35cb115850e507f4f9739cd750ec0fe0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  particlePrefab: {fileID: 673059638366576925, guid: ab0e7edf725be58449fca875a8be6e83, type: 3}
 --- !u!4 &614986409
 Transform:
   m_ObjectHideFlags: 0
@@ -203,8 +204,8 @@ Camera:
   m_GameObject: {fileID: 1240597557}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 1, g: 1, b: 1, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0

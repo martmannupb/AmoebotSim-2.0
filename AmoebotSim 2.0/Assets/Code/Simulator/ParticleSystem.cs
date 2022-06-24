@@ -4,8 +4,47 @@ using UnityEngine;
 
 public class ParticleSystem
 {
-    public List<Particle> particles;
-    public Dictionary<Vector2Int, Particle> particleMap;
+    // References
+    private AmoebotSimulator sim;
+
+    public List<Particle> particles = new List<Particle>();
+    public Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
+
+    public ParticleSystem(AmoebotSimulator sim)
+    {
+        this.sim = sim;
+    }
+
+    /// <summary>
+    /// Initializes the system with ExampleParticles for testing purposes.
+    /// This should be removed after a proper initialization method has been created.
+    /// </summary>
+    public void InitializeExample(int width, int height, float spawnProb, int left = 0, int bottom = 0)
+    {
+        // Fill a "rectangle" randomly with particles (it should be an actual rectangle)
+        int num = 0;
+        
+        for (int col = 0; col < width; ++col)
+        {
+            for (int row = 0; row < height; ++row)
+            {
+                if (Random.Range(0f, 1f) <= spawnProb)
+                {
+                    // TODO: Create functions for adding and removing particles
+                    // Don't use column as x coordinate but shift it to stay in a rectangular shape
+                    Particle p = new ExampleParticle(this, left + col - row / 2, bottom + row);
+                    particles.Add(p);
+                    particleMap.Add(p.Head(), p);
+                    ++num;
+
+                    // <<<TEMPORARY>>> Add GameObject to the scene for visualization
+                    sim.AddParticle(p.Head().x + 0.5f * p.Head().y, p.Head().y * Mathf.Sqrt(0.75f));
+                }
+            }
+        }
+        Debug.Log("Created system with " + num + " particles");
+    }
+
 
 
     public void ActivateParticles()
@@ -30,7 +69,7 @@ public class ParticleSystem
         }
         throw new System.NotImplementedException();
     }
-
+    
 
 
 
