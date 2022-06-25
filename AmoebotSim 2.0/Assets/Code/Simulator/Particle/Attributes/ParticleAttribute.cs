@@ -4,10 +4,14 @@ using UnityEngine;
 
 public abstract class ParticleAttribute
 {
+    protected Particle particle;
     protected string name;
 
-    public ParticleAttribute(string name)
+    public ParticleAttribute(Particle particle, string name)
     {
+        this.particle = particle;
+        if (particle != null)
+            particle.AddAttribute(this);
         this.name = name;
     }
 

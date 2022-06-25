@@ -3,13 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum Foo { FOO, BAR, BAZ }
 
 public class ParticleAttribute_Enum<T> : ParticleAttribute where T : System.Enum
 {
     private T value;
 
-    public ParticleAttribute_Enum(string name, T initialValue) : base(name)
+    public ParticleAttribute_Enum(Particle particle, string name, T initialValue) : base(particle, name)
     {
         value = initialValue;
     }
@@ -32,7 +31,6 @@ public class ParticleAttribute_Enum<T> : ParticleAttribute where T : System.Enum
         }
         s += ", current value is " + ToString_ParameterValue();
         return s;
-        //throw new System.NotImplementedException();
     }
 
     public override string ToString_ParameterName()
@@ -47,6 +45,9 @@ public class ParticleAttribute_Enum<T> : ParticleAttribute where T : System.Enum
 
     public override void UpdateParameterValue(string value)
     {
+        // TODO: Handle exception?
         this.value = (T)Enum.Parse(this.value.GetType(), value);
     }
+
+    public static implicit operator T(ParticleAttribute_Enum<T> attr) => attr.value;
 }

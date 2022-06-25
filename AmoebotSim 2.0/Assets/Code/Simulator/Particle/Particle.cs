@@ -2,6 +2,27 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The abstract base class for particles in the Amoebot model.
+/// <para>
+/// Every algorithm that should run in the simulation must be implemented
+/// as a subclass of the <see cref="Particle"/> class through its <see cref="Activate"/>
+/// method.
+/// Particle attributes that represent a part of the particle's state must be implemented
+/// using the <see cref="ParticleAttribute"/> subclasses.
+/// </para>
+/// <example>
+/// Example for attribute initialization in subclass:
+/// <code>
+/// public class MyParticle : Particle {
+///     ParticleAttribute_Int myIntAttr;
+///     public MyParticle(ParticleSystem system, int x = 0, int y = 0) : base(system, x, y) {
+///         myIntAttr = new ParticleAttribute_Int(this, "Fancy display name for myIntAttr", 42);
+///     }
+/// }
+/// </code>
+/// </example>
+/// </summary>
 public abstract class Particle
 {
 
@@ -108,6 +129,21 @@ public abstract class Particle
         throw new System.NotImplementedException();
     }
 
+    public List<T> GetMsgsOfType<T>() where T : Message
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public T PopMsgOfType<T>() where T : Message
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public List<T> PopMsgsOfType<T>() where T : Message
+    {
+        throw new System.NotImplementedException();
+    }
+
 
     /**
      * System information retrieval
@@ -115,14 +151,36 @@ public abstract class Particle
 
     // TODO: Documentation
     // TODO: Decide on uniform interface for specifying ports (through labels or direction + head/tail (or both))
-    public bool HasNeighborAt(int locDir, bool head = true)
+    // TODO: Add many more helper functions (like firstNbrWithProperty etc.)
+
+
+    /// <summary>
+    /// Checks if this particle has a neighboring particle in the given local direction.
+    /// For expanded particles, there are two different nodes in the same local direction,
+    /// one seen from the particle's head and one seen from its tail.
+    /// <para>See also <see cref="GetNeighborAt(int, bool)"/></para>
+    /// </summary>
+    /// <param name="locDir">The local direction in which to search for a neighbor particle.</param>
+    /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
+    /// the particle's tail (only relevant if this particle is expanded).</param>
+    /// <returns><c>true</c> if and only if there is a different particle in the specified position.</returns>
+    public bool HasNeighborAt(int locDir, bool fromHead = true)
     {
-        throw new System.NotImplementedException();
+        return system.HasNeighborAt(this, locDir, fromHead);
     }
 
-    public Particle GetNeighborAt(int locDir, bool head = true)
+    // TODO: What to do if there is no neighbor? Check beforehand, throw exception?
+    /// <summary>
+    /// Gets this particle's neighbor in the given local direction. The position to
+    /// check is determined in the same way as in <see cref="HasNeighborAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
+    /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
+    /// the particle's tail (only relevant if this particle is expanded).</param>
+    /// <returns>The neighboring particle in the specified position.</returns>
+    public Particle GetNeighborAt(int locDir, bool fromHead = true)
     {
-        throw new System.NotImplementedException();
+        return system.GetNeighborAt(this, locDir, fromHead);
     }
 
 
@@ -132,36 +190,62 @@ public abstract class Particle
 
     public void Expand(int locDir)
     {
-        throw new System.NotImplementedException();
+        system.ExpandParticle(this, locDir);
     }
 
     public void ContractHead()
     {
-        throw new System.NotImplementedException();
+        system.ContractParticleHead(this);
     }
 
     public void ContractTail()
     {
-        throw new System.NotImplementedException();
+        system.ContractParticleTail(this);
     }
 
     public void PushHandover(int locDir)
     {
-        throw new System.NotImplementedException();
+        system.PerformPushHandover(this, locDir);
     }
 
-    public void PullHandoverHead()
+    public void PullHandoverHead(int locDir)
     {
-        throw new System.NotImplementedException();
+        system.PerformPullHandoverHead(this, locDir);
     }
 
-    public void PullHandoverTail()
+    public void PullHandoverTail(int locDir)
     {
-        throw new System.NotImplementedException();
+        system.PerformPullHandoverTail(this, locDir);
     }
 
     public void SendMessage(Message msg, int locDir, bool head = true)
     {
-        throw new System.NotImplementedException();
+        system.SendParticleMessage(this, msg, locDir, head);
+    }
+
+    /**
+     * Attribute handling
+     */
+
+    /// <summary>
+    /// Adds the given <see cref="ParticleAttribute"/> to the particle's list of
+    /// attributes. All attributes on this list will be displayed and editable in
+    /// the simulation UI. This function is called by the
+    /// <see cref="ParticleAttribute"/> constructor when it is created by this particle.
+    /// </summary>
+    /// <param name="attr">The attribute to add to this particle's attribute list.</param>
+    public void AddAttribute(ParticleAttribute attr)
+    {
+        attributes.Add(attr);
+    }
+
+    /// <summary>
+    /// Gets this particle's list of <see cref="ParticleAttribute"/>s. These
+    /// attributes are supposed to be shown and edited in the simulation UI.
+    /// </summary>
+    /// <returns>The list of <see cref="ParticleAttribute"/>s belonging to this particle.</returns>
+    public List<ParticleAttribute> GetAttributes()
+    {
+        return attributes;
     }
 }

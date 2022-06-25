@@ -11,8 +11,8 @@ public class ExampleParticle : Particle
 
     public ExampleParticle(ParticleSystem system, int x = 0, int y = 0) : base(system, x, y)
     {
-        myInt = new ParticleAttribute_Int("Display name of myInt", 0);
-        myEnum = new ParticleAttribute_Enum<State>("Display name of myEnum", State.IDLE);
+        myInt = new ParticleAttribute_Int(this, "Display name of myInt", 0);
+        myEnum = new ParticleAttribute_Enum<State>(this, "Display name of myEnum", State.IDLE);
     }
 
     public override void Activate()

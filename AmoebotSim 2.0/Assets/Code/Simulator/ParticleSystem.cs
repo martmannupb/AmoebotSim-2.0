@@ -55,41 +55,63 @@ public class ParticleSystem
         }
     }
 
-    public Particle GetNeighborAt(Particle p, int locDir, bool isHead)
+    /**
+     * Particle functions
+     */
+
+    // TODO: Actual implementation
+    // TODO: Documentation
+
+    public bool HasNeighborAt(Particle p, int locDir, bool fromHead = true)
     {
-        if(p.IsExpanded())
-        {
-            // Expanded
-
-        }
-        else
-        {
-            // Contracted
-            
-        }
-        throw new System.NotImplementedException();
+        Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+        //Particle nbr = null;
+        // Return true iff there is a particle at that position and it is not the
+        // same as the querying particle
+        return particleMap.TryGetValue(pos, out Particle nbr) && nbr != p;
     }
-    
 
+    // TODO: How to handle case that neighbor does not exist? For now just return null
+    public Particle GetNeighborAt(Particle p, int locDir, bool fromHead = true)
+    {
+        Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+        if (particleMap.TryGetValue(pos, out Particle nbr) && nbr != p)
+            return nbr;
+        else
+            return null;
+    }
 
-
-
-
-
-
-
-
-    /// <summary>
-    /// Queue an expansion movement of a particle. This is executed at the end of the round.
-    /// </summary>
-    /// <param name="p"></param>
-    /// <param name="locDir"></param>
     public void ExpandParticle(Particle p, int locDir)
     {
         throw new System.NotImplementedException();
     }
 
     public void ContractParticleHead(Particle p)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void ContractParticleTail(Particle p)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void PerformPushHandover(Particle p, int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void PerformPullHandoverHead(Particle p, int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void PerformPullHandoverTail(Particle p, int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void SendParticleMessage(Particle p, Message msg, int locDir, bool fromHead = true)
     {
         throw new System.NotImplementedException();
     }

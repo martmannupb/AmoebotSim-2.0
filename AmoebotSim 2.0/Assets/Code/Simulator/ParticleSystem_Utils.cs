@@ -24,12 +24,24 @@ public static class ParticleSystem_Utils
             3 => new Vector2Int(pos.x - distance,   pos.y),
             4 => new Vector2Int(pos.x,              pos.y - distance),
             5 => new Vector2Int(pos.x + distance,   pos.y - distance),
-            _ => throw new System.ArgumentOutOfRangeException()
+            _ => throw new System.ArgumentOutOfRangeException("globalDir", "Direction must be in set {0,1,2,3,4,5}.")
         };
     }
 
-    public static Vector2Int GetNeighborPosition(Particle p, int locDir, bool isHead)
+    /// <summary>
+    /// Turns the given local direction into the corresponding global direction
+    /// based on the given compass orientation.
+    /// </summary>
+    /// <param name="locDir">The local direction in <c>{0,1,2,3,4,5}</c>.</param>
+    /// <param name="compassDir">The offset of the compass direction in <c>{0,1,2,3,4,5}</c>.</param>
+    /// <returns>The global direction corresponding to <paramref name="locDir"/> offset by <paramref name="compassDir"/>.</returns>
+    public static int LocalToGlobalDir(int locDir, int compassDir)
     {
-        throw new System.NotImplementedException();
+        return (locDir + compassDir) % 6;
+    }
+
+    public static Vector2Int GetNeighborPosition(Particle p, int locDir, bool fromHead)
+    {
+        return GetNbrInDir(fromHead ? p.Head() : p.Tail(), LocalToGlobalDir(locDir, p.comDir));
     }
 }
