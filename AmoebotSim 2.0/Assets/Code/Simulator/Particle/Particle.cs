@@ -46,13 +46,13 @@ public abstract class Particle
     public Queue<Message> messageQueue = new Queue<Message>();
 
 
-    public Particle(ParticleSystem system, int x = 0, int y = 0)
+    public Particle(ParticleSystem system, Vector2Int pos)
     {
         this.system = system;
 
         // Start contracted
-        this.pos_head = new Vector2Int(x, y);
-        this.pos_tail = new Vector2Int(x, y);
+        this.pos_head = pos;
+        this.pos_tail = pos;
         this.exp_isExpanded = false;
         this.exp_expansionDir = -1;
 

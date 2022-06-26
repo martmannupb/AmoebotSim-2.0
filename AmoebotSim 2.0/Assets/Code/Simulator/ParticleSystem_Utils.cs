@@ -35,13 +35,13 @@ public static class ParticleSystem_Utils
     /// <param name="locDir">The local direction in <c>{0,1,2,3,4,5}</c>.</param>
     /// <param name="compassDir">The offset of the compass direction in <c>{0,1,2,3,4,5}</c>.</param>
     /// <returns>The global direction corresponding to <paramref name="locDir"/> offset by <paramref name="compassDir"/>.</returns>
-    public static int LocalToGlobalDir(int locDir, int compassDir)
+    public static int LocalToGlobalDir(int locDir, int compassDir, bool chirality)
     {
-        return (locDir + compassDir) % 6;
+        return chirality ? (compassDir + locDir) % 6 : (compassDir - locDir + 6) % 6;
     }
 
     public static Vector2Int GetNeighborPosition(Particle p, int locDir, bool fromHead)
     {
-        return GetNbrInDir(fromHead ? p.Head() : p.Tail(), LocalToGlobalDir(locDir, p.comDir));
+        return GetNbrInDir(fromHead ? p.Head() : p.Tail(), LocalToGlobalDir(locDir, p.comDir, p.chirality));
     }
 }

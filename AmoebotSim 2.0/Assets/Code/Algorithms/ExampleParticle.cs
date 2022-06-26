@@ -9,7 +9,7 @@ public class ExampleParticle : Particle
     public ParticleAttribute_Int myInt;
     public ParticleAttribute_Enum<State> myEnum;
 
-    public ExampleParticle(ParticleSystem system, int x = 0, int y = 0) : base(system, x, y)
+    public ExampleParticle(ParticleSystem system, Vector2Int pos) : base(system, pos)
     {
         myInt = new ParticleAttribute_Int(this, "Display name of myInt", 0);
         myEnum = new ParticleAttribute_Enum<State>(this, "Display name of myEnum", State.IDLE);
