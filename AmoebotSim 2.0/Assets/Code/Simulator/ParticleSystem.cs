@@ -6,13 +6,15 @@ public class ParticleSystem
 {
     // References
     private AmoebotSimulator sim;
+    private RenderSystem renderSystem;
 
     public List<Particle> particles = new List<Particle>();
     public Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
-    public ParticleSystem(AmoebotSimulator sim)
+    public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
         this.sim = sim;
+        this.renderSystem = renderSystem;
     }
 
     /// <summary>

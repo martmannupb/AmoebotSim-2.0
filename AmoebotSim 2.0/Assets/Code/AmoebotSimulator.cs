@@ -14,18 +14,39 @@ public class AmoebotSimulator : MonoBehaviour
 
 
     // TODO: Make this public and assign in editor?
+    // (dont know, maybe it is better if we do like this via code, so we might be able to initialize the system with parameters for something like the graphics)
     private ParticleSystem system;
+    private RenderSystem renderSystem;
 
     // Start is called before the first frame update
     void Start()
     {
-        system = new ParticleSystem(this);
+        renderSystem = new RenderSystem();
+        system = new ParticleSystem(this, renderSystem);
         system.InitializeExample(25, 15, 0.3f, -9, -5);
         system.ActivateParticles();
+
+
+
+
+
+
+        // Test Area -----
+        Debug.Log("V1: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(0, 0)));
+        Debug.Log("V2: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(0.5f, 0.1f)));
+        Debug.Log("V3: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)));
+        Debug.Log("V3 Inverted: " + AmoebotFunctions.CalculateAmoebotCenterPositionVector2(AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).x, AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).y));
+        // -----
     }
 
     // Update is called once per frame
     void Update()
+    {
+        renderSystem.Render();
+    }
+
+    // FixedUpdate is called once per Time.fixedDeltaTime interval
+    void FixedUpdate()
     {
         
     }

@@ -7,7 +7,7 @@ public class RenderSystem
 
     // Dynamic Settings _____
     // View
-    public ViewType setting_viewType = ViewType.Hexagonal;
+    public ViewType setting_viewType = ViewType.Circular;
     // Performance
     public int setting_antiAliasing = 8; // Valid values are 0 (no MSAA), 2, 4, and 8
 
@@ -15,18 +15,30 @@ public class RenderSystem
     // Static Params _____
     // General
     public const float const_circularViewBGLineWidth = 0.06f;
+    public const int const_circularViewBGLineLength = 1000000;
     public const int const_amountOfLinesPerMesh = 100;
     // Layers
     public const float zLayer_background = 1f;
     public const float zLayer_particles = 0f;
     public const float zLayer_pins = -1f;
 
+
+    // Data _____
+    private RendererBackground rendererBG;
+    private RendererParticles rendererP;
+
     
 
 
+    public RenderSystem()
+    {
+        rendererBG = new RendererBackground();
+        rendererP = new RendererParticles();
+    }
+
     public void Render()
     {
-        
+        rendererBG.Render(setting_viewType);
     }
 
 
