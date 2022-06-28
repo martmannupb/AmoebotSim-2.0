@@ -302,7 +302,7 @@ MonoBehaviour:
   camera: {fileID: 0}
   updateManually: 0
   minOrthographicSize: 5
-  maxOrthographicSize: 30
+  maxOrthographicSize: 40
   cameraMovSpeedKeyboard: 10
   minHeightOfSquare: 0
   maxHeightOfSquare: 0
