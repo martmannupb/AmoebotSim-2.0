@@ -25,7 +25,7 @@ public class RendererBackground
                 Render_Hexagonal();
                 break;
             case ViewType.Circular:
-                //Render_Circular();
+                Render_Circular();
                 break;
             default:
                 break;
@@ -45,15 +45,17 @@ public class RendererBackground
         Vector2 screenSize = camPosTR - camPosBL;
         float widthHeightRatio = screenSize.y / screenSize.x;
 
-        // Background
+        // 1. Background
         // We need to adjust the bounds so the grid ist evenly placed on the screen
         Vector2 bgPosBL = camPosBL + new Vector2(-10f - screenSize.y * widthHeightRatio * 1.5f, -10f);
         Vector2 bgPosTR = camPosTR + new Vector2(10f + screenSize.y * widthHeightRatio * 1.5f, 10f);
         int amountDiagonalMeshes = Mathf.CeilToInt(bgPosTR.x - bgPosBL.x + 2) / RenderSystem.const_amountOfLinesPerMesh + 1;
         int amountHorizontalMeshes = (int)(camPosTR.y - camPosBL.y + 4) / RenderSystem.const_amountOfLinesPerMesh + 1;
         // Calc pos of first mesh
-        Vector3 firstBgMeshPos = (Vector3Int)AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
+        Vector2Int firstBgGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
+        Vector3 firstBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(firstBgGridPos);
         firstBgMeshPos.z = RenderSystem.zLayer_background;
+        Debug.Log(firstBgMeshPos);
         // Add diagonal meshes
         while (mesh_circ_bgDiaBLTR.Count < amountDiagonalMeshes)
         {
