@@ -25,10 +25,10 @@ public static class MeshCreator_CircularView
 
         for (int i = 0; i < RenderSystem.const_amountOfLinesPerMesh; i++)
         {
-            vertices[0 + 4 * i] = new Vector3(0f, widthHalf, 0f);
-            vertices[1 + 4 * i] = new Vector3(0f, -widthHalf, 0f);
-            vertices[2 + 4 * i] = new Vector3(length, widthHalf, 0f);
-            vertices[3 + 4 * i] = new Vector3(length, -widthHalf, 0f);
+            vertices[0 + 4 * i] = new Vector3(0f, widthHalf + i * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
+            vertices[1 + 4 * i] = new Vector3(0f, -widthHalf + i * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
+            vertices[2 + 4 * i] = new Vector3(length, widthHalf + i * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
+            vertices[3 + 4 * i] = new Vector3(length, -widthHalf + i * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
             uv[0 + 4 * i] = new Vector2(0f, 0f);
             uv[1 + 4 * i] = new Vector2(1f, 0f);
             uv[2 + 4 * i] = new Vector2(0f, 1f);

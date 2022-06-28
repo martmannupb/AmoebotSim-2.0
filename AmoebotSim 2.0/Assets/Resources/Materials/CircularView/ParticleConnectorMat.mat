@@ -20,9 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ConnectorMat
-  m_Shader: {fileID: -6465566751694194690, guid: 16ae048a72a831c4d985e4cf97f09c56,
-    type: 3}
+  m_Name: ParticleConnectorMat
+  m_Shader: {fileID: -6465566751694194690, guid: 16ae048a72a831c4d985e4cf97f09c56, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
