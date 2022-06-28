@@ -23,12 +23,26 @@ public class ExampleParticle : Particle
         myEnum.UpdateParameterValue("LEADER");
         Debug.Log("myInt after: " + myInt.ToString());
         Debug.Log("myEnum after: " + myEnum.ToString());
-        //Debug.Log("myInt before: " + myInt.ToString());
-        //myInt = 42;
-        //Debug.Log("myInt after assignment: " + myInt.ToString());
-        //myInt++;
-        //Debug.Log("myInt after increment: " + myInt.ToString());
-        //myInt--;
-        //Debug.Log("myInt after decrement: " + myInt.ToString());
+
+        if (exp_isExpanded)
+        {
+            ContractHead();
+        }
+        else
+        {
+            // Expand in random free direction
+            List<int> freeDirs = new List<int>();
+            for (int i = 0; i < 6; i++)
+            {
+                if (!HasNeighborAt(i))
+                {
+                    freeDirs.Add(i);
+                }
+            }
+            if (freeDirs.Count > 0)
+            {
+                Expand(freeDirs[Random.Range(0, freeDirs.Count)]);
+            }
+        }
     }
 }
