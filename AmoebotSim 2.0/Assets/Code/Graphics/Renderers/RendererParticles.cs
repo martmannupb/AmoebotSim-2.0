@@ -5,9 +5,9 @@ using UnityEngine;
 public class RendererParticles
 {
 
-    // Data
-    private Dictionary<Particle, ParticleGraphicalData> particleToparticleGraphicalDataMap = new Dictionary<Particle, ParticleGraphicalData>();
-
+    // Data _____
+    // Particles
+    private Dictionary<Particle, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<Particle, ParticleGraphicsAdapterImpl>();
     // Graphics
     private List<Matrix4x4[]> particleMatrices = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesInner = new List<Matrix4x4[]>();
@@ -49,31 +49,11 @@ public class RendererParticles
         scale_diaTopRightParticleConnection = new Vector3(diagonalConnectionLength, particleConnectedWidth, 1f);
     }
 
-    public void Particle_Connect(ParticleGraphicalData graphicalData)
+    public bool Particle_Add(ParticleGraphicsAdapterImpl graphicalData)
     {
-        particleToparticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
-    }
+        if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) return false;
 
-    public bool Particle_Disconnect(ParticleGraphicalData graphicalData)
-    {
-        if(particleToparticleGraphicalDataMap.ContainsKey(graphicalData.particle) == false)
-        {
-            Log.Error("RendererParticles: Particle_Disconnect: Key not found!");
-            return false;
-        }
-        particleToparticleGraphicalDataMap.Remove(graphicalData.particle);
-        
-        // Remove particle from visual structure
-        ...
-    }
-
-    public bool Particle_Add(ParticleGraphicalData particleGraphicalData)
-    {
-        if (particleToparticleGraphicalDataMap.ContainsKey(particleGraphicalData.particle)) return false;
-
-        int listNumber = 0;
-        int listID = 0;
-        if (((particleGraphicalData.Count + 1) % maxArraySize) == 1)
+        if (((particleToParticleGraphicalDataMap.Count + 1) % maxArraySize) == 1)
         {
             Matrix4x4[] particleMatrix = new Matrix4x4[maxArraySize];
             Matrix4x4[] particleMatrixInner = new Matrix4x4[maxArraySize];
@@ -83,7 +63,9 @@ public class RendererParticles
             for (int i = 0; i < maxArraySize; i++)
             {
                 particleMatrix[i] = matrixTRS_zero;
+                particleMatrixInner[i] = matrixTRS_zero;
                 particleMatrixExpanded[i] = matrixTRS_zero;
+                particleMatrixExpandedInner[i] = matrixTRS_zero;
                 particleConnectionMatrix[i] = matrixTRS_zero;
             }
             particleMatrices.Add(particleMatrix);
@@ -92,49 +74,39 @@ public class RendererParticles
             particleMatricesExpandedInner.Add(particleMatrixExpandedInner);
             particleConnectionMatrices.Add(particleConnectionMatrix);
         }
-        listNumber = particleMatrices.Count - 1;
-        listID = particleGraphicalData.Count % maxArraySize;
+        graphicalData.graphics_listNumber = particleMatrices.Count - 1;
+        graphicalData.graphics_listID = particleToParticleGraphicalDataMap.Count % maxArraySize;
 
-        particleGraphicalData.Add(particle, new ParticleGraphicalData(this, particle, listNumber, listID));
+        particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
         return true;
-
     }
 
     public void Particle_Remove(Particle particle)
     {
-        if (particleToparticleGraphicalDataMap.ContainsKey(particle)) particleToparticleGraphicalDataMap.Remove(particle);
+        if (particleToParticleGraphicalDataMap.ContainsKey(particle)) particleToParticleGraphicalDataMap.Remove(particle);
 
         throw new System.NotImplementedException();
         // We would need to implement the removal of the graphics here, but let us say for the prototype we do not need this.
     }
 
-    public void ParticleMoved(Particle particle)
+    public void UpdateMatrix(ParticleGraphicsAdapterImpl graphicalData)
     {
-        if (particleToparticleGraphicalDataMap.ContainsKey(particle) == false)
-        {
-            Debug.Log("Error: ParticleMoved: Particle not found.");
-        }
-        particleToparticleGraphicalDataMap[particle].Moved();
-    }
-
-    public void UpdateMatrix(ParticleGraphicalData graphicalData)
-    {
-        particleMatrices[graphicalData.graphics_list][graphicalData.graphics_id] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.position1.x, graphicalData.position1.y), Quaternion.identity, Vector3.one);
-        particleMatricesInner[graphicalData.graphics_list][graphicalData.graphics_id] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.position1.x, graphicalData.position1.y), Quaternion.identity, new Vector3(innerParticleScaleFactor, innerParticleScaleFactor, 1f));
-        if (graphicalData.isExpanded)
+        particleMatrices[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position1.x, graphicalData.stored_position1.y), Quaternion.identity, Vector3.one);
+        particleMatricesInner[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position1.x, graphicalData.stored_position1.y), Quaternion.identity, new Vector3(innerParticleScaleFactor, innerParticleScaleFactor, 1f));
+        if (graphicalData.stored_isExpanded)
         {
             // Expanded
-            particleMatricesExpanded[graphicalData.graphics_list][graphicalData.graphics_id] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.position2.x, graphicalData.position2.y), Quaternion.identity, Vector3.one);
-            particleMatricesExpandedInner[graphicalData.graphics_list][graphicalData.graphics_id] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.position2.x, graphicalData.position2.y), Quaternion.identity, new Vector3(innerParticleScaleFactor, innerParticleScaleFactor, 1f));
+            particleMatricesExpanded[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position2.x, graphicalData.stored_position2.y), Quaternion.identity, Vector3.one);
+            particleMatricesExpandedInner[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position2.x, graphicalData.stored_position2.y), Quaternion.identity, new Vector3(innerParticleScaleFactor, innerParticleScaleFactor, 1f));
 
             Vector2Int particleConnectorPosGrid = Vector2Int.zero;
             Quaternion particleConnectorRot = Quaternion.identity;
             Vector3 particleConnectorScale = Vector3.one;
-            if (graphicalData.expansionDir >= 0 && graphicalData.expansionDir <= 2)
+            if (graphicalData.stored_expansionDir >= 0 && graphicalData.stored_expansionDir <= 2)
             {
                 // position2 is the node from which the connection originates
-                particleConnectorPosGrid = graphicalData.position2;
-                switch (graphicalData.expansionDir)
+                particleConnectorPosGrid = graphicalData.stored_position2;
+                switch (graphicalData.stored_expansionDir)
                 {
                     case 0:
                         particleConnectorRot = quaternion_horLeftParticleConnection;
@@ -155,8 +127,8 @@ public class RendererParticles
             else
             {
                 // position2 is the node from which the connection originates
-                particleConnectorPosGrid = graphicalData.position1;
-                switch (graphicalData.expansionDir)
+                particleConnectorPosGrid = graphicalData.stored_position1;
+                switch (graphicalData.stored_expansionDir)
                 {
                     case 3:
                         particleConnectorRot = quaternion_horLeftParticleConnection;
@@ -176,32 +148,16 @@ public class RendererParticles
             }
             Vector3 particleConnectorPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(particleConnectorPosGrid.x, particleConnectorPosGrid.y);
 
-            particleConnectionMatrices[graphicalData.graphics_list][graphicalData.graphics_id] = Matrix4x4.TRS(particleConnectorPos, particleConnectorRot, particleConnectorScale);
+            particleConnectionMatrices[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(particleConnectorPos, particleConnectorRot, particleConnectorScale);
         }
         else
         {
             // Contracted
-            particleMatricesExpanded[graphicalData.graphics_list][graphicalData.graphics_id] = matrixTRS_zero;
-            particleMatricesExpandedInner[graphicalData.graphics_list][graphicalData.graphics_id] = matrixTRS_zero;
-            particleConnectionMatrices[graphicalData.graphics_list][graphicalData.graphics_id] = matrixTRS_zero;
+            particleMatricesExpanded[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = matrixTRS_zero;
+            particleMatricesExpandedInner[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = matrixTRS_zero;
+            particleConnectionMatrices[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = matrixTRS_zero;
         }
     }
-
-    public void RenderAmoebots()
-    {
-        for (int i = 0; i < particleMatrices.Count; i++)
-        {
-            // Test
-            //Graphics.DrawMeshInstanced(defaultQuad, 0, material_particle, new Matrix4x4[] { Matrix4x4.TRS(new Vector3(0f, 0f, 0f), Quaternion.identity, new Vector3(10f, 10f, 1f)) });
-
-            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particle, particleMatrices[i]);
-            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particleCenter, particleMatricesInner[i]);
-            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particle, particleMatricesExpanded[i]);
-            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particleCenter, particleMatricesExpandedInner[i]);
-            Graphics.DrawMeshInstanced(defaultQuadLeftSidePivot, 0, MaterialDatabase.material_circular_particleConnector, particleConnectionMatrices[i]);
-        }
-    }
-
 
     public void Render(ViewType viewType)
     {
@@ -225,7 +181,17 @@ public class RendererParticles
 
     private void Render_Circular()
     {
-        
+        for (int i = 0; i < particleMatrices.Count; i++)
+        {
+            // Test
+            //Graphics.DrawMeshInstanced(defaultQuad, 0, material_particle, new Matrix4x4[] { Matrix4x4.TRS(new Vector3(0f, 0f, 0f), Quaternion.identity, new Vector3(10f, 10f, 1f)) });
+
+            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particle, particleMatrices[i]);
+            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particleCenter, particleMatricesInner[i]);
+            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particle, particleMatricesExpanded[i]);
+            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particleCenter, particleMatricesExpandedInner[i]);
+            Graphics.DrawMeshInstanced(defaultQuadLeftSidePivot, 0, MaterialDatabase.material_circular_particleConnector, particleConnectionMatrices[i]);
+        }
     }
 
 }
