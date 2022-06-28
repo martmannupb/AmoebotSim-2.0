@@ -31,8 +31,8 @@ public abstract class Particle
 
     // Data _____
     // General
-    public int comDir;
-    public bool chirality;
+    public readonly int comDir;
+    public readonly bool chirality;
 
     // State _____
     public Vector2Int pos_head;
@@ -44,6 +44,9 @@ public abstract class Particle
     public List<ParticleAttribute> attributes = new List<ParticleAttribute>();
     // Messages
     public Queue<Message> messageQueue = new Queue<Message>();
+
+    // Data used by system to coordinate movements
+    public ParticleAction scheduledAction = null;
 
 
     public Particle(ParticleSystem system, Vector2Int pos)
@@ -185,7 +188,8 @@ public abstract class Particle
 
 
     /**
-     * Particle actions
+     * Particle actions defining the API.
+     * These methods should be called from the Activate() method.
      */
 
     public void Expand(int locDir)
@@ -222,6 +226,56 @@ public abstract class Particle
     {
         system.SendParticleMessage(this, msg, locDir, head);
     }
+
+
+    /**
+     * System state change functions that are NOT part of the API.
+     * These methods are called by the simulation framework to update
+     * the particle state at the appropriate time. They should not be
+     * called in the Activate method.
+     */
+
+    public void Apply_Expand(int locDir)
+    {
+        exp_isExpanded = true;
+        exp_expansionDir = locDir;
+        pos_head = ParticleSystem_Utils.GetNbrInDir(pos_head, ParticleSystem_Utils.LocalToGlobalDir(locDir, comDir, chirality));
+    }
+
+    public void Apply_ContractHead()
+    {
+        exp_isExpanded = false;
+        exp_expansionDir = -1;
+        pos_tail = pos_head;
+    }
+
+    public void Apply_ContractTail()
+    {
+        exp_isExpanded = false;
+        exp_expansionDir = -1;
+        pos_head = pos_tail;
+    }
+
+    public void Apply_PushHandover(int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Apply_PullHandoverHead(int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Apply_PullHandoverTail(int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Apply_SendMessage(Message msg, int locDir, bool head = true)
+    {
+        throw new System.NotImplementedException();
+    }
+
 
     /**
      * Attribute handling

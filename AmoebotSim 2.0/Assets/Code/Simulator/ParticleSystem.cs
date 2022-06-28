@@ -11,6 +11,8 @@ public class ParticleSystem
     public List<Particle> particles = new List<Particle>();
     public Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
+    public Queue<ParticleAction> actionQueue = new Queue<ParticleAction>();
+
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
         this.sim = sim;
@@ -47,7 +49,21 @@ public class ParticleSystem
         Debug.Log("Created system with " + num + " particles");
     }
 
+    /**
+     * Simulation functions
+     */
 
+    /// <summary>
+    /// Activates a single, randomly chosen particle in the system.
+    /// </summary>
+    public void ActivateRandomParticle()
+    {
+        if (particles.Count > 0)
+        {
+            particles[Random.Range(0, particles.Count)].Activate();
+            ApplyNextActionInQueue();
+        }
+    }
 
     public void ActivateParticles()
     {
@@ -57,8 +73,42 @@ public class ParticleSystem
         }
     }
 
+    public void ApplyNextActionInQueue()
+    {
+        if (actionQueue.Count > 0)
+        {
+            ApplyParticleAction(actionQueue.Dequeue());
+        }
+    }
+
+    public void ApplyParticleAction(ParticleAction a)
+    {
+        switch (a.type)
+        {
+            case ActionType.EXPAND: Apply_ExpandParticle(a.particle, a.localDir);
+                break;
+            case ActionType.CONTRACT_HEAD: Apply_ContractParticleHead(a.particle);
+                break;
+            case ActionType.CONTRACT_TAIL: Apply_ContractParticleTail(a.particle);
+                break;
+            case ActionType.PUSH: Apply_PerformPushHandover(a.particle, a.localDir);
+                break;
+            case ActionType.PULL_HEAD: Apply_PerformPullHandoverHead(a.particle, a.localDir);
+                break;
+            case ActionType.PULL_TAIL: Apply_PerformPullHandoverTail(a.particle, a.localDir);
+                break;
+            default:
+                throw new System.ArgumentException("Unknown ParticleAction type " + a.type);
+        }
+        // Finally remove the particle's scheduled action if it is this one
+        if (a == a.particle.scheduledAction)
+        {
+            a.particle.scheduledAction = null;
+        }
+    }
+
     /**
-     * Particle functions
+     * Particle functions (called by particles to trigger actions)
      */
 
     // TODO: Actual implementation
@@ -85,17 +135,54 @@ public class ParticleSystem
 
     public void ExpandParticle(Particle p, int locDir)
     {
-        throw new System.NotImplementedException();
+        // Reject if the particle is already expanded
+        if (p.IsExpanded())
+        {
+            throw new System.InvalidOperationException("Expanded particle cannot expand again.");
+        }
+
+        // Warning if particle already has a scheduled movement operation
+        // TODO: Turn this into an error?
+        if (p.scheduledAction != null)
+        {
+            Debug.LogWarning("Expanding particle already has a scheduled movement.");
+        }
+
+        // Store expansion action in particle and queue
+        ParticleAction a = new ParticleAction(p, ActionType.EXPAND, locDir);
+        p.scheduledAction = a;
+        actionQueue.Enqueue(a);
     }
 
     public void ContractParticleHead(Particle p)
     {
-        throw new System.NotImplementedException();
+        ContractParticle(p, true);
     }
 
     public void ContractParticleTail(Particle p)
     {
-        throw new System.NotImplementedException();
+        ContractParticle(p, false);
+    }
+
+    private void ContractParticle(Particle p, bool head)
+    {
+        // Reject if the particle is already contracted
+        if (p.IsContracted())
+        {
+            throw new System.InvalidOperationException("Contracted particle cannot contract again.");
+        }
+
+        // Warning if particle already has a scheduled movement operation
+        // TODO: Turn this into an error?
+        if (p.scheduledAction != null)
+        {
+            Debug.LogWarning("Contracting particle already has a scheduled movement.");
+        }
+
+        // Store contraction action in particle and queue
+        ParticleAction a = new ParticleAction(p, head ? ActionType.CONTRACT_HEAD : ActionType.CONTRACT_TAIL);
+        p.scheduledAction = a;
+        actionQueue.Enqueue(a);
     }
 
     public void PerformPushHandover(Particle p, int locDir)
@@ -118,5 +205,76 @@ public class ParticleSystem
         throw new System.NotImplementedException();
     }
 
-    // ...
+
+    /**
+     * State change functions (called to update the simulation state)
+     * These functions should NOT be called by particles!
+     */
+
+    public void Apply_ExpandParticle(Particle p, int locDir)
+    {
+        // Error if the target location is already occupied and the occupying particle
+        // does not intend to move away
+        // TODO: This is only an error in the FSYNC model!
+        Vector2Int targetLoc = ParticleSystem_Utils.GetNbrInDir(p.Head(), ParticleSystem_Utils.LocalToGlobalDir(locDir, p.comDir, p.chirality));
+        Particle p2 = null;
+        if (particleMap.TryGetValue(targetLoc, out p2))
+        {
+            // Target node is occupied, check if the occupying particle intends to move away
+            if (p2.scheduledAction == null ||
+                !(p2.scheduledAction.type == ActionType.CONTRACT_HEAD && p2.Tail() == p.Head()) &&
+                !(p2.scheduledAction.type == ActionType.CONTRACT_TAIL && p2.Head() == p.Head()) &&
+                !(p2.scheduledAction.type == ActionType.PULL_HEAD && ParticleSystem_Utils.GetNeighborPosition(p2, p2.scheduledAction.localDir, false) == p.Head()) &&
+                !(p2.scheduledAction.type == ActionType.PULL_TAIL && ParticleSystem_Utils.GetNeighborPosition(p2, p2.scheduledAction.localDir, true) == p.Head()))
+            {
+                throw new System.InvalidOperationException("Particle tries to expand onto occupied node and occupying particle does not intend to move away.");
+            }
+        }
+
+        // Action is allowed
+        // First let the particle update its internal state
+        p.Apply_Expand(locDir);
+        // Then update the particle map (need a second entry that points to this particle)
+        particleMap.Add(p.Head(), p);
+    }
+
+    public void Apply_ContractParticleHead(Particle p)
+    {
+        // Action is always allowed
+        // First let the particle update its internal state
+        Vector2Int tailPos = p.Tail();
+        p.Apply_ContractHead();
+        // Then update the particle map (need to remove the particle's tail entry)
+        particleMap.Remove(tailPos);
+    }
+
+    public void Apply_ContractParticleTail(Particle p)
+    {
+        // Action is always allowed
+        // First let the particle update its internal state
+        Vector2Int headPos = p.Head();
+        p.Apply_ContractTail();
+        // Then update the particle map (need to remove the particle's head entry)
+        particleMap.Remove(headPos);
+    }
+
+    public void Apply_PerformPushHandover(Particle p, int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Apply_PerformPullHandoverHead(Particle p, int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Apply_PerformPullHandoverTail(Particle p, int locDir)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Apply_SendParticleMessage(Particle p, Message msg, int locDir, bool fromHead = true)
+    {
+        throw new System.NotImplementedException();
+    }
 }

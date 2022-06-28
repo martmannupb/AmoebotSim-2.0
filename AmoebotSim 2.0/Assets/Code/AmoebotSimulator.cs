@@ -24,9 +24,10 @@ public class AmoebotSimulator : MonoBehaviour
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
         system.InitializeExample(25, 15, 0.3f, -9, -5);
-        system.ActivateParticles();
+        //system.ActivateParticles();
 
-
+        // Activate one particle every 100ms (only for testing)
+        InvokeRepeating(nameof(ActivateParticle), 0.0f, 0.1f);
 
 
 
@@ -37,6 +38,12 @@ public class AmoebotSimulator : MonoBehaviour
         Debug.Log("V3: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)));
         Debug.Log("V3 Inverted: " + AmoebotFunctions.CalculateAmoebotCenterPositionVector2(AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).x, AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).y));
         // -----
+    }
+
+    void ActivateParticle()
+    {
+        Debug.Log("Activate");
+        system.ActivateRandomParticle();
     }
 
     // Update is called once per frame

@@ -34,6 +34,8 @@ public static class ParticleSystem_Utils
     /// </summary>
     /// <param name="locDir">The local direction in <c>{0,1,2,3,4,5}</c>.</param>
     /// <param name="compassDir">The offset of the compass direction in <c>{0,1,2,3,4,5}</c>.</param>
+    /// <param name="chirality">The direction in which rotation is applied. <c>true</c> means
+    /// counter-clockwise is positive rotation and <c>false</c> means clockwise.</param>
     /// <returns>The global direction corresponding to <paramref name="locDir"/> offset by <paramref name="compassDir"/>.</returns>
     public static int LocalToGlobalDir(int locDir, int compassDir, bool chirality)
     {
