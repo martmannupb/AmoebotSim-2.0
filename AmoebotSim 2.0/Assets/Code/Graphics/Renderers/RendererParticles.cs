@@ -7,7 +7,7 @@ public class RendererParticles
 
     // Data _____
     // Particles
-    private Dictionary<Particle, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<Particle, ParticleGraphicsAdapterImpl>();
+    private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
     // Graphics
     private List<Matrix4x4[]> particleMatrices = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesInner = new List<Matrix4x4[]>();
@@ -21,8 +21,8 @@ public class RendererParticles
     private Mesh defaultQuadLeftSidePivot = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     // Matrix TRS Params
     private float particleConnectedWidth = 0.1f;
-    Quaternion quaternion_horLeftParticleConnection;
-    Vector3 scale_horLeftParticleConnection;
+    Quaternion quaternion_horRightParticleConnection;
+    Vector3 scale_horRightParticleConnection;
     Quaternion quaternion_diaTopLeftParticleConnection;
     Vector3 scale_diaTopLeftParticleConnection;
     Quaternion quaternion_diaTopRightParticleConnection;
@@ -40,10 +40,10 @@ public class RendererParticles
     public void Init()
     {
         // Calculate Matrix Params
-        quaternion_horLeftParticleConnection = Quaternion.Euler(0f, 0f, 180f) * Quaternion.identity;
+        quaternion_horRightParticleConnection = Quaternion.Euler(0f, 0f, 0f) * Quaternion.identity;
         quaternion_diaTopLeftParticleConnection = Quaternion.Euler(0f, 0f, 120f) * Quaternion.identity;
         quaternion_diaTopRightParticleConnection = Quaternion.Euler(0f, 0f, 60f) * Quaternion.identity;
-        scale_horLeftParticleConnection = new Vector3(1f, particleConnectedWidth, 1f);
+        scale_horRightParticleConnection = new Vector3(1f, particleConnectedWidth, 1f);
         float diagonalConnectionLength = Mathf.Sqrt(0.5f * 0.5f + AmoebotFunctions.HeightDifferenceBetweenRows() * AmoebotFunctions.HeightDifferenceBetweenRows());
         scale_diaTopLeftParticleConnection = new Vector3(diagonalConnectionLength, particleConnectedWidth, 1f);
         scale_diaTopRightParticleConnection = new Vector3(diagonalConnectionLength, particleConnectedWidth, 1f);
@@ -81,7 +81,7 @@ public class RendererParticles
         return true;
     }
 
-    public void Particle_Remove(Particle particle)
+    public void Particle_Remove(IParticleState particle)
     {
         if (particleToParticleGraphicalDataMap.ContainsKey(particle)) particleToParticleGraphicalDataMap.Remove(particle);
 
@@ -102,23 +102,23 @@ public class RendererParticles
             Vector2Int particleConnectorPosGrid = Vector2Int.zero;
             Quaternion particleConnectorRot = Quaternion.identity;
             Vector3 particleConnectorScale = Vector3.one;
-            if (graphicalData.stored_expansionDir >= 0 && graphicalData.stored_expansionDir <= 2)
+            if (graphicalData.stored_globalExpansionDir >= 0 && graphicalData.stored_globalExpansionDir <= 2)
             {
                 // position2 is the node from which the connection originates
                 particleConnectorPosGrid = graphicalData.stored_position2;
-                switch (graphicalData.stored_expansionDir)
+                switch (graphicalData.stored_globalExpansionDir)
                 {
-                    case 0:
-                        particleConnectorRot = quaternion_horLeftParticleConnection;
-                        particleConnectorScale = scale_horLeftParticleConnection;
+                    case 0: // right expansion
+                        particleConnectorRot = quaternion_horRightParticleConnection;
+                        particleConnectorScale = scale_horRightParticleConnection;
                         break;
-                    case 1:
-                        particleConnectorRot = quaternion_diaTopLeftParticleConnection;
-                        particleConnectorScale = scale_diaTopLeftParticleConnection;
-                        break;
-                    case 2:
+                    case 1: // top right expansion
                         particleConnectorRot = quaternion_diaTopRightParticleConnection;
                         particleConnectorScale = scale_diaTopRightParticleConnection;
+                        break;
+                    case 2: // top left expansion
+                        particleConnectorRot = quaternion_diaTopLeftParticleConnection;
+                        particleConnectorScale = scale_diaTopLeftParticleConnection;
                         break;
                     default:
                         break;
@@ -128,19 +128,19 @@ public class RendererParticles
             {
                 // position2 is the node from which the connection originates
                 particleConnectorPosGrid = graphicalData.stored_position1;
-                switch (graphicalData.stored_expansionDir)
+                switch (graphicalData.stored_globalExpansionDir)
                 {
-                    case 3:
-                        particleConnectorRot = quaternion_horLeftParticleConnection;
-                        particleConnectorScale = scale_horLeftParticleConnection;
+                    case 3: // left expansion
+                        particleConnectorRot = quaternion_horRightParticleConnection;
+                        particleConnectorScale = scale_horRightParticleConnection;
                         break;
-                    case 4:
-                        particleConnectorRot = quaternion_diaTopLeftParticleConnection;
-                        particleConnectorScale = scale_diaTopLeftParticleConnection;
-                        break;
-                    case 5:
+                    case 4: // bottom left
                         particleConnectorRot = quaternion_diaTopRightParticleConnection;
                         particleConnectorScale = scale_diaTopRightParticleConnection;
+                        break;
+                    case 5: // bottom right
+                        particleConnectorRot = quaternion_diaTopLeftParticleConnection;
+                        particleConnectorScale = scale_diaTopLeftParticleConnection;
                         break;
                     default:
                         break;

@@ -10,7 +10,7 @@ using UnityEngine.EventSystems;
 
 public class MouseController : MonoBehaviour {
 
-    public Camera camera;
+    public Camera cam;
 
     public bool updateManually = false;
 
@@ -21,11 +21,11 @@ public class MouseController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        if(camera == null)
+        if(cam == null)
         {
-            camera = Camera.main;
+            cam = Camera.main;
         }
-        orthographicSizeTarget = camera.orthographicSize;
+        orthographicSizeTarget = cam.orthographicSize;
     }
 
     // Update is called once per frame
@@ -44,14 +44,14 @@ public class MouseController : MonoBehaviour {
 
     public void UpdateLogic()
     {
-        currFramePosition = camera.ScreenToWorldPoint(Input.mousePosition);
+        currFramePosition = cam.ScreenToWorldPoint(Input.mousePosition);
         currFramePosition.z = 0;
 
         //UpdateCursor();
         UpdateDragging();
         UpdateCameraMovement();
 
-        lastFramePosition = camera.ScreenToWorldPoint(Input.mousePosition);
+        lastFramePosition = cam.ScreenToWorldPoint(Input.mousePosition);
         lastFramePosition.z = 0;
     }
 
@@ -124,7 +124,7 @@ public class MouseController : MonoBehaviour {
 
             diffSmooth = diff; //one down???
             diff = lastFramePosition - currFramePosition;
-            camera.transform.Translate(diff);
+            cam.transform.Translate(diff);
             // Calculate normalized difference (to 60fps)
             diffSmoothNormalized60FPS = (Time.deltaTime * 60f) * diff;
         }
@@ -136,7 +136,7 @@ public class MouseController : MonoBehaviour {
             }*/
 
             if (diffSmoothNormalized60FPS.magnitude > 0.01f * Time.deltaTime) {
-                camera.transform.Translate(diffSmoothNormalized60FPS * Time.deltaTime * 60f);
+                cam.transform.Translate(diffSmoothNormalized60FPS * Time.deltaTime * 60f);
                 diffSmoothNormalized60FPS *= Mathf.Pow(0.99f, Time.deltaTime * 60f);
             }
             else {
@@ -154,7 +154,7 @@ public class MouseController : MonoBehaviour {
                 orthographicSizeTarget -= orthographicSizeTarget * Input.GetAxis("Mouse ScrollWheel") * 3f;
                 orthographicSizeTarget = Mathf.Clamp(orthographicSizeTarget, minOrthographicSize, maxOrthographicSize);
                 // Update orthographic size
-                camera.orthographicSize = Mathf.SmoothDamp(camera.orthographicSize, orthographicSizeTarget, ref orthographicSizeCurrentVelocity, 0.05f);
+                cam.orthographicSize = Mathf.SmoothDamp(cam.orthographicSize, orthographicSizeTarget, ref orthographicSizeCurrentVelocity, 0.05f);
                 break;
             case 1:
                 float mouseWheel = Input.GetAxis("Mouse ScrollWheel");
@@ -168,7 +168,7 @@ public class MouseController : MonoBehaviour {
                     float min = desiredHeightOfSquare - (desiredHeightOfSquare % (squarePixelSize / pixelDivisionConstant));
                     desiredHeightOfSquare = (int)Mathf.Clamp(desiredHeightOfSquare, min, min + (squarePixelSize / pixelDivisionConstant));
                 }
-                camera.orthographicSize = (float)Screen.height / (2f * (float)desiredHeightOfSquare);
+                cam.orthographicSize = (float)Screen.height / (2f * (float)desiredHeightOfSquare);
                 break;
         }
     }

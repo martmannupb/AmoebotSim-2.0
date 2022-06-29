@@ -5,8 +5,8 @@ using UnityEngine;
 public class ParticleSystem
 {
     // References
-    private AmoebotSimulator sim;
-    private RenderSystem renderSystem;
+    public AmoebotSimulator sim;
+    public RenderSystem renderSystem;
 
     public List<Particle> particles = new List<Particle>();
     public Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
@@ -42,7 +42,7 @@ public class ParticleSystem
                     ++num;
 
                     // <<<TEMPORARY>>> Add GameObject to the scene for visualization
-                    sim.AddParticle(p.Head().x + 0.5f * p.Head().y, p.Head().y * Mathf.Sqrt(0.75f));
+                    //sim.AddParticle(p.Head().x + 0.5f * p.Head().y, p.Head().y * Mathf.Sqrt(0.75f));      // Note: Replaced by RenderSystem
                 }
             }
         }

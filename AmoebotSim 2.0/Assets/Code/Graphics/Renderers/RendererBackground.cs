@@ -55,7 +55,6 @@ public class RendererBackground
         Vector2Int firstBgGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
         Vector3 firstBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(firstBgGridPos);
         firstBgMeshPos.z = RenderSystem.zLayer_background;
-        Debug.Log(firstBgMeshPos);
         // Add diagonal meshes
         while (mesh_circ_bgDiaBLTR.Count < amountDiagonalMeshes)
         {

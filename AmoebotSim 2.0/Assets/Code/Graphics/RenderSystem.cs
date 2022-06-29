@@ -23,9 +23,9 @@ public class RenderSystem
     public const float zLayer_pins = -1f;
 
 
-    // Data _____
-    private RendererBackground rendererBG;
-    private RendererParticles rendererP;
+    // Renderers _____
+    public RendererBackground rendererBG;
+    public RendererParticles rendererP;
 
     
 
@@ -39,6 +39,7 @@ public class RenderSystem
     public void Render()
     {
         rendererBG.Render(setting_viewType);
+        rendererP.Render(setting_viewType);
     }
 
 

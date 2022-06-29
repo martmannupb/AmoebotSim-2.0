@@ -6,20 +6,20 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 {
 
     // References
-    public Particle particle;
+    public IParticleState particle;
     private RendererParticles renderer;
 
     // Data
     public Vector2Int stored_position1;
     public Vector2Int stored_position2;
     public bool stored_isExpanded = false;
-    public int stored_expansionDir = -1;
+    public int stored_globalExpansionDir = -1;
 
     // Graphical Data
     public int graphics_listNumber = 0;
     public int graphics_listID = 0;
 
-    public ParticleGraphicsAdapterImpl(Particle particle, RendererParticles renderer)
+    public ParticleGraphicsAdapterImpl(IParticleState particle, RendererParticles renderer)
     {
         this.particle = particle;
         this.renderer = renderer;
@@ -32,6 +32,12 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void Update()
     {
+        // Update Data
+        stored_position1 = particle.Head();
+        stored_position2 = particle.Tail();
+        stored_isExpanded = particle.IsExpanded();
+        stored_globalExpansionDir = particle.GetGlobalExpansionDir();
+        // Update Matrix
         renderer.UpdateMatrix(this);
     }
 

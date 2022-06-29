@@ -23,11 +23,14 @@ using UnityEngine;
 /// </code>
 /// </example>
 /// </summary>
-public abstract class Particle
+public abstract class Particle : IParticleState
 {
 
     // References _____
     private ParticleSystem system;
+
+    // Graphics _____
+    private IParticleGraphicsAdapter graphics;
 
     // Data _____
     // General
@@ -62,6 +65,12 @@ public abstract class Particle
         // TODO: Add these as parameters (?)
         this.comDir = 0;
         this.chirality = true;
+
+        // Graphics
+        // Add particle to the system and update the visuals of the particle
+        graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
+        graphics.AddParticle();
+        graphics.Update();
     }
 
     /// <summary>
@@ -109,6 +118,11 @@ public abstract class Particle
     public bool IsExpanded()
     {
         return exp_isExpanded;
+    }
+
+    public int GetGlobalExpansionDir()
+    {
+        return ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality);
     }
 
     /// <summary>

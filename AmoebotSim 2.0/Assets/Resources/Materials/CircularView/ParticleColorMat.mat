@@ -8,8 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: ParticleColorMat
-  m_Shader: {fileID: -6465566751694194690, guid: 4318fa9977953284fa725618e4a0cc30,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 4318fa9977953284fa725618e4a0cc30, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -22,7 +21,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - Texture2D_1180B1D5:
-        m_Texture: {fileID: 2800000, guid: 6500fe15ad9e6dc408c87e9ab090fcf2, type: 3}
+        m_Texture: {fileID: 2800000, guid: ee99d0f4d9dd6484baa9a576311a0f29, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
