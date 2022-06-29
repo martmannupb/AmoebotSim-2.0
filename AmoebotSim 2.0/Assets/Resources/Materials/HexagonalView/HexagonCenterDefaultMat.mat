@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: HexagonDefaultMat
+  m_Name: HexagonCenterDefaultMat
   m_Shader: {fileID: -6465566751694194690, guid: 4318fa9977953284fa725618e4a0cc30, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -107,7 +107,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - Color_9A67881C: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 0}
-    - Color_C9A6D0DF: {r: 0.2264151, g: 0.2264151, b: 0.2264151, a: 1}
+    - Color_C9A6D0DF: {r: 0.754717, g: 0.754717, b: 0.754717, a: 1}
     - _BaseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}

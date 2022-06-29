@@ -20,6 +20,7 @@ public class RendererParticles
     private Mesh defaultQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
     private Mesh defaultQuadLeftSidePivot = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     private Mesh defaultHexagon = MeshCreator_HexagonalView.GetMesh_BaseHexagon();
+    private Mesh defaultHexagonCenter = MeshCreator_HexagonalView.GetMesh_BaseHexagonCenter();
     // Matrix TRS Params
     private float particleConnectedWidth = 0.1f;
     Quaternion quaternion_horRightParticleConnection;
@@ -179,6 +180,7 @@ public class RendererParticles
     {
         for (int i = 0; i < particleMatrices.Count; i++)
         {
+            Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatrices[i]);
             Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particle, particleMatrices[i]);
         }
     }

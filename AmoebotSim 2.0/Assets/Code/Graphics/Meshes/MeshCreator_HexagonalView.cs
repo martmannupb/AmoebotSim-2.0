@@ -5,6 +5,71 @@ using UnityEngine;
 public static class MeshCreator_HexagonalView
 {
 
+    public static Mesh GetMesh_BaseHexagonCenter()
+    {
+        Mesh mesh = new Mesh();
+
+        // Hexagon Coordinates (we scale these for the vertices of the 6 quads)
+        Vector3 topLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
+        Vector3 top = new Vector3(0f, AmoebotFunctions.HexVertex_YValueTop(), 0f);
+        Vector3 topRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
+        Vector3 bottomLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
+        Vector3 bottom = new Vector3(0f, -AmoebotFunctions.HexVertex_YValueTop(), 0f);
+        Vector3 bottomRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
+
+        // Parameters
+        float scale = RenderSystem.const_hexagonalScale;
+
+        Vector3[] vertices = new Vector3[6];
+        int[] triangles = new int[12];
+        Vector2[] uv = new Vector2[6];
+        Vector3[] normals = new Vector3[6];
+
+        // Vertices _____
+        // Left
+        vertices[0] = bottomLeft * scale;
+        vertices[1] = topLeft * scale;
+        vertices[2] = top * scale;
+        vertices[3] = topRight * scale;
+        vertices[4] = bottomRight * scale;
+        vertices[5] = bottom * scale;
+
+        // Triangles _____
+        triangles[0] = 0;
+        triangles[1] = 1;
+        triangles[2] = 2;
+        triangles[3] = 0;
+        triangles[4] = 2;
+        triangles[5] = 3;
+        triangles[6] = 0;
+        triangles[7] = 3;
+        triangles[8] = 4;
+        triangles[9] = 0;
+        triangles[10] = 4;
+        triangles[11] = 5;
+
+        // UV0s _____
+        uv[0] = bottomLeft.normalized;
+        uv[1] = topLeft.normalized;
+        uv[2] = top.normalized;
+        uv[3] = topRight.normalized;
+        uv[4] = bottomRight.normalized;
+        uv[5] = bottom.normalized;
+
+        // Normals _____
+        for (int i = 0; i < 6; i++)
+        {
+            normals[i] = Vector3.up;
+        }
+
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.uv = uv;
+        mesh.normals = normals;
+
+        return mesh;
+    }
+
     /// <summary>
     /// Creates a mesh for the base hexagon.
     /// </summary>
@@ -276,7 +341,7 @@ public static class MeshCreator_HexagonalView
             Vector3 top = new Vector3(0f, AmoebotFunctions.HexVertex_YValueTop(), 0f);
             Vector3 topRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
             Vector3 bottomLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottom = new Vector3(-AmoebotFunctions.HexVertex_YValueTop(), 0f);
+            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.HexVertex_YValueTop(), 0f);
             Vector3 bottomRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
 
             // Displacement
@@ -327,6 +392,39 @@ public static class MeshCreator_HexagonalView
             vertices[21 + i * 24] = bottomI;
             vertices[22 + i * 24] = bottomLeftO;
             vertices[23 + i * 24] = bottomLeftI;
+
+            // TEST ZERO -------------------------------------------------------
+            //// Left
+            //vertices[0 + i * 24] = Vector3.zero;
+            //vertices[1 + i * 24] = Vector3.zero;
+            //vertices[2 + i * 24] = Vector3.zero;
+            //vertices[3 + i * 24] = Vector3.zero;
+            //// Top Left
+            //vertices[4 + i * 24] = Vector3.zero;
+            //vertices[5 + i * 24] = Vector3.zero;
+            //vertices[6 + i * 24] = Vector3.zero;
+            //vertices[7 + i * 24] = Vector3.zero;
+            //// Top Right
+            //vertices[8 + i * 24] = Vector3.zero;
+            //vertices[9 + i * 24] = Vector3.zero;
+            //vertices[10 + i * 24] = Vector3.zero;
+            //vertices[11 + i * 24] = Vector3.zero;
+            //// Right
+            //vertices[12 + i * 24] = Vector3.zero;
+            //vertices[13 + i * 24] = Vector3.zero;
+            //vertices[14 + i * 24] = Vector3.zero;
+            //vertices[15 + i * 24] = Vector3.zero;
+            //// Bottom Right
+            //vertices[16 + i * 24] = Vector3.zero;
+            //vertices[17 + i * 24] = Vector3.zero;
+            //vertices[18 + i * 24] = Vector3.zero;
+            //vertices[19 + i * 24] = Vector3.zero;
+            //// Bottom Left
+            //vertices[20 + i * 24] = Vector3.zero;
+            //vertices[21 + i * 24] = Vector3.zero;
+            //vertices[22 + i * 24] = Vector3.zero;
+            //vertices[23 + i * 24] = Vector3.zero;
+            // -------------------------------------------------------
 
             // Triangles _____
             for (int j = 0; j < 6; j++)
