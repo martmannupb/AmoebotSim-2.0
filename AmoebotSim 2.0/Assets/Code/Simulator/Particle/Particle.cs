@@ -47,6 +47,7 @@ public abstract class Particle
 
     // Data used by system to coordinate movements
     public ParticleAction scheduledAction = null;
+    public bool hasMoved = false;
 
 
     public Particle(ParticleSystem system, Vector2Int pos)

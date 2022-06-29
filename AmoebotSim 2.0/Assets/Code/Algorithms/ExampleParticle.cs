@@ -17,12 +17,12 @@ public class ExampleParticle : Particle
 
     public override void Activate()
     {
-        Debug.Log("myInt: " + myInt.ToString());
-        Debug.Log("myEnum: " + myEnum.ToString());
-        myInt.UpdateParameterValue("42");
-        myEnum.UpdateParameterValue("LEADER");
-        Debug.Log("myInt after: " + myInt.ToString());
-        Debug.Log("myEnum after: " + myEnum.ToString());
+        //Debug.Log("myInt: " + myInt.ToString());
+        //Debug.Log("myEnum: " + myEnum.ToString());
+        //myInt.UpdateParameterValue("42");
+        //myEnum.UpdateParameterValue("LEADER");
+        //Debug.Log("myInt after: " + myInt.ToString());
+        //Debug.Log("myEnum after: " + myEnum.ToString());
 
         if (exp_isExpanded)
         {
