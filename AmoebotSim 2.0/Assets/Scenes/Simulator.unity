@@ -299,10 +299,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2bdb3e11a2b3644d8baebc4f793e0f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  camera: {fileID: 0}
+  cam: {fileID: 0}
   updateManually: 0
-  minOrthographicSize: 5
-  maxOrthographicSize: 40
+  minOrthographicSize: 2
+  maxOrthographicSize: 20
   cameraMovSpeedKeyboard: 10
   minHeightOfSquare: 0
   maxHeightOfSquare: 0

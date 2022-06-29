@@ -7,6 +7,8 @@ public class RendererBackground
 
     // Data _____
     // Hexagonal
+    private Mesh mesh_hex_hexGrid = MeshCreator_HexagonalView.GetMesh_HexagonGridLine();
+    private List<Matrix4x4> matrix_hex_hexGridPos = new List<Matrix4x4>();
     // Circular
     private List<Mesh> mesh_circ_bgHor = new List<Mesh>();
     private List<Mesh> mesh_circ_bgDiaBLTR = new List<Mesh>();
@@ -34,7 +36,44 @@ public class RendererBackground
 
     private void Render_Hexagonal()
     {
-        throw new System.NotImplementedException();
+        // Camera
+        Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
+        Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
+        Vector2 screenSize = camPosTR - camPosBL;
+
+        // 1. Background
+        Vector2 bgPosBL = camPosBL + new Vector2(-3f, -10f);
+        Vector2 bgPosTR = camPosTR + new Vector2(3f, 10f);
+        Vector2Int screenSizeForBGAdjusted = new Vector2Int((int)(bgPosTR.x - bgPosBL.x), (int)(bgPosTR.y - bgPosBL.y));
+        int amountLines = screenSizeForBGAdjusted.y;
+
+        // Calc pos of first mesh
+        Vector2Int firstBgGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
+        Vector2Int secondBgGridPos = firstBgGridPos + new Vector2Int(0, 1);
+        Vector3 firstBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(firstBgGridPos);
+        Vector3 secondBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(secondBgGridPos);
+        firstBgMeshPos.z = RenderSystem.zLayer_background;
+        secondBgMeshPos.z = RenderSystem.zLayer_background;
+        // Add hex line meshes
+        while (matrix_hex_hexGridPos.Count < amountLines)
+        {
+            matrix_hex_hexGridPos.Add(new Matrix4x4());
+        }
+        // Update Matrices
+        Vector3 pos;
+        float heightDiff = AmoebotFunctions.HeightDifferenceBetweenRows();
+        for (int i = 0; i < amountLines; i++)
+        {
+            if (i % 2 == 0) pos = firstBgMeshPos + new Vector3(0f, heightDiff * i, 0f);
+            else pos = secondBgMeshPos + new Vector3(0f, heightDiff * (i-1), 0f);
+            matrix_hex_hexGridPos[i] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
+        }
+        // Render
+        //Graphics.DrawMeshInstanced(mesh_hex_hexGrid, 0, MaterialDatabase.material_hexagonal_bgHex, matrix_hex_hexGridPos, amountLines);
+        for (int i = 0; i < amountLines; i++)
+        {
+            Graphics.DrawMesh(mesh_hex_hexGrid, matrix_hex_hexGridPos[i], MaterialDatabase.material_hexagonal_bgHex, 0);
+        }
     }
 
     private void Render_Circular()
