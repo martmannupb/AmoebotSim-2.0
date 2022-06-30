@@ -359,10 +359,10 @@ public class ParticleSystem
         // has a null action
         if (particleMap.TryGetValue(targetLoc, out Particle p2))
         {
-            // Error if the other particle has already moved
-            if (p2.hasMoved)
+            // Error if the other particle has already moved or intends to perform a non-matching movement
+            if (p2.hasMoved || p2.scheduledAction != null && !MovementMatchesExpansion(p, p2, targetLoc))
             {
-                throw new System.InvalidOperationException("Particle tries to perform push handover but pushed particle has already moved.");
+                throw new System.InvalidOperationException("Particle tries to perform push handover but pushed particle has already moved or intends to perform a different movement.");
             }
             
             // If the other particle does not intend to do anything: Contract it manually
@@ -410,10 +410,10 @@ public class ParticleSystem
             throw new System.InvalidOperationException("Particle tries to perform pull handover but there is no particle to pull.");
         }
 
-        // Also throw error if the neighbor has already moved to a different position
-        if (p2.hasMoved && p2.Head() != targetLoc && p2.Tail() != targetLoc)
+        // Also throw error if the neighbor has already moved to a different position or intends to perform a different non-matching movement
+        if (p2.hasMoved && p2.Head() != targetLoc && p2.Tail() != targetLoc || p2.scheduledAction != null && !MovementMatchesContraction(p, p2, targetLoc))
         {
-            throw new System.InvalidOperationException("Particle tries to perform pull handover but pulled particle has already expanded somewhere else.");
+            throw new System.InvalidOperationException("Particle tries to perform pull handover but pulled particle has already expanded somewhere else or intends to perform a different non-matching movement.");
         }
 
         // If the other particle does not intend to do anything and has not moved yet: Expand it manually
