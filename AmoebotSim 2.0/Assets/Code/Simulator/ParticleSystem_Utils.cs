@@ -30,7 +30,7 @@ public static class ParticleSystem_Utils
 
     /// <summary>
     /// Turns the given local direction into the corresponding global direction
-    /// based on the given compass orientation.
+    /// based on the given compass orientation and chirality.
     /// </summary>
     /// <param name="locDir">The local direction in <c>{0,1,2,3,4,5}</c>.</param>
     /// <param name="compassDir">The offset of the compass direction in <c>{0,1,2,3,4,5}</c>.</param>
@@ -42,6 +42,31 @@ public static class ParticleSystem_Utils
         return chirality ? (compassDir + locDir) % 6 : (compassDir - locDir + 6) % 6;
     }
 
+    /// <summary>
+    /// Turns the given global direction into the corresponding local direction
+    /// based on the given compass orientation and chirality.
+    /// </summary>
+    /// <param name="globalDir">The global direction in <c>{0,1,2,3,4,5}</c>.</param>
+    /// <param name="compassDir">The offset of the compass direction in <c>{0,1,2,3,4,5}</c> (independent of chirality).</param>
+    /// <param name="chirality">The direction in which rotation is applied. <c>true</c> means
+    /// counter-clockwise is positive rotation and <c>false</c> means clockwise.</param>
+    /// <returns>The local direction corresponding to <paramref name="globalDir"/> offset by <paramref name="compassDir"/>.</returns>
+    public static int GlobalToLocalDir(int globalDir, int compassDir, bool chirality)
+    {
+        return chirality ? (globalDir - compassDir + 6) % 6 : (compassDir - globalDir + 6) % 6;
+    }
+
+    /// <summary>
+    /// Determines the grid node neighboring the given particle in the
+    /// indicated direction.
+    /// </summary>
+    /// <param name="p">The Particle whose neighbor node to find.</param>
+    /// <param name="locDir">The local direction of the Particle <paramref name="p"/>
+    /// indicating in which direction to look.</param>
+    /// <param name="fromHead">If <c>true</c>, use the Particle's head as reference,
+    /// otherwise use the Particle's tail.</param>
+    /// <returns>The grid node in direction <paramref name="locDir"/> relative to
+    /// Particle <paramref name="p"/>'s head or tail, depending on <paramref name="fromHead"/>.</returns>
     public static Vector2Int GetNeighborPosition(Particle p, int locDir, bool fromHead)
     {
         return GetNbrInDir(fromHead ? p.Head() : p.Tail(), LocalToGlobalDir(locDir, p.comDir, p.chirality));

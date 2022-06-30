@@ -50,6 +50,7 @@ public abstract class Particle : IParticleState
 
     // Data used by system to coordinate movements
     public ParticleAction scheduledAction = null;
+    public bool hasMoved = false;
 
 
     public Particle(ParticleSystem system, Vector2Int pos)
@@ -270,19 +271,20 @@ public abstract class Particle : IParticleState
         pos_head = pos_tail;
     }
 
+    // TODO: Check if we need to do anything else in these 3 methods
     public void Apply_PushHandover(int locDir)
     {
-        throw new System.NotImplementedException();
+        Apply_Expand(locDir);
     }
 
     public void Apply_PullHandoverHead(int locDir)
     {
-        throw new System.NotImplementedException();
+        Apply_ContractHead();
     }
 
     public void Apply_PullHandoverTail(int locDir)
     {
-        throw new System.NotImplementedException();
+        Apply_ContractTail();
     }
 
     public void Apply_SendMessage(Message msg, int locDir, bool head = true)
