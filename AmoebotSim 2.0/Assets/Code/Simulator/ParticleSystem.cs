@@ -13,6 +13,8 @@ public class ParticleSystem
 
     public Queue<ParticleAction> actionQueue = new Queue<ParticleAction>();
 
+    public bool useFCFS = true;     // <<<TEMPORARY>>> If true, do not crash on expansion conflicts but simply abort the expansion
+
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
         this.sim = sim;
@@ -307,7 +309,16 @@ public class ParticleSystem
             // Target node is occupied, check if the occupying particle intends to move away
             if (p2.hasMoved || !MovementMatchesExpansion(p, p2, targetLoc))
             {
-                throw new System.InvalidOperationException("Particle tries to expand onto occupied node and occupying particle does not intend to move away.");
+                if (!useFCFS)
+                {
+                    throw new System.InvalidOperationException("Particle tries to expand onto occupied node and occupying particle does not intend to move away.");
+                }
+                else
+                {
+                    // This movement would lead to a conflict, abort
+                    p.hasMoved = true;
+                    return;
+                }
             }
         }
 
@@ -362,7 +373,16 @@ public class ParticleSystem
             // Error if the other particle has already moved or intends to perform a non-matching movement
             if (p2.hasMoved || p2.scheduledAction != null && !MovementMatchesExpansion(p, p2, targetLoc))
             {
-                throw new System.InvalidOperationException("Particle tries to perform push handover but pushed particle has already moved or intends to perform a different movement.");
+                if (!useFCFS)
+                {
+                    throw new System.InvalidOperationException("Particle tries to perform push handover but pushed particle has already moved or intends to perform a different movement.");
+                }
+                else
+                {
+                    // This movement would lead to a conflict, abort
+                    p.hasMoved = true;
+                    return;
+                }
             }
             
             // If the other particle does not intend to do anything: Contract it manually
@@ -407,13 +427,23 @@ public class ParticleSystem
         // Error if the position from which we wanted to pull the particle is empty
         if (!particleMap.TryGetValue(nbrLoc, out Particle p2))
         {
+            // FCFS: This should not happen at all, so throwing an exception is fine
             throw new System.InvalidOperationException("Particle tries to perform pull handover but there is no particle to pull.");
         }
 
         // Also throw error if the neighbor has already moved to a different position or intends to perform a different non-matching movement
         if (p2.hasMoved && p2.Head() != targetLoc && p2.Tail() != targetLoc || p2.scheduledAction != null && !MovementMatchesContraction(p, p2, targetLoc))
         {
-            throw new System.InvalidOperationException("Particle tries to perform pull handover but pulled particle has already expanded somewhere else or intends to perform a different non-matching movement.");
+            if (!useFCFS)
+            {
+                throw new System.InvalidOperationException("Particle tries to perform pull handover but pulled particle has already expanded somewhere else or intends to perform a different non-matching movement.");
+            }
+            else
+            {
+                // This movement would lead to a conflict, abort
+                p.hasMoved = true;
+                return;
+            }
         }
 
         // If the other particle does not intend to do anything and has not moved yet: Expand it manually

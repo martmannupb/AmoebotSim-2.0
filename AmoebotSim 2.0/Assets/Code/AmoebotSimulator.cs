@@ -26,8 +26,8 @@ public class AmoebotSimulator : MonoBehaviour
         system.InitializeExample(25, 15, 0.3f, -9, -5);
         //system.ActivateParticles();
 
-        // Activate one particle every 100ms (only for testing)
-        InvokeRepeating(nameof(ActivateParticle), 0.0f, 0.1f);
+        // Activate one particle every 1000ms (only for testing)
+        InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
 
 
 
@@ -43,7 +43,10 @@ public class AmoebotSimulator : MonoBehaviour
     void ActivateParticle()
     {
         Debug.Log("Activate");
-        system.ActivateRandomParticle();
+        //system.ActivateRandomParticle();
+        float tStart = Time.realtimeSinceStartup;
+        system.SimulateRound();
+        Debug.Log("Simulated round in " + (Time.realtimeSinceStartup - tStart) + " s");
     }
 
     // Update is called once per frame
