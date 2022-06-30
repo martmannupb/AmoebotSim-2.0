@@ -64,9 +64,11 @@ public class ParticleSystem
     {
         if (particles.Count > 0)
         {
-            particles[Random.Range(0, particles.Count)].Activate();
+            int pIdx = Random.Range(0, particles.Count);
+            particles[pIdx].Activate();
             ApplyAllActionsInQueue();
             CleanupAfterRound();
+            particles[pIdx].graphics.Update();
         }
     }
 
@@ -75,6 +77,7 @@ public class ParticleSystem
         ActivateParticles();
         ApplyAllActionsInQueue();
         CleanupAfterRound();
+        UpdateAllParticleVisuals();
     }
 
     public void ActivateParticles()
@@ -135,6 +138,15 @@ public class ParticleSystem
         foreach (Particle p in particles)
         {
             p.hasMoved = false;
+        }
+    }
+
+    public void UpdateAllParticleVisuals()
+    {
+        // TODO: Maybe only update particles with changes
+        foreach (Particle p in particles)
+        {
+            p.graphics.Update();
         }
     }
 

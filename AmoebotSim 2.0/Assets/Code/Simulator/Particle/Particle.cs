@@ -30,7 +30,7 @@ public abstract class Particle : IParticleState
     private ParticleSystem system;
 
     // Graphics _____
-    private IParticleGraphicsAdapter graphics;
+    public IParticleGraphicsAdapter graphics;
 
     // Data _____
     // General
