@@ -23,7 +23,7 @@ public class AmoebotSimulator : MonoBehaviour
     {
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
-        system.InitializeExample(25, 15, 0.3f, -9, -5);
+        system.InitializeExample(100, 100, 0.3f, -9, -5);
         //system.ActivateParticles();
 
         // Activate one particle every 1000ms (only for testing)
