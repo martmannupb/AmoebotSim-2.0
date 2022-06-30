@@ -185,6 +185,10 @@ public class RendererParticles
     {
         for (int i = 0; i < particleMatrices.Count; i++)
         {
+            int listLength;
+            if (i == particleMatrices.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
+            else listLength = maxArraySize;
+
             Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesBG[i]);
             Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particle, particleMatrices[i]);
         }
@@ -196,12 +200,16 @@ public class RendererParticles
         {
             // Test
             //Graphics.DrawMeshInstanced(defaultQuad, 0, material_particle, new Matrix4x4[] { Matrix4x4.TRS(new Vector3(0f, 0f, 0f), Quaternion.identity, new Vector3(10f, 10f, 1f)) });
+            
+            int listLength;
+            if (i == particleMatrices.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
+            else listLength = maxArraySize;
 
-            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particle, particleMatrices[i]);
-            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particleCenter, particleMatricesInner[i]);
-            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particle, particleMatricesExpanded[i]);
-            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particleCenter, particleMatricesExpandedInner[i]);
-            Graphics.DrawMeshInstanced(defaultQuadLeftSidePivot, 0, MaterialDatabase.material_circular_particleConnector, particleConnectionMatrices[i]);
+            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particle, particleMatrices[i], listLength);
+            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particleCenter, particleMatricesInner[i], listLength);
+            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particle, particleMatricesExpanded[i], listLength);
+            Graphics.DrawMeshInstanced(defaultQuad, 0, MaterialDatabase.material_circular_particleCenter, particleMatricesExpandedInner[i], listLength);
+            Graphics.DrawMeshInstanced(defaultQuadLeftSidePivot, 0, MaterialDatabase.material_circular_particleConnector, particleConnectionMatrices[i], listLength);
         }
     }
 
