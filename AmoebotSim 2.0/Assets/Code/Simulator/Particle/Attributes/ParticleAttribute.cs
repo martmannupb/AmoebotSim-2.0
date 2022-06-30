@@ -7,12 +7,16 @@ public abstract class ParticleAttribute
     protected Particle particle;
     protected string name;
 
-    public ParticleAttribute(Particle particle, string name)
+    public ParticleAttribute(ParticleAlgorithm algorithm, string name)
     {
-        this.particle = particle;
-        if (particle != null)
-            particle.AddAttribute(this);
         this.name = name;
+        if (algorithm != null)
+            algorithm.AddAttribute(this);
+    }
+
+    public void SetParticle(Particle p)
+    {
+        this.particle = p;
     }
 
     public abstract override string ToString();

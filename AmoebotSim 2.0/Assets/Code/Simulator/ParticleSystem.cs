@@ -38,7 +38,8 @@ public class ParticleSystem
                 {
                     // TODO: Create functions for adding and removing particles
                     // Don't use column as x coordinate but shift it to stay in a rectangular shape
-                    Particle p = new ExampleParticle(this, new Vector2Int(left + col - row / 2, bottom + row));
+                    Particle p = new Particle(this, new Vector2Int(left + col - row / 2, bottom + row));
+                    new ExampleParticle(p);
                     particles.Add(p);
                     particleMap.Add(p.Head(), p);
                     ++num;

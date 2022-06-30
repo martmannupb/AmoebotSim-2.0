@@ -4,12 +4,12 @@ using UnityEngine;
 
 public enum State { IDLE, ROOT, LEADER }
 
-public class ExampleParticle : Particle
+public class ExampleParticle : ParticleAlgorithm
 {
     public ParticleAttribute_Int myInt;
     public ParticleAttribute_Enum<State> myEnum;
 
-    public ExampleParticle(ParticleSystem system, Vector2Int pos) : base(system, pos)
+    public ExampleParticle(Particle p) : base(p)
     {
         myInt = new ParticleAttribute_Int(this, "Display name of myInt", 0);
         myEnum = new ParticleAttribute_Enum<State>(this, "Display name of myEnum", State.IDLE);
@@ -24,7 +24,7 @@ public class ExampleParticle : Particle
         //Debug.Log("myInt after: " + myInt.ToString());
         //Debug.Log("myEnum after: " + myEnum.ToString());
 
-        if (exp_isExpanded)
+        if (IsExpanded())
         {
             ContractHead();
         }

@@ -8,7 +8,7 @@ public class ParticleAttribute_Enum<T> : ParticleAttribute where T : System.Enum
 {
     private T value;
 
-    public ParticleAttribute_Enum(Particle particle, string name, T initialValue) : base(particle, name)
+    public ParticleAttribute_Enum(ParticleAlgorithm particle, string name, T initialValue) : base(particle, name)
     {
         value = initialValue;
     }

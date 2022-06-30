@@ -3,31 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// The abstract base class for particles in the Amoebot model.
-/// <para>
-/// Every algorithm that should run in the simulation must be implemented
-/// as a subclass of the <see cref="Particle"/> class through its <see cref="Activate"/>
-/// method.
-/// Particle attributes that represent a part of the particle's state must be implemented
-/// using the <see cref="ParticleAttribute"/> subclasses.
-/// </para>
-/// <example>
-/// Example for attribute initialization in subclass:
-/// <code>
-/// public class MyParticle : Particle {
-///     ParticleAttribute_Int myIntAttr;
-///     public MyParticle(ParticleSystem system, int x = 0, int y = 0) : base(system, x, y) {
-///         myIntAttr = new ParticleAttribute_Int(this, "Fancy display name for myIntAttr", 42);
-///     }
-/// }
-/// </code>
-/// </example>
+/// The system-side representation of a Particle.
 /// </summary>
-public abstract class Particle : IParticleState
+public class Particle : IParticleState
 {
-
     // References _____
-    private ParticleSystem system;
+    public ParticleSystem system;
+    public ParticleAlgorithm algorithm;
 
     // Graphics _____
     public IParticleGraphicsAdapter graphics;
@@ -40,20 +22,22 @@ public abstract class Particle : IParticleState
     // State _____
     public Vector2Int pos_head;
     public Vector2Int pos_tail;
+    
     // Expansion
     public bool exp_isExpanded;
     public int exp_expansionDir;
+    
     // Attributes
-    public List<ParticleAttribute> attributes = new List<ParticleAttribute>();
+    private List<ParticleAttribute> attributes = new List<ParticleAttribute>();
+    
     // Messages
-    public Queue<Message> messageQueue = new Queue<Message>();
+    private Queue<Message> messageQueue = new Queue<Message>();
 
     // Data used by system to coordinate movements
     public ParticleAction scheduledAction = null;
     public bool hasMoved = false;
 
-
-    public Particle(ParticleSystem system, Vector2Int pos)
+    public Particle(ParticleSystem system, Vector2Int pos, int compassDir = 0, bool chirality = true)
     {
         this.system = system;
 
@@ -63,9 +47,8 @@ public abstract class Particle : IParticleState
         this.exp_isExpanded = false;
         this.exp_expansionDir = -1;
 
-        // TODO: Add these as parameters (?)
-        this.comDir = 0;
-        this.chirality = true;
+        this.comDir = compassDir;
+        this.chirality = chirality;
 
         // Graphics
         // Add particle to the system and update the visuals of the particle
@@ -76,10 +59,13 @@ public abstract class Particle : IParticleState
 
     /// <summary>
     /// This is the main activation method of the particle.
-    /// It is called exactly once in each round and should contain
-    /// the particle algorithm code.
+    /// It is implemented by the particle algorithm and should
+    /// be called exactly once in each round.
     /// </summary>
-    public abstract void Activate();
+    public void Activate()
+    {
+        algorithm.Activate();
+    }
 
 
     /**
@@ -121,11 +107,6 @@ public abstract class Particle : IParticleState
         return exp_isExpanded;
     }
 
-    public int GetGlobalExpansionDir()
-    {
-        return ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality);
-    }
-
     /// <summary>
     /// Checks if the particle is currently contracted, i.e., occupies exactly one
     /// node of the grid.
@@ -135,6 +116,23 @@ public abstract class Particle : IParticleState
     public bool IsContracted()
     {
         return !exp_isExpanded;
+    }
+
+    public int GetGlobalExpansionDir()
+    {
+        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality) : -1;
+    }
+
+
+    /**
+     * Messages
+     */
+    // TODO: Check if these are even needed (could directly call ParticleSystem methods like for the movements)
+    // TODO: Implement these
+
+    public void SendMessage(Message msg, int locDir, bool head = true)
+    {
+        system.SendParticleMessage(this, msg, locDir, head);
     }
 
     public bool HasMsgOfType<T>() where T : Message
@@ -164,91 +162,12 @@ public abstract class Particle : IParticleState
 
 
     /**
-     * System information retrieval
+     * Particle action methods that are used by the system to change the
+     * particle's state at the appropriate time. They are NOT part of the
+     * ParticleAlgorithm's interface.
      */
 
     // TODO: Documentation
-    // TODO: Decide on uniform interface for specifying ports (through labels or direction + head/tail (or both))
-    // TODO: Add many more helper functions (like firstNbrWithProperty etc.)
-
-
-    /// <summary>
-    /// Checks if this particle has a neighboring particle in the given local direction.
-    /// For expanded particles, there are two different nodes in the same local direction,
-    /// one seen from the particle's head and one seen from its tail.
-    /// <para>See also <see cref="GetNeighborAt(int, bool)"/></para>
-    /// </summary>
-    /// <param name="locDir">The local direction in which to search for a neighbor particle.</param>
-    /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
-    /// the particle's tail (only relevant if this particle is expanded).</param>
-    /// <returns><c>true</c> if and only if there is a different particle in the specified position.</returns>
-    public bool HasNeighborAt(int locDir, bool fromHead = true)
-    {
-        return system.HasNeighborAt(this, locDir, fromHead);
-    }
-
-    // TODO: What to do if there is no neighbor? Check beforehand, throw exception?
-    /// <summary>
-    /// Gets this particle's neighbor in the given local direction. The position to
-    /// check is determined in the same way as in <see cref="HasNeighborAt(int, bool)"/>.
-    /// </summary>
-    /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
-    /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
-    /// the particle's tail (only relevant if this particle is expanded).</param>
-    /// <returns>The neighboring particle in the specified position.</returns>
-    public Particle GetNeighborAt(int locDir, bool fromHead = true)
-    {
-        return system.GetNeighborAt(this, locDir, fromHead);
-    }
-
-
-    /**
-     * Particle actions defining the API.
-     * These methods should be called from the Activate() method.
-     */
-
-    public void Expand(int locDir)
-    {
-        system.ExpandParticle(this, locDir);
-    }
-
-    public void ContractHead()
-    {
-        system.ContractParticleHead(this);
-    }
-
-    public void ContractTail()
-    {
-        system.ContractParticleTail(this);
-    }
-
-    public void PushHandover(int locDir)
-    {
-        system.PerformPushHandover(this, locDir);
-    }
-
-    public void PullHandoverHead(int locDir)
-    {
-        system.PerformPullHandoverHead(this, locDir);
-    }
-
-    public void PullHandoverTail(int locDir)
-    {
-        system.PerformPullHandoverTail(this, locDir);
-    }
-
-    public void SendMessage(Message msg, int locDir, bool head = true)
-    {
-        system.SendParticleMessage(this, msg, locDir, head);
-    }
-
-
-    /**
-     * System state change functions that are NOT part of the API.
-     * These methods are called by the simulation framework to update
-     * the particle state at the appropriate time. They should not be
-     * called in the Activate method.
-     */
 
     public void Apply_Expand(int locDir)
     {
@@ -306,6 +225,7 @@ public abstract class Particle : IParticleState
     /// <param name="attr">The attribute to add to this particle's attribute list.</param>
     public void AddAttribute(ParticleAttribute attr)
     {
+        attr.SetParticle(this);
         attributes.Add(attr);
     }
 

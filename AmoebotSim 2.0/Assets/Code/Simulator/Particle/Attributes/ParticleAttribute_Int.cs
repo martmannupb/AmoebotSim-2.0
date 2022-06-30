@@ -7,7 +7,7 @@ public class ParticleAttribute_Int : ParticleAttribute
 {
     private int value;
 
-    public ParticleAttribute_Int(Particle particle, string name, int value = 0) : base(particle, name)
+    public ParticleAttribute_Int(ParticleAlgorithm particle, string name, int value = 0) : base(particle, name)
     {
         this.value = value;
     }
