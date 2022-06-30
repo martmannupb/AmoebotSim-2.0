@@ -257,19 +257,20 @@ public abstract class Particle
         pos_head = pos_tail;
     }
 
+    // TODO: Check if we need to do anything else in these 3 methods
     public void Apply_PushHandover(int locDir)
     {
-        throw new System.NotImplementedException();
+        Apply_Expand(locDir);
     }
 
     public void Apply_PullHandoverHead(int locDir)
     {
-        throw new System.NotImplementedException();
+        Apply_ContractHead();
     }
 
     public void Apply_PullHandoverTail(int locDir)
     {
-        throw new System.NotImplementedException();
+        Apply_ContractTail();
     }
 
     public void Apply_SendMessage(Message msg, int locDir, bool head = true)

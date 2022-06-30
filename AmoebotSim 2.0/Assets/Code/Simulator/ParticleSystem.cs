@@ -49,6 +49,7 @@ public class ParticleSystem
         Debug.Log("Created system with " + num + " particles");
     }
 
+
     /**
      * Simulation functions
      */
@@ -136,16 +137,14 @@ public class ParticleSystem
     }
 
     /**
-     * Particle functions (called by particles to trigger actions)
+     * Particle functions (called by particles to get information or trigger actions)
      */
 
-    // TODO: Actual implementation
     // TODO: Documentation
 
     public bool HasNeighborAt(Particle p, int locDir, bool fromHead = true)
     {
         Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
-        //Particle nbr = null;
         // Return true iff there is a particle at that position and it is not the
         // same as the querying particle
         return particleMap.TryGetValue(pos, out Particle nbr) && nbr != p;
@@ -228,11 +227,11 @@ public class ParticleSystem
             throw new System.InvalidOperationException("Expanded particle cannot perform a push handover.");
         }
 
-        // Reject if there is a contracted particle on the target node
+        // Reject if there is no expanded particle on the target node
         Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
-        if (particleMap.TryGetValue(targetLoc, out Particle p2) && p2.IsContracted())
+        if (!particleMap.TryGetValue(targetLoc, out Particle p2) || p2.IsContracted())
         {
-            throw new System.InvalidOperationException("Particle cannot perform push handover onto node occupied by contracted particle.");
+            throw new System.InvalidOperationException("Particle cannot perform push handover onto node occupied by no or contracted particle.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -264,6 +263,13 @@ public class ParticleSystem
         if (p.IsContracted())
         {
             throw new System.InvalidOperationException("Contracted particle cannot perform pull handover.");
+        }
+
+        // Reject if there is no contracted particle on the target node
+        Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, !head);
+        if (!particleMap.TryGetValue(targetLoc, out Particle p2) || p2.IsExpanded())
+        {
+            throw new System.InvalidOperationException("Particle cannot perform pull handover onto node occupied by no or expanded particle.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -299,7 +305,7 @@ public class ParticleSystem
         if (particleMap.TryGetValue(targetLoc, out Particle p2))
         {
             // Target node is occupied, check if the occupying particle intends to move away
-            if (!MovementMatchesExtension(p, p2, targetLoc))
+            if (p2.hasMoved || !MovementMatchesExpansion(p, p2, targetLoc))
             {
                 throw new System.InvalidOperationException("Particle tries to expand onto occupied node and occupying particle does not intend to move away.");
             }
@@ -344,23 +350,23 @@ public class ParticleSystem
         p.hasMoved = true;
     }
 
-    // TODO: Handle case that the other particle has already performed its correct movement
-
     public void Apply_PerformPushHandover(Particle p, int locDir)
     {
         Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
 
-        // If the target location is already occupied: Check if the occupying particle matches
-        // the handover operation, otherwise error
+        // If the target location is already occupied: Make sure that the occupying particle
+        // has not moved already (i.e., is the same one as before), and maybe move it if it
+        // has a null action
         if (particleMap.TryGetValue(targetLoc, out Particle p2))
         {
-            // Error if the other particle has already moved or intends to do something else
-            if (p2.hasMoved || p2.scheduledAction != null && !MovementMatchesExtension(p, p2, targetLoc))
+            // Error if the other particle has already moved
+            if (p2.hasMoved)
             {
-                throw new System.InvalidOperationException("Particle tries to perform push handover but pushed particle does not accept the operation.");
+                throw new System.InvalidOperationException("Particle tries to perform push handover but pushed particle has already moved.");
             }
+            
             // If the other particle does not intend to do anything: Contract it manually
-            else if (p2.scheduledAction == null)
+            if (p2.scheduledAction == null)
             {
                 // p2 must be expanded at this point because it has not moved yet and cannot have been contracted when the action was scheduled
                 if (targetLoc == p2.Tail())
@@ -404,13 +410,14 @@ public class ParticleSystem
             throw new System.InvalidOperationException("Particle tries to perform pull handover but there is no particle to pull.");
         }
 
-        // Also throw error if the neighbor has already moved or intends to do something else
-        if (p2.hasMoved || p2.scheduledAction != null && !MovementMatchesContraction(p, p2, targetLoc))
+        // Also throw error if the neighbor has already moved to a different position
+        if (p2.hasMoved && p2.Head() != targetLoc && p2.Tail() != targetLoc)
         {
-            throw new System.InvalidOperationException("Particle tries to perform pull handover but pulled particle does not accept the operation.");
+            throw new System.InvalidOperationException("Particle tries to perform pull handover but pulled particle has already expanded somewhere else.");
         }
-        // If the other particle does not intend to do anything: Expand it manually
-        else if (p2.scheduledAction == null)
+
+        // If the other particle does not intend to do anything and has not moved yet: Expand it manually
+        if (!p2.hasMoved && p2.scheduledAction == null)
         {
             // p2 must be contracted at this point because it has not moved yet and cannot have been expanded when the action was scheduled
             // Expansion direction is local((global(locDir) + 3) % 6)
@@ -429,7 +436,7 @@ public class ParticleSystem
             p.Apply_PullHandoverTail(locDir);
         }
         // Then update the particle map (need to remove the particle's second entry if not removed yet)
-        if (p2 == p)
+        if (particleMap.TryGetValue(targetLoc, out p2) && p2 == p)
         {
             particleMap.Remove(rmPos);
         }
@@ -447,7 +454,6 @@ public class ParticleSystem
      * Helpers
      */
 
-
     /// <summary>
     /// Checks if the scheduled <see cref="ParticleAction"/> of an expanded Particle
     /// matches the expansion action of a contracted neighbor.
@@ -461,7 +467,7 @@ public class ParticleSystem
     /// to expand, i.e., if <paramref name="otherPart"/> intends to contract away from
     /// <paramref name="targetLoc"/> either through a regular contraction or through a
     /// pull handover directed at <paramref name="expandingPart"/>.</returns>
-    private bool MovementMatchesExtension(Particle expandingPart, Particle otherPart, Vector2Int targetLoc)
+    private bool MovementMatchesExpansion(Particle expandingPart, Particle otherPart, Vector2Int targetLoc)
     {
         return otherPart.scheduledAction != null && (
             (otherPart.scheduledAction.type == ActionType.CONTRACT_HEAD && otherPart.Tail() == targetLoc) ||
