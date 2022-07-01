@@ -121,8 +121,8 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _ExpansionVector: {r: 0.5, g: 0, b: 0, a: 0}
-    - _ExpansionVector1: {r: 0.5, g: 0, b: 0, a: 0}
-    - _ExpansionVector2: {r: 0.5, g: 0, b: 0, a: 0}
+    - _ExpansionVector1: {r: 3, g: 0, b: 0, a: 0}
+    - _ExpansionVector2: {r: 3, g: 0, b: 0, a: 0}
     - _InputColor: {r: 0.039215688, g: 0.039215688, b: 0.039215688, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []

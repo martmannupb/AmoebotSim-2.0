@@ -46,11 +46,11 @@ public class MaterialPropertyBlockData_HexParticles : MaterialPropertyBlockData
         ApplyToBlock();
     }
 
-    public void UpdateValue(int arrayPosition, bool isExpanding, int globalExpansionDir)
+    public void UpdateValue(int arrayPosition, bool isExpanding, int visualExpansionDir)
     {
         propertyArray_isExpanding[arrayPosition] = isExpanding ? 1f : 0f;
-        propertyArray_expansionPercentage[arrayPosition] = 100f * propertyArray_isExpanding[arrayPosition];
-        propertyArray_expansionMesh[arrayPosition] = globalDirToExpansionMeshMap[(globalExpansionDir + 6) % 6]; // % for the -1 values
+        propertyArray_expansionPercentage[arrayPosition] = 1f;
+        propertyArray_expansionMesh[arrayPosition] = globalDirToExpansionMeshMap[(visualExpansionDir + 6) % 6]; // % for the -1 values
     }
 
     public void ApplyToBlock()

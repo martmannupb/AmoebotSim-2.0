@@ -109,6 +109,10 @@ public class RendererParticles
         particleMatricesInner[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position1.x, graphicalData.stored_position1.y, RenderSystem.zLayer_particles), Quaternion.identity, new Vector3(innerParticleScaleFactor, innerParticleScaleFactor, 1f));
         particleMatricesBG[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position1.x, graphicalData.stored_position1.y, RenderSystem.ZLayer_particlesBG), Quaternion.identity, Vector3.one);
         particleMatricesBGExpanded[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position2.x, graphicalData.stored_position2.y, RenderSystem.ZLayer_particlesBG), Quaternion.identity, Vector3.one);
+        //if (graphicalData.stored_isExpanded)
+        //{
+        //    Debug.Log("Expanding Particle: " + graphicalData.stored_position1 + ", Tail: " + graphicalData.stored_position2 + ", ExpansionDir: " + graphicalData.stored_globalExpansionDir);
+        //}
         propertyBlocks_HexParticles[graphicalData.graphics_listNumber].UpdateValue(graphicalData.graphics_listID, graphicalData.stored_isExpanded, graphicalData.stored_globalExpansionDir);
         propertyBlocks_HexParticlesExpanded[graphicalData.graphics_listNumber].UpdateValue(graphicalData.graphics_listID, graphicalData.stored_isExpanded, (graphicalData.stored_globalExpansionDir + 3) % 6);
         if (graphicalData.stored_isExpanded)
@@ -201,7 +205,6 @@ public class RendererParticles
             else listLength = maxArraySize;
 
             // First
-            propertyBlocks_HexParticles[i].ApplyToBlock();
             Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesBG[i], listLength);
             Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatrices[i], listLength, propertyBlocks_HexParticles[i].propertyBlock);
             //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particle, particleMatrices[i], listLength);

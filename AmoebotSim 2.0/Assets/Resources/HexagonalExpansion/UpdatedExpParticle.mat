@@ -94,14 +94,14 @@ Material:
     - _DstBlend: 0
     - _EnvironmentReflections: 1
     - _ExpansionBool: 1
-    - _ExpansionMesh: 0
-    - _ExpansionPercentage: 0
+    - _ExpansionMesh: 5
+    - _ExpansionPercentage: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HideExpansionMesh: 0
     - _HideOppositeExpansionMesh: 1
-    - _IsExpanding: 1
+    - _IsExpanding: 0
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
