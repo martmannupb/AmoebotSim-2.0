@@ -47,6 +47,11 @@ public abstract class ParticleAlgorithm
     /// This is the main activation method of the particle.
     /// It is called exactly once in each round and should contain
     /// the particle algorithm code.
+    /// <para>
+    /// Only one movement operation may be performed during an
+    /// execution of this method. If a second movement is performed,
+    /// the previous movement will be nullified.
+    /// </para>
     /// </summary>
     public abstract void Activate();
 
@@ -55,6 +60,21 @@ public abstract class ParticleAlgorithm
      * Attribute handling. Should not be called by the particle algorithm implementation.
      */
 
+    /// <summary>
+    /// Adds the given <see cref="ParticleAttribute"/> to this particle's list of
+    /// attributes. This method is called automatically by the <see cref="ParticleAttribute"/>
+    /// constructor and should not be called manually by <see cref="ParticleAlgorithm"/>
+    /// implementations.
+    /// <para>
+    /// The proper way to add <see cref="ParticleAttribute"/>s to an implementation is to
+    /// call
+    /// <code>
+    /// myAttr = new ParticleAttribute_TYPE(this, "fancy name", INITIAL_VALUE);
+    /// </code>
+    /// in the constructor.
+    /// See <see cref="ParticleAlgorithm"/>.
+    /// </para>
+    /// </summary>
     public void AddAttribute(ParticleAttribute attr)
     {
         particle.AddAttribute(attr);
@@ -171,31 +191,150 @@ public abstract class ParticleAlgorithm
      * Movement actions
      */
 
+    /// <summary>
+    /// Expands this particle in the specified local direction.
+    /// After the expansion, the particle's head will occupy the grid node
+    /// in that direction, and its tail will remain at its current position.
+    /// <para>Only allowed if there is no contracted particle in the
+    /// specified direction.</para>
+    /// <para>Note that movements are only applied at the end of a round,
+    /// i.e., after the activation is over. This means that calling this
+    /// method will have no immediate effect.</para>
+    /// <para>
+    /// See also <seealso cref="ContractHead"/>, <seealso cref="ContractTail"/>,
+    /// <seealso cref="PushHandover(int)"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="locDir">The local direction in which to expand.</param>
     public void Expand(int locDir)
     {
         particle.system.ExpandParticle(particle, locDir);
     }
 
+    /// <summary>
+    /// Contracts this particle into the grid node that is currently
+    /// occupied by the particle's head.
+    /// After the contraction, the head and tail will both occupy this
+    /// node.
+    /// <para>Note that movements are only applied at the end of a round,
+    /// i.e., after the activation is over. This means that calling this
+    /// method will have no immediate effect.</para>
+    /// <para>
+    /// See also <seealso cref="Expand(int)"/>,
+    /// <seealso cref="ContractTail"/>,
+    /// <seealso cref="PullHandoverHead(int)"/>.
+    /// </para>
+    /// </summary>
     public void ContractHead()
     {
         particle.system.ContractParticleHead(particle);
     }
 
+    /// <summary>
+    /// Contracts this particle into the grid node that is currently
+    /// occupied by the particle's tail.
+    /// After the contraction, the head and tail will both occupy this
+    /// node.
+    /// <para>Note that movements are only applied at the end of a round,
+    /// i.e., after the activation is over. This means that calling this
+    /// method will have no immediate effect.</para>
+    /// <para>
+    /// See also <seealso cref="Expand(int)"/>,
+    /// <seealso cref="ContractHead"/>,
+    /// <seealso cref="PullHandoverTail(int)"/>.
+    /// </para>
+    /// </summary>
     public void ContractTail()
     {
         particle.system.ContractParticleTail(particle);
     }
 
+    /// <summary>
+    /// Expands this particle in the specified local direction and tries to
+    /// force the expanded neighbor particle to contract.
+    /// After the expansion, the particle's head will occupy the grid node
+    /// in that direction, and its tail will remain at its current position.
+    /// The neighbor will have contracted away from that node.
+    /// <para>
+    /// Only allowed if there is an expanded particle in the
+    /// specified direction.
+    /// The handover will lead to a conflict if this neighboring particle
+    /// performs a movement that is not consistent with the handover in
+    /// the same round, such as contracting into the neighboring node or
+    /// attempting a pull handover with a third particle.
+    /// </para>
+    /// <para>Note that movements are only applied at the end of a round,
+    /// i.e., after the activation is over. This means that calling this
+    /// method will have no immediate effect.</para>
+    /// <para>
+    /// See also <seealso cref="Expand(int)"/>,
+    /// <seealso cref="PullHandoverHead(int)"/>,
+    /// <seealso cref="PullHandoverTail(int)"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="locDir">The local direction into which the particle should expand.</param>
     public void PushHandover(int locDir)
     {
         particle.system.PerformPushHandover(particle, locDir);
     }
 
+    /// <summary>
+    /// Contracts this particle into the grid node that is currently
+    /// occupied by the particle's head and tries to force the contracted
+    /// neighbor particle in the specified direction to expand onto the
+    /// current tail node.
+    /// After the contraction, the head and tail of this particle will both
+    /// occupy the current head node and the current tail node will be
+    /// occupied by the neighbor.
+    /// <para>
+    /// Only allowed if there is a contracted particle in the specified
+    /// direction relative to this particle's tail.
+    /// The handover will lead to a conflict if that neighboring particle
+    /// performs a movement that is not consistent with the handover in
+    /// the same round, such as expanding onto a different node.
+    /// </para>
+    /// <para>Note that movements are only applied at the end of a round,
+    /// i.e., after the activation is over. This means that calling this
+    /// method will have no immediate effect.</para>
+    /// <para>
+    /// See also <seealso cref="PushHandover(int)"/>,
+    /// <seealso cref="ContractHead"/>,
+    /// <seealso cref="PullHandoverTail(int)"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="locDir">The local direction relative to this particle's
+    /// tail from which the contracted neighbor particle should be pulled.</param>
     public void PullHandoverHead(int locDir)
     {
         particle.system.PerformPullHandoverHead(particle, locDir);
     }
 
+    /// <summary>
+    /// Contracts this particle into the grid node that is currently
+    /// occupied by the particle's tail and tries to force the contracted
+    /// neighbor particle in the specified direction to expand onto the
+    /// current head node.
+    /// After the contraction, the head and tail of this particle will both
+    /// occupy the current tail node and the current head node will be
+    /// occupied by the neighbor.
+    /// <para>
+    /// Only allowed if there is a contracted particle in the specified
+    /// direction relative to this particle's head.
+    /// The handover will lead to a conflict if that neighboring particle
+    /// performs a movement that is not consistent with the handover in
+    /// the same round, such as expanding onto a different node.
+    /// </para>
+    /// <para>Note that movements are only applied at the end of a round,
+    /// i.e., after the activation is over. This means that calling this
+    /// method will have no immediate effect.</para>
+    /// <para>
+    /// See also <seealso cref="PushHandover(int)"/>,
+    /// <seealso cref="ContractTail"/>,
+    /// <seealso cref="PullHandoverHead(int)"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="locDir">The local direction relative to this particle's
+    /// head from which the contracted neighbor particle should be pulled.</param>
     public void PullHandoverTail(int locDir)
     {
         particle.system.PerformPullHandoverTail(particle, locDir);
