@@ -8,8 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Full Particle
-  m_Shader: {fileID: -6465566751694194690, guid: 43ded277c2b709d49ad7186105d40539,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 43ded277c2b709d49ad7186105d40539, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -124,6 +123,7 @@ Material:
     - _ExpansionVector: {r: 0.5, g: 0, b: 0, a: 0}
     - _ExpansionVector1: {r: 0.5, g: 0, b: 0, a: 0}
     - _ExpansionVector2: {r: 0.5, g: 0, b: 0, a: 0}
+    - _InputColor: {r: 0.039215688, g: 0.039215688, b: 0.039215688, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &6713069101338858219

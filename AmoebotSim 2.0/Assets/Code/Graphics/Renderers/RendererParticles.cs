@@ -14,7 +14,11 @@ public class RendererParticles
     private List<Matrix4x4[]> particleMatricesExpanded = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesExpandedInner = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesBG = new List<Matrix4x4[]>();
+    private List<Matrix4x4[]> particleMatricesBGExpanded = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleConnectionMatrices = new List<Matrix4x4[]>();
+    // MaterialPropertyBlocks
+    private List<MaterialPropertyBlockData_HexParticles> propertyBlocks_HexParticles = new List<MaterialPropertyBlockData_HexParticles>();
+    private List<MaterialPropertyBlockData_HexParticles> propertyBlocks_HexParticlesExpanded = new List<MaterialPropertyBlockData_HexParticles>();
 
     // Precalculated Data _____
     // Meshes
@@ -63,6 +67,7 @@ public class RendererParticles
             Matrix4x4[] particleMatrixExpanded = new Matrix4x4[maxArraySize];
             Matrix4x4[] particleMatrixExpandedInner = new Matrix4x4[maxArraySize];
             Matrix4x4[] particleMatrixBG = new Matrix4x4[maxArraySize];
+            Matrix4x4[] particleMatrixBGExpanded = new Matrix4x4[maxArraySize];
             Matrix4x4[] particleConnectionMatrix = new Matrix4x4[maxArraySize];
             for (int i = 0; i < maxArraySize; i++)
             {
@@ -78,7 +83,10 @@ public class RendererParticles
             particleMatricesExpanded.Add(particleMatrixExpanded);
             particleMatricesExpandedInner.Add(particleMatrixExpandedInner);
             particleMatricesBG.Add(particleMatrixBG);
+            particleMatricesBGExpanded.Add(particleMatrixBGExpanded);
             particleConnectionMatrices.Add(particleConnectionMatrix);
+            propertyBlocks_HexParticles.Add(new MaterialPropertyBlockData_HexParticles(maxArraySize));
+            propertyBlocks_HexParticlesExpanded.Add(new MaterialPropertyBlockData_HexParticles(maxArraySize));
         }
         graphicalData.graphics_listNumber = particleMatrices.Count - 1;
         graphicalData.graphics_listID = particleToParticleGraphicalDataMap.Count % maxArraySize;
@@ -100,6 +108,9 @@ public class RendererParticles
         particleMatrices[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position1.x, graphicalData.stored_position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
         particleMatricesInner[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position1.x, graphicalData.stored_position1.y, RenderSystem.zLayer_particles), Quaternion.identity, new Vector3(innerParticleScaleFactor, innerParticleScaleFactor, 1f));
         particleMatricesBG[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position1.x, graphicalData.stored_position1.y, RenderSystem.ZLayer_particlesBG), Quaternion.identity, Vector3.one);
+        particleMatricesBGExpanded[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.stored_position2.x, graphicalData.stored_position2.y, RenderSystem.ZLayer_particlesBG), Quaternion.identity, Vector3.one);
+        propertyBlocks_HexParticles[graphicalData.graphics_listNumber].UpdateValue(graphicalData.graphics_listID, graphicalData.stored_isExpanded, graphicalData.stored_globalExpansionDir);
+        propertyBlocks_HexParticlesExpanded[graphicalData.graphics_listNumber].UpdateValue(graphicalData.graphics_listID, graphicalData.stored_isExpanded, (graphicalData.stored_globalExpansionDir + 3) % 6);
         if (graphicalData.stored_isExpanded)
         {
             // Expanded
@@ -189,9 +200,15 @@ public class RendererParticles
             if (i == particleMatrices.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
             else listLength = maxArraySize;
 
-            Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesBG[i]);
-            Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particle, particleMatrices[i]);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatrices[i]);
+            // First
+            propertyBlocks_HexParticles[i].ApplyToBlock();
+            Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesBG[i], listLength);
+            Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatrices[i], listLength, propertyBlocks_HexParticles[i].propertyBlock);
+            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particle, particleMatrices[i], listLength);
+            // Expanded
+            propertyBlocks_HexParticlesExpanded[i].ApplyToBlock();
+            Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesBGExpanded[i], listLength);
+            Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesExpanded[i], listLength, propertyBlocks_HexParticlesExpanded[i].propertyBlock);
         }
     }
 

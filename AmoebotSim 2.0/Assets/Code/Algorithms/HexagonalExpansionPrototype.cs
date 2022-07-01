@@ -63,16 +63,16 @@ public class HexagonalExpansionPrototype : MonoBehaviour
         Vector3 bottomLeftO = bottomLeft * (scale + halfHexagonWidth);
 
 
-        Vector3[] vertices = new Vector3[4 * 6];
-        int[] triangles = new int[6 * 6];
-        Vector2[] uv = new Vector2[4 * 6];
-        Vector2[] uv2 = new Vector2[4 * 6];
-        Vector2[] uv3 = new Vector2[4 * 6];
-        Vector2[] uv4 = new Vector2[4 * 6];
-        Vector3[] normals = new Vector3[4 * 6];
+        Vector3[] vertices = new Vector3[4 * 6 + 3 * 2];
+        int[] triangles = new int[6 * 6 + 2 * 3];
+        Vector2[] uv = new Vector2[vertices.Length];
+        Vector2[] uv2 = new Vector2[vertices.Length];
+        Vector2[] uv3 = new Vector2[vertices.Length];
+        Vector2[] uv4 = new Vector2[vertices.Length];
+        Vector3[] normals = new Vector3[vertices.Length];
 
-        Vector4[] uv3V4 = new Vector4[4 * 6];
-        Vector4[] uv4V4 = new Vector4[4 * 6];
+        Vector4[] uv3V4 = new Vector4[vertices.Length];
+        Vector4[] uv4V4 = new Vector4[vertices.Length];
 
         // Vertices _____
         // Left
@@ -105,6 +105,14 @@ public class HexagonalExpansionPrototype : MonoBehaviour
         vertices[21] = bottomI;
         vertices[22] = bottomLeftO;
         vertices[23] = bottomLeftI;
+        // Corner Triangle 1
+        vertices[24] = bottomLeftO;
+        vertices[25] = new Vector3(-1, 0f, 0f) + bottomRightI;
+        vertices[26] = bottomLeftI;
+        // Corner Triangle 2
+        vertices[27] = topLeftO;
+        vertices[28] = topLeftI;
+        vertices[29] = new Vector3(-1, 0f, 0f) + topRightI;
 
         // Triangles _____
         for (int i = 0; i < 6; i++)
@@ -117,15 +125,29 @@ public class HexagonalExpansionPrototype : MonoBehaviour
             triangles[i * 6 + 4] = i * 4 + 2;
             triangles[i * 6 + 5] = i * 4 + 3;
         }
+        triangles[36] = 24;
+        triangles[37] = 25;
+        triangles[38] = 26;
+
+        triangles[39] = 27;
+        triangles[40] = 28;
+        triangles[41] = 29;
 
         // UV0s _____
         for (int i = 0; i < 6; i++)
         {
-            uv[i * 4 + 0] = new Vector2(0f, 0f);
+            uv[i * 4 + 0] = 
             uv[i * 4 + 1] = new Vector2(1f, 0f);
             uv[i * 4 + 2] = new Vector2(0f, 1f);
             uv[i * 4 + 3] = new Vector2(1f, 1f);
         }
+        uv[24] = new Vector2(0f, 0.5f);
+        uv[25] = new Vector2(1f, 1f);
+        uv[26] = new Vector2(1f, 0f);
+
+        uv[27] = new Vector2(0f, 0.5f);
+        uv[28] = new Vector2(1f, 1f);
+        uv[29] = new Vector2(1f, 0f);
 
         // UV1s _____
         for (int i = 0; i < 6; i++)
@@ -135,6 +157,12 @@ public class HexagonalExpansionPrototype : MonoBehaviour
                 uv2[i * 4 + j] = new Vector2(i, 0);
             }
         }
+        uv2[24] = new Vector2(6f, 0f);
+        uv2[25] = new Vector2(6f, 0f);
+        uv2[26] = new Vector2(6f, 0f);
+        uv2[27] = new Vector2(6f, 0f);
+        uv2[28] = new Vector2(6f, 0f);
+        uv2[29] = new Vector2(6f, 0f);
 
         // UV2s _____
         // Left

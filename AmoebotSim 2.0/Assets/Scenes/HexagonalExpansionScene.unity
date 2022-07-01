@@ -272,8 +272,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hexScale: 1
   hexBorderWidth: 0.2
-  hexFullMat: {fileID: 2100000, guid: c4f771c1170261344a5acef03902df9b, type: 2}
-  hexExpMat: {fileID: 2100000, guid: a837ada0cc6154c409c4049149eb2b78, type: 2}
+  hexFullMat: {fileID: 2100000, guid: cf6dd4630328d584c9eb231da98623a6, type: 2}
+  hexExpMat: {fileID: 2100000, guid: 3e802ed26ea6249469131d7c2ecca53e, type: 2}
 --- !u!4 &982080036
 Transform:
   m_ObjectHideFlags: 0
