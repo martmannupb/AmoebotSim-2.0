@@ -3,11 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// <see cref="ParticleAttribute"/> subclass representing integer values.
+/// </summary>
 public class ParticleAttribute_Int : ParticleAttribute
 {
     private int value;
 
     public ParticleAttribute_Int(ParticleAlgorithm particle, string name, int value = 0) : base(particle, name)
+    {
+        this.value = value;
+    }
+
+    public void SetValue(int value)
     {
         this.value = value;
     }
@@ -22,29 +30,23 @@ public class ParticleAttribute_Int : ParticleAttribute
         return "ParticleAttribute (int) with name " + name + " and value " + value;
     }
 
-    public override string ToString_ParameterName()
+    public override string ToString_AttributeName()
     {
         return name;
     }
 
-    public override string ToString_ParameterValue()
+    public override string ToString_AttributeValue()
     {
         return value.ToString();
     }
 
-    public override void UpdateParameterValue(string value)
+    public override void UpdateAttributeValue(string value)
     {
         // TODO: Handle exception?
         this.value = int.Parse(value);
     }
 
-    // Conversion operators
+    // Conversion operator
     // This allows ParticleAttribute_Int objects to be readable like normal ints
     public static implicit operator int(ParticleAttribute_Int attr) => attr.value;
-    //public static implicit operator ParticleAttribute_Int(int value) => new ParticleAttribute_Int("", value);
-    // Second one also requires copy constructor (should not be needed)
-    //public ParticleAttribute_Int(ParticleAttribute_Int other) : base(other.name)
-    //{
-    //    this.value = other.value;
-    //}
 }
