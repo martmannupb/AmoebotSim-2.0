@@ -23,11 +23,12 @@ public class AmoebotSimulator : MonoBehaviour
     {
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
-        system.InitializeExample(25, 15, 0.3f, -9, -5);
+        system.InitializeExample(5, 5, 0.3f, -9, -5);
         //system.ActivateParticles();
 
         // Activate one particle every 1000ms (only for testing)
-        InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
+        //InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
+        Time.fixedDeltaTime = 1f;
 
 
 
@@ -58,6 +59,22 @@ public class AmoebotSimulator : MonoBehaviour
     // FixedUpdate is called once per Time.fixedDeltaTime interval
     void FixedUpdate()
     {
-        
+        if(play) ActivateParticle();
     }
+
+
+
+
+
+    private bool play = true;
+
+    /// <summary>
+    /// Toggles the Play/Pause functionality.
+    /// </summary>
+    public void TogglePlayPause()
+    {
+        play = !play;
+    }
+
+
 }

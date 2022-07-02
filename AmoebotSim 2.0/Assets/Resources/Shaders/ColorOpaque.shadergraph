@@ -29,9 +29,6 @@
         },
         {
             "m_Id": "c28d3a655b5f4fb9a4f1dfb030210e2c"
-        },
-        {
-            "m_Id": "b9989a2da94546de8fd7d6b2109c0526"
         }
     ],
     "m_GroupDatas": [],
@@ -77,9 +74,6 @@
         "m_Blocks": [
             {
                 "m_Id": "c28d3a655b5f4fb9a4f1dfb030210e2c"
-            },
-            {
-                "m_Id": "b9989a2da94546de8fd7d6b2109c0526"
             }
         ]
     },
@@ -267,7 +261,7 @@
         "m_Id": "e0fc53d11e89408fb3d0cb42b65bc7c9"
     },
     "m_AllowMaterialOverride": false,
-    "m_SurfaceType": 1,
+    "m_SurfaceType": 0,
     "m_ZTestMode": 4,
     "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
@@ -277,21 +271,6 @@
     "m_ReceiveShadows": true,
     "m_CustomEditorGUI": "",
     "m_SupportVFX": false
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
-    "m_ObjectId": "914f8d23322649658a27f0093cd37170",
-    "m_Id": 0,
-    "m_DisplayName": "Alpha",
-    "m_SlotType": 0,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "Alpha",
-    "m_StageCapability": 2,
-    "m_Value": 1.0,
-    "m_DefaultValue": 1.0,
-    "m_Labels": []
 }
 
 {
@@ -306,8 +285,8 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -165.0,
-            "y": 237.0,
+            "x": -148.0,
+            "y": 238.0,
             "width": 132.0,
             "height": 34.0
         }
@@ -351,39 +330,6 @@
     },
     "m_Labels": [],
     "m_Space": 0
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.BlockNode",
-    "m_ObjectId": "b9989a2da94546de8fd7d6b2109c0526",
-    "m_Group": {
-        "m_Id": ""
-    },
-    "m_Name": "SurfaceDescription.Alpha",
-    "m_DrawState": {
-        "m_Expanded": true,
-        "m_Position": {
-            "serializedVersion": "2",
-            "x": 0.0,
-            "y": 0.0,
-            "width": 0.0,
-            "height": 0.0
-        }
-    },
-    "m_Slots": [
-        {
-            "m_Id": "914f8d23322649658a27f0093cd37170"
-        }
-    ],
-    "synonyms": [],
-    "m_Precision": 0,
-    "m_PreviewExpanded": true,
-    "m_PreviewMode": 0,
-    "m_CustomColors": {
-        "m_SerializableColors": []
-    },
-    "m_SerializedDescriptor": "SurfaceDescription.Alpha"
 }
 
 {
@@ -436,7 +382,7 @@
     "m_DefaultRefNameVersion": 0,
     "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Color_9A67881C",
-    "m_OverrideReferenceName": "",
+    "m_OverrideReferenceName": "_InputColor",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",

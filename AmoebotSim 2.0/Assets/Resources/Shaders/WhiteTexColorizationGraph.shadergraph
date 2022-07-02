@@ -529,7 +529,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "4fedbfb61e6d8a8cbf8e828fe26d65f0",
     "m_Id": 0,
-    "m_DisplayName": "Color",
+    "m_DisplayName": "InputColor",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -632,7 +632,7 @@
     "m_DefaultRefNameVersion": 0,
     "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Texture2D_1180B1D5",
-    "m_OverrideReferenceName": "",
+    "m_OverrideReferenceName": "_Texture2D",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
@@ -1054,17 +1054,17 @@
 }
 
 {
-    "m_SGVersion": 2,
+    "m_SGVersion": 3,
     "m_Type": "UnityEditor.ShaderGraph.Internal.ColorShaderProperty",
     "m_ObjectId": "ce785067c9f5128fa74b176db31821fd",
     "m_Guid": {
         "m_GuidSerialized": "b85c3aa8-0de5-4403-87cd-0a7f6a445910"
     },
-    "m_Name": "Color",
+    "m_Name": "InputColor",
     "m_DefaultRefNameVersion": 0,
     "m_RefNameGeneratedByDisplayName": "",
     "m_DefaultReferenceName": "Color_C9A6D0DF",
-    "m_OverrideReferenceName": "",
+    "m_OverrideReferenceName": "_InputColor",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",

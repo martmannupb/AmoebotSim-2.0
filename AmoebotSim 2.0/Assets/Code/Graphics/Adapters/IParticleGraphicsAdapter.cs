@@ -11,7 +11,7 @@ public interface IParticleGraphicsAdapter
     public void AddParticle();
 
     /// <summary>
-    /// Updates the particle graphics. This is applied and shown directly in the next render cycle.
+    /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
     /// Example: A particle has expanded. Call Update() to update the visuals.
     /// </summary>
     public void Update();

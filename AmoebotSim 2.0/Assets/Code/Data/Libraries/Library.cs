@@ -366,4 +366,58 @@ namespace Engine.Library {
     }
 
 
+    public static class VectorConstants
+    {
+        /// <summary>
+        /// Combines two Vector2 into one Vector4 (vec1.x, vec1.y, vec2.x, vec2.y).
+        /// </summary>
+        /// <param name="vector1"></param>
+        /// <param name="vector2"></param>
+        /// <returns></returns>
+        public static Vector4 Combine2Vector2s(Vector2 vector1, Vector2 vector2)
+        {
+            return new Vector4(vector1.x, vector1.y, vector2.x, vector2.y);
+        }
+
+        /// <summary>
+        /// Rotates a vector by a certain degree.
+        /// </summary>
+        /// <param name="vector"></param>
+        /// <param name="degrees"></param>
+        /// <returns></returns>
+        public static Vector2 Rotate(Vector2 vector, float degrees)
+        {
+            return RotateRadians(vector, degrees * Mathf.Deg2Rad);
+        }
+
+        /// <summary>
+        /// Rotates a vector by radians.
+        /// </summary>
+        /// <param name="vector"></param>
+        /// <param name="radians"></param>
+        /// <returns></returns>
+        public static Vector2 RotateRadians(Vector2 vector, float radians)
+        {
+            var ca = Mathf.Cos(radians);
+            var sa = Mathf.Sin(radians);
+            return new Vector2(ca * vector.x - sa * vector.y, sa * vector.x + ca * vector.y);
+        }
+    }
+
+
+    public static class MatrixConstants
+    {
+        
+        public static Matrix4x4[] GetMatrix4x4Array(int size, Matrix4x4 initialValue)
+        {
+            Matrix4x4[] matrix = new Matrix4x4[size];
+            for (int i = 0; i < size; i++)
+            {
+                matrix[i] = initialValue;
+            }
+            return matrix;
+        }
+
+    }
+
 }
