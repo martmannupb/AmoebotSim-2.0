@@ -404,4 +404,20 @@ namespace Engine.Library {
         }
     }
 
+
+    public static class MatrixConstants
+    {
+        
+        public static Matrix4x4[] GetMatrix4x4Array(int size, Matrix4x4 initialValue)
+        {
+            Matrix4x4[] matrix = new Matrix4x4[size];
+            for (int i = 0; i < size; i++)
+            {
+                matrix[i] = initialValue;
+            }
+            return matrix;
+        }
+
+    }
+
 }

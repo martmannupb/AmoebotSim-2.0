@@ -10,10 +10,19 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     private RendererParticles renderer;
 
     // Data
-    public Vector2Int stored_position1;
-    public Vector2Int stored_position2;
-    public bool stored_isExpanded = false;
-    public int stored_globalExpansionDir = -1;
+    // Current Round
+    public Vector2Int cur_position1;
+    public Vector2Int cur_position2;
+    public bool cur_isExpanded = false;
+    public int cur_globalExpansionDir = -1;
+    public ParticleMovement cur_movement = ParticleMovement.Contracted;
+    // Previous Round
+    public Vector2Int prev_position1;
+    public Vector2Int prev_position2;
+    public bool prev_isExpanded = false;
+    public int prev_globalExpansionDir = -1;
+    public ParticleMovement prev_movement = ParticleMovement.Contracted;
+    // Movement
 
     // Graphical Data
     public int graphics_listNumber = 0;
@@ -32,14 +41,30 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void Update()
     {
-        // Update Data
-        stored_position1 = particle.Head();
-        stored_position2 = particle.Tail();
-        stored_isExpanded = particle.IsExpanded();
-        stored_globalExpansionDir = particle.GetGlobalExpansionDir();
-        if (stored_isExpanded && stored_globalExpansionDir == -1) Log.Error("What???");
+        // Previous Data
+        prev_position1 = cur_position1;
+        prev_position2 = cur_position2;
+        prev_isExpanded = cur_isExpanded;
+        prev_globalExpansionDir = cur_globalExpansionDir;
+        // Current Data
+        cur_position1 = particle.Head();
+        cur_position2 = particle.Tail();
+        cur_isExpanded = particle.IsExpanded();
+        cur_globalExpansionDir = particle.GetGlobalExpansionDir();
+        if(cur_isExpanded)
+        {
+            // Expanded
+            if (prev_isExpanded) cur_movement = ParticleMovement.Expanded;
+            else cur_movement = ParticleMovement.Expanding;
+        }
+        else
+        {
+            // Contracted
+            if (prev_isExpanded) cur_movement = ParticleMovement.Contracting;
+            else cur_movement = ParticleMovement.Contracted;
+        }
         // Update Matrix
-        renderer.UpdateMatrix(this);
+        if(cur_movement != prev_movement) renderer.UpdateMatrix(this);
     }
 
     public void ShowParticle()
@@ -55,5 +80,13 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public void RemoveParticle()
     {
         throw new System.NotImplementedException();
+    }
+
+    public enum ParticleMovement
+    {
+        Contracted,
+        Expanded,
+        Expanding,
+        Contracting 
     }
 }

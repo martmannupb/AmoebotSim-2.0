@@ -20,8 +20,8 @@ public class HexagonalExpansionPrototype : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Graphics.DrawMesh(mesh, Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(1f, 1.1547005f, 1f)), hexExpMat, 0);
-        Graphics.DrawMesh(mesh, Matrix4x4.TRS(new Vector3(-1f, 0f, 0f), Quaternion.identity, new Vector3(1f, 1.1547005f, 1f)), hexFullMat, 0);
+        Graphics.DrawMesh(mesh, Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(1f, 1f, 1f)), hexExpMat, 0);
+        Graphics.DrawMesh(mesh, Matrix4x4.TRS(new Vector3(-1f, 0f, 0f), Quaternion.identity, new Vector3(1f, 1f, 1f)), hexFullMat, 0);
     }
 
     private void CreateMesh()
@@ -70,9 +70,6 @@ public class HexagonalExpansionPrototype : MonoBehaviour
         Vector4[] uv3 = new Vector4[vertices.Length];
         Vector4[] uv4 = new Vector4[vertices.Length];
         Vector3[] normals = new Vector3[vertices.Length];
-
-        Vector4[] uv3V4 = new Vector4[vertices.Length];
-        Vector4[] uv4V4 = new Vector4[vertices.Length];
 
         // Vertices _____
         // Left
@@ -166,7 +163,7 @@ public class HexagonalExpansionPrototype : MonoBehaviour
 
         // UV2s _____
         // Left
-        uv3[0] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftO - topLeftI);
+        uv3[0] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftO - bottomLeftO);
         uv3[1] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftI - bottomLeftI);
         uv3[2] = Engine.Library.VectorConstants.Combine2Vector2s(bottomLeftO - topLeftO, Vector2.zero);
         uv3[3] = Engine.Library.VectorConstants.Combine2Vector2s(bottomLeftI - topLeftI, Vector2.zero);
@@ -217,59 +214,20 @@ public class HexagonalExpansionPrototype : MonoBehaviour
         uv4[10] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 240f), Engine.Library.VectorConstants.Rotate(expVector2top, 240f));
         uv4[11] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 240f), Engine.Library.VectorConstants.Rotate(expVector2top, 240f));
         // Right (Right to Left)
-        uv4[8] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 180f), Engine.Library.VectorConstants.Rotate(expVector2bot, 180f));
-        uv4[9] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 180f), Engine.Library.VectorConstants.Rotate(expVector2bot, 180f));
-        uv4[10] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 180f), Engine.Library.VectorConstants.Rotate(expVector2top, 180f));
-        uv4[11] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 180f), Engine.Library.VectorConstants.Rotate(expVector2top, 180f));
+        uv4[12] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 180f), Engine.Library.VectorConstants.Rotate(expVector2bot, 180f));
+        uv4[13] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 180f), Engine.Library.VectorConstants.Rotate(expVector2bot, 180f));
+        uv4[14] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 180f), Engine.Library.VectorConstants.Rotate(expVector2top, 180f));
+        uv4[15] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 180f), Engine.Library.VectorConstants.Rotate(expVector2top, 180f));
         // Bottom Right
-        uv4[8] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 120f), Engine.Library.VectorConstants.Rotate(expVector2bot, 120f));
-        uv4[9] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 120f), Engine.Library.VectorConstants.Rotate(expVector2bot, 120f));
-        uv4[10] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 120f), Engine.Library.VectorConstants.Rotate(expVector2top, 120f));
-        uv4[11] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 120f), Engine.Library.VectorConstants.Rotate(expVector2top, 120f));
+        uv4[16] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 120f), Engine.Library.VectorConstants.Rotate(expVector2bot, 120f));
+        uv4[17] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 120f), Engine.Library.VectorConstants.Rotate(expVector2bot, 120f));
+        uv4[18] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 120f), Engine.Library.VectorConstants.Rotate(expVector2top, 120f));
+        uv4[19] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 120f), Engine.Library.VectorConstants.Rotate(expVector2top, 120f));
         // Bottom Left
-        uv4[8] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
-        uv4[9] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
-        uv4[10] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
-        uv4[11] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
-
-        // UV4
-        //for (int i = 0; i < 6; i++)
-        //{
-        //    int l1 = (i + 6 - 1) % 6;
-        //    int l2 = (i + 6 - 2) % 6;
-        //    int r1 = (i + 1) % 6;
-        //    int r2 = (i + 2) % 6;
-
-        //    // x,y: ExpansionVector1, z,a: ExpansionVector2
-
-        //    // DownO
-        //    // -1
-        //    int index = l1 * 4;
-        //    Vector2 expVec1 = new Vector2(vertices[i * 4 + 0].x - vertices[index + 0].x, vertices[i * 4 + 0].y - vertices[index + 0].y);
-        //    // -2
-        //    index = l2 * 4;
-        //    Vector2 expVec2 = new Vector2(vertices[i * 4 + 0].x - vertices[index + 0].x, vertices[i * 4 + 0].y - vertices[index + 0].y);
-        //    // UV
-        //    uv4V4[i * 4 + 0] = new Vector4(expVec1.x, expVec1.y, expVec2.x, expVec2.y);
-
-        //    // DownI
-        //    // -1
-        //    // -2
-        //    // UV
-        //    uv4V4[i * 4 + 1] = new Vector4(expVec1.x, expVec1.y, expVec2.x, expVec2.y);
-
-        //    // UpO
-        //    // -1
-        //    // -2
-        //    // UV
-        //    uv4V4[i * 4 + 2] = new Vector4(expVec1.x, expVec1.y, expVec2.x, expVec2.y);
-
-        //    // UpI
-        //    // -1
-        //    // -2
-        //    // UV
-        //    uv4V4[i * 4 + 3] = new Vector4(expVec1.x, expVec1.y, expVec2.x, expVec2.y);
-        //}
+        uv4[20] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
+        uv4[21] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
+        uv4[22] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
+        uv4[23] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
 
         // Normals _____
         for (int i = 0; i < 4 * 6; i++)
@@ -281,8 +239,6 @@ public class HexagonalExpansionPrototype : MonoBehaviour
         mesh.triangles = triangles;
         mesh.uv = uv;
         mesh.uv2 = uv2;
-        //mesh.uv3 = uv3;
-        //mesh.uv4 = uv4;
         mesh.SetUVs(2, uv3);
         mesh.SetUVs(3, uv4);
         mesh.normals = normals;
