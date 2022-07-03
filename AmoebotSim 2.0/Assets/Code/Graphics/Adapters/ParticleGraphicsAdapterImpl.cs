@@ -36,7 +36,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         stored_position1 = particle.Head();
         stored_position2 = particle.Tail();
         stored_isExpanded = particle.IsExpanded();
-        stored_globalExpansionDir = particle.GetGlobalExpansionDir();
+        stored_globalExpansionDir = particle.GlobalHeadDirection();
         // Update Matrix
         renderer.UpdateMatrix(this);
     }

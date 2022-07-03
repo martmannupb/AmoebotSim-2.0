@@ -56,6 +56,12 @@ public class LineFormationParticle : ParticleAlgorithm
     private void IdleActivate()
     {
         // Check if neighbor is LEADER or DONE, if yes become ROOT
+        if (FindFirstNeighborWithProperty<LineFormationParticle>((LineFormationParticle p) => p.state == LFState.LEADER || p.state == LFState.DONE, out Neighbor<LineFormationParticle> nbr))
+        {
+            // TODO: Do something else here
+            Debug.Log("Found neighbor that is LEADER or DONE!");
+            state.SetValue(LFState.DONE);
+        }
 
         // Check if neighbor is ROOT, if yes become FLWR
 

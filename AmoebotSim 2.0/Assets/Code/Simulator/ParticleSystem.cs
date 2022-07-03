@@ -285,6 +285,95 @@ public class ParticleSystem
     }
 
     /// <summary>
+    /// Iterates through the neighbor nodes of a given particle and returns the
+    /// encountered particles.
+    /// </summary>
+    /// <typeparam name="T">The type of particles to search for, must be
+    /// <see cref="ParticleAlgorithm"/> subclass.</typeparam>
+    /// <param name="p">The particle searching for neighbors.</param>
+    /// <param name="localStartDir">The local direction of <paramref name="p"/>
+    /// indicating the place where the search should start.</param>
+    /// <param name="startAtHead">If <c>true</c>, the search starts at <paramref name="p"/>'s
+    /// head, otherwise it starts at its tail (no effect for contracted particles).</param>
+    /// <param name="withChirality">If <c>true</c>, the search progresses in the same
+    /// direction as <paramref name="p"/>'s chirality, otherwise it progresses in the
+    /// opposite direction.</param>
+    /// <param name="maxSearch">The maximum number of nodes to search.</param>
+    /// <param name="maxReturn">The maximum number of neighbors to return.</param>
+    /// <returns>Every neighbor <see cref="ParticleAlgorithm"/> encountered during the
+    /// search, each wrapped in a <see cref="Neighbor{T}"/> instance.</returns>
+    private IEnumerable<Neighbor<T>> IterateNeighbors<T>(Particle p, int localStartDir, bool startAtHead, bool withChirality, int maxSearch, int maxReturn) where T : ParticleAlgorithm
+    {
+        if (maxSearch > 6 && !p.exp_isExpanded || maxSearch > 10)
+        {
+            Debug.LogWarning("Searching for " + maxSearch + " neighbors could lead to duplicate results!");
+        }
+        int numSearched = 0;
+        int numReturned = 0;
+        int currentGlobalDir = ParticleSystem_Utils.LocalToGlobalDir(localStartDir, p.comDir, p.chirality);
+        Vector2Int refNode = startAtHead ? p.Head() : p.Tail();
+        bool atHead = startAtHead;
+
+        int directionIncr = ((withChirality ? 1 : -1) * (p.chirality ? 1 : -1) + 6) % 6;
+        while (numSearched < maxSearch && numReturned < maxReturn)
+        {
+            // Must switch nodes if we have reached the point where we look at the other one
+            if (p.exp_isExpanded && (atHead && currentGlobalDir == p.GlobalTailDirection() || !atHead && currentGlobalDir == p.GlobalHeadDirection()))
+            {
+                atHead = !atHead;
+                // Turn twice against the current turn direction, i.e., 4 times in current turn direction
+                currentGlobalDir = (currentGlobalDir + 4 * directionIncr) % 6;
+            }
+
+            // Check the next position
+            Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(refNode, currentGlobalDir);
+            if (particleMap.TryGetValue(nbrPos, out Particle nbr))
+            {
+                yield return new Neighbor<T>((T)nbr.algorithm, ParticleSystem_Utils.GlobalToLocalDir(currentGlobalDir, p.comDir, p.chirality), atHead);
+                numReturned++;
+            }
+            
+            currentGlobalDir = (currentGlobalDir + directionIncr) % 6;
+            numSearched++;
+        }
+    }
+
+    // TODO: Documentation
+
+    public bool FindFirstNeighbor<T>(Particle p, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    {
+        if (maxNumber == -1)
+        {
+            maxNumber = p.exp_isExpanded ? 10 : 6;
+        }
+        foreach(Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxNumber, maxNumber))
+        {
+            neighbor = nbr;
+            return true;
+        }
+        neighbor = new Neighbor<T>(null, -1, true);
+        return false;
+    }
+
+    public bool FindFirstNeighborWithProperty<T>(Particle p, System.Func<T, bool> prop, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    {
+        if (maxNumber == -1)
+        {
+            maxNumber = p.exp_isExpanded ? 10 : 6;
+        }
+        foreach (Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxNumber, maxNumber))
+        {
+            if (prop(nbr.neighbor))
+            {
+                neighbor = nbr;
+                return true;
+            }
+        }
+        neighbor = new Neighbor<T>(null, -1, true);
+        return false;
+    }
+
+    /// <summary>
     /// System-side implementation of <see cref="ParticleAlgorithm.Expand(int)"/>.
     /// <para>
     /// Schedules a <see cref="ParticleAction"/> to expand the given particle in the

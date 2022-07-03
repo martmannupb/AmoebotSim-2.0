@@ -3,6 +3,29 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
+/// A simple container for neighbor search results.
+/// <para>
+/// Contains a reference to a neighbor particle, the local direction
+/// in which it was found, and a flag indicating whether the
+/// direction is relative to the querying particle's head or tail.
+/// </para>
+/// </summary>
+/// <typeparam name="T">The type of the neighbor particle.</typeparam>
+public struct Neighbor<T> where T : ParticleAlgorithm
+{
+    public T neighbor;
+    public int localDir;
+    public bool atHead;
+
+    public Neighbor(T neighbor, int localDir, bool atHead)
+    {
+        this.neighbor = neighbor;
+        this.localDir = localDir;
+        this.atHead = atHead;
+    }
+}
+
+/// <summary>
 /// The abstract base class for particle algorithms in the Amoebot model.
 /// <para>
 /// Every algorithm that should run in the simulation must be implemented
@@ -113,6 +136,25 @@ public abstract class ParticleAlgorithm
         return !particle.exp_isExpanded;
     }
 
+    /// <summary>
+    /// Returns the local direction pointing from the particle's tail towards its head.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's tail towards its head,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int HeadDirection()
+    {
+        return particle.exp_isExpanded ? particle.exp_expansionDir : -1;
+    }
+
+    /// <summary>
+    /// Returns the local direction pointing from the particle's head towards its tail.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's head towards its tail,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int TailDirection()
+    {
+        return particle.exp_isExpanded ? (particle.exp_expansionDir + 3) % 6 : -1;
+    }
 
     /**
      * Messages
@@ -152,6 +194,7 @@ public abstract class ParticleAlgorithm
 
     /**
      * System information retrieval
+     * Mainly for finding neighbor particles
      */
 
     // TODO: Decide on uniform interface for specifying ports (through labels or direction + head/tail (or both))
@@ -184,6 +227,18 @@ public abstract class ParticleAlgorithm
     public ParticleAlgorithm GetNeighborAt(int locDir, bool fromHead = true)
     {
         return particle.system.GetNeighborAt(particle, locDir, fromHead).algorithm;
+    }
+
+    // TODO: Documentation
+
+    public bool FindFirstNeighbor<T>(out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    {
+        return particle.system.FindFirstNeighbor<T>(particle, out neighbor, startDir, startAtHead, withChirality, maxNumber);
+    }
+
+    public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    {
+        return particle.system.FindFirstNeighborWithProperty<T>(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
     }
 
 

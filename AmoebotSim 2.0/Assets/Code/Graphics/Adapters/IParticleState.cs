@@ -14,7 +14,7 @@ public interface IParticleState
     /// The global direction of an expansion. Returns -1 if there is no expansion.
     /// </summary>
     /// <returns></returns>
-    public int GetGlobalExpansionDir();
+    public int GlobalHeadDirection();
 
     /// <summary>
     /// Head position of the particle.
