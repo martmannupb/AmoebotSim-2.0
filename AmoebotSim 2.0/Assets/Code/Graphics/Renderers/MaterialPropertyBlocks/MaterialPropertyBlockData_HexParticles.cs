@@ -5,15 +5,11 @@ using UnityEngine;
 public class MaterialPropertyBlockData_HexParticles : MaterialPropertyBlockData
 {
 
-    // Defaults
-    private Color def_color = MaterialDatabase.material_hexagonal_particleExpansion.GetColor("_InputColor");
-    private float def_isExpanding = 0f; // bool is a float here
-    private float def_expansionPercentage = 0f;
-    private float def_expansionMesh = 0f;
-
     // Data
+    private Color property_color = MaterialDatabase.material_hexagonal_particleExpansion.GetColor("_InputColor");
     private float property_isExpanding;
     private float property_expansionPercentage;
+    private float property_expansionPercentage2;
     private float property_expansionMesh;
 
     // Data Conversion
@@ -26,28 +22,31 @@ public class MaterialPropertyBlockData_HexParticles : MaterialPropertyBlockData
 
     protected override void Init()
     {
-        // Set default material properties (not expanded + color)
-        property_isExpanding = def_isExpanding;
-        property_expansionPercentage = def_expansionPercentage;
-        property_expansionMesh = def_expansionMesh;
-
         // Apply to block
         ApplyToBlock();
     }
 
-    public void UpdateValue(bool isExpanding, int visualExpansionDir)
+    public void UpdateValue(bool isExpanding, int visualExpansionDir, float animation_expansionPercentage1, float animation_expansionPercentage2)
     {
         property_isExpanding = isExpanding ? 1f : 0f;
-        property_expansionPercentage = 1f;
+        property_expansionPercentage = animation_expansionPercentage1;
+        property_expansionPercentage2 = animation_expansionPercentage2;
         property_expansionMesh = globalDirToExpansionMeshMap[(visualExpansionDir + 6) % 6]; // % for the -1 values
+    }
+
+    public void ApplyAnimationTimestamp(float triggerTime, float animationLength)
+    {
+        propertyBlock.SetFloat("_AnimTriggerTime", triggerTime);
+        propertyBlock.SetFloat("_AnimDuration", animationLength);
     }
 
     public void ApplyToBlock()
     {
         // Apply to block
-        propertyBlock.SetColor("_InputColor", def_color);
+        propertyBlock.SetColor("_InputColor", property_color);
         propertyBlock.SetFloat("_IsExpanding", property_isExpanding);
         propertyBlock.SetFloat("_ExpansionPercentage", property_expansionPercentage);
+        propertyBlock.SetFloat("_ExpansionPercentage2", property_expansionPercentage2);
         propertyBlock.SetFloat("_ExpansionMesh", property_expansionMesh);
     }
 

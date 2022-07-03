@@ -187,6 +187,7 @@ public class ParticleSystem
         {
             p.graphics.Update();
         }
+        RenderSystem.flag_newRound = true;
     }
 
     /**

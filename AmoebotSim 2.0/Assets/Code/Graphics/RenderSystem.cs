@@ -20,16 +20,21 @@ public class RenderSystem
     public const float const_hexagonalScale = 1f;
     public const float const_hexagonalBorderWidth = 0.12f;
     public const int const_hexagonalBGHexLineAmount = 200;
+    public const float const_hexagonalAnimationDurationDef = 0.5f;
+    public const float const_hexagonalAnimationDurationMax = 1f;
     // Layers
     public const float zLayer_background = 1f;
     public const float ZLayer_particlesBG = 0.1f;
     public const float zLayer_particles = 0f;
     public const float zLayer_pins = -1f;
 
+    // Dynamic Params _____
+    public static bool flag_newRound = true;
 
     // Renderers _____
     public RendererBackground rendererBG;
     public RendererParticles rendererP;
+
 
     
 
@@ -42,8 +47,12 @@ public class RenderSystem
 
     public void Render()
     {
+        // Render
         rendererBG.Render(setting_viewType);
         rendererP.Render(setting_viewType);
+
+        // Reset Round Flag
+        flag_newRound = false;
     }
 
 

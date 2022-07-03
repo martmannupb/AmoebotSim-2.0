@@ -349,8 +349,8 @@ public static class MeshCreator_HexagonalView
         Vector3 bottomLeftO = bottomLeft * (scale + halfHexagonWidth);
 
 
-        Vector3[] vertices = new Vector3[4 * 6 + 3 * 2];
-        int[] triangles = new int[6 * 6 + 2 * 3];
+        Vector3[] vertices = new Vector3[4 * 6 + 3 * 2 + 6];
+        int[] triangles = new int[6 * 6 + 2 * 3 + 4 * 3];
         Vector2[] uv = new Vector2[vertices.Length];
         Vector2[] uv2 = new Vector2[vertices.Length];
         Vector4[] uv3 = new Vector4[vertices.Length];
@@ -396,25 +396,45 @@ public static class MeshCreator_HexagonalView
         vertices[27] = topLeftO;
         vertices[28] = topLeftI;
         vertices[29] = new Vector3(-1, 0f, 0f) + topRightI;
+        // Background
+        vertices[30] = bottomLeft + new Vector3(0f, 0f, 0.1f);
+        vertices[31] = topLeft + new Vector3(0f, 0f, 0.1f);
+        vertices[32] = top + new Vector3(0f, 0f, 0.1f);
+        vertices[33] = topRight + new Vector3(0f, 0f, 0.1f);
+        vertices[34] = bottomRight + new Vector3(0f, 0f, 0.1f);
+        vertices[35] = bottom + new Vector3(0f, 0f, 0.1f);
 
         // Triangles _____
+        // Background
+        triangles[0] = 30;
+        triangles[1] = 31;
+        triangles[2] = 32;
+        triangles[3] = 30;
+        triangles[4] = 32;
+        triangles[5] = 33;
+        triangles[6] = 30;
+        triangles[7] = 33;
+        triangles[8] = 34;
+        triangles[9] = 30;
+        triangles[10] = 34;
+        triangles[11] = 35;
         for (int i = 0; i < 6; i++)
         {
-            triangles[i * 6 + 0] = i * 4 + 0;
-            triangles[i * 6 + 1] = i * 4 + 2;
-            triangles[i * 6 + 2] = i * 4 + 1;
+            triangles[12 + i * 6 + 0] = i * 4 + 0;
+            triangles[12 + i * 6 + 1] = i * 4 + 2;
+            triangles[12 + i * 6 + 2] = i * 4 + 1;
 
-            triangles[i * 6 + 3] = i * 4 + 1;
-            triangles[i * 6 + 4] = i * 4 + 2;
-            triangles[i * 6 + 5] = i * 4 + 3;
+            triangles[12 + i * 6 + 3] = i * 4 + 1;
+            triangles[12 + i * 6 + 4] = i * 4 + 2;
+            triangles[12 + i * 6 + 5] = i * 4 + 3;
         }
-        triangles[36] = 24;
-        triangles[37] = 25;
-        triangles[38] = 26;
-
-        triangles[39] = 27;
-        triangles[40] = 28;
-        triangles[41] = 29;
+        // Corner Triangles
+        triangles[12 + 36] = 24;
+        triangles[12 + 37] = 25;
+        triangles[12 + 38] = 26;
+        triangles[12 + 39] = 27;
+        triangles[12 + 40] = 28;
+        triangles[12 + 41] = 29;
 
         // UV0s _____
         for (int i = 0; i < 6; i++)
@@ -424,13 +444,20 @@ public static class MeshCreator_HexagonalView
             uv[i * 4 + 2] = new Vector2(0f, 1f);
             uv[i * 4 + 3] = new Vector2(1f, 1f);
         }
+        // Corner Triangles
         uv[24] = new Vector2(0f, 0.5f);
         uv[25] = new Vector2(1f, 1f);
         uv[26] = new Vector2(1f, 0f);
-
         uv[27] = new Vector2(0f, 0.5f);
         uv[28] = new Vector2(1f, 1f);
         uv[29] = new Vector2(1f, 0f);
+        // Background
+        uv[30] = bottomLeft.normalized;
+        uv[31] = topLeft.normalized;
+        uv[32] = top.normalized;
+        uv[33] = topRight.normalized;
+        uv[34] = bottomRight.normalized;
+        uv[35] = bottom.normalized;
 
         // UV1s _____
         for (int i = 0; i < 6; i++)
@@ -440,12 +467,20 @@ public static class MeshCreator_HexagonalView
                 uv2[i * 4 + j] = new Vector2(i, 0);
             }
         }
+        // Corner Triangles
         uv2[24] = new Vector2(6f, 0f);
         uv2[25] = new Vector2(6f, 0f);
         uv2[26] = new Vector2(6f, 0f);
         uv2[27] = new Vector2(6f, 0f);
         uv2[28] = new Vector2(6f, 0f);
         uv2[29] = new Vector2(6f, 0f);
+        // Background
+        uv2[30] = new Vector2(7f, 0f);
+        uv2[31] = new Vector2(7f, 0f);
+        uv2[32] = new Vector2(7f, 0f);
+        uv2[33] = new Vector2(7f, 0f);
+        uv2[34] = new Vector2(7f, 0f);
+        uv2[35] = new Vector2(7f, 0f);
 
         // UV2s _____
         // Left
@@ -516,7 +551,7 @@ public static class MeshCreator_HexagonalView
         uv4[23] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
 
         // Normals _____
-        for (int i = 0; i < 4 * 6; i++)
+        for (int i = 0; i < vertices.Length; i++)
         {
             normals[i] = Vector3.up;
         }
