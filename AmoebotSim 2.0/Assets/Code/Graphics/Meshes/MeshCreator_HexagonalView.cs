@@ -5,7 +5,7 @@ using UnityEngine;
 public static class MeshCreator_HexagonalView
 {
 
-    public static Mesh GetMesh_BaseHexagonCenter()
+    public static Mesh GetMesh_BaseHexagonBackground()
     {
         Mesh mesh = new Mesh();
 
@@ -474,13 +474,13 @@ public static class MeshCreator_HexagonalView
         uv2[27] = new Vector2(6f, 0f);
         uv2[28] = new Vector2(6f, 0f);
         uv2[29] = new Vector2(6f, 0f);
-        // Background
+        // Background (y value defines vertex number)
         uv2[30] = new Vector2(7f, 0f);
-        uv2[31] = new Vector2(7f, 0f);
-        uv2[32] = new Vector2(7f, 0f);
-        uv2[33] = new Vector2(7f, 0f);
-        uv2[34] = new Vector2(7f, 0f);
-        uv2[35] = new Vector2(7f, 0f);
+        uv2[31] = new Vector2(7f, 1f);
+        uv2[32] = new Vector2(7f, 2f);
+        uv2[33] = new Vector2(7f, 3f);
+        uv2[34] = new Vector2(7f, 4f);
+        uv2[35] = new Vector2(7f, 5f);
 
         // UV2s _____
         // Left
@@ -513,6 +513,22 @@ public static class MeshCreator_HexagonalView
         uv3[21] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftI - bottomI);
         uv3[22] = Engine.Library.VectorConstants.Combine2Vector2s(bottomO - bottomLeftO, Vector2.zero);
         uv3[23] = Engine.Library.VectorConstants.Combine2Vector2s(bottomI - bottomLeftI, Vector2.zero);
+        // Corner Triangles
+        uv3[24] = Vector4.zero;
+        uv3[25] = Vector4.zero;
+        uv3[26] = Vector4.zero;
+        uv3[27] = Vector4.zero;
+        uv3[28] = Vector4.zero;
+        uv3[29] = Vector4.zero;
+        // Background (here the clockwise contraction offsets are defined)
+        Vector2 conVector1cl =  topLeft - bottomLeft;
+        Vector2 conVector2cl = top - topLeft;
+        uv3[30] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 0f), Engine.Library.VectorConstants.Rotate(conVector2cl, 0f));
+        uv3[31] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 300f), Engine.Library.VectorConstants.Rotate(conVector2cl, 300f));
+        uv3[32] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 240f), Engine.Library.VectorConstants.Rotate(conVector2cl, 240f));
+        uv3[33] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 180f), Engine.Library.VectorConstants.Rotate(conVector2cl, 180f));
+        uv3[34] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 120f), Engine.Library.VectorConstants.Rotate(conVector2cl, 120f));
+        uv3[35] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 60f), Engine.Library.VectorConstants.Rotate(conVector2cl, 60f));
 
         // UV3s _____
         // Left (Left to Right)
@@ -549,6 +565,22 @@ public static class MeshCreator_HexagonalView
         uv4[21] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
         uv4[22] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
         uv4[23] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
+        // Corner Triangles
+        uv4[24] = Vector4.zero;
+        uv4[25] = Vector4.zero;
+        uv4[26] = Vector4.zero;
+        uv4[27] = Vector4.zero;
+        uv4[28] = Vector4.zero;
+        uv4[29] = Vector4.zero;
+        // Background (here the counterclockwise contraction offsets are defined)
+        Vector2 conVector1cc = bottom - bottomLeft;
+        Vector2 conVector2cc = bottomRight - bottom;
+        uv4[30] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 0f), Engine.Library.VectorConstants.Rotate(conVector2cc, 0f));
+        uv4[31] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 300f), Engine.Library.VectorConstants.Rotate(conVector2cc, 300f));
+        uv4[32] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 240f), Engine.Library.VectorConstants.Rotate(conVector2cc, 240f));
+        uv4[33] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 180f), Engine.Library.VectorConstants.Rotate(conVector2cc, 180f));
+        uv4[34] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 120f), Engine.Library.VectorConstants.Rotate(conVector2cc, 120f));
+        uv4[35] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 60f), Engine.Library.VectorConstants.Rotate(conVector2cc, 60f));
 
         // Normals _____
         for (int i = 0; i < vertices.Length; i++)
@@ -580,13 +612,7 @@ public static class MeshCreator_HexagonalView
         Vector3[] vertices = new Vector3[hexAmount * 4 * 6];
         int[] triangles = new int[hexAmount * 6 * 6];
         Vector2[] uv = new Vector2[hexAmount * 4 * 6];
-        Vector2[] uv2 = new Vector2[hexAmount * 4 * 6];
-        Vector2[] uv3 = new Vector2[hexAmount * 4 * 6];
-        Vector2[] uv4 = new Vector2[hexAmount * 4 * 6];
         Vector3[] normals = new Vector3[hexAmount * 4 * 6];
-
-        Vector4[] uv3V4 = new Vector4[hexAmount * 4 * 6];
-        Vector4[] uv4V4 = new Vector4[hexAmount * 4 * 6];
 
         for (int i = 0; i < hexAmount; i++)
         {
@@ -711,10 +737,6 @@ public static class MeshCreator_HexagonalView
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uv;
-        mesh.uv2 = uv2;
-        //mesh.uv3 = uv3;
-        //mesh.uv4 = uv4;
-        mesh.SetUVs(2, uv3V4);
         mesh.normals = normals;
 
         return mesh;

@@ -26,7 +26,7 @@ public class HexagonalExpansionPrototype : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Graphics.DrawMesh(mesh, Matrix4x4.TRS(new Vector3(-1f, 0f, 0f), Quaternion.identity, new Vector3(1f, 1f, 1f)), hexFullMat, 0);
+        //Graphics.DrawMesh(mesh, Matrix4x4.TRS(new Vector3(-1f, 0f, 0f), Quaternion.identity, new Vector3(1f, 1f, 1f)), hexFullMat, 0);
         Graphics.DrawMesh(mesh, Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(1f, 1f, 1f)), hexExpMat, 0, null, 0, propertyBlockExpanding);
     }
 
