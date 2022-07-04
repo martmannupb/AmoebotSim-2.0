@@ -226,7 +226,47 @@ public abstract class ParticleAlgorithm
     /// <returns>The neighboring particle in the specified position.</returns>
     public ParticleAlgorithm GetNeighborAt(int locDir, bool fromHead = true)
     {
-        return particle.system.GetNeighborAt(particle, locDir, fromHead).algorithm;
+        Particle p = particle.system.GetNeighborAt(particle, locDir, fromHead);
+        if (p == null)
+        {
+            return null;
+        }
+        else
+        {
+            return p.algorithm;
+        }
+    }
+
+    /// <summary>
+    /// Checks if the part of the neighboring particle in the given local direction is
+    /// the neighbor's head. The position to check is determined in the same way as in
+    /// <see cref="HasNeighborAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
+    /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise
+    /// look from the particle's tail (only relevant if this particle is expanded.)</param>
+    /// <returns><c>true</c> if and only if the grid node in the specified position is
+    /// occupied by the head of a neighboring particle (for contracted particles, head and
+    /// tail occupy the same node.)</returns>
+    public bool IsHeadAt(int locDir, bool fromHead = true)
+    {
+        return particle.system.IsHeadAt(particle, locDir, fromHead);
+    }
+
+    /// <summary>
+    /// Checks if the part of the neighboring particle in the given local direction is
+    /// the neighbor's tail. The position to check is determined in the same way as in
+    /// <see cref="HasNeighborAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
+    /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise
+    /// look from the particle's tail (only relevant if this particle is expanded.)</param>
+    /// <returns><c>true</c> if and only if the grid node in the specified position is
+    /// occupied by the tail of a neighboring particle (for contracted particles, head and
+    /// tail occupy the same node.)</returns>
+    public bool IsTailAt(int locDir, bool fromHead = true)
+    {
+        return particle.system.IsTailAt(particle, locDir, fromHead);
     }
 
     // TODO: Documentation

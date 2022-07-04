@@ -73,7 +73,7 @@ public class ParticleSystem
         List<Vector2Int> candidates = new();
         Vector2Int node = new Vector2Int(0, 0);
         Particle p = new Particle(this, node);
-        new LineFormationParticle(p);
+        new LineFormationParticleSeq(p);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -100,7 +100,7 @@ public class ParticleSystem
                 }
 
                 p = new Particle(this, newPos);
-                new LineFormationParticle(p);
+                new LineFormationParticleSeq(p);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -109,6 +109,7 @@ public class ParticleSystem
 
             occupied.Add(newPos);
         }
+        Debug.Log("Created system with " + n + " particles");
     }
 
 
@@ -128,7 +129,8 @@ public class ParticleSystem
             particles[pIdx].Activate();
             ApplyAllActionsInQueue();
             CleanupAfterRound();
-            particles[pIdx].graphics.Update();
+            UpdateAllParticleVisuals();     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
+            //particles[pIdx].graphics.Update();
         }
     }
 
@@ -282,6 +284,38 @@ public class ParticleSystem
             return nbr;
         else
             return null;
+    }
+
+    /// <summary>
+    /// System-side implementation of <see cref="ParticleAlgorithm.IsHeadAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="p">The particle checking for a neighbor's head.</param>
+    /// <param name="locDir">The local direction of the particle in which to check.</param>
+    /// <param name="fromHead">If <c>true</c>, check relative to <paramref name="p"/>'s head,
+    /// otherwise check relative to the tail.</param>
+    /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
+    /// relative to <paramref name="p"/>'s head or tail is occupied by the head of a particle
+    /// other than <paramref name="p"/>.</returns>
+    public bool IsHeadAt(Particle p, int locDir, bool fromHead = true)
+    {
+        Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+        return particleMap.TryGetValue(pos, out Particle nbr) && nbr != p && nbr.Head() == pos;
+    }
+
+    /// <summary>
+    /// System-side implementation of <see cref="ParticleAlgorithm.IsTailAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="p">The particle checking for a neighbor's tail.</param>
+    /// <param name="locDir">The local direction of the particle in which to check.</param>
+    /// <param name="fromHead">If <c>true</c>, check relative to <paramref name="p"/>'s head,
+    /// otherwise check relative to the tail.</param>
+    /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
+    /// relative to <paramref name="p"/>'s head or tail is occupied by the tail of a particle
+    /// other than <paramref name="p"/>.</returns>
+    public bool IsTailAt(Particle p, int locDir, bool fromHead = true)
+    {
+        Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+        return particleMap.TryGetValue(pos, out Particle nbr) && nbr != p && nbr.Tail() == pos;
     }
 
     /// <summary>
