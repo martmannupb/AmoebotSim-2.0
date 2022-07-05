@@ -8,29 +8,29 @@ public interface IParticleGraphicsAdapter
     /// Adds and initializes the graphics of the particle. Call this each time a new particle has been added to the RenderSystem.
     /// Afterwards use Update() repeatedly to update the particle visuals.
     /// </summary>
-    public void AddParticle();
+    void AddParticle();
 
     /// <summary>
     /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
     /// Example: A particle has expanded. Call Update() to update the visuals.
     /// </summary>
-    public void Update();
+    void Update();
 
     /// <summary>
     /// Complements HideParticle(). Shows the particle.
     /// Calling this method is not necessary if the particle is never hidden. By default the particle is visible once it is added and updated.
     /// </summary>
-    public void ShowParticle();
+    void ShowParticle();
 
     /// <summary>
     /// Complements ShowParticle(). Hides the particle.
     /// Call this if you want to hide the particle.
     /// </summary>
-    public void HideParticle();
+    void HideParticle();
 
     /// <summary>
     /// Removes the particle from the RenderSystem.
     /// Example: If you want to load a different setup of particles, all particles should be deleted.
     /// </summary>
-    public void RemoveParticle();
+    void RemoveParticle();
 }

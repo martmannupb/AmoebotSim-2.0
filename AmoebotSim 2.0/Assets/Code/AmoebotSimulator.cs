@@ -23,13 +23,17 @@ public class AmoebotSimulator : MonoBehaviour
     {
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
+        
+        //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(25, 15, 0.3f, -9, -5);
-        system.InitializeLineFormation(50, 0.4f);
+        system.InitializeExample(50, 50, 0.3f, -9, -5);
+        //system.InitializeLineFormation(50, 0.4f);
+        
         //system.ActivateParticles();
 
         // Activate one particle every 1000ms (only for testing)
         //InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
-        Time.fixedDeltaTime = 0.1f;
+        Time.fixedDeltaTime = 1f;
 
 
 
@@ -47,8 +51,8 @@ public class AmoebotSimulator : MonoBehaviour
         //Debug.Log("Activate");
         //float tStart = Time.realtimeSinceStartup;
 
-        system.ActivateRandomParticle();
-        //system.SimulateRound();
+        //system.ActivateRandomParticle();
+        system.SimulateRound();
         //Debug.Log("Simulated round in " + (Time.realtimeSinceStartup - tStart) + " s");
     }
 

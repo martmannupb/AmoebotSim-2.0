@@ -26,12 +26,14 @@ public class MaterialPropertyBlockData_HexParticles : MaterialPropertyBlockData
         ApplyToBlock();
     }
 
-    public void UpdateValue(bool isExpanding, int visualExpansionDir, float animation_expansionPercentage1, float animation_expansionPercentage2)
+    public void ApplyUpdatedValues(bool isExpanding, int visualExpansionDir, float animation_expansionPercentage1, float animation_expansionPercentage2)
     {
         property_isExpanding = isExpanding ? 1f : 0f;
         property_expansionPercentage = animation_expansionPercentage1;
         property_expansionPercentage2 = animation_expansionPercentage2;
         property_expansionMesh = globalDirToExpansionMeshMap[(visualExpansionDir + 6) % 6]; // % for the -1 values
+        // Apply
+        ApplyToBlock();
     }
 
     public void ApplyAnimationTimestamp(float triggerTime, float animationLength)
@@ -40,7 +42,7 @@ public class MaterialPropertyBlockData_HexParticles : MaterialPropertyBlockData
         propertyBlock.SetFloat("_AnimDuration", animationLength);
     }
 
-    public void ApplyToBlock()
+    private void ApplyToBlock()
     {
         // Apply to block
         propertyBlock.SetColor("_InputColor", property_color);
