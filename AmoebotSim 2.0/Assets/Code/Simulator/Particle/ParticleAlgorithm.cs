@@ -3,6 +3,29 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
+/// A simple container for neighbor search results.
+/// <para>
+/// Contains a reference to a neighbor particle, the local direction
+/// in which it was found, and a flag indicating whether the
+/// direction is relative to the querying particle's head or tail.
+/// </para>
+/// </summary>
+/// <typeparam name="T">The type of the neighbor particle.</typeparam>
+public struct Neighbor<T> where T : ParticleAlgorithm
+{
+    public T neighbor;
+    public int localDir;
+    public bool atHead;
+
+    public Neighbor(T neighbor, int localDir, bool atHead)
+    {
+        this.neighbor = neighbor;
+        this.localDir = localDir;
+        this.atHead = atHead;
+    }
+}
+
+/// <summary>
 /// The abstract base class for particle algorithms in the Amoebot model.
 /// <para>
 /// Every algorithm that should run in the simulation must be implemented
@@ -113,6 +136,25 @@ public abstract class ParticleAlgorithm
         return !particle.exp_isExpanded;
     }
 
+    /// <summary>
+    /// Returns the local direction pointing from the particle's tail towards its head.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's tail towards its head,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int HeadDirection()
+    {
+        return particle.exp_isExpanded ? particle.exp_expansionDir : -1;
+    }
+
+    /// <summary>
+    /// Returns the local direction pointing from the particle's head towards its tail.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's head towards its tail,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int TailDirection()
+    {
+        return particle.exp_isExpanded ? (particle.exp_expansionDir + 3) % 6 : -1;
+    }
 
     /**
      * Messages
@@ -152,6 +194,7 @@ public abstract class ParticleAlgorithm
 
     /**
      * System information retrieval
+     * Mainly for finding neighbor particles
      */
 
     // TODO: Decide on uniform interface for specifying ports (through labels or direction + head/tail (or both))
@@ -183,7 +226,59 @@ public abstract class ParticleAlgorithm
     /// <returns>The neighboring particle in the specified position.</returns>
     public ParticleAlgorithm GetNeighborAt(int locDir, bool fromHead = true)
     {
-        return particle.system.GetNeighborAt(particle, locDir, fromHead).algorithm;
+        Particle p = particle.system.GetNeighborAt(particle, locDir, fromHead);
+        if (p == null)
+        {
+            return null;
+        }
+        else
+        {
+            return p.algorithm;
+        }
+    }
+
+    /// <summary>
+    /// Checks if the part of the neighboring particle in the given local direction is
+    /// the neighbor's head. The position to check is determined in the same way as in
+    /// <see cref="HasNeighborAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
+    /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise
+    /// look from the particle's tail (only relevant if this particle is expanded.)</param>
+    /// <returns><c>true</c> if and only if the grid node in the specified position is
+    /// occupied by the head of a neighboring particle (for contracted particles, head and
+    /// tail occupy the same node.)</returns>
+    public bool IsHeadAt(int locDir, bool fromHead = true)
+    {
+        return particle.system.IsHeadAt(particle, locDir, fromHead);
+    }
+
+    /// <summary>
+    /// Checks if the part of the neighboring particle in the given local direction is
+    /// the neighbor's tail. The position to check is determined in the same way as in
+    /// <see cref="HasNeighborAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
+    /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise
+    /// look from the particle's tail (only relevant if this particle is expanded.)</param>
+    /// <returns><c>true</c> if and only if the grid node in the specified position is
+    /// occupied by the tail of a neighboring particle (for contracted particles, head and
+    /// tail occupy the same node.)</returns>
+    public bool IsTailAt(int locDir, bool fromHead = true)
+    {
+        return particle.system.IsTailAt(particle, locDir, fromHead);
+    }
+
+    // TODO: Documentation
+
+    public bool FindFirstNeighbor<T>(out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    {
+        return particle.system.FindFirstNeighbor<T>(particle, out neighbor, startDir, startAtHead, withChirality, maxNumber);
+    }
+
+    public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    {
+        return particle.system.FindFirstNeighborWithProperty<T>(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
     }
 
 

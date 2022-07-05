@@ -156,14 +156,45 @@ public class Particle : IParticleState
     }
 
     /// <summary>
-    /// Converts the particle's local direction that points from its tail to its
+    /// Returns the local direction pointing from the particle's tail towards its head.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's tail towards its head,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int HeadDirection()
+    {
+        return exp_isExpanded ? exp_expansionDir : -1;
+    }
+
+    /// <summary>
+    /// Returns the local direction pointing from the particle's head towards its tail.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's head towards its tail,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int TailDirection()
+    {
+        return exp_isExpanded ? (exp_expansionDir + 3) % 6 : -1;
+    }
+
+    /// <summary>
+    /// Converts the particle's local direction that points from its tail towards its
     /// head into a global direction.
     /// </summary>
-    /// <returns>The global direction pointing from this particle's tail to its head.
-    /// Will return <c>-1</c> if the particle is contracted.</returns>
-    public int GetGlobalExpansionDir()
+    /// <returns>The global direction pointing from this particle's tail towards its head,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int GlobalHeadDirection()
     {
         return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality) : -1;
+    }
+
+    /// <summary>
+    /// Converts the particle's local direction that points from its head towards its
+    /// tail into a global direction.
+    /// </summary>
+    /// <returns>The global direction pointing from this particle's head towards its tail,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int GlobalTailDirection()
+    {
+        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir((exp_expansionDir + 3) % 6, comDir, chirality) : -1;
     }
 
 

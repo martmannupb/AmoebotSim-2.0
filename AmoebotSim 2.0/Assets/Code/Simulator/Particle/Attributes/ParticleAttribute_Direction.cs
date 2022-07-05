@@ -5,7 +5,7 @@ using UnityEngine;
 
 /// <summary>
 /// <see cref="ParticleAttribute"/> subclass representing direction values.
-/// Only values in the set {0,1,2,3,4,5} are permitted.
+/// Only values in the set {-1,0,1,2,3,4,5} are permitted.
 /// </summary>
 public class ParticleAttribute_Direction : ParticleAttribute
 {
@@ -19,7 +19,7 @@ public class ParticleAttribute_Direction : ParticleAttribute
 
     private void CheckValue(int val)
     {
-        if (val < 0 || val > 5)
+        if (val < -1 || val > 5)
         {
             throw new System.ArgumentOutOfRangeException("Direction must be value between 0 and 5, got " + val);
         }

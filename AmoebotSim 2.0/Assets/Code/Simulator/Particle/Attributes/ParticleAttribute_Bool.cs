@@ -10,7 +10,7 @@ public class ParticleAttribute_Bool : ParticleAttribute
 {
     private bool value;
 
-    public ParticleAttribute_Bool(ParticleAlgorithm particle, string name, bool value) : base(particle, name)
+    public ParticleAttribute_Bool(ParticleAlgorithm particle, string name, bool value = false) : base(particle, name)
     {
         this.value = value;
     }

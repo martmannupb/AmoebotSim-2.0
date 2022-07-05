@@ -59,6 +59,59 @@ public class ParticleSystem
         Debug.Log("Created system with " + num + " particles");
     }
 
+    /// <summary>
+    /// Initializes the system with connected LineFormationParticles for testing purposes.
+    /// This should be removed after a proper initialization method has been created.
+    /// </summary>
+    /// <param name="numParticles">The number of particles to create.</param>
+    /// <param name="holeProb">The probability of a position not being occupied by
+    /// a particle and being left empty instead.</param>
+    public void InitializeLineFormation(int numParticles, float holeProb)
+    {
+        int n = 1;
+        // Always start by adding a particle at position (0, 0)
+        List<Vector2Int> candidates = new();
+        Vector2Int node = new Vector2Int(0, 0);
+        Particle p = new Particle(this, node);
+        new LineFormationParticleSeq(p);
+        particles.Add(p);
+        particleMap.Add(p.Head(), p);
+
+        for (int d = 0; d < 6; d++)
+            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, d));
+
+        HashSet<Vector2Int> occupied = new();
+        occupied.Add(node);
+
+        while (n < numParticles && candidates.Count > 0)
+        {
+            int randIdx = Random.Range(0, candidates.Count);
+            Vector2Int newPos = candidates[randIdx];
+            candidates.RemoveAt(randIdx);
+
+            // Either use newPos to insert particle or to insert hole
+            if (Random.Range(0.0f, 1.0f) >= holeProb)
+            {
+                for (int d = 0; d < 6; d++)
+                {
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, d);
+                    if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
+                        candidates.Add(nbr);
+                }
+
+                p = new Particle(this, newPos);
+                new LineFormationParticleSeq(p);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+
+                n++;
+            }
+
+            occupied.Add(newPos);
+        }
+        Debug.Log("Created system with " + n + " particles");
+    }
+
 
     /**
      * Simulation functions
@@ -76,7 +129,8 @@ public class ParticleSystem
             particles[pIdx].Activate();
             ApplyAllActionsInQueue();
             CleanupAfterRound();
-            particles[pIdx].graphics.Update();
+            UpdateAllParticleVisuals();     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
+            //particles[pIdx].graphics.Update();
         }
     }
 
@@ -231,6 +285,127 @@ public class ParticleSystem
             return nbr;
         else
             return null;
+    }
+
+    /// <summary>
+    /// System-side implementation of <see cref="ParticleAlgorithm.IsHeadAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="p">The particle checking for a neighbor's head.</param>
+    /// <param name="locDir">The local direction of the particle in which to check.</param>
+    /// <param name="fromHead">If <c>true</c>, check relative to <paramref name="p"/>'s head,
+    /// otherwise check relative to the tail.</param>
+    /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
+    /// relative to <paramref name="p"/>'s head or tail is occupied by the head of a particle
+    /// other than <paramref name="p"/>.</returns>
+    public bool IsHeadAt(Particle p, int locDir, bool fromHead = true)
+    {
+        Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+        return particleMap.TryGetValue(pos, out Particle nbr) && nbr != p && nbr.Head() == pos;
+    }
+
+    /// <summary>
+    /// System-side implementation of <see cref="ParticleAlgorithm.IsTailAt(int, bool)"/>.
+    /// </summary>
+    /// <param name="p">The particle checking for a neighbor's tail.</param>
+    /// <param name="locDir">The local direction of the particle in which to check.</param>
+    /// <param name="fromHead">If <c>true</c>, check relative to <paramref name="p"/>'s head,
+    /// otherwise check relative to the tail.</param>
+    /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
+    /// relative to <paramref name="p"/>'s head or tail is occupied by the tail of a particle
+    /// other than <paramref name="p"/>.</returns>
+    public bool IsTailAt(Particle p, int locDir, bool fromHead = true)
+    {
+        Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+        return particleMap.TryGetValue(pos, out Particle nbr) && nbr != p && nbr.Tail() == pos;
+    }
+
+    /// <summary>
+    /// Iterates through the neighbor nodes of a given particle and returns the
+    /// encountered particles.
+    /// </summary>
+    /// <typeparam name="T">The type of particles to search for, must be
+    /// <see cref="ParticleAlgorithm"/> subclass.</typeparam>
+    /// <param name="p">The particle searching for neighbors.</param>
+    /// <param name="localStartDir">The local direction of <paramref name="p"/>
+    /// indicating the place where the search should start.</param>
+    /// <param name="startAtHead">If <c>true</c>, the search starts at <paramref name="p"/>'s
+    /// head, otherwise it starts at its tail (no effect for contracted particles).</param>
+    /// <param name="withChirality">If <c>true</c>, the search progresses in the same
+    /// direction as <paramref name="p"/>'s chirality, otherwise it progresses in the
+    /// opposite direction.</param>
+    /// <param name="maxSearch">The maximum number of nodes to search.</param>
+    /// <param name="maxReturn">The maximum number of neighbors to return.</param>
+    /// <returns>Every neighbor <see cref="ParticleAlgorithm"/> encountered during the
+    /// search, each wrapped in a <see cref="Neighbor{T}"/> instance.</returns>
+    private IEnumerable<Neighbor<T>> IterateNeighbors<T>(Particle p, int localStartDir, bool startAtHead, bool withChirality, int maxSearch, int maxReturn) where T : ParticleAlgorithm
+    {
+        if (maxSearch > 6 && !p.exp_isExpanded || maxSearch > 10)
+        {
+            Debug.LogWarning("Searching for " + maxSearch + " neighbors could lead to duplicate results!");
+        }
+        int numSearched = 0;
+        int numReturned = 0;
+        int currentGlobalDir = ParticleSystem_Utils.LocalToGlobalDir(localStartDir, p.comDir, p.chirality);
+        Vector2Int refNode = startAtHead ? p.Head() : p.Tail();
+        bool atHead = startAtHead;
+
+        int directionIncr = ((withChirality ? 1 : -1) * (p.chirality ? 1 : -1) + 6) % 6;
+        while (numSearched < maxSearch && numReturned < maxReturn)
+        {
+            // Must switch nodes if we have reached the point where we look at the other one
+            if (p.exp_isExpanded && (atHead && currentGlobalDir == p.GlobalTailDirection() || !atHead && currentGlobalDir == p.GlobalHeadDirection()))
+            {
+                atHead = !atHead;
+                // Turn twice against the current turn direction, i.e., 4 times in current turn direction
+                currentGlobalDir = (currentGlobalDir + 4 * directionIncr) % 6;
+            }
+
+            // Check the next position
+            Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(refNode, currentGlobalDir);
+            if (particleMap.TryGetValue(nbrPos, out Particle nbr))
+            {
+                yield return new Neighbor<T>((T)nbr.algorithm, ParticleSystem_Utils.GlobalToLocalDir(currentGlobalDir, p.comDir, p.chirality), atHead);
+                numReturned++;
+            }
+            
+            currentGlobalDir = (currentGlobalDir + directionIncr) % 6;
+            numSearched++;
+        }
+    }
+
+    // TODO: Documentation
+
+    public bool FindFirstNeighbor<T>(Particle p, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    {
+        if (maxNumber == -1)
+        {
+            maxNumber = p.exp_isExpanded ? 10 : 6;
+        }
+        foreach(Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxNumber, maxNumber))
+        {
+            neighbor = nbr;
+            return true;
+        }
+        neighbor = new Neighbor<T>(null, -1, true);
+        return false;
+    }
+
+    public bool FindFirstNeighborWithProperty<T>(Particle p, System.Func<T, bool> prop, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    {
+        if (maxNumber == -1)
+        {
+            maxNumber = p.exp_isExpanded ? 10 : 6;
+        }
+        foreach (Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxNumber, maxNumber))
+        {
+            if (prop(nbr.neighbor))
+            {
+                neighbor = nbr;
+                return true;
+            }
+        }
+        neighbor = new Neighbor<T>(null, -1, true);
+        return false;
     }
 
     /// <summary>

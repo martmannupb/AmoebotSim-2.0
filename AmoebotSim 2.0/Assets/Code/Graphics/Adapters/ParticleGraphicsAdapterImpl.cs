@@ -80,7 +80,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         // Previous Data
         state_prev = state_cur;
         // Current Data
-        state_cur = new PositionSnap(particle.Head(), particle.Tail(), particle.IsExpanded(), particle.GetGlobalExpansionDir(), ParticleMovement.Contracted, Time.timeSinceLevelLoad);
+        state_cur = new PositionSnap(particle.Head(), particle.Tail(), particle.IsExpanded(), particle.GlobalHeadDirection(), ParticleMovement.Contracted, Time.timeSinceLevelLoad);
         
         if(state_cur.isExpanded)
         {
