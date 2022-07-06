@@ -8,7 +8,8 @@ using UnityEngine;
 /// <para>
 /// The history can be extended by adding records for later rounds or
 /// updating the value for the currently last round, but it cannot be
-/// changed for any round before the last round with a record.
+/// changed for any round before the last round with a record unless
+/// it is cut off.
 /// </para>
 /// <para>
 /// The value in a round before the first recorded round is not defined.
@@ -102,34 +103,40 @@ public class ValueHistory<T>
     {
         if (round < lastRound)
         {
-            throw new System.ArgumentOutOfRangeException("Cannot set value for round earlier than last round.");
+            throw new System.ArgumentOutOfRangeException("Cannot record value for round earlier than last round.");
         }
-        // New round is later than current round, check if we have a new value
-        // TODO: Check if this can be done better
+
+        // New round is later than or equal to current round
+        lastRound = round;
+        // Check if we actually need a new entry or if we can just update the last recorded one
+        if (round == rounds[^1])
+        {
+            values[^1] = value;
+        }
+        // TODO: Check if this comparison can be done better
         else if (!EqualityComparer<T>.Default.Equals(value, values[^1]))
         {
-            // Value is new, check if we actually need a new entry or if we can just update the last recorded one
-            if (round == rounds[^1])
-            {
-                values[^1] = value;
-            }
-            else
-            {
-                values.Add(value);
-                rounds.Add(round);
-                lastRound = round;
-                if (isTracking)
-                {
-                    markedRound = round;
-                    markedIndex = rounds.Count - 1;
-                }
-            }
+            values.Add(value);
+            rounds.Add(round);
+        }
+
+        // Update tracking
+        if (isTracking)
+        {
+            markedRound = round;
+            markedIndex = rounds.Count - 1;
         }
     }
 
-    // TODO: Documentation
-    // TODO: Continue implementing this mechanism
-
+    /// <summary>
+    /// Sets the marker to the specified round and stops it from
+    /// tracking the latest round.
+    /// </summary>
+    /// <param name="round">The round to which the marker should be set. Must not
+    /// be smaller than the first recorded round.</param>
+    /// <exception cref="System.ArgumentOutOfRangeException">
+    /// Thrown if <paramref name="round"/> is less than the first recorded round.
+    /// </exception>
     public void SetMarkerToRound(int round)
     {
         if (round < rounds[0])
@@ -141,6 +148,9 @@ public class ValueHistory<T>
         markedIndex = GetIndexOfRound(round);
     }
 
+    /// <summary>
+    /// Resets the marker to continue tracking the last recorded round.
+    /// </summary>
     public void ContinueTracking()
     {
         isTracking = true;
@@ -148,6 +158,14 @@ public class ValueHistory<T>
         markedIndex = rounds.Count - 1;
     }
 
+    /// <summary>
+    /// Moves the marker one round back and stops it from tracking the last round.
+    /// <para>Must not be called when the marker is already at the first recorded
+    /// round.</para>
+    /// </summary>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown when the marker is already at the first recorded round.
+    /// </exception>
     public void StepBack()
     {
         if (markedRound == rounds[0])
@@ -162,6 +180,9 @@ public class ValueHistory<T>
         isTracking = false;
     }
 
+    /// <summary>
+    /// Moves the marker one round forward and stops it from tracking the last round.
+    /// </summary>
     public void StepForward()
     {
         markedRound++;
@@ -170,6 +191,123 @@ public class ValueHistory<T>
             markedIndex++;
         }
         isTracking = false;
+    }
+
+    /// <summary>
+    /// Returns the round that is currently marked.
+    /// <para>
+    /// See <see cref="SetMarkerToRound(int)"/>,
+    /// <see cref="StepBack"/>, <see cref="StepForward"/>.
+    /// </para>
+    /// </summary>
+    /// <returns>The currently marked round.</returns>
+    public int GetMarkedRound()
+    {
+        return markedRound;
+    }
+
+    /// <summary>
+    /// Returns the value recorded for the currently marked round.
+    /// <para>
+    /// Note that the returned value may still change if the marked round
+    /// is greater than or equal to the last recorded round and the
+    /// history is updated with new values.
+    /// </para>
+    /// </summary>
+    /// <returns>The recorded or predicted value for the currently marked round.</returns>
+    public T GetMarkedValue()
+    {
+        return values[markedIndex];
+    }
+
+    /// <summary>
+    /// Like <see cref="RecordValueInRound(T, int)"/> but the recorded round is the
+    /// round that is currently marked.
+    /// </summary>
+    /// <param name="value">The value to record in the currently marked round.</param>
+    public void RecordValueAtMarker(T value)
+    {
+        if (markedRound < lastRound)
+        {
+            throw new System.InvalidOperationException("Cannot record value when marker is in round earlier than last round.");
+        }
+
+        if (markedRound == rounds[^1])
+        {
+            // Only update value of last round
+            values[^1] = value;
+        }
+        else
+        {
+            lastRound = markedRound;
+            // Only record new entry if value is different
+            if (!EqualityComparer<T>.Default.Equals(value, values[^1]))
+            {
+                values.Add(value);
+                rounds.Add(markedRound);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Shifts all records as well as the marker by the specified
+    /// amount of rounds.
+    /// </summary>
+    /// <param name="amount">The number of rounds to add to each entry.
+    /// May be negative.</param>
+    public void ShiftTimescale(int amount)
+    {
+        for (int i = 0; i < rounds.Count; i++)
+        {
+            rounds[i] += amount;
+        }
+        lastRound += amount;
+        markedRound += amount;
+    }
+
+    /// <summary>
+    /// Deletes all records after the specified round, turning this
+    /// round into the last round if it is earlier than the current
+    /// last round.
+    /// </summary>
+    /// <param name="round">The round after which all records should be removed.</param>
+    public void CutOffAfterRound(int round)
+    {
+        int idx = GetIndexOfRound(round);
+        // Cut off list elements after index
+        if (idx < rounds.Count - 1)
+        {
+            values.RemoveRange(idx + 1, values.Count - idx - 1);
+            rounds.RemoveRange(idx + 1, rounds.Count - idx - 1);
+        }
+        if (round < lastRound)
+        {
+            lastRound = round;
+        }
+
+        if (isTracking)
+        {
+            markedRound = lastRound;
+        }
+        markedIndex = GetIndexOfRound(markedRound);
+    }
+
+    /// <summary>
+    /// Deletes all records after the currently marked round.
+    /// If the marked round is earlier than the current
+    /// last round, the marked round becomes the new last round.
+    /// </summary>
+    public void CutOffAtMarker()
+    {
+        if (markedIndex < rounds.Count)
+        {
+            values.RemoveRange(markedIndex + 1, values.Count - markedIndex - 1);
+            rounds.RemoveRange(markedIndex + 1, rounds.Count - markedIndex - 1);
+        }
+        if (markedRound < lastRound)
+        {
+            lastRound = markedRound;
+        }
     }
 
     /// <summary>
@@ -212,6 +350,9 @@ public class ValueHistory<T>
         return left;
     }
 
-    // Implicit conversion returns the most recent value
-    public static implicit operator T(ValueHistory<T> history) => history.values[history.markedRound];
+    /// <summary>
+    /// Implicit conversion that returns the currently marked value
+    /// </summary>
+    /// <param name="history">The history whose marked value to return.</param>
+    public static implicit operator T(ValueHistory<T> history) => history.values[history.markedIndex];
 }
