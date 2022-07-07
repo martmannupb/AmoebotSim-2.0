@@ -53,7 +53,7 @@ public class Particle : IParticleState
     public int exp_expansionDir;
     
     // Attributes
-    private List<ParticleAttribute> attributes = new List<ParticleAttribute>();
+    private List<IParticleAttribute> attributes = new List<IParticleAttribute>();
     
     // Messages
     private Queue<Message> messageQueue = new Queue<Message>();
@@ -336,25 +336,24 @@ public class Particle : IParticleState
      */
 
     /// <summary>
-    /// Adds the given <see cref="ParticleAttribute"/> to the particle's list of
+    /// Adds the given <see cref="IParticleAttribute"/> to the particle's list of
     /// attributes. All attributes on this list will be displayed and editable in
     /// the simulation UI. This function is called by the
-    /// <see cref="ParticleAttribute"/> constructor when it is created by this particle's
-    /// <see cref="ParticleAlgorithm"/>.
+    /// <see cref="ParticleAttributeFactory"/> when it is called by this particle's
+    /// <see cref="ParticleAlgorithm"/> to instantiate the attribute.
     /// </summary>
     /// <param name="attr">The attribute to add to this particle's attribute list.</param>
-    public void AddAttribute(ParticleAttribute attr)
+    public void AddAttribute(IParticleAttribute attr)
     {
-        attr.SetParticle(this);
         attributes.Add(attr);
     }
 
     /// <summary>
-    /// Gets this particle's list of <see cref="ParticleAttribute"/>s. These
+    /// Gets this particle's list of <see cref="IParticleAttribute"/>s. These
     /// attributes are supposed to be shown and edited in the simulation UI.
     /// </summary>
-    /// <returns>The list of <see cref="ParticleAttribute"/>s belonging to this particle.</returns>
-    public List<ParticleAttribute> GetAttributes()
+    /// <returns>The list of <see cref="IParticleAttribute"/>s belonging to this particle.</returns>
+    public List<IParticleAttribute> GetAttributes()
     {
         return attributes;
     }

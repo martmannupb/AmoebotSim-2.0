@@ -6,13 +6,18 @@ public enum State { IDLE, ROOT, LEADER }
 
 public class ExampleParticle : ParticleAlgorithm
 {
-    public ParticleAttribute_Int myInt;
-    public ParticleAttribute_Enum<State> myEnum;
+    private ParticleAttribute<int> _myInt;
+    public int myInt
+    {
+        get { return _myInt; }
+        set { _myInt.SetValue(value); }
+    }
+    public ParticleAttribute<State> myEnum;
 
     public ExampleParticle(Particle p) : base(p)
     {
-        myInt = new ParticleAttribute_Int(this, "Display name of myInt", 0);
-        myEnum = new ParticleAttribute_Enum<State>(this, "Display name of myEnum", State.IDLE);
+        _myInt = CreateAttributeInt("Display name of myInt", 0);
+        myEnum = CreateAttributeEnum<State>("Display name of myEnum", State.IDLE);
     }
 
     public override void Activate()

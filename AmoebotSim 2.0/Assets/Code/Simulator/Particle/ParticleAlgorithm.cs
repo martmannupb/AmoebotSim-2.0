@@ -40,18 +40,22 @@ public struct Neighbor<T> where T : ParticleAlgorithm
 /// </para>
 /// <para>
 /// Particle attributes that represent a part of the particle's state must be implemented
-/// using the <see cref="ParticleAttribute"/> subclasses.
+/// using the <see cref="ParticleAttribute{T}"/> class.
 /// <para/>
 /// <example>
 /// Example for attribute initialization in subclass:
 /// <code>
 /// public class MyParticle : ParticleAlgorithm {
-///     ParticleAttribute_Int myIntAttr;
+///     ParticleAttribute<![CDATA[<int>]]> myIntAttr;
 ///     public MyParticle(Particle p) : base(p) {
-///         myIntAttr = new ParticleAttribute_Int(this, "Fancy display name for myIntAttr", 42);
+///         myIntAttr = CreateAttributeInt("Fancy display name for myIntAttr", 42);
 ///     }
 /// }
 /// </code>
+/// Note that a <see cref="ParticleAttribute{T}"/> can be read like a regular variable of
+/// type <c>T</c> but must be written using the <see cref="ParticleAttribute{T}.SetValue(T)"/>
+/// method. We recommend wrapping the attribute using a property of type <c>T</c> if using this
+/// method is too inconvenient.
 /// </example>
 /// </para>
 /// </summary>
@@ -80,27 +84,56 @@ public abstract class ParticleAlgorithm
 
 
     /**
-     * Attribute handling. Should not be called by the particle algorithm implementation.
+     * Attribute creation methods.
      */
 
     /// <summary>
-    /// Adds the given <see cref="ParticleAttribute"/> to this particle's list of
-    /// attributes. This method is called automatically by the <see cref="ParticleAttribute"/>
-    /// constructor and should not be called manually by <see cref="ParticleAlgorithm"/>
-    /// implementations.
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing an integer value.
+    /// </summary>
+    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<int> CreateAttributeInt(string name, int initialValue = 0)
+    {
+        return ParticleAttributeFactory.CreateParticleAttributeInt(particle, name, initialValue);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing a boolean value.
+    /// </summary>
+    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<bool> CreateAttributeBool(string name, bool initialValue = false)
+    {
+        return ParticleAttributeFactory.CreateParticleAttributeBool(particle, name, initialValue);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing a direction.
     /// <para>
-    /// The proper way to add <see cref="ParticleAttribute"/>s to an implementation is to
-    /// call
-    /// <code>
-    /// myAttr = new ParticleAttribute_TYPE(this, "fancy name", INITIAL_VALUE);
-    /// </code>
-    /// in the constructor.
-    /// See <see cref="ParticleAlgorithm"/>.
+    /// Note that only values in the set <c>{-1,0,1,2,3,4,5}</c> are valid directions,
+    /// with <c>-1</c> representing no direction.
     /// </para>
     /// </summary>
-    public void AddAttribute(ParticleAttribute attr)
+    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<int> CreateAttributeDirection(string name, int initialValue = 0)
     {
-        particle.AddAttribute(attr);
+        return ParticleAttributeFactory.CreateParticleAttributeDirection(particle, name, initialValue);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing an enum value.
+    /// </summary>
+    /// <typeparam name="EnumT">The enum specifying the possible values of this attribute.</typeparam>
+    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<EnumT> CreateAttributeEnum<EnumT>(string name, EnumT initialValue) where EnumT : System.Enum
+    {
+        return ParticleAttributeFactory.CreateParticleAttributeEnum<EnumT>(particle, name, initialValue);
     }
 
 

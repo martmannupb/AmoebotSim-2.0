@@ -21,21 +21,21 @@ using UnityEngine;
 /// </para>
 /// </summary>
 /// <typeparam name="T">The enum type to represent.</typeparam>
-public class ParticleAttribute_Enum<T> : ParticleAttribute where T : System.Enum
+public class ParticleAttribute_Enum<T> : ParticleAttribute<T>, IParticleAttribute where T : System.Enum
 {
     private T value;
 
-    public ParticleAttribute_Enum(ParticleAlgorithm particle, string name, T initialValue) : base(particle, name)
+    public ParticleAttribute_Enum(Particle particle, string name, T initialValue) : base(particle, name)
     {
         value = initialValue;
     }
 
-    public void SetValue(T value)
+    public override void SetValue(T value)
     {
         this.value = value;
     }
 
-    public override Type GetAttributeType()
+    public Type GetAttributeType()
     {
         return value.GetType();
     }
@@ -55,23 +55,28 @@ public class ParticleAttribute_Enum<T> : ParticleAttribute where T : System.Enum
         return s;
     }
 
-    public override string ToString_AttributeName()
+    public string ToString_AttributeName()
     {
         return name;
     }
 
-    public override string ToString_AttributeValue()
+    public string ToString_AttributeValue()
     {
         return value.ToString();
     }
 
-    public override void UpdateAttributeValue(string value)
+    public void UpdateAttributeValue(string value)
     {
         // TODO: Handle exception?
         this.value = (T)Enum.Parse(this.value.GetType(), value);
     }
 
+    public override T GetValue()
+    {
+        return value;
+    }
+
     // Conversion operator
     // This allows ParticleAttribute_Int objects to be readable like normal enum variables
-    public static implicit operator T(ParticleAttribute_Enum<T> attr) => attr.value;
+    //public static implicit operator T(ParticleAttribute_Enum<T> attr) => attr.value;
 }
