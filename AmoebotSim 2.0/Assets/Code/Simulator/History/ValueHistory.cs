@@ -25,7 +25,7 @@ using UnityEngine;
 /// </summary>
 /// <typeparam name="T">The type of the represented variable. Must
 /// implement an equality check.</typeparam>
-public class ValueHistory<T>
+public class ValueHistory<T> : IReplayHistory
 {
     private List<T> values;     // Stores the different values
     private List<int> rounds;   // Stores the rounds in which values were changed
@@ -355,4 +355,19 @@ public class ValueHistory<T>
     /// </summary>
     /// <param name="history">The history whose marked value to return.</param>
     public static implicit operator T(ValueHistory<T> history) => history.values[history.markedIndex];
+
+    public void Print()
+    {
+        string s = "History (rounds " + rounds[0] + " - " + lastRound + "):\n";
+        foreach (int r in rounds)
+        {
+            s += r + " ";
+        }
+        s += "\n";
+        foreach (T v in values)
+        {
+            s += v + " ";
+        }
+        Debug.Log(s);
+    }
 }
