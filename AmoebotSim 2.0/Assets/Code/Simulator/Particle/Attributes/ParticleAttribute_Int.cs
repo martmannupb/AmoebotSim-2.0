@@ -6,18 +6,32 @@ using UnityEngine;
 /// <summary>
 /// <see cref="ParticleAttribute"/> subclass representing integer values.
 /// </summary>
-public class ParticleAttribute_Int : ParticleAttribute<int>, IParticleAttribute
+public class ParticleAttribute_Int : ParticleAttributeWithHistory<int>, IParticleAttribute
 {
-    private int value;
+    private int Value
+    {
+        get
+        {
+            return particle.isActive ? history.GetMarkedValue() : history.GetValueInRound(particle.system.CurrentRound - 1);
+        }
+        set
+        {
+            if (!particle.isActive)
+            {
+                throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+            }
+            history.RecordValueInRound(value, particle.system.CurrentRound);
+        }
+    }
 
     public ParticleAttribute_Int(Particle particle, string name, int value = 0) : base(particle, name)
     {
-        this.value = value;
+        history = new ValueHistory<int>(value, particle.system.CurrentRound);
     }
 
     public override void SetValue(int value)
     {
-        this.value = value;
+        Value = value;
     }
 
     public Type GetAttributeType()
@@ -27,7 +41,7 @@ public class ParticleAttribute_Int : ParticleAttribute<int>, IParticleAttribute
 
     public override string ToString()
     {
-        return "ParticleAttribute (int) with name " + name + " and value " + value;
+        return "ParticleAttribute (int) with name " + name + " and value " + Value;
     }
 
     public string ToString_AttributeName()
@@ -37,21 +51,17 @@ public class ParticleAttribute_Int : ParticleAttribute<int>, IParticleAttribute
 
     public string ToString_AttributeValue()
     {
-        return value.ToString();
+        return Value.ToString();
     }
 
     public void UpdateAttributeValue(string value)
     {
         // TODO: Handle exception?
-        this.value = int.Parse(value);
+        Value = int.Parse(value);
     }
 
     public override int GetValue()
     {
-        return value;
+        return Value;
     }
-
-    // Conversion operator
-    // This allows ParticleAttribute_Int objects to be readable like normal ints
-    //public static implicit operator int(ParticleAttribute_Int attr) => attr.value;
 }

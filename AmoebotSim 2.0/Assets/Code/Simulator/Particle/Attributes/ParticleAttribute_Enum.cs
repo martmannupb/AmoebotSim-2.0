@@ -21,30 +21,44 @@ using UnityEngine;
 /// </para>
 /// </summary>
 /// <typeparam name="T">The enum type to represent.</typeparam>
-public class ParticleAttribute_Enum<T> : ParticleAttribute<T>, IParticleAttribute where T : System.Enum
+public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParticleAttribute where T : System.Enum
 {
-    private T value;
+    private T Value
+    {
+        get
+        {
+            return particle.isActive ? history.GetMarkedValue() : history.GetValueInRound(particle.system.CurrentRound - 1);
+        }
+        set
+        {
+            if (!particle.isActive)
+            {
+                throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+            }
+            history.RecordValueInRound(value, particle.system.CurrentRound);
+        }
+    }
 
     public ParticleAttribute_Enum(Particle particle, string name, T initialValue) : base(particle, name)
     {
-        value = initialValue;
+        history = new ValueHistory<T>(initialValue, particle.system.CurrentRound);
     }
 
     public override void SetValue(T value)
     {
-        this.value = value;
+        Value = value;
     }
 
     public Type GetAttributeType()
     {
-        return value.GetType();
+        return Value.GetType();
     }
     
     public override string ToString()
     {
-        string s = "ParticleAttribute_Enum of type " + value.GetType().Name + " with values ";
-        string[] names = Enum.GetNames(value.GetType());
-        Array values = Enum.GetValues(value.GetType());
+        string s = "ParticleAttribute_Enum of type " + Value.GetType().Name + " with values ";
+        string[] names = Enum.GetNames(Value.GetType());
+        Array values = Enum.GetValues(Value.GetType());
         int i = 0;
         foreach (int val in values)
         {
@@ -62,21 +76,17 @@ public class ParticleAttribute_Enum<T> : ParticleAttribute<T>, IParticleAttribut
 
     public string ToString_AttributeValue()
     {
-        return value.ToString();
+        return Value.ToString();
     }
 
     public void UpdateAttributeValue(string value)
     {
         // TODO: Handle exception?
-        this.value = (T)Enum.Parse(this.value.GetType(), value);
+        Value = (T)Enum.Parse(Value.GetType(), value);
     }
 
     public override T GetValue()
     {
-        return value;
+        return Value;
     }
-
-    // Conversion operator
-    // This allows ParticleAttribute_Int objects to be readable like normal enum variables
-    //public static implicit operator T(ParticleAttribute_Enum<T> attr) => attr.value;
 }

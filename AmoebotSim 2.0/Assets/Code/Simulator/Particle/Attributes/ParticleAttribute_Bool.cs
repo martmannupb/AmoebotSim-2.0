@@ -6,18 +6,32 @@ using UnityEngine;
 /// <summary>
 /// <see cref="ParticleAttribute"/> subclass representing boolean values.
 /// </summary>
-public class ParticleAttribute_Bool : ParticleAttribute<bool>, IParticleAttribute
+public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParticleAttribute
 {
-    private bool value;
+    private bool Value
+    {
+        get
+        {
+            return particle.isActive ? history.GetMarkedValue() : history.GetValueInRound(particle.system.CurrentRound - 1);
+        }
+        set
+        {
+            if (!particle.isActive)
+            {
+                throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+            }
+            history.RecordValueInRound(value, particle.system.CurrentRound);
+        }
+    }
 
     public ParticleAttribute_Bool(Particle particle, string name, bool value = false) : base(particle, name)
     {
-        this.value = value;
+        history = new ValueHistory<bool>(value, particle.system.CurrentRound);
     }
 
     public override void SetValue(bool value)
     {
-        this.value = value;
+        Value = value;
     }
 
     public Type GetAttributeType()
@@ -27,7 +41,7 @@ public class ParticleAttribute_Bool : ParticleAttribute<bool>, IParticleAttribut
 
     public override string ToString()
     {
-        return "ParticleAttribute (bool) with name " + name + " and value " + value.ToString();
+        return "ParticleAttribute (bool) with name " + name + " and value " + Value.ToString();
     }
 
     public string ToString_AttributeName()
@@ -37,21 +51,17 @@ public class ParticleAttribute_Bool : ParticleAttribute<bool>, IParticleAttribut
 
     public string ToString_AttributeValue()
     {
-        return value.ToString();
+        return Value.ToString();
     }
 
     public void UpdateAttributeValue(string value)
     {
         // TODO: Handle exception?
-        this.value = bool.Parse(value);
+        Value = bool.Parse(value);
     }
 
     public override bool GetValue()
     {
-        return value;
+        return Value;
     }
-
-    // Conversion operator
-    // This allows ParticleAttribute_Int objects to be readable like normal bools
-    //public static implicit operator bool(ParticleAttribute_Bool attr) => attr.value;
 }

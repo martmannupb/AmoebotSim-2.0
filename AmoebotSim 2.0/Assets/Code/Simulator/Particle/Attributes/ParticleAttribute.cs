@@ -35,6 +35,7 @@ using UnityEngine;
 /// the <see cref="SetValue(T)"/> method must be used.
 /// </para>
 /// </summary>
+/// <typeparam name="T">The type of values the attribute stores.</typeparam>
 public abstract class ParticleAttribute<T> : ParticleAttributeBase
 {
     public ParticleAttribute(Particle particle, string name) : base(particle, name) { }

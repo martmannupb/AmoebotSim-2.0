@@ -7,7 +7,7 @@ using UnityEngine;
 /// Interface defining how particle attributes can be used
 /// by the System and the UI.
 /// </summary>
-public interface IParticleAttribute
+public interface IParticleAttribute : IReplayHistory
 {
     /// <summary>
     /// String representation of the attribute and its
@@ -40,4 +40,6 @@ public interface IParticleAttribute
     /// </summary>
     /// <returns>The type of value stored in the attribute.</returns>
     public Type GetAttributeType();
+
+    public void Print();
 }
