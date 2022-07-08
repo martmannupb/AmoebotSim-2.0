@@ -11,6 +11,52 @@ using UnityEngine;
 /// </summary>
 public class ParticleSystem
 {
+    // Round indexing
+    private int _currentRound = 0;
+    private int _earliestRound = 0;
+    private int _latestRound = 0;
+
+    /// <summary>
+    /// The current round describing the simulation state.
+    /// <para>
+    /// Before the first round is simulated, the current round is <c>0</c>.
+    /// After each simulated round, this counter is incremented by <c>1</c>.
+    /// </para>
+    /// </summary>
+    public int CurrentRound
+    {
+        get { return _currentRound; }
+        private set { _currentRound = value; }
+    }
+
+    // TODO: Maybe earliest round can change when loading a (partial) history or doing something else that changes the rounds?
+    /// <summary>
+    /// The round of the initial configuration before the first simulation round.
+    /// <para>
+    /// This is assumed to be always <c>0</c>.
+    /// </para>
+    /// </summary>
+    public int EarliestRound
+    {
+        get { return _earliestRound; }
+        private set { _earliestRound = value; }
+    }
+
+    /// <summary>
+    /// The latest round that has been reached through simulation.
+    /// <para>
+    /// Any simulation state between round <c>0</c> and this round
+    /// can be restored at any time without having to simulate the
+    /// particles. To proceed to later rounds, the simulation must
+    /// be continued from this round.
+    /// </para>
+    /// </summary>
+    public int LatestRound
+    {
+        get { return _latestRound; }
+        private set { _latestRound = value; }
+    }
+
     // References
     public AmoebotSimulator sim;
     public RenderSystem renderSystem;
@@ -46,7 +92,11 @@ public class ParticleSystem
                     // TODO: Create functions for adding and removing particles
                     // Don't use column as x coordinate but shift it to stay in a rectangular shape
                     Particle p = new Particle(this, new Vector2Int(left + col - row / 2, bottom + row));
+                    // Must wrap this in isActive to enable setting attribute values more easily
+                    // (Another reason why we need a better instantiation method)
+                    p.isActive = true;
                     new ExampleParticle(p);
+                    p.isActive = false;
                     particles.Add(p);
                     particleMap.Add(p.Head(), p);
                     ++num;
@@ -73,7 +123,11 @@ public class ParticleSystem
         List<Vector2Int> candidates = new();
         Vector2Int node = new Vector2Int(0, 0);
         Particle p = new Particle(this, node);
+        // Must wrap this in isActive to enable setting attribute values more easily
+        // (Another reason why we need a better instantiation method)
+        p.isActive = true;
         new LineFormationParticleSeq(p);
+        p.isActive = false;
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -100,7 +154,9 @@ public class ParticleSystem
                 }
 
                 p = new Particle(this, newPos);
+                p.isActive = true;
                 new LineFormationParticleSeq(p);
+                p.isActive = false;
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -125,6 +181,8 @@ public class ParticleSystem
     {
         if (particles.Count > 0)
         {
+            _currentRound++;
+            _latestRound++;
             int pIdx = Random.Range(0, particles.Count);
             particles[pIdx].Activate();
             ApplyAllActionsInQueue();
@@ -142,6 +200,8 @@ public class ParticleSystem
     /// </summary>
     public void SimulateRound()
     {
+        _currentRound++;
+        _latestRound++;
         ActivateParticles();
         ApplyAllActionsInQueue();
         CleanupAfterRound();
@@ -974,5 +1034,14 @@ public class ParticleSystem
         return otherPart.scheduledAction != null && (
             (otherPart.scheduledAction.type == ActionType.EXPAND && targetLoc == ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.scheduledAction.localDir, true)) ||
             (otherPart.scheduledAction.type == ActionType.PUSH && targetLoc == ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.scheduledAction.localDir, true)));
+    }
+
+    public void Print()
+    {
+        for (int i = 0; i < particles.Count; i++)
+        {
+            Debug.Log("========== Particle " + i + " ==========");
+            particles[i].Print();
+        }
     }
 }

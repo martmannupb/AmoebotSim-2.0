@@ -32,11 +32,6 @@ public class LineFormationParticleSeq : ParticleAlgorithm
         followDir = CreateAttributeDirection("followDir", -1);
         state = CreateAttributeEnum<LFState>("State", LFState.IDLE);
 
-        //constructionDir = new ParticleAttribute_Direction(this, "constructionDir", -1);
-        //moveDir = new ParticleAttribute_Direction(this, "moveDir", -1);
-        //followDir = new ParticleAttribute_Direction(this, "followDir", -1);
-        //state = new ParticleAttribute_Enum<LFState>(this, "State", LFState.IDLE);
-
         // Make one particle the leader
         if (!leaderCreated)
         {
@@ -48,9 +43,6 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 
         havePushed = CreateAttributeBool("havePushed", false);
         newFollowDir = CreateAttributeDirection("newFollowDir", -1);
-
-        //havePushed = new ParticleAttribute_Bool(this, "havePushed", false);
-        //newFollowDir = new ParticleAttribute_Direction(this, "newFollowDir", -1);
     }
 
     public override void Activate()

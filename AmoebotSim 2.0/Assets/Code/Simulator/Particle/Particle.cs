@@ -54,6 +54,10 @@ public class Particle : IParticleState
     
     // Attributes
     private List<IParticleAttribute> attributes = new List<IParticleAttribute>();
+    // Flag used to indicate that the particle is currently being activated
+    // (Causes ParticleAttributes to behave differently for this particle than
+    // for others)
+    public bool isActive = false;
     
     // Messages
     private Queue<Message> messageQueue = new Queue<Message>();
@@ -101,7 +105,9 @@ public class Particle : IParticleState
     /// </summary>
     public void Activate()
     {
+        isActive = true;
         algorithm.Activate();
+        isActive = false;
     }
 
 
@@ -356,5 +362,13 @@ public class Particle : IParticleState
     public List<IParticleAttribute> GetAttributes()
     {
         return attributes;
+    }
+
+    public void Print()
+    {
+        foreach (IParticleAttribute attr in attributes)
+        {
+            attr.Print();
+        }
     }
 }
