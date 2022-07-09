@@ -155,7 +155,7 @@ public abstract class ParticleAlgorithm
     /// <returns><c>true</c> if and only if the particle is expanded.</returns>
     public bool IsExpanded()
     {
-        return particle.exp_isExpanded;
+        return particle.IsExpanded();
     }
 
     /// <summary>
@@ -166,7 +166,7 @@ public abstract class ParticleAlgorithm
     /// <returns><c>true</c> if and only if the particle is contracted.</returns>
     public bool IsContracted()
     {
-        return !particle.exp_isExpanded;
+        return particle.IsContracted();
     }
 
     /// <summary>
@@ -176,7 +176,7 @@ public abstract class ParticleAlgorithm
     /// if it is expanded, otherwise <c>-1</c>.</returns>
     public int HeadDirection()
     {
-        return particle.exp_isExpanded ? particle.exp_expansionDir : -1;
+        return particle.HeadDirection();
     }
 
     /// <summary>
@@ -186,7 +186,7 @@ public abstract class ParticleAlgorithm
     /// if it is expanded, otherwise <c>-1</c>.</returns>
     public int TailDirection()
     {
-        return particle.exp_isExpanded ? (particle.exp_expansionDir + 3) % 6 : -1;
+        return particle.TailDirection();
     }
 
     /**

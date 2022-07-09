@@ -13,6 +13,7 @@ public class ParticleSystem
 {
     // Round indexing
     private int _currentRound = 0;
+    private int _previousRound = 0;
     private int _earliestRound = 0;
     private int _latestRound = 0;
 
@@ -27,6 +28,21 @@ public class ParticleSystem
     {
         get { return _currentRound; }
         private set { _currentRound = value; }
+    }
+
+    /// <summary>
+    /// The round that was previously simulated.
+    /// <para>
+    /// While a simulation round is being computed and the particles are
+    /// being activated, this value will be <see cref="CurrentRound"/><c> - 1</c>.
+    /// Inbetween rounds, <see cref="CurrentRound"/> and <see cref="PreviousRound"/>
+    /// will have the same value.
+    /// </para>
+    /// </summary>
+    public int PreviousRound
+    {
+        get { return _previousRound; }
+        private set { _previousRound = value; }
     }
 
     // TODO: Maybe earliest round can change when loading a (partial) history or doing something else that changes the rounds?
@@ -187,6 +203,7 @@ public class ParticleSystem
             particles[pIdx].Activate();
             ApplyAllActionsInQueue();
             CleanupAfterRound();
+            _previousRound++;
             UpdateAllParticleVisuals();     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
             //particles[pIdx].graphics.Update();
         }
@@ -205,6 +222,7 @@ public class ParticleSystem
         ActivateParticles();
         ApplyAllActionsInQueue();
         CleanupAfterRound();
+        _previousRound++;
         UpdateAllParticleVisuals();
     }
 
@@ -399,7 +417,7 @@ public class ParticleSystem
     /// search, each wrapped in a <see cref="Neighbor{T}"/> instance.</returns>
     private IEnumerable<Neighbor<T>> IterateNeighbors<T>(Particle p, int localStartDir, bool startAtHead, bool withChirality, int maxSearch, int maxReturn) where T : ParticleAlgorithm
     {
-        if (maxSearch > 6 && !p.exp_isExpanded || maxSearch > 10)
+        if (maxSearch > 6 && !p.IsExpanded() || maxSearch > 10)
         {
             Debug.LogWarning("Searching for " + maxSearch + " neighbors could lead to duplicate results!");
         }
@@ -413,7 +431,7 @@ public class ParticleSystem
         while (numSearched < maxSearch && numReturned < maxReturn)
         {
             // Must switch nodes if we have reached the point where we look at the other one
-            if (p.exp_isExpanded && (atHead && currentGlobalDir == p.GlobalTailDirection() || !atHead && currentGlobalDir == p.GlobalHeadDirection()))
+            if (p.IsExpanded() && (atHead && currentGlobalDir == p.GlobalTailDirection() || !atHead && currentGlobalDir == p.GlobalHeadDirection()))
             {
                 atHead = !atHead;
                 // Turn twice against the current turn direction, i.e., 4 times in current turn direction
@@ -439,7 +457,7 @@ public class ParticleSystem
     {
         if (maxNumber == -1)
         {
-            maxNumber = p.exp_isExpanded ? 10 : 6;
+            maxNumber = p.IsExpanded() ? 10 : 6;
         }
         foreach(Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxNumber, maxNumber))
         {
@@ -454,7 +472,7 @@ public class ParticleSystem
     {
         if (maxNumber == -1)
         {
-            maxNumber = p.exp_isExpanded ? 10 : 6;
+            maxNumber = p.IsExpanded() ? 10 : 6;
         }
         foreach (Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxNumber, maxNumber))
         {

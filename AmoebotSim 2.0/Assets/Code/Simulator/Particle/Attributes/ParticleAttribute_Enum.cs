@@ -27,7 +27,7 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
     {
         get
         {
-            return particle.isActive ? history.GetMarkedValue() : history.GetValueInRound(particle.system.CurrentRound - 1);
+            return particle.isActive ? history.GetMarkedValue() : history.GetValueInRound(particle.system.PreviousRound);
         }
         set
         {

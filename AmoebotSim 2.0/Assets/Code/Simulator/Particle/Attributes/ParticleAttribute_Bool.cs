@@ -12,7 +12,7 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
     {
         get
         {
-            return particle.isActive ? history.GetMarkedValue() : history.GetValueInRound(particle.system.CurrentRound - 1);
+            return particle.isActive ? history.GetMarkedValue() : history.GetValueInRound(particle.system.PreviousRound);
         }
         set
         {

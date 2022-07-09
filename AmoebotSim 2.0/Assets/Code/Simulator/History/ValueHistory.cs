@@ -358,7 +358,7 @@ public class ValueHistory<T> : IReplayHistory
 
     public void Print()
     {
-        string s = "History (rounds " + rounds[0] + " - " + lastRound + "):\n";
+        string s = "History (rounds " + rounds[0] + " - " + lastRound + ") with " + rounds.Count + " records:\n";
         foreach (int r in rounds)
         {
             s += r + " ";

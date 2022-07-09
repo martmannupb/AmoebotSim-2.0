@@ -20,7 +20,7 @@ using UnityEngine;
 /// </code>
 /// </para>
 /// </summary>
-public class Particle : IParticleState
+public class Particle : IParticleState, IReplayHistory
 {
     // References _____
     public ParticleSystem system;
@@ -42,15 +42,19 @@ public class Particle : IParticleState
     public readonly bool chirality;
 
     // State _____
-    public Vector2Int pos_head;
-    public Vector2Int pos_tail;
-    
+    // Position: Store tail position in history but always keep head position up to date
+    private ValueHistory<Vector2Int> tailPosHistory;
+    private Vector2Int pos_head;
+    private Vector2Int pos_tail;
+
     // Expansion
-    public bool exp_isExpanded;
+    // Store expansion direction in history
+    private ValueHistory<int> expansionDirHistory;
+    private bool exp_isExpanded;
     /// <summary>
     /// The local direction pointing from the particle's tail towards its head.
     /// </summary>
-    public int exp_expansionDir;
+    private int exp_expansionDir;
     
     // Attributes
     private List<IParticleAttribute> attributes = new List<IParticleAttribute>();
@@ -83,12 +87,14 @@ public class Particle : IParticleState
         this.system = system;
 
         // Start contracted
-        this.pos_head = pos;
-        this.pos_tail = pos;
-        this.exp_isExpanded = false;
-        this.exp_expansionDir = -1;
+        tailPosHistory = new ValueHistory<Vector2Int>(pos, system.CurrentRound);
+        expansionDirHistory = new ValueHistory<int>(-1, system.CurrentRound);
+        pos_head = pos;
+        pos_tail = pos;
+        exp_isExpanded = false;
+        exp_expansionDir = -1;
 
-        this.comDir = compassDir;
+        comDir = compassDir;
         this.chirality = chirality;
 
         // Graphics
@@ -168,7 +174,7 @@ public class Particle : IParticleState
     /// if it is expanded, otherwise <c>-1</c>.</returns>
     public int HeadDirection()
     {
-        return exp_isExpanded ? exp_expansionDir : -1;
+        return exp_expansionDir;
     }
 
     /// <summary>
@@ -245,9 +251,12 @@ public class Particle : IParticleState
      * Particle action methods that are used by the system to change the
      * particle's state at the appropriate time. They are NOT part of the
      * ParticleAlgorithm's interface used by the algorithm developer.
+     * 
+     * Note that these must not be called while the particle is in a
+     * previous state. The ParticleSystem managing this particle is
+     * responsible for ensuring that all particles are in a tracking
+     * state when a round is simulated.
      */
-
-    // TODO: Documentation
 
     /// <summary>
     /// Expands this particle in the specified local direction.
@@ -261,6 +270,7 @@ public class Particle : IParticleState
         exp_isExpanded = true;
         exp_expansionDir = locDir;
         pos_head = ParticleSystem_Utils.GetNbrInDir(pos_head, ParticleSystem_Utils.LocalToGlobalDir(locDir, comDir, chirality));
+        expansionDirHistory.RecordValueInRound(exp_expansionDir, system.CurrentRound);
     }
 
     /// <summary>
@@ -274,6 +284,8 @@ public class Particle : IParticleState
         exp_isExpanded = false;
         exp_expansionDir = -1;
         pos_tail = pos_head;
+        tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
+        expansionDirHistory.RecordValueInRound(-1, system.CurrentRound);
     }
 
     /// <summary>
@@ -287,6 +299,7 @@ public class Particle : IParticleState
         exp_isExpanded = false;
         exp_expansionDir = -1;
         pos_head = pos_tail;
+        expansionDirHistory.RecordValueInRound(-1, system.CurrentRound);
     }
 
     // TODO: Check if we need to do anything else in these 3 methods
@@ -366,9 +379,167 @@ public class Particle : IParticleState
 
     public void Print()
     {
+        Debug.Log("Position history:");
+        tailPosHistory.Print();
+        Debug.Log("Expansion dir history:");
+        expansionDirHistory.Print();
         foreach (IParticleAttribute attr in attributes)
         {
             attr.Print();
+        }
+    }
+
+
+    /**
+     * Methods implementing the IReplayHistory interface.
+     * These allow the particle to be reset to any
+     * previous round.
+     * 
+     * Note that the histories stored in this particle may
+     * not all have the same marker position while they
+     * are tracking. The first marker action should
+     * always be <see cref="SetMarkerToRound(int)"/> to
+     * synchronize all markers. This is the responsibility
+     * of the ParticleSystem.
+     */
+
+    /// <summary>
+    /// Implementation of <see cref="IReplayHistory.GetFirstRecordedRound"/>.
+    /// <para>
+    /// Note that a particle stores multiple value histories and their first
+    /// recorded rounds may differ.
+    /// </para>
+    /// </summary>
+    /// <returns>The first recorded round of one of the value histories that
+    /// were initialized in the constructor.</returns>
+    public int GetFirstRecordedRound()
+    {
+        // Position and expansion direction histories are initialized in the constructor
+        return tailPosHistory.GetFirstRecordedRound();
+    }
+
+    public void SetMarkerToRound(int round)
+    {
+        // Reset position and expansion state
+        tailPosHistory.SetMarkerToRound(round);
+        expansionDirHistory.SetMarkerToRound(round);
+
+        // Need to update private fields accordingly
+        UpdateInternalState();
+
+        // Reset all ParticleAttributes
+        foreach (IParticleAttribute attr in attributes)
+        {
+            attr.SetMarkerToRound(round);
+        }
+    }
+
+    public void StepBack()
+    {
+        tailPosHistory.StepBack();
+        expansionDirHistory.StepBack();
+
+        UpdateInternalState();
+
+        foreach (IParticleAttribute attr in attributes)
+        {
+            attr.StepBack();
+        }
+    }
+
+    public void StepForward()
+    {
+        tailPosHistory.StepForward();
+        expansionDirHistory.StepForward();
+
+        UpdateInternalState();
+
+        foreach (IParticleAttribute attr in attributes)
+        {
+            attr.StepForward();
+        }
+    }
+
+    /// <summary>
+    /// Implementation of <see cref="IReplayHistory.GetMarkedRound"/>.
+    /// <para>
+    /// Note that a particle stores multiple value histories and their
+    /// currently marked rounds may differ unless they were set to track
+    /// the same round previously.
+    /// </para>
+    /// </summary>
+    /// <returns>The currently marked round of one of the value histories that
+    /// was initialized in the constructor.</returns>
+    public int GetMarkedRound()
+    {
+        return tailPosHistory.GetMarkedRound();
+    }
+
+    public void ContinueTracking()
+    {
+        tailPosHistory.ContinueTracking();
+        expansionDirHistory.ContinueTracking();
+
+        UpdateInternalState();
+
+        foreach (IParticleAttribute attr in attributes)
+        {
+            attr.ContinueTracking();
+        }
+    }
+
+    /// <summary>
+    /// Implementation of <see cref="IReplayHistory.CutOffAtMarker"/>.
+    /// <para>
+    /// Note that a particle stores multiple value histories and their
+    /// current marker positions may differ unless they were set to track
+    /// the same round previously
+    /// </para>
+    /// </summary>
+    public void CutOffAtMarker()
+    {
+        tailPosHistory.CutOffAtMarker();
+        expansionDirHistory.CutOffAtMarker();
+
+        // No need to update internal state because this does not change
+        // the current value of a history
+
+        foreach (IParticleAttribute attr in attributes)
+        {
+            attr.CutOffAtMarker();
+        }
+    }
+
+    public void ShiftTimescale(int amount)
+    {
+        tailPosHistory.ShiftTimescale(amount);
+        expansionDirHistory.ShiftTimescale(amount);
+
+        // No need to update internal state because this does not change
+        // the current value of a history
+
+        foreach (IParticleAttribute attr in attributes)
+        {
+            attr.ShiftTimescale(amount);
+        }
+    }
+
+    /// <summary>
+    /// Helper that updates the private state variables after
+    /// the histories were changed in any way.
+    /// </summary>
+    private void UpdateInternalState()
+    {
+        pos_tail = tailPosHistory.GetMarkedValue();
+        exp_expansionDir = expansionDirHistory.GetMarkedValue();
+        exp_isExpanded = exp_expansionDir != -1;
+        if (exp_isExpanded)
+        {
+            pos_head = ParticleSystem_Utils.GetNbrInDir(pos_tail, exp_expansionDir);
+        }
+        else
+        {
+            pos_head = pos_tail;
         }
     }
 }
