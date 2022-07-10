@@ -48,11 +48,6 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
     {
         Value = value;
     }
-
-    public Type GetAttributeType()
-    {
-        return Value.GetType();
-    }
     
     public override string ToString()
     {
@@ -67,11 +62,6 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
         }
         s += ", current value is " + ToString_AttributeValue();
         return s;
-    }
-
-    public string ToString_AttributeName()
-    {
-        return name;
     }
 
     public string ToString_AttributeValue()

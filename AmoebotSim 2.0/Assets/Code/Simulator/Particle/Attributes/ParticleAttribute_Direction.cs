@@ -45,19 +45,9 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IP
         Value = value;
     }
 
-    public Type GetAttributeType()
-    {
-        return System.Type.GetType("int");
-    }
-
     public override string ToString()
     {
         return "ParticleAttribute (direction) with name " + name + " and value " + Value;
-    }
-
-    public string ToString_AttributeName()
-    {
-        return name;
     }
 
     public string ToString_AttributeValue()

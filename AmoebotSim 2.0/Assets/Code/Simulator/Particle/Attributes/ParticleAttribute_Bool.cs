@@ -34,19 +34,9 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
         Value = value;
     }
 
-    public Type GetAttributeType()
-    {
-        return System.Type.GetType("bool");
-    }
-
     public override string ToString()
     {
         return "ParticleAttribute (bool) with name " + name + " and value " + Value.ToString();
-    }
-
-    public string ToString_AttributeName()
-    {
-        return name;
     }
 
     public string ToString_AttributeValue()

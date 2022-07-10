@@ -2,8 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO: Maybe this class can even implement more of the ParticleAttribute functionality
-// (Like checking the isActive flag and returning different values based on that)
 
 /// <summary>
 /// Abstract base class for particle attributes that adds functionality
@@ -66,6 +64,22 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
         history.ShiftTimescale(amount);
     }
 
+    /**
+     * Some methods of IParticleAttribute interface can already be implemented here
+     */
+
+    public virtual string ToString_AttributeName()
+    {
+        return name;
+    }
+
+    public virtual System.Type GetAttributeType()
+    {
+        return System.Type.GetType(nameof(T));
+    }
+
+
+    // <<<TEMPORARY: FOR DEBUGGING HISTORIES>>>
     public void Print()
     {
         Debug.Log(name + ":");

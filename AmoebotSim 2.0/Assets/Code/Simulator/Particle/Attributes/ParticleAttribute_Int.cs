@@ -34,19 +34,9 @@ public class ParticleAttribute_Int : ParticleAttributeWithHistory<int>, IParticl
         Value = value;
     }
 
-    public Type GetAttributeType()
-    {
-        return System.Type.GetType("int");
-    }
-
     public override string ToString()
     {
         return "ParticleAttribute (int) with name " + name + " and value " + Value;
-    }
-
-    public string ToString_AttributeName()
-    {
-        return name;
     }
 
     public string ToString_AttributeValue()
