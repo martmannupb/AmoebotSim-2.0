@@ -1,11 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class AmoebotSimulator : MonoBehaviour
 {
     // <<<TEMPORARY>>> Prefab and instantiation method for simple visualization
     public GameObject particlePrefab;
+
+    public TextMeshProUGUI roundsText;
+    public TextMeshProUGUI maxRoundText;
+    public TMP_InputField roundInput;
 
     public void AddParticle(float x, float y)
     {
@@ -18,6 +23,10 @@ public class AmoebotSimulator : MonoBehaviour
     private ParticleSystem system;
     private RenderSystem renderSystem;
 
+
+    enum MyEnum { FOO, BAR, BAZ }
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -29,7 +38,7 @@ public class AmoebotSimulator : MonoBehaviour
 
         // Activate one particle every 1000ms (only for testing)
         //InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
-        Time.fixedDeltaTime = 0.1f;
+        Time.fixedDeltaTime = 0.005f;
 
 
 
@@ -40,6 +49,24 @@ public class AmoebotSimulator : MonoBehaviour
         Debug.Log("V3: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)));
         Debug.Log("V3 Inverted: " + AmoebotFunctions.CalculateAmoebotCenterPositionVector2(AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).x, AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).y));
         // -----
+
+
+        // Test out value history
+        ValueHistory<MyEnum> vh = new ValueHistory<MyEnum>(MyEnum.FOO, 0);
+        vh.RecordValueAtMarker(MyEnum.BAR);
+        vh.StepForward();
+        vh.RecordValueAtMarker(MyEnum.BAZ);
+        vh.ContinueTracking();
+        vh.RecordValueInRound(MyEnum.FOO, 5);
+        vh.StepForward();
+        vh.StepForward();
+        vh.RecordValueAtMarker(MyEnum.BAR);
+        vh.SetMarkerToRound(vh.GetFirstRecordedRound());
+        for (int i = 0; i < 10; i++)
+        {
+            Debug.Log("Value in round " + vh.GetMarkedRound() + ": " + (MyEnum)vh);
+            vh.StepForward();
+        }
     }
 
     public void ActivateParticle()
@@ -48,8 +75,16 @@ public class AmoebotSimulator : MonoBehaviour
         //float tStart = Time.realtimeSinceStartup;
 
         system.ActivateRandomParticle();
+        UpdateRoundCounter();
+        //activationsText.text = "Round: " + system.CurrentRound;
         //system.SimulateRound();
         //Debug.Log("Simulated round in " + (Time.realtimeSinceStartup - tStart) + " s");
+    }
+
+    private void UpdateRoundCounter()
+    {
+        roundsText.text = "Round: " + system.CurrentRound;
+        maxRoundText.text = "Max: " + system.LatestRound;
     }
 
     // Update is called once per frame
@@ -75,6 +110,14 @@ public class AmoebotSimulator : MonoBehaviour
     /// </summary>
     public void TogglePlayPause()
     {
+        if (!play)
+        {
+            system.ContinueTracking();
+        }
+        else
+        {
+            system.Print();
+        }
         play = !play;
     }
 
@@ -83,5 +126,45 @@ public class AmoebotSimulator : MonoBehaviour
         renderSystem.ToggleViewType();
     }
 
+    public void StepBack()
+    {
+        if (!play)
+        {
+            system.StepBack();
+            UpdateRoundCounter();
+        }
+    }
 
+    public void StepForward()
+    {
+        if (!play)
+        {
+            system.StepForward();
+            UpdateRoundCounter();
+        }
+    }
+
+    public void Jump()
+    {
+        if (!play)
+        {
+            string text = roundInput.text;
+            if (int.TryParse(text, out int round))
+            {
+                if (round < system.EarliestRound || round > system.LatestRound)
+                {
+                    Debug.LogWarning("Round must be between earliest round (" + system.EarliestRound + ") and latest round (" + system.LatestRound + ")");
+                }
+                else
+                {
+                    system.SetMarkerToRound(round);
+                    UpdateRoundCounter();
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Must enter a number");
+            }
+        }
+    }
 }

@@ -9,7 +9,7 @@ using UnityEngine;
 /// Main container for a system of particles in the grid together with
 /// the execution logic for simulating particle activations and entire rounds.
 /// </summary>
-public class ParticleSystem
+public class ParticleSystem : IReplayHistory
 {
     // Round indexing
     private int _currentRound = 0;
@@ -72,6 +72,8 @@ public class ParticleSystem
         get { return _latestRound; }
         private set { _latestRound = value; }
     }
+
+    private bool isTracking = true;     // For IReplayHistory
 
     // References
     public AmoebotSimulator sim;
@@ -1062,6 +1064,160 @@ public class ParticleSystem
         {
             Debug.Log("========== Particle " + i + " ==========");
             particles[i].Print();
+        }
+    }
+
+
+    /**
+     * IReplayHistory implementation
+     */
+
+    // TODO: Test this thoroughly
+    // TODO: Maybe find better way to update particleMap
+
+    public int GetFirstRecordedRound()
+    {
+        return _earliestRound;
+    }
+
+    public void SetMarkerToRound(int round)
+    {
+        if (round < _earliestRound || round > _latestRound)
+        {
+            throw new System.ArgumentOutOfRangeException("Cannot set system to round " + round + "; must be between " + _earliestRound + " and " + _latestRound);
+        }
+        if (isTracking || round != _currentRound)
+        {
+            _currentRound = round;
+            _previousRound = round;
+            // Set all particles to track the given round
+            // Have to update the particleMap as well
+            particleMap.Clear();
+            foreach (Particle p in particles)
+            {
+                p.SetMarkerToRound(round);
+                particleMap[p.Tail()] = p;
+                if (p.IsExpanded())
+                {
+                    particleMap[p.Head()] = p;
+                }
+            }
+            isTracking = false;
+            UpdateAllParticleVisuals();
+        }
+    }
+
+    public void StepBack()
+    {
+        if (_currentRound == _earliestRound)
+        {
+            throw new System.InvalidOperationException("Cannot step back because the system is in the earliest round " + _earliestRound);
+        }
+        // Have to synchronize to given round if we are still tracking
+        if (isTracking)
+        {
+            SetMarkerToRound(_currentRound - 1);
+        }
+        // Otherwise particles are already synchronized
+        else
+        {
+            _currentRound--;
+            _previousRound = _currentRound;
+            // Reset all particles by one round and update particleMap
+            particleMap.Clear();
+            foreach (Particle p in particles)
+            {
+                p.StepBack();
+                particleMap[p.Tail()] = p;
+                if (p.IsExpanded())
+                {
+                    particleMap[p.Head()] = p;
+                }
+            }
+            isTracking = false;
+            UpdateAllParticleVisuals();
+        }
+    }
+
+    public void StepForward()
+    {
+        if (_currentRound == _latestRound)
+        {
+            throw new System.InvalidOperationException("Cannot step forward because the system is in the latest round " + _latestRound);
+        }
+        // Have to synchronize to given round if we are still tracking
+        if (isTracking)
+        {
+            SetMarkerToRound(_currentRound + 1);
+        }
+        // Otherwise particles are already synchronized
+        else
+        {
+            _currentRound++;
+            _previousRound = _currentRound;
+            // Advance all particles by one round and update particleMap
+            particleMap.Clear();
+            foreach (Particle p in particles)
+            {
+                p.StepForward();
+                particleMap[p.Tail()] = p;
+                if (p.IsExpanded())
+                {
+                    particleMap[p.Head()] = p;
+                }
+            }
+            isTracking = false;
+            UpdateAllParticleVisuals();
+        }
+    }
+
+    public int GetMarkedRound()
+    {
+        return _currentRound;
+    }
+
+    public void ContinueTracking()
+    {
+        if (!isTracking)
+        {
+            _currentRound = _latestRound;
+            _previousRound = _currentRound;
+            particleMap.Clear();
+            foreach (Particle p in particles)
+            {
+                p.ContinueTracking();
+                particleMap[p.Tail()] = p;
+                if (p.IsExpanded())
+                {
+                    particleMap[p.Head()] = p;
+                }
+            }
+            isTracking = true;
+            UpdateAllParticleVisuals();
+        }
+    }
+
+    public void CutOffAtMarker()
+    {
+        if (!isTracking && _currentRound < _latestRound)
+        {
+            _latestRound = _currentRound;
+            foreach (Particle p in particles)
+            {
+                p.CutOffAtMarker();
+            }
+        }
+    }
+
+    public void ShiftTimescale(int amount)
+    {
+        _currentRound += amount;
+        _previousRound = _currentRound;
+        _earliestRound += amount;
+        _latestRound += amount;
+        foreach (Particle p in particles)
+        {
+            p.ShiftTimescale(amount);
         }
     }
 }
