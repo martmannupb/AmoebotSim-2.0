@@ -24,15 +24,12 @@ public class AmoebotSimulator : MonoBehaviour
     private RenderSystem renderSystem;
 
 
-    enum MyEnum { FOO, BAR, BAZ }
-
-
     // Start is called before the first frame update
     void Start()
     {
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
-        
+
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(25, 15, 0.3f, -9, -5);
         system.InitializeLineFormation(50, 0.4f);
@@ -100,7 +97,7 @@ public class AmoebotSimulator : MonoBehaviour
         }
         else
         {
-            system.Print();
+            //system.Print();
         }
         play = !play;
     }

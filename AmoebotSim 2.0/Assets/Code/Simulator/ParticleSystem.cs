@@ -124,7 +124,12 @@ public class ParticleSystem : IReplayHistory
                 }
             }
         }
-        Debug.Log("Created system with " + num + " particles");
+        string s = "Created system with " + num + " particles:\n";
+        foreach (Particle part in particles)
+        {
+            s += part.Head() + "\n";
+        }
+        Debug.Log(s);
     }
 
     /// <summary>
@@ -183,7 +188,12 @@ public class ParticleSystem : IReplayHistory
 
             occupied.Add(newPos);
         }
-        Debug.Log("Created system with " + n + " particles");
+        string s = "Created system with " + n + " particles:\n";
+        foreach (Particle part in particles)
+        {
+            s += part.Head() + "\n";
+        }
+        Debug.Log(s);
     }
 
 
