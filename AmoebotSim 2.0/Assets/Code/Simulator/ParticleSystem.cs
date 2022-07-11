@@ -1080,6 +1080,11 @@ public class ParticleSystem : IReplayHistory
         return _earliestRound;
     }
 
+    public bool IsTracking()
+    {
+        return isTracking;
+    }
+
     public void SetMarkerToRound(int round)
     {
         if (round < _earliestRound || round > _latestRound)

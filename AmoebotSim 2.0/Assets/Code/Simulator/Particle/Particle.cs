@@ -418,6 +418,11 @@ public class Particle : IParticleState, IReplayHistory
         return tailPosHistory.GetFirstRecordedRound();
     }
 
+    public bool IsTracking()
+    {
+        return tailPosHistory.IsTracking();
+    }
+
     public void SetMarkerToRound(int round)
     {
         // Reset position and expansion state
@@ -434,6 +439,10 @@ public class Particle : IParticleState, IReplayHistory
         }
     }
 
+    // Note for StepBack and StepForward:
+    // The individual histories are not synchronized automatically
+    // The ParticleSystem is responsible for synchronizing all particles
+    // before calling one of these two methods.
     public void StepBack()
     {
         tailPosHistory.StepBack();

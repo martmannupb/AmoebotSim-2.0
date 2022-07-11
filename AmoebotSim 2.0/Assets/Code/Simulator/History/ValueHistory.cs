@@ -128,6 +128,11 @@ public class ValueHistory<T> : IReplayHistory
         }
     }
 
+    public bool IsTracking()
+    {
+        return isTracking;
+    }
+
     /// <summary>
     /// Sets the marker to the specified round and stops it from
     /// tracking the latest round.

@@ -29,6 +29,11 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
         return history.GetFirstRecordedRound();
     }
 
+    public virtual bool IsTracking()
+    {
+        return history.IsTracking();
+    }
+
     public virtual void SetMarkerToRound(int round)
     {
         history.SetMarkerToRound(round);

@@ -34,6 +34,17 @@ public interface IReplayHistory
     public int GetFirstRecordedRound();
 
     /// <summary>
+    /// Checks whether the object is currently tracking the latest
+    /// recorded state.
+    /// <para>
+    /// If the object is not tracking, it may not be usable in the regular
+    /// way until the tracking is continued.
+    /// </para>
+    /// </summary>
+    /// <returns>Whether the marker currently tracks the latest recorded state.</returns>
+    public bool IsTracking();
+
+    /// <summary>
     /// Sets the tracking marker to the specified round, restores the
     /// state recorded for that point in time, and stops the marker
     /// from tracking the latest round.
