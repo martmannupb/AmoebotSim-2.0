@@ -16,16 +16,23 @@ public static class ParticleSystem_Utils
     /// from node <paramref name="pos"/>.</returns>
     public static Vector2Int GetNbrInDir(Vector2Int pos, int globalDir, int distance = 1)
     {
-        return globalDir switch
+        switch (globalDir)
         {
-            0 => new Vector2Int(pos.x + distance,   pos.y),
-            1 => new Vector2Int(pos.x,              pos.y + distance),
-            2 => new Vector2Int(pos.x - distance,   pos.y + distance),
-            3 => new Vector2Int(pos.x - distance,   pos.y),
-            4 => new Vector2Int(pos.x,              pos.y - distance),
-            5 => new Vector2Int(pos.x + distance,   pos.y - distance),
-            _ => throw new System.ArgumentOutOfRangeException("globalDir", "Direction must be in set {0,1,2,3,4,5}.")
-        };
+            case 0:
+                return new Vector2Int(pos.x + distance, pos.y);
+            case 1:
+                return new Vector2Int(pos.x, pos.y + distance);
+            case 2:
+                return new Vector2Int(pos.x - distance, pos.y + distance);
+            case 3:
+                return new Vector2Int(pos.x - distance, pos.y);
+            case 4:
+                return new Vector2Int(pos.x, pos.y - distance);
+            case 5:
+                return new Vector2Int(pos.x + distance, pos.y - distance);
+            default:
+                throw new System.ArgumentOutOfRangeException("globalDir", "Direction must be in set {0,1,2,3,4,5}.");
+        }
     }
 
     /// <summary>

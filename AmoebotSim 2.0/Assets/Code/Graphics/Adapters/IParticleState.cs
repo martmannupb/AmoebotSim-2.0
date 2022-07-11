@@ -8,24 +8,24 @@ public interface IParticleState
     /// True if the particle is expanded, false if not.
     /// </summary>
     /// <returns></returns>
-    public bool IsExpanded();
+    bool IsExpanded();
 
     /// <summary>
     /// The global direction of an expansion. Returns -1 if there is no expansion.
     /// </summary>
     /// <returns></returns>
-    public int GlobalHeadDirection();
+    int GlobalHeadDirection();
 
     /// <summary>
     /// Head position of the particle.
     /// </summary>
     /// <returns></returns>
-    public Vector2Int Head();
+    Vector2Int Head();
 
     /// <summary>
     /// Tail position of the particle. Same as Head() if particle is not expanded.
     /// </summary>
     /// <returns></returns>
-    public Vector2Int Tail();
+    Vector2Int Tail();
 
 }

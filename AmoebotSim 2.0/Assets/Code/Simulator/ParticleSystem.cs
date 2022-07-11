@@ -138,7 +138,7 @@ public class ParticleSystem : IReplayHistory
     {
         int n = 1;
         // Always start by adding a particle at position (0, 0)
-        List<Vector2Int> candidates = new();
+        List<Vector2Int> candidates = new List<Vector2Int>();
         Vector2Int node = new Vector2Int(0, 0);
         Particle p = new Particle(this, node);
         // Must wrap this in isActive to enable setting attribute values more easily
@@ -152,7 +152,7 @@ public class ParticleSystem : IReplayHistory
         for (int d = 0; d < 6; d++)
             candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, d));
 
-        HashSet<Vector2Int> occupied = new();
+        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
         occupied.Add(node);
 
         while (n < numParticles && candidates.Count > 0)

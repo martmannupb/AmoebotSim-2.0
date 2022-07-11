@@ -32,6 +32,8 @@ public class AmoebotSimulator : MonoBehaviour
     {
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
+        
+        //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(25, 15, 0.3f, -9, -5);
         system.InitializeLineFormation(50, 0.4f);
         //system.ActivateParticles();
@@ -49,24 +51,6 @@ public class AmoebotSimulator : MonoBehaviour
         Debug.Log("V3: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)));
         Debug.Log("V3 Inverted: " + AmoebotFunctions.CalculateAmoebotCenterPositionVector2(AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).x, AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).y));
         // -----
-
-
-        // Test out value history
-        ValueHistory<MyEnum> vh = new ValueHistory<MyEnum>(MyEnum.FOO, 0);
-        vh.RecordValueAtMarker(MyEnum.BAR);
-        vh.StepForward();
-        vh.RecordValueAtMarker(MyEnum.BAZ);
-        vh.ContinueTracking();
-        vh.RecordValueInRound(MyEnum.FOO, 5);
-        vh.StepForward();
-        vh.StepForward();
-        vh.RecordValueAtMarker(MyEnum.BAR);
-        vh.SetMarkerToRound(vh.GetFirstRecordedRound());
-        for (int i = 0; i < 10; i++)
-        {
-            Debug.Log("Value in round " + vh.GetMarkedRound() + ": " + (MyEnum)vh);
-            vh.StepForward();
-        }
     }
 
     public void ActivateParticle()

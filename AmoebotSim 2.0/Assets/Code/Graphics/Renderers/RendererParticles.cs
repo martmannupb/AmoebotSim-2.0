@@ -23,6 +23,12 @@ public class RendererParticles
     private List<Matrix4x4[]> particleMatricesHex_ExpandedToContracted = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesHexBG = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesHexBGExpanded = new List<Matrix4x4[]>();
+
+    private List<Matrix4x4> particleMatricesSingle_Position1 = new List<Matrix4x4>();
+    private List<Matrix4x4> particleMatricesSingle_Position2 = new List<Matrix4x4>();
+    private List<MaterialPropertyBlockData_HexParticles> particlePropertyBlockSingle_Position1 = new List<MaterialPropertyBlockData_HexParticles>();
+    private List<MaterialPropertyBlockData_HexParticles> particlePropertyBlockSingle_Position2 = new List<MaterialPropertyBlockData_HexParticles>();
+
     // MaterialPropertyBlocks
     private MaterialPropertyBlockData_HexParticles propertyBlock_HexParticles_Contracted;
     private MaterialPropertyBlockData_HexParticles propertyBlock_HexParticles_Expanded;
@@ -48,6 +54,9 @@ public class RendererParticles
     const int maxArraySize = 1023;
     float innerParticleScaleFactor = 0.75f;
 
+    // Settings _____
+    private bool useInstancedDrawing = true;
+
     public RendererParticles()
     {
         Init();
@@ -69,6 +78,15 @@ public class RendererParticles
     {
         if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) return false;
 
+        particleMatricesSingle_Position1.Add(matrixTRS_zero);
+        particleMatricesSingle_Position2.Add(matrixTRS_zero);
+        MaterialPropertyBlockData_HexParticles propertyBlock = new MaterialPropertyBlockData_HexParticles();
+        propertyBlock.ApplyUpdatedValues(false, 0, 0f, 0f);
+        particlePropertyBlockSingle_Position1.Add(new MaterialPropertyBlockData_HexParticles());
+        propertyBlock = new MaterialPropertyBlockData_HexParticles();
+        propertyBlock.ApplyUpdatedValues(true, 3, 1f, 1f);
+        particlePropertyBlockSingle_Position2.Add(new MaterialPropertyBlockData_HexParticles());
+
         if (((particleToParticleGraphicalDataMap.Count + 1) % maxArraySize) == 1)
         {
             // Matrices
@@ -86,20 +104,17 @@ public class RendererParticles
             particleMatricesHexBGExpanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             // Property Blocks
             propertyBlock_HexParticles_Contracted = new MaterialPropertyBlockData_HexParticles();
-            propertyBlock_HexParticles_Contracted.UpdateValue(false, 0, 0f, 0f);
-            propertyBlock_HexParticles_Contracted.ApplyToBlock();
+            propertyBlock_HexParticles_Contracted.ApplyUpdatedValues(false, 0, 0f, 0f);
             propertyBlock_HexParticles_Expanded = new MaterialPropertyBlockData_HexParticles();
-            propertyBlock_HexParticles_Expanded.UpdateValue(true, 3, 1f, 1f); // gap to the right so that we can rotate the mesh
-            propertyBlock_HexParticles_Expanded.ApplyToBlock();
+            propertyBlock_HexParticles_Expanded.ApplyUpdatedValues(true, 3, 1f, 1f); // gap to the right so that we can rotate the mesh
             propertyBlock_HexParticles_ContractedToExpanded = new MaterialPropertyBlockData_HexParticles();
-            propertyBlock_HexParticles_ContractedToExpanded.UpdateValue(true, 3, 0f, 1f);
-            propertyBlock_HexParticles_ContractedToExpanded.ApplyToBlock();
+            propertyBlock_HexParticles_ContractedToExpanded.ApplyUpdatedValues(true, 3, 0f, 1f);
             propertyBlock_HexParticles_ExpandedToContracted = new MaterialPropertyBlockData_HexParticles();
-            propertyBlock_HexParticles_ExpandedToContracted.UpdateValue(true, 3, 1f, 0f);
-            propertyBlock_HexParticles_ExpandedToContracted.ApplyToBlock();
+            propertyBlock_HexParticles_ExpandedToContracted.ApplyUpdatedValues(true, 3, 1f, 0f);
         }
         graphicalData.graphics_listNumber = particleMatricesCircle.Count - 1;
         graphicalData.graphics_listID = particleToParticleGraphicalDataMap.Count % maxArraySize;
+        graphicalData.graphics_globalID = particleToParticleGraphicalDataMap.Count;
 
         particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
         return true;
@@ -130,21 +145,41 @@ public class RendererParticles
         {
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracted:
                 particleMatricesHex_Contracted[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position1.x, graphicalData.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
+                
+                particleMatricesSingle_Position1[graphicalData.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position1.x, graphicalData.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
+                particleMatricesSingle_Position2[graphicalData.graphics_globalID] = matrixTRS_zero;
+                particlePropertyBlockSingle_Position1[graphicalData.graphics_globalID].ApplyUpdatedValues(false, graphicalData.state_cur.globalExpansionDir, 0f, 0f);
+                particlePropertyBlockSingle_Position2[graphicalData.graphics_globalID].ApplyUpdatedValues(false, graphicalData.state_cur.globalExpansionDir, 0f, 0f);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Expanded:
                 float rotationDegrees = graphicalData.state_cur.globalExpansionDir * 60f;
                 particleMatricesHex_Expanded1[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position1.x, graphicalData.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees), Vector3.one);
                 particleMatricesHex_Expanded2[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position2.x, graphicalData.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees + 180f), Vector3.one);
+
+                particleMatricesSingle_Position1[graphicalData.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position1.x, graphicalData.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
+                particleMatricesSingle_Position2[graphicalData.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position2.x, graphicalData.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
+                particlePropertyBlockSingle_Position1[graphicalData.graphics_globalID].ApplyUpdatedValues(true, (graphicalData.state_cur.globalExpansionDir + 3) % 6, 1f, 1f);
+                particlePropertyBlockSingle_Position2[graphicalData.graphics_globalID].ApplyUpdatedValues(true, graphicalData.state_cur.globalExpansionDir, 1f, 1f);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Expanding:
                 float rotationDegrees2 = graphicalData.state_cur.globalExpansionDir * 60f;
                 particleMatricesHex_ContractedToExpanded[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position1.x, graphicalData.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees2), Vector3.one);
                 particleMatricesHex_Expanded2[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position2.x, graphicalData.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees2 + 180f), Vector3.one);
+
+                particleMatricesSingle_Position1[graphicalData.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position1.x, graphicalData.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
+                particleMatricesSingle_Position2[graphicalData.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position2.x, graphicalData.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
+                particlePropertyBlockSingle_Position1[graphicalData.graphics_globalID].ApplyUpdatedValues(true, (graphicalData.state_cur.globalExpansionDir + 3) % 6, 0f, 1f);
+                particlePropertyBlockSingle_Position2[graphicalData.graphics_globalID].ApplyUpdatedValues(true, graphicalData.state_cur.globalExpansionDir, 1f, 1f);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracting:
                 float rotationDegrees3 = graphicalData.state_prev.globalExpansionDir * 60f;
                 particleMatricesHex_Expanded1[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position1.x, graphicalData.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees3), Vector3.one);
                 particleMatricesHex_ExpandedToContracted[graphicalData.graphics_listNumber][graphicalData.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position2.x, graphicalData.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees3 + 180f), Vector3.one);
+
+                particleMatricesSingle_Position1[graphicalData.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position1.x, graphicalData.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
+                particleMatricesSingle_Position2[graphicalData.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(graphicalData.state_cur.position2.x, graphicalData.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
+                particlePropertyBlockSingle_Position1[graphicalData.graphics_globalID].ApplyUpdatedValues(true, (graphicalData.state_prev.globalExpansionDir + 3) % 6, 1f, 1f);
+                particlePropertyBlockSingle_Position2[graphicalData.graphics_globalID].ApplyUpdatedValues(true, graphicalData.state_prev.globalExpansionDir, 1f, 0f);
                 break;
             default:
                 break;
@@ -233,31 +268,51 @@ public class RendererParticles
 
     private void Render_Hexagonal()
     {
-        if(RenderSystem.flag_newRound)
+        float triggerTime = Time.timeSinceLevelLoad;
+        float animationLength = Mathf.Clamp(RenderSystem.const_hexagonalAnimationDurationDef, 0f, Time.fixedDeltaTime);
+
+        if (RenderSystem.flag_newRound)
         {
             // Update PropertyBlocks (for Animations)
-            float triggerTime = Time.timeSinceLevelLoad;
-            float duration = Mathf.Clamp(RenderSystem.const_hexagonalAnimationDurationDef, 0f, Time.fixedDeltaTime);
-            propertyBlock_HexParticles_Contracted.ApplyAnimationTimestamp(triggerTime, duration);
-            propertyBlock_HexParticles_Expanded.ApplyAnimationTimestamp(triggerTime, duration);
-            propertyBlock_HexParticles_ContractedToExpanded.ApplyAnimationTimestamp(triggerTime, duration);
-            propertyBlock_HexParticles_ExpandedToContracted.ApplyAnimationTimestamp(triggerTime, duration);
+            propertyBlock_HexParticles_Contracted.ApplyAnimationTimestamp(triggerTime, animationLength);
+            propertyBlock_HexParticles_Expanded.ApplyAnimationTimestamp(triggerTime, animationLength);
+            propertyBlock_HexParticles_ContractedToExpanded.ApplyAnimationTimestamp(triggerTime, animationLength);
+            propertyBlock_HexParticles_ExpandedToContracted.ApplyAnimationTimestamp(triggerTime, animationLength);
         }
 
-        for (int i = 0; i < particleMatricesCircle.Count; i++)
+        if(useInstancedDrawing)
         {
-            int listLength;
-            if (i == particleMatricesCircle.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
-            else listLength = maxArraySize;
+            for (int i = 0; i < particleMatricesCircle.Count; i++)
+            {
+                int listLength;
+                if (i == particleMatricesCircle.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
+                else listLength = maxArraySize;
 
-            Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Contracted[i], listLength, propertyBlock_HexParticles_Contracted.propertyBlock);
-            Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Expanded1[i], listLength, propertyBlock_HexParticles_Expanded.propertyBlock);
-            Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Expanded2[i], listLength, propertyBlock_HexParticles_Expanded.propertyBlock);
-            Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_ContractedToExpanded[i], listLength, propertyBlock_HexParticles_ContractedToExpanded.propertyBlock);
-            Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_ExpandedToContracted[i], listLength, propertyBlock_HexParticles_ExpandedToContracted.propertyBlock);
+                Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Contracted[i], listLength, propertyBlock_HexParticles_Contracted.propertyBlock);
+                Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Expanded1[i], listLength, propertyBlock_HexParticles_Expanded.propertyBlock);
+                Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Expanded2[i], listLength, propertyBlock_HexParticles_Expanded.propertyBlock);
+                Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_ContractedToExpanded[i], listLength, propertyBlock_HexParticles_ContractedToExpanded.propertyBlock);
+                Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_ExpandedToContracted[i], listLength, propertyBlock_HexParticles_ExpandedToContracted.propertyBlock);
 
-            //Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesHexBG[i], listLength);
-            //Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesHexBGExpanded[i], listLength);
+                //Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesHexBG[i], listLength);
+                //Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesHexBGExpanded[i], listLength);
+            }
+        }
+        else
+        {
+
+            for (int i = 0; i < particleMatricesSingle_Position1.Count; i++)
+            {
+                if (RenderSystem.flag_newRound)
+                {
+                    // Update PropertyBlocks (for Animations)
+                    particlePropertyBlockSingle_Position1[i].ApplyAnimationTimestamp(triggerTime, animationLength);
+                    particlePropertyBlockSingle_Position2[i].ApplyAnimationTimestamp(triggerTime, animationLength);
+                }
+
+                Graphics.DrawMesh(defaultHexagon, particleMatricesSingle_Position1[i], MaterialDatabase.material_hexagonal_particleExpansion, 0, null, 0, particlePropertyBlockSingle_Position1[i].propertyBlock);
+                Graphics.DrawMesh(defaultHexagon, particleMatricesSingle_Position2[i], MaterialDatabase.material_hexagonal_particleExpansion, 0, null, 0, particlePropertyBlockSingle_Position2[i].propertyBlock);
+            }
         }
     }
 
