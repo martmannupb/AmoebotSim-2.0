@@ -125,9 +125,10 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
             else state_cur.movement = ParticleMovement.Contracted;
         }
         // Update Matrix
-        if(PositionSnap.IsPositionEqual(state_cur, state_prev) == false
+        if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
             || state_prev.movement == ParticleMovement.Contracting
             || state_prev.movement == ParticleMovement.Expanding) renderer.UpdateMatrix(this);
+        //renderer.UpdateMatrix(this);
     }
 
     public void ShowParticle()

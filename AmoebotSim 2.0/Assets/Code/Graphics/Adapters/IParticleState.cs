@@ -4,6 +4,8 @@ using UnityEngine;
 
 public interface IParticleState
 {
+    // General Data _________________________
+
     /// <summary>
     /// True if the particle is expanded, false if not.
     /// </summary>
@@ -28,4 +30,17 @@ public interface IParticleState
     /// <returns></returns>
     Vector2Int Tail();
 
+    // Circuits and Partition Sets _________________________
+
+    /**
+     * List of methods we need:
+     * - Access to list of partition sets
+     * - 
+     * 
+     * What connections we need:
+     * - Partition sets need to have a connection to the circuits
+     * - Circuits should have a color set
+     * - 
+     **/
+    
 }
