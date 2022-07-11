@@ -26,8 +26,8 @@ public class AmoebotSimulator : MonoBehaviour
         
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(25, 15, 0.3f, -9, -5);
-        system.InitializeExample(50, 50, 0.3f, -9, -5);
-        //system.InitializeLineFormation(50, 0.4f);
+        //system.InitializeExample(50, 50, 0.3f, -9, -5);
+        system.InitializeLineFormation(50, 0.4f);
         
         //system.ActivateParticles();
 

@@ -98,17 +98,22 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public void AddParticle()
     {
         renderer.Particle_Add(this);
-        Update();
+        Update(true);
     }
 
     public void Update()
+    {
+        Update(false);
+    }
+
+    private void Update(bool forceRenderUpdate)
     {
         // Previous Data
         state_prev = state_cur;
         // Current Data
         state_cur = new PositionSnap(particle.Head(), particle.Tail(), particle.IsExpanded(), particle.GlobalHeadDirection(), ParticleMovement.Contracted, Time.timeSinceLevelLoad);
-        
-        if(state_cur.isExpanded)
+
+        if (state_cur.isExpanded)
         {
             // Expanded
             if (state_prev.isExpanded) state_cur.movement = ParticleMovement.Expanded;
@@ -127,8 +132,8 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         // Update Matrix
         if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
             || state_prev.movement == ParticleMovement.Contracting
-            || state_prev.movement == ParticleMovement.Expanding) renderer.UpdateMatrix(this);
-        //renderer.UpdateMatrix(this);
+            || state_prev.movement == ParticleMovement.Expanding
+            || forceRenderUpdate) renderer.UpdateMatrix(this);
     }
 
     public void ShowParticle()
