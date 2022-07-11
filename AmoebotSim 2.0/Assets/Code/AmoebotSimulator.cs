@@ -167,4 +167,13 @@ public class AmoebotSimulator : MonoBehaviour
             }
         }
     }
+
+    public void CutOff()
+    {
+        if (!play)
+        {
+            system.CutOffAtMarker();
+            UpdateRoundCounter();
+        }
+    }
 }
