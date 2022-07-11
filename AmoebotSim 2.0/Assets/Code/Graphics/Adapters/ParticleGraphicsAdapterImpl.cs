@@ -18,6 +18,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public int graphics_listNumber = 0;
     public int graphics_listID = 0;
     public int graphics_globalID = 0;
+    public Color graphics_color;
 
     public struct PositionSnap
     {
@@ -97,6 +98,8 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void AddParticle()
     {
+        //graphics_color = particle.GetParticleColor();
+        graphics_color = MaterialDatabase.material_circular_particle.GetColor("_InputColor");
         renderer.Particle_Add(this);
         Update(true);
     }
@@ -147,6 +150,11 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     }
 
     public void RemoveParticle()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void SetParticleColor(Color color)
     {
         throw new System.NotImplementedException();
     }

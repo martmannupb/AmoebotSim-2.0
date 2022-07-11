@@ -165,4 +165,38 @@ public static class MeshCreator_CircularView
         return mesh;
     }
 
+    /// <summary>
+    /// Creates a mesh for a particle.
+    /// This mesh has bigger boundaries to not get frustrum culled. The positions of the circles are calculated in the shader.
+    /// </summary>
+    /// <returns></returns>
+    public static Mesh GetMesh_Particle()
+    {
+        // Mesh Data
+        Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(3f, 0f, new Vector2(0.5f, 0.5f));
+
+        return mesh;
+    }
+
+    /// <summary>
+    /// Creates a mesh for particle connector.
+    /// </summary>
+    /// <returns></returns>
+    public static Mesh GetMesh_ParticleConnector()
+    {
+        // Mesh Data
+        Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0f, 0.5f));
+        Vector2[] uv2 = new Vector2[4];
+
+        // UV2.x = 0 means this vertex will move
+        uv2[0] = new Vector2(1f, 0f);
+        uv2[1] = new Vector2(0f, 0f);
+        uv2[2] = new Vector2(1f, 0f);
+        uv2[3] = new Vector2(0f, 0f);
+
+        mesh.uv2 = uv2;
+
+        return mesh;
+    }
+
 }

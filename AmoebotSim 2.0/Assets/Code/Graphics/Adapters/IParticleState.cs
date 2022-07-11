@@ -29,7 +29,7 @@ public interface IParticleState
     /// </summary>
     /// <returns></returns>
     Vector2Int Tail();
-
+    
     // Circuits and Partition Sets _________________________
 
     /**
@@ -42,5 +42,14 @@ public interface IParticleState
      * - Circuits should have a color set
      * - 
      **/
+
+    // Visualization
+
+    /// <summary>
+    /// Method to get the particle color for the visualization.
+    /// </summary>
+    /// <returns></returns>
+    //Color GetParticleColor();
+    
     
 }
