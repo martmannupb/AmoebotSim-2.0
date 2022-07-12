@@ -289,6 +289,7 @@ public class Particle : IParticleState, IReplayHistory
         mainColorSet = true;
         mainColorHistory.RecordValueInRound(c, system.CurrentRound);
         mainColorSetHistory.RecordValueInRound(true, system.CurrentRound);
+        graphics.SetParticleColor(c);
     }
 
     /// <summary>
@@ -302,6 +303,7 @@ public class Particle : IParticleState, IReplayHistory
     {
         mainColorSet = false;
         mainColorSetHistory.RecordValueInRound(false, system.CurrentRound);
+        graphics.ClearParticleColor();
     }
 
     /// <summary>

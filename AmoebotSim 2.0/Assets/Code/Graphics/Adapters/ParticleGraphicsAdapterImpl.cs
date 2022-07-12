@@ -9,6 +9,9 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public IParticleState particle;
     private RendererParticles renderer;
 
+    // Defaults
+    private static Color defColor = MaterialDatabase.material_circular_particle.GetColor("_InputColor");
+
     // Data
     // Current Round
     public PositionSnap state_cur = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, ParticleMovement.Contracted, 0f);
@@ -100,7 +103,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public void AddParticle()
     {
         if (particle.IsParticleColorSet()) graphics_color = particle.GetParticleColor();
-        else graphics_color = MaterialDatabase.material_circular_particle.GetColor("_InputColor");
+        else graphics_color = defColor;
         renderer.Particle_Add(this);
         Update(true, true);
     }
@@ -156,6 +159,11 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         renderer.UpdateParticleColor(this, graphics_color, color);
     }
 
+    public void ClearParticleColor()
+    {
+        SetParticleColor(defColor);
+    }
+
     public void ShowParticle()
     {
         throw new System.NotImplementedException();
@@ -170,6 +178,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
         throw new System.NotImplementedException();
     }
+
 
     public enum ParticleMovement
     {

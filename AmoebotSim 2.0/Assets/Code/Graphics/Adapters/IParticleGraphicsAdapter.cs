@@ -49,4 +49,10 @@ public interface IParticleGraphicsAdapter
     /// This only needs to be called when the color which has automatically been set when the particle was added to the rendering system should be changed in some way.
     /// </summary>
     void SetParticleColor(Color color);
+
+    /// <summary>
+    /// Call this when you want to remove the particle color. It goes back to default afterwards.
+    /// This only needs to be called when the color which has been set manually should be removed.
+    /// </summary>
+    void ClearParticleColor();
 }

@@ -77,7 +77,7 @@ public class RendererParticles_RenderBatch
     static Quaternion quaternion_botLeft = Quaternion.Euler(0f, 0f, 240f) * Quaternion.identity;
     static Quaternion quaternion_botRight = Quaternion.Euler(0f, 0f, 300f) * Quaternion.identity;
     // Defaults
-    Matrix4x4 matrixTRS_zero = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.zero);
+    Matrix4x4 matrixTRS_zero = Matrix4x4.TRS(new Vector3(float.MaxValue / 2f, float.MaxValue / 2f, 0f), Quaternion.identity, Vector3.zero);
     const int maxArraySize = 1023;
     float innerParticleScaleFactor = 0.75f;
 
@@ -148,6 +148,7 @@ public class RendererParticles_RenderBatch
         graphicalData.graphics_globalID = particleToParticleGraphicalDataMap.Count;
         graphicalData.graphics_color = properties.color;
         graphicalData.graphics_colorRenderer = this;
+        //Log.Debug("_____Add:    Color: " + properties.color + ", ListNumber: " + graphicalData.graphics_listNumber + ", ListID: " + graphicalData.graphics_listID);
 
         // Register Particle
         particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
@@ -166,16 +167,22 @@ public class RendererParticles_RenderBatch
         ParticleGraphicsAdapterImpl lastParticleGraphicalData = graphicalDataList[graphicalDataList.Count - 1];
         int movedParticleIndex = graphicalDataList.IndexOf(graphicalData);
         graphicalDataList[movedParticleIndex] = lastParticleGraphicalData;
+        bool canListBeDeleted = graphicalData.graphics_listID == 0 && lastParticleGraphicalData.graphics_listID == 0;
         // Update References
+        int original_listNumber = lastParticleGraphicalData.graphics_listNumber;
+        int original_listID = lastParticleGraphicalData.graphics_listID;
         lastParticleGraphicalData.graphics_listNumber = movedParticleIndex / maxArraySize;
         lastParticleGraphicalData.graphics_listID = movedParticleIndex % maxArraySize;
         lastParticleGraphicalData.graphics_globalID = movedParticleIndex;
+        // Copy Matrices of lastParticleGraphicalData from original index to moved index
+        CutAndCopyMatrices(original_listNumber, original_listID, lastParticleGraphicalData.graphics_listNumber, lastParticleGraphicalData.graphics_listID);
 
+        //Log.Debug("_____Remove:     Color: " + properties.color + ", ListNumber: " + graphicalData.graphics_listNumber + ", ListID: " + graphicalData.graphics_listID);
         // Unregister Particle
         graphicalDataList.RemoveAt(graphicalDataList.Count - 1);
         particleToParticleGraphicalDataMap.Remove(graphicalData.particle);
         // Lists became smaller, possibly delete list entry
-        if (lastParticleGraphicalData.graphics_listID == 0)
+        if (canListBeDeleted)
         {
             // Particle was only element in the last list
             // Delete list
@@ -196,25 +203,47 @@ public class RendererParticles_RenderBatch
         return true;
     }
 
+    private void CutAndCopyMatrices(int orig_ListNumber, int orig_ListID, int moved_ListNumber, int moved_ListID)
+    {
+        // 1. Move Matrices
+        particleMatricesCircle_Contracted[moved_ListNumber][moved_ListID] = particleMatricesCircle_Contracted[orig_ListNumber][orig_ListID];
+        particleMatricesCircle_Expanded[moved_ListNumber][moved_ListID] = particleMatricesCircle_Expanded[orig_ListNumber][orig_ListID];
+        particleMatricesCircle_Expanding[moved_ListNumber][moved_ListID] = particleMatricesCircle_Expanding[orig_ListNumber][orig_ListID];
+        particleMatricesCircle_Contracting[moved_ListNumber][moved_ListID] = particleMatricesCircle_Contracting[orig_ListNumber][orig_ListID];
+        particleMatricesCircle_ConnectionMatrices_Contracted[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Contracted[orig_ListNumber][orig_ListID];
+        particleMatricesCircle_ConnectionMatrices_Expanded[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Expanded[orig_ListNumber][orig_ListID];
+        particleMatricesCircle_ConnectionMatrices_Expanding[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Expanding[orig_ListNumber][orig_ListID];
+        particleMatricesCircle_ConnectionMatrices_Contracting[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Contracting[orig_ListNumber][orig_ListID];
+
+        // 2. Reset Matrices
+        ResetMatrices(orig_ListNumber, orig_ListID);
+    }
+
+    private void ResetMatrices(int listNumber, int listID)
+    {
+        particleMatricesCircle_Contracted[listNumber][listID] = matrixTRS_zero;
+        particleMatricesCircle_Expanded[listNumber][listID] = matrixTRS_zero;
+        particleMatricesCircle_Expanding[listNumber][listID] = matrixTRS_zero;
+        particleMatricesCircle_Contracting[listNumber][listID] = matrixTRS_zero;
+        particleMatricesCircle_ConnectionMatrices_Contracted[listNumber][listID] = matrixTRS_zero;
+        particleMatricesCircle_ConnectionMatrices_Expanded[listNumber][listID] = matrixTRS_zero;
+        particleMatricesCircle_ConnectionMatrices_Expanding[listNumber][listID] = matrixTRS_zero;
+        particleMatricesCircle_ConnectionMatrices_Contracting[listNumber][listID] = matrixTRS_zero;
+    }
+    
     public void UpdateMatrix(ParticleGraphicsAdapterImpl gd)
     {
         // Reset Matrices
-        particleMatricesCircle_Contracted[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        particleMatricesCircle_Expanded[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        particleMatricesCircle_Expanding[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        particleMatricesCircle_Contracting[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        particleMatricesCircle_ConnectionMatrices_Contracted[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        particleMatricesCircle_ConnectionMatrices_Expanded[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        particleMatricesCircle_ConnectionMatrices_Expanding[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        particleMatricesCircle_ConnectionMatrices_Contracting[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
+        ResetMatrices(gd.graphics_listNumber, gd.graphics_listID);
+        //Log.Debug("UPDATE: Color: "+properties.color+", ListNumber: " + gd.graphics_listNumber + ", ListID: " + gd.graphics_listID + ", List Count: "+ particleMatricesCircle_Contracted.Count+", Array Count: ");
 
         // Calculate Rotation
         Quaternion rotation = Quaternion.identity;
-        if(gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanded || gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding)
+        if (gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanded || gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding)
         {
             rotation = Quaternion.Euler(0f, 0f, 60f * gd.state_cur.globalExpansionDir) * Quaternion.identity;
         }
-        else if(gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting)
+        else if (gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting)
         {
             rotation = Quaternion.Euler(0f, 0f, (60f * gd.state_prev.globalExpansionDir + 180f) % 360f) * Quaternion.identity;
         }
@@ -239,7 +268,6 @@ public class RendererParticles_RenderBatch
             default:
                 break;
         }
-
 
 
 
