@@ -12,6 +12,12 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 {
     public enum LFState { IDLE, FLWR, ROOT, DONE, LEADER }
 
+    private static Color leaderColor = new Color(0, 1, 0);
+    private static Color idleColor = new Color(0, 0, 0);
+    private static Color rootColor = new Color(1, 0, 0);
+    private static Color flwrColor = new Color(0, 0, 1);
+    private static Color doneColor = new Color(1, 1, 0);
+
     // Used to create one leader particle
     private static bool leaderCreated = false;
 
@@ -32,11 +38,14 @@ public class LineFormationParticleSeq : ParticleAlgorithm
         followDir = CreateAttributeDirection("followDir", -1);
         state = CreateAttributeEnum<LFState>("State", LFState.IDLE);
 
+        SetMainColor(idleColor);
+
         // Make one particle the leader
         if (!leaderCreated)
         {
             state.SetValue(LFState.LEADER);
             constructionDir.SetValue(Random.Range(0, 6));
+            SetMainColor(leaderColor);
             Debug.Log("Line construction dir: " + (int)constructionDir);
             leaderCreated = true;
         }
@@ -73,6 +82,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 
             // Otherwise become ROOT
             state.SetValue(LFState.ROOT);
+            SetMainColor(rootColor);
             ComputeRootMoveDir(nbrDone);
             constructionDir.SetValue(nbrDone.neighbor.constructionDir);
             return;
@@ -82,6 +92,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
         if (FindFirstNeighborWithProperty((LineFormationParticleSeq p) => p.state == LFState.ROOT, out Neighbor<LineFormationParticleSeq> nbrRoot))
         {
             state.SetValue(LFState.FLWR);
+            SetMainColor(flwrColor);
             constructionDir.SetValue(nbrRoot.neighbor.constructionDir);
             followDir.SetValue(nbrRoot.localDir);
             return;
@@ -91,6 +102,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
         if (FindFirstNeighborWithProperty((LineFormationParticleSeq p) => p.state == LFState.FLWR, out Neighbor<LineFormationParticleSeq> nbrFlwr))
         {
             state.SetValue(LFState.FLWR);
+            SetMainColor(flwrColor);
             constructionDir.SetValue(nbrFlwr.neighbor.constructionDir);
             followDir.SetValue(nbrFlwr.localDir);
             return;
@@ -176,6 +188,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 
                 // Otherwise become ROOT
                 state.SetValue(LFState.ROOT);
+                SetMainColor(rootColor);
                 ComputeRootMoveDir(nbrDone);
                 constructionDir.SetValue(nbrDone.neighbor.constructionDir);
                 return;
@@ -225,6 +238,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
         if (constructionDir == (nbr.localDir + 3) % 6)
         {
             state.SetValue(LFState.DONE);
+            SetMainColor(doneColor);
             return true;
         }
         return false;

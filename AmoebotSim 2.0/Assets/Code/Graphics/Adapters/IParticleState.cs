@@ -49,7 +49,13 @@ public interface IParticleState
     /// Method to get the particle color for the visualization.
     /// </summary>
     /// <returns></returns>
-    //Color GetParticleColor();
-    
+    Color GetParticleColor();
+
+    /// <summary>
+    /// Checks if the particle color has been overwritten.
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle color
+    /// was overwritten by the particle algorithm.</returns>
+    bool IsParticleColorSet();
     
 }

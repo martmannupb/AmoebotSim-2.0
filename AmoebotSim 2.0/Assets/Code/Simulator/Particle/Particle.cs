@@ -66,6 +66,12 @@ public class Particle : IParticleState, IReplayHistory
     // Messages
     private Queue<Message> messageQueue = new Queue<Message>();
 
+    // Visualization
+    private ValueHistory<Color> mainColorHistory;
+    private ValueHistory<bool> mainColorSetHistory;
+    private Color mainColor = new Color();
+    private bool mainColorSet = false;
+
     // Data used by system to coordinate movements
     /// <summary>
     /// Stores the movement action the particle scheduled during the current round.
@@ -85,10 +91,11 @@ public class Particle : IParticleState, IReplayHistory
     public Particle(ParticleSystem system, Vector2Int pos, int compassDir = 0, bool chirality = true)
     {
         this.system = system;
+        int currentRound = system.CurrentRound;
 
         // Start contracted
-        tailPosHistory = new ValueHistory<Vector2Int>(pos, system.CurrentRound);
-        expansionDirHistory = new ValueHistory<int>(-1, system.CurrentRound);
+        tailPosHistory = new ValueHistory<Vector2Int>(pos, currentRound);
+        expansionDirHistory = new ValueHistory<int>(-1, currentRound);
         pos_head = pos;
         pos_tail = pos;
         exp_isExpanded = false;
@@ -98,6 +105,10 @@ public class Particle : IParticleState, IReplayHistory
         this.chirality = chirality;
 
         // Graphics
+        // Initialize color
+        mainColorHistory = new ValueHistory<Color>(mainColor, currentRound);
+        mainColorSetHistory = new ValueHistory<bool>(mainColorSet, currentRound);
+
         // Add particle to the system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
         graphics.AddParticle();
@@ -246,6 +257,62 @@ public class Particle : IParticleState, IReplayHistory
         throw new System.NotImplementedException();
     }
 
+    /**
+     * Visualization
+     */
+
+    /// <summary>
+    /// Returns the main color of this particle.
+    /// <para>
+    /// Call <see cref="IsParticleColorSet"/> to check if this
+    /// color has been set or not. If not, the particle's color
+    /// should default to some other value.
+    /// </para>
+    /// </summary>
+    /// <returns>The current main color of this particle.</returns>
+    public Color GetParticleColor()
+    {
+        return mainColor;
+    }
+
+    /// <summary>
+    /// Sets this particle's main color.
+    /// <para>
+    /// Should only be called during a simulation, i.e., while
+    /// the system is in the tracking state.
+    /// </para>
+    /// </summary>
+    /// <param name="c">The new main color of the particle.</param>
+    public void SetParticleColor(Color c)
+    {
+        mainColor = c;
+        mainColorSet = true;
+        mainColorHistory.RecordValueInRound(c, system.CurrentRound);
+        mainColorSetHistory.RecordValueInRound(true, system.CurrentRound);
+    }
+
+    /// <summary>
+    /// Resets the particle's main color to its default value.
+    /// <para>
+    /// Should only be called during a simulation, i.e., while
+    /// the system is in the tracking state.
+    /// </para>
+    /// </summary>
+    public void ResetParticleColor()
+    {
+        mainColorSet = false;
+        mainColorSetHistory.RecordValueInRound(false, system.CurrentRound);
+    }
+
+    /// <summary>
+    /// Checks whether the particle's main color has been overwritten.
+    /// </summary>
+    /// <returns><c>true</c> if and only if the main color has been
+    /// overwritten by the particle algorithm.</returns>
+    public bool IsParticleColorSet()
+    {
+        return mainColorSet;
+    }
 
     /**
      * Particle action methods that are used by the system to change the
@@ -383,6 +450,9 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.Print();
         Debug.Log("Expansion dir history:");
         expansionDirHistory.Print();
+        Debug.Log("Main color history:");
+        mainColorHistory.Print();
+        mainColorSetHistory.Print();
         foreach (IParticleAttribute attr in attributes)
         {
             attr.Print();
@@ -429,6 +499,10 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.SetMarkerToRound(round);
         expansionDirHistory.SetMarkerToRound(round);
 
+        // Reset visuals
+        mainColorHistory.SetMarkerToRound(round);
+        mainColorSetHistory.SetMarkerToRound(round);
+
         // Need to update private fields accordingly
         UpdateInternalState();
 
@@ -448,6 +522,9 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.StepBack();
         expansionDirHistory.StepBack();
 
+        mainColorHistory.StepBack();
+        mainColorSetHistory.StepBack();
+
         UpdateInternalState();
 
         foreach (IParticleAttribute attr in attributes)
@@ -460,6 +537,9 @@ public class Particle : IParticleState, IReplayHistory
     {
         tailPosHistory.StepForward();
         expansionDirHistory.StepForward();
+
+        mainColorHistory.StepForward();
+        mainColorSetHistory.StepForward();
 
         UpdateInternalState();
 
@@ -489,6 +569,9 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.ContinueTracking();
         expansionDirHistory.ContinueTracking();
 
+        mainColorHistory.ContinueTracking();
+        mainColorSetHistory.ContinueTracking();
+
         UpdateInternalState();
 
         foreach (IParticleAttribute attr in attributes)
@@ -510,6 +593,9 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.CutOffAtMarker();
         expansionDirHistory.CutOffAtMarker();
 
+        mainColorHistory.CutOffAtMarker();
+        mainColorSetHistory.CutOffAtMarker();
+
         // No need to update internal state because this does not change
         // the current value of a history
 
@@ -523,6 +609,9 @@ public class Particle : IParticleState, IReplayHistory
     {
         tailPosHistory.ShiftTimescale(amount);
         expansionDirHistory.ShiftTimescale(amount);
+
+        mainColorHistory.ShiftTimescale(amount);
+        mainColorSetHistory.ShiftTimescale(amount);
 
         // No need to update internal state because this does not change
         // the current value of a history
@@ -550,5 +639,7 @@ public class Particle : IParticleState, IReplayHistory
         {
             pos_head = pos_tail;
         }
+        mainColor = mainColorHistory.GetMarkedValue();
+        mainColorSet = mainColorSetHistory.GetMarkedValue();
     }
 }

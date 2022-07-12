@@ -467,4 +467,58 @@ public abstract class ParticleAlgorithm
     {
         particle.system.PerformPullHandoverTail(particle, locDir);
     }
+
+
+    /**
+     * Visualization
+     * These methods should only be called on the particle itself.
+     * Calling them on other particles is not defined and should
+     * never be done.
+     */
+
+    /// <summary>
+    /// Returns the main color of this particle.
+    /// <para>
+    /// Call <see cref="IsMainColorSet"/> first to check if
+    /// the color has been set or not. If not, the return
+    /// value of this method has no meaning.
+    /// </para>
+    /// </summary>
+    /// <returns>The currently set main color of the particle,
+    /// if it has been set previously.</returns>
+    public Color GetMainColor()
+    {
+        return particle.GetParticleColor();
+    }
+
+    /// <summary>
+    /// Sets the main color of this particle.
+    /// </summary>
+    /// <param name="c">The color to be applied to the particle.</param>
+    public void SetMainColor(Color c)
+    {
+        particle.SetParticleColor(c);
+    }
+
+    /// <summary>
+    /// Resets the particle's main color to its default value.
+    /// </summary>
+    public void ResetMainColor()
+    {
+        particle.ResetParticleColor();
+    }
+
+    /// <summary>
+    /// Checks whether this particle's main color has been overwritten.
+    /// <para>
+    /// <see cref="GetMainColor"/> only returns a meaningful value if this
+    /// method returns <c>true</c>.
+    /// </para>
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle's main color
+    /// has been overwritten and has not been reset since.</returns>
+    public bool IsMainColorSet()
+    {
+        return particle.IsParticleColorSet();
+    }
 }
