@@ -5,6 +5,9 @@ using UnityEngine;
 public class RendererParticles
 {
 
+    public Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch>();
+
+
     // Data _____
     // Particles
     private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
@@ -56,6 +59,7 @@ public class RendererParticles
 
     // Settings _____
     private bool useInstancedDrawing = true;
+    private Color defaultColor = MaterialDatabase.material_circular_particleComplete.GetColor("_InputColor");
 
     public RendererParticles()
     {
@@ -76,6 +80,29 @@ public class RendererParticles
 
     public bool Particle_Add(ParticleGraphicsAdapterImpl graphicalData)
     {
+        // New System ___________________________________________________________
+
+        RendererParticles_RenderBatch.PropertyBlockData block = new RendererParticles_RenderBatch.PropertyBlockData(graphicalData.graphics_color);
+        // Add particle to existing/new RenderBatch
+        if (propertiesToRenderBatchMap.ContainsKey(block))
+        {
+            // RenderBatch does already exist
+            // Add particle to batch
+            propertiesToRenderBatchMap[block].Particle_Add(graphicalData);
+        }
+        else
+        {
+            // RenderBatch does not exist
+            // Create RenderBatch, add particle
+            RendererParticles_RenderBatch renderBatch = new RendererParticles_RenderBatch(block);
+            propertiesToRenderBatchMap.Add(block, renderBatch);
+            renderBatch.Particle_Add(graphicalData);
+        }
+
+
+
+        // Old System ___________________________________________________________
+
         if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) return false;
 
         particleMatricesSingle_Position1.Add(matrixTRS_zero);
@@ -126,6 +153,20 @@ public class RendererParticles
 
         throw new System.NotImplementedException();
         // We would need to implement the removal of the graphics here, but let us say for the prototype we do not need this.
+    }
+
+    public bool UpdateParticleColor(ParticleGraphicsAdapterImpl gd, Color oldColor, Color color)
+    {
+        if (oldColor == color) return false;
+
+        // Remove particle from old RenderBatch
+        propertiesToRenderBatchMap[new RendererParticles_RenderBatch.PropertyBlockData(oldColor)].Particle_Remove(gd);
+
+        // Add particle to new RenderBatch
+        gd.graphics_color = color;
+        Particle_Add(gd);
+
+        return true;
     }
 
     public void UpdateMatrix(ParticleGraphicsAdapterImpl graphicalData)
@@ -253,7 +294,16 @@ public class RendererParticles
 
     public void Render(ViewType viewType)
     {
-        switch (viewType)
+        bool useNewSystem = true;
+
+        // New System _______________________________________________________
+        if(useNewSystem) foreach (var item in propertiesToRenderBatchMap.Values)
+        {
+            item.Render(viewType);
+        }
+
+        // Old System _______________________________________________________
+        if(!useNewSystem) switch (viewType)
         {
             case ViewType.Hexagonal:
                 Render_Hexagonal();

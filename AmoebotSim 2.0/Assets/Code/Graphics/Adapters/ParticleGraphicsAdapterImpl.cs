@@ -18,6 +18,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public int graphics_listNumber = 0;
     public int graphics_listID = 0;
     public int graphics_globalID = 0;
+    public RendererParticles_RenderBatch graphics_colorRenderer;
     public Color graphics_color;
 
     public struct PositionSnap
@@ -98,8 +99,8 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void AddParticle()
     {
-        //graphics_color = particle.GetParticleColor();
-        graphics_color = MaterialDatabase.material_circular_particle.GetColor("_InputColor");
+        if (particle.IsParticleColorSet()) graphics_color = particle.GetParticleColor();
+        else graphics_color = MaterialDatabase.material_circular_particle.GetColor("_InputColor");
         renderer.Particle_Add(this);
         Update(true, true);
     }
@@ -140,11 +141,19 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
             || state_prev.movement == ParticleMovement.Contracting
             || state_prev.movement == ParticleMovement.Expanding
             || forceRenderUpdate) renderer.UpdateMatrix(this);
+        
+        // New System
+        graphics_colorRenderer.UpdateMatrix(this);    // this will replace the old value
     }
 
     public void UpdateReset()
     {
         Update(true, true);
+    }
+
+    public void SetParticleColor(Color color)
+    {
+        renderer.UpdateParticleColor(this, graphics_color, color);
     }
 
     public void ShowParticle()
@@ -158,11 +167,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     }
 
     public void RemoveParticle()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void SetParticleColor(Color color)
     {
         throw new System.NotImplementedException();
     }
