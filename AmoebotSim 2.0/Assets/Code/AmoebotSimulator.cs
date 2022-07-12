@@ -23,7 +23,6 @@ public class AmoebotSimulator : MonoBehaviour
     private ParticleSystem system;
     private RenderSystem renderSystem;
 
-
     // Start is called before the first frame update
     void Start()
     {

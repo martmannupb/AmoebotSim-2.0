@@ -4,6 +4,9 @@ using UnityEngine;
 
 public interface IParticleGraphicsAdapter
 {
+
+    // General Functions _______________
+
     /// <summary>
     /// Adds and initializes the graphics of the particle. Call this each time a new particle has been added to the RenderSystem.
     /// Afterwards use Update() repeatedly to update the particle visuals.
@@ -33,4 +36,12 @@ public interface IParticleGraphicsAdapter
     /// Example: If you want to load a different setup of particles, all particles should be deleted.
     /// </summary>
     void RemoveParticle();
+
+    // Visualization _______________
+
+    /// <summary>
+    /// Call this when you want to update the particle color.
+    /// This only needs to be called when the color which has automatically been set when the particle was added to the rendering system should be changed in some way.
+    /// </summary>
+    void SetParticleColor(Color color);
 }

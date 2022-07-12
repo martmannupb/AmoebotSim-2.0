@@ -18,6 +18,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public int graphics_listNumber = 0;
     public int graphics_listID = 0;
     public int graphics_globalID = 0;
+    public Color graphics_color;
 
     public struct PositionSnap
     {
@@ -97,18 +98,25 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void AddParticle()
     {
+        //graphics_color = particle.GetParticleColor();
+        graphics_color = MaterialDatabase.material_circular_particle.GetColor("_InputColor");
         renderer.Particle_Add(this);
-        Update();
+        Update(true);
     }
 
     public void Update()
+    {
+        Update(false);
+    }
+
+    private void Update(bool forceRenderUpdate)
     {
         // Previous Data
         state_prev = state_cur;
         // Current Data
         state_cur = new PositionSnap(particle.Head(), particle.Tail(), particle.IsExpanded(), particle.GlobalHeadDirection(), ParticleMovement.Contracted, Time.timeSinceLevelLoad);
-        
-        if(state_cur.isExpanded)
+
+        if (state_cur.isExpanded)
         {
             // Expanded
             if (state_prev.isExpanded) state_cur.movement = ParticleMovement.Expanded;
@@ -125,9 +133,10 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
             else state_cur.movement = ParticleMovement.Contracted;
         }
         // Update Matrix
-        if(PositionSnap.IsPositionEqual(state_cur, state_prev) == false
+        if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
             || state_prev.movement == ParticleMovement.Contracting
-            || state_prev.movement == ParticleMovement.Expanding) renderer.UpdateMatrix(this);
+            || state_prev.movement == ParticleMovement.Expanding
+            || forceRenderUpdate) renderer.UpdateMatrix(this);
     }
 
     public void ShowParticle()
@@ -141,6 +150,11 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     }
 
     public void RemoveParticle()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void SetParticleColor(Color color)
     {
         throw new System.NotImplementedException();
     }
