@@ -216,7 +216,7 @@ public class ParticleSystem : IReplayHistory
             ApplyAllActionsInQueue();
             CleanupAfterRound();
             _previousRound++;
-            UpdateAllParticleVisuals();     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
+            UpdateAllParticleVisuals(false);     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
             //particles[pIdx].graphics.Update();
         }
     }
@@ -235,7 +235,7 @@ public class ParticleSystem : IReplayHistory
         ApplyAllActionsInQueue();
         CleanupAfterRound();
         _previousRound++;
-        UpdateAllParticleVisuals();
+        UpdateAllParticleVisuals(false);
     }
 
     /// <summary>
@@ -324,12 +324,13 @@ public class ParticleSystem : IReplayHistory
     /// <summary>
     /// Triggers a graphics update for each particle in the system.
     /// </summary>
-    public void UpdateAllParticleVisuals()
+    public void UpdateAllParticleVisuals(bool resetVisuals)
     {
         // TODO: Maybe only update particles with changes
         foreach (Particle p in particles)
         {
-            p.graphics.Update();
+            if (resetVisuals) p.graphics.UpdateReset();
+            else p.graphics.Update();
         }
         RenderSystem.flag_newRound = true;
     }
@@ -1118,7 +1119,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
-            UpdateAllParticleVisuals();
+            UpdateAllParticleVisuals(true);
         }
     }
 
@@ -1150,7 +1151,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
-            UpdateAllParticleVisuals();
+            UpdateAllParticleVisuals(true);
         }
     }
 
@@ -1182,7 +1183,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
-            UpdateAllParticleVisuals();
+            UpdateAllParticleVisuals(true);
         }
     }
 
@@ -1208,7 +1209,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = true;
-            UpdateAllParticleVisuals();
+            UpdateAllParticleVisuals(true);
         }
     }
 

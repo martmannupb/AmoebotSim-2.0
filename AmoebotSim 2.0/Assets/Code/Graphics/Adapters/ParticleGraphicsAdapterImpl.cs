@@ -101,15 +101,15 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         //graphics_color = particle.GetParticleColor();
         graphics_color = MaterialDatabase.material_circular_particle.GetColor("_InputColor");
         renderer.Particle_Add(this);
-        Update(true);
+        Update(true, true);
     }
 
     public void Update()
     {
-        Update(false);
+        Update(false, false);
     }
 
-    private void Update(bool forceRenderUpdate)
+    private void Update(bool forceRenderUpdate, bool noAnimation)
     {
         // Previous Data
         state_prev = state_cur;
@@ -119,24 +119,32 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         if (state_cur.isExpanded)
         {
             // Expanded
-            if (state_prev.isExpanded) state_cur.movement = ParticleMovement.Expanded;
+            if (state_prev.isExpanded || noAnimation) state_cur.movement = ParticleMovement.Expanded;
             else state_cur.movement = ParticleMovement.Expanding;
         }
         else
         {
             // Contracted
-            if (state_prev.isExpanded)
+            if (state_prev.isExpanded == false || noAnimation)
+            {
+                state_cur.movement = ParticleMovement.Contracted;
+            }
+            else
             {
                 state_cur.movement = ParticleMovement.Contracting;
                 state_cur.position2 = state_prev.position2; // Tail to previous Tail
             }
-            else state_cur.movement = ParticleMovement.Contracted;
         }
         // Update Matrix
         if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
             || state_prev.movement == ParticleMovement.Contracting
             || state_prev.movement == ParticleMovement.Expanding
             || forceRenderUpdate) renderer.UpdateMatrix(this);
+    }
+
+    public void UpdateReset()
+    {
+        Update(true, true);
     }
 
     public void ShowParticle()

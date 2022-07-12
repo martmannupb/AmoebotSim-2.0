@@ -20,6 +20,11 @@ public interface IParticleGraphicsAdapter
     void Update();
 
     /// <summary>
+    /// Like Update(), but forces the update to be applied visually without an animation, even if the particle positions are the same as in the previous frame.
+    /// </summary>
+    void UpdateReset();
+
+    /// <summary>
     /// Complements HideParticle(). Shows the particle.
     /// Calling this method is not necessary if the particle is never hidden. By default the particle is visible once it is added and updated.
     /// </summary>
