@@ -12,11 +12,11 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 {
     public enum LFState { IDLE, FLWR, ROOT, DONE, LEADER }
 
-    private static Color leaderColor = new Color(0, 1, 0);
-    private static Color idleColor = new Color(0, 0, 0);
-    private static Color rootColor = new Color(1, 0, 0);
-    private static Color flwrColor = new Color(0, 0, 1);
-    private static Color doneColor = new Color(1, 1, 0);
+    private static Color leaderColor = ColorData.Green;
+    private static Color idleColor = ColorData.Black;
+    private static Color rootColor = ColorData.Red;
+    private static Color flwrColor = ColorData.Blue;
+    private static Color doneColor = ColorData.Yellow;
 
     // Used to create one leader particle
     private static bool leaderCreated = false;
