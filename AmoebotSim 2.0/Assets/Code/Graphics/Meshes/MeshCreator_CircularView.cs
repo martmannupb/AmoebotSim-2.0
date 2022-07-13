@@ -178,6 +178,19 @@ public static class MeshCreator_CircularView
         return mesh;
     }
 
+    public static Mesh GetMesh_ParticleOptimized()
+    {
+        Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(2f, 0f, new Vector2(0.25f, 0.5f));
+        Vector3[] vertices = mesh.vertices;
+        vertices[0] = new Vector3(vertices[0].x, vertices[0].y * 0.5f, vertices[0].z);
+        vertices[1] = new Vector3(vertices[1].x, vertices[1].y * 0.5f, vertices[1].z);
+        vertices[2] = new Vector3(vertices[2].x, vertices[2].y * 0.5f, vertices[2].z);
+        vertices[3] = new Vector3(vertices[3].x, vertices[3].y * 0.5f, vertices[3].z);
+        mesh.vertices = vertices;
+
+        return mesh;
+    }
+
     /// <summary>
     /// Creates a mesh for particle connector.
     /// </summary>

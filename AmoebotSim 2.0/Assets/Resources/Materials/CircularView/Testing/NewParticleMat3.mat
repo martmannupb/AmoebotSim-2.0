@@ -61,7 +61,7 @@ Material:
     - _AliasingDist: 0.03
     - _AnimDuration: 3
     - _AnimPercentage1: 0
-    - _AnimPercentage2: 1
+    - _AnimPercentage2: 0.71
     - _AnimTriggerTime: 0
     - _EnableExternalAlpha: 0
     - _InnerRingAliasingDist: 0.02

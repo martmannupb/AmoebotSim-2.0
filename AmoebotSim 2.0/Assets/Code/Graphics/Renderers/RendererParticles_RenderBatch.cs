@@ -56,7 +56,7 @@ public class RendererParticles_RenderBatch
     // Precalculated Data _____
     // Meshes
     private Mesh defaultQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
-    private Mesh mesh_circle_particle = MeshCreator_CircularView.GetMesh_Particle();
+    private Mesh mesh_circle_particle = MeshCreator_CircularView.GetMesh_ParticleOptimized();
     private Mesh mesh_circle_particleConnector = MeshCreator_CircularView.GetMesh_ParticleConnector();
     private Mesh defaultQuadLeftSidePivot = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     private Mesh defaultHexagon = MeshCreator_HexagonalView.GetMesh_BaseExpansionHexagon();
@@ -462,7 +462,6 @@ public class RendererParticles_RenderBatch
             else listLength = maxArraySize;
 
             // Particle Connectors
-            //Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Contracted[i], listLength, propertyBlock_circle_connector_contracted.propertyBlock);
             Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanded[i], listLength, propertyBlock_circle_connector_expanded.propertyBlock);
             Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanding[i], listLength, propertyBlock_circle_connector_expanding.propertyBlock);
             Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Contracting[i], listLength, propertyBlock_circle_connector_contracting.propertyBlock);

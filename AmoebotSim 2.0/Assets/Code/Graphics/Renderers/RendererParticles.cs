@@ -294,22 +294,17 @@ public class RendererParticles
 
     public void Render(ViewType viewType)
     {
-        bool useNewSystem = true;
-
-        // New System _______________________________________________________
-        if(useNewSystem) foreach (var item in propertiesToRenderBatchMap.Values)
-        {
-            item.Render(viewType);
-        }
-
-        // Old System _______________________________________________________
-        if(!useNewSystem) switch (viewType)
+        switch (viewType)
         {
             case ViewType.Hexagonal:
                 Render_Hexagonal();
                 break;
             case ViewType.Circular:
-                Render_Circular();
+                //Render_Circular();
+                foreach (var item in propertiesToRenderBatchMap.Values)
+                {
+                    item.Render(viewType);
+                }
                 break;
             default:
                 break;
