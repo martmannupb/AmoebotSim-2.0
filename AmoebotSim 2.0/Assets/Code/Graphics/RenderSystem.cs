@@ -5,6 +5,9 @@ using UnityEngine;
 public class RenderSystem
 {
 
+    // References
+    private ParticleSystem map;
+
     // Dynamic Settings _____
     // View
     public ViewType setting_viewType = ViewType.Hexagonal;
@@ -27,6 +30,7 @@ public class RenderSystem
     public const float ZLayer_particlesBG = 0.1f;
     public const float zLayer_particles = 0f;
     public const float zLayer_pins = -1f;
+    public const float zLayer_ui = -5f;
 
     // Dynamic Params _____
     public static bool flag_newRound = true;
@@ -34,15 +38,17 @@ public class RenderSystem
     // Renderers _____
     public RendererBackground rendererBG;
     public RendererParticles rendererP;
+    public RendererUI rendererUI;
 
 
-    
+
 
 
     public RenderSystem()
     {
         rendererBG = new RendererBackground();
         rendererP = new RendererParticles();
+        rendererUI = new RendererUI();
     }
 
     public void Render()
@@ -53,6 +59,11 @@ public class RenderSystem
 
         // Reset Round Flag
         flag_newRound = false;
+    }
+
+    public void AddReferenceToParticleSystem(ParticleSystem map)
+    {
+        this.map = map;
     }
 
 
