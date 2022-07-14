@@ -147,12 +147,12 @@ public class RendererParticles
         return true;
     }
 
-    public void Particle_Remove(IParticleState particle)
+    public void Particle_Remove(ParticleGraphicsAdapterImpl graphicalData)
     {
-        if (particleToParticleGraphicalDataMap.ContainsKey(particle)) particleToParticleGraphicalDataMap.Remove(particle);
+        if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) particleToParticleGraphicalDataMap.Remove(graphicalData.particle);
 
-        throw new System.NotImplementedException();
-        // We would need to implement the removal of the graphics here, but let us say for the prototype we do not need this.
+        // Remove particle from old RenderBatch
+        propertiesToRenderBatchMap[new RendererParticles_RenderBatch.PropertyBlockData(graphicalData.graphics_color)].Particle_Remove(graphicalData);
     }
 
     public bool UpdateParticleColor(ParticleGraphicsAdapterImpl gd, Color oldColor, Color color)

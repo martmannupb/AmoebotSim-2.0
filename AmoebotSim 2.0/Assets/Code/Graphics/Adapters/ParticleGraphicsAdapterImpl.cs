@@ -176,7 +176,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void RemoveParticle()
     {
-        throw new System.NotImplementedException();
+        renderer.Particle_Remove(this);
     }
 
 

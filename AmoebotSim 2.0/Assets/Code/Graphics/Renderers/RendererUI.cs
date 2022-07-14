@@ -33,10 +33,10 @@ public class RendererUI
         this.map = map;
     }
 
-    public void Render()
+    public void Render(ViewType viewType)
     {
         Vector2 camPos = CameraUtils.MainCamera_Mouse_WorldPosition();
-        Vector2Int camWorldField = AmoebotFunctions.GetGridPositionFromWorldPosition(camPos);
+        Vector2Int camWorldField = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(camPos));
 
         if (map != null)
         {
@@ -48,8 +48,15 @@ public class RendererUI
             map.TryGetParticleAt(camWorldField, out p);
             if(p != null)
             {
-                Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(new Vector3(p.Head().x, p.Head().y, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
-                if (p.IsExpanded()) Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(new Vector3(p.Tail().x, p.Tail().y, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+                // Render Head Overlay
+                Vector3 worldPos_head = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(p.Head());
+                Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_head + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+                // Render Tail Overlay
+                if (p.IsExpanded())
+                {
+                    Vector3 worldPos_tail = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(p.Tail());
+                    Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+                }
             }
         }
     }

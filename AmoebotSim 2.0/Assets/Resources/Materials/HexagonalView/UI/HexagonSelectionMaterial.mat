@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: HexagonSelectionOverlay
+  m_Name: HexagonSelectionMaterial
   m_Shader: {fileID: -6465566751694194690, guid: 16ae048a72a831c4d985e4cf97f09c56, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -111,6 +111,6 @@ Material:
     - _BaseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _InputColor: {r: 0.7529412, g: 0.7529412, b: 0.7529412, a: 1}
+    - _InputColor: {r: 0.14017446, g: 0.6603774, b: 0.60982025, a: 0.7529412}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []

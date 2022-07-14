@@ -58,6 +58,7 @@ public class RendererParticles_RenderBatch
     private Mesh defaultQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
     private Mesh mesh_circle_particle = MeshCreator_CircularView.GetMesh_ParticleOptimized();
     private Mesh mesh_circle_particleConnector = MeshCreator_CircularView.GetMesh_ParticleConnector();
+    private Mesh mesh_hex_particle = MeshCreator_HexagonalView.GetMesh_BaseExpansionHexagon();
     private Mesh defaultQuadLeftSidePivot = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     private Mesh defaultHexagon = MeshCreator_HexagonalView.GetMesh_BaseExpansionHexagon();
     private Mesh defaultHexagonCenter = MeshCreator_HexagonalView.GetMesh_BaseHexagonBackground();
@@ -440,14 +441,11 @@ public class RendererParticles_RenderBatch
             if (i == particleMatricesCircle_Contracted.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
             else listLength = maxArraySize;
 
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Contracted[i], listLength, propertyBlock_HexParticles_Contracted.propertyBlock);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Expanded1[i], listLength, propertyBlock_HexParticles_Expanded.propertyBlock);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Expanded2[i], listLength, propertyBlock_HexParticles_Expanded.propertyBlock);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_ContractedToExpanded[i], listLength, propertyBlock_HexParticles_ContractedToExpanded.propertyBlock);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_ExpandedToContracted[i], listLength, propertyBlock_HexParticles_ExpandedToContracted.propertyBlock);
-
-            //Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesHexBG[i], listLength);
-            //Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesHexBGExpanded[i], listLength);
+            // Particles
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
         }
     }
 
