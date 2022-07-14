@@ -64,6 +64,7 @@ public class RenderSystem
     public void AddReferenceToParticleSystem(ParticleSystem map)
     {
         this.map = map;
+        rendererUI.AddReferenceToMap(map);
     }
 
 

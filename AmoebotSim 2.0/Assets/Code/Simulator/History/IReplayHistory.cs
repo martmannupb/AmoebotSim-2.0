@@ -31,7 +31,7 @@ public interface IReplayHistory
     /// </para>
     /// </summary>
     /// <returns>The first round for which a state has been recorded.</returns>
-    public int GetFirstRecordedRound();
+    int GetFirstRecordedRound();
 
     /// <summary>
     /// Checks whether the object is currently tracking the latest
@@ -42,7 +42,7 @@ public interface IReplayHistory
     /// </para>
     /// </summary>
     /// <returns>Whether the marker currently tracks the latest recorded state.</returns>
-    public bool IsTracking();
+    bool IsTracking();
 
     /// <summary>
     /// Sets the tracking marker to the specified round, restores the
@@ -55,7 +55,7 @@ public interface IReplayHistory
     /// </summary>
     /// <param name="round">The round to which the tracking marker
     /// should be set.</param>
-    public void SetMarkerToRound(int round);
+    void SetMarkerToRound(int round);
 
     /// <summary>
     /// Moves the marker one round back and restores the object's recorded
@@ -66,7 +66,7 @@ public interface IReplayHistory
     /// round.
     /// </para>
     /// </summary>
-    public void StepBack();
+    void StepBack();
 
     /// <summary>
     /// Moves the marker one round forward and restores the object's
@@ -77,7 +77,7 @@ public interface IReplayHistory
     /// recorded round.
     /// </para>
     /// </summary>
-    public void StepForward();
+    void StepForward();
 
     /// <summary>
     /// Returns the round that is currently marked.
@@ -87,18 +87,18 @@ public interface IReplayHistory
     /// </para>
     /// </summary>
     /// <returns>The round that is currently marked.</returns>
-    public int GetMarkedRound();
+    int GetMarkedRound();
 
     /// <summary>
     /// Resets the marker to track the latest recorded state and
     /// to continue evolving as the simulation progresses.
     /// </summary>
-    public void ContinueTracking();
+    void ContinueTracking();
 
     /// <summary>
     /// Deletes all recorded states after the currently marked round.
     /// </summary>
-    public void CutOffAtMarker();
+    void CutOffAtMarker();
 
     /// <summary>
     /// Shifts all records as well as the marker by the specified
@@ -106,5 +106,5 @@ public interface IReplayHistory
     /// </summary>
     /// <param name="amount">The number of rounds to add to each entry.
     /// May be negative.</param>
-    public void ShiftTimescale(int amount);
+    void ShiftTimescale(int amount);
 }

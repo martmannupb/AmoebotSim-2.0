@@ -109,12 +109,12 @@ public class ValueHistory<T> : IReplayHistory
         // New round is later than or equal to current round
         lastRound = round;
         // Check if we actually need a new entry or if we can just update the last recorded one
-        if (round == rounds[^1])
+        if (round == rounds[rounds.Count - 1])
         {
-            values[^1] = value;
+            values[values.Count - 1] = value;
         }
         // TODO: Check if this comparison can be done better
-        else if (!EqualityComparer<T>.Default.Equals(value, values[^1]))
+        else if (!EqualityComparer<T>.Default.Equals(value, values[values.Count - 1]))
         {
             values.Add(value);
             rounds.Add(round);
@@ -159,7 +159,7 @@ public class ValueHistory<T> : IReplayHistory
     public void ContinueTracking()
     {
         isTracking = true;
-        markedRound = rounds[^1];
+        markedRound = rounds[rounds.Count - 1];
         markedIndex = rounds.Count - 1;
     }
 
@@ -237,16 +237,16 @@ public class ValueHistory<T> : IReplayHistory
             throw new System.InvalidOperationException("Cannot record value when marker is in round earlier than last round.");
         }
 
-        if (markedRound == rounds[^1])
+        if (markedRound == rounds[rounds.Count - 1])
         {
             // Only update value of last round
-            values[^1] = value;
+            values[values.Count - 1] = value;
         }
         else
         {
             lastRound = markedRound;
             // Only record new entry if value is different
-            if (!EqualityComparer<T>.Default.Equals(value, values[^1]))
+            if (!EqualityComparer<T>.Default.Equals(value, values[values.Count - 1]))
             {
                 values.Add(value);
                 rounds.Add(markedRound);
@@ -330,7 +330,7 @@ public class ValueHistory<T> : IReplayHistory
         {
             throw new System.ArgumentOutOfRangeException("Cannot find entry for round " + round + " as first recorded round is " + rounds[0]);
         }
-        else if (round >= rounds[^1])
+        else if (round >= rounds[rounds.Count - 1])
         {
             return rounds.Count - 1;
         }

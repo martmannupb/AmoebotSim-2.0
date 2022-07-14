@@ -5,6 +5,9 @@ using UnityEngine;
 public class RendererUI
 {
 
+    // References
+    private ParticleSystem map;
+
     public Mesh mesh_particleOverlay_contracted;
     public Mesh mesh_particleOverlay_expanded;
 
@@ -25,17 +28,30 @@ public class RendererUI
         this.material_hexagonSelectionOverlay = MaterialDatabase.material_hexagonal_ui_baseHexagonSelectionMaterial;
     }
 
+    public void AddReferenceToMap(ParticleSystem map)
+    {
+        this.map = map;
+    }
+
     public void Render()
     {
         Vector2 camPos = CameraUtils.MainCamera_Mouse_WorldPosition();
+        Vector2Int camWorldField = AmoebotFunctions.GetGridPositionFromWorldPosition(camPos);
 
-        // Find out if we are over a UI or non-UI element
-        // (look at code from other project)
+        if (map != null)
+        {
+            // Find out if we are over a UI or non-UI element
+            // (look at code from other project)
 
-        // Show Particle Selection Overlay
-        Particle p = null;
-        Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(new Vector3(p.Head().x, p.Head().y, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
-        if (p.IsExpanded()) Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(new Vector3(p.Tail().x, p.Tail().y, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+            // Show Particle Selection Overlay
+            Particle p;
+            map.TryGetParticleAt(camWorldField, out p);
+            if(p != null)
+            {
+                Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(new Vector3(p.Head().x, p.Head().y, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+                if (p.IsExpanded()) Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(new Vector3(p.Tail().x, p.Tail().y, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+            }
+        }
     }
 
 }
