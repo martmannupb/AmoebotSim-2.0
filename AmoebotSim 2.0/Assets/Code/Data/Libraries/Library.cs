@@ -49,6 +49,36 @@ namespace Engine.Library {
         }
 
         /// <summary>
+        /// Scales a mesh around the pivot. From the scaleVector each coordinate is multiplied with the corresponding coordinates from the mesh vertices.
+        /// </summary>
+        /// <param name="mesh"></param>
+        /// <param name="scaleVector"></param>
+        /// <returns></returns>
+        public static Mesh scaleMeshAroundPivot(Mesh mesh, Vector3 scaleVector)
+        {
+            Vector3[] vertices = mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = new Vector3(scaleVector.x * vertices[i].x, scaleVector.y * vertices[i].y, scaleVector.z * vertices[i].z);
+            }
+            mesh.vertices = vertices;
+
+            return mesh;
+        }
+
+        public static Mesh offsetMeshVertices(Mesh mesh, Vector3 offsetVector)
+        {
+            Vector3[] vertices = mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = vertices[i] + offsetVector;
+            }
+            mesh.vertices = vertices;
+
+            return mesh;
+        }
+
+        /// <summary>
         /// Returns the default Quad Vertices with definable length, z coordinate and pivot. (0,0); (1,0); (0,1); (1,1) for length 1 and pivot (0,0). Pivot must be between (0,0) and (1,1).
         /// </summary>
         /// <param name="length">The length of a side.</param>
