@@ -46,7 +46,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
             state.SetValue(LFState.LEADER);
             constructionDir.SetValue(Random.Range(0, 6));
             SetMainColor(leaderColor);
-            Debug.Log("Line construction dir: " + (int)constructionDir);
+            Debug.Log("Line construction dir: " + (int)constructionDir.GetValue_After());
             leaderCreated = true;
         }
 
@@ -131,16 +131,17 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 
                 ComputeRootMoveDir(nbrDone);
                 // Expand if there is a free node in movement direction or try to do a push handover with another ROOT
-                ParticleAlgorithm nbr = GetNeighborAt(moveDir);
+                int md = moveDir.GetValue_After();
+                ParticleAlgorithm nbr = GetNeighborAt(md);
                 if (nbr == null)
                 {
-                    Expand(moveDir);
+                    Expand(md);
                     return;
                 }
                 LineFormationParticleSeq lfp = (LineFormationParticleSeq)nbr;
-                if (lfp.state == LFState.ROOT && lfp.IsExpanded() && !IsHeadAt(moveDir))
+                if (lfp.state == LFState.ROOT && lfp.IsExpanded() && !IsHeadAt(md))
                 {
-                    PushHandover(moveDir);
+                    PushHandover(md);
                     return;
                 }
             }
@@ -194,10 +195,11 @@ public class LineFormationParticleSeq : ParticleAlgorithm
                 return;
             }
             // Did not become DONE or ROOT, try pushing into followed particle
-            ParticleAlgorithm nbr = GetNeighborAt(followDir, true);
-            if (nbr != null && nbr.IsExpanded() && !IsHeadAt(followDir, true) /* UGLY HACK */ && !((LineFormationParticleSeq)nbr).havePushed)
+            int fd = followDir.GetValue_After();
+            ParticleAlgorithm nbr = GetNeighborAt(fd, true);
+            if (nbr != null && nbr.IsExpanded() && !IsHeadAt(fd, true) /* UGLY HACK */ && !((LineFormationParticleSeq)nbr).havePushed)
             {
-                PushHandover(followDir);
+                PushHandover(fd);
                 havePushed.SetValue(true);
                 newFollowDir.SetValue(nbr.HeadDirection());
             }
@@ -235,7 +237,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 
         // Safe to always set constructionDir because we have common chirality and compass orientation
         constructionDir.SetValue(cd);
-        if (constructionDir == (nbr.localDir + 3) % 6)
+        if (constructionDir.GetValue_After() == (nbr.localDir + 3) % 6)
         {
             state.SetValue(LFState.DONE);
             SetMainColor(doneColor);
@@ -248,43 +250,44 @@ public class LineFormationParticleSeq : ParticleAlgorithm
     {
         // We already know cnostructionDir, set moveDir relative to neighbor position
         // On the other end of the line => Move around the left side
-        if (constructionDir == nbr.localDir)
+        int cd = constructionDir.GetValue_After();
+        if (cd == nbr.localDir)
         {
-            moveDir.SetValue((constructionDir + 1) % 6);
+            moveDir.SetValue((cd + 1) % 6);
             return;
         }
 
         // Left or right side of the line => Move up the line
-        if (nbr.localDir == (constructionDir + 5) % 6 || nbr.localDir == (constructionDir + 4) % 6)
+        if (nbr.localDir == (cd + 5) % 6 || nbr.localDir == (cd + 4) % 6)
         {
             // On left side
             // First check if we can move to the end position of the line
-            ParticleAlgorithm nbr2 = GetNeighborAt((constructionDir + 5) % 6);
+            ParticleAlgorithm nbr2 = GetNeighborAt((cd + 5) % 6);
             if (nbr2 == null || (((LineFormationParticleSeq)nbr2).state != LFState.LEADER && ((LineFormationParticleSeq)nbr2).state != LFState.DONE))
             {
                 // Position is empty or occupied by non-LEADER, non-DONE particle => try to move there
-                moveDir.SetValue((constructionDir + 5) % 6);
+                moveDir.SetValue((cd + 5) % 6);
             }
             else
             {
                 // Position is already part of the line, move forward
-                moveDir.SetValue(constructionDir);
+                moveDir.SetValue(cd);
             }
         }
-        else if (nbr.localDir == (constructionDir + 1) % 6 || nbr.localDir == (constructionDir + 2) % 6)
+        else if (nbr.localDir == (cd + 1) % 6 || nbr.localDir == (cd + 2) % 6)
         {
             // On right side
             // First check if we can move to the end position of the line
-            ParticleAlgorithm nbr2 = GetNeighborAt((constructionDir + 1) % 6);
+            ParticleAlgorithm nbr2 = GetNeighborAt((cd + 1) % 6);
             if (nbr2 == null || (((LineFormationParticleSeq)nbr2).state != LFState.LEADER && ((LineFormationParticleSeq)nbr2).state != LFState.DONE))
             {
                 // Position is empty or occupied by non-LEADER, non-DONE particle => try to move there
-                moveDir.SetValue((constructionDir + 1) % 6);
+                moveDir.SetValue((cd + 1) % 6);
             }
             else
             {
                 // Position is already part of the line, move forward
-                moveDir.SetValue(constructionDir);
+                moveDir.SetValue(cd);
             }
         }
     }

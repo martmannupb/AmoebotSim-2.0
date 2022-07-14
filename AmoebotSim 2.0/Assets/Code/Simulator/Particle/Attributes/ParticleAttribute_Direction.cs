@@ -9,23 +9,6 @@ using UnityEngine;
 /// </summary>
 public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IParticleAttribute
 {
-    private int Value
-    {
-        get
-        {
-            return particle.isActive ? history.GetMarkedValue() : history.GetValueInRound(particle.system.PreviousRound);
-        }
-        set
-        {
-            if (!particle.isActive)
-            {
-                throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
-            }
-            CheckValue(value);
-            history.RecordValueInRound(value, particle.system.CurrentRound);
-        }
-    }
-
     public ParticleAttribute_Direction(Particle particle, string name, int value = 0) : base(particle, name)
     {
         CheckValue(value);
@@ -40,29 +23,49 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IP
         }
     }
 
+    public override int GetValue()
+    {
+        return history.GetValueInRound(particle.system.PreviousRound);
+    }
+
+    public override int GetValue_After()
+    {
+        if (!particle.isActive)
+        {
+            throw new System.InvalidOperationException("Particles are not allowed to read other particles' updated states!");
+        }
+        return history.GetMarkedValue();
+    }
+
     public override void SetValue(int value)
     {
-        Value = value;
+        if (!particle.isActive)
+        {
+            throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+        }
+        CheckValue(value);
+        history.RecordValueInRound(value, particle.system.CurrentRound);
     }
 
     public override string ToString()
     {
-        return "ParticleAttribute (direction) with name " + name + " and value " + Value;
+        return "ParticleAttribute (direction) with name " + name + " and value " + ToString_AttributeValue();
     }
 
     public string ToString_AttributeValue()
     {
-        return Value.ToString();
+        return history.GetMarkedValue().ToString();
     }
 
     public void UpdateAttributeValue(string value)
     {
-        // TODO: Handle exception?
-        Value = int.Parse(value);
-    }
-
-    public override int GetValue()
-    {
-        return Value;
+        if (int.TryParse(value, out int parsedVal))
+        {
+            SetValue(parsedVal);
+        }
+        else
+        {
+            throw new System.ArgumentException("Cannot convert " + value + " to direction attribute.");
+        }
     }
 }

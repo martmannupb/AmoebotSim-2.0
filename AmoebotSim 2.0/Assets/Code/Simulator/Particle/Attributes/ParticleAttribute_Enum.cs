@@ -44,9 +44,27 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
         history = new ValueHistory<T>(initialValue, particle.system.CurrentRound);
     }
 
+    public override T GetValue()
+    {
+        return history.GetValueInRound(particle.system.PreviousRound);
+    }
+
+    public override T GetValue_After()
+    {
+        if (!particle.isActive)
+        {
+            throw new System.InvalidOperationException("Particles are not allowed to read other particles' updated states!");
+        }
+        return history.GetMarkedValue();
+    }
+
     public override void SetValue(T value)
     {
-        Value = value;
+        if (!particle.isActive)
+        {
+            throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+        }
+        history.RecordValueInRound(value, particle.system.CurrentRound);
     }
     
     public override string ToString()
@@ -66,17 +84,18 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
 
     public string ToString_AttributeValue()
     {
-        return Value.ToString();
+        return history.GetMarkedValue().ToString();
     }
 
     public void UpdateAttributeValue(string value)
     {
-        // TODO: Handle exception?
-        Value = (T)Enum.Parse(Value.GetType(), value);
-    }
-
-    public override T GetValue()
-    {
-        return Value;
+        if (Enum.TryParse(typeof(T), value, true, out object parsedVal))
+        {
+            SetValue((T)parsedVal);
+        }
+        else
+        {
+            throw new System.ArgumentException("Cannot convert " + value + " to enum attribute of type " + GetType());
+        }
     }
 }
