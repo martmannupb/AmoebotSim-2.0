@@ -275,7 +275,7 @@ public class ParticleSystem : IReplayHistory
 
     /// <summary>
     /// Applies the given action to the particle for which it was created.
-    /// If the particle's <see cref="Particle.scheduledAction"/> is the
+    /// If the particle's <see cref="Particle.ScheduledMovement"/> is the
     /// same as this one, it is reset to <c>null</c>.
     /// </summary>
     /// <param name="a">The action to be applied.</param>
@@ -299,9 +299,9 @@ public class ParticleSystem : IReplayHistory
                 throw new System.ArgumentException("Unknown ParticleAction type " + a.type);
         }
         // Finally remove the particle's scheduled action if it is this one
-        if (a == a.particle.scheduledAction)
+        if (a == a.particle.ScheduledMovement)
         {
-            a.particle.scheduledAction = null;
+            a.particle.ScheduledMovement = null;
         }
     }
 
@@ -532,14 +532,14 @@ public class ParticleSystem : IReplayHistory
 
         // Warning if particle already has a scheduled movement operation
         // TODO: Turn this into an error?
-        if (p.scheduledAction != null)
+        if (p.ScheduledMovement != null)
         {
             Debug.LogWarning("Expanding particle already has a scheduled movement.");
         }
 
         // Store expansion action in particle and queue
         ParticleAction a = new ParticleAction(p, ActionType.EXPAND, locDir);
-        p.scheduledAction = a;
+        p.ScheduledMovement = a;
         actionQueue.Enqueue(a);
     }
 
@@ -589,14 +589,14 @@ public class ParticleSystem : IReplayHistory
 
         // Warning if particle already has a scheduled movement operation
         // TODO: Turn this into an error?
-        if (p.scheduledAction != null)
+        if (p.ScheduledMovement != null)
         {
             Debug.LogWarning("Contracting particle already has a scheduled movement.");
         }
 
         // Store contraction action in particle and queue
         ParticleAction a = new ParticleAction(p, head ? ActionType.CONTRACT_HEAD : ActionType.CONTRACT_TAIL);
-        p.scheduledAction = a;
+        p.ScheduledMovement = a;
         actionQueue.Enqueue(a);
     }
 
@@ -633,14 +633,14 @@ public class ParticleSystem : IReplayHistory
 
         // Warning if particle already has a scheduled movement operation
         // TODO: Turn this into an error?
-        if (p.scheduledAction != null)
+        if (p.ScheduledMovement != null)
         {
             Debug.LogWarning("Particle scheduling push handover already has a scheduled movement.");
         }
 
         // Store push handover action in particle and queue
         ParticleAction a = new ParticleAction(p, ActionType.PUSH, locDir);
-        p.scheduledAction = a;
+        p.ScheduledMovement = a;
         actionQueue.Enqueue(a);
     }
 
@@ -707,14 +707,14 @@ public class ParticleSystem : IReplayHistory
 
         // Warning if particle already has a scheduled movement operation
         // TODO: Turn this into an error?
-        if (p.scheduledAction != null)
+        if (p.ScheduledMovement != null)
         {
             Debug.LogWarning("Particle scheduling pull handover already has a scheduled movement.");
         }
 
         // Store pull handover action in particle and queue
         ParticleAction a = new ParticleAction(p, head ? ActionType.PULL_HEAD : ActionType.PULL_TAIL);
-        p.scheduledAction = a;
+        p.ScheduledMovement = a;
         actionQueue.Enqueue(a);
     }
 
@@ -857,7 +857,7 @@ public class ParticleSystem : IReplayHistory
         if (particleMap.TryGetValue(targetLoc, out Particle p2))
         {
             // Error if the other particle has already moved or intends to perform a non-matching movement
-            if (p2.hasMoved || p2.scheduledAction != null && !MovementMatchesExpansion(p, p2, targetLoc))
+            if (p2.hasMoved || p2.ScheduledMovement != null && !MovementMatchesExpansion(p, p2, targetLoc))
             {
                 if (!useFCFS)
                 {
@@ -872,7 +872,7 @@ public class ParticleSystem : IReplayHistory
             }
             
             // If the other particle does not intend to do anything: Contract it manually
-            if (p2.scheduledAction == null)
+            if (p2.ScheduledMovement == null)
             {
                 // p2 must be expanded at this point because it has not moved yet and cannot have been contracted when the action was scheduled
                 if (targetLoc == p2.Tail())
@@ -974,7 +974,7 @@ public class ParticleSystem : IReplayHistory
         }
 
         // Also throw error if the neighbor has already moved to a different position or intends to perform a different non-matching movement
-        if (p2.hasMoved && p2.Head() != targetLoc && p2.Tail() != targetLoc || p2.scheduledAction != null && !MovementMatchesContraction(p, p2, targetLoc))
+        if (p2.hasMoved && p2.Head() != targetLoc && p2.Tail() != targetLoc || p2.ScheduledMovement != null && !MovementMatchesContraction(p, p2, targetLoc))
         {
             if (!useFCFS)
             {
@@ -989,7 +989,7 @@ public class ParticleSystem : IReplayHistory
         }
 
         // If the other particle does not intend to do anything and has not moved yet: Expand it manually
-        if (!p2.hasMoved && p2.scheduledAction == null)
+        if (!p2.hasMoved && p2.ScheduledMovement == null)
         {
             // p2 must be contracted at this point because it has not moved yet and cannot have been expanded when the action was scheduled
             // Expansion direction is local((global(locDir) + 3) % 6)
@@ -1034,18 +1034,18 @@ public class ParticleSystem : IReplayHistory
     /// <param name="otherPart">The Particle whose action should be checked.</param>
     /// <param name="targetLoc">The grid node onto which <paramref name="expandingPart"/>
     /// wants to expand and which is occupied by <paramref name="otherPart"/>.</param>
-    /// <returns><c>true</c> if and only if the <see cref="Particle.scheduledAction"/> of
+    /// <returns><c>true</c> if and only if the <see cref="Particle.ScheduledMovement"/> of
     /// <paramref name="otherPart"/> is not <c>null</c> and allows <paramref name="expandingPart"/>
     /// to expand, i.e., if <paramref name="otherPart"/> intends to contract away from
     /// <paramref name="targetLoc"/> either through a regular contraction or through a
     /// pull handover directed at <paramref name="expandingPart"/>.</returns>
     private bool MovementMatchesExpansion(Particle expandingPart, Particle otherPart, Vector2Int targetLoc)
     {
-        return otherPart.scheduledAction != null && (
-            (otherPart.scheduledAction.type == ActionType.CONTRACT_HEAD && otherPart.Tail() == targetLoc) ||
-            (otherPart.scheduledAction.type == ActionType.CONTRACT_TAIL && otherPart.Head() == targetLoc) ||
-            (otherPart.scheduledAction.type == ActionType.PULL_HEAD && otherPart.Tail() == targetLoc && ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.scheduledAction.localDir, false) == expandingPart.Head()) ||
-            (otherPart.scheduledAction.type == ActionType.PULL_TAIL && otherPart.Head() == targetLoc && ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.scheduledAction.localDir, true) == expandingPart.Head()));
+        return otherPart.ScheduledMovement != null && (
+            (otherPart.ScheduledMovement.type == ActionType.CONTRACT_HEAD && otherPart.Tail() == targetLoc) ||
+            (otherPart.ScheduledMovement.type == ActionType.CONTRACT_TAIL && otherPart.Head() == targetLoc) ||
+            (otherPart.ScheduledMovement.type == ActionType.PULL_HEAD && otherPart.Tail() == targetLoc && ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.ScheduledMovement.localDir, false) == expandingPart.Head()) ||
+            (otherPart.ScheduledMovement.type == ActionType.PULL_TAIL && otherPart.Head() == targetLoc && ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.ScheduledMovement.localDir, true) == expandingPart.Head()));
     }
 
     /// <summary>
@@ -1056,15 +1056,15 @@ public class ParticleSystem : IReplayHistory
     /// <param name="otherPart">The Particle that is supposed to follow using an expansion.</param>
     /// <param name="targetLoc">The grid node from which <paramref name="contractingPart"/> wants to
     /// contract and onto which <paramref name="otherPart"/> is supposed to expand.</param>
-    /// <returns><c>true</c> if and only if the <see cref="Particle.scheduledAction"/> of
+    /// <returns><c>true</c> if and only if the <see cref="Particle.ScheduledMovement"/> of
     /// <paramref name="otherPart"/> is not <c>null</c> and follows the pull handover of
     /// <paramref name="contractingPart"/>, i.e., it is a regular expansion or a push handover
     /// directed at <paramref name="contractingPart"/>.</returns>
     private bool MovementMatchesContraction(Particle contractingPart, Particle otherPart, Vector2Int targetLoc)
     {
-        return otherPart.scheduledAction != null && (
-            (otherPart.scheduledAction.type == ActionType.EXPAND && targetLoc == ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.scheduledAction.localDir, true)) ||
-            (otherPart.scheduledAction.type == ActionType.PUSH && targetLoc == ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.scheduledAction.localDir, true)));
+        return otherPart.ScheduledMovement != null && (
+            (otherPart.ScheduledMovement.type == ActionType.EXPAND && targetLoc == ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.ScheduledMovement.localDir, true)) ||
+            (otherPart.ScheduledMovement.type == ActionType.PUSH && targetLoc == ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.ScheduledMovement.localDir, true)));
     }
 
 

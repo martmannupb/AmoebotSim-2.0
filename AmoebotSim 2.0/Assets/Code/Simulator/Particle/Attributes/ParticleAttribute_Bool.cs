@@ -29,6 +29,20 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
         history = new ValueHistory<bool>(value, particle.system.CurrentRound);
     }
 
+    public override bool GetValue()
+    {
+        return history.GetValueInRound(particle.system.PreviousRound);
+    }
+
+    public override bool GetValue_After()
+    {
+        if (!particle.isActive)
+        {
+            throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+        }
+    }
+
+
     public override void SetValue(bool value)
     {
         Value = value;
@@ -48,10 +62,5 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
     {
         // TODO: Handle exception?
         Value = bool.Parse(value);
-    }
-
-    public override bool GetValue()
-    {
-        return Value;
     }
 }
