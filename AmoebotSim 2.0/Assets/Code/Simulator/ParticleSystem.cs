@@ -80,7 +80,7 @@ public class ParticleSystem : IReplayHistory
     public RenderSystem renderSystem;
 
     public List<Particle> particles = new List<Particle>();
-    public Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
+    private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
     public Queue<ParticleAction> actionQueue = new Queue<ParticleAction>();
 
@@ -90,7 +90,13 @@ public class ParticleSystem : IReplayHistory
     {
         this.sim = sim;
         this.renderSystem = renderSystem;
+        this.renderSystem.AddReferenceToParticleSystem(this);
     }
+
+
+    /**
+     * Methods for controlling the system
+     */
 
     /// <summary>
     /// Initializes the system with ExampleParticles for testing purposes.
@@ -194,6 +200,26 @@ public class ParticleSystem : IReplayHistory
             s += part.Head() + "\n";
         }
         Debug.Log(s);
+    }
+
+    /// <summary>
+    /// Tries to get the <see cref="Particle"/> at the given position.
+    /// </summary>
+    /// <param name="position">The grid position at which to look for the particle.</param>
+    /// <param name="particle">The particle at the given position, if it exists,
+    /// otherwise <c>null</c>.</param>
+    /// <returns><c>true</c> if and only if a particle was found at the given position.</returns>
+    public bool TryGetParticleAt(Vector2Int position, out Particle particle)
+    {
+        if (particleMap.TryGetValue(position, out particle))
+        {
+            return true;
+        }
+        else
+        {
+            particle = null;
+            return false;
+        }
     }
 
 
