@@ -329,6 +329,7 @@ public class ParticleSystem : IReplayHistory
         // TODO: Maybe only update particles with changes
         foreach (Particle p in particles)
         {
+            p.graphics.SetParticleColor(p.GetParticleColor());
             if (resetVisuals) p.graphics.UpdateReset();
             else p.graphics.Update();
         }
