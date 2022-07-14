@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ActionType { EXPAND, CONTRACT_HEAD, CONTRACT_TAIL, PUSH, PULL_HEAD, PULL_TAIL }
+public enum ActionType { EXPAND, CONTRACT_HEAD, CONTRACT_TAIL, PUSH, PULL_HEAD, PULL_TAIL, NULL }
 
 /// <summary>
 /// Represents an action a particle can schedule when it is activated.
@@ -19,7 +19,7 @@ public class ParticleAction
     public ActionType type;
     public int localDir;
 
-    public ParticleAction(Particle particle, ActionType type, int localDir = -1)
+    public ParticleAction(Particle particle = null, ActionType type = ActionType.NULL, int localDir = -1)
     {
         this.particle = particle;
         this.type = type;

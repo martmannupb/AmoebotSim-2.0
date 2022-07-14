@@ -52,10 +52,6 @@ public struct Neighbor<T> where T : ParticleAlgorithm
 ///     }
 /// }
 /// </code>
-/// Note that a <see cref="ParticleAttribute{T}"/> can be read like a regular variable of
-/// type <c>T</c> but must be written using the <see cref="ParticleAttribute{T}.SetValue(T)"/>
-/// method. We recommend wrapping the attribute using a property of type <c>T</c> if using this
-/// method is too inconvenient.
 /// </example>
 /// </para>
 /// </summary>
@@ -145,12 +141,22 @@ public abstract class ParticleAlgorithm
 
     /**
      * State information retrieval
+     * The default methods return the state information recorded in the
+     * snapshot at the beginning of the current round. There are specialized
+     * methods that return the predicted state at the end of the round.
      */
 
     /// <summary>
     /// Checks if the particle is currently expanded, i.e., occupies 2 neighboring
     /// grid nodes simultaneously.
-    /// <para>See <see cref="IsContracted"/></para>
+    /// <para>See <see cref="IsContracted"/>.</para>
+    /// <para>
+    /// Note: This method returns information from the snapshot taken at the
+    /// beginning of the current round. Its return value will not change during
+    /// this execution of the <see cref="Activate"/> method. Use
+    /// <see cref="IsExpanded_After"/> to get the predicted value for after the
+    /// round.
+    /// </para>
     /// </summary>
     /// <returns><c>true</c> if and only if the particle is expanded.</returns>
     public bool IsExpanded()
@@ -161,7 +167,14 @@ public abstract class ParticleAlgorithm
     /// <summary>
     /// Checks if the particle is currently contracted, i.e., occupies exactly one
     /// node of the grid.
-    /// <para>See <see cref="IsExpanded"/></para>
+    /// <para>See <see cref="IsExpanded"/>.</para>
+    /// <para>
+    /// Note: This method returns information from the snapshot taken at the
+    /// beginning of the current round. Its return value will not change during
+    /// this execution of the <see cref="Activate"/> method. Use
+    /// <see cref="IsContracted_After"/> to get the predicted value for after the
+    /// round.
+    /// </para>
     /// </summary>
     /// <returns><c>true</c> if and only if the particle is contracted.</returns>
     public bool IsContracted()
@@ -171,6 +184,13 @@ public abstract class ParticleAlgorithm
 
     /// <summary>
     /// Returns the local direction pointing from the particle's tail towards its head.
+    /// <para>
+    /// Note: This method returns information from the snapshot taken at the
+    /// beginning of the current round. Its return value will not change during
+    /// this execution of the <see cref="Activate"/> method. Use
+    /// <see cref="HeadDirection_After"/> to get the predicted value for after the
+    /// round.
+    /// </para>
     /// </summary>
     /// <returns>The local direction pointing from the particle's tail towards its head,
     /// if it is expanded, otherwise <c>-1</c>.</returns>
@@ -181,6 +201,13 @@ public abstract class ParticleAlgorithm
 
     /// <summary>
     /// Returns the local direction pointing from the particle's head towards its tail.
+    /// <para>
+    /// Note: This method returns information from the snapshot taken at the
+    /// beginning of the current round. Its return value will not change during
+    /// this execution of the <see cref="Activate"/> method. Use
+    /// <see cref="TailDirection_After"/> to get the predicted value for after the
+    /// round.
+    /// </para>
     /// </summary>
     /// <returns>The local direction pointing from the particle's head towards its tail,
     /// if it is expanded, otherwise <c>-1</c>.</returns>
@@ -226,6 +253,58 @@ public abstract class ParticleAlgorithm
 
 
     /**
+     * Predicted state information retrieval
+     * These methods return the predicted values for after the
+     * current round based on the particle's actions during this
+     * call of <see cref="Activate"/>.
+     */
+
+    /// <summary>
+    /// Like <see cref="IsExpanded"/>, but returns the predicted
+    /// value for after the round
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle will be
+    /// expanded at the end of the round if its planned movements succeed.</returns>
+    public bool IsExpanded_After()
+    {
+        return particle.IsExpanded_After();
+    }
+
+    /// <summary>
+    /// Like <see cref="IsContracted"/>, but returns the predicted
+    /// value for after the round
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle will be
+    /// contracted at the end of the round if its planned movements succeed.</returns>
+    public bool IsContracted_After()
+    {
+        return particle.IsContracted_After();
+    }
+
+    /// <summary>
+    /// Like <see cref="HeadDirection"/>, but returns the predicted value
+    /// for after the round.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's tail towards its head,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int HeadDirection_After()
+    {
+        return particle.HeadDirection_After();
+    }
+
+    /// <summary>
+    /// Like <see cref="TailDirection"/>, but returns the predicted value
+    /// for after the round.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's head towards its tail,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int TailDirection_After()
+    {
+        return particle.TailDirection_After();
+    }
+
+
+    /**
      * System information retrieval
      * Mainly for finding neighbor particles
      */
@@ -237,7 +316,12 @@ public abstract class ParticleAlgorithm
     /// Checks if this particle has a neighboring particle in the given local direction.
     /// For expanded particles, there are two different nodes in the same local direction,
     /// one seen from the particle's head and one seen from its tail.
-    /// <para>See also <see cref="GetNeighborAt(int, bool)"/></para>
+    /// <para>See also <see cref="GetNeighborAt(int, bool)"/>.</para>
+    /// <para>
+    /// Note: This method returns information from the snapshot taken at the
+    /// beginning of the current round. Its return value will not change during
+    /// this execution of the <see cref="Activate"/> method.
+    /// </para>
     /// </summary>
     /// <param name="locDir">The local direction in which to search for a neighbor particle.</param>
     /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
@@ -252,6 +336,11 @@ public abstract class ParticleAlgorithm
     /// <summary>
     /// Gets this particle's neighbor in the given local direction. The position to
     /// check is determined in the same way as in <see cref="HasNeighborAt(int, bool)"/>.
+    /// <para>
+    /// Note: This method returns information from the snapshot taken at the
+    /// beginning of the current round. Its return value will not change during
+    /// this execution of the <see cref="Activate"/> method.
+    /// </para>
     /// </summary>
     /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
     /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
@@ -274,6 +363,11 @@ public abstract class ParticleAlgorithm
     /// Checks if the part of the neighboring particle in the given local direction is
     /// the neighbor's head. The position to check is determined in the same way as in
     /// <see cref="HasNeighborAt(int, bool)"/>.
+    /// <para>
+    /// Note: This method returns information from the snapshot taken at the
+    /// beginning of the current round. Its return value will not change during
+    /// this execution of the <see cref="Activate"/> method.
+    /// </para>
     /// </summary>
     /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
     /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise
@@ -290,6 +384,11 @@ public abstract class ParticleAlgorithm
     /// Checks if the part of the neighboring particle in the given local direction is
     /// the neighbor's tail. The position to check is determined in the same way as in
     /// <see cref="HasNeighborAt(int, bool)"/>.
+    /// <para>
+    /// Note: This method returns information from the snapshot taken at the
+    /// beginning of the current round. Its return value will not change during
+    /// this execution of the <see cref="Activate"/> method.
+    /// </para>
     /// </summary>
     /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
     /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise

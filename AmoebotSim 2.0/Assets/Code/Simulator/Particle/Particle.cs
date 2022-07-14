@@ -72,14 +72,34 @@ public class Particle : IParticleState, IReplayHistory
     private Color mainColor = new Color();
     private bool mainColorSet = false;
 
-    // Data used by system to coordinate movements
+    /**
+     * Data used by simulator to coordinate particle actions
+     * 
+     * This section is used by the simulator to store information on
+     * planned actions such that they can be coordinated and applied
+     * easily, and to provide a way for the developer to access
+     * predicted information.
+     * 
+     * Some information is maintained internally by the Particle to
+     * cache predicted information.
+     */
+
     /// <summary>
     /// Stores the movement action the particle scheduled during the current round.
     /// Used to find out if a particle intends to perform a movement to check if
     /// movements are consistent or will lead to conflicts.
-    /// <para>Reset to <c>null</c> after applying the movement action.</para>
+    /// <para>Reset this to <c>null</c> after applying the movement action.</para>
     /// </summary>
-    public ParticleAction scheduledAction = null;
+    public ParticleAction ScheduledMovement
+    {
+        get { return scheduledMovement; }
+        set { if (value == null) ResetScheduledMovement(); else SetScheduledMovement(value); }
+    }
+    private ParticleAction scheduledMovement = null;
+    private bool predictIsExpanded = false;
+    private int predictTailDir = -1;
+    private int predictHeadDir = -1;
+
     /// <summary>
     /// Flag indicating whether the particle has moved during the current round.
     /// Used to determine whether a particle can be pushed or pulled by a
@@ -130,6 +150,11 @@ public class Particle : IParticleState, IReplayHistory
 
     /**
      * State information retrieval
+     * 
+     * These methods return the latest known state of the Particle, not
+     * including the planned actions stored by the simulator.
+     * During an activation, these will return the Particle's state at
+     * the beginning of the round.
      */
 
     /// <summary>
@@ -255,6 +280,87 @@ public class Particle : IParticleState, IReplayHistory
     public List<T> PopMsgsOfType<T>() where T : Message
     {
         throw new System.NotImplementedException();
+    }
+
+
+    /**
+     * Predicted state information retrieval.
+     * 
+     * These methods provide a way for the developer to access the
+     * updated particle state during the Activate() method, based
+     * on the actions that are currently planned.
+     */
+
+    /// <summary>
+    /// Like <see cref="IsExpanded"/>, but returns the predicted value
+    /// for after the round.
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle will be
+    /// expanded after the current round if its planned movements succeed.</returns>
+    public bool IsExpanded_After()
+    {
+        if (scheduledMovement != null)
+        {
+            return predictIsExpanded;
+        }
+        else
+        {
+            return IsExpanded();
+        }
+    }
+
+    /// <summary>
+    /// Like <see cref="IsContracted"/>, but returns the predicted value
+    /// for after the round.
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle will be
+    /// contracted after the current round if its planned movements succeed.</returns>
+    public bool IsContracted_After()
+    {
+        if (scheduledMovement != null)
+        {
+            return !predictIsExpanded;
+        }
+        else
+        {
+            return IsContracted();
+        }
+    }
+
+    /// <summary>
+    /// Like <see cref="HeadDirection"/>, but returns the predicted value
+    /// for after the round.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's tail towards its head,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int HeadDirection_After()
+    {
+        if (scheduledMovement != null)
+        {
+            return predictHeadDir;
+        }
+        else
+        {
+            return HeadDirection();
+        }
+    }
+
+    /// <summary>
+    /// Like <see cref="TailDirection"/>, but returns the predicted value
+    /// for after the round.
+    /// </summary>
+    /// <returns>The local direction pointing from the particle's head towards its tail,
+    /// if it is expanded, otherwise <c>-1</c>.</returns>
+    public int TailDirection_After()
+    {
+        if (scheduledMovement != null)
+        {
+            return predictTailDir;
+        }
+        else
+        {
+            return TailDirection();
+        }
     }
 
     /**
@@ -416,6 +522,39 @@ public class Particle : IParticleState, IReplayHistory
     public void Apply_SendMessage(Message msg, int locDir, bool head = true)
     {
         throw new System.NotImplementedException();
+    }
+
+
+    /**
+     * Methods used by ParticleSystem to set and reset planned actions.
+     */
+
+    private void SetScheduledMovement(ParticleAction a)
+    {
+        scheduledMovement = a;
+        // Update predicted information
+        switch (a.type)
+        {
+            case ActionType.EXPAND:
+            case ActionType.PUSH:
+                predictIsExpanded = true;
+                predictHeadDir = a.localDir;
+                predictTailDir = (predictHeadDir + 3) % 6;
+                break;
+            case ActionType.CONTRACT_HEAD:
+            case ActionType.CONTRACT_TAIL:
+            case ActionType.PULL_HEAD:
+            case ActionType.PULL_TAIL:
+                predictIsExpanded = false;
+                predictHeadDir = -1;
+                predictTailDir = -1;
+                break;
+        }
+    }
+
+    private void ResetScheduledMovement()
+    {
+        scheduledMovement = null;
     }
 
 

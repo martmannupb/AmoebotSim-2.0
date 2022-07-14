@@ -29,10 +29,13 @@ using UnityEngine;
 ///     }
 /// }
 /// </code>
-/// After that, the value of a <see cref="ParticleAttribute{T}"/> variable
-/// be read as if it was a variable of type <typeparamref name="T"/>, even
-/// if the variable of another particle is read. To write the value, however,
-/// the <see cref="SetValue(T)"/> method must be used.
+/// </para>
+/// <para>
+/// Note the difference between the <see cref="GetValue"/> and
+/// <see cref="GetValue_After"/> methods. Reading a <see cref="ParticleAttribute{T}"/>
+/// like a variable of type <typeparamref name="T"/> will return the same value as
+/// <see cref="GetValue"/>. Depending on the desired semantics, it may be helpful to
+/// wrap attributes in properties when writing a particle algorithm.
 /// </para>
 /// </summary>
 /// <typeparam name="T">The type of values the attribute stores.</typeparam>
@@ -40,8 +43,36 @@ public abstract class ParticleAttribute<T> : ParticleAttributeBase
 {
     public ParticleAttribute(Particle particle, string name) : base(particle, name) { }
 
+    /// <summary>
+    /// Returns the attribute's value from the snapshot taken at the
+    /// beginning of the current round.
+    /// <para>
+    /// The return value is not changed by assigning new values to this attribute!
+    /// To get the latest assigned value, use <see cref="GetValue_After"/>.
+    /// </para>
+    /// </summary>
+    /// <returns>The attribute value at the beginning of the current round.</returns>
     public abstract T GetValue();
 
+    /// <summary>
+    /// Returns the latest value of this attribute.
+    /// <para>
+    /// The return value changes based on value assignments made within this
+    /// activation. Use <see cref="GetValue"/> to get the attribute's value at
+    /// the beginning of the current round.
+    /// </para>
+    /// </summary>
+    /// <returns>The latest value of this attribute.</returns>
+    public abstract T GetValue_After();
+
+    /// <summary>
+    /// Assigns the given value to this attribute.
+    /// <para>
+    /// Note that this value will only be visible to other particles in the
+    /// next round.
+    /// </para>
+    /// </summary>
+    /// <param name="value">The new value assigned to this attribute.</param>
     public abstract void SetValue(T value);
 
     public static implicit operator T(ParticleAttribute<T> attr) => attr.GetValue();
