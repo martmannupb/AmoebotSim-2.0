@@ -666,7 +666,7 @@ public static class MeshCreator_HexagonalView
         uv[3] = new Vector2(1f, 1f);
 
         // UV1s _____
-        todo // set the rest correctly
+        //todo // set the rest correctly
         for (int i = 0; i < 6; i++)
         {
             for (int j = 0; j < 4; j++)
