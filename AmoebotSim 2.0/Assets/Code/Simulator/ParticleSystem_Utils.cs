@@ -4,6 +4,93 @@ using UnityEngine;
 
 public static class ParticleSystem_Utils
 {
+    /**
+     * Label conversion matrices
+     * 
+     * Labels of contracted particles are the local directions.
+     * 
+     * For expanded particles, labels 0,1,2 always correspond to
+     * directions 0,1,2. For head directions 0,1,2, label 0 belongs
+     * to the head, and for directions 3,4,5, label 0 belongs to
+     * the tail.
+     */
+
+    /// <summary>
+    /// Conversion matrix for converting a local direction of an
+    /// expanded particle into a label.
+    /// <para>
+    /// The entry at position <c>[exp,loc]</c> is the head label
+    /// of an expanded particle with head direction <c>exp</c>
+    /// corresponding to the local direction <c>loc</c>. To get
+    /// the tail label for that direction, use <c>(exp + 3) % 6</c>
+    /// as the first index.
+    /// </para>
+    /// </summary>
+    private static readonly int[,] expandedLabels = new int[6,6]
+    {
+        // Head direction 0,...,5 for head labels or
+        // 3,4,5,0,1,2 for tail labels
+        { 0, 1, 2, -1, 8, 9 },
+        { 0, 1, 2, 3, -1, 9 },
+        { 0, 1, 2, 3, 4, -1 },
+        { -1, 3, 4, 5, 6, 7 },
+        { 8, -1, 4, 5, 6, 7 },
+        { 8, 9, -1, 5, 6, 7 }
+    };
+
+    /// <summary>
+    /// Conversion matrix for converting a label into a direction.
+    /// <para>
+    /// The entry at position <c>[exp,label]</c> is the direction
+    /// of an expanded particle with head direction <c>exp</c>
+    /// corresponding to label <c>label</c>.
+    /// </para>
+    /// <para>
+    /// Note that the conversion for head directions <c>3,4,5</c>
+    /// is the same as for head directions <c>0,1,2</c>, which is
+    /// why the second half of the matrix is redundant.
+    /// </para>
+    /// </summary>
+    private static readonly int[,] labelDirections = new int[,]
+    {
+        // Head direction 0,...,5
+        { 0, 1, 2, 1, 2, 3, 4, 5, 4, 5 },
+        { 0, 1, 2, 3, 2, 3, 4, 5, 0, 5 },
+        { 0, 1, 2, 3, 4, 3, 4, 5, 0, 1 },
+        // NOTE: The second half could be removed, but we would have
+        // one additional operation when reading...
+        { 0, 1, 2, 1, 2, 3, 4, 5, 4, 5 },
+        { 0, 1, 2, 3, 2, 3, 4, 5, 0, 5 },
+        { 0, 1, 2, 3, 4, 3, 4, 5, 0, 1 }
+    };
+
+    /// <summary>
+    /// Bool matrix telling whether a given label is a head or
+    /// tail label.
+    /// <para>
+    /// The entry at position <c>[exp,label]</c> is <c>true</c>
+    /// if and only if the label <c>label</c> belongs to the
+    /// head of an expanded particle with head direction <c>exp</c>.
+    /// </para>
+    /// <para>
+    /// Note that the entries for head directions <c>3,4,5</c> are
+    /// exactly the opposite of the entries for head directions
+    /// <c>0,1,2</c>.
+    /// </para>
+    /// </summary>
+    private static readonly bool[,] isHeadLabel = new bool[,]
+    {
+        // Head direction 0,...,5
+        { true, true, true, false, false, false, false, false, true, true },
+        { true, true, true, true, false, false, false, false, false, true },
+        { true, true, true, true, true, false, false, false, false, false },
+        // NOTE: The second half could be removed, but we would have
+        // additional operations when reading...
+        { false, false, false, true, true, true, true, true, false, false },
+        { false, false, false, false, true, true, true, true, true, false },
+        { false, false, false, false, false, true, true, true, true, true }
+    };
+
     /// <summary>
     /// Computes the neighbor of a grid node position in the given direction and distance.
     /// </summary>
