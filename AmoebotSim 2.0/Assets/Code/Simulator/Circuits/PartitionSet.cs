@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class PartitionSet
 {
-    private PinConfiguration pinConfig;
-    private int id;
-    private BitArray pins;
+    public PinConfiguration pinConfig;
+    public int id;
+    public BitArray pins;
 
     public PartitionSet(PinConfiguration pinConfig, int id, int size)
     {

@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class Pin
 {
-    private PartitionSet partitionSet;
-    private int id;
-    private int localDir;
-    private bool head;
-    private int edgeOffset;
+    public PartitionSet partitionSet;
+    public int id;
+    public int localDir;
+    public bool head;
+    public int edgeOffset;
 
     public Pin(PartitionSet partitionSet, int id, int localDir, bool head, int edgeOffset)
     {

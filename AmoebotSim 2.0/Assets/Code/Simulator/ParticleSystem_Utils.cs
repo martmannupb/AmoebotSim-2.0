@@ -7,6 +7,14 @@ public static class ParticleSystem_Utils
     /**
      * Label conversion matrices
      * 
+     * Labels are indices assigned to the edges incident to a
+     * particle. They range from 0 to 5 for a contracted
+     * particle and from 0 to 9 for an expanded particle, and
+     * they increase in local counter-clockwise order around the
+     * particle (if the chirality of the particle is reversed,
+     * the global direction of the edges increases in clockwise
+     * direction).
+     * 
      * Labels of contracted particles are the local directions.
      * 
      * For expanded particles, labels 0,1,2 always correspond to
@@ -90,6 +98,102 @@ public static class ParticleSystem_Utils
         { false, false, false, false, true, true, true, true, true, false },
         { false, false, false, false, false, true, true, true, true, true }
     };
+
+    /// <summary>
+    /// Computes the edge label corresponding to the given direction and
+    /// expansion state.
+    /// <para>
+    /// If <paramref name="headDir"/> is <c>-1</c>, i.e., the
+    /// particle is contracted, the label always equals the given
+    /// <paramref name="direction"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="direction">The direction of the edge marked by
+    /// the returned label.</param>
+    /// <param name="headDir">The head direction of the particle, if
+    /// it is expanded. Leave it at <c>-1</c> otherwise.</param>
+    /// <param name="head">If the particle is expanded, this flag
+    /// determines whether the label belongs to the particle's head
+    /// or tail.</param>
+    /// <returns>The label of the edge specified by the direction
+    /// and expansion state of a particle.</returns>
+    public static int GetLabelInDir(int direction, int headDir = -1, bool head = true)
+    {
+        if (headDir == -1)
+        {
+            return direction;
+        }
+        else
+        {
+            return expandedLabels[head ? headDir : ((headDir + 3) % 6), direction];
+        }
+    }
+
+    /// <summary>
+    /// Computes the direction in which the given edge label points.
+    /// </summary>
+    /// <param name="label">The label of which to compute the direction.</param>
+    /// <param name="headDir">The head direction of the particle, if it is
+    /// expanded. Leave it at <c>-1</c> otherwise.</param>
+    /// <returns>The direction of the edge label <paramref name="label"/>
+    /// of a particle with head direction <paramref name="headDir"/>.</returns>
+    public static int GetDirOfLabel(int label, int headDir = -1)
+    {
+        if (headDir == -1)
+        {
+            return label;
+        }
+        else
+        {
+            return labelDirections[headDir, label];
+        }
+    }
+
+    /// <summary>
+    /// Checks if the given label belongs to the particle's head.
+    /// <para>
+    /// If <paramref name="headDir"/> is <c>-1</c>, i.e., the
+    /// particle is contracted, the result will always be <c>true</c>.
+    /// </para>
+    /// </summary>
+    /// <param name="label">The edge label to check.</param>
+    /// <param name="headDir">The head direction of the particle, if
+    /// it is expanded. Leave it at <c>-1</c> otherwise.</param>
+    /// <returns></returns>
+    public static bool IsHeadLabel(int label, int headDir = -1)
+    {
+        if (headDir == -1)
+        {
+            return true;
+        }
+        else
+        {
+            return isHeadLabel[headDir, label];
+        }
+    }
+
+    /// <summary>
+    /// Checks if the given label belongs to the particle's tail.
+    /// <para>
+    /// If <paramref name="headDir"/> is <c>-1</c>, i.e., the
+    /// particle is contracted, the result will always be <c>true</c>.
+    /// </para>
+    /// </summary>
+    /// <param name="label">The edge label to check.</param>
+    /// <param name="headDir">The head direction of the particle, if
+    /// it is expanded. Leave it at <c>-1</c> otherwise.</param>
+    /// <returns></returns>
+    public static bool IsTailLabel(int label, int headDir = -1)
+    {
+        if (headDir == -1)
+        {
+            return true;
+        }
+        else
+        {
+            return !isHeadLabel[headDir, label];
+        }
+    }
 
     /// <summary>
     /// Computes the neighbor of a grid node position in the given direction and distance.

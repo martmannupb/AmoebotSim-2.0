@@ -4,47 +4,58 @@ using UnityEngine;
 
 public class PinConfiguration
 {
-    private Particle particle;
-    private int pinsPerEdge;
-    private int expansionDir;
-    private int numPins;
+    public Particle particle;
+    public int pinsPerEdge;
+    public int expansionDir;
+    public int numPins;
 
-    private Pin[] pins;
-    private PartitionSet[] partitionSets;
+    public Pin[] pins;
+    public PartitionSet[] partitionSets;
 
     public PinConfiguration(Particle particle, int pinsPerEdge, int expansionDir = -1)
     {
         this.particle = particle;
         this.pinsPerEdge = pinsPerEdge;
         this.expansionDir = expansionDir;
-        this.numPins = expansionDir == -1 ? 6 * pinsPerEdge : 10 * pinsPerEdge;
+
+        numPins = expansionDir == -1 ? (6 * pinsPerEdge) : (10 * pinsPerEdge);
 
         partitionSets = new PartitionSet[numPins];
         pins = new Pin[numPins];
 
-        // Initialize
+        // Initialize partition sets and pins
+        // Default is singleton: Each pin is its own partition set (for now)
         if (expansionDir == -1)
         {
-            // Initialize partition sets
-            // Default is singleton: Each pin is its own partition set (for now)
-            for (int i = 0; i < 6 * pinsPerEdge; i++)
+            for (int direction = 0; direction < 6; direction++)
             {
-                partitionSets[i] = new PartitionSet(this, i, 1);
-            }
-            // Then initialize pins
-            for (int locDir = 0; locDir < 6; locDir++)
-            {
-                for (int p = 0; p < pinsPerEdge; p++)
+                for (int idx = 0; idx < pinsPerEdge; idx++)
                 {
-                    int id = locDir * pinsPerEdge + p;
-                    pins[id] = new Pin(partitionSets[id], id, locDir, true, p);
-                    partitionSets[id].AddPin(id);
+                    int id = direction * pinsPerEdge + idx;
+                    PartitionSet ps = new PartitionSet(this, id, numPins);
+                    Pin pin = new Pin(ps, id, direction, true, idx);
+                    ps.AddPin(id);
+                    partitionSets[id] = ps;
+                    pins[id] = pin;
                 }
             }
-        } else
+        }
+        else
         {
-            // TODO
-            // Need label conversion operations here
+            for (int label = 0; label < 10; label++)
+            {
+                int direction = ParticleSystem_Utils.GetDirOfLabel(label, expansionDir);
+                bool isHead = ParticleSystem_Utils.IsHeadLabel(label, expansionDir);
+                for (int idx = 0; idx < pinsPerEdge; idx++)
+                {
+                    int id = label * pinsPerEdge + idx;
+                    PartitionSet ps = new PartitionSet(this, id, numPins);
+                    Pin pin = new Pin(ps, id, direction, isHead, idx);
+                    ps.AddPin(id);
+                    partitionSets[id] = ps;
+                    pins[id] = pin;
+                }
+            }
         }
     }
 }
