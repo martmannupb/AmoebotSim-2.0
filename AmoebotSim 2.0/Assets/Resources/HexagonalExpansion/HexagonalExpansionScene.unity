@@ -520,7 +520,7 @@ GameObject:
   - component: {fileID: 1564501274}
   - component: {fileID: 1564501273}
   m_Layer: 0
-  m_Name: Quad (2)
+  m_Name: MergingParticleTest
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -618,7 +618,7 @@ GameObject:
   - component: {fileID: 1764460363}
   - component: {fileID: 1764460362}
   m_Layer: 0
-  m_Name: Quad (1)
+  m_Name: TilingAndOffset Test
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

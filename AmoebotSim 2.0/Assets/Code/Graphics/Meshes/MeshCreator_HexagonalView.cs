@@ -806,31 +806,12 @@ public static class MeshCreator_HexagonalView
         return mesh;
     }
 
-    public static Mesh GetMesh_CombinedExpansionHexagon()
+    public static Mesh GetMesh_MergingExpansionHexagon()
     {
-        // Create Hexagonal Mesh 1
-        Mesh m1 = GetMesh_BaseExpansionHexagon();
-        CombineInstance combineInstanceM1 = new CombineInstance();
-        combineInstanceM1.mesh = m1;
-        combineInstanceM1.subMeshIndex = 0;
-        combineInstanceM1.transform = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one);
-        // Create Hexagonal Mesh 2
-        Mesh m2 = GetMesh_BaseExpansionHexagon();
-        CombineInstance combineInstanceM2 = new CombineInstance();
-        combineInstanceM2.mesh = m2;
-        combineInstanceM2.subMeshIndex = 0;
-        combineInstanceM2.transform = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one);
-        // Create Hexagonal Mesh 3
-        throw new System.NotImplementedException();
-        Mesh mCenter = GetMesh_CombinedExpansionRectangle(); // todo: update this 
-        CombineInstance combineInstanceMCenter = new CombineInstance();
-        combineInstanceMCenter.mesh = mCenter;
-        combineInstanceMCenter.subMeshIndex = 0;
-        combineInstanceMCenter.transform = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, Vector3.one);
-
-        // Combine Meshes
-        Mesh mesh = new Mesh();
-        mesh.CombineMeshes(new CombineInstance[] { combineInstanceM1, combineInstanceM2, combineInstanceMCenter }, true, false, false);
+        Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0.5f, 0.5f));
+        mesh = Engine.Library.MeshConstants.scaleMeshAroundPivot(mesh, new Vector3(3f, 2f, 1f));
+        mesh = Engine.Library.MeshConstants.offsetMeshVertices(mesh, new Vector3(0.5f, 0f, 0f));
+        return mesh;
     }
 
     public static Mesh GetMesh_HexagonGridLine()

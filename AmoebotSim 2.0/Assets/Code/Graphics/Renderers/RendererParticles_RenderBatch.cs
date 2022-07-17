@@ -58,13 +58,11 @@ public class RendererParticles_RenderBatch
     private Mesh defaultQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
     private Mesh mesh_circle_particle = MeshCreator_CircularView.GetMesh_ParticleOptimized();
     private Mesh mesh_circle_particleConnector = MeshCreator_CircularView.GetMesh_ParticleConnector();
-    private Mesh mesh_hex_particle = MeshCreator_HexagonalView.GetMesh_BaseExpansionHexagon();
+    private Mesh mesh_hex_particle = MeshCreator_HexagonalView.GetMesh_MergingExpansionHexagon();
     private Mesh defaultQuadLeftSidePivot = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     private Mesh defaultHexagon = MeshCreator_HexagonalView.GetMesh_BaseExpansionHexagon();
     private Mesh defaultHexagonCenter = MeshCreator_HexagonalView.GetMesh_BaseHexagonBackground();
     // Matrix TRS Params
-    //static float diagonalConnectionLength = Mathf.Sqrt(0.5f * 0.5f + AmoebotFunctions.HeightDifferenceBetweenRows() * AmoebotFunctions.HeightDifferenceBetweenRows());
-    static private float particleConnectedWidth = 0.1f;
     static Quaternion quaternion_horRightParticleConnection = Quaternion.Euler(0f, 0f, 0f) * Quaternion.identity;
     //static Vector3 scale_horRightParticleConnection = new Vector3(1f, particleConnectedWidth, 1f);
     static Quaternion quaternion_diaTopLeftParticleConnection = Quaternion.Euler(0f, 0f, 120f) * Quaternion.identity;
@@ -80,7 +78,6 @@ public class RendererParticles_RenderBatch
     // Defaults
     Matrix4x4 matrixTRS_zero = Matrix4x4.TRS(new Vector3(float.MaxValue / 2f, float.MaxValue / 2f, 0f), Quaternion.identity, Vector3.zero);
     const int maxArraySize = 1023;
-    float innerParticleScaleFactor = 0.75f;
 
     // Settings _____
     public PropertyBlockData properties;

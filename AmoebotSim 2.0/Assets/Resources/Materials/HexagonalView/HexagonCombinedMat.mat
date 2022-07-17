@@ -7,12 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: HexExpansion
+  m_Name: HexagonCombinedMat
   m_Shader: {fileID: -6465566751694194690, guid: 6908d8f829902c647941ed492468041c, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
@@ -63,13 +63,13 @@ Material:
     m_Ints: []
     m_Floats:
     - _AnimDuration: 0
-    - _AnimPercentage1: 0.99
+    - _AnimPercentage1: 0
     - _AnimPercentage2: 0
     - _AnimTriggerTime: 0
     - _EnableExternalAlpha: 0
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _Scale: 0.85
+    - _Scale: 0.81
     m_Colors:
     - _AnimMeshRelativeUVOffset: {r: 0.33333, g: 0, b: 0, a: 0}
     - _AnimOffset: {r: -0.624, g: 0, b: 0, a: 0}

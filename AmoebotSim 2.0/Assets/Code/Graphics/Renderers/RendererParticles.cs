@@ -294,21 +294,27 @@ public class RendererParticles
 
     public void Render(ViewType viewType)
     {
-        switch (viewType)
+        foreach (var item in propertiesToRenderBatchMap.Values)
         {
-            case ViewType.Hexagonal:
-                Render_Hexagonal();
-                break;
-            case ViewType.Circular:
-                //Render_Circular();
-                foreach (var item in propertiesToRenderBatchMap.Values)
-                {
-                    item.Render(viewType);
-                }
-                break;
-            default:
-                break;
+            item.Render(viewType);
         }
+
+        //return;
+        //switch (viewType)
+        //{
+        //    case ViewType.Hexagonal:
+        //        Render_Hexagonal();
+        //        break;
+        //    case ViewType.Circular:
+        //        //Render_Circular();
+        //        foreach (var item in propertiesToRenderBatchMap.Values)
+        //        {
+        //            item.Render(viewType);
+        //        }
+        //        break;
+        //    default:
+        //        break;
+        //}
     }
 
     private void Render_Hexagonal()
