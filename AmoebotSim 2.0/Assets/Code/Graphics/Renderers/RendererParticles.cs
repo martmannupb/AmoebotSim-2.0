@@ -102,7 +102,7 @@ public class RendererParticles
 
 
         // Old System ___________________________________________________________
-
+        /*
         if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) return false;
 
         particleMatricesSingle_Position1.Add(matrixTRS_zero);
@@ -143,7 +143,7 @@ public class RendererParticles
         graphicalData.graphics_listID = particleToParticleGraphicalDataMap.Count % maxArraySize;
         graphicalData.graphics_globalID = particleToParticleGraphicalDataMap.Count;
 
-        particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
+        particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);*/
         return true;
     }
 

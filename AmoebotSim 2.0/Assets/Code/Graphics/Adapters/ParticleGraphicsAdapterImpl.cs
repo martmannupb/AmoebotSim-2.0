@@ -143,10 +143,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
             || state_prev.movement == ParticleMovement.Contracting
             || state_prev.movement == ParticleMovement.Expanding
-            || forceRenderUpdate) renderer.UpdateMatrix(this);
-        
-        // New System
-        graphics_colorRenderer.UpdateMatrix(this);    // this will replace the old value
+            || forceRenderUpdate) graphics_colorRenderer.UpdateMatrix(this); //renderer.UpdateMatrix(this);
     }
 
     public void UpdateReset()

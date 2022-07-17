@@ -146,11 +146,14 @@ public class RendererParticles_RenderBatch
         graphicalData.graphics_globalID = particleToParticleGraphicalDataMap.Count;
         graphicalData.graphics_color = properties.color;
         graphicalData.graphics_colorRenderer = this;
+
         //Log.Debug("_____Add:    Color: " + properties.color + ", ListNumber: " + graphicalData.graphics_listNumber + ", ListID: " + graphicalData.graphics_listID);
 
         // Register Particle
         particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
         graphicalDataList.Add(graphicalData);
+        UpdateMatrix(graphicalData);
+
         return true;
     }
 
@@ -165,7 +168,6 @@ public class RendererParticles_RenderBatch
         ParticleGraphicsAdapterImpl lastParticleGraphicalData = graphicalDataList[graphicalDataList.Count - 1];
         int movedParticleIndex = graphicalDataList.IndexOf(graphicalData);
         graphicalDataList[movedParticleIndex] = lastParticleGraphicalData;
-        bool canListBeDeleted = graphicalData.graphics_listID == 0 && lastParticleGraphicalData.graphics_listID == 0;
         // Update References
         int original_listNumber = lastParticleGraphicalData.graphics_listNumber;
         int original_listID = lastParticleGraphicalData.graphics_listID;
@@ -176,11 +178,12 @@ public class RendererParticles_RenderBatch
         CutAndCopyMatrices(original_listNumber, original_listID, lastParticleGraphicalData.graphics_listNumber, lastParticleGraphicalData.graphics_listID);
 
         //Log.Debug("_____Remove:     Color: " + properties.color + ", ListNumber: " + graphicalData.graphics_listNumber + ", ListID: " + graphicalData.graphics_listID);
+
         // Unregister Particle
         graphicalDataList.RemoveAt(graphicalDataList.Count - 1);
         particleToParticleGraphicalDataMap.Remove(graphicalData.particle);
         // Lists became smaller, possibly delete list entry
-        if (canListBeDeleted)
+        if (graphicalDataList.Count % maxArraySize == 0)
         {
             // Particle was only element in the last list
             // Delete list
@@ -200,6 +203,14 @@ public class RendererParticles_RenderBatch
 
         return true;
     }
+
+    //public void ValidityCheck()
+    //{
+    //    for (int i = 0; i < graphicalDataList.Count; i++)
+    //    {
+    //        Matrix4x4 a = particleMatricesCircle_Contracted[graphicalDataList[i].graphics_listNumber][graphicalDataList[i].graphics_listID].transpose;
+    //    }
+    //}
 
     private void CutAndCopyMatrices(int orig_ListNumber, int orig_ListID, int moved_ListNumber, int moved_ListID)
     {
@@ -232,6 +243,7 @@ public class RendererParticles_RenderBatch
     public void UpdateMatrix(ParticleGraphicsAdapterImpl gd)
     {
         // Reset Matrices
+        //Log.Debug("Possible Error Particle: Color: "+properties.color+", List Number: " + gd.graphics_listNumber + ", List ID: " + gd.graphics_listID+ "\n____LIST AMOUNT: " + particleMatricesCircle_Contracted.Count);
         ResetMatrices(gd.graphics_listNumber, gd.graphics_listID);
         //Log.Debug("UPDATE: Color: "+properties.color+", ListNumber: " + gd.graphics_listNumber + ", ListID: " + gd.graphics_listID + ", List Count: "+ particleMatricesCircle_Contracted.Count+", Array Count: ");
 

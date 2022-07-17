@@ -41,11 +41,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureHexagon:
-        m_Texture: {fileID: 2800000, guid: f8e9f1fe5af60fb4bbb4916d14893654, type: 3}
+        m_Texture: {fileID: 2800000, guid: ffd65bbdd1a8b704785ab0e5bca73b0a, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureHexagonConnector:
-        m_Texture: {fileID: 2800000, guid: d20b57440ad39ea4dae4713f088aa6f1, type: 3}
+        m_Texture: {fileID: 2800000, guid: 9deea303e4717a0428a1e2d402938125, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
