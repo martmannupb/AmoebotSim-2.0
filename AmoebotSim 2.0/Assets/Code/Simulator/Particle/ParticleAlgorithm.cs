@@ -305,6 +305,121 @@ public abstract class ParticleAlgorithm
 
 
     /**
+     * Pin configuration management
+     * 
+     * API is defined by <see cref="IPinConfiguration"/>,
+     * <see cref="IPartitionSet"/> and <see cref="IPin"/>
+     * interfaces.
+     */
+
+    /// <summary>
+    /// Returns a copy of the pin configuration at the
+    /// beginning of the round.
+    /// <para>
+    /// This object can be used as a basis for defining the
+    /// new pin configuration after the round if the particle
+    /// does not perform a movement.
+    /// </para>
+    /// <para>
+    /// See also <seealso cref="GetContractedPinConfiguration"/>,
+    /// <seealso cref="GetExpandedPinConfiguration(int)"/>,
+    /// <seealso cref="SetPlannedPinConfiguration(IPinConfiguration)"/>,
+    /// <seealso cref="GetPlannedPinConfiguration"/>.
+    /// </para>
+    /// </summary>
+    /// <returns>A copy of the pin configuration at the
+    /// beginning of the current round.</returns>
+    public IPinConfiguration GetCurrentPinConfiguration()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    /// <summary>
+    /// Creates a pin configuration for the contracted state
+    /// with the default singleton pattern.
+    /// <para>
+    /// The returned object can be used to define the next
+    /// pin configuration if the particle plans to perform
+    /// a contraction movement in this round.
+    /// </para>
+    /// <para>
+    /// See also <seealso cref="GetCurrentPinConfiguration"/>,
+    /// <seealso cref="GetExpandedPinConfiguration(int)"/>,
+    /// <seealso cref="SetPlannedPinConfiguration(IPinConfiguration)"/>,
+    /// <seealso cref="GetPlannedPinConfiguration"/>.
+    /// </para>
+    /// </summary>
+    /// <returns>A new singleton pin configuration for the
+    /// contracted state that can be modified arbitrarily.</returns>
+    public IPinConfiguration GetContractedPinConfiguration()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    /// <summary>
+    /// Creates a pin configuration for an expanded state
+    /// with the default singleton pattern.
+    /// <para>
+    /// The returned object can be used to define the next
+    /// pin configuration if the particle plans to perform
+    /// an expansion movement such that its head direction
+    /// after the movement is <paramref name="headDirection"/>.
+    /// </para>
+    /// <para>
+    /// See also <seealso cref="GetCurrentPinConfiguration"/>,
+    /// <seealso cref="GetContractedPinConfiguration"/>,
+    /// <seealso cref="SetPlannedPinConfiguration(IPinConfiguration)"/>,
+    /// <seealso cref="GetPlannedPinConfiguration"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="headDirection">The head direction defining the
+    /// expansion state for which the pin configuration should be created.</param>
+    /// <returns>A new singleton pin configuration for the specified
+    /// expansion state that can be modified arbitrarily.</returns>
+    public IPinConfiguration GetExpandedPinConfiguration(int headDirection)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    /// <summary>
+    /// Sets the pin configuration that should be applied to the particle
+    /// at the end of this round.
+    /// <para>
+    /// The expansion state of the pin configuration must match the planned
+    /// expansion state of the particle, i.e., if the particle plans to be
+    /// contracted at the end of the round, the pin configuration must be made
+    /// for the contracted state, and if the particle plans to be expanded at
+    /// the end of the round, the pin configuration must match the
+    /// corresponding head direction.
+    /// </para>
+    /// <para>
+    /// If no pin configuration is planned in the same round in which a
+    /// movement is performed, the pin configuration defaults to the
+    /// singleton pattern. If no movement and no new pin configuration
+    /// are planned, the configuration is left unchanged.
+    /// </para>
+    /// </summary>
+    /// <param name="pinConfiguration">The pin configuration to be applied
+    /// at the end of the current round.</param>
+    public void SetPlannedPinConfiguration(IPinConfiguration pinConfiguration)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    /// <summary>
+    /// Returns the pin configuration set using
+    /// <see cref="SetPlannedPinConfiguration(IPinConfiguration)"/> in
+    /// this round.
+    /// </summary>
+    /// <returns>The pin configuration planned to be applied at the end of
+    /// the current round. <c>null</c> if no configuration was planned yet.</returns>
+    public IPinConfiguration GetPlannedPinConfiguration()
+    {
+        throw new System.NotImplementedException();
+    }
+
+
+    /**
      * System information retrieval
      * Mainly for finding neighbor particles
      */

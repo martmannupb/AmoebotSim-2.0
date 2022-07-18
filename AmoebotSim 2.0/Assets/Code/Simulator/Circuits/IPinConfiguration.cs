@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// TODO: Use generic collections instead of (or in addition to) arrays?
+
 /// <summary>
 /// Developer API for pin configuration definition.
 /// <para>
