@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Pin
+public class Pin : IPin
 {
     public PartitionSet partitionSet;
     public int id;
@@ -17,5 +17,40 @@ public class Pin
         this.localDir = localDir;
         this.head = head;
         this.edgeOffset = edgeOffset;
+    }
+
+
+    /**
+     * IPin: Developer API
+     */
+
+    public IPartitionSet PartitionSet
+    {
+        get { return partitionSet; }
+    }
+
+    public int Id
+    {
+        get { return id; }
+    }
+
+    public int Direction
+    {
+        get { return localDir; }
+    }
+
+    public int Offset
+    {
+        get { return edgeOffset; }
+    }
+
+    public bool IsOnHead
+    {
+        get { return head; }
+    }
+
+    public bool IsOnTail
+    {
+        get { return !head; }
     }
 }

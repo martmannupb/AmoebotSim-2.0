@@ -126,7 +126,7 @@ public interface IPartitionSet
     /// Adds the specified pins to this partition set.
     /// <para>
     /// Has the same effect as calling <see cref="AddPin(int)"/>
-    /// multiple times, but may be more efficient.
+    /// multiple times.
     /// </para>
     /// <para>
     /// See also <seealso cref="AddPins(IPin[])"/>.
@@ -140,7 +140,7 @@ public interface IPartitionSet
     /// Adds the given pins to this partition set.
     /// <para>
     /// Has the same effect as calling <see cref="AddPin(IPin)"/>
-    /// multiple times, but may be more efficient.
+    /// multiple times.
     /// </para>
     /// <para>
     /// See also <seealso cref="AddPins(int[])"/>.
@@ -151,36 +151,48 @@ public interface IPartitionSet
     void AddPins(IPin[] pins);
 
     /// <summary>
-    /// Removes the specified pin from this partition set.
+    /// Tries to remove the specified pin from this partition set.
     /// <para>
     /// If the pin is currently contained in this partition
-    /// set, it is added to its own singleton partition set.
+    /// set and some other partition set is currently empty, the
+    /// pin is moved to that empty partition set. If no empty
+    /// partition set can be found, an exception will be thrown.
     /// </para>
     /// <para>
     /// See also <seealso cref="RemovePin(IPin)"/>.
     /// </para>
     /// </summary>
     /// <param name="pinId">The ID of the pin to be removed.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if the pin is the only one in this partition set and
+    /// no other partition set is empty.
+    /// </exception>
     void RemovePin(int pinId);
 
     /// <summary>
-    /// Removes the given pin from this partition set.
+    /// Tries to remove the specified pin from this partition set.
     /// <para>
     /// If the pin is currently contained in this partition
-    /// set, it is added to its own singleton partition set.
+    /// set and some other partition set is currently empty, the
+    /// pin is moved to that empty partition set. If no empty
+    /// partition set can be found, an exception will be thrown.
     /// </para>
     /// <para>
     /// See also <seealso cref="RemovePin(int)"/>.
     /// </para>
     /// </summary>
     /// <param name="pin">The pin to be removed.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if the pin is the only one in this partition set and
+    /// no other partition set is empty.
+    /// </exception>
     void RemovePin(IPin pin);
 
     /// <summary>
-    /// Removes the specified pins from this partition set.
+    /// Tries to remove the specified pins from this partition set.
     /// <para>
     /// Has the same effect as calling <see cref="RemovePin(int)"/>
-    /// multiple times, but may be more efficient.
+    /// multiple times.
     /// </para>
     /// <para>
     /// See also <seealso cref="RemovePins(IPin[])"/>.
@@ -188,13 +200,17 @@ public interface IPartitionSet
     /// </summary>
     /// <param name="pinIds">An array containing the IDs of
     /// the pins to be removed.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if a pin is the last one in this partition set and
+    /// no other partition set is empty.
+    /// </exception>
     void RemovePins(int[] pinIds);
 
     /// <summary>
-    /// Removes the given pins from this partition set.
+    /// Tries to remove the given pins from this partition set.
     /// <para>
     /// Has the same effect as calling <see cref="RemovePin(IPin)"/>
-    /// multiple times, but may be more efficient.
+    /// multiple times.
     /// </para>
     /// <para>
     /// See also <seealso cref="RemovePins(int[])"/>.
@@ -202,6 +218,10 @@ public interface IPartitionSet
     /// </summary>
     /// <param name="pins">An array containing the pins to
     /// be removed.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if a pin is the last one in this partition set and
+    /// no other partition set is empty.
+    /// </exception>
     void RemovePins(IPin[] pins);
 
     /// <summary>

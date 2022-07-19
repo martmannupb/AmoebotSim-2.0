@@ -37,6 +37,14 @@ public interface IPin
     }
 
     /// <summary>
+    /// The ID of this pin.
+    /// </summary>
+    int Id
+    {
+        get;
+    }
+
+    /// <summary>
     /// The local direction of the edge on which this pin is located.
     /// </summary>
     int Direction

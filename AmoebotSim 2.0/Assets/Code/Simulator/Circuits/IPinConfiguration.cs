@@ -162,6 +162,14 @@ public interface IPinConfiguration
     void SetToGlobal(int partitionSetId = 0);
 
     /// <summary>
+    /// Same as <see cref="SetToGlobal(int)"/>, but the partition set
+    /// to hold the pins is specified directly instead of by its ID.
+    /// </summary>
+    /// <param name="partitionSet">The partition set that should hold
+    /// all pins.</param>
+    void SetToGlobal(IPartitionSet partitionSet);
+
+    /// <summary>
     /// Sets the specified partition set to contain all pins with
     /// the given edge offset <paramref name="offset"/>.
     /// <para>
@@ -234,18 +242,29 @@ public interface IPinConfiguration
     /// <para>
     /// If the partition set already contains any pins that are not part of
     /// the given set, they are removed and put into their own singleton
-    /// sets.
+    /// sets. If <paramref name="pinIds"/> is empty, it may be impossible
+    /// to put every removed pin into a singleton set, in which case an
+    /// exception is thrown.
+    /// </para>
+    /// <para>
+    /// The <paramref name="pinIds"/> array will be sorted in ascending
+    /// order.
     /// </para>
     /// </summary>
     /// <param name="pinIds">The IDs of the pins to be put into the
     /// specified partition set.</param>
     /// <param name="partitionSetIndex">The ID of the partition set that
     /// should hold the specified set of pins.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if <paramref name="pinIds"/> is empty and not all pins can
+    /// be inserted into empty partition sets.
+    /// </exception>
     void MakePartitionSet(int[] pinIds, int partitionSetIndex);
 
     /// <summary>
     /// Same as <see cref="MakePartitionSet(int[], int)"/>, but the pins
-    /// are specified directly and not by their IDs.
+    /// are specified directly and not by their IDs. The array will not
+    /// be sorted.
     /// </summary>
     /// <param name="pins">The pins to be put into the specified
     /// partition set.</param>
@@ -266,6 +285,7 @@ public interface IPinConfiguration
     /// <summary>
     /// Same as <see cref="MakePartitionSet(int[], int)"/>, but the pins
     /// and the partition set are specified directly and not by their IDs.
+    /// The array of pins will not be sorted.
     /// </summary>
     /// <param name="pins">The pins to be put into the given
     /// partition set.</param>
