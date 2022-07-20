@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -68,6 +69,68 @@ public class PartitionSet : IPartitionSet
     }
 
 
+    // TODO: May have to put these into compressed storage classes/structs instead
+    /**
+     * Comparison operators for comparing partition sets and pin configurations easily
+     */
+
+    public static bool operator==(PartitionSet p1, PartitionSet p2)
+    {
+        if (p1 is null && p2 is null)
+        {
+            return true;
+        }
+        else if (p1 is null || p2 is null || p1.id != p2.id || p1.numStoredPins != p2.numStoredPins || p1.pins.Count != p2.pins.Count)
+        {
+            return false;
+        }
+        for (int i = 0; i < p1.pins.Count; i++)
+        {
+            if (p1.pins[i] != p2.pins[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static bool operator!=(PartitionSet p1, PartitionSet p2)
+    {
+        if (p1 is null && p2 is null)
+        {
+            return false;
+        }
+        else if (p1 is null || p2 is null || p1.id != p2.id || p1.numStoredPins != p2.numStoredPins || p1.pins.Count != p2.pins.Count)
+        {
+            return true;
+        }
+        for (int i = 0; i < p1.pins.Count; i++)
+        {
+            if (p1.pins[i] != p2.pins[i])
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public override bool Equals(object obj)
+    {
+        PartitionSet other = obj as PartitionSet;
+        if (other is null)
+        {
+            return false;
+        }
+        return this == other;
+    }
+
+    // TODO: Make sure this is correct if it is used
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(id, pins, numStoredPins);
+    }
+
+
     /**
      * IPartitionSet: Developer API
      */
@@ -132,7 +195,10 @@ public class PartitionSet : IPartitionSet
         if (!pins[idx])
         {
             Pin pin = pinConfig.GetPin(idx);
-            pin.partitionSet.RemovePinBasic(idx);
+            if (pin.partitionSet != null)
+            {
+                pin.partitionSet.RemovePinBasic(idx);
+            }
             AddPinBasic(idx);
             pin.partitionSet = this;
         }
@@ -231,5 +297,22 @@ public class PartitionSet : IPartitionSet
     public void Merge(IPartitionSet other)
     {
         Merge(other.Id);
+    }
+
+
+
+    // <<<TEMPORARY, FOR DEBUGGING>>>
+    public void Print()
+    {
+        string s = "Partition Set with " + numStoredPins + " pins:\n";
+        for (int i = 0; i < pins.Count; i++)
+        {
+            if (pins[i])
+            {
+                s += i + " " + pinConfig.GetPin(i).Print() + "\n";
+            }
+        }
+        s += "\n";
+        Debug.Log(s);
     }
 }

@@ -34,7 +34,7 @@ public class PinConfiguration : IPinConfiguration
                     int id = direction * pinsPerEdge + idx;
                     PartitionSet ps = new PartitionSet(this, id, numPins);
                     Pin pin = new Pin(ps, id, direction, true, idx);
-                    ps.AddPin(id);
+                    ps.AddPinBasic(id);
                     partitionSets[id] = ps;
                     pins[id] = pin;
                 }
@@ -51,7 +51,7 @@ public class PinConfiguration : IPinConfiguration
                     int id = label * pinsPerEdge + idx;
                     PartitionSet ps = new PartitionSet(this, id, numPins);
                     Pin pin = new Pin(ps, id, direction, isHead, idx);
-                    ps.AddPin(id);
+                    ps.AddPinBasic(id);
                     partitionSets[id] = ps;
                     pins[id] = pin;
                 }
@@ -175,6 +175,62 @@ public class PinConfiguration : IPinConfiguration
                 throw new System.InvalidOperationException("Pin with ID " + pinId + " cannot be removed from its partition set: No other partition set is empty.");
             }
         }
+    }
+
+    // TODO: May have to put these into compressed storage classes/structs instead
+    /**
+     * Comparison operators for comparing pin configurations easily
+     */
+
+    public static bool operator==(PinConfiguration pc1, PinConfiguration pc2)
+    {
+        if (pc1 is null && pc2 is null)
+        {
+            return true;
+        }
+        else if (pc1 is null || pc2 is null || pc1.headDirection != pc2.headDirection || pc1.pinsPerEdge != pc2.pinsPerEdge)
+        {
+            return false;
+        }
+        for (int i = 0; i < pc1.numPins; i++)
+        {
+            if (pc1.partitionSets[i] != pc2.partitionSets[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static bool operator!=(PinConfiguration pc1, PinConfiguration pc2)
+    {
+        if (pc1 is null && pc2 is null)
+        {
+            return false;
+        }
+        else if (pc1 is null || pc2 is null || pc1.headDirection != pc2.headDirection || pc1.pinsPerEdge != pc2.pinsPerEdge)
+        {
+            return true;
+        }
+        for (int i = 0; i < pc1.numPins; i++)
+        {
+            if (pc1.partitionSets[i] != pc2.partitionSets[i])
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is PinConfiguration other && this == other;
+    }
+
+    // TODO: Make sure this is correct if it is used
+    public override int GetHashCode()
+    {
+        return System.HashCode.Combine(pinsPerEdge, headDirection, partitionSets);
     }
 
 
@@ -364,5 +420,18 @@ public class PinConfiguration : IPinConfiguration
             pinIds[i] = pins[i].Id;
         }
         MakePartitionSet(pinIds, partitionSet.Id);
+    }
+
+
+
+    // <<<TEMPORARY, FOR DEBUGGING>>>
+    public void Print()
+    {
+        Debug.Log("Pin Configuration for head direction " + headDirection + " with " + pinsPerEdge + " pins per edge and " + numPins + " pins:");
+        for (int i = 0; i < numPins; i++)
+        {
+            Debug.Log("Partition set " + i + ":");
+            partitionSets[i].Print();
+        }
     }
 }

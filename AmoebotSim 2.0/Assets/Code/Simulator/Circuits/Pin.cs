@@ -53,4 +53,13 @@ public class Pin : IPin
     {
         get { return !head; }
     }
+
+
+
+
+    // <<<TEMPORARY, FOR DEBUGGING>>>
+    public string Print()
+    {
+        return "Pin with ID " + id + ": Direction " + localDir + ", Offset: " + edgeOffset + ", On Head: " + head;
+    }
 }
