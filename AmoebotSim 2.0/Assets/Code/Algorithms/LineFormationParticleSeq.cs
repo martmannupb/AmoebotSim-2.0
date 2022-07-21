@@ -54,6 +54,8 @@ public class LineFormationParticleSeq : ParticleAlgorithm
         newFollowDir = CreateAttributeDirection("newFollowDir", -1);
     }
 
+    public override int PinsPerEdge => 3;
+
     public override void Activate()
     {
         switch ((LFState)state)

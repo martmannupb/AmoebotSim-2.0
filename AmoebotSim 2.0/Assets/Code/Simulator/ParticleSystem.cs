@@ -115,12 +115,7 @@ public class ParticleSystem : IReplayHistory
                 {
                     // TODO: Create functions for adding and removing particles
                     // Don't use column as x coordinate but shift it to stay in a rectangular shape
-                    Particle p = new Particle(this, new Vector2Int(left + col - row / 2, bottom + row));
-                    // Must wrap this in isActive to enable setting attribute values more easily
-                    // (Another reason why we need a better instantiation method)
-                    p.isActive = true;
-                    new ExampleParticle(p);
-                    p.isActive = false;
+                    Particle p = ParticleFactory.CreateExampleParticle(this, new Vector2Int(left + col - row / 2, bottom + row));
                     particles.Add(p);
                     particleMap.Add(p.Head(), p);
                     ++num;
@@ -151,12 +146,7 @@ public class ParticleSystem : IReplayHistory
         // Always start by adding a particle at position (0, 0)
         List<Vector2Int> candidates = new List<Vector2Int>();
         Vector2Int node = new Vector2Int(0, 0);
-        Particle p = new Particle(this, node);
-        // Must wrap this in isActive to enable setting attribute values more easily
-        // (Another reason why we need a better instantiation method)
-        p.isActive = true;
-        new LineFormationParticleSeq(p);
-        p.isActive = false;
+        Particle p = ParticleFactory.CreateLineFormationParticle(this, node);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -182,10 +172,7 @@ public class ParticleSystem : IReplayHistory
                         candidates.Add(nbr);
                 }
 
-                p = new Particle(this, newPos);
-                p.isActive = true;
-                new LineFormationParticleSeq(p);
-                p.isActive = false;
+                p = ParticleFactory.CreateLineFormationParticle(this, newPos);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -240,6 +227,7 @@ public class ParticleSystem : IReplayHistory
             int pIdx = Random.Range(0, particles.Count);
             particles[pIdx].Activate();
             ApplyAllActionsInQueue();
+            particles[pIdx].ApplyPlannedPinConfiguration();
             CleanupAfterRound();
             _previousRound++;
             UpdateAllParticleVisuals(false);     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
@@ -259,6 +247,7 @@ public class ParticleSystem : IReplayHistory
         _latestRound++;
         ActivateParticles();
         ApplyAllActionsInQueue();
+        ApplyNewPinConfigurations();
         CleanupAfterRound();
         _previousRound++;
         UpdateAllParticleVisuals(false);
@@ -332,9 +321,25 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
+    /// Updates the pin configuration for each particle.
+    /// <para>
+    /// If a particle has moved, it must have set a new
+    /// pin configuration, otherwise it will be reset
+    /// to a singleton pattern.
+    /// </para>
+    /// </summary>
+    public void ApplyNewPinConfigurations()
+    {
+        foreach (Particle p in particles)
+        {
+            p.ApplyPlannedPinConfiguration();
+        }
+    }
+
+    /// <summary>
     /// Resets the helper information of all particles to prepare for
     /// the simulation of the next round (currently only the
-    /// <see cref="Particle.hasMoved"/> flag).
+    /// <see cref="Particle.hasMoved"/> flag.
     /// </summary>
     public void CleanupAfterRound()
     {

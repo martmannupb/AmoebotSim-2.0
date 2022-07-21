@@ -62,6 +62,10 @@ public class Particle : IParticleState, IReplayHistory
     // (Causes ParticleAttributes to behave differently for this particle than
     // for others)
     public bool isActive = false;
+
+    // Pin Configuration
+    private ValueHistory<SysPinConfiguration> pinConfigurationHistory;
+    private SysPinConfiguration pinConfiguration;
     
     // Messages
     private Queue<Message> messageQueue = new Queue<Message>();
@@ -108,6 +112,17 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public bool hasMoved = false;
 
+    /// <summary>
+    /// Stores the pin configuration that is planned to be applied at the end
+    /// of the current round.
+    /// </summary>
+    public SysPinConfiguration PlannedPinConfiguration
+    {
+        get { return plannedPinConfiguration; }
+        set { plannedPinConfiguration = value; }
+    }
+    private SysPinConfiguration plannedPinConfiguration;
+
     public Particle(ParticleSystem system, Vector2Int pos, int compassDir = 0, bool chirality = true)
     {
         this.system = system;
@@ -124,6 +139,7 @@ public class Particle : IParticleState, IReplayHistory
         comDir = compassDir;
         this.chirality = chirality;
 
+
         // Graphics
         // Initialize color
         mainColorHistory = new ValueHistory<Color>(mainColor, currentRound);
@@ -133,6 +149,16 @@ public class Particle : IParticleState, IReplayHistory
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
         graphics.AddParticle();
         graphics.Update();
+    }
+
+    /// <summary>
+    /// Initialization to be called after the <see cref="ParticleAlgorithm"/>
+    /// has been bound to this particle.
+    /// </summary>
+    public void InitWithAlgorithm()
+    {
+        pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
+        pinConfigurationHistory = new ValueHistory<SysPinConfiguration>(pinConfiguration, system.CurrentRound);
     }
 
     /// <summary>
@@ -243,6 +269,48 @@ public class Particle : IParticleState, IReplayHistory
     public int GlobalTailDirection()
     {
         return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir((exp_expansionDir + 3) % 6, comDir, chirality) : -1;
+    }
+
+
+    /**
+     * Pin configuration
+     */
+
+    /// <summary>
+    /// Returns a copy of the current pin configuration.
+    /// </summary>
+    /// <returns>A copy of the pin configuration at the
+    /// start of the current round.</returns>
+    public SysPinConfiguration GetCurrentPinConfiguration()
+    {
+        return pinConfiguration.Copy();
+    }
+
+    /// <summary>
+    /// Sets the pin configuration to be applied at the end
+    /// of the current round.
+    /// <para>
+    /// This configuration must match the expansion state of
+    /// the particle at the end of the round.
+    /// </para>
+    /// </summary>
+    /// <param name="pc">The new pin configuration.</param>
+    public void SetPlannedPinConfiguration(SysPinConfiguration pc)
+    {
+        plannedPinConfiguration = pc;
+    }
+
+    /// <summary>
+    /// Returns the currently planned pin configuration for
+    /// the end of the round. Equivalent to
+    /// <see cref="PlannedPinConfiguration"/>, but part of the
+    /// algorithm API.
+    /// </summary>
+    /// <returns>The pin configuration planned to be applied at
+    /// the end of the current round.</returns>
+    public SysPinConfiguration GetPlannedPinConfiguration()
+    {
+        return plannedPinConfiguration;
     }
 
 
@@ -524,6 +592,41 @@ public class Particle : IParticleState, IReplayHistory
         throw new System.NotImplementedException();
     }
 
+    /// <summary>
+    /// Updates the current pin configuration to the one that was
+    /// planned for this round. If no configuration was planned and
+    /// the particle has moved, the pins are reset to a singleton
+    /// pattern. Also resets the planned pin configuration to
+    /// <c>null</c>.
+    /// </summary>
+    public void ApplyPlannedPinConfiguration()
+    {
+        SysPinConfiguration newPC = null;
+        if (!(plannedPinConfiguration is null))
+        {
+            // Have a planned pin configuration, try to apply it
+            if (plannedPinConfiguration.HeadDirection != exp_expansionDir)
+            {
+                throw new System.InvalidOperationException("Particle's planned pin configuration has head direction " + plannedPinConfiguration.HeadDirection + ", but particle's head direction is " + exp_expansionDir);
+            }
+            newPC = plannedPinConfiguration;
+        }
+        else
+        {
+            // Have no planned configuration, generate default one if necessary
+            if (pinConfiguration.HeadDirection != exp_expansionDir)
+            {
+                newPC = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
+            }
+        }
+        if (!(newPC is null))
+        {
+            pinConfigurationHistory.RecordValueInRound(newPC, system.CurrentRound);
+            pinConfiguration = newPC;
+        }
+        plannedPinConfiguration = null;
+    }
+
 
     /**
      * Methods used by ParticleSystem to set and reset planned actions.
@@ -591,6 +694,8 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.Print();
         Debug.Log("Expansion dir history:");
         expansionDirHistory.Print();
+        Debug.Log("PinConfiguration history:");
+        pinConfigurationHistory.Print();
         Debug.Log("Main color history:");
         mainColorHistory.Print();
         mainColorSetHistory.Print();
@@ -640,6 +745,9 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.SetMarkerToRound(round);
         expansionDirHistory.SetMarkerToRound(round);
 
+        // Reset pin configuration
+        pinConfigurationHistory.SetMarkerToRound(round);
+
         // Reset visuals
         mainColorHistory.SetMarkerToRound(round);
         mainColorSetHistory.SetMarkerToRound(round);
@@ -663,6 +771,8 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.StepBack();
         expansionDirHistory.StepBack();
 
+        pinConfigurationHistory.StepBack();
+
         mainColorHistory.StepBack();
         mainColorSetHistory.StepBack();
 
@@ -678,6 +788,8 @@ public class Particle : IParticleState, IReplayHistory
     {
         tailPosHistory.StepForward();
         expansionDirHistory.StepForward();
+
+        pinConfigurationHistory.StepForward();
 
         mainColorHistory.StepForward();
         mainColorSetHistory.StepForward();
@@ -710,6 +822,8 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.ContinueTracking();
         expansionDirHistory.ContinueTracking();
 
+        pinConfigurationHistory.ContinueTracking();
+
         mainColorHistory.ContinueTracking();
         mainColorSetHistory.ContinueTracking();
 
@@ -734,6 +848,8 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.CutOffAtMarker();
         expansionDirHistory.CutOffAtMarker();
 
+        pinConfigurationHistory.CutOffAtMarker();
+
         mainColorHistory.CutOffAtMarker();
         mainColorSetHistory.CutOffAtMarker();
 
@@ -750,6 +866,8 @@ public class Particle : IParticleState, IReplayHistory
     {
         tailPosHistory.ShiftTimescale(amount);
         expansionDirHistory.ShiftTimescale(amount);
+
+        pinConfigurationHistory.ShiftTimescale(amount);
 
         mainColorHistory.ShiftTimescale(amount);
         mainColorSetHistory.ShiftTimescale(amount);
@@ -780,6 +898,9 @@ public class Particle : IParticleState, IReplayHistory
         {
             pos_head = pos_tail;
         }
+
+        pinConfiguration = pinConfigurationHistory.GetMarkedValue();
+
         mainColor = mainColorHistory.GetMarkedValue();
         mainColorSet = mainColorSetHistory.GetMarkedValue();
     }

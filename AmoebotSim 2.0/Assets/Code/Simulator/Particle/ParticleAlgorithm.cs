@@ -39,6 +39,10 @@ public struct Neighbor<T> where T : ParticleAlgorithm
 /// </code>
 /// </para>
 /// <para>
+/// The number of pins used by the algorithm must be specified by overriding
+/// the <see cref="PinsPerEdge"/> property.
+/// </para>
+/// <para>
 /// Particle attributes that represent a part of the particle's state must be implemented
 /// using the <see cref="ParticleAttribute{T}"/> class.
 /// <para/>
@@ -65,6 +69,16 @@ public abstract class ParticleAlgorithm
         this.particle = particle;
         particle.algorithm = this;
     }
+
+    // TODO: Optimization if this number is 0?
+    /// <summary>
+    /// The number of pins on each edge.
+    /// <para>
+    /// This number must be the same constant for all
+    /// particles.
+    /// </para>
+    /// </summary>
+    public abstract int PinsPerEdge { get;}
 
     /// <summary>
     /// This is the main activation method of the particle.
@@ -307,8 +321,8 @@ public abstract class ParticleAlgorithm
     /**
      * Pin configuration management
      * 
-     * API is defined by <see cref="IPinConfiguration"/>,
-     * <see cref="IPartitionSet"/> and <see cref="IPin"/>
+     * API is defined by <see cref="PinConfiguration"/>,
+     * <see cref="PartitionSet"/> and <see cref="Pin"/>
      * interfaces.
      */
 
@@ -323,15 +337,15 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// See also <seealso cref="GetContractedPinConfiguration"/>,
     /// <seealso cref="GetExpandedPinConfiguration(int)"/>,
-    /// <seealso cref="SetPlannedPinConfiguration(IPinConfiguration)"/>,
+    /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
     /// <seealso cref="GetPlannedPinConfiguration"/>.
     /// </para>
     /// </summary>
     /// <returns>A copy of the pin configuration at the
     /// beginning of the current round.</returns>
-    public IPinConfiguration GetCurrentPinConfiguration()
+    public PinConfiguration GetCurrentPinConfiguration()
     {
-        throw new System.NotImplementedException();
+        return particle.GetCurrentPinConfiguration();
     }
 
     /// <summary>
@@ -345,15 +359,15 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// See also <seealso cref="GetCurrentPinConfiguration"/>,
     /// <seealso cref="GetExpandedPinConfiguration(int)"/>,
-    /// <seealso cref="SetPlannedPinConfiguration(IPinConfiguration)"/>,
+    /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
     /// <seealso cref="GetPlannedPinConfiguration"/>.
     /// </para>
     /// </summary>
     /// <returns>A new singleton pin configuration for the
     /// contracted state that can be modified arbitrarily.</returns>
-    public IPinConfiguration GetContractedPinConfiguration()
+    public PinConfiguration GetContractedPinConfiguration()
     {
-        throw new System.NotImplementedException();
+        return new SysPinConfiguration(particle, PinsPerEdge);
     }
 
     /// <summary>
@@ -368,7 +382,7 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// See also <seealso cref="GetCurrentPinConfiguration"/>,
     /// <seealso cref="GetContractedPinConfiguration"/>,
-    /// <seealso cref="SetPlannedPinConfiguration(IPinConfiguration)"/>,
+    /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
     /// <seealso cref="GetPlannedPinConfiguration"/>.
     /// </para>
     /// </summary>
@@ -376,9 +390,9 @@ public abstract class ParticleAlgorithm
     /// expansion state for which the pin configuration should be created.</param>
     /// <returns>A new singleton pin configuration for the specified
     /// expansion state that can be modified arbitrarily.</returns>
-    public IPinConfiguration GetExpandedPinConfiguration(int headDirection)
+    public PinConfiguration GetExpandedPinConfiguration(int headDirection)
     {
-        throw new System.NotImplementedException();
+        return new SysPinConfiguration(particle, PinsPerEdge, headDirection);
     }
 
     /// <summary>
@@ -401,21 +415,21 @@ public abstract class ParticleAlgorithm
     /// </summary>
     /// <param name="pinConfiguration">The pin configuration to be applied
     /// at the end of the current round.</param>
-    public void SetPlannedPinConfiguration(IPinConfiguration pinConfiguration)
+    public void SetPlannedPinConfiguration(PinConfiguration pinConfiguration)
     {
-        throw new System.NotImplementedException();
+        particle.SetPlannedPinConfiguration((SysPinConfiguration)pinConfiguration);
     }
 
     /// <summary>
     /// Returns the pin configuration set using
-    /// <see cref="SetPlannedPinConfiguration(IPinConfiguration)"/> in
+    /// <see cref="SetPlannedPinConfiguration(PinConfiguration)"/> in
     /// this round.
     /// </summary>
     /// <returns>The pin configuration planned to be applied at the end of
     /// the current round. <c>null</c> if no configuration was planned yet.</returns>
-    public IPinConfiguration GetPlannedPinConfiguration()
+    public PinConfiguration GetPlannedPinConfiguration()
     {
-        throw new System.NotImplementedException();
+        return particle.GetPlannedPinConfiguration();
     }
 
 

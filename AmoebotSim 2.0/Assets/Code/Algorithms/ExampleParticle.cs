@@ -20,6 +20,8 @@ public class ExampleParticle : ParticleAlgorithm
         myEnum = CreateAttributeEnum<State>("Display name of myEnum", State.IDLE);
     }
 
+    public override int PinsPerEdge => 0;
+
     public override void Activate()
     {
         //Debug.Log("myInt: " + myInt.ToString());
