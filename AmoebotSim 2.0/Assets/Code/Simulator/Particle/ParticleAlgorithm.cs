@@ -92,6 +92,27 @@ public abstract class ParticleAlgorithm
     /// </summary>
     public abstract void Activate();
 
+    /// <summary>
+    /// Checks if the particle is currently active and throws
+    /// an exception if it is not.
+    /// <para>
+    /// Used to guard operations from being called on particles
+    /// that are not currently active.
+    /// </para>
+    /// </summary>
+    /// <param name="errorMessage">The error message to be
+    /// used for the exception.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this particle is currently not active.
+    /// </exception>
+    private void CheckActive(string errorMessage)
+    {
+        if (!particle.isActive)
+        {
+            throw new System.InvalidOperationException(errorMessage);
+        }
+    }
+
 
     /**
      * Attribute creation methods.
@@ -105,6 +126,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<int> CreateAttributeInt(string name, int initialValue = 0)
     {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
         return ParticleAttributeFactory.CreateParticleAttributeInt(particle, name, initialValue);
     }
 
@@ -116,6 +138,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<bool> CreateAttributeBool(string name, bool initialValue = false)
     {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
         return ParticleAttributeFactory.CreateParticleAttributeBool(particle, name, initialValue);
     }
 
@@ -131,6 +154,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<int> CreateAttributeDirection(string name, int initialValue = 0)
     {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
         return ParticleAttributeFactory.CreateParticleAttributeDirection(particle, name, initialValue);
     }
 
@@ -143,6 +167,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<EnumT> CreateAttributeEnum<EnumT>(string name, EnumT initialValue) where EnumT : System.Enum
     {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
         return ParticleAttributeFactory.CreateParticleAttributeEnum<EnumT>(particle, name, initialValue);
     }
 
@@ -281,6 +306,7 @@ public abstract class ParticleAlgorithm
     /// expanded at the end of the round if its planned movements succeed.</returns>
     public bool IsExpanded_After()
     {
+        CheckActive("Predicted state information is not available for other particles.");
         return particle.IsExpanded_After();
     }
 
@@ -292,6 +318,7 @@ public abstract class ParticleAlgorithm
     /// contracted at the end of the round if its planned movements succeed.</returns>
     public bool IsContracted_After()
     {
+        CheckActive("Predicted state information is not available for other particles.");
         return particle.IsContracted_After();
     }
 
@@ -303,6 +330,7 @@ public abstract class ParticleAlgorithm
     /// if it is expanded, otherwise <c>-1</c>.</returns>
     public int HeadDirection_After()
     {
+        CheckActive("Predicted state information is not available for other particles.");
         return particle.HeadDirection_After();
     }
 
@@ -314,6 +342,7 @@ public abstract class ParticleAlgorithm
     /// if it is expanded, otherwise <c>-1</c>.</returns>
     public int TailDirection_After()
     {
+        CheckActive("Predicted state information is not available for other particles.");
         return particle.TailDirection_After();
     }
 
@@ -345,6 +374,7 @@ public abstract class ParticleAlgorithm
     /// beginning of the current round.</returns>
     public PinConfiguration GetCurrentPinConfiguration()
     {
+        CheckActive("Pin configurations cannot be obtained from other particles.");
         return particle.GetCurrentPinConfiguration();
     }
 
@@ -367,6 +397,7 @@ public abstract class ParticleAlgorithm
     /// contracted state that can be modified arbitrarily.</returns>
     public PinConfiguration GetContractedPinConfiguration()
     {
+        CheckActive("Pin configurations cannot be obtained from other particles.");
         return new SysPinConfiguration(particle, PinsPerEdge);
     }
 
@@ -392,6 +423,7 @@ public abstract class ParticleAlgorithm
     /// expansion state that can be modified arbitrarily.</returns>
     public PinConfiguration GetExpandedPinConfiguration(int headDirection)
     {
+        CheckActive("Pin configurations cannot be obtained from other particles.");
         return new SysPinConfiguration(particle, PinsPerEdge, headDirection);
     }
 
@@ -417,6 +449,7 @@ public abstract class ParticleAlgorithm
     /// at the end of the current round.</param>
     public void SetPlannedPinConfiguration(PinConfiguration pinConfiguration)
     {
+        CheckActive("Cannot set pin configuration of other particles.");
         particle.SetPlannedPinConfiguration((SysPinConfiguration)pinConfiguration);
     }
 
@@ -429,6 +462,7 @@ public abstract class ParticleAlgorithm
     /// the current round. <c>null</c> if no configuration was planned yet.</returns>
     public PinConfiguration GetPlannedPinConfiguration()
     {
+        CheckActive("Predicted state information is not available for other particles.");
         return particle.GetPlannedPinConfiguration();
     }
 
@@ -458,6 +492,7 @@ public abstract class ParticleAlgorithm
     /// <returns><c>true</c> if and only if there is a different particle in the specified position.</returns>
     public bool HasNeighborAt(int locDir, bool fromHead = true)
     {
+        CheckActive("Neighbor information is not available for other particles.");
         return particle.system.HasNeighborAt(particle, locDir, fromHead);
     }
 
@@ -477,6 +512,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The neighboring particle in the specified position.</returns>
     public ParticleAlgorithm GetNeighborAt(int locDir, bool fromHead = true)
     {
+        CheckActive("Neighbor information is not available for other particles.");
         Particle p = particle.system.GetNeighborAt(particle, locDir, fromHead);
         if (p == null)
         {
@@ -506,6 +542,7 @@ public abstract class ParticleAlgorithm
     /// tail occupy the same node.)</returns>
     public bool IsHeadAt(int locDir, bool fromHead = true)
     {
+        CheckActive("Neighbor information is not available for other particles.");
         return particle.system.IsHeadAt(particle, locDir, fromHead);
     }
 
@@ -527,6 +564,7 @@ public abstract class ParticleAlgorithm
     /// tail occupy the same node.)</returns>
     public bool IsTailAt(int locDir, bool fromHead = true)
     {
+        CheckActive("Neighbor information is not available for other particles.");
         return particle.system.IsTailAt(particle, locDir, fromHead);
     }
 
@@ -534,11 +572,13 @@ public abstract class ParticleAlgorithm
 
     public bool FindFirstNeighbor<T>(out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
+        CheckActive("Neighbor information is not available for other particles.");
         return particle.system.FindFirstNeighbor<T>(particle, out neighbor, startDir, startAtHead, withChirality, maxNumber);
     }
 
     public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
+        CheckActive("Neighbor information is not available for other particles.");
         return particle.system.FindFirstNeighborWithProperty<T>(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
     }
 
@@ -564,6 +604,7 @@ public abstract class ParticleAlgorithm
     /// <param name="locDir">The local direction in which to expand.</param>
     public void Expand(int locDir)
     {
+        CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.ExpandParticle(particle, locDir);
     }
 
@@ -583,6 +624,7 @@ public abstract class ParticleAlgorithm
     /// </summary>
     public void ContractHead()
     {
+        CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.ContractParticleHead(particle);
     }
 
@@ -602,6 +644,7 @@ public abstract class ParticleAlgorithm
     /// </summary>
     public void ContractTail()
     {
+        CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.ContractParticleTail(particle);
     }
 
@@ -631,6 +674,7 @@ public abstract class ParticleAlgorithm
     /// <param name="locDir">The local direction into which the particle should expand.</param>
     public void PushHandover(int locDir)
     {
+        CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.PerformPushHandover(particle, locDir);
     }
 
@@ -662,6 +706,7 @@ public abstract class ParticleAlgorithm
     /// tail from which the contracted neighbor particle should be pulled.</param>
     public void PullHandoverHead(int locDir)
     {
+        CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.PerformPullHandoverHead(particle, locDir);
     }
 
@@ -693,6 +738,7 @@ public abstract class ParticleAlgorithm
     /// head from which the contracted neighbor particle should be pulled.</param>
     public void PullHandoverTail(int locDir)
     {
+        CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.PerformPullHandoverTail(particle, locDir);
     }
 
@@ -716,6 +762,7 @@ public abstract class ParticleAlgorithm
     /// if it has been set previously.</returns>
     public Color GetMainColor()
     {
+        CheckActive("Visualization info is not available for other particles.");
         return particle.GetParticleColor();
     }
 
@@ -725,6 +772,7 @@ public abstract class ParticleAlgorithm
     /// <param name="c">The color to be applied to the particle.</param>
     public void SetMainColor(Color c)
     {
+        CheckActive("Visualization info is not available for other particles.");
         particle.SetParticleColor(c);
     }
 
@@ -733,6 +781,7 @@ public abstract class ParticleAlgorithm
     /// </summary>
     public void ResetMainColor()
     {
+        CheckActive("Visualization info is not available for other particles.");
         particle.ResetParticleColor();
     }
 
@@ -747,6 +796,7 @@ public abstract class ParticleAlgorithm
     /// has been overwritten and has not been reset since.</returns>
     public bool IsMainColorSet()
     {
+        CheckActive("Visualization info is not available for other particles.");
         return particle.IsParticleColorSet();
     }
 }
