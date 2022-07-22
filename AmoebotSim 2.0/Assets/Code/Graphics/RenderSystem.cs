@@ -56,6 +56,7 @@ public class RenderSystem
         // Render
         rendererBG.Render(setting_viewType);
         rendererP.Render(setting_viewType);
+        rendererUI.Render(setting_viewType);
 
         // Reset Round Flag
         flag_newRound = false;

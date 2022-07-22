@@ -58,12 +58,11 @@ public class RendererParticles_RenderBatch
     private Mesh defaultQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
     private Mesh mesh_circle_particle = MeshCreator_CircularView.GetMesh_ParticleOptimized();
     private Mesh mesh_circle_particleConnector = MeshCreator_CircularView.GetMesh_ParticleConnector();
+    private Mesh mesh_hex_particle = MeshCreator_HexagonalView.GetMesh_MergingExpansionHexagon();
     private Mesh defaultQuadLeftSidePivot = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     private Mesh defaultHexagon = MeshCreator_HexagonalView.GetMesh_BaseExpansionHexagon();
     private Mesh defaultHexagonCenter = MeshCreator_HexagonalView.GetMesh_BaseHexagonBackground();
     // Matrix TRS Params
-    //static float diagonalConnectionLength = Mathf.Sqrt(0.5f * 0.5f + AmoebotFunctions.HeightDifferenceBetweenRows() * AmoebotFunctions.HeightDifferenceBetweenRows());
-    static private float particleConnectedWidth = 0.1f;
     static Quaternion quaternion_horRightParticleConnection = Quaternion.Euler(0f, 0f, 0f) * Quaternion.identity;
     //static Vector3 scale_horRightParticleConnection = new Vector3(1f, particleConnectedWidth, 1f);
     static Quaternion quaternion_diaTopLeftParticleConnection = Quaternion.Euler(0f, 0f, 120f) * Quaternion.identity;
@@ -79,7 +78,6 @@ public class RendererParticles_RenderBatch
     // Defaults
     Matrix4x4 matrixTRS_zero = Matrix4x4.TRS(new Vector3(float.MaxValue / 2f, float.MaxValue / 2f, 0f), Quaternion.identity, Vector3.zero);
     const int maxArraySize = 1023;
-    float innerParticleScaleFactor = 0.75f;
 
     // Settings _____
     public PropertyBlockData properties;
@@ -148,11 +146,14 @@ public class RendererParticles_RenderBatch
         graphicalData.graphics_globalID = particleToParticleGraphicalDataMap.Count;
         graphicalData.graphics_color = properties.color;
         graphicalData.graphics_colorRenderer = this;
+
         //Log.Debug("_____Add:    Color: " + properties.color + ", ListNumber: " + graphicalData.graphics_listNumber + ", ListID: " + graphicalData.graphics_listID);
 
         // Register Particle
         particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
         graphicalDataList.Add(graphicalData);
+        UpdateMatrix(graphicalData);
+
         return true;
     }
 
@@ -167,7 +168,6 @@ public class RendererParticles_RenderBatch
         ParticleGraphicsAdapterImpl lastParticleGraphicalData = graphicalDataList[graphicalDataList.Count - 1];
         int movedParticleIndex = graphicalDataList.IndexOf(graphicalData);
         graphicalDataList[movedParticleIndex] = lastParticleGraphicalData;
-        bool canListBeDeleted = graphicalData.graphics_listID == 0 && lastParticleGraphicalData.graphics_listID == 0;
         // Update References
         int original_listNumber = lastParticleGraphicalData.graphics_listNumber;
         int original_listID = lastParticleGraphicalData.graphics_listID;
@@ -178,11 +178,12 @@ public class RendererParticles_RenderBatch
         CutAndCopyMatrices(original_listNumber, original_listID, lastParticleGraphicalData.graphics_listNumber, lastParticleGraphicalData.graphics_listID);
 
         //Log.Debug("_____Remove:     Color: " + properties.color + ", ListNumber: " + graphicalData.graphics_listNumber + ", ListID: " + graphicalData.graphics_listID);
+
         // Unregister Particle
         graphicalDataList.RemoveAt(graphicalDataList.Count - 1);
         particleToParticleGraphicalDataMap.Remove(graphicalData.particle);
         // Lists became smaller, possibly delete list entry
-        if (canListBeDeleted)
+        if (graphicalDataList.Count % maxArraySize == 0)
         {
             // Particle was only element in the last list
             // Delete list
@@ -202,6 +203,14 @@ public class RendererParticles_RenderBatch
 
         return true;
     }
+
+    //public void ValidityCheck()
+    //{
+    //    for (int i = 0; i < graphicalDataList.Count; i++)
+    //    {
+    //        Matrix4x4 a = particleMatricesCircle_Contracted[graphicalDataList[i].graphics_listNumber][graphicalDataList[i].graphics_listID].transpose;
+    //    }
+    //}
 
     private void CutAndCopyMatrices(int orig_ListNumber, int orig_ListID, int moved_ListNumber, int moved_ListID)
     {
@@ -234,6 +243,7 @@ public class RendererParticles_RenderBatch
     public void UpdateMatrix(ParticleGraphicsAdapterImpl gd)
     {
         // Reset Matrices
+        //Log.Debug("Possible Error Particle: Color: "+properties.color+", List Number: " + gd.graphics_listNumber + ", List ID: " + gd.graphics_listID+ "\n____LIST AMOUNT: " + particleMatricesCircle_Contracted.Count);
         ResetMatrices(gd.graphics_listNumber, gd.graphics_listID);
         //Log.Debug("UPDATE: Color: "+properties.color+", ListNumber: " + gd.graphics_listNumber + ", ListID: " + gd.graphics_listID + ", List Count: "+ particleMatricesCircle_Contracted.Count+", Array Count: ");
 
@@ -440,14 +450,11 @@ public class RendererParticles_RenderBatch
             if (i == particleMatricesCircle_Contracted.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
             else listLength = maxArraySize;
 
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Contracted[i], listLength, propertyBlock_HexParticles_Contracted.propertyBlock);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Expanded1[i], listLength, propertyBlock_HexParticles_Expanded.propertyBlock);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_Expanded2[i], listLength, propertyBlock_HexParticles_Expanded.propertyBlock);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_ContractedToExpanded[i], listLength, propertyBlock_HexParticles_ContractedToExpanded.propertyBlock);
-            //Graphics.DrawMeshInstanced(defaultHexagon, 0, MaterialDatabase.material_hexagonal_particleExpansion, particleMatricesHex_ExpandedToContracted[i], listLength, propertyBlock_HexParticles_ExpandedToContracted.propertyBlock);
-
-            //Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesHexBG[i], listLength);
-            //Graphics.DrawMeshInstanced(defaultHexagonCenter, 0, MaterialDatabase.material_hexagonal_particleCenter, particleMatricesHexBGExpanded[i], listLength);
+            // Particles
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
         }
     }
 

@@ -20,6 +20,8 @@ public static class MaterialDatabase
     public static Material material_hexagonal_particle = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonDefaultMat");
     public static Material material_hexagonal_particleExpansion = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonExpansionMat");
     public static Material material_hexagonal_particleCenter = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonCenterDefaultMat");
+    // new system
+    public static Material material_hexagonal_particleCombined = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonCombinedMat");
 
     // UI
     public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");

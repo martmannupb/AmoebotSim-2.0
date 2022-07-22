@@ -102,7 +102,7 @@ public class RendererParticles
 
 
         // Old System ___________________________________________________________
-
+        /*
         if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) return false;
 
         particleMatricesSingle_Position1.Add(matrixTRS_zero);
@@ -143,16 +143,16 @@ public class RendererParticles
         graphicalData.graphics_listID = particleToParticleGraphicalDataMap.Count % maxArraySize;
         graphicalData.graphics_globalID = particleToParticleGraphicalDataMap.Count;
 
-        particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
+        particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);*/
         return true;
     }
 
-    public void Particle_Remove(IParticleState particle)
+    public void Particle_Remove(ParticleGraphicsAdapterImpl graphicalData)
     {
-        if (particleToParticleGraphicalDataMap.ContainsKey(particle)) particleToParticleGraphicalDataMap.Remove(particle);
+        if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) particleToParticleGraphicalDataMap.Remove(graphicalData.particle);
 
-        throw new System.NotImplementedException();
-        // We would need to implement the removal of the graphics here, but let us say for the prototype we do not need this.
+        // Remove particle from old RenderBatch
+        propertiesToRenderBatchMap[new RendererParticles_RenderBatch.PropertyBlockData(graphicalData.graphics_color)].Particle_Remove(graphicalData);
     }
 
     public bool UpdateParticleColor(ParticleGraphicsAdapterImpl gd, Color oldColor, Color color)
@@ -294,21 +294,27 @@ public class RendererParticles
 
     public void Render(ViewType viewType)
     {
-        switch (viewType)
+        foreach (var item in propertiesToRenderBatchMap.Values)
         {
-            case ViewType.Hexagonal:
-                Render_Hexagonal();
-                break;
-            case ViewType.Circular:
-                //Render_Circular();
-                foreach (var item in propertiesToRenderBatchMap.Values)
-                {
-                    item.Render(viewType);
-                }
-                break;
-            default:
-                break;
+            item.Render(viewType);
         }
+
+        //return;
+        //switch (viewType)
+        //{
+        //    case ViewType.Hexagonal:
+        //        Render_Hexagonal();
+        //        break;
+        //    case ViewType.Circular:
+        //        //Render_Circular();
+        //        foreach (var item in propertiesToRenderBatchMap.Values)
+        //        {
+        //            item.Render(viewType);
+        //        }
+        //        break;
+        //    default:
+        //        break;
+        //}
     }
 
     private void Render_Hexagonal()
