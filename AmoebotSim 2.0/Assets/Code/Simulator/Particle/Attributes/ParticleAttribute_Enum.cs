@@ -5,7 +5,7 @@ using UnityEngine;
 
 
 /// <summary>
-/// <see cref="ParticleAttribute"/> subclass representing enum values.
+/// <see cref="ParticleAttribute{T}"/> subclass representing enum values.
 /// <para>
 /// To use this attribute, simply create an <c>enum</c> and use it
 /// as the attribute's type parameter:

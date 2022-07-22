@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// <see cref="ParticleAttribute"/> subclass representing integer values.
+/// <see cref="ParticleAttribute{T}"/> subclass representing integer values.
 /// </summary>
 public class ParticleAttribute_Int : ParticleAttributeWithHistory<int>, IParticleAttribute
 {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// <see cref="ParticleAttribute"/> subclass representing boolean values.
+/// <see cref="ParticleAttribute{T}"/> subclass representing boolean values.
 /// </summary>
 public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParticleAttribute
 {

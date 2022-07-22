@@ -67,4 +67,23 @@ public static class ParticleAttributeFactory
         p.AddAttribute(attr);
         return attr;
     }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute_PinConfiguration"/> and adds it to
+    /// the given <see cref="Particle"/>'s list of attributes.
+    /// <para>
+    /// Note the usage remarks of the <see cref="ParticleAttribute_PinConfiguration"/>
+    /// class.
+    /// </para>
+    /// </summary>
+    /// <param name="p">The <see cref="Particle"/> to which the attribute should belong.</param>
+    /// <param name="name">The display name of the attribute.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>A newly initialized <see cref="ParticleAttribute_PinConfiguration"/>.</returns>
+    public static ParticleAttribute_PinConfiguration CreateParticleAttributePinConfiguration(Particle p, string name, PinConfiguration initialValue)
+    {
+        ParticleAttribute_PinConfiguration attr = new ParticleAttribute_PinConfiguration(p, name, initialValue);
+        p.AddAttribute(attr);
+        return attr;
+    }
 }

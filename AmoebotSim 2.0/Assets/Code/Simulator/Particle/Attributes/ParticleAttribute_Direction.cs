@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// <see cref="ParticleAttribute"/> subclass representing direction values.
+/// <see cref="ParticleAttribute{T}"/> subclass representing direction values.
 /// Only values in the set {-1,0,1,2,3,4,5} are permitted.
 /// </summary>
 public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IParticleAttribute

@@ -116,6 +116,10 @@ public abstract class ParticleAlgorithm
 
     /**
      * Attribute creation methods.
+     * 
+     * To be called in the particle constructor.
+     * (There is currently no way to check if they are called
+     * anywhere else, but this is strongly discouraged)
      */
 
     /// <summary>
@@ -169,6 +173,24 @@ public abstract class ParticleAlgorithm
     {
         CheckActive("Particles can only create attributes for themselves, not for other particles");
         return ParticleAttributeFactory.CreateParticleAttributeEnum<EnumT>(particle, name, initialValue);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing a pin configuration.
+    /// <para>
+    /// Note that <see cref="PinConfiguration"/> is a reference type but particle attributes
+    /// have value semantics. This means that changes to the value of an attribute of this
+    /// type must be "committed" by calling the <see cref="ParticleAttribute{T}.SetValue(T)"/>
+    /// method.
+    /// </para>
+    /// </summary>
+    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<PinConfiguration> CreateAttributePinConfiguration(string name, PinConfiguration initialValue)
+    {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        return ParticleAttributeFactory.CreateParticleAttributePinConfiguration(particle, name, initialValue);
     }
 
 
