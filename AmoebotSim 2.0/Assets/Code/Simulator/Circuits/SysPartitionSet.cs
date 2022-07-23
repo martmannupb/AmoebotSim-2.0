@@ -15,6 +15,9 @@ public class SysPartitionSet : PartitionSet
     public BitArray pins;
     private int numStoredPins;
 
+    // TODO: Documentation
+    public int circuit = -1;
+
     public SysPartitionSet(SysPinConfiguration pinConfig, int id, int size)
     {
         this.pinConfig = pinConfig;

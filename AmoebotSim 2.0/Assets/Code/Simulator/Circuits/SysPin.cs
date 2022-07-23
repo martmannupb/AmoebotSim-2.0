@@ -12,16 +12,20 @@ public class SysPin : Pin
     public SysPartitionSet partitionSet;
     public int id;
     public int localDir;
+    public int globalDir;
     public bool head;
-    public int edgeOffset;
+    public int localEdgeOffset;
+    public int globalEdgeOffset;
 
-    public SysPin(SysPartitionSet partitionSet, int id, int localDir, bool head, int edgeOffset)
+    public SysPin(SysPartitionSet partitionSet, int id, int localDir, int globalDir, bool head, int localEdgeOffset, int globalEdgeOffset)
     {
         this.partitionSet = partitionSet;
         this.id = id;
         this.localDir = localDir;
+        this.globalDir = globalDir;
         this.head = head;
-        this.edgeOffset = edgeOffset;
+        this.localEdgeOffset = localEdgeOffset;
+        this.globalEdgeOffset = globalEdgeOffset;
     }
 
 
@@ -46,7 +50,7 @@ public class SysPin : Pin
 
     public override int Offset
     {
-        get { return edgeOffset; }
+        get { return localEdgeOffset; }
     }
 
     public override bool IsOnHead
@@ -65,6 +69,6 @@ public class SysPin : Pin
     // <<<TEMPORARY, FOR DEBUGGING>>>
     public string Print()
     {
-        return "Pin with ID " + id + ": Direction " + localDir + ", Offset: " + edgeOffset + ", On Head: " + head;
+        return "Pin with ID " + id + ": Direction " + localDir + " (" + globalDir + "), Offset: " + localEdgeOffset + " (" + globalEdgeOffset + "), On Head: " + head;
     }
 }

@@ -228,6 +228,7 @@ public class ParticleSystem : IReplayHistory
             particles[pIdx].Activate();
             ApplyAllActionsInQueue();
             particles[pIdx].ApplyPlannedPinConfiguration();
+            DiscoverCircuits();
             CleanupAfterRound();
             _previousRound++;
             UpdateAllParticleVisuals(false);     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
@@ -248,6 +249,7 @@ public class ParticleSystem : IReplayHistory
         ActivateParticles();
         ApplyAllActionsInQueue();
         ApplyNewPinConfigurations();
+        DiscoverCircuits();
         CleanupAfterRound();
         _previousRound++;
         UpdateAllParticleVisuals(false);
@@ -336,6 +338,123 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    // TODO: Documentation
+    public void DiscoverCircuits()
+    {
+        float tStart = Time.realtimeSinceStartup;
+        List<Circuit> circuits = new List<Circuit>();
+
+        // Go through all particles, start search for each unfinished one
+        foreach (Particle particle in particles)
+        {
+            if (particle.processedPinConfig)
+            {
+                continue;
+            }
+            // Particle is not finished, start BFS and collect circuits
+            Queue<Particle> queue = new Queue<Particle>();
+            queue.Enqueue(particle);
+            while (queue.Count > 0)
+            {
+                Particle p = queue.Dequeue();
+                // Must avoid processing the particle multiple times (particles can occur more than once in the queue)
+                if (p.processedPinConfig)
+                {
+                    continue;
+                }
+
+                int globalHeadDir = p.GlobalHeadDirection();
+                // First of all, find all neighboring nodes and particles that have already been processed
+                int numNbrs = p.IsExpanded() ? 10 : 6;
+                Vector2Int[] nbrNodes = new Vector2Int[numNbrs];
+                Particle[] nbrParts = new Particle[numNbrs];
+                bool[] nbrHead = new bool[numNbrs];
+                for (int label = 0; label < numNbrs; label++)
+                {
+                    int dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+                    bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
+                    Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
+                    nbrNodes[label] = nbrPos;
+                    if (particleMap.TryGetValue(nbrPos, out Particle nbr))
+                    {
+                        nbrParts[label] = nbr;
+                        nbrHead[label] = nbr.Head() == nbrPos;
+                    }
+                    else
+                    {
+                        nbrParts[label] = null;
+                    }
+                }
+                // Have found all neighbors, now determine circuits into which the partition sets belong
+                foreach (SysPartitionSet ps in p.PinConfiguration.partitionSets)
+                {
+                    if (ps.IsEmpty())
+                    {
+                        continue;
+                    }
+                    // Partition set contains at least one pin
+                    // For each pin, find out if it is connected to a partition set of an
+                    // already processed neighbor
+                    // Put the partition set into the first encountered circuit
+                    // Merge this circuit with any other circuits encountered on the way
+                    // If no circuit is encountered, create a new one for the partition set
+                    bool foundCircuit = false;
+                    foreach (Pin _pin in ps.GetPins())
+                    {
+                        SysPin pin = (SysPin) _pin;
+                        int pinLabel = ParticleSystem_Utils.GetLabelInDir(pin.globalDir, globalHeadDir, pin.IsOnHead);
+                        int pinOffset = pin.globalEdgeOffset;
+                        if (nbrParts[pinLabel] != null && nbrParts[pinLabel].processedPinConfig)
+                        {
+                            // Find the neighbor's corresponding pin
+                            SysPinConfiguration nbrPC = nbrParts[pinLabel].PinConfiguration;
+                            int nbrPinLabel = ParticleSystem_Utils.GetLabelInDir((pin.globalDir + 3) % 6, nbrParts[pinLabel].GlobalHeadDirection(), nbrHead[pinLabel])
+                                * nbrPC.PinsPerEdge + (nbrPC.PinsPerEdge - 1 - pinOffset);
+                            SysPin nbrPin = nbrPC.pinsGlobal[nbrPinLabel];
+                            // If we have not found a circuit yet, add our partition set to the circuit
+                            if (!foundCircuit)
+                            {
+                                circuits[nbrPin.partitionSet.circuit].AddPartitionSet(ps);
+                                foundCircuit = true;
+                            }
+                            // Otherwise merge our circuit with the neighbor's
+                            else
+                            {
+                                circuits[nbrPin.partitionSet.circuit].MergeWith(circuits[ps.circuit]);
+                            }
+                        }
+                    }
+                    if (!foundCircuit)
+                    {
+                        // If we have not found a circuit after going through all pins, create a new circuit
+                        Circuit c = new Circuit(circuits.Count);
+                        c.AddPartitionSet(ps);
+                        circuits.Add(c);
+                    }
+                }
+                p.processedPinConfig = true;
+
+                // Insert un-processed neighbors into the queue
+                foreach (Particle nbr in nbrParts)
+                {
+                    if (nbr != null && !nbr.processedPinConfig)
+                    {
+                        // TODO: Neighbors can be enqueued multiple times!
+                        queue.Enqueue(nbr);
+                    }
+                }
+            }
+        }
+
+        string s = "Found " + circuits.Count + " circuits in " + (Time.realtimeSinceStartup - tStart) + " seconds\n";
+        //string s = "Found " + circuits.Count + " circuits:\n";
+        //foreach (Circuit c in circuits)
+        //{
+        //    s += c.Print() + "\n";
+        //}
+        Debug.Log(s);
+    }
+
     /// <summary>
     /// Resets the helper information of all particles to prepare for
     /// the simulation of the next round (currently only the
@@ -349,6 +468,7 @@ public class ParticleSystem : IReplayHistory
         foreach (Particle p in particles)
         {
             p.hasMoved = false;
+            p.processedPinConfig = false;
         }
     }
 

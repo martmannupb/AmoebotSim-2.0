@@ -66,6 +66,11 @@ public class Particle : IParticleState, IReplayHistory
     // Pin Configuration
     private ValueHistory<SysPinConfiguration> pinConfigurationHistory;
     private SysPinConfiguration pinConfiguration;
+    public SysPinConfiguration PinConfiguration
+    {
+        get { return pinConfiguration; }
+        private set { pinConfiguration = value; }
+    }
     
     // Messages
     private Queue<Message> messageQueue = new Queue<Message>();
@@ -111,6 +116,9 @@ public class Particle : IParticleState, IReplayHistory
     /// <para>Reset to <c>false</c> after simulating a round.</para>
     /// </summary>
     public bool hasMoved = false;
+
+    // TODO: Documentation
+    public bool processedPinConfig = false;
 
     /// <summary>
     /// Stores the pin configuration that is planned to be applied at the end
