@@ -75,7 +75,7 @@ public class SysPinConfiguration : PinConfiguration
                     int id = label * pinsPerEdge + idx;
                     int idGlobal = globalLabel * pinsPerEdge + idxGlobal;
                     SysPartitionSet ps = new SysPartitionSet(this, id, numPins);
-                    SysPin pin = new SysPin(ps, id, direction, globalDir, isHead, idx, idxGlobal);
+                    SysPin pin = new SysPin(ps, id, direction, globalLabel, isHead, idx, idxGlobal);
                     ps.AddPinBasic(id);
                     partitionSets[id] = ps;
                     pins[id] = pin;
@@ -83,6 +83,19 @@ public class SysPinConfiguration : PinConfiguration
                 }
             }
         }
+
+        // FOR DEBUGGING
+
+        // DEFAULT IS SINGLETON
+
+        // TRY GLOBAL
+        //SetToGlobal();
+
+        // TRY STAR ON ALL PINS
+        //for (int i = 0; i < pinsPerEdge; i++)
+        //{
+        //    SetStarConfig(i, i);
+        //}
     }
 
     /// <summary>

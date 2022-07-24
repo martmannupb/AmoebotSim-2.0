@@ -600,6 +600,7 @@ public abstract class ParticleAlgorithm
 
     public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
+        
         CheckActive("Neighbor information is not available for other particles.");
         return particle.system.FindFirstNeighborWithProperty<T>(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
     }

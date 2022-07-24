@@ -119,6 +119,7 @@ public class Particle : IParticleState, IReplayHistory
 
     // TODO: Documentation
     public bool processedPinConfig = false;
+    public bool queuedForPinConfigProcessing = false;
 
     /// <summary>
     /// Stores the pin configuration that is planned to be applied at the end

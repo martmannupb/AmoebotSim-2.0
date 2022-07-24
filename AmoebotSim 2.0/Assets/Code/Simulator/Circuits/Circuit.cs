@@ -2,7 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO: Documentation
+
+/// <summary>
+/// Represents a collection of partition sets that are connected
+/// into a single circuit.
+/// </summary>
 public class Circuit
 {
     public int id;
@@ -16,12 +20,27 @@ public class Circuit
         active = true;
     }
 
+    /// <summary>
+    /// Adds the given partition set to this circuit.
+    /// </summary>
+    /// <param name="ps">The partition set to be added.</param>
     public void AddPartitionSet(SysPartitionSet ps)
     {
         partitionSets.Add(ps);
         ps.circuit = id;
     }
 
+    /// <summary>
+    /// Merges this circuit with the given other circuit.
+    /// <para>
+    /// Nothing happens if the other circuit is the same
+    /// as this one. Otherwise, the smaller circuit is
+    /// merged into the bigger one and the smaller one is
+    /// set to be inactive.
+    /// </para>
+    /// </summary>
+    /// <param name="other">The circuit to merge this one
+    /// with.</param>
     public void MergeWith(Circuit other)
     {
         if (other.id == id)
@@ -38,6 +57,11 @@ public class Circuit
         }
     }
 
+    /// <summary>
+    /// Merges the given other circuit into this one.
+    /// </summary>
+    /// <param name="other">The circuit to be merged into
+    /// this one. It will be set to inactive after the merge.</param>
     private void MergeOther(Circuit other)
     {
         foreach (SysPartitionSet ps in other.partitionSets)
