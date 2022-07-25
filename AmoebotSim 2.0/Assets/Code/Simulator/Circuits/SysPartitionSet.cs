@@ -15,7 +15,9 @@ public class SysPartitionSet : PartitionSet
     public BitArray pins;
     private int numStoredPins;
 
-    // TODO: Documentation
+    /// <summary>
+    /// The ID of the circuit this partition set currently belongs to.
+    /// </summary>
     public int circuit = -1;
 
     public SysPartitionSet(SysPinConfiguration pinConfig, int id, int size)
@@ -307,6 +309,15 @@ public class SysPartitionSet : PartitionSet
         Merge(other.Id);
     }
 
+    public override bool ReceivedBeep()
+    {
+        return pinConfig.ReceivedBeepOnPartitionSet(id);
+    }
+
+    public override void SendBeep()
+    {
+        pinConfig.SendBeepOnPartitionSet(id);
+    }
 
 
     // <<<TEMPORARY, FOR DEBUGGING>>>

@@ -338,9 +338,12 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    // TODO: Circuit computation and beep/message handling should probably be done separately
+
     /// <summary>
     /// Uses the particles' pin configurations to determine
-    /// all circuits in the system from scratch.
+    /// all circuits in the system from scratch and send the
+    /// planned beeps accordingly.
     /// <para>
     /// The algorithm performs a breadth-first search on each
     /// connected component of the particle system to assign
@@ -462,6 +465,18 @@ public class ParticleSystem : IReplayHistory
         //    s += c.Print() + "\n";
         //}
         Debug.Log(s);
+
+        // Apply beeps to all circuits
+        foreach (Circuit c in circuits)
+        {
+            if (c.active && c.hasBeep)
+            {
+                foreach (SysPartitionSet ps in c.partitionSets)
+                {
+                    ps.pinConfig.particle.ReceiveBeep(ps.id);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -480,6 +495,7 @@ public class ParticleSystem : IReplayHistory
             p.hasMoved = false;
             p.processedPinConfig = false;
             p.queuedForPinConfigProcessing = false;
+            p.ResetPlannedBeeps();
         }
     }
 

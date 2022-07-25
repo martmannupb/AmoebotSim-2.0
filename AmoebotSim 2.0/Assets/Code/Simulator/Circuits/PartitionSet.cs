@@ -237,4 +237,27 @@ public abstract class PartitionSet
     /// <param name="other">The partition set whose pins should
     /// be moved to this set.</param>
     public abstract void Merge(PartitionSet other);
+
+    /// <summary>
+    /// Checks whether this partition set has received a beep in
+    /// the last round, if the pin configuration it belongs to
+    /// is the current one.
+    /// </summary>
+    /// <returns><c>true</c> if and only if this partition set has
+    /// received a beep in the last round.</returns>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this partition set does not belong to the current
+    /// pin configuration.
+    /// </exception>
+    public abstract bool ReceivedBeep();
+
+    /// <summary>
+    /// Sends a beep on this partition set if the pin configuration
+    /// it belongs to is the planned one.
+    /// </summary>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this partition set does not belong to the planned
+    /// pin configuration.
+    /// </exception>
+    public abstract void SendBeep();
 }

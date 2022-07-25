@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -23,6 +24,10 @@ public class SysPinConfiguration : PinConfiguration
     public SysPin[] pins;
     public SysPin[] pinsGlobal;
     public SysPartitionSet[] partitionSets;
+
+    // State information for receiving and sending beeps and messages
+    public bool isCurrent = false;  // If true, give access to received data
+    public bool isPlanned = false;  // If true, allow sending data
 
     public SysPinConfiguration(Particle particle, int pinsPerEdge, int headDirection = -1)
     {
@@ -98,6 +103,12 @@ public class SysPinConfiguration : PinConfiguration
         //}
     }
 
+    private void UpdateFlagsAfterChange()
+    {
+        isCurrent = false;
+        isPlanned = false;
+    }
+
     /// <summary>
     /// Computes the ID of the pin on the specified edge with the
     /// given offset.
@@ -167,6 +178,7 @@ public class SysPinConfiguration : PinConfiguration
             if (ps.IsEmpty())
             {
                 ps.AddPin(pinId);
+                UpdateFlagsAfterChange();
                 return;
             }
         }
@@ -206,6 +218,7 @@ public class SysPinConfiguration : PinConfiguration
                 {
                     ps.AddPin(pinId);
                     foundSet = true;
+                    UpdateFlagsAfterChange();
                     break;
                 }
             }
@@ -237,6 +250,8 @@ public class SysPinConfiguration : PinConfiguration
                 copy.MakePartitionSet(partitionSets[i].GetPins(), i);
             }
         }
+        copy.isCurrent = isCurrent;
+        copy.isPlanned = isPlanned;
         return copy;
     }
 
@@ -367,6 +382,7 @@ public class SysPinConfiguration : PinConfiguration
             ps.AddPinBasic(id);
             pin.partitionSet = ps;
         }
+        UpdateFlagsAfterChange();
     }
 
     public override void SetToGlobal(int partitionSetId = 0)
@@ -384,6 +400,7 @@ public class SysPinConfiguration : PinConfiguration
             psGlobal.AddPinBasic(id);
             pin.partitionSet = psGlobal;
         }
+        UpdateFlagsAfterChange();
     }
 
     public override void SetToGlobal(PartitionSet partitionSet)
@@ -424,6 +441,7 @@ public class SysPinConfiguration : PinConfiguration
             }
         }
         TryRemovePins(pinsToRemove.ToArray());
+        UpdateFlagsAfterChange();
     }
 
     public override void SetStarConfig(int offset, bool[] inverted, PartitionSet partitionSet)
@@ -458,6 +476,7 @@ public class SysPinConfiguration : PinConfiguration
             }
         }
         TryRemovePins(pinsToRemove.ToArray());
+        UpdateFlagsAfterChange();
     }
 
     public override void MakePartitionSet(Pin[] pins, int partitionSetIndex)
@@ -483,6 +502,25 @@ public class SysPinConfiguration : PinConfiguration
             pinIds[i] = pins[i].Id;
         }
         MakePartitionSet(pinIds, partitionSet.Id);
+    }
+
+    public override bool ReceivedBeepOnPartitionSet(int partitionSetIndex)
+    {
+        if (!isCurrent)
+        {
+            throw new InvalidOperationException("Cannot check for received beeps in non-current pin configuration.");
+        }
+        return particle.HasReceivedBeep(partitionSetIndex);
+    }
+
+    public override void SendBeepOnPartitionSet(int partitionSetIndex)
+    {
+        if (!isPlanned)
+        {
+            throw new InvalidOperationException("Cannot send beeps in non-planned pin configuration.");
+        }
+        // TODO: Mask these things better
+        particle.PlanBeep(partitionSetIndex);
     }
 
 

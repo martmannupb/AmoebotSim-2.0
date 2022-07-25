@@ -12,22 +12,32 @@ public class Circuit
     public int id;
     public List<SysPartitionSet> partitionSets;
     public bool active;
+    public bool hasBeep;
 
     public Circuit(int id)
     {
         this.id = id;
         partitionSets = new List<SysPartitionSet>();
         active = true;
+        hasBeep = false;
     }
 
     /// <summary>
     /// Adds the given partition set to this circuit.
+    /// <para>
+    /// If the partition set has a planned beep, this information
+    /// is stored in the circuit.
+    /// </para>
     /// </summary>
     /// <param name="ps">The partition set to be added.</param>
     public void AddPartitionSet(SysPartitionSet ps)
     {
         partitionSets.Add(ps);
         ps.circuit = id;
+        if (!hasBeep && ps.pinConfig.particle.HasPlannedBeep(ps.Id))
+        {
+            hasBeep = true;
+        }
     }
 
     /// <summary>
@@ -36,7 +46,9 @@ public class Circuit
     /// Nothing happens if the other circuit is the same
     /// as this one. Otherwise, the smaller circuit is
     /// merged into the bigger one and the smaller one is
-    /// set to be inactive.
+    /// set to be inactive. If one of the circuits has a
+    /// planned beep, the resulting circuit will also
+    /// have a planned beep.
     /// </para>
     /// </summary>
     /// <param name="other">The circuit to merge this one
@@ -55,6 +67,9 @@ public class Circuit
         {
             other.MergeOther(this);
         }
+        bool beep = hasBeep || other.hasBeep;
+        hasBeep = beep;
+        other.hasBeep = beep;
     }
 
     /// <summary>
@@ -75,7 +90,7 @@ public class Circuit
 
     public string Print()
     {
-        string s = "Circuit with ID " + id + " and " + partitionSets.Count + " partition sets (" + (active ? "active" : "inactive") + ")";
+        string s = "Circuit with ID " + id + " and " + partitionSets.Count + " partition sets (" + (active ? "active" : "inactive") + "): " + (hasBeep ? "HAS BEEP" : "Has no beep");
         return s;
     }
 }

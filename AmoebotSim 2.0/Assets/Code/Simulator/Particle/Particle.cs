@@ -71,9 +71,14 @@ public class Particle : IParticleState, IReplayHistory
         get { return pinConfiguration; }
         private set { pinConfiguration = value; }
     }
-    
-    // Messages
-    private Queue<Message> messageQueue = new Queue<Message>();
+
+    // Beeps and messages
+    /// <summary>
+    /// Flags indicating which partition sets have received a beep.
+    /// Indices equal (local) partition set IDs.
+    /// </summary>
+    public BitArray receivedBeeps;
+
 
     // Visualization
     private ValueHistory<Color> mainColorHistory;
@@ -81,13 +86,14 @@ public class Particle : IParticleState, IReplayHistory
     private Color mainColor = new Color();
     private bool mainColorSet = false;
 
+
     /**
      * Data used by simulator to coordinate particle actions
      * 
-     * This section is used by the simulator to store information on
-     * planned actions such that they can be coordinated and applied
-     * easily, and to provide a way for the developer to access
-     * predicted information.
+     * This section is used by the particle and the simulator to
+     * store information on planned actions such that they can be
+     * coordinated and applied easily, and to provide a way for
+     * the developer to access predicted information.
      * 
      * Some information is maintained internally by the Particle to
      * cache predicted information.
@@ -117,8 +123,19 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public bool hasMoved = false;
 
-    // TODO: Documentation
+    /// <summary>
+    /// Flag indicating whether the pin configuration of the particle has
+    /// already been processed for finding circuits. Becomes <c>true</c>
+    /// as soon as all non-empty partition sets have been assigned to a
+    /// circuit, and is reset to <c>false</c> after finishing the round.
+    /// </summary>
     public bool processedPinConfig = false;
+
+    /// <summary>
+    /// Flag indicating whether the particle has been added to the BFS
+    /// queue for circuit discovery. Used to ensure that each particle
+    /// is only added to the queue once.
+    /// </summary>
     public bool queuedForPinConfigProcessing = false;
 
     /// <summary>
@@ -131,6 +148,14 @@ public class Particle : IParticleState, IReplayHistory
         set { plannedPinConfiguration = value; }
     }
     private SysPinConfiguration plannedPinConfiguration;
+
+    /// <summary>
+    /// Flags indicating which partition sets of the planned pin
+    /// configuration have scheduled sending a beep. Indices
+    /// equal (local) partition set IDs.
+    /// </summary>
+    private BitArray plannedBeeps;
+    public bool hasPlannedBeeps = false;
 
     public Particle(ParticleSystem system, Vector2Int pos, int compassDir = 0, bool chirality = true)
     {
@@ -168,6 +193,8 @@ public class Particle : IParticleState, IReplayHistory
     {
         pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
         pinConfigurationHistory = new ValueHistory<SysPinConfiguration>(pinConfiguration, system.CurrentRound);
+        receivedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
+        plannedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
     }
 
     /// <summary>
@@ -287,12 +314,18 @@ public class Particle : IParticleState, IReplayHistory
 
     /// <summary>
     /// Returns a copy of the current pin configuration.
+    /// <para>
+    /// This copy can be used to check which partition sets
+    /// have received beeps or messages in the last round.
+    /// </para>
     /// </summary>
     /// <returns>A copy of the pin configuration at the
     /// start of the current round.</returns>
     public SysPinConfiguration GetCurrentPinConfiguration()
     {
-        return pinConfiguration.Copy();
+        SysPinConfiguration current = pinConfiguration.Copy();
+        current.isCurrent = true;
+        return current;
     }
 
     /// <summary>
@@ -302,11 +335,25 @@ public class Particle : IParticleState, IReplayHistory
     /// This configuration must match the expansion state of
     /// the particle at the end of the round.
     /// </para>
+    /// <para>
+    /// After setting it to be the planned configuration, it
+    /// can be used to send beeps and messages. If it is
+    /// altered, its ability to send data expires. Setting
+    /// the planned pin configuration to a different value
+    /// after sending beeps or messages nullifies the
+    /// previously sent data.
+    /// </para>
     /// </summary>
     /// <param name="pc">The new pin configuration.</param>
     public void SetPlannedPinConfiguration(SysPinConfiguration pc)
     {
-        plannedPinConfiguration = pc;
+        if (hasPlannedBeeps && !pc.isPlanned)
+        {
+            Debug.LogWarning("Setting planned pin configuration after sending data erases the sent data.");
+            ResetPlannedBeeps();
+        }
+        plannedPinConfiguration = pc.Copy();
+        pc.isPlanned = true;
     }
 
     /// <summary>
@@ -319,7 +366,9 @@ public class Particle : IParticleState, IReplayHistory
     /// the end of the current round.</returns>
     public SysPinConfiguration GetPlannedPinConfiguration()
     {
-        return plannedPinConfiguration;
+        SysPinConfiguration planned = plannedPinConfiguration.Copy();
+        planned.isPlanned = true;
+        return planned;
     }
 
 
@@ -606,7 +655,7 @@ public class Particle : IParticleState, IReplayHistory
     /// planned for this round. If no configuration was planned and
     /// the particle has moved, the pins are reset to a singleton
     /// pattern. Also resets the planned pin configuration to
-    /// <c>null</c>.
+    /// <c>null</c> and resets the received beeps.
     /// </summary>
     public void ApplyPlannedPinConfiguration()
     {
@@ -633,12 +682,16 @@ public class Particle : IParticleState, IReplayHistory
             pinConfigurationHistory.RecordValueInRound(newPC, system.CurrentRound);
             pinConfiguration = newPC;
         }
+        pinConfiguration.isCurrent = true;
+        pinConfiguration.isPlanned = false;
         plannedPinConfiguration = null;
+
+        ResetReceivedBeeps();
     }
 
 
     /**
-     * Methods used by ParticleSystem to set and reset planned actions.
+     * Methods used by the system to read, set and reset planned actions.
      */
 
     private void SetScheduledMovement(ParticleAction a)
@@ -667,6 +720,64 @@ public class Particle : IParticleState, IReplayHistory
     private void ResetScheduledMovement()
     {
         scheduledMovement = null;
+    }
+
+    /// <summary>
+    /// Checks if the specified partition set has received
+    /// a beep.
+    /// </summary>
+    /// <param name="idx">ID of the partition set to check.</param>
+    /// <returns><c>true</c> if and only if the partition set with
+    /// ID <paramref name="idx"/> has received a beep.</returns>
+    public bool HasReceivedBeep(int idx)
+    {
+        return receivedBeeps[idx];
+    }
+
+    /// <summary>
+    /// Checks if the specified partition set has planned a beep.
+    /// </summary>
+    /// <param name="idx">ID of the partition set to check.</param>
+    /// <returns><c>true</c> if and only if the partition set of the
+    /// planned pin configuration with ID <paramref name="idx"/>
+    /// has planned a beep.</returns>
+    public bool HasPlannedBeep(int idx)
+    {
+        return plannedBeeps[idx];
+    }
+
+    /// <summary>
+    /// Sets the flag that the partition set with the given ID
+    /// has received a beep.
+    /// </summary>
+    /// <param name="idx">The ID of the partition set to
+    /// receive the beep.</param>
+    public void ReceiveBeep(int idx)
+    {
+        receivedBeeps[idx] = true;
+    }
+
+    /// <summary>
+    /// Sets the flag that the partition set of the planned
+    /// pin configuration with the given ID has received a beep.
+    /// </summary>
+    /// <param name="idx">The ID of the planned partition set to
+    /// receive the beep.</param>
+    public void PlanBeep(int idx)
+    {
+        plannedBeeps[idx] = true;
+        hasPlannedBeeps = true;
+    }
+
+    public void ResetPlannedBeeps()
+    {
+        plannedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
+        hasPlannedBeeps = false;
+    }
+
+    public void ResetReceivedBeeps()
+    {
+        receivedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
     }
 
 

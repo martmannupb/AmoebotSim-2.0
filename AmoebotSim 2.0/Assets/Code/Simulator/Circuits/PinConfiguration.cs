@@ -292,4 +292,27 @@ public abstract class PinConfiguration
     /// <param name="partitionSetIndex">The partition set that
     /// should hold the given set of pins.</param>
     public abstract void MakePartitionSet(Pin[] pins, PartitionSet partitionSet);
+
+    /// <summary>
+    /// Checks whether the specified partition set has received a beep in the
+    /// last round, if this pin configuration is the current one.
+    /// </summary>
+    /// <param name="partitionSetIndex">The ID of the partition set to check.</param>
+    /// <returns><c>true</c> if and only if the partition set with ID
+    /// <paramref name="partitionSetIndex"/> has received a beep.</returns>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this pin configuration is not the current one.
+    /// </exception>
+    public abstract bool ReceivedBeepOnPartitionSet(int partitionSetIndex);
+
+    /// <summary>
+    /// Sends a beep on the specified partition set, if this is the planned pin
+    /// configuration.
+    /// </summary>
+    /// <param name="partitionSetIndex">The ID of the partition set on which
+    /// to send the beep.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this pin configuration is not the planned one.
+    /// </exception>
+    public abstract void SendBeepOnPartitionSet(int partitionSetIndex);
 }
