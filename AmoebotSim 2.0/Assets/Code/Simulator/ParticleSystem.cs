@@ -146,7 +146,8 @@ public class ParticleSystem : IReplayHistory
         // Always start by adding a particle at position (0, 0)
         List<Vector2Int> candidates = new List<Vector2Int>();
         Vector2Int node = new Vector2Int(0, 0);
-        Particle p = ParticleFactory.CreateLineFormationParticle(this, node);
+        //Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
+        Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -172,7 +173,8 @@ public class ParticleSystem : IReplayHistory
                         candidates.Add(nbr);
                 }
 
-                p = ParticleFactory.CreateLineFormationParticle(this, newPos);
+                //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
+                p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -298,6 +300,7 @@ public class ParticleSystem : IReplayHistory
     /// <param name="a">The action to be applied.</param>
     public void ApplyParticleAction(ParticleAction a)
     {
+        Debug.Log("Particle action with type " + a.type + " and local direction " + a.localDir);
         switch (a.type)
         {
             case ActionType.EXPAND: Apply_ExpandParticle(a.particle, a.localDir);

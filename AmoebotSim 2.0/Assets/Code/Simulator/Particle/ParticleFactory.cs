@@ -26,11 +26,21 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateLineFormationParticle(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    public static Particle CreateLineFormationParticleSeq(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
     {
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
         new LineFormationParticleSeq(p);
+        p.isActive = false;
+        p.InitWithAlgorithm();
+        return p;
+    }
+
+    public static Particle CreateLineFormationParticleSync(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    {
+        Particle p = new Particle(system, position, compassDir, chirality);
+        p.isActive = true;
+        new LineFormationParticleSync(p);
         p.isActive = false;
         p.InitWithAlgorithm();
         return p;
