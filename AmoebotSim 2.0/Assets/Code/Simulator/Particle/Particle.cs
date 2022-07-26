@@ -78,6 +78,7 @@ public class Particle : IParticleState, IReplayHistory
     /// Indices equal (local) partition set IDs.
     /// </summary>
     public BitArray receivedBeeps;
+    private ValueHistoryBitArray receivedBeepsHistory;
 
 
     // Visualization
@@ -195,6 +196,7 @@ public class Particle : IParticleState, IReplayHistory
         pinConfigurationHistory = new ValueHistory<SysPinConfiguration>(pinConfiguration, system.CurrentRound);
         receivedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
         plannedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
+        receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), system.CurrentRound);
     }
 
     /// <summary>
@@ -204,6 +206,9 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public void Activate()
     {
+        // TODO: Have pre-activation method for similar things like this?
+        StoreReceivedBeeps();
+
         isActive = true;
         algorithm.Activate();
         isActive = false;
@@ -780,6 +785,17 @@ public class Particle : IParticleState, IReplayHistory
         receivedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
     }
 
+    /// <summary>
+    /// Triggers the insertion of the received beeps
+    /// into the history. Should be called before each
+    /// activation.
+    /// </summary>
+    public void StoreReceivedBeeps()
+    {
+        // Record the value for the previous round because the final value is only available now
+        receivedBeepsHistory.RecordValueInRound((BitArray)receivedBeeps.Clone(), system.PreviousRound);
+    }
+
 
     /**
      * Attribute handling
@@ -867,6 +883,7 @@ public class Particle : IParticleState, IReplayHistory
 
         // Reset pin configuration
         pinConfigurationHistory.SetMarkerToRound(round);
+        receivedBeepsHistory.SetMarkerToRound(round);
 
         // Reset visuals
         mainColorHistory.SetMarkerToRound(round);
@@ -892,6 +909,7 @@ public class Particle : IParticleState, IReplayHistory
         expansionDirHistory.StepBack();
 
         pinConfigurationHistory.StepBack();
+        receivedBeepsHistory.StepBack();
 
         mainColorHistory.StepBack();
         mainColorSetHistory.StepBack();
@@ -910,6 +928,7 @@ public class Particle : IParticleState, IReplayHistory
         expansionDirHistory.StepForward();
 
         pinConfigurationHistory.StepForward();
+        receivedBeepsHistory.StepForward();
 
         mainColorHistory.StepForward();
         mainColorSetHistory.StepForward();
@@ -943,6 +962,7 @@ public class Particle : IParticleState, IReplayHistory
         expansionDirHistory.ContinueTracking();
 
         pinConfigurationHistory.ContinueTracking();
+        receivedBeepsHistory.ContinueTracking();
 
         mainColorHistory.ContinueTracking();
         mainColorSetHistory.ContinueTracking();
@@ -969,6 +989,7 @@ public class Particle : IParticleState, IReplayHistory
         expansionDirHistory.CutOffAtMarker();
 
         pinConfigurationHistory.CutOffAtMarker();
+        receivedBeepsHistory.CutOffAtMarker();
 
         mainColorHistory.CutOffAtMarker();
         mainColorSetHistory.CutOffAtMarker();
@@ -988,6 +1009,7 @@ public class Particle : IParticleState, IReplayHistory
         expansionDirHistory.ShiftTimescale(amount);
 
         pinConfigurationHistory.ShiftTimescale(amount);
+        receivedBeepsHistory.ShiftTimescale(amount);
 
         mainColorHistory.ShiftTimescale(amount);
         mainColorSetHistory.ShiftTimescale(amount);
@@ -1020,6 +1042,7 @@ public class Particle : IParticleState, IReplayHistory
         }
 
         pinConfiguration = pinConfigurationHistory.GetMarkedValue();
+        receivedBeeps = (BitArray)receivedBeepsHistory.GetMarkedValue().Clone();
 
         mainColor = mainColorHistory.GetMarkedValue();
         mainColorSet = mainColorSetHistory.GetMarkedValue();

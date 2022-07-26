@@ -84,7 +84,7 @@ public class ParticleSystem : IReplayHistory
 
     public Queue<ParticleAction> actionQueue = new Queue<ParticleAction>();
 
-    public bool useFCFS = true;     // <<<TEMPORARY>>> If true, do not crash on expansion conflicts but simply abort the expansion
+    public bool useFCFS = false;     // <<<TEMPORARY>>> If true, do not crash on expansion conflicts but simply abort the expansion
 
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
@@ -238,6 +238,8 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    // TODO: Refactor the sequence of phases (including cleanup)
+
     /// <summary>
     /// Simulates a round in which each particle is activated
     /// exactly once. The order of activations is the same in
@@ -247,6 +249,7 @@ public class ParticleSystem : IReplayHistory
     public void SimulateRound()
     {
         _currentRound++;
+        Debug.Log("Simulate round " + _currentRound + " (previous round: " + _previousRound + ")");
         _latestRound++;
         ActivateParticles();
         ApplyAllActionsInQueue();
@@ -300,7 +303,6 @@ public class ParticleSystem : IReplayHistory
     /// <param name="a">The action to be applied.</param>
     public void ApplyParticleAction(ParticleAction a)
     {
-        Debug.Log("Particle action with type " + a.type + " and local direction " + a.localDir);
         switch (a.type)
         {
             case ActionType.EXPAND: Apply_ExpandParticle(a.particle, a.localDir);
@@ -895,7 +897,7 @@ public class ParticleSystem : IReplayHistory
         }
 
         // Store pull handover action in particle and queue
-        ParticleAction a = new ParticleAction(p, head ? ActionType.PULL_HEAD : ActionType.PULL_TAIL);
+        ParticleAction a = new ParticleAction(p, head ? ActionType.PULL_HEAD : ActionType.PULL_TAIL, locDir);
         p.ScheduledMovement = a;
         actionQueue.Enqueue(a);
     }

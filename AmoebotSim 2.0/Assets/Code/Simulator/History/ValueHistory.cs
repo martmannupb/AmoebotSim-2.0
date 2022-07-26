@@ -53,6 +53,26 @@ public class ValueHistory<T> : IReplayHistory
         isTracking = true;
     }
 
+    // TODO: Check if the default comparison can be done better
+    /// <summary>
+    /// Equality comparison method for values of the parameter type
+    /// <typeparamref name="T"/>. Can be overridden by inheriting
+    /// classes to define specialized behavior for specific types.
+    /// <para>
+    /// Default implementation uses
+    /// <see cref="EqualityComparer{T}.Default"/> for comparison.
+    /// </para>
+    /// </summary>
+    /// <param name="val1">The first value to compare.</param>
+    /// <param name="val2">The second value to compare.</param>
+    /// <returns><c>true</c> if and only if <paramref name="val1"/>
+    /// and <paramref name="val2"/> are equal in the sense that it
+    /// is not necessary to create a new history entry.</returns>
+    protected virtual bool ValuesEqual(T val1, T val2)
+    {
+        return EqualityComparer<T>.Default.Equals(val1, val2);
+    }
+
     /// <summary>
     /// Returns the first round in which a value was recorded. This is the
     /// round in which the history of this variable begins; its value is
@@ -113,8 +133,7 @@ public class ValueHistory<T> : IReplayHistory
         {
             values[values.Count - 1] = value;
         }
-        // TODO: Check if this comparison can be done better
-        else if (!EqualityComparer<T>.Default.Equals(value, values[values.Count - 1]))
+        else if (!ValuesEqual(value, values[values.Count - 1]))
         {
             values.Add(value);
             rounds.Add(round);
@@ -246,7 +265,7 @@ public class ValueHistory<T> : IReplayHistory
         {
             lastRound = markedRound;
             // Only record new entry if value is different
-            if (!EqualityComparer<T>.Default.Equals(value, values[values.Count - 1]))
+            if (!ValuesEqual(value, values[values.Count - 1]))
             {
                 values.Add(value);
                 rounds.Add(markedRound);

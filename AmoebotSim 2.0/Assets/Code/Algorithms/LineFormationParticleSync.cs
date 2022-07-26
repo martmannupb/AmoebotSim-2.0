@@ -14,13 +14,14 @@ using UnityEngine;
 /// </summary>
 public class LineFormationParticleSync : ParticleAlgorithm
 {
-    public enum LFState { IDLE, FLWR, ROOT, DONE, LEADER }
+    public enum LFState { IDLE, FLWR, ROOT, INLINE, LEADER, FINISHED }
 
     private static Color leaderColor = ColorData.Aqua;
     private static Color idleColor = ColorData.Black;
     private static Color rootColor = ColorData.Red;
     private static Color flwrColor = ColorData.Blue;
-    private static Color doneColor = ColorData.Yellow;
+    private static Color inlineColor = ColorData.Yellow;
+    private static Color finishedColor = ColorData.BlueDark;
 
     // Used to create one leader particle
     private static bool leaderCreated = false;
@@ -30,10 +31,18 @@ public class LineFormationParticleSync : ParticleAlgorithm
     public ParticleAttribute<int> moveDir;
     public ParticleAttribute<int> followDir;
 
-    // Helpers to make sure that followDir is updated only if a push handover was successful
-    // TODO: Switch to only doing pull handovers (pulling particle can choose, but need message to update followDir)
-    public ParticleAttribute<bool> havePushed;
-    public ParticleAttribute<int> newFollowDir;
+    // Helper to ensure that ROOTs only push when no handover is planned already
+    public ParticleAttribute<bool> rootHandoverAvailable;
+
+    // Flag to indicate when the LEADER or an INLINE particle has decided that a ROOT may move
+    private ParticleAttribute<bool> hasChosenRoot;
+
+    // Flag to indicate when the LEADER or an INLINE particle has successfully determined its local part of the line to be complete
+    // For INLINE particles, this only becomes true once they have received a beep from the LEADER
+    private ParticleAttribute<bool> localLineComplete;
+
+    // Flag to make LEADER send a beep every 2 rounds and recognize when the line is complete
+    private ParticleAttribute<bool> beepInLastRound;
 
     public LineFormationParticleSync(Particle p) : base(p)
     {
@@ -41,6 +50,11 @@ public class LineFormationParticleSync : ParticleAlgorithm
         moveDir = CreateAttributeDirection("moveDir", -1);
         followDir = CreateAttributeDirection("followDir", -1);
         state = CreateAttributeEnum<LFState>("State", LFState.IDLE);
+
+        rootHandoverAvailable = CreateAttributeBool("ROOT handover OK", true);
+        hasChosenRoot = CreateAttributeBool("Has chosen ROOT", false);
+        localLineComplete = CreateAttributeBool("Local line complete", false);
+        beepInLastRound = CreateAttributeBool("Beep in last round", false);
 
         SetMainColor(idleColor);
 
@@ -53,9 +67,6 @@ public class LineFormationParticleSync : ParticleAlgorithm
             Debug.Log("Line construction dir: " + (int)constructionDir.GetValue_After());
             leaderCreated = true;
         }
-
-        //havePushed = CreateAttributeBool("havePushed", false);
-        //newFollowDir = CreateAttributeDirection("newFollowDir", -1);
     }
 
     // Only need one pin per edge in this algorithm because communication
@@ -66,6 +77,8 @@ public class LineFormationParticleSync : ParticleAlgorithm
     {
         switch ((LFState)state)
         {
+            case LFState.FINISHED:
+                return;
             case LFState.LEADER:
                 LeaderActivate();
                 break;
@@ -78,8 +91,8 @@ public class LineFormationParticleSync : ParticleAlgorithm
             case LFState.FLWR:
                 FlwrActivate();
                 break;
-            case LFState.DONE:
-                DoneActivate();
+            case LFState.INLINE:
+                InlineActivate();
                 break;
             default: throw new System.InvalidOperationException("Undefined state " + state);
         }
@@ -87,24 +100,51 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     private void LeaderActivate()
     {
-        Debug.Log("Leader!");
-        return;
+        if (!localLineComplete)
+        {
+            if (!hasChosenRoot && SendBeepToWaitingRoot())
+            {
+                hasChosenRoot.SetValue(true);
+                return;
+            }
+            if (CheckLocalCompleteness())
+            {
+                localLineComplete.SetValue(true);
+            }
+        }
+        else
+        {
+            // Local part of the line is complete
+            // Send a beep every 2 rounds and finish if a beep is sent in between
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            PartitionSet ps = pc.GetPinAt(constructionDir, 0).PartitionSet;
+            if (!beepInLastRound)
+            {
+                if (ps.ReceivedBeep())
+                {
+                    // Received beep although we did not send it: Line is complete
+                    state.SetValue(LFState.FINISHED);
+                    SetMainColor(finishedColor);
+                }
+                else
+                {
+                    SetPlannedPinConfiguration(pc);
+                    ps.SendBeep();
+                    beepInLastRound.SetValue(true);
+                }
+            }
+            else
+            {
+                beepInLastRound.SetValue(false);
+            }
+        }
     }
 
     private void IdleActivate()
     {
-        // Check if neighbor is LEADER or DONE, if yes become DONE or ROOT
-        if (FindFirstNeighborWithProperty((LineFormationParticleSync p) => p.state == LFState.LEADER || p.state == LFState.DONE, out Neighbor<LineFormationParticleSync> nbrDone))
+        // Check if neighbor is LEADER or INLINE, if yes become INLINE or ROOT
+        if (TryToBecomeRootOrInline() > 0)
         {
-            // Become DONE if we are at the end of the line
-            if (TryToBecomeDone(nbrDone))
-                return;
-
-            // Otherwise become ROOT
-            state.SetValue(LFState.ROOT);
-            SetMainColor(rootColor);
-            ComputeRootMoveDir(nbrDone);
-            constructionDir.SetValue(nbrDone.neighbor.constructionDir);
             return;
         }
 
@@ -132,15 +172,20 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     private void RootActivate()
     {
-        Debug.Log("Root! " + constructionDir.GetValue_After());
-
         int cd = constructionDir.GetValue_After();
 
         // ROOT handovers take precedence: Try performing handover with ROOT first
         if (IsContracted())
         {
+            // First thing to try: Become INLINE
+            if (TryToBecomeInline())
+            {
+                return;
+            }
+
             // Always compute the move direction when contracted
-            ComputeRootMoveDir();
+            // The result indicates whether we are about to enter the end position of the line
+            int moveDirResult = ComputeRootMoveDir();
             int md = moveDir.GetValue_After();
 
             // If we are contracted and we can expand freely or push into an expanded ROOT: Do it
@@ -148,49 +193,66 @@ public class LineFormationParticleSync : ParticleAlgorithm
             LineFormationParticleSync nbr = GetNeighborAt(md) as LineFormationParticleSync;
             if (nbr == null)
             {
+                // Special case: We are almost at the end of the line
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                if (moveDirResult == 1)
+                {
+                    // We are on the left side, wait for beep from INLINE or LEADER particle
+                    if (!pc.GetPinAt((md + 5) % 6, 0).PartitionSet.ReceivedBeep())
+                    {
+                        return;
+                    }
+                }
+                else if (moveDirResult == 2)
+                {
+                    // We are on the right side, wait for beep from INLINE or LEADER particle
+                    if (!pc.GetPinAt((md + 1) % 6, 0).PartitionSet.ReceivedBeep())
+                    {
+                        return;
+                    }
+                }
+
+                // No reason not to expand
                 Expand(md);
             }
-            else if (nbr.state == LFState.ROOT && nbr.IsExpanded())
+            else if (nbr.state == LFState.ROOT && nbr.IsExpanded() && nbr.rootHandoverAvailable && IsTailAt(md))
             {
-                Debug.Log("Push handover in direction " + md);
                 PushHandover(md);
             }
         }
         else
         {
             // If we have sent a beep to a FLWR neighbor in the last round: Perform pull handover
-            //if (PullIfSentBeep())
-            //{
-            //    return;
-            //}
+            if (PullIfSentBeep())
+            {
+                // Also reset handover flag
+                rootHandoverAvailable.SetValue(true);
+                return;
+            }
 
             // If there is a ROOT neighbor that we can pull: Do it
             // ROOT neighbors to pull can only be at our tail in direction
             // constructionDir + 3 or constructionDir + 4
             LineFormationParticleSync nbr = GetNeighborAt((cd + 3) % 6, false) as LineFormationParticleSync;
-            if (nbr != null)
+            if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
             {
-                if (nbr.state == LFState.ROOT && nbr.IsContracted())
-                {
-                    Debug.Log("Pull handover (1) in direction " + (cd + 3) % 6);
-                    PullHandoverHead((cd + 3) % 6);
-                    return;
-                }
+                PullHandoverHead((cd + 3) % 6);
+                return;
             }
             else
             {
                 nbr = GetNeighborAt((cd + 4) % 6, false) as LineFormationParticleSync;
                 if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
                 {
-                    Debug.Log("Pull handover (2) in direction " + (cd + 4) % 6);
                     PullHandoverHead((cd + 4) % 6);
                     return;
                 }
             }
-            return;
+
             // ROOT handover did not work: Try pulling a FLWR instead (this can prevent a ROOT handover in the next round)
             if (SendBeepForPull())
             {
+                rootHandoverAvailable.SetValue(false);
                 return;
             }
 
@@ -204,16 +266,23 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     private void FlwrActivate()
     {
-        Debug.Log("Follower!");
-
         PinConfiguration pc = GetCurrentPinConfiguration();
 
         if (IsContracted())
         {
+            // Try becoming ROOT or even INLINE
+            if (TryToBecomeRootOrInline() > 0)
+            {
+                return;
+            }
+
             // Contracted FLWR must wait for followed particle to send beep
             if (pc.GetPinAt(followDir, 0).PartitionSet.ReceivedBeep())
             {
                 PushHandover(followDir);
+                // Also update the follow direction
+                LineFormationParticleSync nbr = GetNeighborAt(followDir) as LineFormationParticleSync;
+                followDir.SetValue(nbr.HeadDirection());
                 return;
             }
         }
@@ -238,10 +307,56 @@ public class LineFormationParticleSync : ParticleAlgorithm
         }
     }
 
-    private void DoneActivate()
+    private void InlineActivate()
     {
-        Debug.Log("Done!");
-        return;
+        if (!localLineComplete && !hasChosenRoot && SendBeepToWaitingRoot())
+        {
+            hasChosenRoot.SetValue(true);
+            return;
+        }
+
+        PinConfiguration pc = GetCurrentPinConfiguration();
+        PartitionSet ps = pc.GetPinAt((constructionDir + 3) % 6, 0).PartitionSet;
+        if (!localLineComplete)
+        {
+            if (CheckLocalCompleteness() && ps.ReceivedBeep())
+            {
+                // Our local view of the line is complete and the completeness beep from
+                // the leader has reached us: We are locally done as well
+                localLineComplete.SetValue(true);
+                SetMainColor(ColorData.Purple);     // FOR DEBUGGING (should be visible by circuits alone later)
+                // Connect the two pins in direction of the line
+                ps.AddPin(pc.GetPinAt(constructionDir, 0));
+                SetPlannedPinConfiguration(pc);
+                // LEADER has beeped in the last round, so the flag must be reset to false
+                beepInLastRound.SetValue(false);
+            }
+        }
+        else
+        {
+            if (beepInLastRound)
+            {
+                // LEADER has beeped in last round, we received it this round
+                beepInLastRound.SetValue(false);
+                // If we are at the end of the line: Send reply beep
+                if (!HasNeighborAt(constructionDir))
+                {
+                    SetPlannedPinConfiguration(pc);
+                    ps.SendBeep();
+                }
+            }
+            else
+            {
+                // LEADER has not beeped in last round, will beep this round
+                beepInLastRound.SetValue(true);
+                // If we have received a beep: Came from the end of the line, so we can finish
+                if (ps.ReceivedBeep())
+                {
+                    state.SetValue(LFState.FINISHED);
+                    SetMainColor(finishedColor);
+                }
+            }
+        }
     }
 
     private bool HaveBlockingTailNeighbor()
@@ -265,7 +380,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
         return false;
     }
 
-    private bool TryToBecomeDone(Neighbor<LineFormationParticleSync> nbr)
+    private bool TryToBecomeInline(Neighbor<LineFormationParticleSync> nbr)
     {
         int cd = nbr.neighbor.constructionDir;
         if (cd == -1)
@@ -275,14 +390,59 @@ public class LineFormationParticleSync : ParticleAlgorithm
         constructionDir.SetValue(cd);
         if (constructionDir.GetValue_After() == (nbr.localDir + 3) % 6)
         {
-            state.SetValue(LFState.DONE);
-            SetMainColor(doneColor);
+            state.SetValue(LFState.INLINE);
+            SetMainColor(inlineColor);
             return true;
         }
         return false;
     }
 
-    private void ComputeRootMoveDir(Neighbor<LineFormationParticleSync> nbr)
+    private bool TryToBecomeInline()
+    {
+        if (FindFirstNeighborWithProperty((LineFormationParticleSync p) => p.state == LFState.INLINE || p.state == LFState.LEADER, out Neighbor<LineFormationParticleSync> nbr))
+        {
+            return TryToBecomeInline(nbr);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Searches for a neighbor in state INLINE or LEADER and goes to
+    /// state INLINE if we are at the end of the line or state ROOT if
+    /// we are not. If no such neighbor is found, the state does not
+    /// change.
+    /// </summary>
+    /// <returns><c>2</c> if we are now INLINE, <c>1</c> if we are now
+    /// a ROOT, <c>0</c> otherwise.</returns>
+    private int TryToBecomeRootOrInline()
+    {
+        if (FindFirstNeighborWithProperty((LineFormationParticleSync p) => p.state == LFState.INLINE || p.state == LFState.LEADER, out Neighbor<LineFormationParticleSync> nbrInline))
+        {
+            // Become INLINE if we are at the end of the line
+            if (TryToBecomeInline(nbrInline))
+                return 2;
+
+            // Otherwise become ROOT
+            state.SetValue(LFState.ROOT);
+            SetMainColor(rootColor);
+            ComputeRootMoveDir(nbrInline);
+            constructionDir.SetValue(nbrInline.neighbor.constructionDir);
+            return 1;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Computes the next movement direction of the contracted ROOT
+    /// particle and determines whether it is about to enter the end
+    /// position of the line.
+    /// </summary>
+    /// <param name="nbr">The INLINE or LEADER neighbor from which we
+    /// can determine the movement direction.</param>
+    /// <returns><c>1</c> if we are about to enter the end position of
+    /// the line from the left side, <c>2</c> if we are about to enter
+    /// from the right side, and <c>0</c> otherwise.</returns>
+    private int ComputeRootMoveDir(Neighbor<LineFormationParticleSync> nbr)
     {
         // We already know constructionDir, set moveDir relative to neighbor position
         // On the other end of the line => Move around the left side
@@ -290,7 +450,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
         if (cd == nbr.localDir)
         {
             moveDir.SetValue((cd + 1) % 6);
-            return;
+            return 0;
         }
 
         // Left or right side of the line => Move up the line
@@ -299,10 +459,11 @@ public class LineFormationParticleSync : ParticleAlgorithm
             // On left side
             // First check if we can move to the end position of the line
             ParticleAlgorithm nbr2 = GetNeighborAt((cd + 5) % 6);
-            if (nbr2 == null || (((LineFormationParticleSync)nbr2).state != LFState.LEADER && ((LineFormationParticleSync)nbr2).state != LFState.DONE))
+            if (nbr2 == null || (((LineFormationParticleSync)nbr2).state != LFState.LEADER && ((LineFormationParticleSync)nbr2).state != LFState.INLINE))
             {
-                // Position is empty or occupied by non-LEADER, non-DONE particle => try to move there
+                // Position is empty or occupied by non-LEADER, non-INLINE particle => try to move there
                 moveDir.SetValue((cd + 5) % 6);
+                return 1;
             }
             else
             {
@@ -315,10 +476,11 @@ public class LineFormationParticleSync : ParticleAlgorithm
             // On right side
             // First check if we can move to the end position of the line
             ParticleAlgorithm nbr2 = GetNeighborAt((cd + 1) % 6);
-            if (nbr2 == null || (((LineFormationParticleSync)nbr2).state != LFState.LEADER && ((LineFormationParticleSync)nbr2).state != LFState.DONE))
+            if (nbr2 == null || (((LineFormationParticleSync)nbr2).state != LFState.LEADER && ((LineFormationParticleSync)nbr2).state != LFState.INLINE))
             {
-                // Position is empty or occupied by non-LEADER, non-DONE particle => try to move there
+                // Position is empty or occupied by non-LEADER, non-INLINE particle => try to move there
                 moveDir.SetValue((cd + 1) % 6);
+                return 2;
             }
             else
             {
@@ -326,19 +488,21 @@ public class LineFormationParticleSync : ParticleAlgorithm
                 moveDir.SetValue(cd);
             }
         }
+        return 0;
     }
 
-    private void ComputeRootMoveDir()
+    private int ComputeRootMoveDir()
     {
-        if (FindFirstNeighborWithProperty((LineFormationParticleSync p) => p.state == LFState.DONE || p.state == LFState.LEADER, out Neighbor<LineFormationParticleSync> nbr))
+        if (FindFirstNeighborWithProperty((LineFormationParticleSync p) => p.state == LFState.INLINE || p.state == LFState.LEADER, out Neighbor<LineFormationParticleSync> nbr))
         {
-            ComputeRootMoveDir(nbr);
+            return ComputeRootMoveDir(nbr);
         }
         else
         {
             // This should never occur
-            Debug.LogError("ROOT particle does not have a DONE or LEADER neighbor!");
+            Debug.LogError("ROOT particle does not have an INLINE or LEADER neighbor!");
             moveDir.SetValue(-1);
+            return -1;
         }
     }
 
@@ -404,5 +568,67 @@ public class LineFormationParticleSync : ParticleAlgorithm
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// Procedure of LEADER and INLINE particles to decide which of
+    /// the up to 2 waiting ROOT particles may move to the end
+    /// position of the line. If this situation is detected and a
+    /// decision can be made, a beep is sent to the chosen ROOT.
+    /// </summary>
+    /// <returns><c>true</c> if and only if a ROOT particle was
+    /// chosen or no ROOT particle will ever be chosen because the
+    /// next position in the line is already occupied by an INLINE
+    /// particle.</returns>
+    private bool SendBeepToWaitingRoot()
+    {
+        int cd = constructionDir.GetValue_After();
+
+        // First ensure that position in construction direction is free
+        LineFormationParticleSync nbr = GetNeighborAt(cd) as LineFormationParticleSync;
+        if (nbr != null)
+        {
+            return nbr.state == LFState.INLINE;
+        }
+        // Now check the two candidate positions for waiting ROOTs
+        PinConfiguration pc = GetCurrentPinConfiguration();
+        foreach (int candidateDir in new int[] { (cd + 1) % 6, (cd + 5) % 6 })
+        {
+            nbr = GetNeighborAt(candidateDir) as LineFormationParticleSync;
+            if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
+            {
+                // Found a waiting ROOT: Send beep
+                SetPlannedPinConfiguration(pc);
+                pc.GetPinAt(candidateDir, 0).PartitionSet.SendBeep();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if the line is locally complete.
+    /// </summary>
+    /// <returns><c>true</c> if and only if the only neighbors
+    /// are LEADER or INLINE particles directly in or directly opposite
+    /// of the construction direction.</returns>
+    private bool CheckLocalCompleteness()
+    {
+        int cd = constructionDir.GetValue_After();
+        for (int direction = 0; direction < 6; direction++)
+        {
+            LineFormationParticleSync nbr = GetNeighborAt(direction) as LineFormationParticleSync;
+            if (direction == cd || direction == ((cd + 3) % 6)) {
+                if (nbr != null && nbr.state != LFState.LEADER && nbr.state != LFState.INLINE)
+                {
+                    return false;
+                }
+            }
+            else if (nbr != null)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
