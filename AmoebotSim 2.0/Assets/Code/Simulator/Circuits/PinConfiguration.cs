@@ -315,4 +315,44 @@ public abstract class PinConfiguration
     /// Thrown if this pin configuration is not the planned one.
     /// </exception>
     public abstract void SendBeepOnPartitionSet(int partitionSetIndex);
+
+    /// <summary>
+    /// Checks whether the specified partition set hat received a message in
+    /// the last round, if this pin configuration is the current one.
+    /// </summary>
+    /// <param name="partitionSetIndex">The ID of the partition set to check.</param>
+    /// <returns><c>true</c> if and only if the partition set with ID
+    /// <paramref name="partitionSetIndex"/> has received a message.</returns>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this pin configuration is not the current one.
+    /// </exception>
+    public abstract bool ReceivedMessageOnPartitionSet(int partitionSetIndex);
+
+    /// <summary>
+    /// Returns the message received by the specified partition set, if it has
+    /// received a message and this pin configuration is the current one.
+    /// </summary>
+    /// <param name="partitionSetIndex">The ID of the partition set to get the
+    /// message from.</param>
+    /// <returns>A <see cref="Message"/> instance received by the partition set
+    /// with ID <paramref name="partitionSetIndex"/>, if it has received one,
+    /// otherwise <c>null</c>.</returns>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this pin configuration is not the current one.
+    /// </exception>
+    public abstract Message GetReceivedMessageOfPartitionSet(int partitionSetIndex);
+
+    /// <summary>
+    /// Sends the given message on the specified partition set, if this pin
+    /// configuration is the planned one.
+    /// <para>
+    /// Note that a copy of the given <see cref="Message"/> instance
+    /// <paramref name="msg"/> is sent. Altering the instance after calling
+    /// this method has no effect on the sent message.
+    /// </para>
+    /// </summary>
+    /// <param name="partitionSetIndex">The ID of the partition set on which
+    /// to send the message.</param>
+    /// <param name="msg">The message to be sent.</param>
+    public abstract void SendMessageOnPartitionSet(int partitionSetIndex, Message msg);
 }

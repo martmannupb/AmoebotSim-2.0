@@ -13,6 +13,7 @@ public class Circuit
     public List<SysPartitionSet> partitionSets;
     public bool active;
     public bool hasBeep;
+    public Message message;
 
     public Circuit(int id)
     {
@@ -20,6 +21,7 @@ public class Circuit
         partitionSets = new List<SysPartitionSet>();
         active = true;
         hasBeep = false;
+        message = null;
     }
 
     /// <summary>
@@ -37,6 +39,22 @@ public class Circuit
         if (!hasBeep && ps.pinConfig.particle.HasPlannedBeep(ps.Id))
         {
             hasBeep = true;
+        }
+
+        if (message == null)
+        {
+            if (ps.pinConfig.particle.HasPlannedMessage(ps.Id))
+            {
+                message = ps.pinConfig.particle.GetPlannedMessage(ps.Id);
+            }
+        }
+        else if (ps.pinConfig.particle.HasPlannedMessage(ps.Id))
+        {
+            Message msg = ps.pinConfig.particle.GetPlannedMessage(ps.Id);
+            if (msg.GreaterThan(message))
+            {
+                message = msg;
+            }
         }
     }
 
@@ -70,6 +88,22 @@ public class Circuit
         bool beep = hasBeep || other.hasBeep;
         hasBeep = beep;
         other.hasBeep = beep;
+
+        Message newMsg = null;
+        if (message == null)
+        {
+            newMsg = other.message;
+        }
+        else if (other.message == null)
+        {
+            newMsg = message;
+        }
+        else
+        {
+            newMsg = other.message.GreaterThan(message) ? other.message : message;
+        }
+        message = newMsg;
+        other.message = newMsg;
     }
 
     /// <summary>
@@ -90,7 +124,7 @@ public class Circuit
 
     public string Print()
     {
-        string s = "Circuit with ID " + id + " and " + partitionSets.Count + " partition sets (" + (active ? "active" : "inactive") + "): " + (hasBeep ? "HAS BEEP" : "Has no beep");
+        string s = "Circuit with ID " + id + " and " + partitionSets.Count + " partition sets (" + (active ? "active" : "inactive") + "): " + (hasBeep ? "HAS BEEP" : "Has no beep") + ", " + (message != null ? "HAS MESSAGE" : "Has no message");
         return s;
     }
 }

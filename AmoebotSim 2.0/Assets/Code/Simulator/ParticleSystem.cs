@@ -500,7 +500,7 @@ public class ParticleSystem : IReplayHistory
             p.hasMoved = false;
             p.processedPinConfig = false;
             p.queuedForPinConfigProcessing = false;
-            p.ResetPlannedBeeps();
+            p.ResetPlannedBeepsAndMessages();
         }
     }
 

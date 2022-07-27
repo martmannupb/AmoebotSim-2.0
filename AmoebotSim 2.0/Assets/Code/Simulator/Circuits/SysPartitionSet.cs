@@ -319,6 +319,21 @@ public class SysPartitionSet : PartitionSet
         pinConfig.SendBeepOnPartitionSet(id);
     }
 
+    public override bool HasReceivedMessage()
+    {
+        return pinConfig.ReceivedMessageOnPartitionSet(id);
+    }
+
+    public override Message GetReceivedMessage()
+    {
+        return pinConfig.GetReceivedMessageOfPartitionSet(id);
+    }
+
+    public override void SendMessage(Message msg)
+    {
+        pinConfig.SendMessageOnPartitionSet(id, msg);
+    }
+
 
     // <<<TEMPORARY, FOR DEBUGGING>>>
     public void Print()

@@ -80,6 +80,9 @@ public class Particle : IParticleState, IReplayHistory
     public BitArray receivedBeeps;
     private ValueHistoryBitArray receivedBeepsHistory;
 
+    public Message[] receivedMessages;
+    private ValueHistoryMessage[] receivedMessagesHistory;
+
 
     // Visualization
     private ValueHistory<Color> mainColorHistory;
@@ -156,7 +159,10 @@ public class Particle : IParticleState, IReplayHistory
     /// equal (local) partition set IDs.
     /// </summary>
     private BitArray plannedBeeps;
-    public bool hasPlannedBeeps = false;
+    private bool hasPlannedBeeps = false;
+
+    private Message[] plannedMessages;
+    private bool hasPlannedMessages = false;
 
     public Particle(ParticleSystem system, Vector2Int pos, int compassDir = 0, bool chirality = true)
     {
@@ -192,11 +198,19 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public void InitWithAlgorithm()
     {
+        int maxNumPins = algorithm.PinsPerEdge * 10;
         pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
         pinConfigurationHistory = new ValueHistory<SysPinConfiguration>(pinConfiguration, system.CurrentRound);
-        receivedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
-        plannedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
+        receivedBeeps = new BitArray(maxNumPins);
+        receivedMessages = new Message[maxNumPins];
+        plannedBeeps = new BitArray(maxNumPins);
+        plannedMessages = new Message[maxNumPins];
         receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), system.CurrentRound);
+        receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        for (int i = 0; i < maxNumPins; i++)
+        {
+            receivedMessagesHistory[i] = new ValueHistoryMessage(null, system.CurrentRound);
+        }
     }
 
     /// <summary>
@@ -207,7 +221,7 @@ public class Particle : IParticleState, IReplayHistory
     public void Activate()
     {
         // TODO: Have pre-activation method for similar things like this?
-        StoreReceivedBeeps();
+        StoreReceivedBeepsAndMessages();
 
         isActive = true;
         algorithm.Activate();
@@ -355,7 +369,7 @@ public class Particle : IParticleState, IReplayHistory
         if (hasPlannedBeeps && !pc.isPlanned)
         {
             Debug.LogWarning("Setting planned pin configuration after sending data erases the sent data.");
-            ResetPlannedBeeps();
+            ResetPlannedBeepsAndMessages();
         }
         plannedPinConfiguration = pc.Copy();
         pc.isPlanned = true;
@@ -374,43 +388,6 @@ public class Particle : IParticleState, IReplayHistory
         SysPinConfiguration planned = plannedPinConfiguration.Copy();
         planned.isPlanned = true;
         return planned;
-    }
-
-
-    /**
-     * Messages
-     */
-    // TODO: Check if these are even needed (could directly call ParticleSystem methods like for the movements)
-    // TODO: Implement these
-
-    public void SendMessage(Message msg, int locDir, bool head = true)
-    {
-        system.SendParticleMessage(this, msg, locDir, head);
-    }
-
-    public bool HasMsgOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public T GetMsgOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public List<T> GetMsgsOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public T PopMsgOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public List<T> PopMsgsOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
     }
 
 
@@ -660,7 +637,7 @@ public class Particle : IParticleState, IReplayHistory
     /// planned for this round. If no configuration was planned and
     /// the particle has moved, the pins are reset to a singleton
     /// pattern. Also resets the planned pin configuration to
-    /// <c>null</c> and resets the received beeps.
+    /// <c>null</c> and resets the received beeps and messages.
     /// </summary>
     public void ApplyPlannedPinConfiguration()
     {
@@ -691,7 +668,7 @@ public class Particle : IParticleState, IReplayHistory
         pinConfiguration.isPlanned = false;
         plannedPinConfiguration = null;
 
-        ResetReceivedBeeps();
+        ResetReceivedBeepsAndMessages();
     }
 
 
@@ -740,6 +717,38 @@ public class Particle : IParticleState, IReplayHistory
     }
 
     /// <summary>
+    /// Checks if the specified partition set has received
+    /// a message.
+    /// </summary>
+    /// <param name="idx">ID of the partition set to check.</param>
+    /// <returns><c>true</c> if and only if the partition set with
+    /// ID <paramref name="idx"/> has received a message.</returns>
+    public bool HasReceivedMessage(int idx)
+    {
+        return receivedMessages[idx] != null;
+    }
+
+    /// <summary>
+    /// Returns the message received by the specified
+    /// partition set.
+    /// </summary>
+    /// <param name="idx">The ID of the partition set.</param>
+    /// <returns>A <see cref="Message"/> instance if the specified
+    /// partition set has received one, otherwise <c>null</c>.</returns>
+    public Message GetReceivedMessage(int idx)
+    {
+        Message rec = receivedMessages[idx];
+        if (rec == null)
+        {
+            return null;
+        }
+        else
+        {
+            return rec.Copy();
+        }
+    }
+
+    /// <summary>
     /// Checks if the specified partition set has planned a beep.
     /// </summary>
     /// <param name="idx">ID of the partition set to check.</param>
@@ -749,6 +758,32 @@ public class Particle : IParticleState, IReplayHistory
     public bool HasPlannedBeep(int idx)
     {
         return plannedBeeps[idx];
+    }
+
+    /// <summary>
+    /// Checks if the specified partition set has planned a message.
+    /// </summary>
+    /// <param name="idx">ID of the partition set to check.</param>
+    /// <returns><c>true</c> if and only if the partition set of the
+    /// planned pin configuration with ID <paramref name="idx"/>
+    /// has planned a message.</returns>
+    public bool HasPlannedMessage(int idx)
+    {
+        return plannedMessages[idx] != null;
+    }
+
+    /// <summary>
+    /// Returns the message planned for the specified partition set,
+    /// if it exists.
+    /// </summary>
+    /// <param name="idx">ID of the partition set from which
+    /// to get the message.</param>
+    /// <returns>The message planned for the specified partition set,
+    /// if one has been planned, otherwise <c>null</c>.</returns>
+    public Message GetPlannedMessage(int idx)
+    {
+        Message msg = plannedMessages[idx];
+        return msg != null ? msg.Copy() : null;
     }
 
     /// <summary>
@@ -763,37 +798,78 @@ public class Particle : IParticleState, IReplayHistory
     }
 
     /// <summary>
+    /// Stores the given message to be recceived by the partition
+    /// set with the given ID.
+    /// </summary>
+    /// <param name="idx">The ID of the partition set to
+    /// receive the message.</param>
+    /// <param name="msg">The message to be received.</param>
+    public void ReceiveMessage(int idx, Message msg)
+    {
+        receivedMessages[idx] = msg;
+    }
+
+    /// <summary>
     /// Sets the flag that the partition set of the planned
     /// pin configuration with the given ID has received a beep.
     /// </summary>
     /// <param name="idx">The ID of the planned partition set to
-    /// receive the beep.</param>
+    /// send the beep.</param>
     public void PlanBeep(int idx)
     {
         plannedBeeps[idx] = true;
         hasPlannedBeeps = true;
     }
 
-    public void ResetPlannedBeeps()
+    /// <summary>
+    /// Stores the given message to be sent on the partition
+    /// set with the given ID.
+    /// </summary>
+    /// <param name="idx">The ID of the planned partition set to
+    /// send the message.</param>
+    /// <param name="msg">The message to be sent.</param>
+    public void PlanMessage(int idx, Message msg)
+    {
+        plannedMessages[idx] = msg;
+        hasPlannedMessages = true;
+    }
+
+    public void ResetPlannedBeepsAndMessages()
     {
         plannedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
         hasPlannedBeeps = false;
+        if (hasPlannedMessages)
+        {
+            for (int i = 0; i < plannedMessages.Length; i++)
+            {
+                plannedMessages[i] = null;
+            }
+            hasPlannedMessages = false;
+        }
     }
 
-    public void ResetReceivedBeeps()
+    public void ResetReceivedBeepsAndMessages()
     {
         receivedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
+        for (int i = 0; i < receivedMessages.Length; i++)
+        {
+            receivedMessages[i] = null;
+        }
     }
 
     /// <summary>
-    /// Triggers the insertion of the received beeps
-    /// into the history. Should be called before each
+    /// Triggers the insertion of the received beeps and
+    /// messagse into the history. Should be called before each
     /// activation.
     /// </summary>
-    public void StoreReceivedBeeps()
+    public void StoreReceivedBeepsAndMessages()
     {
         // Record the value for the previous round because the final value is only available now
         receivedBeepsHistory.RecordValueInRound((BitArray)receivedBeeps.Clone(), system.PreviousRound);
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        {
+            receivedMessagesHistory[i].RecordValueInRound(receivedMessages[i], system.PreviousRound);
+        }
     }
 
 
@@ -884,6 +960,10 @@ public class Particle : IParticleState, IReplayHistory
         // Reset pin configuration
         pinConfigurationHistory.SetMarkerToRound(round);
         receivedBeepsHistory.SetMarkerToRound(round);
+        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        {
+            h.SetMarkerToRound(round);
+        }
 
         // Reset visuals
         mainColorHistory.SetMarkerToRound(round);
@@ -910,6 +990,10 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.StepBack();
         receivedBeepsHistory.StepBack();
+        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        {
+            h.StepBack();
+        }
 
         mainColorHistory.StepBack();
         mainColorSetHistory.StepBack();
@@ -929,6 +1013,10 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.StepForward();
         receivedBeepsHistory.StepForward();
+        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        {
+            h.StepForward();
+        }
 
         mainColorHistory.StepForward();
         mainColorSetHistory.StepForward();
@@ -963,6 +1051,10 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.ContinueTracking();
         receivedBeepsHistory.ContinueTracking();
+        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        {
+            h.ContinueTracking();
+        }
 
         mainColorHistory.ContinueTracking();
         mainColorSetHistory.ContinueTracking();
@@ -990,6 +1082,10 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.CutOffAtMarker();
         receivedBeepsHistory.CutOffAtMarker();
+        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        {
+            h.CutOffAtMarker();
+        }
 
         mainColorHistory.CutOffAtMarker();
         mainColorSetHistory.CutOffAtMarker();
@@ -1010,6 +1106,10 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.ShiftTimescale(amount);
         receivedBeepsHistory.ShiftTimescale(amount);
+        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        {
+            h.ShiftTimescale(amount);
+        }
 
         mainColorHistory.ShiftTimescale(amount);
         mainColorSetHistory.ShiftTimescale(amount);
@@ -1043,6 +1143,10 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfiguration = pinConfigurationHistory.GetMarkedValue();
         receivedBeeps = (BitArray)receivedBeepsHistory.GetMarkedValue().Clone();
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        {
+            receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
+        }
 
         mainColor = mainColorHistory.GetMarkedValue();
         mainColorSet = mainColorSetHistory.GetMarkedValue();

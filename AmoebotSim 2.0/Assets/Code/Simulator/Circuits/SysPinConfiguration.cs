@@ -523,6 +523,34 @@ public class SysPinConfiguration : PinConfiguration
         particle.PlanBeep(partitionSetIndex);
     }
 
+    public override bool ReceivedMessageOnPartitionSet(int partitionSetIndex)
+    {
+        if (!isCurrent)
+        {
+            throw new InvalidOperationException("Cannot check for received messages in non-current pin configuration.");
+        }
+        return particle.HasReceivedMessage(partitionSetIndex);
+    }
+
+    public override Message GetReceivedMessageOfPartitionSet(int partitionSetIndex)
+    {
+        if (!isCurrent)
+        {
+            throw new InvalidOperationException("Cannot get received messages from non-current pin configuration.");
+        }
+        return particle.GetReceivedMessage(partitionSetIndex);
+    }
+
+    public override void SendMessageOnPartitionSet(int partitionSetIndex, Message msg)
+    {
+        if (!isPlanned)
+        {
+            throw new InvalidOperationException("Cannot send messages in non-planned pin configuration.");
+        }
+        // TODO: Mask these things better
+        particle.PlanMessage(partitionSetIndex, msg != null ? msg.Copy() : null);
+    }
+
 
 
     // <<<TEMPORARY, FOR DEBUGGING>>>
