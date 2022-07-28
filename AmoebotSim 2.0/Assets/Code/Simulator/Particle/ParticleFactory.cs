@@ -45,4 +45,14 @@ public class ParticleFactory
         p.InitWithAlgorithm();
         return p;
     }
+
+    public static Particle CreateLeaderElectionParticle(ParticleSystem system , Vector2Int position, int compassDir = 0, bool chirality = true)
+    {
+        Particle p = new Particle(system, position, compassDir, chirality);
+        p.isActive = true;
+        new LeaderElectionParticle(p);
+        p.isActive = false;
+        p.InitWithAlgorithm();
+        return p;
+    }
 }
