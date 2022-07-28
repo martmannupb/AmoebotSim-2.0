@@ -474,11 +474,22 @@ public class ParticleSystem : IReplayHistory
         // Apply beeps to all circuits
         foreach (Circuit c in circuits)
         {
-            if (c.active && c.hasBeep)
+            if (!c.active)
+            {
+                continue;
+            }
+            if (c.hasBeep)
             {
                 foreach (SysPartitionSet ps in c.partitionSets)
                 {
                     ps.pinConfig.particle.ReceiveBeep(ps.id);
+                }
+            }
+            if (c.message != null)
+            {
+                foreach (SysPartitionSet ps in c.partitionSets)
+                {
+                    ps.pinConfig.particle.ReceiveMessage(ps.id, c.message);
                 }
             }
         }

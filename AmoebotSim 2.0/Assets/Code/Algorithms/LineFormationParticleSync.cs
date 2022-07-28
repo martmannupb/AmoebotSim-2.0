@@ -3,6 +3,49 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
+public class MyMessage : Message
+{
+    public enum Direction { LEFT, RIGHT }
+
+    public Direction dir;
+
+    public MyMessage(Direction dir)
+    {
+        this.dir = dir;
+    }
+
+    public override Message Copy()
+    {
+        return new MyMessage(dir);
+    }
+
+    public override bool Equals(Message other)
+    {
+        if (this == other)
+        {
+            return true;
+        }
+        MyMessage otherMessage = other as MyMessage;
+        return otherMessage != null && otherMessage.dir == dir;
+    }
+
+    public override bool GreaterThan(Message other)
+    {
+        if (other == null)
+        {
+            return true;
+        }
+        else if (Equals(other))
+        {
+            return false;
+        }
+        else
+        {
+            return dir == Direction.LEFT;
+        }
+    }
+}
+
 /// <summary>
 /// Basic line formation algorithm that assumes a connected system
 /// as well as common chirality and compass alignment. Designed to
@@ -210,6 +253,11 @@ public class LineFormationParticleSync : ParticleAlgorithm
                     {
                         return;
                     }
+                }
+                if (moveDirResult == 1 || moveDirResult == 2)
+                {
+                    MyMessage msg = (MyMessage)pc.GetPinAt(moveDirResult == 1 ? (md + 5) % 6 : ((md + 1) % 6), 0).PartitionSet.GetReceivedMessage();
+                    Debug.Log("ALLOWED TO MOVE FROM " + msg.dir);
                 }
 
                 // No reason not to expand
@@ -600,6 +648,8 @@ public class LineFormationParticleSync : ParticleAlgorithm
                 // Found a waiting ROOT: Send beep
                 SetPlannedPinConfiguration(pc);
                 pc.GetPinAt(candidateDir, 0).PartitionSet.SendBeep();
+                MyMessage msg = new MyMessage(candidateDir == ((cd + 1) % 6) ? MyMessage.Direction.LEFT : MyMessage.Direction.RIGHT);
+                pc.GetPinAt(candidateDir, 0).PartitionSet.SendMessage(msg);
                 return true;
             }
         }
