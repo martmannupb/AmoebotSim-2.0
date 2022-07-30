@@ -55,4 +55,14 @@ public class ParticleFactory
         p.InitWithAlgorithm();
         return p;
     }
+
+    public static Particle CreateChiralityAndCompassParticle(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    {
+        Particle p = new Particle(system, position, Random.Range(0, 6), Random.Range(0f, 1f) <= 0.5f);
+        p.isActive = true;
+        new ChiralityAndCompassParticle(p);
+        p.isActive = false;
+        p.InitWithAlgorithm();
+        return p;
+    }
 }

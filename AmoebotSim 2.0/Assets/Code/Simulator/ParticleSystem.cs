@@ -84,7 +84,7 @@ public class ParticleSystem : IReplayHistory
 
     public Queue<ParticleAction> actionQueue = new Queue<ParticleAction>();
 
-    public bool useFCFS = false;     // <<<TEMPORARY>>> If true, do not crash on expansion conflicts but simply abort the expansion
+    public bool useFCFS = true;     // <<<TEMPORARY>>> If true, do not crash on expansion conflicts but simply abort the expansion
 
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
@@ -146,8 +146,8 @@ public class ParticleSystem : IReplayHistory
         // Always start by adding a particle at position (0, 0)
         List<Vector2Int> candidates = new List<Vector2Int>();
         Vector2Int node = new Vector2Int(0, 0);
-        //Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
-        Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
+        Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
+        //Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -173,8 +173,8 @@ public class ParticleSystem : IReplayHistory
                         candidates.Add(nbr);
                 }
 
-                //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
-                p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
+                p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
+                //p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -224,6 +224,55 @@ public class ParticleSystem : IReplayHistory
                 }
 
                 p = ParticleFactory.CreateLeaderElectionParticle(this, newPos);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+
+                n++;
+            }
+
+            occupied.Add(newPos);
+        }
+        string s = "Created system with " + n + " particles:\n";
+        foreach (Particle part in particles)
+        {
+            s += part.Head() + "\n";
+        }
+        Debug.Log(s);
+    }
+
+    public void InitializeChiralityCompass(int numParticles, float holeProb)
+    {
+        int n = 1;
+        // Always start by adding a particle at position (0, 0)
+        List<Vector2Int> candidates = new List<Vector2Int>();
+        Vector2Int node = new Vector2Int(0, 0);
+        Particle p = ParticleFactory.CreateChiralityAndCompassParticle(this, node);
+        particles.Add(p);
+        particleMap.Add(p.Head(), p);
+
+        for (int d = 0; d < 6; d++)
+            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, d));
+
+        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
+        occupied.Add(node);
+
+        while (n < numParticles && candidates.Count > 0)
+        {
+            int randIdx = Random.Range(0, candidates.Count);
+            Vector2Int newPos = candidates[randIdx];
+            candidates.RemoveAt(randIdx);
+
+            // Either use newPos to insert particle or to insert hole
+            if (Random.Range(0.0f, 1.0f) >= holeProb)
+            {
+                for (int d = 0; d < 6; d++)
+                {
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, d);
+                    if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
+                        candidates.Add(nbr);
+                }
+
+                p = ParticleFactory.CreateChiralityAndCompassParticle(this, newPos);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
