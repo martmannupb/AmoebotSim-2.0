@@ -461,9 +461,9 @@ public class SysPinConfiguration : PinConfiguration
         int numLabels = headDirection == -1 ? 6 : 10;
         for (int label = 0; label < numLabels; label++)
         {
-            for (int os = 0; os < pinsPerEdge; os++)
+            for (int offset = 0; offset < pinsPerEdge; offset++)
             {
-                int pinId = label * pinsPerEdge + os;
+                int pinId = label * pinsPerEdge + offset;
                 if (pinIdx < pinIds.Length && pinIds[pinIdx] == pinId)
                 {
                     ps.AddPin(pinId);

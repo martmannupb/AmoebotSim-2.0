@@ -4,46 +4,46 @@ using UnityEngine;
 
 public enum CoinTossResult { HEADS = 0, TAILS = 1, FAILED = 2 }
 
-public class CoinTossMessage : Message
-{
-    public CoinTossResult result;
+//public class CoinTossMessage : Message
+//{
+//    public CoinTossResult result;
 
-    public CoinTossMessage(CoinTossResult result)
-    {
-        this.result = result;
-    }
+//    public CoinTossMessage(CoinTossResult result)
+//    {
+//        this.result = result;
+//    }
 
-    public override Message Copy()
-    {
-        return new CoinTossMessage(result);
-    }
+//    public override Message Copy()
+//    {
+//        return new CoinTossMessage(result);
+//    }
 
-    public override bool Equals(Message other)
-    {
-        CoinTossMessage otherMsg = other as CoinTossMessage;
-        if (otherMsg == null)
-        {
-            return false;
-        }
-        else
-        {
-            return this == otherMsg || result == otherMsg.result;
-        }
-    }
+//    public override bool Equals(Message other)
+//    {
+//        CoinTossMessage otherMsg = other as CoinTossMessage;
+//        if (otherMsg == null)
+//        {
+//            return false;
+//        }
+//        else
+//        {
+//            return this == otherMsg || result == otherMsg.result;
+//        }
+//    }
 
-    public override bool GreaterThan(Message other)
-    {
-        CoinTossMessage otherMsg = other as CoinTossMessage;
-        if (otherMsg == null)
-        {
-            return true;
-        }
-        else
-        {
-            return result < otherMsg.result;
-        }
-    }
-}
+//    public override bool GreaterThan(Message other)
+//    {
+//        CoinTossMessage otherMsg = other as CoinTossMessage;
+//        if (otherMsg == null)
+//        {
+//            return true;
+//        }
+//        else
+//        {
+//            return result < otherMsg.result;
+//        }
+//    }
+//}
 
 /// <summary>
 /// Implementation of the chirality agreement and compass alignment
@@ -121,7 +121,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     private ParticleAttribute<bool> hasRegionalCircuit;
 
     // The result of the last coin toss
-    private ParticleAttribute<CoinTossResult> coinTossResult;
+    public ParticleAttribute<CoinTossResult> coinTossResult;
 
     public ChiralityAndCompassParticle(Particle p) : base(p)
     {
@@ -158,12 +158,14 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             firstActivation.SetValue(false);
             // Find all neighbors
             bool hasAnyNeighbor = false;
+            string s = "Particle has neighbors at ";
             for (int i = 0; i < 6; i++)
             {
                 if (HasNeighborAt(i))
                 {
                     nbrs[i].SetValue(true);
                     hasAnyNeighbor = true;
+                    s += i + " ";
                 }
             }
             // If we don't have any neighbors: Terminate immediately
@@ -171,7 +173,9 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             {
                 SetMainColor(ColorData.Purple);
                 finished.SetValue(true);
+                s += "Particle has no neighbors!";
             }
+            Debug.Log(s);
             return;
         }
 
@@ -216,6 +220,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             if (chiralityAgreementPhase)
             {
                 // Beep on the pin with offset 0
+                Debug.Log("Beep on pin in direction " + origDir + " with offset " + (reverseChirality ? 1 : 0));
                 pc.GetPinAt(origDir, reverseChirality ? 1 : 0).PartitionSet.SendBeep();
             }
             else
@@ -244,11 +249,13 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 if (pc.GetPinAt(origDir, reverseChirality ? 0 : 1).PartitionSet.ReceivedBeep())
                 {
                     // Share chirality, remember this neighbor as regional neighbor
+                    Debug.Log("Received beep from direction " + origDir + " with offset " + (reverseChirality ? 0 : 1));
                     regionNbrs.Add(origDir);
                 }
                 else
                 {
                     // Do not share chirality, remember as non-regional neighbor
+                    Debug.Log("Did not receive beep from direction " + origDir + " with offset " + (reverseChirality ? 0 : 1));
                     haveNbrOutOfRegion = true;
                 }
             }
@@ -274,11 +281,17 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
             if (haveNbrOutOfRegion)
             {
+                Debug.Log("SEND BEEP BECAUSE WE HAVE A NEIGHBOR OUT OF REGION");
                 pc.SendBeepOnPartitionSet(0);
+            }
+            else
+            {
+                Debug.Log("HAVE NO NEIGHBOR OUTSIDE OF REGION");
             }
         }
         else
         {
+            Debug.Log("HAVE NO REGIONAL CIRCUIT");
             hasRegionalCircuit.SetValue(false);
         }
 
@@ -297,6 +310,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         {
             if (chiralityAgreementPhase)
             {
+                Debug.Log("END OF CHIRALITY AGREEMENT PHASE");
                 chiralityAgreementPhase.SetValue(false);
                 round.SetValue(0);
             }
@@ -306,6 +320,8 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             }
             return;
         }
+
+        Debug.Log("NO END OF CHIRALITY AGREEMENT PHASE: " + (hasRegionalCircuit ? "RECEIVED BEEP" : "NO REGIONAL CIRCUIT"));
 
         // Phase is not over yet: candidates toss coins and beep on regional circuit if HEADS is tossed
         if (isCandidate)
@@ -351,6 +367,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             bool hasTailsBeep = pc.ReceivedBeepOnPartitionSet(0);
 
             // Compute coin toss result
+            // The attribute is public so neighbor particles can read it in the next round
             if (beepedForHeads && hasTailsBeep)
             {
                 coinTossResult.SetValue(CoinTossResult.FAILED);
@@ -364,14 +381,18 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 coinTossResult.SetValue(CoinTossResult.TAILS);
             }
 
-            // Send ...
-            // TODO: Problem here? How to decide on which pin we can send the result?
-            // May have to split this into 3 rounds
-            // Or simply set the result as a public attribute...
+            // Candidates with TAILS withdraw candidacy if result is FAILED
+            if (isCandidate && !heads && coinTossResult.GetValue_After() == CoinTossResult.FAILED)
+            {
+                SetMainColor(ColorData.Black);
+                isCandidate.SetValue(false);
+            }
         }
         else
         {
-            // TODO
+            // We have no regional circuit, so we are alone
+            // The coin toss result is simply our own result
+            coinTossResult.SetValue(heads ? CoinTossResult.HEADS : CoinTossResult.TAILS);
         }
 
         // Proceed with round 5
@@ -380,11 +401,102 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     private void Activate5()
     {
+        // Can now read coin toss result of neighbors
+        // If our coin toss result is TAILS and we have a neighbor with a different result,
+        // initiate the merge procedure
+
+        if (coinTossResult == CoinTossResult.TAILS)
+        {
+            if (hasRegionalCircuit)
+            {
+                PinConfiguration pc = GetCurrentPinConfiguration();
+
+                if (chiralityAgreementPhase)
+                {
+                    // If any neighbor has a different coin toss result, send beep
+                    for (int i = 0; i < 6; i++)
+                    {
+                        if (!nbrs[i]) continue;
+
+                        ChiralityAndCompassParticle nbr = GetNeighborAt(i) as ChiralityAndCompassParticle;
+                        if (nbr.coinTossResult != coinTossResult)
+                        {
+                            SetPlannedPinConfiguration(pc);
+                            pc.SendBeepOnPartitionSet(0);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    // TODO
+                }
+            }
+            else
+            {
+                // No regional circuit means that all neighbors are in other regions
+                if (chiralityAgreementPhase)
+                {
+                    // In the next round, check if any neighbor has a different coin toss result and then act based on that information
+                }
+                else
+                {
+                    // TODO
+                }
+            }
+        }
+
+        // Proceed with round 6
         round.SetValue(6);
     }
 
     private void Activate6()
     {
+        // Chirality agreement phase: Know if we have to change our chirality now
+        if (chiralityAgreementPhase)
+        {
+            // Check if we have to merge into other region
+            if (coinTossResult == CoinTossResult.TAILS)
+            {
+                bool mergeIntoOtherRegion = false;
+                // Check for beep on regional circuit or check all neighbors if there is no regional circuit
+                if (hasRegionalCircuit)
+                {
+                    PinConfiguration pc = GetCurrentPinConfiguration();
+                    mergeIntoOtherRegion = pc.ReceivedBeepOnPartitionSet(0);
+                }
+                else
+                {
+                    for (int i = 0; i < 6; i++)
+                    {
+                        if (!nbrs[i]) continue;
+
+                        ChiralityAndCompassParticle nbr = GetNeighborAt(i) as ChiralityAndCompassParticle;
+                        if (nbr.coinTossResult != CoinTossResult.TAILS)
+                        {
+                            mergeIntoOtherRegion = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Change chirality if necessary
+                if (mergeIntoOtherRegion)
+                {
+                    reverseChirality.SetValue(!reverseChirality);
+                    isCandidate.SetValue(false);
+                }
+            }
+
+            // Go back to round 0 to start next iteration
+            round.SetValue(0);
+            return;
+        }
+        else
+        {
+            // TODO
+        }
+
         round.SetValue(7);
     }
 

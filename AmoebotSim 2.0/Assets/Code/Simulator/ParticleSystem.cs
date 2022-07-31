@@ -476,6 +476,7 @@ public class ParticleSystem : IReplayHistory
             {
                 Particle p = queue.Dequeue();
                 int globalHeadDir = p.GlobalHeadDirection();
+                int pinsPerEdge = p.algorithm.PinsPerEdge;
                 // First of all, find all neighboring particles and some relative positional information
                 int numNbrs = p.IsExpanded() ? 10 : 6;
                 Particle[] nbrParts = new Particle[numNbrs];
@@ -535,7 +536,8 @@ public class ParticleSystem : IReplayHistory
                         {
                             // Find the neighbor's corresponding pin
                             int nbrPinLabel = nbrLabels[pinLabel];
-                            SysPin nbrPin = nbrParts[pinLabel].PinConfiguration.pinsGlobal[nbrPinLabel];
+                            int nbrPinId = nbrPinLabel * pinsPerEdge + pinsPerEdge - 1 - pinOffset;
+                            SysPin nbrPin = nbrParts[pinLabel].PinConfiguration.pinsGlobal[nbrPinId];
                             // If we have not found a circuit yet, add our partition set to the circuit
                             if (!foundCircuit)
                             {
@@ -563,10 +565,23 @@ public class ParticleSystem : IReplayHistory
 
         string s = "Found " + circuits.Count + " circuits in " + (Time.realtimeSinceStartup - tStart) + " seconds\n";
         //string s = "Found " + circuits.Count + " circuits:\n";
-        //foreach (Circuit c in circuits)
-        //{
-        //    s += c.Print() + "\n";
-        //}
+        foreach (Circuit c in circuits)
+        {
+            //s += c.Print() + "\n";
+            if (c.partitionSets.Count > 1)
+            {
+                s += "Circuit with " + c.partitionSets.Count + " partition sets: " + (c.hasBeep ? "HAS BEEP" : "HAS NO BEEP") + "\n";
+                foreach (SysPartitionSet ps in c.partitionSets)
+                {
+                    s += "Partition set with ID " + ps.Id + " and pins: ";
+                    foreach (int i in ps.GetPinIds())
+                    {
+                        s += i + " ";
+                    }
+                    s += "\n";
+                }
+            }
+        }
         Debug.Log(s);
 
         // Apply beeps to all circuits
