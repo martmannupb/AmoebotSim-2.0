@@ -446,7 +446,7 @@ public class ParticleSystem : IReplayHistory
     /// <summary>
     /// Uses the particles' pin configurations to determine
     /// all circuits in the system from scratch and send the
-    /// planned beeps accordingly.
+    /// planned beeps and messages accordingly.
     /// <para>
     /// The algorithm performs a breadth-first search on each
     /// connected component of the particle system to assign
@@ -513,6 +513,7 @@ public class ParticleSystem : IReplayHistory
                         nbrParts[label] = null;
                     }
                 }
+
                 // Have found all neighbors, now determine circuits into which the partition sets belong
                 foreach (SysPartitionSet ps in p.PinConfiguration.partitionSets)
                 {
@@ -532,7 +533,7 @@ public class ParticleSystem : IReplayHistory
                         SysPin pin = (SysPin) _pin;
                         int pinLabel = pin.globalLabel;
                         int pinOffset = pin.globalEdgeOffset;
-                        if (nbrParts[pinLabel] != null && nbrParts[pinLabel].processedPinConfig)
+                        if (nbrParts[pinLabel] != null)
                         {
                             // Find the neighbor's corresponding pin
                             int nbrPinLabel = nbrLabels[pinLabel];
@@ -565,26 +566,26 @@ public class ParticleSystem : IReplayHistory
 
         string s = "Found " + circuits.Count + " circuits in " + (Time.realtimeSinceStartup - tStart) + " seconds\n";
         //string s = "Found " + circuits.Count + " circuits:\n";
-        foreach (Circuit c in circuits)
-        {
-            //s += c.Print() + "\n";
-            if (c.partitionSets.Count > 1)
-            {
-                s += "Circuit with " + c.partitionSets.Count + " partition sets: " + (c.hasBeep ? "HAS BEEP" : "HAS NO BEEP") + "\n";
-                foreach (SysPartitionSet ps in c.partitionSets)
-                {
-                    s += "Partition set with ID " + ps.Id + " and pins: ";
-                    foreach (int i in ps.GetPinIds())
-                    {
-                        s += i + " ";
-                    }
-                    s += "\n";
-                }
-            }
-        }
+        //foreach (Circuit c in circuits)
+        //{
+        //    //s += c.Print() + "\n";
+        //    if (c.partitionSets.Count > 1)
+        //    {
+        //        s += "Circuit with " + c.partitionSets.Count + " partition sets: " + (c.hasBeep ? "HAS BEEP" : "HAS NO BEEP") + "\n";
+        //        foreach (SysPartitionSet ps in c.partitionSets)
+        //        {
+        //            s += "Partition set with ID " + ps.Id + " and pins: ";
+        //            foreach (int i in ps.GetPinIds())
+        //            {
+        //                s += i + " ";
+        //            }
+        //            s += "\n";
+        //        }
+        //    }
+        //}
         Debug.Log(s);
 
-        // Apply beeps to all circuits
+        // Apply beeps and send messages to all circuits
         foreach (Circuit c in circuits)
         {
             if (!c.active)
@@ -624,6 +625,7 @@ public class ParticleSystem : IReplayHistory
             p.hasMoved = false;
             p.processedPinConfig = false;
             p.queuedForPinConfigProcessing = false;
+            p.StoreReceivedBeepsAndMessages();
             p.ResetPlannedBeepsAndMessages();
         }
     }

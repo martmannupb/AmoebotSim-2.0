@@ -77,7 +77,7 @@ public class Particle : IParticleState, IReplayHistory
     /// Flags indicating which partition sets have received a beep.
     /// Indices equal (local) partition set IDs.
     /// </summary>
-    public BitArray receivedBeeps;
+    private BitArray receivedBeeps;
     private ValueHistoryBitArray receivedBeepsHistory;
 
     public Message[] receivedMessages;
@@ -220,9 +220,6 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public void Activate()
     {
-        // TODO: Have pre-activation method for similar things like this?
-        StoreReceivedBeepsAndMessages();
-
         isActive = true;
         algorithm.Activate();
         isActive = false;
@@ -865,10 +862,10 @@ public class Particle : IParticleState, IReplayHistory
     public void StoreReceivedBeepsAndMessages()
     {
         // Record the value for the previous round because the final value is only available now
-        receivedBeepsHistory.RecordValueInRound((BitArray)receivedBeeps.Clone(), system.PreviousRound);
+        receivedBeepsHistory.RecordValueInRound((BitArray)receivedBeeps.Clone(), system.CurrentRound);
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
-            receivedMessagesHistory[i].RecordValueInRound(receivedMessages[i], system.PreviousRound);
+            receivedMessagesHistory[i].RecordValueInRound(receivedMessages[i], system.CurrentRound);
         }
     }
 
