@@ -45,7 +45,7 @@ public class SysPinConfiguration : PinConfiguration
         bool chirality = particle.chirality;
 
         // Initialize partition sets and pins
-        // Default is singleton: Each pin is its own partition set (for now)
+        // Default is singleton: Each pin is its own partition set
         // Store each pin in its local position and its global position
         if (headDirection == -1)
         {
@@ -556,11 +556,14 @@ public class SysPinConfiguration : PinConfiguration
     // <<<TEMPORARY, FOR DEBUGGING>>>
     public void Print()
     {
-        Debug.Log("Pin Configuration for head direction " + headDirection + " with " + pinsPerEdge + " pins per edge and " + numPins + " pins:");
+        string s = "Pin Configuration for head direction " + headDirection + " with " + pinsPerEdge + " pins per edge and " + numPins + " pins:\n";
+        //Debug.Log("Pin Configuration for head direction " + headDirection + " with " + pinsPerEdge + " pins per edge and " + numPins + " pins:");
         for (int i = 0; i < numPins; i++)
         {
-            Debug.Log("Partition set " + i + ":");
-            partitionSets[i].Print();
+            //Debug.Log("Partition set " + i + ":");
+            s += "Partition set " + i + ":\n" + partitionSets[i].Print() + "\n";
+            //partitionSets[i].Print();
         }
+        Debug.Log(s);
     }
 }

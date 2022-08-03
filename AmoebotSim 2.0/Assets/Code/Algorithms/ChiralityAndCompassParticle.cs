@@ -2,48 +2,48 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum CoinTossResult { HEADS = 0, TAILS = 1, FAILED = 2 }
+public enum CoinTossResult { HEADS, TAILS, FAILED }
 
-//public class CoinTossMessage : Message
-//{
-//    public CoinTossResult result;
+public class DirectionMessage : Message
+{
+    public int direction;
 
-//    public CoinTossMessage(CoinTossResult result)
-//    {
-//        this.result = result;
-//    }
+    public DirectionMessage(int direction)
+    {
+        this.direction = direction;
+    }
 
-//    public override Message Copy()
-//    {
-//        return new CoinTossMessage(result);
-//    }
+    public override Message Copy()
+    {
+        return new DirectionMessage(direction);
+    }
 
-//    public override bool Equals(Message other)
-//    {
-//        CoinTossMessage otherMsg = other as CoinTossMessage;
-//        if (otherMsg == null)
-//        {
-//            return false;
-//        }
-//        else
-//        {
-//            return this == otherMsg || result == otherMsg.result;
-//        }
-//    }
+    public override bool Equals(Message other)
+    {
+        DirectionMessage otherMsg = other as DirectionMessage;
+        if (otherMsg == null)
+        {
+            return false;
+        }
+        else
+        {
+            return this == otherMsg || direction == otherMsg.direction;
+        }
+    }
 
-//    public override bool GreaterThan(Message other)
-//    {
-//        CoinTossMessage otherMsg = other as CoinTossMessage;
-//        if (otherMsg == null)
-//        {
-//            return true;
-//        }
-//        else
-//        {
-//            return result < otherMsg.result;
-//        }
-//    }
-//}
+    public override bool GreaterThan(Message other)
+    {
+        DirectionMessage otherMsg = other as DirectionMessage;
+        if (otherMsg == null)
+        {
+            return true;
+        }
+        else
+        {
+            return direction > otherMsg.direction;
+        }
+    }
+}
 
 /// <summary>
 /// Implementation of the chirality agreement and compass alignment
@@ -85,6 +85,38 @@ public enum CoinTossResult { HEADS = 0, TAILS = 1, FAILED = 2 }
 /// </summary>
 public class ChiralityAndCompassParticle : ParticleAlgorithm
 {
+    // GLOBAL INFO - Used only for visualization
+    public ParticleAttribute<bool> realChirality;   // Initialized to global chirality, changes when chirality is flipped
+    public ParticleAttribute<int> realCompassDir;   // Initialized to global compass direction, changes when offset is changed according to current real chirality
+
+    private static readonly Color chir1CandColor = new Color(143f / 255f, 0f / 255f, 255f / 255f);
+    private static readonly Color chir1NoCandColor = new Color(116f / 255f, 0f / 255f, 204f / 255f);
+    private static readonly Color chir0CandColor = new Color(227f / 255f, 66f / 255f, 52f / 255f);
+    private static readonly Color chir0NoCandColor = new Color(176f / 255f, 52f / 255f, 40f / 255f);
+    // Color by direction, candidates get brighter colors
+    // Amber, Vermillion, Magenta, Violet, Teal, Chartreuse
+    // Brightness is 20% lower for non-candidates
+    private static readonly Color[] compCandColors = new Color[]
+    {
+        new Color(255f / 255f, 191f / 255f, 0f / 255f),
+        new Color(227f / 255f, 66f / 255f, 52f / 255f),
+        new Color(255f / 255f, 0f / 255f, 255f / 255f),
+        new Color(143f / 255f, 0f / 255f, 255f / 255f),
+        new Color(0f / 255f, 128f / 255f, 128f / 255f),
+        new Color(127f / 255f, 255f / 255f, 0f / 255f)
+    };
+    private static readonly Color[] compNoCandColor = new Color[]
+    {
+        new Color(204f / 255f, 153f / 255f, 0f / 255f),
+        new Color(176f / 255f, 52f / 255f, 40f / 255f),
+        new Color(204f / 255f, 0f / 255f, 204f / 255f),
+        new Color(116f / 255f, 0f / 255f, 204f / 255f),
+        new Color(0f / 255f, 77f / 255f, 77f / 255f),
+        new Color(102f / 255f, 204f / 255f, 0f / 255f)
+    };
+
+
+
     // Settings for changing compass direction and chirality
     // Compass offset is our new 0 direction encoded using the original chirality
     // If the chirality is reversed, directions now increase clockwise from the
@@ -123,6 +155,13 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     // The result of the last coin toss
     public ParticleAttribute<CoinTossResult> coinTossResult;
 
+    // Stores the offsets of all non-region neighbors for the compass alignment phase; indices are original directions
+    // Offset of -1 means there is no non-region neighbor in that direction
+    private ParticleAttribute<int>[] nbrOffsets;
+
+    // The offset that is used to decide how to merge in the compass alignment phase
+    private ParticleAttribute<int> mergeOffset;
+
     public ChiralityAndCompassParticle(Particle p) : base(p)
     {
         SetMainColor(ColorData.Green);
@@ -143,6 +182,16 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         firstActivation = CreateAttributeBool("First activation", true);
         hasRegionalCircuit = CreateAttributeBool("Has regional circuit", false);
         coinTossResult = CreateAttributeEnum("Coin toss result", CoinTossResult.FAILED);
+        nbrOffsets = new ParticleAttribute<int>[6];
+        for (int i = 0; i < 6; i++)
+        {
+            nbrOffsets[i] = CreateAttributeDirection("Nbr offset [" + i + "]", -1);
+        }
+        mergeOffset = CreateAttributeDirection("Merge offset", -1);
+
+
+        realChirality = CreateAttributeBool("Real chirality", true);
+        realCompassDir = CreateAttributeDirection("Real compass dir", -1);
     }
 
     public override int PinsPerEdge => 2;
@@ -158,14 +207,12 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             firstActivation.SetValue(false);
             // Find all neighbors
             bool hasAnyNeighbor = false;
-            string s = "Particle has neighbors at ";
             for (int i = 0; i < 6; i++)
             {
                 if (HasNeighborAt(i))
                 {
                     nbrs[i].SetValue(true);
                     hasAnyNeighbor = true;
-                    s += i + " ";
                 }
             }
             // If we don't have any neighbors: Terminate immediately
@@ -173,9 +220,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             {
                 SetMainColor(ColorData.Purple);
                 finished.SetValue(true);
-                s += "Particle has no neighbors!";
             }
-            Debug.Log(s);
             return;
         }
 
@@ -202,14 +247,24 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             case 6:
                 Activate6();
                 break;
+            case 7:
+            case 8:
+            case 9:
+                Activate7To9();
+                break;
+            case 10:
+                Activate10();
+                break;
             default:
                 throw new System.ArgumentOutOfRangeException("Round counter increased too far.");
         }
+
+        SetColor();
     }
 
     private void Activate0()
     {
-        // Send chirality or compass information to all of our neighbors
+        // Send chirality or compass information to all of our neighbors using singleton configuration
         PinConfiguration pc = GetContractedPinConfiguration();
         SetPlannedPinConfiguration(pc);
 
@@ -220,12 +275,14 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             if (chiralityAgreementPhase)
             {
                 // Beep on the pin with offset 0
-                Debug.Log("Beep on pin in direction " + origDir + " with offset " + (reverseChirality ? 1 : 0));
                 pc.GetPinAt(origDir, reverseChirality ? 1 : 0).PartitionSet.SendBeep();
             }
             else
             {
-                // TODO: Send message on pin 0 with compass offset to neighbor
+                // Send message with my edge direction on pin 0
+                int dir = ToNewDir(origDir);
+                DirectionMessage msg = new DirectionMessage(dir);
+                pc.GetPinAt(origDir, reverseChirality ? 1 : 0).PartitionSet.SendMessage(msg);
             }
         }
 
@@ -249,19 +306,41 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 if (pc.GetPinAt(origDir, reverseChirality ? 0 : 1).PartitionSet.ReceivedBeep())
                 {
                     // Share chirality, remember this neighbor as regional neighbor
-                    Debug.Log("Received beep from direction " + origDir + " with offset " + (reverseChirality ? 0 : 1));
                     regionNbrs.Add(origDir);
                 }
                 else
                 {
                     // Do not share chirality, remember as non-regional neighbor
-                    Debug.Log("Did not receive beep from direction " + origDir + " with offset " + (reverseChirality ? 0 : 1));
                     haveNbrOutOfRegion = true;
                 }
             }
             else
             {
-                // TODO: Receive message on pin 0 and read compass direction
+                // Receive message on pin 1 (must have one) and read compass direction
+                int myDir = ToNewDir(origDir);
+                DirectionMessage msg = pc.GetPinAt(origDir, reverseChirality ? 0 : 1).PartitionSet.GetReceivedMessage() as DirectionMessage;
+                if (msg == null)
+                {
+                    Debug.LogError("Did not receive direction message from neighbor in direction " + origDir);
+                    continue;
+                }
+                // Offset to neighbor dir is number of clockwise rotations we have to make to match their compass
+                // This is the direction of our neighbor corresponding to myDir
+                int nbrDir = (msg.direction + 3) % 6;
+                // One clockwise rotation increases the direction label by 1, so count how many times we have to increase it to match the labels
+                int offset = (nbrDir + 6 - myDir) % 6;
+                if (offset == 0)
+                {
+                    // No offset, neighbor is in the region
+                    regionNbrs.Add(origDir);
+                    nbrOffsets[origDir].SetValue(-1);
+                }
+                else
+                {
+                    // Remember neighbor with offset
+                    nbrOffsets[origDir].SetValue(offset);
+                    haveNbrOutOfRegion = true;
+                }
             }
         }
 
@@ -281,17 +360,11 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
             if (haveNbrOutOfRegion)
             {
-                Debug.Log("SEND BEEP BECAUSE WE HAVE A NEIGHBOR OUT OF REGION");
                 pc.SendBeepOnPartitionSet(0);
-            }
-            else
-            {
-                Debug.Log("HAVE NO NEIGHBOR OUTSIDE OF REGION");
             }
         }
         else
         {
-            Debug.Log("HAVE NO REGIONAL CIRCUIT");
             hasRegionalCircuit.SetValue(false);
         }
 
@@ -312,16 +385,16 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             {
                 Debug.Log("END OF CHIRALITY AGREEMENT PHASE");
                 chiralityAgreementPhase.SetValue(false);
+                isCandidate.SetValue(true);
                 round.SetValue(0);
             }
             else
             {
+                Debug.Log("FINISHED");
                 finished.SetValue(true);
             }
             return;
         }
-
-        Debug.Log("NO END OF CHIRALITY AGREEMENT PHASE: " + (hasRegionalCircuit ? "RECEIVED BEEP" : "NO REGIONAL CIRCUIT"));
 
         // Phase is not over yet: candidates toss coins and beep on regional circuit if HEADS is tossed
         if (isCandidate)
@@ -419,7 +492,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                         if (!nbrs[i]) continue;
 
                         ChiralityAndCompassParticle nbr = GetNeighborAt(i) as ChiralityAndCompassParticle;
-                        if (nbr.coinTossResult != coinTossResult)
+                        if (nbr.coinTossResult != coinTossResult.GetValue_After())
                         {
                             SetPlannedPinConfiguration(pc);
                             pc.SendBeepOnPartitionSet(0);
@@ -429,20 +502,14 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 }
                 else
                 {
-                    // TODO
+                    // Compass alignment phase: Send first beep on regional circuit if we have a matching neighbor
+                    CompassAlignmentUpdateMergeBeep(1);
                 }
             }
             else
             {
                 // No regional circuit means that all neighbors are in other regions
-                if (chiralityAgreementPhase)
-                {
-                    // In the next round, check if any neighbor has a different coin toss result and then act based on that information
-                }
-                else
-                {
-                    // TODO
-                }
+                // Delay the merge decision until the round everyone else decides it
             }
         }
 
@@ -483,7 +550,10 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 // Change chirality if necessary
                 if (mergeIntoOtherRegion)
                 {
+                    //Debug.Log("MERGE");
                     reverseChirality.SetValue(!reverseChirality);
+                    realChirality.SetValue(!realChirality);
+                    SetMainColor(ColorData.Black);
                     isCandidate.SetValue(false);
                 }
             }
@@ -494,10 +564,97 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         }
         else
         {
-            // TODO
+            // Part of phase where we send beeps for matching neighbor regions
+            if (hasRegionalCircuit)
+            {
+                // Read result of beep for offset 1, beep if we have neighbor with offset 2 and coin toss result != TAILS
+                CompassAlignmentUpdateMergeBeep(2);
+            }
         }
 
         round.SetValue(7);
+    }
+
+    private void Activate7To9()
+    {
+        // Compass alignment phase
+        // In these rounds, we only listen for beeps and send a beep if we have a matching neighbor
+        // This is done to agree on a region we can merge into
+        // Nothing needs to be done if we have no regional circuit
+        if (hasRegionalCircuit && coinTossResult == CoinTossResult.TAILS)
+        {
+            CompassAlignmentUpdateMergeBeep(round - 4);
+        }
+        round.SetValue(round + 1);
+    }
+
+    private void Activate10()
+    {
+        // Compass alignment phase: Last round
+        // In this round, we decide if and how to merge and start the next iteration
+        // Only merge if our coin toss result is TAILS
+        if (coinTossResult == CoinTossResult.TAILS)
+        {
+            if (hasRegionalCircuit)
+            {
+                // Read the last merge beep
+                CompassAlignmentUpdateMergeBeep(6);
+            }
+            else
+            {
+                // Have no regional circuit: Decide if and how to merge now
+                // Find the neighbor with the smallest offset
+                int minOffset = 6;  // Real offsets are always < 6
+                for (int origDir = 0; origDir < 6; origDir++)
+                {
+                    int offset = nbrOffsets[origDir];
+                    if (!nbrs[origDir] || offset == -1 || offset >= minOffset) continue;
+                    ChiralityAndCompassParticle nbr = GetNeighborAt(origDir) as ChiralityAndCompassParticle;
+                    if (nbr.coinTossResult != CoinTossResult.TAILS)
+                    {
+                        minOffset = offset;
+                    }
+                }
+                if (minOffset < 6)
+                {
+                    mergeOffset.SetValue(minOffset);
+                }
+            }
+
+            // Perform merge if merge offset is set
+            if (mergeOffset.GetValue_After() != -1)
+            {
+                int offset = mergeOffset.GetValue_After();
+                // Rotate compass direction by the offset
+                if (reverseChirality)
+                {
+                    compassOffset.SetValue((compassOffset + offset) % 6);
+                }
+                else
+                {
+                    compassOffset.SetValue((compassOffset + 6 - offset) % 6);
+                }
+
+                // Also update value of real compass direction
+                if (realChirality)
+                {
+                    realCompassDir.SetValue((realCompassDir + 6 - offset) % 6);
+                }
+                else
+                {
+                    realCompassDir.SetValue((realCompassDir + offset) % 6);
+                }
+
+                // Withdraw candidacy if we merge
+                isCandidate.SetValue(false);
+            }
+        }
+
+        // Reset merge offset
+        mergeOffset.SetValue(-1);
+
+        // Start next iteration
+        round.SetValue(0);
     }
 
     /// <summary>
@@ -552,5 +709,73 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         bool result = Random.Range(0f, 1f) <= 0.5f;
         heads.SetValue(result);
         return result;
+    }
+
+    private void CompassAlignmentUpdateMergeBeep(int offset)
+    {
+        PinConfiguration pc = GetCurrentPinConfiguration();
+        // Read value from previous round if offset is large enough and no merge offset was selected yet
+        if (offset > 1 && mergeOffset.GetValue_After() == -1 && pc.ReceivedBeepOnPartitionSet(0))
+        {
+            mergeOffset.SetValue(offset - 1);
+        }
+
+        // Send beep if offset is small enough and we have a matching neighbor
+        if (offset < 6)
+        {
+            for (int origDir = 0; origDir < 6; origDir++)
+            {
+                if (!nbrs[origDir] || nbrOffsets[origDir] != offset) continue;
+
+                ChiralityAndCompassParticle nbr = GetNeighborAt(origDir) as ChiralityAndCompassParticle;
+                if (nbr.coinTossResult != CoinTossResult.TAILS)
+                {
+                    // This neighbor has a matching coin toss result and offset
+                    SetPlannedPinConfiguration(pc);
+                    pc.SendBeepOnPartitionSet(0);
+                }
+            }
+        }
+    }
+
+    // Only for visualization, uses global data
+    private void SetColor()
+    {
+        if (chiralityAgreementPhase.GetValue_After())
+        {
+            if (realChirality.GetValue_After())
+            {
+                if (isCandidate.GetValue_After())
+                {
+                    SetMainColor(chir1CandColor);
+                }
+                else
+                {
+                    SetMainColor(chir1NoCandColor);
+                }
+            }
+            else
+            {
+                if (isCandidate.GetValue_After())
+                {
+                    SetMainColor(chir0CandColor);
+                }
+                else
+                {
+                    SetMainColor(chir0NoCandColor);
+                }
+            }
+        }
+        else
+        {
+            if (isCandidate.GetValue_After())
+            {
+                SetMainColor(compCandColors[realCompassDir.GetValue_After()]);
+            }
+            else
+            {
+                SetMainColor(compNoCandColor[realCompassDir.GetValue_After()]);
+            }
+        }
     }
 }

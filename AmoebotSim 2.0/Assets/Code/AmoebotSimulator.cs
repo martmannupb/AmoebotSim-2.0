@@ -32,14 +32,14 @@ public class AmoebotSimulator : MonoBehaviour
         // Activate one particle every 1000ms (only for testing)
         //InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
         Time.fixedDeltaTime = 0.005f;
-        Time.fixedDeltaTime = 0.4f;
+        Time.fixedDeltaTime = 0.5f;
 
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(50, 50, 0.3f, -9, -5);
         //system.InitializeLineFormation(50, 0.4f);
-        //system.InitializeLineFormation(50, 0.4f);
+        //system.InitializeLineFormation(25, 0.4f);
         //system.InitializeLeaderElection(500, 0.35f);
-        system.InitializeChiralityCompass(100, 0.4f);
+        system.InitializeChiralityCompass(1000, 0.2f);
         //system.ActivateParticles();
 
 

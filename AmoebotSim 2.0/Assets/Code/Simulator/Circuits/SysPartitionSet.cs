@@ -336,7 +336,7 @@ public class SysPartitionSet : PartitionSet
 
 
     // <<<TEMPORARY, FOR DEBUGGING>>>
-    public void Print()
+    public string Print()
     {
         string s = "Partition Set with " + numStoredPins + " pins:\n";
         for (int i = 0; i < pins.Count; i++)
@@ -347,6 +347,6 @@ public class SysPartitionSet : PartitionSet
             }
         }
         s += "\n";
-        Debug.Log(s);
+        return s;
     }
 }

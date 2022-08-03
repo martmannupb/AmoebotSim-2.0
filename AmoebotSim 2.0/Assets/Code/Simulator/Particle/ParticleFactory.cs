@@ -60,9 +60,11 @@ public class ParticleFactory
     {
         Particle p = new Particle(system, position, Random.Range(0, 6), Random.Range(0f, 1f) <= 0.5f);
         p.isActive = true;
-        new ChiralityAndCompassParticle(p);
-        p.isActive = false;
+        ChiralityAndCompassParticle alg = new ChiralityAndCompassParticle(p);
+        alg.realChirality.SetValue(p.chirality);
+        alg.realCompassDir.SetValue(p.comDir);
         p.InitWithAlgorithm();
+        p.isActive = false;
         return p;
     }
 }
