@@ -29,12 +29,14 @@ public class ParticlePinGraphicState
     public int pinsPerSide;
 
     // State
-    public bool isExpanded;
-    public int[][] pins1 = new int[6][];
-    public int[][] pins2 = new int[6][];
-    public List<PSetData> partitionSets = new List<PSetData>();
+    //public bool isExpanded; // not needed, we know this already from the other data the renderer receives per round
+    //public int[][] pins1 = new int[6][];
+    //public int[][] pins2 = new int[6][];
+    public bool[] hasNeighbor1 = new bool[6]; // like pins1 and pins2 (hasNeighbor2 is only relevant if particle is expanded), return true if there is a particle in that direction
+    public bool[] hasNeighbor2 = new bool[6];
+    public List<PSetData> partitionSets;
     // Beeps
-    public List<PSetBeep> beeps_pSets = new List<PSetBeep>();
+    //public List<PSetBeep> beeps_pSets = new List<PSetBeep>();
 
 
 
@@ -42,27 +44,82 @@ public class ParticlePinGraphicState
 
     // Structs ====================
 
-    public struct PSetData
+    public class PSetData
     {
         public Color color;
-        int amountOfConnectedPins;
+        // Data
+        public List<PinDef> pins; // all pins that belong to this partition set
+        // Beeping
+        bool beepsThisRound;
 
-        public PSetData(Color color, int amountOfConnectedPins)
+        private PSetData()
+        {
+            this.pins = new List<PinDef>(10);
+        }
+
+        public void UpdatePSetData(Color color, bool beepsThisRound, params PinDef[] pins)
         {
             this.color = color;
-            this.amountOfConnectedPins = amountOfConnectedPins;
+            this.beepsThisRound = beepsThisRound;
+            foreach (PinDef pin in pins)
+            {
+                this.pins.Add(pin);
+            }
         }
-    }
 
-    public struct PSetBeep
-    {
-        public int index;
-
-        public PSetBeep(int index)
+        public void Clear()
         {
-            this.index = index;
+            this.color = new Color();
+            this.pins.Clear();
+            this.beepsThisRound = false;
+        }
+
+
+        // Pooling ===========
+
+        private static Stack<PSetData> pool = new Stack<PSetData>();
+
+        public static PSetData PoolCreate()
+        {
+            if (pool.Count > 0) return pool.Pop();
+            else
+            {
+                return new PSetData();
+            }
+        }
+
+        public static void PoolRelease(PSetData obj)
+        {
+            obj.Clear();
+            pool.Push(obj);
+        }
+
+    }
+
+    public struct PinDef
+    {
+        public int globalDir; // e.g. 0 to 5 for all directions (starting to the right counterclockwise)
+        public int dirID; // e.g. 1,2 or 3 for 3 pins per side (or is 0,1,2 better?)
+        public bool isHead; // true for contracted particle or head on expanded particle, false if is tail on expanded particle
+
+        public PinDef(int globalDir, int dirID, bool isHead)
+        {
+            this.globalDir = globalDir;
+            this.dirID = dirID;
+            this.isHead = isHead;
         }
     }
+
+
+    //public struct PSetBeep
+    //{
+    //    public int index;
+
+    //    public PSetBeep(int index)
+    //    {
+    //        this.index = index;
+    //    }
+    //}
 
     //public struct SingletonBeep
     //{
@@ -86,23 +143,26 @@ public class ParticlePinGraphicState
     private ParticlePinGraphicState(int pinsPerSide)
     {
         this.pinsPerSide = pinsPerSide;
+        partitionSets = new List<PSetData>(pinsPerSide * 6 * 2);
         // Init Pins
         InitPins();
     }
 
     private void InitPins()
     {
-        pins1 = new int[6][];
-        pins2 = new int[6][];
+        //pins1 = new int[6][];
+        //pins2 = new int[6][];
         for (int i = 0; i < 6; i++)
         {
-            pins1[i] = new int[pinsPerSide];
-            pins2[i] = new int[pinsPerSide];
-            for (int j = 0; j < pinsPerSide; j++)
-            {
-                pins1[i][j] = -1;
-                pins2[i][j] = -1;
-            }
+            //pins1[i] = new int[pinsPerSide];
+            //pins2[i] = new int[pinsPerSide];
+            hasNeighbor1[i] = false;
+            hasNeighbor2[i] = false;
+            //for (int j = 0; j < pinsPerSide; j++)
+            //{
+            //    pins1[i][j] = -1;
+            //    pins2[i][j] = -1;
+            //}
         }
     }
 
@@ -110,11 +170,17 @@ public class ParticlePinGraphicState
     {
         for (int i = 0; i < 6; i++)
         {
-            for (int j = 0; j < pinsPerSide; j++)
-            {
-                pins1[i][j] = -1;
-                pins2[i][j] = -1;
-            }
+            hasNeighbor1[i] = false;
+            hasNeighbor2[i] = false;
+            //for (int j = 0; j < pinsPerSide; j++)
+            //{
+            //    pins1[i][j] = -1;
+            //    pins2[i][j] = -1;
+            //}
+        }
+        foreach (PSetData pSet in partitionSets)
+        {
+            PSetData.PoolRelease(pSet);
         }
         partitionSets.Clear();
     }
