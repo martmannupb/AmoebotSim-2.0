@@ -25,6 +25,12 @@ public interface IParticleGraphicsAdapter
     void UpdateReset();
 
     /// <summary>
+    /// Pushes an Update for the internal circuits of the particle and the immediate connections to neighboring particles.
+    /// </summary>
+    /// <param name="data"></param>
+    //void CircuitPush(ParticlePinGraphicState data); // Either this or a Pull Method
+
+    /// <summary>
     /// Complements HideParticle(). Shows the particle.
     /// Calling this method is not necessary if the particle is never hidden. By default the particle is visible once it is added and updated.
     /// </summary>

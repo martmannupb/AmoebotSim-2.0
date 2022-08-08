@@ -59,12 +59,12 @@ public class LineFormationParticleSync : ParticleAlgorithm
 {
     public enum LFState { IDLE, FLWR, ROOT, INLINE, LEADER, FINISHED }
 
-    private static Color leaderColor = ColorData.Aqua;
-    private static Color idleColor = ColorData.Black;
-    private static Color rootColor = ColorData.Red;
-    private static Color flwrColor = ColorData.Blue;
-    private static Color inlineColor = ColorData.Yellow;
-    private static Color finishedColor = ColorData.BlueDark;
+    private static Color leaderColor = ColorData.Particle_Aqua;
+    private static Color idleColor = ColorData.Particle_Black;
+    private static Color rootColor = ColorData.Particle_Red;
+    private static Color flwrColor = ColorData.Particle_Blue;
+    private static Color inlineColor = ColorData.Particle_Yellow;
+    private static Color finishedColor = ColorData.Particle_BlueDark;
 
     // Used to create one leader particle
     private static bool leaderCreated = false;
@@ -372,7 +372,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
                 // Our local view of the line is complete and the completeness beep from
                 // the leader has reached us: We are locally done as well
                 localLineComplete.SetValue(true);
-                SetMainColor(ColorData.Purple);     // FOR DEBUGGING (should be visible by circuits alone later)
+                SetMainColor(ColorData.Particle_Purple);     // FOR DEBUGGING (should be visible by circuits alone later)
                 // Connect the two pins in direction of the line
                 ps.AddPin(pc.GetPinAt(constructionDir, 0));
                 SetPlannedPinConfiguration(pc);

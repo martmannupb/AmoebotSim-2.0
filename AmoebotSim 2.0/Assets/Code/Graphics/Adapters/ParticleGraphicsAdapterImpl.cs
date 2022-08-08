@@ -153,7 +153,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void SetParticleColor(Color color)
     {
-        renderer.UpdateParticleColor(this, graphics_color, color);
+        renderer.Particle_UpdateColor(this, graphics_color, color);
     }
 
     public void ClearParticleColor()

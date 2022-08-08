@@ -209,7 +209,17 @@
         }
     ],
     "m_GroupDatas": [],
-    "m_StickyNoteDatas": [],
+    "m_StickyNoteDatas": [
+        {
+            "m_Id": "b6813e4c954b41058eeeb8fea5f6754f"
+        },
+        {
+            "m_Id": "4d409351e3bd45b7a52e1d571764eac7"
+        },
+        {
+            "m_Id": "240290787ab4402399c25c578c2a75da"
+        }
+    ],
     "m_Edges": [
         {
             "m_OutputSlot": {
@@ -1818,6 +1828,26 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
+    "m_ObjectId": "240290787ab4402399c25c578c2a75da",
+    "m_Title": "Center Piece",
+    "m_Content": "The connector between the Hexagons",
+    "m_TextSize": 0,
+    "m_Theme": 0,
+    "m_Position": {
+        "serializedVersion": "2",
+        "x": -843.0,
+        "y": 144.0,
+        "width": 148.0,
+        "height": 100.0
+    },
+    "m_Group": {
+        "m_Id": ""
+    }
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
     "m_ObjectId": "24b0ba081f274f97be2acf05839e63f9",
     "m_Group": {
@@ -2737,6 +2767,26 @@
         "w": 0.0
     },
     "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
+    "m_ObjectId": "4d409351e3bd45b7a52e1d571764eac7",
+    "m_Title": "Hexagon 2",
+    "m_Content": "This one is expanding or contracting",
+    "m_TextSize": 0,
+    "m_Theme": 0,
+    "m_Position": {
+        "serializedVersion": "2",
+        "x": -847.0,
+        "y": -230.0,
+        "width": 148.0,
+        "height": 100.0
+    },
+    "m_Group": {
+        "m_Id": ""
+    }
 }
 
 {
@@ -4607,6 +4657,26 @@
     },
     "m_Property": {
         "m_Id": "44082ad372f34e7088db52ff22fd244c"
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
+    "m_ObjectId": "b6813e4c954b41058eeeb8fea5f6754f",
+    "m_Title": "Hexagon 1",
+    "m_Content": "This one stays in place",
+    "m_TextSize": 0,
+    "m_Theme": 0,
+    "m_Position": {
+        "serializedVersion": "2",
+        "x": -836.0,
+        "y": -671.0,
+        "width": 148.0,
+        "height": 100.0
+    },
+    "m_Group": {
+        "m_Id": ""
     }
 }
 

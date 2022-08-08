@@ -164,7 +164,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     public ChiralityAndCompassParticle(Particle p) : base(p)
     {
-        SetMainColor(ColorData.Green);
+        SetMainColor(ColorData.Particle_Green);
 
         compassOffset = CreateAttributeDirection("Compass offset", 0);
         reverseChirality = CreateAttributeBool("Reverse chirality", false);
@@ -218,7 +218,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             // If we don't have any neighbors: Terminate immediately
             if (!hasAnyNeighbor)
             {
-                SetMainColor(ColorData.Purple);
+                SetMainColor(ColorData.Particle_Purple);
                 finished.SetValue(true);
             }
             return;
@@ -457,7 +457,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             // Candidates with TAILS withdraw candidacy if result is FAILED
             if (isCandidate && !heads && coinTossResult.GetValue_After() == CoinTossResult.FAILED)
             {
-                SetMainColor(ColorData.Black);
+                SetMainColor(ColorData.Particle_Black);
                 isCandidate.SetValue(false);
             }
         }
@@ -553,7 +553,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                     //Debug.Log("MERGE");
                     reverseChirality.SetValue(!reverseChirality);
                     realChirality.SetValue(!realChirality);
-                    SetMainColor(ColorData.Black);
+                    SetMainColor(ColorData.Particle_Black);
                     isCandidate.SetValue(false);
                 }
             }

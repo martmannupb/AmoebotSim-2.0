@@ -34,7 +34,7 @@ public class LeaderElectionParticle : ParticleAlgorithm
 
     public LeaderElectionParticle(Particle p) : base(p)
     {
-        SetMainColor(ColorData.Green);
+        SetMainColor(ColorData.Particle_Green);
         firstActivation = CreateAttributeBool("First activation", true);
         isCandidate = CreateAttributeBool("Is candidate", true);
         phase2Candidate = CreateAttributeBool("Phase 2 Candidate", false);
@@ -103,7 +103,7 @@ public class LeaderElectionParticle : ParticleAlgorithm
                         phase2Candidate.SetValue(true);
                         if (!isCandidate)
                         {
-                            SetMainColor(ColorData.Blue);
+                            SetMainColor(ColorData.Particle_Blue);
                         }
                         // Proper candidates toss coin and send beep on HEADS
                         if (isCandidate)
@@ -119,11 +119,11 @@ public class LeaderElectionParticle : ParticleAlgorithm
                     {
                         if (isCandidate)
                         {
-                            SetMainColor(ColorData.Purple);
+                            SetMainColor(ColorData.Particle_Purple);
                         }
                         else
                         {
-                            SetMainColor(ColorData.Black);
+                            SetMainColor(ColorData.Particle_Black);
                         }
                         terminated.SetValue(true);
                         return;
@@ -195,15 +195,15 @@ public class LeaderElectionParticle : ParticleAlgorithm
         // Set color
         if (isCandidate.GetValue_After())
         {
-            SetMainColor(ColorData.Green);
+            SetMainColor(ColorData.Particle_Green);
         }
         else if (phase2Candidate.GetValue_After())
         {
-            SetMainColor(ColorData.Blue);
+            SetMainColor(ColorData.Particle_Blue);
         }
         else
         {
-            SetMainColor(ColorData.Black);
+            SetMainColor(ColorData.Particle_Black);
         }
     }
 
