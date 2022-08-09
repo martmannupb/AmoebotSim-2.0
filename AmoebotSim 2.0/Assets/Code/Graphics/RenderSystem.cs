@@ -31,6 +31,8 @@ public class RenderSystem
     public const float zLayer_particles = 0f;
     public const float zLayer_pins = -1f;
     public const float zLayer_ui = -5f;
+    // Global Data
+    public static float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");
 
     // Dynamic Params _____
     public static bool flag_newRound = true;

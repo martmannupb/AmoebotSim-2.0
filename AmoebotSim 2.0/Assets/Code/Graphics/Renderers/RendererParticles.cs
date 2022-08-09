@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class RendererParticles
 {
+
+    // Circuits ===============
+    public RendererCircuits circuitRenderer = new RendererCircuits();
+
+    // Particles ===============
     // Render Batch
     public Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch>();
 

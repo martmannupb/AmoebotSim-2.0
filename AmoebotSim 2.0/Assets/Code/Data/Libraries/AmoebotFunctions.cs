@@ -76,4 +76,17 @@ public static class AmoebotFunctions
     {
         return Mathf.Round(value / multipleOf) * multipleOf;
     }
+
+    // Circuits ===============
+
+    public static Vector2 CalculateRelativePinPosition(ParticlePinGraphicState.PinDef pinDef, int particlesPerSide, float particleScale)
+    {
+        float linePos = (pinDef.dirID + 1) / (particlesPerSide + 1);
+        Vector2 topRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides());
+        Vector2 bottomRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides());
+        Vector2 pinPosNonRotated = bottomRight + linePos * (topRight - bottomRight);
+        pinPosNonRotated *= particleScale;
+        Vector2 pinPos = Quaternion.Euler(0f, 0f, 60f * pinDef.globalDir) * pinPosNonRotated;
+        return pinPos;
+    }
 }
