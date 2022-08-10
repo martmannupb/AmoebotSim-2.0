@@ -142,6 +142,10 @@ public class ParticleSystem : IReplayHistory
     /// a particle and being left empty instead.</param>
     public void InitializeLineFormation(int numParticles, float holeProb)
     {
+        // Ensure that a new leader will be chosen
+        // (This is bad practice and should be handled differently later!)
+        LineFormationParticleSync.leaderCreated = false;
+
         int n = 1;
         // Always start by adding a particle at position (0, 0)
         List<Vector2Int> candidates = new List<Vector2Int>();

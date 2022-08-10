@@ -73,7 +73,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
     private static Color finishedColor = ColorData.Particle_BlueDark;
 
     // Used to create one leader particle
-    private static bool leaderCreated = false;
+    public static bool leaderCreated = false;
 
     public ParticleAttribute<LFState> state;
     public ParticleAttribute<int> constructionDir;

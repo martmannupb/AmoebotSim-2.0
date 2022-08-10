@@ -165,7 +165,7 @@ public class AmoebotSimulator : MonoBehaviour
         if (!play)
         {
             system.Reset();
-            system.InitializeLeaderElection(50, 0.4f);
+            system.InitializeLineFormation(50, 0.4f);
             UpdateRoundCounter();
         }
     }
