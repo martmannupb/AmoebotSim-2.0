@@ -13,6 +13,7 @@ public class RenderSystem
     public ViewType setting_viewType = ViewType.Hexagonal;
     // Performance
     public int setting_antiAliasing = 8; // Valid values are 0 (no MSAA), 2, 4, and 8
+    public bool toggleCircuitView = true;
 
 
     // Static Params _____
@@ -25,12 +26,16 @@ public class RenderSystem
     public const int const_hexagonalBGHexLineAmount = 200;
     public const float const_hexagonalAnimationDurationDef = 0.5f;
     public const float const_hexagonalAnimationDurationMax = 1f;
+    public const float const_circuitLineWidth = 0.1f;
     // Layers
     public const float zLayer_background = 1f;
     public const float ZLayer_particlesBG = 0.1f;
     public const float zLayer_particles = 0f;
+    public const float zLayer_circuits = 0.5f;
     public const float zLayer_pins = -1f;
     public const float zLayer_ui = -5f;
+    // Global Data
+    public static float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");
 
     // Dynamic Params _____
     public static bool flag_newRound = true;
@@ -60,6 +65,19 @@ public class RenderSystem
 
         // Reset Round Flag
         flag_newRound = false;
+    }
+
+    /// <summary>
+    /// Signalizes the Renderer that the last round has been successfully calculated (all particles and circuits have been updated).
+    /// Updates that have not yet been shown will be displayed now (like circuit updates).
+    /// </summary>
+    public void RoundOver()
+    {
+        // Apply Particle Updates
+        // (so far we only use one array and apply it directly)
+
+        // Apply Circuit Updates
+        rendererP.circuitRenderer.ApplyUpdates();
     }
 
     public void AddReferenceToParticleSystem(ParticleSystem map)

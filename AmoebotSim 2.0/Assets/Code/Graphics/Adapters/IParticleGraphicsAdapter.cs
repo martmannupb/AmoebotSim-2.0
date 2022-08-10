@@ -28,7 +28,7 @@ public interface IParticleGraphicsAdapter
     /// Pushes an Update for the internal circuits of the particle and the immediate connections to neighboring particles.
     /// </summary>
     /// <param name="data"></param>
-    //void CircuitPush(ParticlePinGraphicState data); // Either this or a Pull Method
+    void CircuitUpdate(ParticlePinGraphicState state);
 
     /// <summary>
     /// Complements HideParticle(). Shows the particle.

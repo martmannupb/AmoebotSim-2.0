@@ -23,6 +23,9 @@ public static class MaterialDatabase
     // new system
     public static Material material_hexagonal_particleCombined = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonCombinedMat");
 
+    // Circuits
+    public static Material material_circuit_line = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/CircuitMat");
+
     // UI
     public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");
 

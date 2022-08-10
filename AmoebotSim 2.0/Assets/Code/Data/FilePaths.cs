@@ -5,9 +5,7 @@ using UnityEngine;
 public static class FilePaths
 {
 
-    // Circular View
     public static readonly string path_materials = "Materials/";
-
-    // Hexagonal View
+    public static readonly string path_textures = "Textures/";
 
 }

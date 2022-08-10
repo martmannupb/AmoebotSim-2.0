@@ -13,6 +13,7 @@ public class ParticlePinGraphicState
     public bool[] hasNeighbor2 = new bool[6];
     public int neighbor1ToNeighbor2Direction = -1; // global direction from the neighbor1 to the neighbor2 (range 0 to 5), only set if particle is expanded (default -1)
     public List<PSetData> partitionSets;
+    public List<PSetData> singletonSets;
     public bool isExpanded {
         get {
             return neighbor1ToNeighbor2Direction != -1;
@@ -79,7 +80,7 @@ public class ParticlePinGraphicState
     public struct PinDef
     {
         public int globalDir; // e.g. 0 to 5 for all directions (starting to the right counterclockwise)
-        public int dirID; // e.g. 1,2 or 3 for 3 pins per side (or is 0,1,2 better?)
+        public int dirID; // e.g. 0,1 or 2 for 3 pins per side
         public bool isHead; // true for contracted particle or head on expanded particle, false if is tail on expanded particle
 
         public PinDef(int globalDir, int dirID, bool isHead)
@@ -99,7 +100,8 @@ public class ParticlePinGraphicState
     private ParticlePinGraphicState(int pinsPerSide)
     {
         this.pinsPerSide = pinsPerSide;
-        partitionSets = new List<PSetData>(pinsPerSide * 6 * 2);
+        partitionSets = new List<PSetData>(pinsPerSide * 10);
+        singletonSets = new List<PSetData>(pinsPerSide * 10);
         // Init Pins
         InitPins();
     }
@@ -126,6 +128,11 @@ public class ParticlePinGraphicState
             PSetData.PoolRelease(pSet);
         }
         partitionSets.Clear();
+        foreach (PSetData pSet in singletonSets)
+        {
+            PSetData.PoolRelease(pSet);
+        }
+        singletonSets.Clear();
     }
 
     public void Reset(int pinsPerSide)
