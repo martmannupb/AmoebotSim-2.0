@@ -54,6 +54,12 @@ public class MyMessage : Message
 /// <para>
 /// The algorithm uses only 1 pin per edge.
 /// </para>
+/// <para>
+/// Known bug: FLWR particles can accidentally pull ROOT particles if
+/// they only become a ROOT in the round they receive the beep.
+/// Possible solution: FLWRs and ROOTs must check where the beep was
+/// sent and where it came from before starting a handover
+/// </para>
 /// </summary>
 public class LineFormationParticleSync : ParticleAlgorithm
 {
