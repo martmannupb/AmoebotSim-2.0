@@ -290,6 +290,30 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
+    /// Resets the entire system to a state from which it can be
+    /// initialized again.
+    /// </summary>
+    public void Reset()
+    {
+        // Remove particles from the renderer system
+        foreach (Particle p in particles)
+        {
+            p.graphics.RemoveParticle();
+        }
+
+        // Clear particle list and map
+        particles.Clear();
+        particleMap.Clear();
+
+        // Reset history state
+        _earliestRound = 0;
+        _latestRound = 0;
+        _currentRound = 0;
+        _previousRound = 0;
+        isTracking = true;
+    }
+
+    /// <summary>
     /// Tries to get the <see cref="Particle"/> at the given position.
     /// </summary>
     /// <param name="position">The grid position at which to look for the particle.</param>
