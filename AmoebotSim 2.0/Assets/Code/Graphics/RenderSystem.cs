@@ -13,6 +13,7 @@ public class RenderSystem
     public ViewType setting_viewType = ViewType.Hexagonal;
     // Performance
     public int setting_antiAliasing = 8; // Valid values are 0 (no MSAA), 2, 4, and 8
+    public bool toggleCircuitView = true;
 
 
     // Static Params _____
@@ -64,6 +65,19 @@ public class RenderSystem
 
         // Reset Round Flag
         flag_newRound = false;
+    }
+
+    /// <summary>
+    /// Signalizes the Renderer that the last round has been successfully calculated (all particles and circuits have been updated).
+    /// Updates that have not yet been shown will be displayed now (like circuit updates).
+    /// </summary>
+    public void RoundOver()
+    {
+        // Apply Particle Updates
+        // (so far we only use one array and apply it directly)
+
+        // Apply Circuit Updates
+        rendererP.circuitRenderer.ApplyUpdates();
     }
 
     public void AddReferenceToParticleSystem(ParticleSystem map)

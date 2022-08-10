@@ -44,6 +44,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _TextureHexagon2:
+        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _TextureHexagonConnector:
         m_Texture: {fileID: 2800000, guid: 309420024968d1b499c8cc9961f4d3a0, type: 3}
         m_Scale: {x: 1, y: 1}

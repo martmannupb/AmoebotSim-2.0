@@ -151,6 +151,11 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         Update(true, true);
     }
 
+    public void CircuitUpdate(ParticlePinGraphicState state)
+    {
+        renderer.circuitRenderer.AddCircuits(state, state_cur);
+    }
+
     public void SetParticleColor(Color color)
     {
         renderer.Particle_UpdateColor(this, graphics_color, color);
@@ -175,7 +180,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
         renderer.Particle_Remove(this);
     }
-
 
     public enum ParticleMovement
     {
