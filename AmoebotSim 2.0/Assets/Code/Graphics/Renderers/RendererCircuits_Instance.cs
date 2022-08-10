@@ -8,7 +8,7 @@ public class RendererCircuits_Instance
     public Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch>();
 
     // Data
-    private Mesh quad = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
+    
 
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
@@ -33,21 +33,40 @@ public class RendererCircuits_Instance
 
     public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool moving)
     {
-
+        RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, moving);
+        RendererCircuits_RenderBatch batch;
+        if (propertiesToRenderBatchMap.ContainsKey(propertyBlockData) == false)
+        {
+            // Batch does not exist
+            // Create Batch
+            batch = new RendererCircuits_RenderBatch(propertyBlockData);
+            propertiesToRenderBatchMap.Add(propertyBlockData, batch);
+        }
+        else
+        {
+            propertiesToRenderBatchMap.TryGetValue(propertyBlockData, out batch);
+        }
+        batch.AddLine(globalLineStartPos, globalLineEndPos);
     }
 
-
-
-
-
-
-
-    private Matrix4x4 CalculateLineMatrix(Vector2 posInitial, Vector2 posEnd, float width)
+    /// <summary>
+    /// Clears or nullifies the matrices to reset the data structures.
+    /// </summary>
+    public void Clear()
     {
-        Vector2 vec = posEnd - posInitial;
-        float length = vec.magnitude;
-        return Matrix4x4.TRS(posInitial, Quaternion.FromToRotation(Vector2.right, vec), new Vector3(length, width, 1f));
+        foreach (var batch in propertiesToRenderBatchMap.Values)
+        {
+            batch.ClearMatrices();
+        }
     }
+
+
+
+
+
+
+
+    
 
     private Vector2 CalculateGlobalPinPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
     {
@@ -56,13 +75,13 @@ public class RendererCircuits_Instance
         return posParticle + relPinPos;
     }
 
-    private Vector2 CalculateGlobalPartitionSetPinPosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float placementLineLength, int rotationDegrees)
+    private Vector2 CalculateGlobalPartitionSetPinPosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float placementLineLength, float rotationDegrees)
     {
         Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPosParticle);
         return posParticle + CalculateRelativePartitionSetPinPosition(partitionSetID, amountOfPartitionSetsAtNode, placementLineLength, rotationDegrees);
     }
 
-    private Vector2 CalculateRelativePartitionSetPinPosition(int partitionSetID, int amountOfPartitionSetsAtNode, float placementLineLength, int rotationDegrees)
+    private Vector2 CalculateRelativePartitionSetPinPosition(int partitionSetID, int amountOfPartitionSetsAtNode, float placementLineLength, float rotationDegrees)
     {
         if (amountOfPartitionSetsAtNode == 1) return Vector2.zero;
         else

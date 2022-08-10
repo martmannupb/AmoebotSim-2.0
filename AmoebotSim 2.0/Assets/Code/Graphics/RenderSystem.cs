@@ -25,10 +25,12 @@ public class RenderSystem
     public const int const_hexagonalBGHexLineAmount = 200;
     public const float const_hexagonalAnimationDurationDef = 0.5f;
     public const float const_hexagonalAnimationDurationMax = 1f;
+    public const float const_circuitLineWidth = 0.1f;
     // Layers
     public const float zLayer_background = 1f;
     public const float ZLayer_particlesBG = 0.1f;
     public const float zLayer_particles = 0f;
+    public const float zLayer_circuits = 0.5f;
     public const float zLayer_pins = -1f;
     public const float zLayer_ui = -5f;
     // Global Data
