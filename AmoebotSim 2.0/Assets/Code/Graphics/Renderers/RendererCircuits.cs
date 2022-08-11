@@ -27,6 +27,9 @@ public class RendererCircuits
         renderInstances[updateInstance].Clear();
     }
 
-
+    public void Render()
+    {
+        renderInstances[drawnInstance].Render();
+    }
 
 }
