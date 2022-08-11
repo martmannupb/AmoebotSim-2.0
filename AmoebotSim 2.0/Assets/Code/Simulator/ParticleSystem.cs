@@ -684,6 +684,7 @@ public class ParticleSystem : IReplayHistory
                         pins[i].globalDir = pinDir;
                         pins[i].dirID = pin.globalEdgeOffset;
                         pins[i].isHead = pin.head;
+                        i++;
                     }
                     ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                     // TODO: Circuit color for larger partition sets
