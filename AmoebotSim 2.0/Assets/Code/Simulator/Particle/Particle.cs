@@ -192,8 +192,6 @@ public class Particle : IParticleState, IReplayHistory
 
         // Add particle to the system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
-        graphics.AddParticle();
-        graphics.Update();
     }
 
     /// <summary>
