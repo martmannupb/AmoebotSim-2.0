@@ -18,6 +18,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public PositionSnap state_prev = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, ParticleMovement.Contracted, 0f);
 
     // Graphical Data
+    public bool graphics_isRegistered = false;
     public int graphics_listNumber = 0;
     public int graphics_listID = 0;
     public int graphics_globalID = 0;
@@ -102,6 +103,13 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void AddParticle()
     {
+        // Check if already added to the system
+        if(graphics_isRegistered)
+        {
+            Log.Error("Error: Particle has already been added!");
+        }
+
+        graphics_isRegistered = true;
         if (particle.IsParticleColorSet()) graphics_color = particle.GetParticleColor();
         else graphics_color = defColor;
         renderer.Particle_Add(this);
@@ -158,7 +166,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void SetParticleColor(Color color)
     {
-        renderer.Particle_UpdateColor(this, graphics_color, color);
+        if(graphics_isRegistered) renderer.Particle_UpdateColor(this, graphics_color, color);
     }
 
     public void ClearParticleColor()

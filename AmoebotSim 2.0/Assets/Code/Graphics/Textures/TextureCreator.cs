@@ -2,16 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TextureCreator
+public static class TextureCreator
 {
 
-    public Dictionary<int, Texture2D> pinBorderTextures = new Dictionary<int, Texture2D>();
-    public Dictionary<int, Material> pinBorderMaterials = new Dictionary<int, Material>();
+    public static Dictionary<int, Texture2D> pinBorderTextures = new Dictionary<int, Texture2D>();
+    public static Dictionary<int, Material> pinBorderMaterials = new Dictionary<int, Material>();
 
-    public Texture2D pinTexture = Resources.Load<Texture2D>(FilePaths.path_textures+"PinTex");
-    public Texture2D transTexture = Resources.Load<Texture2D>(FilePaths.path_textures + "TransparentPixel");
+    private static Texture2D pinTexture = Resources.Load<Texture2D>(FilePaths.path_textures+"PinTex");
+    private static Texture2D transTexture = Resources.Load<Texture2D>(FilePaths.path_textures + "TransparentPixel");
 
-    public Material GetPinBorderMaterial(int pinsPerSide)
+    public static Material GetPinBorderMaterial(int pinsPerSide)
     {
         if (pinBorderMaterials.ContainsKey(pinsPerSide)) return pinBorderMaterials[pinsPerSide];
 
@@ -31,7 +31,7 @@ public class TextureCreator
         return mat;
     }
 
-    private Texture2D GetPinBorderTexture(int pinsPerSide)
+    private static Texture2D GetPinBorderTexture(int pinsPerSide)
     {
         if (pinBorderTextures.ContainsKey(pinsPerSide)) return pinBorderTextures[pinsPerSide];
 

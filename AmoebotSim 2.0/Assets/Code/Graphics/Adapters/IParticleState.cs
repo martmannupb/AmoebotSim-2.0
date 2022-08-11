@@ -29,7 +29,7 @@ public interface IParticleState
     /// </summary>
     /// <returns></returns>
     Vector2Int Tail();
-    
+
     // Circuits and Partition Sets _________________________
 
     /**
@@ -42,6 +42,12 @@ public interface IParticleState
      * - Circuits should have a color set
      * - 
      **/
+
+    /// <summary>
+    /// Returns the number of pins per side at the particle.
+    /// </summary>
+    /// <returns></returns>
+    int GetCircuitPinsPerSide();
 
     // Visualization
 

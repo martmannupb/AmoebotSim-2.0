@@ -67,19 +67,24 @@ public class RenderSystem
         flag_particleRoundOver = false;
     }
 
+    /// <summary>
+    /// Signalizes the Renderer that the last round of particle movements has been successfully calculated.
+    /// </summary>
     public void ParticleMovementOver()
     {
+        // Apply Particle Updates
         flag_particleRoundOver = true;
+        // (so far we only use one array and apply updates directly)
+        // (later we could use two arrays here)
     }
 
     /// <summary>
-    /// Signalizes the Renderer that the last round has been successfully calculated (all particles and circuits have been updated).
-    /// Updates that have not yet been shown will be displayed now (like circuit updates).
+    /// Signalizes the Renderer that the last round of circuit updates has been successfully calculated (all circuits have been updated).
+    /// Updates that have not yet been shown will be displayed now.
     /// </summary>
     public void CircuitCalculationOver()
     {
-        // Apply Particle Updates
-        // (so far we only use one array and apply it directly)
+        
 
         // Apply Circuit Updates
         rendererP.circuitRenderer.ApplyUpdates();
