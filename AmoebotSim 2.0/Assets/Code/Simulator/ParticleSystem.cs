@@ -655,7 +655,45 @@ public class ParticleSystem : IReplayHistory
         foreach (Particle p in particles)
         {
             // Compute each partition set
+            foreach (SysPartitionSet ps in p.PinConfiguration.partitionSets)
+            {
+                if (ps.IsEmpty()) continue;
 
+                // Singleton sets must be created independently
+                if (ps.NumStoredPins == 1)
+                {
+                    SysPin pin = ps.GetPins()[0] as SysPin;
+                    int pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
+                    ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
+                    // TODO: Circuit color for singleton sets?
+                    pset.UpdatePSetData(
+                        ColorData.Particle_Black,
+                        circuits[ps.circuit].hasBeep,
+                        new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir, pin.globalEdgeOffset, pin.head) });
+                    p.gCircuit.singletonSets.Add(pset);
+                }
+                // Partition Set with more than one pin
+                else
+                {
+                    ParticlePinGraphicState.PinDef[] pins = new ParticlePinGraphicState.PinDef[ps.NumStoredPins];
+                    int i = 0;
+                    foreach (Pin _pin in ps.GetPins())
+                    {
+                        SysPin pin = _pin as SysPin;
+                        int pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
+                        pins[i].globalDir = pinDir;
+                        pins[i].dirID = pin.globalEdgeOffset;
+                        pins[i].isHead = pin.head;
+                    }
+                    ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
+                    // TODO: Circuit color for larger partition sets
+                    pset.UpdatePSetData(
+                        ColorData.Particle_Black,
+                        circuits[ps.circuit].hasBeep,
+                        pins);
+                    p.gCircuit.partitionSets.Add(pset);
+                }
+            }
 
             p.graphics.CircuitUpdate(p.gCircuit);
         }

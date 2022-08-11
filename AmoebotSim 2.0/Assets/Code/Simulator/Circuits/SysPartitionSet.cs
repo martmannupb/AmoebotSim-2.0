@@ -14,6 +14,10 @@ public class SysPartitionSet : PartitionSet
     public int id;
     public BitArray pins;
     private int numStoredPins;
+    public int NumStoredPins
+    {
+        get { return numStoredPins; }
+    }
 
     /// <summary>
     /// The ID of the circuit this partition set currently belongs to.
