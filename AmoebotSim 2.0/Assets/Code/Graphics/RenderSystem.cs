@@ -13,7 +13,6 @@ public class RenderSystem
     public ViewType setting_viewType = ViewType.Hexagonal;
     // Performance
     public int setting_antiAliasing = 8; // Valid values are 0 (no MSAA), 2, 4, and 8
-    public bool toggleCircuitView = true;
 
 
     // Static Params _____
@@ -38,7 +37,8 @@ public class RenderSystem
     public static float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");
 
     // Dynamic Params _____
-    public static bool flag_newRound = true;
+    public static bool flag_particleRoundOver = true;
+    public static bool flag_showCircuitView = true;
 
     // Renderers _____
     public RendererBackground rendererBG;
@@ -64,14 +64,19 @@ public class RenderSystem
         rendererUI.Render(setting_viewType);
 
         // Reset Round Flag
-        flag_newRound = false;
+        flag_particleRoundOver = false;
+    }
+
+    public void ParticleMovementOver()
+    {
+        flag_particleRoundOver = true;
     }
 
     /// <summary>
     /// Signalizes the Renderer that the last round has been successfully calculated (all particles and circuits have been updated).
     /// Updates that have not yet been shown will be displayed now (like circuit updates).
     /// </summary>
-    public void RoundOver()
+    public void CircuitCalculationOver()
     {
         // Apply Particle Updates
         // (so far we only use one array and apply it directly)

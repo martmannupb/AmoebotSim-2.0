@@ -670,7 +670,7 @@ public class ParticleSystem : IReplayHistory
             if (resetVisuals) p.graphics.UpdateReset();
             else p.graphics.Update();
         }
-        RenderSystem.flag_newRound = true;
+        RenderSystem.flag_particleRoundOver = true;
     }
 
     /**

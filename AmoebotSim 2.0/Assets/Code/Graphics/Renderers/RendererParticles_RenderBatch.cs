@@ -415,7 +415,7 @@ public class RendererParticles_RenderBatch
         // 1. Update Properties
         float triggerTime = Time.timeSinceLevelLoad;
         float animationLength = Mathf.Clamp(RenderSystem.const_hexagonalAnimationDurationDef, 0f, Time.fixedDeltaTime);
-        if (RenderSystem.flag_newRound)
+        if (RenderSystem.flag_particleRoundOver)
         {
             // Update PropertyBlocks Timestamps (for Animations)
             propertyBlock_circle_contracted.ApplyAnimationTimestamp(triggerTime, animationLength);
@@ -456,6 +456,7 @@ public class RendererParticles_RenderBatch
             Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
             Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
         }
+        if(RenderSystem.toggl)
     }
 
     private void Render_Circular()
