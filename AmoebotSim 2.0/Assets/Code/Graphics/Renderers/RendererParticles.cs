@@ -85,6 +85,7 @@ public class RendererParticles
         {
             item.Render(viewType);
         }
+        circuitRenderer.Render();
     }
 
 }

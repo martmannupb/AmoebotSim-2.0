@@ -49,6 +49,14 @@ public class RendererCircuits_Instance
         batch.AddLine(globalLineStartPos, globalLineEndPos);
     }
 
+    public void Render()
+    {
+        foreach (var batch in propertiesToRenderBatchMap.Values)
+        {
+            batch.Render();
+        }
+    }
+
     /// <summary>
     /// Clears or nullifies the matrices to reset the data structures.
     /// </summary>
