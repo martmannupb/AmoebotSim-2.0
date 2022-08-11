@@ -81,7 +81,7 @@ public static class AmoebotFunctions
 
     public static Vector2 CalculateRelativePinPosition(ParticlePinGraphicState.PinDef pinDef, int particlesPerSide, float particleScale)
     {
-        float linePos = (pinDef.dirID + 1) / (particlesPerSide + 1);
+        float linePos = (pinDef.dirID + 1) / (float)(particlesPerSide + 1);
         Vector2 topRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides());
         Vector2 bottomRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides());
         Vector2 pinPosNonRotated = bottomRight + linePos * (topRight - bottomRight);
