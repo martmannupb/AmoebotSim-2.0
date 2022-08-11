@@ -28,7 +28,8 @@ public class RendererParticles_RenderBatch
     private MaterialPropertyBlockData_CircParticles propertyBlock_circle_connector_expanded = new MaterialPropertyBlockData_CircParticles();
     private MaterialPropertyBlockData_CircParticles propertyBlock_circle_connector_expanding = new MaterialPropertyBlockData_CircParticles();
     private MaterialPropertyBlockData_CircParticles propertyBlock_circle_connector_contracting = new MaterialPropertyBlockData_CircParticles();
-
+    // Materials
+    private Material circuitPinMaterial;
 
 
 
@@ -88,10 +89,12 @@ public class RendererParticles_RenderBatch
     public struct PropertyBlockData
     {
         public Color color;
+        public int pinsPerSide;
 
-        public PropertyBlockData(Color color)
+        public PropertyBlockData(Color color, int pinsPerMesh)
         {
             this.color = color;
+            this.pinsPerSide = pinsPerMesh;
         }
     }
 
@@ -104,7 +107,7 @@ public class RendererParticles_RenderBatch
 
     public void Init()
     {
-        // Circle PropertyBlocks
+        // PropertyBlocks
         propertyBlock_circle_contracted.ApplyColor(properties.color);
         propertyBlock_circle_expanded.ApplyColor(properties.color);
         propertyBlock_circle_expanding.ApplyColor(properties.color);
@@ -118,8 +121,9 @@ public class RendererParticles_RenderBatch
         propertyBlock_circle_connector_expanding.ApplyConnectorValues(0f, 1f, Vector3.right, Vector3.left);
         propertyBlock_circle_connector_contracting.ApplyConnectorValues(1f, 0f, Vector3.right, Vector3.left);
 
-        // Hexagon PropertyBlocks
-        // ..
+        // Circuit Pins
+        // Generate Material
+        circuitPinMaterial = TextureCreator.GetPinBorderMaterial(properties.pinsPerSide);
     }
 
     public bool Particle_Add(ParticleGraphicsAdapterImpl graphicalData)
@@ -455,8 +459,29 @@ public class RendererParticles_RenderBatch
             Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
             Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
             Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
         }
-        if(RenderSystem.toggl)
+
+        // Circuit Pins
+        //if(RenderSystem.flag_showCircuitView)
+        //{
+        //    for (int i = 0; i < particleMatricesCircle_Contracted.Count; i++)
+        //    {
+        //        int listLength;
+        //        if (i == particleMatricesCircle_Contracted.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
+        //        else listLength = maxArraySize;
+
+        //        // Render Outter Circuit Pins
+        //        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+        //        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+        //        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+        //        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+        //    }
+        //}
     }
 
     private void Render_Circular()

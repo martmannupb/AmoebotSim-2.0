@@ -23,7 +23,7 @@ public class RendererParticles
     /// <returns></returns>
     public bool Particle_Add(ParticleGraphicsAdapterImpl graphicalData)
     {
-        RendererParticles_RenderBatch.PropertyBlockData block = new RendererParticles_RenderBatch.PropertyBlockData(graphicalData.graphics_color);
+        RendererParticles_RenderBatch.PropertyBlockData block = new RendererParticles_RenderBatch.PropertyBlockData(graphicalData.graphics_color, graphicalData.particle.GetCircuitPinsPerSide());
         // Add particle to existing/new RenderBatch
         if (propertiesToRenderBatchMap.ContainsKey(block))
         {
@@ -51,7 +51,7 @@ public class RendererParticles
         if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) particleToParticleGraphicalDataMap.Remove(graphicalData.particle);
 
         // Remove particle from old RenderBatch
-        propertiesToRenderBatchMap[new RendererParticles_RenderBatch.PropertyBlockData(graphicalData.graphics_color)].Particle_Remove(graphicalData);
+        propertiesToRenderBatchMap[new RendererParticles_RenderBatch.PropertyBlockData(graphicalData.graphics_color, graphicalData.particle.GetCircuitPinsPerSide())].Particle_Remove(graphicalData);
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public class RendererParticles
         if (oldColor == color) return false;
 
         // Remove particle from old RenderBatch
-        propertiesToRenderBatchMap[new RendererParticles_RenderBatch.PropertyBlockData(oldColor)].Particle_Remove(gd);
+        propertiesToRenderBatchMap[new RendererParticles_RenderBatch.PropertyBlockData(oldColor, gd.particle.GetCircuitPinsPerSide())].Particle_Remove(gd);
 
         // Add particle to new RenderBatch
         gd.graphics_color = color;
