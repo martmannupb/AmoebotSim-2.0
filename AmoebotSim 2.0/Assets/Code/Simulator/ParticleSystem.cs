@@ -505,6 +505,11 @@ public class ParticleSystem : IReplayHistory
                 Particle p = queue.Dequeue();
                 int globalHeadDir = p.GlobalHeadDirection();
                 int pinsPerEdge = p.algorithm.PinsPerEdge;
+
+                // Initialize graphics computation as well
+                p.gCircuit = ParticlePinGraphicState.PoolCreate(pinsPerEdge);
+                p.gCircuit.neighbor1ToNeighbor2Direction = globalHeadDir;
+
                 // First of all, find all neighboring particles and some relative positional information
                 int numNbrs = p.IsExpanded() ? 10 : 6;
                 Particle[] nbrParts = new Particle[numNbrs];
@@ -517,6 +522,16 @@ public class ParticleSystem : IReplayHistory
                     Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
                     if (particleMap.TryGetValue(nbrPos, out Particle nbr))
                     {
+                        // Has neighbor in this position, record in circuit graphics info
+                        if (p.IsExpanded() && head)
+                        {
+                            p.gCircuit.hasNeighbor2[dir] = true;
+                        }
+                        else
+                        {
+                            p.gCircuit.hasNeighbor1[dir] = true;
+                        }
+
                         // If the neighbor has already been processed: Compute required information
                         if (nbr.processedPinConfig)
                         {
@@ -635,6 +650,15 @@ public class ParticleSystem : IReplayHistory
                 }
             }
         }
+
+        // Complete graphics information for all particles
+        foreach (Particle p in particles)
+        {
+            // Compute each partition set
+
+
+            p.graphics.CircuitUpdate(p.gCircuit);
+        }
     }
 
     /// <summary>
@@ -670,7 +694,8 @@ public class ParticleSystem : IReplayHistory
             if (resetVisuals) p.graphics.UpdateReset();
             else p.graphics.Update();
         }
-        RenderSystem.flag_particleRoundOver = true;
+        renderSystem.ParticleMovementOver();
+        renderSystem.CircuitCalculationOver();
     }
 
     /**

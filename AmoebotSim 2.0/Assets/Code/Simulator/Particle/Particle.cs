@@ -164,6 +164,10 @@ public class Particle : IParticleState, IReplayHistory
     private Message[] plannedMessages;
     private bool hasPlannedMessages = false;
 
+    // Graphical information
+    // TODO: Cache neighbor information in particles instead of this
+    public ParticlePinGraphicState gCircuit;
+
     public Particle(ParticleSystem system, Vector2Int pos, int compassDir = 0, bool chirality = true)
     {
         this.system = system;
@@ -471,6 +475,11 @@ public class Particle : IParticleState, IReplayHistory
     /**
      * Visualization
      */
+
+    public int GetCircuitPinsPerSide()
+    {
+        return algorithm.PinsPerEdge;
+    }
 
     /// <summary>
     /// Returns the main color of this particle.
