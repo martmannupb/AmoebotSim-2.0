@@ -28,5 +28,12 @@ public static class ColorData
         new Color(127f / 255f, 255f / 255f, 0f / 255f)
     };
 
+    private static Color defaultHexBGColor = new Color(121f / 255f, 121f / 255f, 121f / 255f, 1f);
+
+    public static Color ConvertColorToHexBGColor(Color color)
+    {
+        return new Color((defaultHexBGColor.r + color.r) / 2f, (defaultHexBGColor.g + color.g) / 2f, (defaultHexBGColor.b + color.b) / 2f, (defaultHexBGColor.a + color.a) / 2f);
+    }
+
 
 }

@@ -43,6 +43,7 @@ public class RendererCircuits_RenderBatch
     public void Init()
     {
         // Circle PropertyBlocks
+        propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color);
         //propertyBlock_circle_contracted.ApplyColor(properties.color);
         //propertyBlock_circle_expanded.ApplyColor(properties.color);
         //propertyBlock_circle_expanding.ApplyColor(properties.color);

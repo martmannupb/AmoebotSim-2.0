@@ -16,12 +16,13 @@ public static class TextureCreator
         if (pinBorderMaterials.ContainsKey(pinsPerSide)) return pinBorderMaterials[pinsPerSide];
 
         // Create Material
-        Material hexMat = MaterialDatabase.material_circular_particleComplete;
+        Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
         Material mat = new Material(hexMat.shader);
         mat.CopyPropertiesFromMaterial(hexMat);
-        Texture2D borderTex1 = GetPinBorderTexture(pinsPerSide);
+        Texture2D borderTex1 = GetPinBorderTexture(pinsPerSide, true, 3);
+        Texture2D borderTex2 = GetPinBorderTexture(pinsPerSide, true, 0);
         mat.SetTexture("_TextureHexagon", borderTex1);
-        mat.SetTexture("_TextureHexagon2", borderTex1);
+        mat.SetTexture("_TextureHexagon2", borderTex2);
         mat.SetTexture("_TextureHexagonConnector", transTexture);
 
         // Add Material to Data
@@ -31,7 +32,7 @@ public static class TextureCreator
         return mat;
     }
 
-    private static Texture2D GetPinBorderTexture(int pinsPerSide)
+    private static Texture2D GetPinBorderTexture(int pinsPerSide, bool omitSide, int omittedSide)
     {
         if (pinBorderTextures.ContainsKey(pinsPerSide)) return pinBorderTextures[pinsPerSide];
 
@@ -44,7 +45,7 @@ public static class TextureCreator
         Vector2Int texCenterPixel = new Vector2Int(tex.width / 2, tex.height / 2);
 
         // Make Tex Transparent
-        Color colorTransparent = new Color(0f, 0f, 0f, 1f);
+        Color colorTransparent = new Color(0f, 0f, 0f, 0f);
         for (int x = 0; x < tex.width; x++)
         {
             for (int y = 0; y < tex.height; y++)
@@ -72,15 +73,18 @@ public static class TextureCreator
                 // Use relPosPinRight to calculate absolute positions
                 for (int k = 0; k < 6; k++)
                 {
-                    Vector2 relPosRotated = Quaternion.Euler(new Vector3(0f, 0f, 60f * k)) * relPosPinRight;
-                    Vector2Int absPosRotated = texCenterPixel + new Vector2Int((int)(0.5f * relPosRotated.x * tex.width), (int)(0.5f * relPosRotated.y * tex.height));
-                    Vector2Int startPos = absPosRotated - new Vector2Int(pinTexture.width / 2, pinTexture.height / 2);
-                    for (int x = 0; x < pinTexture.width; x++)
+                    if(omitSide == false || k != omittedSide)
                     {
-                        for (int y = 0; y < pinTexture.height; y++)
+                        Vector2 relPosRotated = Quaternion.Euler(new Vector3(0f, 0f, 60f * k)) * relPosPinRight;
+                        Vector2Int absPosRotated = texCenterPixel + new Vector2Int((int)(0.5f * relPosRotated.x * tex.width), (int)(0.5f * relPosRotated.y * tex.height));
+                        Vector2Int startPos = absPosRotated - new Vector2Int(pinTexture.width / 2, pinTexture.height / 2);
+                        for (int x = 0; x < pinTexture.width; x++)
                         {
-                            Vector2Int texPos = new Vector2Int(startPos.x + x, startPos.y + y);
-                            if(texPos.x >= 0 && texPos.x < tex.width && texPos.y >= 0 && texPos.y < tex.height) tex.SetPixel(texPos.x, texPos.y, pinTexture.GetPixel(x, y));
+                            for (int y = 0; y < pinTexture.height; y++)
+                            {
+                                Vector2Int texPos = new Vector2Int(startPos.x + x, startPos.y + y);
+                                if (texPos.x >= 0 && texPos.x < tex.width && texPos.y >= 0 && texPos.y < tex.height) tex.SetPixel(texPos.x, texPos.y, pinTexture.GetPixel(x, y));
+                            }
                         }
                     }
                 }

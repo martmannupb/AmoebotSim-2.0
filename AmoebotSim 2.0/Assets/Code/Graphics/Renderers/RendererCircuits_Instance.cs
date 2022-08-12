@@ -8,7 +8,6 @@ public class RendererCircuits_Instance
     public Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch>();
 
     // Data
-    
 
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
@@ -24,8 +23,13 @@ public class RendererCircuits_Instance
                 Vector2 posPartitionSet = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, RenderSystem.global_particleScale * 0.8f, 0f);
                 foreach (var pin in pSet.pins)
                 {
+                    // Inner Line
                     Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                     AddLine(posPartitionSet, posPin, pSet.color, moving);
+                    // Outter Line
+                    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                    //AddLine(posPin, posOutterLineCenter, pSet.color, moving);
+                    AddLine(posPin, posOutterLineCenter, Color.black, moving);
                 }
             }
         }
@@ -87,6 +91,19 @@ public class RendererCircuits_Instance
     {
         Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPosParticle);
         return posParticle + CalculateRelativePartitionSetPinPosition(partitionSetID, amountOfPartitionSetsAtNode, placementLineLength, rotationDegrees);
+    }
+
+    private Vector2 CalculateGlobalOutterPinLineCenterPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
+    {
+        Vector2 pinPos = CalculateGlobalPinPosition(gridPosParticle, pinDef, pinsPerSide);
+        Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(new ParticlePinGraphicState.PinDef(pinDef.globalDir, 0, pinDef.isHead), 1, RenderSystem.global_particleScale);
+        //Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.global_particleScale);
+        Vector2 lineCenterOffset = relPinPos / RenderSystem.global_particleScale - relPinPos;
+        if(pinDef.globalDir == 3)
+        {
+            Debug.Log("pinPos: "+pinPos+", relPinPos: " +relPinPos + ", lineCenterOffset: "+lineCenterOffset);
+        }
+        return pinPos + lineCenterOffset;
     }
 
     private Vector2 CalculateRelativePartitionSetPinPosition(int partitionSetID, int amountOfPartitionSetsAtNode, float placementLineLength, float rotationDegrees)

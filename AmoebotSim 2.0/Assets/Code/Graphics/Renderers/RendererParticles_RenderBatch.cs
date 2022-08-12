@@ -10,11 +10,15 @@ public class RendererParticles_RenderBatch
     private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
     private List<ParticleGraphicsAdapterImpl> graphicalDataList = new List<ParticleGraphicsAdapterImpl>();
     // Graphics
-    // Circle
+    // Matrices
     private List<Matrix4x4[]> particleMatricesCircle_Contracted = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_Expanded = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_Expanding = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_Contracting = new List<Matrix4x4[]>();
+    private List<Matrix4x4[]> particleMatricesPins_Contracted = new List<Matrix4x4[]>();
+    private List<Matrix4x4[]> particleMatricesPins_Expanded = new List<Matrix4x4[]>();
+    private List<Matrix4x4[]> particleMatricesPins_Expanding = new List<Matrix4x4[]>();
+    private List<Matrix4x4[]> particleMatricesPins_Contracting = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_ConnectionMatrices_Contracted = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_ConnectionMatrices_Expanded = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_ConnectionMatrices_Expanding = new List<Matrix4x4[]>();
@@ -137,6 +141,10 @@ public class RendererParticles_RenderBatch
             particleMatricesCircle_Expanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_Expanding.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_Contracting.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+            particleMatricesPins_Contracted.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+            particleMatricesPins_Expanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+            particleMatricesPins_Expanding.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+            particleMatricesPins_Contracting.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_ConnectionMatrices_Contracted.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_ConnectionMatrices_Expanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_ConnectionMatrices_Expanding.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
@@ -197,6 +205,10 @@ public class RendererParticles_RenderBatch
             particleMatricesCircle_Expanded.RemoveAt(indexOfLastList);
             particleMatricesCircle_Expanding.RemoveAt(indexOfLastList);
             particleMatricesCircle_Contracting.RemoveAt(indexOfLastList);
+            particleMatricesPins_Contracted.RemoveAt(indexOfLastList);
+            particleMatricesPins_Expanded.RemoveAt(indexOfLastList);
+            particleMatricesPins_Expanding.RemoveAt(indexOfLastList);
+            particleMatricesPins_Contracting.RemoveAt(indexOfLastList);
             particleMatricesCircle_ConnectionMatrices_Contracted.RemoveAt(indexOfLastList);
             particleMatricesCircle_ConnectionMatrices_Expanded.RemoveAt(indexOfLastList);
             particleMatricesCircle_ConnectionMatrices_Expanding.RemoveAt(indexOfLastList);
@@ -223,6 +235,10 @@ public class RendererParticles_RenderBatch
         particleMatricesCircle_Expanded[moved_ListNumber][moved_ListID] = particleMatricesCircle_Expanded[orig_ListNumber][orig_ListID];
         particleMatricesCircle_Expanding[moved_ListNumber][moved_ListID] = particleMatricesCircle_Expanding[orig_ListNumber][orig_ListID];
         particleMatricesCircle_Contracting[moved_ListNumber][moved_ListID] = particleMatricesCircle_Contracting[orig_ListNumber][orig_ListID];
+        particleMatricesPins_Contracted[moved_ListNumber][moved_ListID] = particleMatricesPins_Contracted[orig_ListNumber][orig_ListID];
+        particleMatricesPins_Expanded[moved_ListNumber][moved_ListID] = particleMatricesPins_Expanded[orig_ListNumber][orig_ListID];
+        particleMatricesPins_Expanding[moved_ListNumber][moved_ListID] = particleMatricesPins_Expanding[orig_ListNumber][orig_ListID];
+        particleMatricesPins_Contracting[moved_ListNumber][moved_ListID] = particleMatricesPins_Contracting[orig_ListNumber][orig_ListID];
         particleMatricesCircle_ConnectionMatrices_Contracted[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Contracted[orig_ListNumber][orig_ListID];
         particleMatricesCircle_ConnectionMatrices_Expanded[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Expanded[orig_ListNumber][orig_ListID];
         particleMatricesCircle_ConnectionMatrices_Expanding[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Expanding[orig_ListNumber][orig_ListID];
@@ -238,6 +254,10 @@ public class RendererParticles_RenderBatch
         particleMatricesCircle_Expanded[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_Expanding[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_Contracting[listNumber][listID] = matrixTRS_zero;
+        particleMatricesPins_Contracted[listNumber][listID] = matrixTRS_zero;
+        particleMatricesPins_Expanded[listNumber][listID] = matrixTRS_zero;
+        particleMatricesPins_Expanding[listNumber][listID] = matrixTRS_zero;
+        particleMatricesPins_Contracting[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_ConnectionMatrices_Contracted[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_ConnectionMatrices_Expanded[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_ConnectionMatrices_Expanding[listNumber][listID] = matrixTRS_zero;
@@ -266,17 +286,21 @@ public class RendererParticles_RenderBatch
         {
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracted:
                 particleMatricesCircle_Contracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), rotation, Vector3.one);
+                particleMatricesPins_Contracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_pins), rotation, Vector3.one);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Expanded:
                 particleMatricesCircle_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), rotation, Vector3.one);
+                particleMatricesPins_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_pins), rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles + 0.1f), rotation, Vector3.one);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Expanding:
                 particleMatricesCircle_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), rotation, Vector3.one);
+                particleMatricesPins_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_pins), rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles + 0.1f), rotation, Vector3.one);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracting:
                 particleMatricesCircle_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), rotation, Vector3.one);
+                particleMatricesPins_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_pins), rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles + 0.1f), rotation, Vector3.one);
                 break;
             default:
@@ -459,11 +483,11 @@ public class RendererParticles_RenderBatch
             Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
             Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
             Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
-
-            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+            // Pins
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesPins_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesPins_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesPins_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesPins_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
         }
 
         // Circuit Pins
