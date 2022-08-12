@@ -562,9 +562,9 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     /// <summary>
     /// Assuming that we are expanded, check if we have received a
-    /// beep on one of our tail edges. If we have, that means that
-    /// we have sent that beep and we can now pull the particle at
-    /// that edge.
+    /// beep on one of our tail edges incident to a contracted FLWR.
+    /// If we have, that means that we have sent that beep and we can
+    /// now pull the particle at that edge.
     /// <para>
     /// Will perform the pull handover immediately.
     /// </para>
@@ -582,8 +582,19 @@ public class LineFormationParticleSync : ParticleAlgorithm
             }
             if (pc.GetPinAt(direction, 0, false).PartitionSet.ReceivedBeep())
             {
-                PullHandoverHead(direction);
-                return true;
+                LineFormationParticleSync nbr = GetNeighborAt(direction, false) as LineFormationParticleSync;
+                // Should never be null
+                if (nbr == null)
+                {
+                    Debug.LogError("Neighbor to which beep was sent does not exist anymore!");
+                    continue;
+                }
+                // Only pull if the neighbor is still a FLWR
+                if (nbr.state == LFState.FLWR)
+                {
+                    PullHandoverHead(direction);
+                    return true;
+                }
             }
         }
         return false;
