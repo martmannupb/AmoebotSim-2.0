@@ -18,9 +18,15 @@ public static class ColorData
 
     // Standard Circuit Colors
     public static Color[] Circuit_Colors = new Color[] {
-        new Color(),
-        new Color(),
-        new Color()};
+        // Tertiary colors
+        // Amber, Vermillion, Magenta, Violet, Teal, Chartreuse
+        new Color(255f / 255f, 191f / 255f, 0f / 255f),
+        new Color(227f / 255f, 66f / 255f, 52f / 255f),
+        new Color(255f / 255f, 0f / 255f, 255f / 255f),
+        new Color(143f / 255f, 0f / 255f, 255f / 255f),
+        new Color(0f / 255f, 128f / 255f, 128f / 255f),
+        new Color(127f / 255f, 255f / 255f, 0f / 255f)
+    };
 
 
 }

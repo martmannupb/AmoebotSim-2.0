@@ -14,6 +14,8 @@ public class Circuit
     public bool active;
     public bool hasBeep;
     public Message message;
+    public Color color;
+    public bool colorOverride;
 
     public Circuit(int id)
     {
@@ -22,6 +24,8 @@ public class Circuit
         active = true;
         hasBeep = false;
         message = null;
+        color = Color.black;
+        colorOverride = false;
     }
 
     /// <summary>

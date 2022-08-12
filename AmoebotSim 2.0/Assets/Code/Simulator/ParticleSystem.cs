@@ -357,6 +357,7 @@ public class ParticleSystem : IReplayHistory
             ApplyAllActionsInQueue();
             particles[pIdx].ApplyPlannedPinConfiguration();
             DiscoverCircuits();
+            FinishBeepAndMessageInfo();
             CleanupAfterRound();
             _previousRound++;
             UpdateAllParticleVisuals(false);     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
@@ -381,6 +382,7 @@ public class ParticleSystem : IReplayHistory
         ApplyAllActionsInQueue();
         ApplyNewPinConfigurations();
         DiscoverCircuits();
+        FinishBeepAndMessageInfo();
         CleanupAfterRound();
         _previousRound++;
         UpdateAllParticleVisuals(false);
@@ -483,7 +485,10 @@ public class ParticleSystem : IReplayHistory
     /// when a partition set is added.
     /// </para>
     /// </summary>
-    public void DiscoverCircuits()
+    /// <param name="sendBeepsAndMessages">Determines whether beeps
+    /// and messages are sent. Set to <c>false</c> to only recompute
+    /// the current circuits and update their graphics info.</param>
+    public void DiscoverCircuits(bool sendBeepsAndMessages = true)
     {
         float tStart = Time.realtimeSinceStartup;
         // TODO: Experiment with initial capacity
@@ -629,25 +634,37 @@ public class ParticleSystem : IReplayHistory
         Debug.Log(s);
 
         // Apply beeps and send messages to all circuits
+        // Also apply colors to circuits
+        int colIdx = 0;
         foreach (Circuit c in circuits)
         {
             if (!c.active)
             {
                 continue;
             }
-            if (c.hasBeep)
+            if (sendBeepsAndMessages)
             {
-                foreach (SysPartitionSet ps in c.partitionSets)
+                if (c.hasBeep)
                 {
-                    ps.pinConfig.particle.ReceiveBeep(ps.id);
+                    foreach (SysPartitionSet ps in c.partitionSets)
+                    {
+                        ps.pinConfig.particle.ReceiveBeep(ps.id);
+                    }
+                }
+                if (c.message != null)
+                {
+                    foreach (SysPartitionSet ps in c.partitionSets)
+                    {
+                        ps.pinConfig.particle.ReceiveMessage(ps.id, c.message);
+                    }
                 }
             }
-            if (c.message != null)
+
+            // Only apply color to circuits with more than 2 partition sets
+            if (c.partitionSets.Count > 2 && !c.colorOverride)
             {
-                foreach (SysPartitionSet ps in c.partitionSets)
-                {
-                    ps.pinConfig.particle.ReceiveMessage(ps.id, c.message);
-                }
+                c.color = ColorData.Circuit_Colors[colIdx];
+                colIdx = (colIdx + 1) % ColorData.Circuit_Colors.Length;
             }
         }
 
@@ -665,9 +682,8 @@ public class ParticleSystem : IReplayHistory
                     SysPin pin = ps.GetPins()[0] as SysPin;
                     int pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
                     ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
-                    // TODO: Circuit color for singleton sets?
                     pset.UpdatePSetData(
-                        ColorData.Particle_Black,
+                        circuits[ps.circuit].color,
                         circuits[ps.circuit].hasBeep,
                         new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir, pin.globalEdgeOffset, pin.head) });
                     p.gCircuit.singletonSets.Add(pset);
@@ -687,9 +703,8 @@ public class ParticleSystem : IReplayHistory
                         i++;
                     }
                     ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
-                    // TODO: Circuit color for larger partition sets
                     pset.UpdatePSetData(
-                        ColorData.Particle_Black,
+                        circuits[ps.circuit].color,
                         circuits[ps.circuit].hasBeep,
                         pins);
                     p.gCircuit.partitionSets.Add(pset);
@@ -716,6 +731,19 @@ public class ParticleSystem : IReplayHistory
             p.hasMoved = false;
             p.processedPinConfig = false;
             p.queuedForPinConfigProcessing = false;
+        }
+    }
+
+    /// <summary>
+    /// Stores the received beeps and messages and resets the
+    /// planned beeps and messages for each particle. Use this to
+    /// prepare the particles for the transmission and reception of
+    /// beeps and messages in the next round.
+    /// </summary>
+    public void FinishBeepAndMessageInfo()
+    {
+        foreach (Particle p in particles)
+        {
             p.StoreReceivedBeepsAndMessages();
             p.ResetPlannedBeepsAndMessages();
         }
@@ -1521,6 +1549,8 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
+            DiscoverCircuits(false);
+            CleanupAfterRound();
             UpdateAllParticleVisuals(true);
         }
     }
@@ -1553,6 +1583,8 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
+            DiscoverCircuits(false);
+            CleanupAfterRound();
             UpdateAllParticleVisuals(true);
         }
     }
@@ -1585,6 +1617,8 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
+            DiscoverCircuits(false);
+            CleanupAfterRound();
             UpdateAllParticleVisuals(true);
         }
     }
@@ -1611,6 +1645,8 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = true;
+            DiscoverCircuits();
+            CleanupAfterRound();
             UpdateAllParticleVisuals(true);
         }
     }
