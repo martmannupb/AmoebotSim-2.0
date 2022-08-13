@@ -30,6 +30,10 @@ public class RendererCircuits_Instance
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     //AddLine(posPin, posOutterLineCenter, pSet.color, moving);
                     AddLine(posPin, posOutterLineCenter, Color.black, moving);
+                    //if(pin.globalDir == 3)
+                    //{
+                    //    Debug.Log("pinCenter: "+ AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1)+", pinPos: " + posPin + ", posOutterLineCenter: " + posOutterLineCenter);
+                    //}
                 }
             }
         }
@@ -99,10 +103,10 @@ public class RendererCircuits_Instance
         Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(new ParticlePinGraphicState.PinDef(pinDef.globalDir, 0, pinDef.isHead), 1, RenderSystem.global_particleScale);
         //Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.global_particleScale);
         Vector2 lineCenterOffset = relPinPos / RenderSystem.global_particleScale - relPinPos;
-        if(pinDef.globalDir == 3)
-        {
-            Debug.Log("pinPos: "+pinPos+", relPinPos: " +relPinPos + ", lineCenterOffset: "+lineCenterOffset);
-        }
+        //if(pinDef.globalDir == 3)
+        //{
+            //Debug.Log("pinPos: "+pinPos+", relPinPos: " +relPinPos + ", lineCenterOffset: "+lineCenterOffset);
+        //}
         return pinPos + lineCenterOffset;
     }
 
