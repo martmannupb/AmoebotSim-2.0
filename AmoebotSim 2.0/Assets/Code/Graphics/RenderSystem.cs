@@ -112,6 +112,11 @@ public class RenderSystem
         }
     }
 
+    public void ToggleCircuits()
+    {
+        flag_showCircuitView = !flag_showCircuitView;
+    }
+
     public void ToggleAntiAliasing()
     {
         switch (setting_antiAliasing)

@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: HexagonCombinedMat
-  m_Shader: {fileID: -6465566751694194690, guid: eaeec92a32b9ff14aaec6ddf48e3d0f7, type: 3}
+  m_Name: HexagonCombinedMat_old
+  m_Shader: {fileID: -6465566751694194690, guid: 6908d8f829902c647941ed492468041c, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -41,14 +41,6 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureHexagon:
-        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _TextureHexagon100P:
-        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _TextureHexagon100P2:
         m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}

@@ -81,11 +81,13 @@ public class RendererParticles
     /// <param name="viewType"></param>
     public void Render(ViewType viewType)
     {
+        // Particles
         foreach (var item in propertiesToRenderBatchMap.Values)
         {
             item.Render(viewType);
         }
-        circuitRenderer.Render();
+        // Circuits
+        if(RenderSystem.flag_showCircuitView && viewType != ViewType.Circular) circuitRenderer.Render();
     }
 
 }

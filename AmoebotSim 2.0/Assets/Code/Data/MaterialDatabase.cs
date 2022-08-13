@@ -5,6 +5,9 @@ using UnityEngine;
 public static class MaterialDatabase
 {
 
+    // Base
+    public static Material material_color = Resources.Load<Material>(FilePaths.path_materials + "Base/WhiteMat");
+
     // Circular View
     // deprecated
     public static Material material_circular_bgLines = Resources.Load<Material>(FilePaths.path_materials + "CircularView/BGMaterial");

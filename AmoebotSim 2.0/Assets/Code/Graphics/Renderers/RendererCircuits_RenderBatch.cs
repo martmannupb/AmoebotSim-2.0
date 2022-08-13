@@ -43,6 +43,7 @@ public class RendererCircuits_RenderBatch
     public void Init()
     {
         // Circle PropertyBlocks
+        propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color);
         //propertyBlock_circle_contracted.ApplyColor(properties.color);
         //propertyBlock_circle_expanded.ApplyColor(properties.color);
         //propertyBlock_circle_expanding.ApplyColor(properties.color);
@@ -78,7 +79,10 @@ public class RendererCircuits_RenderBatch
     {
         Vector2 vec = posEnd - posInitial;
         float length = vec.magnitude;
-        return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, RenderSystem.zLayer_circuits), Quaternion.FromToRotation(Vector2.right, vec), new Vector3(length, width, 1f));
+        Quaternion q;
+        q = Quaternion.FromToRotation(Vector2.right, vec);
+        if (q.eulerAngles.y >= 179.99) q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
+        return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, RenderSystem.zLayer_circuits), q, new Vector3(length, width, 1f));
     }
 
     /// <summary>

@@ -66,7 +66,7 @@ public class MaterialPropertyBlockData_CircParticles : MaterialPropertyBlockData
     private void ApplyToBlock()
     {
         // Apply to block
-        propertyBlock.SetColor("_InputColor", property_color);
+        //propertyBlock.SetColor("_InputColor", property_color);
         //propertyBlock.SetFloat("_IsExpanding", property_isExpanding);
         propertyBlock.SetFloat("_AnimPercentage1", property_expansionPercentage);
         propertyBlock.SetFloat("_AnimPercentage2", property_expansionPercentage2);

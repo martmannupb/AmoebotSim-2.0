@@ -6,7 +6,7 @@ public class MaterialPropertyBlockData_Circuits : MaterialPropertyBlockData
 {
 
     // Data
-
+    private Color color;
 
     public MaterialPropertyBlockData_Circuits()
     {
@@ -17,6 +17,12 @@ public class MaterialPropertyBlockData_Circuits : MaterialPropertyBlockData
     {
         // Apply to block
         ApplyToBlock();
+    }
+
+    public void ApplyColor(Color color)
+    {
+        this.color = color;
+        propertyBlock.SetColor("_InputColor", color);
     }
 
     public void ApplyUpdatedValues(bool isExpanding, int visualExpansionDir, float animation_expansionPercentage1, float animation_expansionPercentage2)
