@@ -293,6 +293,55 @@ public class ParticleSystem : IReplayHistory
         Debug.Log(s);
     }
 
+    public void InitializeBoundaryTest(int numParticles, float holeProb)
+    {
+        int n = 1;
+        // Always start by adding a particle at position (0, 0)
+        List<Vector2Int> candidates = new List<Vector2Int>();
+        Vector2Int node = new Vector2Int(0, 0);
+        Particle p = ParticleFactory.CreateBoundaryTestParticle(this, node);
+        particles.Add(p);
+        particleMap.Add(p.Head(), p);
+
+        for (int d = 0; d < 6; d++)
+            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, d));
+
+        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
+        occupied.Add(node);
+
+        while (n < numParticles && candidates.Count > 0)
+        {
+            int randIdx = Random.Range(0, candidates.Count);
+            Vector2Int newPos = candidates[randIdx];
+            candidates.RemoveAt(randIdx);
+
+            // Either use newPos to insert particle or to insert hole
+            if (Random.Range(0.0f, 1.0f) >= holeProb)
+            {
+                for (int d = 0; d < 6; d++)
+                {
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, d);
+                    if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
+                        candidates.Add(nbr);
+                }
+
+                p = ParticleFactory.CreateBoundaryTestParticle(this, newPos);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+
+                n++;
+            }
+
+            occupied.Add(newPos);
+        }
+        string s = "Created system with " + n + " particles:\n";
+        foreach (Particle part in particles)
+        {
+            s += part.Head() + "\n";
+        }
+        Debug.Log(s);
+    }
+
     /// <summary>
     /// Resets the entire system to a state from which it can be
     /// initialized again.
