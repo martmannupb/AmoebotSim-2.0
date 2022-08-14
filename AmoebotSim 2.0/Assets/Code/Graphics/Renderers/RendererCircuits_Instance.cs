@@ -162,7 +162,7 @@ public class RendererCircuits_Instance
         if (amountOfPartitionSetsAtNode == 1) return Vector2.zero;
         else
         {
-            float height = (placementLineLength / 2f) - (amountOfPartitionSetsAtNode - 1) * (placementLineLength / (amountOfPartitionSetsAtNode - 1));
+            float height = (placementLineLength / 2f) - partitionSetID * (placementLineLength / (amountOfPartitionSetsAtNode - 1));
             Vector2 position = new Vector2(0f, height);
             position = Quaternion.Euler(0f, 0f, rotationDegrees) * position;
             return position;
