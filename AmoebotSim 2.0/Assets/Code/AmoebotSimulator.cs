@@ -36,10 +36,10 @@ public class AmoebotSimulator : MonoBehaviour
 
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(50, 50, 0.3f, -9, -5);
-        system.InitializeLineFormation(50, 0.4f);
+        //system.InitializeLineFormation(50, 0.4f);
         //system.InitializeLineFormation(25, 0.4f);
         //system.InitializeLeaderElection(50, 0.35f);
-        //system.InitializeChiralityCompass(50, 0.2f);
+        system.InitializeChiralityCompass(50, 0.2f);
         //system.ActivateParticles();
 
 

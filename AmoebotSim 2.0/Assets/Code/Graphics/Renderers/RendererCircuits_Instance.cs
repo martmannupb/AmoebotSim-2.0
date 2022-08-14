@@ -6,8 +6,11 @@ public class RendererCircuits_Instance
 {
 
     public Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch>();
+    public Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch> propertiesToPinRenderBatchMap = new Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch>();
 
     // Data
+
+    //private bool[] globalDirLineSet = new bool[] { false, false, false, false, false, false };
 
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
@@ -21,19 +24,37 @@ public class RendererCircuits_Instance
             {
                 ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
                 Vector2 posPartitionSet = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, RenderSystem.global_particleScale * 0.8f, 0f);
+                // 1. Add Pin
+                AddPin(posPartitionSet, pSet.color, moving);
+                // 2. Add Lines
+                //for (int j = 0; j < 6; j++) globalDirLineSet[j] = false;
                 foreach (var pin in pSet.pins)
                 {
                     // Inner Line
                     Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                     AddLine(posPartitionSet, posPin, pSet.color, moving);
                     // Outter Line
-                    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                    //AddLine(posPin, posOutterLineCenter, pSet.color, moving);
-                    AddLine(posPin, posOutterLineCenter, Color.black, moving);
-                    //if(pin.globalDir == 3)
+                    //if (state.hasNeighbor1[pin.globalDir])
                     //{
-                    //    Debug.Log("pinCenter: "+ AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1)+", pinPos: " + posPin + ", posOutterLineCenter: " + posOutterLineCenter);
+                    //    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                    //    //AddLine(posPin, posOutterLineCenter, pSet.color, moving); // this does not look good enough
+                    //    AddLine(posPin, posOutterLineCenter, Color.black, moving);
+                    //    globalDirLineSet[pin.globalDir] = true;
                     //}
+                }
+            }
+            // Add Connection Pins
+            for (int i = 0; i < 6; i++)
+            {
+                if(state.hasNeighbor1[i])
+                {
+                    for (int j = 0; j < state.pinsPerSide; j++)
+                    {
+                        ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
+                        Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
+                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                        AddLine(posPin, posOutterLineCenter, Color.black, moving);
+                    }
                 }
             }
         }
@@ -57,9 +78,31 @@ public class RendererCircuits_Instance
         batch.AddLine(globalLineStartPos, globalLineEndPos);
     }
 
+    public void AddPin(Vector2 pinPos, Color color, bool moving)
+    {
+        RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuitPins_RenderBatch.PropertyBlockData(color, moving);
+        RendererCircuitPins_RenderBatch batch;
+        if (propertiesToPinRenderBatchMap.ContainsKey(propertyBlockData) == false)
+        {
+            // Batch does not exist
+            // Create Batch
+            batch = new RendererCircuitPins_RenderBatch(propertyBlockData);
+            propertiesToPinRenderBatchMap.Add(propertyBlockData, batch);
+        }
+        else
+        {
+            propertiesToPinRenderBatchMap.TryGetValue(propertyBlockData, out batch);
+        }
+        batch.AddPin(pinPos);
+    }
+
     public void Render()
     {
         foreach (var batch in propertiesToRenderBatchMap.Values)
+        {
+            batch.Render();
+        }
+        foreach (var batch in propertiesToPinRenderBatchMap.Values)
         {
             batch.Render();
         }
@@ -71,6 +114,10 @@ public class RendererCircuits_Instance
     public void Clear()
     {
         foreach (var batch in propertiesToRenderBatchMap.Values)
+        {
+            batch.ClearMatrices();
+        }
+        foreach (var batch in propertiesToPinRenderBatchMap.Values)
         {
             batch.ClearMatrices();
         }

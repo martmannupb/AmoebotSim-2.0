@@ -26,6 +26,7 @@ public class RenderSystem
     public const float const_hexagonalAnimationDurationDef = 0.5f;
     public const float const_hexagonalAnimationDurationMax = 1f;
     public const float const_circuitLineWidth = 0.02f;
+    public const float const_circuitPinSize = 0.1f;
     // Layers
     public const float zLayer_background = 1f;
     public const float ZLayer_particlesBG = 0.1f;
