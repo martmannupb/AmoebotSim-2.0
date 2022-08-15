@@ -7,8 +7,10 @@ public class RendererCircuitPins_RenderBatch
 
     // Data
     private List<Matrix4x4[]> circuitMatrices_Pins = new List<Matrix4x4[]>();
+    private List<Matrix4x4[]> circuitMatrices_PinConnectors = new List<Matrix4x4[]>();
     private MaterialPropertyBlockData_Circuits propertyBlock_circuitMatrices_Pins = new MaterialPropertyBlockData_Circuits();
     private int currentIndex = 0;
+    private int currentIndex_connectors = 0;
 
     // Precalculated Data _____
     // Meshes
@@ -76,9 +78,28 @@ public class RendererCircuitPins_RenderBatch
         currentIndex++;
     }
 
+    public void AddConnectorPin(Vector2 pinPos)
+    {
+        if (currentIndex_connectors >= maxArraySize * circuitMatrices_PinConnectors.Count)
+        {
+            // Add an Array
+            circuitMatrices_PinConnectors.Add(new Matrix4x4[maxArraySize]);
+        }
+        int listNumber = currentIndex_connectors / maxArraySize;
+        int listIndex = currentIndex_connectors % maxArraySize;
+        Matrix4x4 matrix = CalculatePinConnectorMatrix(pinPos);
+        circuitMatrices_PinConnectors[listNumber][listIndex] = matrix;
+        currentIndex_connectors++;
+    }
+
     private Matrix4x4 CalculatePinMatrix(Vector2 pinPos)
     {
         return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinSize, RenderSystem.const_circuitPinSize, 1f));
+    }
+
+    private Matrix4x4 CalculatePinConnectorMatrix(Vector2 pinPos)
+    {
+        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
     }
 
     /// <summary>
@@ -88,6 +109,7 @@ public class RendererCircuitPins_RenderBatch
     public void ClearMatrices()
     {
         currentIndex = 0;
+        currentIndex_connectors = 0;
     }
 
     public void ApplyUpdates(float animationStartTime, float animationDuration)
@@ -102,13 +124,19 @@ public class RendererCircuitPins_RenderBatch
         if (currentIndex == 0) return;
 
         int listDrawAmount = ((currentIndex - 1) / maxArraySize) + 1;
+        int listDrawAmount_connectors = ((currentIndex_connectors - 1) / maxArraySize) + 1;
         for (int i = 0; i < listDrawAmount; i++)
         {
+            // Pins
             int count;
             if (i < listDrawAmount - 1) count = maxArraySize;
             else count = currentIndex % maxArraySize;
-
             Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_Pins[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
+
+            // Pin Connectors
+            if (i < listDrawAmount_connectors - 1) count = maxArraySize;
+            else count = currentIndex_connectors % maxArraySize;
+            Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_PinConnectors[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
         }
     }
 
