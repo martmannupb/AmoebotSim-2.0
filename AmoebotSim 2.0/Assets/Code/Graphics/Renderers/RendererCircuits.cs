@@ -19,10 +19,11 @@ public class RendererCircuits
         renderInstances[updateInstance].AddCircuits(state, snap);
     }
 
-    public void ApplyUpdates()
+    public void ApplyUpdates(float animationStartTime, float animationDuration)
     {
-        // Switch Instance
+        // Switch + Notify Instance
         updateInstance = 1 - updateInstance;
+        renderInstances[drawnInstance].ApplyUpdates(animationStartTime, animationDuration);
         // Clear old Instance
         renderInstances[updateInstance].Clear();
     }

@@ -94,6 +94,12 @@ public class RendererCircuits_RenderBatch
         currentIndex = 0;
     }
 
+    public void ApplyUpdates(float animationStartTime, float animationDuration)
+    {
+        propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(properties.hasDelay ? 0f : 1f, 1f);
+        propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, animationDuration);
+    }
+
     public void Render()
     {
         // Null Check

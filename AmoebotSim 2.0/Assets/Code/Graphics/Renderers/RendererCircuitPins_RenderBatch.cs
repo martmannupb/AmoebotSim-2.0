@@ -7,7 +7,7 @@ public class RendererCircuitPins_RenderBatch
 
     // Data
     private List<Matrix4x4[]> circuitMatrices_Pins = new List<Matrix4x4[]>();
-    //private MaterialPropertyBlockData_Circuits propertyBlock_circuitMatrices_Pins = new MaterialPropertyBlockData_Circuits();
+    private MaterialPropertyBlockData_Circuits propertyBlock_circuitMatrices_Pins = new MaterialPropertyBlockData_Circuits();
     private int currentIndex = 0;
 
     // Precalculated Data _____
@@ -90,6 +90,12 @@ public class RendererCircuitPins_RenderBatch
         currentIndex = 0;
     }
 
+    public void ApplyUpdates(float animationStartTime, float animationDuration)
+    {
+        propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(properties.hasDelay ? 0f : 1f, 1f);
+        propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, animationDuration);
+    }
+
     public void Render()
     {
         // Null Check
@@ -102,7 +108,7 @@ public class RendererCircuitPins_RenderBatch
             if (i < listDrawAmount - 1) count = maxArraySize;
             else count = currentIndex % maxArraySize;
 
-            Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_Pins[i], count);
+            Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_Pins[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
         }
     }
 

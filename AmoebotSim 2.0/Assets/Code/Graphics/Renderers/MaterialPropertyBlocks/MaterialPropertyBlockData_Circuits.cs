@@ -15,8 +15,7 @@ public class MaterialPropertyBlockData_Circuits : MaterialPropertyBlockData
 
     protected override void Init()
     {
-        // Apply to block
-        ApplyToBlock();
+
     }
 
     public void ApplyColor(Color color)
@@ -25,30 +24,17 @@ public class MaterialPropertyBlockData_Circuits : MaterialPropertyBlockData
         propertyBlock.SetColor("_InputColor", color);
     }
 
-    public void ApplyUpdatedValues(bool isExpanding, int visualExpansionDir, float animation_expansionPercentage1, float animation_expansionPercentage2)
-    {
-        //property_isExpanding = isExpanding ? 1f : 0f;
-        //property_expansionPercentage = animation_expansionPercentage1;
-        //property_expansionPercentage2 = animation_expansionPercentage2;
-        //property_expansionMesh = globalDirToExpansionMeshMap[(visualExpansionDir + 6) % 6]; // % for the -1 values
-        // Apply
-        ApplyToBlock();
-    }
-
     public void ApplyAnimationTimestamp(float triggerTime, float animationLength)
     {
         propertyBlock.SetFloat("_AnimTriggerTime", triggerTime);
         propertyBlock.SetFloat("_AnimDuration", animationLength);
     }
 
-    private void ApplyToBlock()
+    public void ApplyAlphaPercentagesToBlock(float alphaBeforeAnimation, float alphaAfterAnimation)
     {
         // Apply to block
-        //propertyBlock.SetColor("_InputColor", property_color);
-        //propertyBlock.SetFloat("_IsExpanding", property_isExpanding);
-        //propertyBlock.SetFloat("_ExpansionPercentage", property_expansionPercentage);
-        //propertyBlock.SetFloat("_ExpansionPercentage2", property_expansionPercentage2);
-        //propertyBlock.SetFloat("_ExpansionMesh", property_expansionMesh);
+        propertyBlock.SetFloat("_AnimAlpha1", alphaBeforeAnimation);
+        propertyBlock.SetFloat("_AnimAlpha2", alphaAfterAnimation);
     }
 
     public override void Reset()

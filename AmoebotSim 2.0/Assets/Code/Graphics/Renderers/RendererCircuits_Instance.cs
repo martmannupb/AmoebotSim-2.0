@@ -58,6 +58,11 @@ public class RendererCircuits_Instance
                 }
             }
         }
+        else
+        {
+            // Expanded
+            // ..
+        }
     }
 
     public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool moving)
@@ -105,6 +110,18 @@ public class RendererCircuits_Instance
         foreach (var batch in propertiesToPinRenderBatchMap.Values)
         {
             batch.Render();
+        }
+    }
+
+    public void ApplyUpdates(float animationStartTime, float animationDuration)
+    {
+        foreach (var batch in propertiesToRenderBatchMap.Values)
+        {
+            batch.ApplyUpdates(animationStartTime, animationDuration);
+        }
+        foreach (var batch in propertiesToPinRenderBatchMap.Values)
+        {
+            batch.ApplyUpdates(animationStartTime, animationDuration);
         }
     }
 
