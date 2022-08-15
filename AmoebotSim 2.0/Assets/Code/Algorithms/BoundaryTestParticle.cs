@@ -36,6 +36,30 @@ namespace BoundaryTestAlgo
      *  If both HEADS and TAILS beeped: Phase 2 candidates with TAILS
      *  retire, send beep.
      *  If only one result beeped: Send no beep.
+     * 
+     * Sum Computation
+     * 0: Receive global termination beep
+     *  If beep received: Terminate algorithm.
+     *  If no beep: Setup pin configuration, leader beeps
+     *  on primary partition set.
+     * 1: Active particles listen for beep on secondary
+     *  partition set, send echo if they received it and
+     *  store this information.
+     * 2: All particles listen for echo.
+     *  If no echo: Algorithm has terminated, setup boundary circuit
+     *  again and leader prepares transmission of final result.
+     *  If echo: Setup pin configuration for transmission of
+     *  intermediate result and start sending.
+     * 3-5: Send and receive partial sums, active particles add
+     *  received angles to their own.
+     * 6: Receive final part of partial sum, establish global
+     *  circuit and beep if the procedure is not done yet. Active
+     *  particles that have a flag to become passive in this iteration
+     *  become passive now and reset the flag.
+     *  If this is the end of the final result transmission, the
+     *  particles determine whether or not they are on the outer
+     *  boundary and will not send a beep in round 6 in any future
+     *  iteration.
      */
 
     /// <summary>
@@ -67,6 +91,8 @@ namespace BoundaryTestAlgo
         private static readonly Color candidate3Color = ColorData.Particle_Purple;
         private static readonly Color retiredColor = ColorData.Particle_BlueDark;
         private static readonly Color phase2CandColor = ColorData.Particle_Blue;
+        private static readonly Color activeColor = new Color(1, 1, 0);
+        private static readonly Color passiveColor = ColorData.Particle_BlueDark;
 
         // Attributes
         // General
@@ -86,6 +112,9 @@ namespace BoundaryTestAlgo
         private ParticleAttribute<bool>[] heads;                // Last coin toss result for each boundary
         private ParticleAttribute<bool>[] receivedHeadsBeep;    // HEADS flag for remembering coin toss beep for each boundary
         private ParticleAttribute<int> phase2Count;             // Counter to execute the second phase kappa times
+
+        // Sum computation
+        private ParticleAttribute<bool>[] isActive;             // Flag indicating whether the particle is active on each boundary
 
         public BoundaryTestParticle(Particle p) : base(p)
         {
@@ -119,6 +148,12 @@ namespace BoundaryTestAlgo
                 isPhase2Candidate[i] = CreateAttributeBool("Boundary " + (i + 1) + " Phase 2 Cand.", false);
                 heads[i] = CreateAttributeBool("Boundary " + (i + 1) + " HEADS", false);
                 receivedHeadsBeep[i] = CreateAttributeBool("Boundary " + (i + 1) + " HEADS beep", false);
+            }
+
+            isActive = new ParticleAttribute<bool>[3];
+            for (int i = 0; i < 3; i++)
+            {
+                isActive[i] = CreateAttributeBool("Boundary " + (i + 1) + " Active", false);
             }
 
             SetMainColor(startColor);
@@ -318,9 +353,6 @@ namespace BoundaryTestAlgo
             // Receive termination beep on global circuit
             PinConfiguration pc = GetCurrentPinConfiguration();
             bool rcvGlobalBeep = pc.ReceivedBeepOnPartitionSet(0);
-            // First setup boundary circuit again (partition set ID = boundary index)
-            SetupBoundaryCircuit(pc);
-            SetPlannedPinConfiguration(pc);
 
             // If nobody beeped, check if we have to start the next iteration
             bool nextIteration = false;
@@ -335,11 +367,33 @@ namespace BoundaryTestAlgo
             {
                 phase.SetValue(Phase.SUM);
                 Debug.Log("PROCEED TO SUM COMPUTATION");
+
+                // Setup Sum Computation
+                // Particles on at least one boundary become active
+                for (int boundary = 0; boundary < numBoundaries; boundary++)
+                {
+                    isActive[boundary].SetValue(true);
+                }
+                // Setup the pin configuration
+                SetPASCPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+
+                // If we are the leader of the boundary: Beep on primary partition set
+                for (int boundary = 0; boundary < numBoundaries; boundary++)
+                {
+                    if (isCandidate[boundary])
+                        pc.SendBeepOnPartitionSet(boundary * 2);
+                }
+
+                round.SetValue(1);
                 return;
             }
 
             // Did not proceed to Sum Computation, so carry on or start next iteration
             // Have to continue or start next iteration
+            // First setup boundary circuit again (partition set ID = boundary index)
+            SetupBoundaryCircuit(pc);
+            SetPlannedPinConfiguration(pc);
             // Every candidate has to toss a coin again and beep if the result is HEADS
             // If we start a new iteration, become a Phase 2 candidate again
             StartLERound(pc, nextIteration);
@@ -485,6 +539,48 @@ namespace BoundaryTestAlgo
             }
         }
 
+        // Sets up the PASC pin configuration based on whether the particle is active
+        // and a leader or not. For boundary i, the partition set with ID 2*i is the
+        // primary partition set and the partition set with ID 2*i + 1 is the secondary
+        // partition set. The primary partition set is always connected to the successor
+        // on the pin that is closest to the empty region.
+        private void SetPASCPinConfig(PinConfiguration pc)
+        {
+            if (numBoundaries == 0)
+                return;
+
+            pc.SetToSingleton();
+            for (int boundary = 0; boundary < numBoundaries; boundary++)
+            {
+                if (isCandidate[boundary])
+                {
+                    // If we are still a candidate, that means we are the leader of the boundary
+                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(boundaryNbrs[boundary, 1], 0) }, boundary * 2);
+                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(boundaryNbrs[boundary, 1], 1) }, boundary * 2 + 1);
+                }
+                else
+                {
+                    // We are not the leader of the boundary
+                    Pin pSucc = pc.GetPinAt(boundaryNbrs[boundary, 1], 0);
+                    Pin sSucc = pc.GetPinAt(boundaryNbrs[boundary, 1], 1);
+                    Pin pPred = pc.GetPinAt(boundaryNbrs[boundary, 0], 3);
+                    Pin sPred = pc.GetPinAt(boundaryNbrs[boundary, 0], 2);
+                    if (isActive[boundary].GetValue_After())
+                    {
+                        // Active particles cross their connections
+                        pc.MakePartitionSet(new Pin[] { pSucc, sPred }, boundary * 2);
+                        pc.MakePartitionSet(new Pin[] { sSucc, pPred }, boundary * 2 + 1);
+                    }
+                    else
+                    {
+                        // Passive particles set their connections parallel
+                        pc.MakePartitionSet(new Pin[] { pSucc, pPred }, boundary * 2);
+                        pc.MakePartitionSet(new Pin[] { sSucc, sPred }, boundary * 2 + 1);
+                    }
+                }
+            }
+        }
+
         // Tosses a fair coin for the given boundary and sets the corresponding
         // HEADS flag to true if the result is HEADS. Also returns the result.
         private bool TossCoin(int boundary)
@@ -553,6 +649,20 @@ namespace BoundaryTestAlgo
                     SetMainColor(candidate2Color);
                 else if (numCandidacies == 3)
                     SetMainColor(candidate3Color);
+                else
+                {
+                    // Not a candidate: Check if we are active on any boundary
+                    bool active = false;
+                    for (int i = 0; i < numBoundaries; i++)
+                    {
+                        if (isActive[i].GetValue_After())
+                        {
+                            active = true;
+                            break;
+                        }
+                    }
+                    SetMainColor(active ? activeColor : passiveColor);
+                }
             }
         }
     }
