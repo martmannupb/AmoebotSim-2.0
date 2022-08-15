@@ -36,28 +36,6 @@ public class RendererParticles_RenderBatch
     private Material circuitPinMaterial;
 
 
-
-
-
-
-    //// Hexagon
-    //private List<Matrix4x4[]> particleMatricesHex_Contracted = new List<Matrix4x4[]>();
-    //private List<Matrix4x4[]> particleMatricesHex_Expanded1 = new List<Matrix4x4[]>();
-    //private List<Matrix4x4[]> particleMatricesHex_Expanded2 = new List<Matrix4x4[]>();
-    //private List<Matrix4x4[]> particleMatricesHex_ContractedToExpanded = new List<Matrix4x4[]>();
-    //private List<Matrix4x4[]> particleMatricesHex_ExpandedToContracted = new List<Matrix4x4[]>();
-
-    //private List<Matrix4x4> particleMatricesSingle_Position1 = new List<Matrix4x4>();
-    //private List<Matrix4x4> particleMatricesSingle_Position2 = new List<Matrix4x4>();
-    //private List<MaterialPropertyBlockData_HexParticles> particlePropertyBlockSingle_Position1 = new List<MaterialPropertyBlockData_HexParticles>();
-    //private List<MaterialPropertyBlockData_HexParticles> particlePropertyBlockSingle_Position2 = new List<MaterialPropertyBlockData_HexParticles>();
-
-    //// MaterialPropertyBlocks
-    //private MaterialPropertyBlockData_HexParticles propertyBlock_HexParticles_Contracted;
-    //private MaterialPropertyBlockData_HexParticles propertyBlock_HexParticles_Expanded;
-    //private MaterialPropertyBlockData_HexParticles propertyBlock_HexParticles_ContractedToExpanded;
-    //private MaterialPropertyBlockData_HexParticles propertyBlock_HexParticles_ExpandedToContracted;
-
     // Precalculated Data _____
     // Meshes
     private Mesh defaultQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
@@ -159,8 +137,6 @@ public class RendererParticles_RenderBatch
         graphicalData.graphics_color = properties.color;
         graphicalData.graphics_colorRenderer = this;
 
-        //Log.Debug("_____Add:    Color: " + properties.color + ", ListNumber: " + graphicalData.graphics_listNumber + ", ListID: " + graphicalData.graphics_listID);
-
         // Register Particle
         particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
         graphicalDataList.Add(graphicalData);
@@ -188,8 +164,6 @@ public class RendererParticles_RenderBatch
         lastParticleGraphicalData.graphics_globalID = movedParticleIndex;
         // Copy Matrices of lastParticleGraphicalData from original index to moved index
         CutAndCopyMatrices(original_listNumber, original_listID, lastParticleGraphicalData.graphics_listNumber, lastParticleGraphicalData.graphics_listID);
-
-        //Log.Debug("_____Remove:     Color: " + properties.color + ", ListNumber: " + graphicalData.graphics_listNumber + ", ListID: " + graphicalData.graphics_listID);
 
         // Unregister Particle
         graphicalDataList.RemoveAt(graphicalDataList.Count - 1);
@@ -219,14 +193,6 @@ public class RendererParticles_RenderBatch
 
         return true;
     }
-
-    //public void ValidityCheck()
-    //{
-    //    for (int i = 0; i < graphicalDataList.Count; i++)
-    //    {
-    //        Matrix4x4 a = particleMatricesCircle_Contracted[graphicalDataList[i].graphics_listNumber][graphicalDataList[i].graphics_listID].transpose;
-    //    }
-    //}
 
     private void CutAndCopyMatrices(int orig_ListNumber, int orig_ListID, int moved_ListNumber, int moved_ListID)
     {
@@ -267,10 +233,8 @@ public class RendererParticles_RenderBatch
     public void UpdateMatrix(ParticleGraphicsAdapterImpl gd)
     {
         // Reset Matrices
-        //Log.Debug("Possible Error Particle: Color: "+properties.color+", List Number: " + gd.graphics_listNumber + ", List ID: " + gd.graphics_listID+ "\n____LIST AMOUNT: " + particleMatricesCircle_Contracted.Count);
         ResetMatrices(gd.graphics_listNumber, gd.graphics_listID);
-        //Log.Debug("UPDATE: Color: "+properties.color+", ListNumber: " + gd.graphics_listNumber + ", ListID: " + gd.graphics_listID + ", List Count: "+ particleMatricesCircle_Contracted.Count+", Array Count: ");
-
+        
         // Calculate Rotation
         Quaternion rotation = Quaternion.identity;
         if (gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanded || gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding)
@@ -306,136 +270,6 @@ public class RendererParticles_RenderBatch
             default:
                 break;
         }
-
-
-
-
-        //particleMatricesCircle[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //particleMatricesCircleInner[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, new Vector3(innerParticleScaleFactor, innerParticleScaleFactor, 1f));
-        //particleMatricesHexBG[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.ZLayer_particlesBG), Quaternion.identity, Vector3.one);
-        //particleMatricesHexBGExpanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.ZLayer_particlesBG), Quaternion.identity, Vector3.one);
-
-        //particleMatricesHex_Contracted[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        //particleMatricesHex_Expanded1[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        //particleMatricesHex_Expanded2[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        //particleMatricesHex_ContractedToExpanded[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        //particleMatricesHex_ExpandedToContracted[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-
-        //switch (gd.state_cur.movement)
-        //{
-        //    case ParticleGraphicsAdapterImpl.ParticleMovement.Contracted:
-        //        particleMatricesHex_Contracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-                
-        //        particleMatricesSingle_Position1[gd.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //        particleMatricesSingle_Position2[gd.graphics_globalID] = matrixTRS_zero;
-        //        particlePropertyBlockSingle_Position1[gd.graphics_globalID].ApplyUpdatedValues(false, gd.state_cur.globalExpansionDir, 0f, 0f);
-        //        particlePropertyBlockSingle_Position2[gd.graphics_globalID].ApplyUpdatedValues(false, gd.state_cur.globalExpansionDir, 0f, 0f);
-        //        break;
-        //    case ParticleGraphicsAdapterImpl.ParticleMovement.Expanded:
-        //        float rotationDegrees = gd.state_cur.globalExpansionDir * 60f;
-        //        particleMatricesHex_Expanded1[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees), Vector3.one);
-        //        particleMatricesHex_Expanded2[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees + 180f), Vector3.one);
-
-        //        particleMatricesSingle_Position1[gd.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //        particleMatricesSingle_Position2[gd.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //        particlePropertyBlockSingle_Position1[gd.graphics_globalID].ApplyUpdatedValues(true, (gd.state_cur.globalExpansionDir + 3) % 6, 1f, 1f);
-        //        particlePropertyBlockSingle_Position2[gd.graphics_globalID].ApplyUpdatedValues(true, gd.state_cur.globalExpansionDir, 1f, 1f);
-        //        break;
-        //    case ParticleGraphicsAdapterImpl.ParticleMovement.Expanding:
-        //        float rotationDegrees2 = gd.state_cur.globalExpansionDir * 60f;
-        //        particleMatricesHex_ContractedToExpanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees2), Vector3.one);
-        //        particleMatricesHex_Expanded2[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees2 + 180f), Vector3.one);
-
-        //        particleMatricesSingle_Position1[gd.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //        particleMatricesSingle_Position2[gd.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //        particlePropertyBlockSingle_Position1[gd.graphics_globalID].ApplyUpdatedValues(true, (gd.state_cur.globalExpansionDir + 3) % 6, 0f, 1f);
-        //        particlePropertyBlockSingle_Position2[gd.graphics_globalID].ApplyUpdatedValues(true, gd.state_cur.globalExpansionDir, 1f, 1f);
-        //        break;
-        //    case ParticleGraphicsAdapterImpl.ParticleMovement.Contracting:
-        //        float rotationDegrees3 = gd.state_prev.globalExpansionDir * 60f;
-        //        particleMatricesHex_Expanded1[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees3), Vector3.one);
-        //        particleMatricesHex_ExpandedToContracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity * Quaternion.Euler(0f, 0f, rotationDegrees3 + 180f), Vector3.one);
-
-        //        particleMatricesSingle_Position1[gd.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //        particleMatricesSingle_Position2[gd.graphics_globalID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //        particlePropertyBlockSingle_Position1[gd.graphics_globalID].ApplyUpdatedValues(true, (gd.state_prev.globalExpansionDir + 3) % 6, 1f, 1f);
-        //        particlePropertyBlockSingle_Position2[gd.graphics_globalID].ApplyUpdatedValues(true, gd.state_prev.globalExpansionDir, 1f, 0f);
-        //        break;
-        //    default:
-        //        break;
-        //}
-
-        //if (gd.state_cur.isExpanded)
-        //{
-        //    // Expanded
-        //    particleMatricesCircleExpanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity, Vector3.one);
-        //    particleMatricesCircleExpandedInner[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles), Quaternion.identity, new Vector3(innerParticleScaleFactor, innerParticleScaleFactor, 1f));
-
-        //    Vector2Int particleConnectorPosGrid = Vector2Int.zero;
-        //    Quaternion particleConnectorRot = Quaternion.identity;
-        //    Quaternion particleRotation = Quaternion.identity;
-        //    Vector3 particleConnectorScale = Vector3.one;
-        //    if (gd.state_cur.globalExpansionDir >= 0 && gd.state_cur.globalExpansionDir <= 2)
-        //    {
-        //        // position2 is the node from which the connection originates
-        //        particleConnectorPosGrid = gd.state_cur.position2;
-        //        switch (gd.state_cur.globalExpansionDir)
-        //        {
-        //            case 0: // right expansion
-        //                particleConnectorRot = quaternion_horRightParticleConnection;
-        //                particleRotation = quaternion_right;
-        //                particleConnectorScale = scale_horRightParticleConnection;
-        //                break;
-        //            case 1: // top right expansion
-        //                particleConnectorRot = quaternion_diaTopRightParticleConnection;
-        //                particleRotation = quaternion_topRight;
-        //                particleConnectorScale = scale_diaTopRightParticleConnection;
-        //                break;
-        //            case 2: // top left expansion
-        //                particleConnectorRot = quaternion_diaTopLeftParticleConnection;
-        //                particleRotation = quaternion_topLeft;
-        //                particleConnectorScale = scale_diaTopLeftParticleConnection;
-        //                break;
-        //            default:
-        //                break;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        // position2 is the node from which the connection originates
-        //        particleConnectorPosGrid = gd.state_cur.position1;
-        //        switch (gd.state_cur.globalExpansionDir)
-        //        {
-        //            case 3: // left expansion
-        //                particleConnectorRot = quaternion_horRightParticleConnection;
-        //                particleRotation = quaternion_left;
-        //                particleConnectorScale = scale_horRightParticleConnection;
-        //                break;
-        //            case 4: // bottom left
-        //                particleConnectorRot = quaternion_diaTopRightParticleConnection;
-        //                particleRotation = quaternion_botLeft;
-        //                particleConnectorScale = scale_diaTopRightParticleConnection;
-        //                break;
-        //            case 5: // bottom right
-        //                particleConnectorRot = quaternion_diaTopLeftParticleConnection;
-        //                particleRotation = quaternion_botRight;
-        //                particleConnectorScale = scale_diaTopLeftParticleConnection;
-        //                break;
-        //            default:
-        //                break;
-        //        }
-        //    }
-        //    Vector3 particleConnectorPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(particleConnectorPosGrid.x, particleConnectorPosGrid.y);
-
-        //    particleMatricesCircleConnectionMatrices[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particleConnectorPos, particleConnectorRot, particleConnectorScale);
-        //}
-        //else
-        //{
-        //    // Contracted
-        //    particleMatricesCircleExpanded[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        //    particleMatricesCircleExpandedInner[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        //    particleMatricesCircleConnectionMatrices[gd.graphics_listNumber][gd.graphics_listID] = matrixTRS_zero;
-        //}
     }
 
     public void Render(ViewType viewType)
@@ -492,23 +326,6 @@ public class RendererParticles_RenderBatch
                 Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesPins_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
             }
         }
-
-        // Circuit Pins
-        //if(RenderSystem.flag_showCircuitView)
-        //{
-        //    for (int i = 0; i < particleMatricesCircle_Contracted.Count; i++)
-        //    {
-        //        int listLength;
-        //        if (i == particleMatricesCircle_Contracted.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
-        //        else listLength = maxArraySize;
-
-        //        // Render Outter Circuit Pins
-        //        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-        //        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-        //        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-        //        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
-        //    }
-        //}
     }
 
     private void Render_Circular()
