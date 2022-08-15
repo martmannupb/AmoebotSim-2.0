@@ -62,7 +62,9 @@ namespace BoundaryTestAlgo
     {
         // Visualization data
         private static readonly Color startColor = ColorData.Particle_Black;
-        private static readonly Color candidateColor = ColorData.Particle_Green;
+        private static readonly Color candidate1Color = ColorData.Particle_Green;
+        private static readonly Color candidate2Color = ColorData.Particle_Red;
+        private static readonly Color candidate3Color = ColorData.Particle_Purple;
         private static readonly Color retiredColor = ColorData.Particle_BlueDark;
         private static readonly Color phase2CandColor = ColorData.Particle_Blue;
 
@@ -176,6 +178,9 @@ namespace BoundaryTestAlgo
                         break;
                 }
             }
+
+            // Finally, update the visuals
+            SetColor();
         }
 
         private void FirstActivation()
@@ -242,7 +247,7 @@ namespace BoundaryTestAlgo
             // Partition set index will be equal to boundary index
             else
             {
-                SetMainColor(candidateColor);
+                SetMainColor(candidate1Color);
                 SetupBoundaryCircuit(pc);
             }
 
@@ -264,6 +269,8 @@ namespace BoundaryTestAlgo
             round.SetValue(1);
         }
 
+        #region LeaderElection
+
         private void LE1Activate0()
         {
             // Receive termination beep on global circuit
@@ -281,62 +288,16 @@ namespace BoundaryTestAlgo
             }
 
             // Every candidate has to toss a coin again and beep if the result is HEADS
-            for (int boundary = 0; boundary < numBoundaries; boundary++)
-            {
-                if (isCandidate[boundary])
-                {
-                    if (TossCoin(boundary))
-                    {
-                        pc.SendBeepOnPartitionSet(boundary);
-                    }
-                }
-
-                // If we have to start phase 2, become a phase 2 candidate
-                if (!rcvGlobalBeep)
-                {
-                    isPhase2Candidate[boundary].SetValue(true);
-                }
-            }
-
-            // Visualization
-            if (!rcvGlobalBeep && numBoundaries > 0)
-            {
-                bool isACandidate = false;
-                for (int i = 0; i < numBoundaries; i++)
-                {
-                    if (isCandidate[i])
-                    {
-                        isACandidate = true;
-                        break;
-                    }
-                }
-                if (!isACandidate)
-                {
-                    SetMainColor(phase2CandColor);
-                }
-            }
+            // If we are starting Phase 2, make every boundary particle a Phase 2 candidate
+            StartLERound(pc, !rcvGlobalBeep);
 
             round.SetValue(1);
         }
 
         private void LE1Activate1()
         {
-            // Receive HEADS beep on each boundary
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            for (int boundary = 0; boundary < numBoundaries; boundary++)
-            {
-                if (pc.ReceivedBeepOnPartitionSet(boundary))
-                {
-                    receivedHeadsBeep[boundary].SetValue(true);
-                }
-                // Send beep if we are a candidate and have tossed TAILS
-                if (isCandidate[boundary] && !heads[boundary])
-                {
-                    SetPlannedPinConfiguration(pc);
-                    pc.SendBeepOnPartitionSet(boundary);
-                }
-            }
-
+            // Receive HEADS beep and send TAILS beep
+            LEActivate1();
             round.SetValue(2);
         }
 
@@ -344,48 +305,10 @@ namespace BoundaryTestAlgo
         {
             // Receive TAILS beep on each boundary
             PinConfiguration pc = GetCurrentPinConfiguration();
-            bool beepOnGlobal = false;
-            bool isCandidateOnABoundary = false;
-            for (int boundary = 0; boundary < numBoundaries; boundary++)
-            {
-                bool rcvTails = pc.ReceivedBeepOnPartitionSet(boundary);
-                // If both HEADS and TAILS were received: Phase is not finished yet
-                // Candidate with TAILS must retire and beep must be sent
-                if (receivedHeadsBeep[boundary] && rcvTails)
-                {
-                    beepOnGlobal = true;
-                    if (isCandidate[boundary] && !heads[boundary])
-                    {
-                        isCandidate[boundary].SetValue(false);
-                    }
-                }
-
-                // Reset flag
-                receivedHeadsBeep[boundary].SetValue(false);
-
-                // Visualization
-                if (isCandidate[boundary].GetValue_After())
-                {
-                    isCandidateOnABoundary = true;
-                }
-            }
-
-            // Visualization
-            if (numBoundaries > 0 && !isCandidateOnABoundary)
-            {
-                SetMainColor(retiredColor);
-            }
+            bool beepOnGlobal = LEReceiveTails(pc);
 
             // Establish global circuit and beep if we are not finished yet
-            if (numBoundaries > 0)
-            {
-                pc.SetToGlobal();
-                SetPlannedPinConfiguration(pc);
-                if (beepOnGlobal)
-                {
-                    pc.SendBeepOnPartitionSet(0);
-                }
-            }
+            SetGlobalCircuitAndBeep(pc, beepOnGlobal);
 
             round.SetValue(0);
         }
@@ -412,34 +335,64 @@ namespace BoundaryTestAlgo
             {
                 phase.SetValue(Phase.SUM);
                 Debug.Log("PROCEED TO SUM COMPUTATION");
-                if (numBoundaries > 0)
-                {
-                    int numCandidacies = 0;
-                    for (int i = 0; i < numBoundaries; i++)
-                    {
-                        if (isCandidate[i])
-                        {
-                            numCandidacies++;
-                        }
-                    }
-                    if (numCandidacies == 0)
-                        SetMainColor(retiredColor);
-                    else if (numCandidacies == 1)
-                        SetMainColor(candidateColor);
-                    else if (numCandidacies == 2)
-                        SetMainColor(ColorData.Particle_Red);
-                    else if (numCandidacies == 3)
-                        SetMainColor(ColorData.Particle_Purple);
-                }
                 return;
             }
 
             // Did not proceed to Sum Computation, so carry on or start next iteration
             // Have to continue or start next iteration
             // Every candidate has to toss a coin again and beep if the result is HEADS
+            // If we start a new iteration, become a Phase 2 candidate again
+            StartLERound(pc, nextIteration);
+
+            round.SetValue(1);
+        }
+
+        private void LE2Activate1()
+        {
+            // Receive HEADS beep and send TAILS beep
+            LEActivate1();
+            round.SetValue(2);
+        }
+
+        private void LE2Activate2()
+        {
+            // Receive TAILS beep on each boundary
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            LEReceiveTails(pc);
+
+            // Phase 2 candidates toss coins and send beep on HEADS
+            SetPlannedPinConfiguration(pc);
+            StartLERound(pc, false, true);
+
+            round.SetValue(3);
+        }
+
+        private void LE2Activate3()
+        {
+            LEActivate1(true);
+            round.SetValue(4);
+        }
+
+        private void LE2Activate4()
+        {
+            // Receive TAILS beep on each boundary
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            bool beepOnGlobal = LEReceiveTails(pc, true);
+
+            // Establish global circuit and beep if we are not finished yet
+            SetGlobalCircuitAndBeep(pc, beepOnGlobal);
+
+            round.SetValue(0);
+        }
+
+        // Makes each candidate or Phase 2 candidate toss a coin and send a
+        // beep on the corresponding partition set if it tossed HEADS. Also
+        // makes every boundary particle a Phase 2 candidate if required.
+        private void StartLERound(PinConfiguration pc, bool becomePhase2Cand = false, bool isPhase2Cand = false)
+        {
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
-                if (isCandidate[boundary])
+                if (!isPhase2Cand && isCandidate[boundary] || isPhase2Cand && isPhase2Candidate[boundary])
                 {
                     if (TossCoin(boundary))
                     {
@@ -448,45 +401,16 @@ namespace BoundaryTestAlgo
                 }
 
                 // If we start a new iteration, become a Phase 2 candidate again
-                if (nextIteration)
+                if (becomePhase2Cand)
                 {
                     isPhase2Candidate[boundary].SetValue(true);
                 }
             }
-
-            // Visualization
-            if (!rcvGlobalBeep && numBoundaries > 0)
-            {
-                bool isACandidate = false;
-                bool isAPhase2Candidate = false;
-                for (int i = 0; i < numBoundaries; i++)
-                {
-                    if (isCandidate[i])
-                    {
-                        isACandidate = true;
-                    }
-                    if (isPhase2Candidate[i].GetValue_After())
-                    {
-                        isAPhase2Candidate = true;
-                    }
-                }
-                if (!isACandidate)
-                {
-                    if (isAPhase2Candidate)
-                    {
-                        SetMainColor(phase2CandColor);
-                    }
-                    else
-                    {
-                        SetMainColor(retiredColor);
-                    }
-                }
-            }
-
-            round.SetValue(1);
         }
 
-        private void LE2Activate1()
+        // Procedure in round 1 is shared between Phase 1 and 2.
+        // Can also be reused for Phase 2 candidates
+        private void LEActivate1(bool phase2 = false)
         {
             // Receive HEADS beep on each boundary
             PinConfiguration pc = GetCurrentPinConfiguration();
@@ -497,163 +421,51 @@ namespace BoundaryTestAlgo
                     receivedHeadsBeep[boundary].SetValue(true);
                 }
                 // Send beep if we are a candidate and have tossed TAILS
-                if (isCandidate[boundary] && !heads[boundary])
+                if (!heads[boundary] && (!phase2 && isCandidate[boundary] || phase2 && isPhase2Candidate[boundary]))
                 {
                     SetPlannedPinConfiguration(pc);
                     pc.SendBeepOnPartitionSet(boundary);
                 }
             }
-
-            round.SetValue(2);
         }
 
-        private void LE2Activate2()
+        // Receives the TAILS beep for each boundary and revokes candidacy
+        // if both HEADS and TAILS were received for that boundary. Also
+        // resets the HEADS storage and returns true if HEADS and TAILS
+        // were received on any boundary. Can be used by Phase 1 and
+        // Phase 2 candidates
+        private bool LEReceiveTails(PinConfiguration pc, bool phase2 = false)
         {
-            // Receive TAILS beep on each boundary
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            bool isACandidate = false;
-            bool isAPhase2Candidate = false;
-            for (int boundary = 0; boundary < numBoundaries; boundary++)
-            {
-                bool rcvTails = pc.ReceivedBeepOnPartitionSet(boundary);
-                // If both HEADS and TAILS were received: Candidate with TAILS must retire
-                // Candidate with TAILS must retire and beep must be sent
-                if (receivedHeadsBeep[boundary] && rcvTails)
-                {
-                    if (isCandidate[boundary] && !heads[boundary])
-                    {
-                        isCandidate[boundary].SetValue(false);
-                    }
-                }
-
-                // Reset flag
-                receivedHeadsBeep[boundary].SetValue(false);
-            }
-
-            // Phase 2 candidates toss coins and send beep on HEADS
-            SetPlannedPinConfiguration(pc);
-            for (int boundary = 0; boundary < numBoundaries; boundary++)
-            {
-                if (isPhase2Candidate[boundary])
-                {
-                    if (TossCoin(boundary))
-                    {
-                        pc.SendBeepOnPartitionSet(boundary);
-                    }
-                }
-
-                // Visualization
-                if (isCandidate[boundary].GetValue_After())
-                {
-                    isACandidate = true;
-                }
-                if (isPhase2Candidate[boundary].GetValue_After())
-                {
-                    isAPhase2Candidate = true;
-                }
-            }
-
-            // Visualization
-            if (numBoundaries > 0)
-            {
-                if (!isACandidate)
-                {
-                    if (isAPhase2Candidate)
-                    {
-                        SetMainColor(phase2CandColor);
-                    }
-                    else
-                    {
-                        SetMainColor(retiredColor);
-                    }
-                }
-            }
-
-            round.SetValue(3);
-        }
-
-        private void LE2Activate3()
-        {
-            // Receive HEADS beep on each boundary
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            for (int boundary = 0; boundary < numBoundaries; boundary++)
-            {
-                if (pc.ReceivedBeepOnPartitionSet(boundary))
-                {
-                    receivedHeadsBeep[boundary].SetValue(true);
-                }
-                // Send beep if we are a Phase 2 candidate and have tossed TAILS
-                if (isPhase2Candidate[boundary] && !heads[boundary])
-                {
-                    SetPlannedPinConfiguration(pc);
-                    pc.SendBeepOnPartitionSet(boundary);
-                }
-            }
-
-            round.SetValue(4);
-        }
-
-        private void LE2Activate4()
-        {
-            // Receive TAILS beep on each boundary
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            bool beepOnGlobal = false;
-            bool isACandidate = false;
-            bool isAPhase2Candidate = false;
+            bool rcvHeadsAndTails = false;
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
                 bool rcvTails = pc.ReceivedBeepOnPartitionSet(boundary);
                 // If both HEADS and TAILS were received: Phase is not finished yet
-                // Phase 2 candidate with TAILS must retire and beep must be sent
+                // Candidate with TAILS must retire and beep must be sent
                 if (receivedHeadsBeep[boundary] && rcvTails)
                 {
-                    beepOnGlobal = true;
-                    if (isPhase2Candidate[boundary] && !heads[boundary])
+                    rcvHeadsAndTails = true;
+                    if (!heads[boundary])
                     {
-                        isPhase2Candidate[boundary].SetValue(false);
+                        // Revoke Phase 1 or Phase 2 candidacy
+                        if (!phase2 && isCandidate[boundary])
+                        {
+                            isCandidate[boundary].SetValue(false);
+                        }
+                        else if (phase2 && isPhase2Candidate[boundary])
+                        {
+                            isPhase2Candidate[boundary].SetValue(false);
+                        }
                     }
                 }
 
                 // Reset flag
                 receivedHeadsBeep[boundary].SetValue(false);
-
-                // Visualization
-                if (isCandidate[boundary].GetValue_After())
-                {
-                    isACandidate = true;
-                }
-                if (isPhase2Candidate[boundary].GetValue_After())
-                {
-                    isAPhase2Candidate = true;
-                }
             }
-
-            // Visualization
-            if (numBoundaries > 0 && !isACandidate)
-            {
-                if (isAPhase2Candidate)
-                {
-                    SetMainColor(phase2CandColor);
-                }
-                else
-                {
-                    SetMainColor(retiredColor);
-                }
-            }
-
-            // Establish global circuit and beep if we are not finished yet
-            if (numBoundaries > 0)
-            {
-                pc.SetToGlobal();
-                SetPlannedPinConfiguration(pc);
-                if (beepOnGlobal)
-                {
-                    pc.SendBeepOnPartitionSet(0);
-                }
-            }
-
-            round.SetValue(0);
+            return rcvHeadsAndTails;
         }
+
+        #endregion
 
         // Changes the pin configuration such that partition set i is part
         // of the boundary circuit for boundary i. Has no effect for
@@ -673,11 +485,75 @@ namespace BoundaryTestAlgo
             }
         }
 
+        // Tosses a fair coin for the given boundary and sets the corresponding
+        // HEADS flag to true if the result is HEADS. Also returns the result.
         private bool TossCoin(int boundary)
         {
             bool result = Random.Range(0.0f, 1.0f) <= 0.5f;
             heads[boundary].SetValue(result);
             return result;
+        }
+
+        // Sets the given PinConfiguration to the global configuration,
+        // makes it the planned one, and sends a beep if specified.
+        // Only affects particles with at least one boundary.
+        private void SetGlobalCircuitAndBeep(PinConfiguration pc, bool beep)
+        {
+            if (numBoundaries > 0)
+            {
+                pc.SetToGlobal();
+                SetPlannedPinConfiguration(pc);
+                if (beep)
+                {
+                    pc.SendBeepOnPartitionSet(0);
+                }
+            }
+        }
+
+        private void SetColor()
+        {
+            if (numBoundaries.GetValue_After() == 0)
+                return;
+
+            if (phase.GetValue_After() == Phase.LE1 || phase.GetValue_After() == Phase.LE2)
+            {
+                // Candidate color if we are a candidate on 1-3 boundaries
+                // P2 candidate color if we are only a Phase 2 candidate on any boundary
+                // Retired color otherwise
+                int numCandidacies = 0;
+                bool isAP2Candidate = false;
+                for (int b = 0; b < numBoundaries.GetValue_After(); b++)
+                {
+                    if (isCandidate[b].GetValue_After())
+                        numCandidacies++;
+                    if (isPhase2Candidate[b].GetValue_After())
+                        isAP2Candidate = true;
+                }
+                if (numCandidacies > 0)
+                {
+                    SetMainColor(numCandidacies == 1 ? candidate1Color : (numCandidacies == 2 ? candidate2Color : candidate3Color));
+                }
+                else
+                    SetMainColor(isAP2Candidate ? phase2CandColor : retiredColor);
+            }
+            else
+            {
+                // Candidate color is determined by number of candidacies
+                int numCandidacies = 0;
+                for (int i = 0; i < numBoundaries; i++)
+                {
+                    if (isCandidate[i])
+                    {
+                        numCandidacies++;
+                    }
+                }
+                if (numCandidacies == 1)
+                    SetMainColor(candidate1Color);
+                else if (numCandidacies == 2)
+                    SetMainColor(candidate2Color);
+                else if (numCandidacies == 3)
+                    SetMainColor(candidate3Color);
+            }
         }
     }
 
