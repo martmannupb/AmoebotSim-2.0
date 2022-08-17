@@ -97,7 +97,7 @@ public class RendererCircuits_Instance
             // Add Connection Pins
             for (int i = 0; i < 6; i++)
             {
-                if (state.hasNeighbor1[i] && snap.globalExpansionDir != (i + 3) % 6)
+                if (state.hasNeighbor1[i] && state.neighbor1ToNeighbor2Direction != i)
                 {
                     for (int j = 0; j < state.pinsPerSide; j++)
                     {
@@ -107,7 +107,7 @@ public class RendererCircuits_Instance
                         AddLine(posPin, posOutterLineCenter, Color.black, moving);
                     }
                 }
-                if (state.hasNeighbor2[i] && snap.globalExpansionDir != i)
+                if (state.hasNeighbor2[i] && state.neighbor1ToNeighbor2Direction != ((i + 3) % 6))
                 {
                     for (int j = 0; j < state.pinsPerSide; j++)
                     {

@@ -130,24 +130,50 @@ public class RendererCircuitPins_RenderBatch
 
     public void Render()
     {
-        // Null Check
-        if (currentIndex == 0) return;
-
+        // Pins
         int listDrawAmount = ((currentIndex - 1) / maxArraySize) + 1;
-        int listDrawAmount_connectors = ((currentIndex_connectors - 1) / maxArraySize) + 1;
-        for (int i = 0; i < listDrawAmount; i++)
+        if(currentIndex > 0)
         {
-            // Pins
-            int count;
-            if (i < listDrawAmount - 1) count = maxArraySize;
-            else count = currentIndex % maxArraySize;
-            Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_Pins[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
+            for (int i = 0; i < listDrawAmount; i++)
+            {
+                int count;
+                if (i < listDrawAmount - 1) count = maxArraySize;
+                else count = currentIndex % maxArraySize;
+                Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_Pins[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
+            }
+        }
 
-            // Pin Connectors
-            if (i < listDrawAmount_connectors - 1) count = maxArraySize;
-            else count = currentIndex_connectors % maxArraySize;
-            Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_PinConnectors[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
+        // Pin Connectors
+        int listDrawAmount_connectors = ((currentIndex_connectors - 1) / maxArraySize) + 1;
+        if(currentIndex_connectors > 0)
+        {
+            for (int i = 0; i < listDrawAmount_connectors; i++)
+            {
+                int count;
+                if (i < listDrawAmount_connectors - 1) count = maxArraySize;
+                else count = currentIndex_connectors % maxArraySize;
+
+                Log.Debug("Count: "+count+", ");
+                Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_PinConnectors[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
+            }
         }
     }
 
 }
+
+/**
+ * - Bugfixing
+ * - Beeps
+ * - UI (Parameter Editing)
+ *     - Content
+ * 
+ * - Todo _____
+ * - UI (Param Editing, Deleting, Adding)
+ * - Load/save
+ * - Performance (Time Checks, Threading)
+ * - Strong Connections
+ * - Screenshots
+ * - Runtime Scripting
+ * - Docs
+ * - 
+ **/
