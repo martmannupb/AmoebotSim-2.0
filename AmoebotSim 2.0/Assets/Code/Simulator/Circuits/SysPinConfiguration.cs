@@ -551,6 +551,24 @@ public class SysPinConfiguration : PinConfiguration
         particle.PlanMessage(partitionSetIndex, msg != null ? msg.Copy() : null);
     }
 
+    public override void SetPartitionSetColor(int partitionSetIndex, Color color)
+    {
+        if (!isPlanned)
+        {
+            throw new InvalidOperationException("Cannot override color in non-planned pin configuration.");
+        }
+        particle.SetPartitionSetColor(partitionSetIndex, color);
+    }
+
+    public override void ResetPartitionSetColor(int partitionSetIndex)
+    {
+        if (!isPlanned)
+        {
+            throw new InvalidOperationException("Cannot override color in non-planned pin configuration.");
+        }
+        particle.ResetPartitionSetColor(partitionSetIndex);
+    }
+
 
 
     // <<<TEMPORARY, FOR DEBUGGING>>>

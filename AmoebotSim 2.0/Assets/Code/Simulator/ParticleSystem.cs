@@ -714,7 +714,7 @@ public class ParticleSystem : IReplayHistory
             // Only apply color to circuits with more than 2 partition sets
             if (c.partitionSets.Count > 2 && !c.colorOverride)
             {
-                c.color = ColorData.Circuit_Colors[colIdx];
+                c.color = c.colorOverride ? c.color : ColorData.Circuit_Colors[colIdx];
                 colIdx = (colIdx + 1) % ColorData.Circuit_Colors.Length;
             }
         }

@@ -338,6 +338,16 @@ public class SysPartitionSet : PartitionSet
         pinConfig.SendMessageOnPartitionSet(id, msg);
     }
 
+    public override void SetColor(Color color)
+    {
+        pinConfig.SetPartitionSetColor(id, color);
+    }
+
+    public override void ResetColor()
+    {
+        pinConfig.ResetPartitionSetColor(id);
+    }
+
 
     // <<<TEMPORARY, FOR DEBUGGING>>>
     public string Print()

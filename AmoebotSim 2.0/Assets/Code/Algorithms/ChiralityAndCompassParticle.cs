@@ -93,6 +93,8 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     private static readonly Color chir1NoCandColor = new Color(116f / 255f, 0f / 255f, 204f / 255f);
     private static readonly Color chir0CandColor = new Color(227f / 255f, 66f / 255f, 52f / 255f);
     private static readonly Color chir0NoCandColor = new Color(176f / 255f, 52f / 255f, 40f / 255f);
+    private static readonly Color chir1CircuitColor = new Color(230f / 255f, 255f / 255f, 0f / 255f);
+    private static readonly Color chir0CircuitColor = new Color(52f / 255f, 227f / 255f, 130f / 255f);
     // Color by direction, candidates get brighter colors
     // Amber, Vermillion, Magenta, Violet, Teal, Chartreuse
     // Brightness is 20% lower for non-candidates
@@ -741,6 +743,13 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     // Only for visualization, uses global data
     private void SetColor()
     {
+        PinConfiguration pc = GetPlannedPinConfiguration();
+        if (pc is null)
+        {
+            pc = GetCurrentPinConfiguration();
+            SetPlannedPinConfiguration(pc);
+        }
+        bool hasRegion = hasRegionalCircuit.GetValue_After();
         if (chiralityAgreementPhase.GetValue_After())
         {
             if (realChirality.GetValue_After())
@@ -748,6 +757,8 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 if (isCandidate.GetValue_After())
                 {
                     SetMainColor(chir1CandColor);
+                    if (hasRegion)
+                        pc.SetPartitionSetColor(0, chir1CircuitColor);
                 }
                 else
                 {
@@ -759,6 +770,8 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 if (isCandidate.GetValue_After())
                 {
                     SetMainColor(chir0CandColor);
+                    if (hasRegion)
+                        pc.SetPartitionSetColor(0, chir0CircuitColor);
                 }
                 else
                 {
@@ -770,7 +783,10 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         {
             if (isCandidate.GetValue_After())
             {
-                SetMainColor(compCandColors[realCompassDir.GetValue_After()]);
+                int i = realCompassDir.GetValue_After();
+                SetMainColor(compCandColors[i]);
+                if (hasRegion)
+                    pc.SetPartitionSetColor(0, compCandColors[(i + 3) % 6]);
             }
             else
             {

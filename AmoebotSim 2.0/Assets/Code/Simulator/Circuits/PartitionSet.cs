@@ -302,4 +302,32 @@ public abstract class PartitionSet
     /// pin configuration.
     /// </exception>
     public abstract void SendMessage(Message msg);
+
+    /// <summary>
+    /// Overrides the color of this partition set if the pin configuration
+    /// it belongs to is the planned one.
+    /// <para>
+    /// See <see cref="PinConfiguration.SetPartitionSetColor(int, Color)"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="color">The color in which to display this
+    /// partition set.</param>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this partition set does not belong to the planned
+    /// pin configuration.
+    /// </exception>
+    public abstract void SetColor(Color color);
+
+    /// <summary>
+    /// Resets the color override of this partition set if the pin
+    /// configuration it belongs to is the planned one.
+    /// <para>
+    /// See <see cref="PinConfiguration.ResetPartitionSetColor(int)"/>.
+    /// </para>
+    /// </summary>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown if this partition set does not belong to the planned
+    /// pin configuration.
+    /// </exception>
+    public abstract void ResetColor();
 }

@@ -60,6 +60,12 @@ public class Circuit
                 message = msg;
             }
         }
+
+        if (!colorOverride && ps.pinConfig.particle.PartitionSetColorsOverride[ps.Id])
+        {
+            colorOverride = true;
+            color = ps.pinConfig.particle.PartitionSetColors[ps.Id];
+        }
     }
 
     /// <summary>
@@ -111,7 +117,9 @@ public class Circuit
     }
 
     /// <summary>
-    /// Merges the given other circuit into this one.
+    /// Merges the given other circuit into this one. If one of the circuits
+    /// has a color override, that color is used. If both circuits have a
+    /// color override, the color of this circuit is used.
     /// </summary>
     /// <param name="other">The circuit to be merged into
     /// this one. It will be set to inactive after the merge.</param>
@@ -123,6 +131,12 @@ public class Circuit
         }
         partitionSets.AddRange(other.partitionSets);
         other.active = false;
+
+        if (!colorOverride && other.colorOverride)
+        {
+            color = other.color;
+            colorOverride = true;
+        }
     }
 
 

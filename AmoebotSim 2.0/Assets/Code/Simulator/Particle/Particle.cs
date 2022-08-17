@@ -85,10 +85,26 @@ public class Particle : IParticleState, IReplayHistory
 
 
     // Visualization
+    
+    // Particle fill color
     private ValueHistory<Color> mainColorHistory;
     private ValueHistory<bool> mainColorSetHistory;
     private Color mainColor = new Color();
     private bool mainColorSet = false;
+
+    // Partition set colors
+    private ValueHistory<Color>[] partitionSetColorHistory;
+    private ValueHistory<bool>[] partitionSetColorOverrideHistory;
+    private Color[] partitionSetColors;
+    private bool[] partitionSetColorsOverride;
+    public Color[] PartitionSetColors
+    {
+        get { return partitionSetColors; }
+    }
+    public bool[] PartitionSetColorsOverride
+    {
+        get { return partitionSetColorsOverride; }
+    }
 
 
     /**
@@ -201,19 +217,28 @@ public class Particle : IParticleState, IReplayHistory
     public void InitWithAlgorithm()
     {
         int maxNumPins = algorithm.PinsPerEdge * 10;
+        int currentRound = system.CurrentRound;
         pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
-        pinConfigurationHistory = new ValueHistory<SysPinConfiguration>(pinConfiguration, system.CurrentRound);
+        pinConfigurationHistory = new ValueHistory<SysPinConfiguration>(pinConfiguration, currentRound);
         receivedBeeps = new BitArray(maxNumPins);
         receivedMessages = new Message[maxNumPins];
         plannedBeeps = new BitArray(maxNumPins);
         plannedMessages = new Message[maxNumPins];
-        receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), system.CurrentRound);
+        receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), currentRound);
         receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
+        partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
+        partitionSetColors = new Color[maxNumPins];
+        partitionSetColorsOverride = new bool[maxNumPins];
         for (int i = 0; i < maxNumPins; i++)
         {
-            receivedMessagesHistory[i] = new ValueHistoryMessage(null, system.CurrentRound);
+            receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
+            partitionSetColorHistory[i] = new ValueHistory<Color>(new Color(), currentRound);
+            partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(false, currentRound);
+            partitionSetColors[i] = new Color();
+            partitionSetColorsOverride[i] = false;
         }
-    }
+}
 
     /// <summary>
     /// This is the main activation method of the particle.
@@ -359,16 +384,22 @@ public class Particle : IParticleState, IReplayHistory
     /// altered, its ability to send data expires. Setting
     /// the planned pin configuration to a different value
     /// after sending beeps or messages nullifies the
-    /// previously sent data.
+    /// previously sent data. Partition set colors have the
+    /// same behavior.
     /// </para>
     /// </summary>
     /// <param name="pc">The new pin configuration.</param>
     public void SetPlannedPinConfiguration(SysPinConfiguration pc)
     {
-        if (hasPlannedBeeps && !pc.isPlanned)
+        if (!pc.isPlanned)
         {
-            Debug.LogWarning("Setting planned pin configuration after sending data erases the sent data.");
-            ResetPlannedBeepsAndMessages();
+            if (hasPlannedBeeps)
+            {
+                Debug.LogWarning("Setting planned pin configuration after sending data erases the sent data.");
+                ResetPlannedBeepsAndMessages();
+            }
+            if (!pc.isCurrent)
+                ResetAllPartitionSetColors();
         }
         plannedPinConfiguration = pc.Copy();
         pc.isPlanned = true;
@@ -384,9 +415,17 @@ public class Particle : IParticleState, IReplayHistory
     /// the end of the current round.</returns>
     public SysPinConfiguration GetPlannedPinConfiguration()
     {
-        SysPinConfiguration planned = plannedPinConfiguration.Copy();
-        planned.isPlanned = true;
-        return planned;
+        if (!(plannedPinConfiguration is null))
+        {
+            SysPinConfiguration planned = plannedPinConfiguration.Copy();
+            planned.isPlanned = true;
+            return planned;
+        }
+        else
+        {
+            return null;
+        }
+        
     }
 
 
@@ -534,6 +573,69 @@ public class Particle : IParticleState, IReplayHistory
         return mainColorSet;
     }
 
+    /// <summary>
+    /// Overrides the specified partition set's color with the
+    /// given color.
+    /// <para>
+    /// The circuit to which the partition set belongs will be
+    /// displayed with this color unless its color has been
+    /// overridden by another partition set already.
+    /// This method must only be called when the system is in
+    /// a tracking state.
+    /// </para>
+    /// <para>
+    /// See also <seealso cref="ResetPartitionSetColor(int)"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="idx">The index of the partition set.</param>
+    /// <param name="color">The color to give to the partition set.</param>
+    public void SetPartitionSetColor(int idx, Color color)
+    {
+        partitionSetColors[idx] = color;
+        partitionSetColorsOverride[idx] = true;
+        partitionSetColorHistory[idx].RecordValueInRound(color, system.CurrentRound);
+        partitionSetColorOverrideHistory[idx].RecordValueInRound(true, system.CurrentRound);
+    }
+
+    /// <summary>
+    /// Resets the color override of the specified partition set.
+    /// <para>
+    /// This method must only be called when the system is in a
+    /// tracking state.
+    /// </para>
+    /// <para>
+    /// See also <seealso cref="SetPartitionSetColor(int, Color)"/>,
+    /// <seealso cref="ResetAllPartitionSetColors"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="idx">The index of the partition set.</param>
+    public void ResetPartitionSetColor(int idx)
+    {
+        if (partitionSetColorsOverride[idx])
+        {
+            partitionSetColors[idx] = Color.black;
+            partitionSetColorsOverride[idx] = false;
+            partitionSetColorHistory[idx].RecordValueInRound(Color.black, system.CurrentRound);
+            partitionSetColorOverrideHistory[idx].RecordValueInRound(false, system.CurrentRound);
+        }
+    }
+
+    /// <summary>
+    /// Resets the colors of all partition sets.
+    /// <para>
+    /// This method must only be called when the system is in
+    /// a tracking state.
+    /// </para>
+    /// <para>
+    /// See also <seealso cref="ResetPartitionSetColor(int)"/>.
+    /// </para>
+    /// </summary>
+    public void ResetAllPartitionSetColors()
+    {
+        for (int i = 0; i < partitionSetColors.Length; i++)
+            ResetPartitionSetColor(i);
+    }
+
     /**
      * Particle action methods that are used by the system to change the
      * particle's state at the appropriate time. They are NOT part of the
@@ -660,7 +762,9 @@ public class Particle : IParticleState, IReplayHistory
             // Have no planned configuration, generate default one if necessary
             if (pinConfiguration.HeadDirection != exp_expansionDir)
             {
+                // Have moved
                 newPC = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
+                ResetAllPartitionSetColors();
             }
         }
         if (!(newPC is null))
@@ -964,9 +1068,11 @@ public class Particle : IParticleState, IReplayHistory
         // Reset pin configuration
         pinConfigurationHistory.SetMarkerToRound(round);
         receivedBeepsHistory.SetMarkerToRound(round);
-        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
-            h.SetMarkerToRound(round);
+            receivedMessagesHistory[i].SetMarkerToRound(round);
+            partitionSetColorHistory[i].SetMarkerToRound(round);
+            partitionSetColorOverrideHistory[i].SetMarkerToRound(round);
         }
 
         // Reset visuals
@@ -994,9 +1100,11 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.StepBack();
         receivedBeepsHistory.StepBack();
-        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
-            h.StepBack();
+            receivedMessagesHistory[i].StepBack();
+            partitionSetColorHistory[i].StepBack();
+            partitionSetColorOverrideHistory[i].StepBack();
         }
 
         mainColorHistory.StepBack();
@@ -1017,9 +1125,11 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.StepForward();
         receivedBeepsHistory.StepForward();
-        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
-            h.StepForward();
+            receivedMessagesHistory[i].StepForward();
+            partitionSetColorHistory[i].StepForward();
+            partitionSetColorOverrideHistory[i].StepForward();
         }
 
         mainColorHistory.StepForward();
@@ -1055,9 +1165,11 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.ContinueTracking();
         receivedBeepsHistory.ContinueTracking();
-        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
-            h.ContinueTracking();
+            receivedMessagesHistory[i].ContinueTracking();
+            partitionSetColorHistory[i].ContinueTracking();
+            partitionSetColorOverrideHistory[i].ContinueTracking();
         }
 
         mainColorHistory.ContinueTracking();
@@ -1086,9 +1198,11 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.CutOffAtMarker();
         receivedBeepsHistory.CutOffAtMarker();
-        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
-            h.CutOffAtMarker();
+            receivedMessagesHistory[i].CutOffAtMarker();
+            partitionSetColorHistory[i].CutOffAtMarker();
+            partitionSetColorOverrideHistory[i].CutOffAtMarker();
         }
 
         mainColorHistory.CutOffAtMarker();
@@ -1110,9 +1224,11 @@ public class Particle : IParticleState, IReplayHistory
 
         pinConfigurationHistory.ShiftTimescale(amount);
         receivedBeepsHistory.ShiftTimescale(amount);
-        foreach (ValueHistoryMessage h in receivedMessagesHistory)
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
-            h.ShiftTimescale(amount);
+            receivedMessagesHistory[i].ShiftTimescale(amount);
+            partitionSetColorHistory[i].ShiftTimescale(amount);
+            partitionSetColorOverrideHistory[i].ShiftTimescale(amount);
         }
 
         mainColorHistory.ShiftTimescale(amount);
@@ -1150,6 +1266,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
+            partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
+            partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
         }
 
         mainColor = mainColorHistory.GetMarkedValue();

@@ -355,4 +355,32 @@ public abstract class PinConfiguration
     /// to send the message.</param>
     /// <param name="msg">The message to be sent.</param>
     public abstract void SendMessageOnPartitionSet(int partitionSetIndex, Message msg);
+
+    /// <summary>
+    /// Overrides the specified partition set's color. The circuit to which
+    /// the partition set belongs will be displayed in this color unless it
+    /// has been overridden by another partition set already.
+    /// <para>
+    /// Overriding the color of partition sets is only possible for planned
+    /// pin configurations. Planning a new pin configuration will reset all
+    /// partition set colors.
+    /// </para>
+    /// <para>
+    /// See also <seealso cref="ResetPartitionSetColor(int)"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="partitionSetIndex">The ID of the partition set whose
+    /// color to override.</param>
+    /// <param name="color">The color to set for the partition set.</param>
+    public abstract void SetPartitionSetColor(int partitionSetIndex, Color color);
+
+    /// <summary>
+    /// Resets the specified partition set's color override.
+    /// <para>
+    /// See <see cref="SetPartitionSetColor(int, Color)"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="partitionSetIndex">The ID of the partition set whose
+    /// color override to reset.</param>
+    public abstract void ResetPartitionSetColor(int partitionSetIndex);
 }
