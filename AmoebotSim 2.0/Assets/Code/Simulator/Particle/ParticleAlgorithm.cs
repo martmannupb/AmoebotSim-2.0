@@ -383,7 +383,9 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// This object can be used as a basis for defining the
     /// new pin configuration after the round if the particle
-    /// does not perform a movement.
+    /// does not perform a movement. It also provides the
+    /// interface for reading beeps and messages that were
+    /// received.
     /// </para>
     /// <para>
     /// See also <seealso cref="GetContractedPinConfiguration"/>,

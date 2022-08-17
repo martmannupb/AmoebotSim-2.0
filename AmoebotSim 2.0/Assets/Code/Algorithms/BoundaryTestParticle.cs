@@ -5,6 +5,11 @@ using UnityEngine;
 namespace BoundaryTestAlgo
 {
     public enum Phase { LE1, LE2, SUM }
+    // Operation modes of the Sum Computation phase
+    // COMPUTE: We are still computing the sum of the angles
+    // FINAL: This is the last iteration and the leader transmits the final result
+    // WAIT: The leader has already transmitted the final result and we are waiting for termination
+    public enum SCMode { COMPUTE, FINAL, WAIT }
 
     /*
      * Structure
@@ -106,7 +111,7 @@ namespace BoundaryTestAlgo
         private ParticleAttribute<bool> terminated;             // Final termination flag
 
         // Leader Election
-        private static readonly int kappa = 3;                  // Number of repetitions of the second phase (one iteration is always executed)
+        private static readonly int kappa = 2;                  // Number of repetitions of the second phase (one iteration is always executed)
         private ParticleAttribute<bool>[] isCandidate;          // Stores candidate flag for each of the boundaries
         private ParticleAttribute<bool>[] isPhase2Candidate;    // Stores phase 2 candidate flag for each of the boundaries
         private ParticleAttribute<bool>[] heads;                // Last coin toss result for each boundary
@@ -115,6 +120,8 @@ namespace BoundaryTestAlgo
 
         // Sum computation
         private ParticleAttribute<bool>[] isActive;             // Flag indicating whether the particle is active on each boundary
+        private ParticleAttribute<bool>[] becomePassive;        // Flag indicating whether the particle should become passive in the current iteration
+        private ParticleAttribute<SCMode>[] scMode;             // Mode of the Sum Computation on each boundary
 
         public BoundaryTestParticle(Particle p) : base(p)
         {
@@ -151,9 +158,13 @@ namespace BoundaryTestAlgo
             }
 
             isActive = new ParticleAttribute<bool>[3];
+            becomePassive = new ParticleAttribute<bool>[3];
+            scMode = new ParticleAttribute<SCMode>[3];
             for (int i = 0; i < 3; i++)
             {
                 isActive[i] = CreateAttributeBool("Boundary " + (i + 1) + " Active", false);
+                becomePassive[i] = CreateAttributeBool("Boundary " + (i + 1) + " Become Passive", false);
+                scMode[i] = CreateAttributeEnum<SCMode>("Boundary " + (i + 1) + " SC Mode", SCMode.COMPUTE);
             }
 
             SetMainColor(startColor);
@@ -210,6 +221,32 @@ namespace BoundaryTestAlgo
                         break;
                     default:
                         Debug.LogError("Error: Round " + round.GetValue() + " undefined for Leader Election Phase 2");
+                        break;
+                }
+            }
+            else
+            {
+                switch (round)
+                {
+                    case 0:
+                        SCActivate0();
+                        break;
+                    case 1:
+                        SCActivate1();
+                        break;
+                    case 2:
+                        SCActivate2();
+                        break;
+                    case 3:
+                    case 4:
+                    case 5:
+                        SCActivate345();
+                        break;
+                    case 6:
+                        SCActivate6();
+                        break;
+                    default:
+                        Debug.LogError("Error: Round " + round.GetValue() + " undefined for Sum Computation phase");
                         break;
                 }
             }
@@ -521,6 +558,226 @@ namespace BoundaryTestAlgo
 
         #endregion
 
+        #region SumComputation
+
+        private void SCActivate0()
+        {
+            // Receive global termination beep (no beep = we are finished)
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            if (!pc.ReceivedBeepOnPartitionSet(0))
+            {
+                terminated.SetValue(true);
+                return;
+            }
+
+            // No termination yet: Continue with next iteration
+            SetPASCPinConfig(pc);
+            SetPlannedPinConfiguration(pc);
+
+            // Leader particles send beep on primary partition sets
+            for (int boundary = 0; boundary < numBoundaries; boundary++)
+            {
+                if (isCandidate[boundary])
+                {
+                    pc.SendBeepOnPartitionSet(boundary * 2);
+                }
+            }
+
+            round.SetValue(1);
+        }
+
+        private void SCActivate1()
+        {
+            // Active particles listen for beep on secondary circuit
+            // If they receive a beep, they send an echo and remember
+            // to become passive in this iteration
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            for (int boundary = 0; boundary < numBoundaries; boundary++)
+            {
+                if (scMode[boundary] != SCMode.COMPUTE) continue;
+                if (isActive[boundary] && pc.ReceivedBeepOnPartitionSet(boundary * 2 + 1))
+                {
+                    SetPlannedPinConfiguration(pc);
+                    pc.SendBeepOnPartitionSet(boundary * 2 + 1);
+                    becomePassive[boundary].SetValue(true);
+                }
+            }
+
+            round.SetValue(2);
+        }
+
+        private void SCActivate2()
+        {
+            // All boundary particles listen for echo beep on primary and secondary partition set
+            // If a beep was sent, active particles becoming passive will cut
+            // their connections to their successors and start transmitting
+            // their partial sum to the predecessors
+            // If no beep was sent, the leader has the final result and will
+            // start transmitting it now
+
+            // TODO: This way of planning the new pin configuration and sending beeps is not very nice
+            //  Maybe the API will need a better alternative that allows changing the configuration even
+            //  after beeps and messages have been scheduled
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            PinConfiguration planned = GetCurrentPinConfiguration();
+            // Collect partition sets on which to send beep
+            List<int> beepPSs = new List<int>();
+
+            for (int boundary = 0; boundary < numBoundaries; boundary++)
+            {
+                if (scMode[boundary] != SCMode.COMPUTE) continue;
+                bool rcvEcho = pc.ReceivedBeepOnPartitionSet(boundary * 2) || pc.ReceivedBeepOnPartitionSet(boundary * 2 + 1);
+                if (rcvEcho)
+                {
+                    // Active particles becoming passive setup pin configuration for
+                    // transmission of partial sum and transmit 1 if that is the value
+                    if (isActive[boundary] && becomePassive[boundary])
+                    {
+                        // Turn primary partition set into one set containing only
+                        // connections to the predecessor
+                        planned.MakePartitionSet(new Pin[] {
+                            planned.GetPinAt(boundaryNbrs[boundary, 0], 2),
+                            planned.GetPinAt(boundaryNbrs[boundary, 0], 3)
+                        }, boundary * 2);
+
+                        // Send beep if current angle value is 1
+                        if (boundaryAngles[boundary] == 1)
+                        {
+                            beepPSs.Add(boundary * 2);
+                        }
+                    }
+                }
+                else
+                {
+                    // Termination: Leader starts transmitting final result
+                    scMode[boundary].SetValue(SCMode.FINAL);
+                    if (isCandidate[boundary])
+                    {
+                        // Connect primary and secondary circuit
+                        planned.MakePartitionSet(new Pin[] {
+                            planned.GetPinAt(boundaryNbrs[boundary, 1], 0),
+                            planned.GetPinAt(boundaryNbrs[boundary, 1], 1)
+                        }, boundary * 2);
+                        // Send beep if final angle result is 1
+                        if (boundaryAngles[boundary] == 1)
+                        {
+                            beepPSs.Add(boundary * 2);
+                        }
+                    }
+                    else
+                    {
+                        // Set final result to 0 in case no beep is sent
+                        boundaryAngles[boundary].SetValue(0);
+                    }
+                }
+            }
+            SetPlannedPinConfiguration(planned);
+            foreach (int psIdx in beepPSs)
+                planned.SendBeepOnPartitionSet(psIdx);
+
+            round.SetValue(3);
+        }
+
+        private void SCActivate345()
+        {
+            // In COMPUTE phase: Active boundary particles send and receive
+            // partial sums on primary partition set
+            // In FINAL phase: All boundary particles listen for final result
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            for (int boundary = 0; boundary < numBoundaries; boundary++)
+            {
+                if (scMode[boundary] == SCMode.WAIT) continue;
+                if (scMode[boundary] == SCMode.COMPUTE)
+                {
+                    if (isActive[boundary])
+                    {
+                        // Particles that stay active listen for beeps,
+                        // particles that will become passive send them
+                        if (!becomePassive[boundary] && pc.ReceivedBeepOnPartitionSet(boundary * 2))
+                        {
+                            // Update partial sum mod 5 (round 3 receives angle 1, round 4 receives angle 2, etc.)
+                            boundaryAngles[boundary].SetValue((boundaryAngles[boundary] + round - 2) % 5);
+                        }
+                        else if (becomePassive[boundary] && boundaryAngles[boundary] == round - 1)
+                        {
+                            SetPlannedPinConfiguration(pc);
+                            pc.SendBeepOnPartitionSet(boundary * 2);
+                        }
+                    }
+                }
+                else
+                {
+                    // SC mode is FINAL
+                    // Leader sends final result, other particles listen
+                    if (isCandidate[boundary] && boundaryAngles[boundary] == round - 1)
+                    {
+                        SetPlannedPinConfiguration(pc);
+                        pc.SendBeepOnPartitionSet(boundary * 2);
+                    }
+                    else if (!isCandidate[boundary] && pc.ReceivedBeepOnPartitionSet(boundary * 2))
+                    {
+                        boundaryAngles[boundary].SetValue(round - 2);
+                    }
+                }
+            }
+
+            round.SetValue(round + 1);
+        }
+
+        private void SCActivate6()
+        {
+            // Receive angle value 4 if we are computing or receiving the final result
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            bool beepOnGlobal = false;
+            for (int boundary = 0; boundary < numBoundaries; boundary++)
+            {
+                if (scMode[boundary] == SCMode.WAIT) continue;
+                if (scMode[boundary] == SCMode.COMPUTE)
+                {
+                    beepOnGlobal = true;
+                    if (isActive[boundary])
+                    {
+                        // Particles that stay active listen for beeps
+                        if (!becomePassive[boundary] && pc.ReceivedBeepOnPartitionSet(boundary * 2))
+                        {
+                            // Update partial sum mod 5 (round 6 receives angle 4)
+                            boundaryAngles[boundary].SetValue((boundaryAngles[boundary] + 4) % 5);
+                        }
+                        // Particles that become passive do so now
+                        if (becomePassive[boundary])
+                        {
+                            isActive[boundary].SetValue(false);
+                            becomePassive[boundary].SetValue(false);
+                        }
+                    }
+                }
+                else
+                {
+                    // SC mode is FINAL
+                    // Receive final bit of result
+                    if (pc.ReceivedBeepOnPartitionSet(boundary * 2))
+                    {
+                        boundaryAngles[boundary].SetValue(4);
+                    }
+                    scMode[boundary].SetValue(SCMode.WAIT);
+                }
+            }
+
+            // Establish global circuit and beep if we are not done yet
+            if (numBoundaries > 0)
+            {
+                pc.SetToGlobal();
+                SetPlannedPinConfiguration(pc);
+                if (beepOnGlobal)
+                    pc.SendBeepOnPartitionSet(0);
+            }
+
+            round.SetValue(0);
+        }
+
+        #endregion
+
+
         // Changes the pin configuration such that partition set i is part
         // of the boundary circuit for boundary i. Has no effect for
         // particles that have no boundaries
@@ -610,6 +867,34 @@ namespace BoundaryTestAlgo
         {
             if (numBoundaries.GetValue_After() == 0)
                 return;
+            
+            if (terminated.GetValue_After())
+            {
+                // Set final color
+                // Find boundary and leader status
+                // 0 = inner boundary
+                // 1 = outer boundary
+                // 2 = inner boundary leader
+                // 3 = outer boundary leader
+                int score = 0;
+                for (int b = 0; b < numBoundaries; b++)
+                {
+                    bool leader = isCandidate[b];
+                    bool outer = boundaryAngles[b] == 1;
+                    int s = (leader ? 2 : 0) + (outer ? 1 : 0);
+                    if (s > score)
+                        score = s;
+                }
+                Color[] colors = new Color[] {
+                    ColorData.Particle_Orange,
+                    ColorData.Particle_Aqua,
+                    ColorData.Particle_Red,
+                    ColorData.Particle_Green
+                };
+                SetMainColor(colors[score]);
+                
+                return;
+            }
 
             if (phase.GetValue_After() == Phase.LE1 || phase.GetValue_After() == Phase.LE2)
             {

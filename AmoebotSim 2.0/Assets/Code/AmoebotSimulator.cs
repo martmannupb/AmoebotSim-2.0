@@ -40,7 +40,7 @@ public class AmoebotSimulator : MonoBehaviour
         //system.InitializeLineFormation(25, 0.4f);
         //system.InitializeLeaderElection(50, 0.35f);
         //system.InitializeChiralityCompass(50, 0.2f);
-        system.InitializeBoundaryTest(100, 0.1f);
+        system.InitializeBoundaryTest(100, 0.05f);
 
 
 
