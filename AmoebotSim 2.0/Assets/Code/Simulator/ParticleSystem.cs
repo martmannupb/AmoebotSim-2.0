@@ -562,7 +562,7 @@ public class ParticleSystem : IReplayHistory
 
                 // Initialize graphics computation as well
                 p.gCircuit = ParticlePinGraphicState.PoolCreate(pinsPerEdge);
-                p.gCircuit.neighbor1ToNeighbor2Direction = globalHeadDir;
+                p.gCircuit.neighbor1ToNeighbor2Direction = p.GlobalTailDirection();
 
                 // First of all, find all neighboring particles and some relative positional information
                 int numNbrs = p.IsExpanded() ? 10 : 6;
@@ -577,12 +577,14 @@ public class ParticleSystem : IReplayHistory
                     if (particleMap.TryGetValue(nbrPos, out Particle nbr))
                     {
                         // Has neighbor in this position, record in circuit graphics info
-                        if (p.IsExpanded() && head)
+                        if (p.IsExpanded() && !head)
                         {
+                            // neighbor2 is tail
                             p.gCircuit.hasNeighbor2[dir] = true;
                         }
                         else
                         {
+                            // neighbor1 is head
                             p.gCircuit.hasNeighbor1[dir] = true;
                         }
 
