@@ -27,6 +27,8 @@ public class RenderSystem
     public const float const_hexagonalAnimationDurationMax = 1f;
     public const float const_circuitLineWidth = 0.02f;
     public const float const_circuitPinSize = 0.1f;
+    public const float const_circuitPinConnectorSize = 0.1f;
+    public const float const_circuitAnimationDuration = 0.2f;
     // Layers
     public const float zLayer_background = 1f;
     public const float ZLayer_particlesBG = 0.1f;
@@ -40,6 +42,9 @@ public class RenderSystem
     // Dynamic Params _____
     public static bool flag_particleRoundOver = true;
     public static bool flag_showCircuitView = true;
+
+    // Dynamic Data _____
+    public static float data_particleMovementFinishedTimestamp;
 
     // Renderers _____
     public RendererBackground rendererBG;
@@ -88,7 +93,7 @@ public class RenderSystem
         
 
         // Apply Circuit Updates
-        rendererP.circuitRenderer.ApplyUpdates();
+        rendererP.circuitRenderer.ApplyUpdates(data_particleMovementFinishedTimestamp, const_circuitAnimationDuration);
     }
 
     public void AddReferenceToParticleSystem(ParticleSystem map)

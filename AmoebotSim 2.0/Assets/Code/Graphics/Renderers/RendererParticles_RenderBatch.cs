@@ -288,6 +288,7 @@ public class RendererParticles_RenderBatch
             propertyBlock_circle_connector_expanded.ApplyAnimationTimestamp(triggerTime, animationLength);
             propertyBlock_circle_connector_expanding.ApplyAnimationTimestamp(triggerTime, animationLength);
             propertyBlock_circle_connector_contracting.ApplyAnimationTimestamp(triggerTime, animationLength);
+            RenderSystem.data_particleMovementFinishedTimestamp = triggerTime + animationLength;
         }
 
         // 2. Render
