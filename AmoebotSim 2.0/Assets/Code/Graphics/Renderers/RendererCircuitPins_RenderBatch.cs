@@ -26,12 +26,12 @@ public class RendererCircuitPins_RenderBatch
     public struct PropertyBlockData
     {
         public Color color;
-        public bool hasDelay;
+        public bool moving;
 
-        public PropertyBlockData(Color color, bool hasDelay)
+        public PropertyBlockData(Color color, bool moving)
         {
             this.color = color;
-            this.hasDelay = hasDelay;
+            this.moving = moving;
         }
     }
 
@@ -114,8 +114,18 @@ public class RendererCircuitPins_RenderBatch
 
     public void ApplyUpdates(float animationStartTime, float animationDuration)
     {
-        propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(properties.hasDelay ? 0f : 1f, 1f);
-        propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, animationDuration);
+        if (properties.moving)
+        {
+            // Moving
+            propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
+            propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, animationDuration);
+        }
+        else
+        {
+            // Not Moving
+            propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
+            propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(-1f, 0.01f);
+        }
     }
 
     public void Render()
