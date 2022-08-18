@@ -9,6 +9,7 @@ public class RendererCircuits_Instance
     public Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch> propertiesToPinRenderBatchMap = new Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch>();
 
     // Data
+    public bool isRenderingActive = false;
 
     //private bool[] globalDirLineSet = new bool[] { false, false, false, false, false, false };
 
@@ -177,26 +178,16 @@ public class RendererCircuits_Instance
 
     public void Render()
     {
+        bool firstRenderFrame = isRenderingActive == false;
         foreach (var batch in propertiesToRenderBatchMap.Values)
         {
-            batch.Render();
+            batch.Render(firstRenderFrame);
         }
         foreach (var batch in propertiesToPinRenderBatchMap.Values)
         {
-            batch.Render();
+            batch.Render(firstRenderFrame);
         }
-    }
-
-    public void ApplyUpdates(float animationStartTime, float animationDuration)
-    {
-        foreach (var batch in propertiesToRenderBatchMap.Values)
-        {
-            batch.ApplyUpdates(animationStartTime, animationDuration);
-        }
-        foreach (var batch in propertiesToPinRenderBatchMap.Values)
-        {
-            batch.ApplyUpdates(animationStartTime, animationDuration);
-        }
+        isRenderingActive = true;
     }
 
     /// <summary>
@@ -212,6 +203,7 @@ public class RendererCircuits_Instance
         {
             batch.ClearMatrices();
         }
+        isRenderingActive = false;
     }
 
 
