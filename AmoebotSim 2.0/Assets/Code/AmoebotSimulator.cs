@@ -32,14 +32,14 @@ public class AmoebotSimulator : MonoBehaviour
         // Activate one particle every 1000ms (only for testing)
         //InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
         Time.fixedDeltaTime = 0.005f;
-        Time.fixedDeltaTime = 0.5f;
+        Time.fixedDeltaTime = 0.2f;
 
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(50, 50, 0.3f, -9, -5);
         system.InitializeLineFormation(50, 0.4f);
-        //system.InitializeLineFormation(25, 0.4f);
+        //system.InitializeLineFormation(100, 0.4f);
         //system.InitializeLeaderElection(50, 0.35f);
-        //system.InitializeChiralityCompass(50, 0.2f);
+        //system.InitializeChiralityCompass(100, 0.2f);
         //system.InitializeBoundaryTest(100, 0.05f);
 
 
@@ -172,6 +172,27 @@ public class AmoebotSimulator : MonoBehaviour
             system.Reset();
             system.InitializeLineFormation(50, 0.4f);
             UpdateRoundCounter();
+        }
+    }
+
+    public void Save()
+    {
+        if (!play)
+        {
+            float t1 = Time.realtimeSinceStartup;
+            SimulationStateSaveData data = system.GenerateSaveData();
+            float t2 = Time.realtimeSinceStartup;
+            SaveStateUtility.Save(data);
+            float t3 = Time.realtimeSinceStartup;
+            Debug.Log("Created save state in " + (t2 - t1) + "s\nWrote save file in " + (t3 - t2) + "s");
+        }
+    }
+
+    public void Load()
+    {
+        if (!play)
+        {
+            SimulationStateSaveData data = SaveStateUtility.Load();
         }
     }
 }

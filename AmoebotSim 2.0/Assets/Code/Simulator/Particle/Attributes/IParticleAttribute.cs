@@ -41,5 +41,14 @@ public interface IParticleAttribute : IReplayHistory
     /// <returns>The type of value stored in the attribute.</returns>
     Type GetAttributeType();
 
+    /// <summary>
+    /// Returns a serializable object representing the attribute's data.
+    /// </summary>
+    /// <returns>An instance of a subclass of
+    /// <see cref="ParticleAttributeSaveDataBase"/> matching the
+    /// attribute's type.
+    /// </returns>
+    ParticleAttributeSaveDataBase GenerateSaveData();
+
     void Print();
 }

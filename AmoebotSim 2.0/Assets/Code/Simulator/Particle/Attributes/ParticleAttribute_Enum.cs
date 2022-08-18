@@ -98,4 +98,13 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
             throw new System.ArgumentException("Cannot convert " + value + " to enum attribute of type " + GetType());
         }
     }
+
+    public override ParticleAttributeSaveDataBase GenerateSaveData()
+    {
+        ParticleAttributeEnumSaveData data = new ParticleAttributeEnumSaveData();
+        data.name = name;
+        data.enumType = nameof(T);
+        data.history = history.GenerateSaveDataString();
+        return data;
+    }
 }

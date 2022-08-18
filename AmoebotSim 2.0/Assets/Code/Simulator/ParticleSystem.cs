@@ -1728,4 +1728,25 @@ public class ParticleSystem : IReplayHistory
             p.ShiftTimescale(amount);
         }
     }
+
+
+    /**
+     * Saving and loading functionality.
+     */
+
+    public SimulationStateSaveData GenerateSaveData()
+    {
+        SimulationStateSaveData data = new SimulationStateSaveData();
+
+        data.earliestRound = _earliestRound;
+        data.latestRound = _latestRound;
+
+        data.particles = new ParticleStateSaveData[particles.Count];
+        for (int i = 0; i < particles.Count; i++)
+        {
+            data.particles[i] = particles[i].GenerateSaveData();
+        }
+
+        return data;
+    }
 }

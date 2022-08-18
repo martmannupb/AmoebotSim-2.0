@@ -1273,4 +1273,70 @@ public class Particle : IParticleState, IReplayHistory
         mainColor = mainColorHistory.GetMarkedValue();
         mainColorSet = mainColorSetHistory.GetMarkedValue();
     }
+
+
+    /**
+     * Saving and loading functionality.
+     */
+
+    public ParticleStateSaveData GenerateSaveData()
+    {
+        ParticleStateSaveData data = new ParticleStateSaveData();
+
+        data.comDir = comDir;
+        data.chirality = chirality;
+
+        data.tailPositionHistory = tailPosHistory.GenerateSaveData();
+        data.expansionDirHistory = expansionDirHistory.GenerateSaveData();
+
+        data.boolAttributes = new List<ParticleAttributeSaveData<bool>>();
+        data.dirAttributes = new List<ParticleAttributeSaveData<int>>();
+        data.intAttributes = new List<ParticleAttributeSaveData<int>>();
+        data.enumAttributes = new List<ParticleAttributeEnumSaveData>();
+        // Fill in the particle attributes ordered by type
+        // Must use reflection here
+        for (int i = 0; i < attributes.Count; i++)
+        {
+            System.Type t = attributes[i].GetAttributeType();
+            if (t == typeof(int))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                aData.idx = i;
+                if (attributes[i].GetType() == typeof(ParticleAttribute_Direction))
+                {
+                    data.dirAttributes.Add(aData as ParticleAttributeSaveData<int>);
+                }
+                else
+                {
+                    data.intAttributes.Add(aData as ParticleAttributeSaveData<int>);
+                }
+            }
+            else if (t == typeof(bool))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                aData.idx = i;
+                data.boolAttributes.Add(aData as ParticleAttributeSaveData<bool>);
+            }
+            else if (attributes[i].GetType().IsGenericType && attributes[i].GetType().GetGenericTypeDefinition() == typeof(ParticleAttribute_Enum<>))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                aData.idx = i;
+                data.enumAttributes.Add(aData as ParticleAttributeEnumSaveData);
+            }
+        }
+
+        data.receivedBeepsHistory = receivedBeepsHistory.GenerateSaveData();
+
+        data.mainColorHistory = mainColorHistory.GenerateSaveData();
+        data.mainColorSetHistory = mainColorSetHistory.GenerateSaveData();
+        data.partitionSetColorHistory = new ValueHistorySaveData<Color>[partitionSetColorHistory.Length];
+        data.partitionSetColorOverrideHistory = new ValueHistorySaveData<bool>[partitionSetColorOverrideHistory.Length];
+        for (int i = 0; i < partitionSetColorHistory.Length; i++)
+        {
+            data.partitionSetColorHistory[i] = partitionSetColorHistory[i].GenerateSaveData();
+            data.partitionSetColorOverrideHistory[i] = partitionSetColorOverrideHistory[i].GenerateSaveData();
+        }
+
+        return data;
+    }
 }

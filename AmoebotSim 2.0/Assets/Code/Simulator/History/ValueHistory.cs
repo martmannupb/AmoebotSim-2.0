@@ -27,13 +27,13 @@ using UnityEngine;
 /// implement an equality check.</typeparam>
 public class ValueHistory<T> : IReplayHistory
 {
-    private List<T> values;     // Stores the different values
-    private List<int> rounds;   // Stores the rounds in which values were changed
-    private int lastRound;      // Stores the last round for which we have a certain recorded value
+    protected List<T> values;       // Stores the different values
+    protected List<int> rounds;     // Stores the rounds in which values were changed
+    protected int lastRound;        // Stores the last round for which we have a certain recorded value
 
-    private int markedRound;    // The currently marked round
-    private int markedIndex;    // The index corresponding to the currently marked round for fast lookup
-    private bool isTracking;    // Is true while the marked round is tracking the last round
+    private int markedRound;        // The currently marked round
+    private int markedIndex;        // The index corresponding to the currently marked round for fast lookup
+    private bool isTracking;        // Is true while the marked round is tracking the last round
 
     /// <summary>
     /// Creates a new history record for a variable of type <typeparamref name="T"/>.
@@ -393,5 +393,34 @@ public class ValueHistory<T> : IReplayHistory
             s += v + " ";
         }
         Debug.Log(s);
+    }
+
+
+    /**
+     * Saving and loading functionality.
+     */
+
+    public ValueHistorySaveData<T> GenerateSaveData()
+    {
+        ValueHistorySaveData<T> data = new ValueHistorySaveData<T>();
+
+        data.values = values;
+        data.rounds = rounds;
+        data.lastRound = lastRound;
+
+        return data;
+    }
+
+    public ValueHistorySaveData<string> GenerateSaveDataString()
+    {
+        ValueHistorySaveData<string> data = new ValueHistorySaveData<string>();
+
+        data.values = new List<string>(values.Count);
+        foreach (T val in values)
+            data.values.Add(val.ToString());
+        data.rounds = rounds;
+        data.lastRound = lastRound;
+
+        return data;
     }
 }

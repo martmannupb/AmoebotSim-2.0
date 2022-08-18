@@ -80,7 +80,15 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
 
     public virtual System.Type GetAttributeType()
     {
-        return System.Type.GetType(nameof(T));
+        return typeof(T);
+    }
+
+    public virtual ParticleAttributeSaveDataBase GenerateSaveData()
+    {
+        ParticleAttributeSaveData<T> data = new ParticleAttributeSaveData<T>();
+        data.name = name;
+        data.history = history.GenerateSaveData();
+        return data;
     }
 
 

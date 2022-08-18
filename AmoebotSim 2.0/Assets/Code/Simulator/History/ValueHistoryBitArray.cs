@@ -29,4 +29,17 @@ public class ValueHistoryBitArray : ValueHistory<BitArray>
         }
         return true;
     }
+
+    public new ValueHistorySaveData<BitArraySaveData> GenerateSaveData()
+    {
+        ValueHistorySaveData<BitArraySaveData> data = new ValueHistorySaveData<BitArraySaveData>();
+
+        data.values = new List<BitArraySaveData>(values.Count);
+        foreach (BitArray ba in values)
+            data.values.Add(BitArraySaveData.FromBitArray(ba));
+        data.rounds = rounds;
+        data.lastRound = lastRound;
+
+        return data;
+    }
 }
