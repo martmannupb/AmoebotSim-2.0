@@ -761,8 +761,6 @@ public class ParticleSystem : IReplayHistory
                     p.gCircuit.partitionSets.Add(pset);
                 }
             }
-
-            p.graphics.CircuitUpdate(p.gCircuit);
         }
     }
 
@@ -806,11 +804,16 @@ public class ParticleSystem : IReplayHistory
     public void UpdateAllParticleVisuals(bool resetVisuals)
     {
         // TODO: Maybe only update particles with changes
+        // First update position info, then update circuit data
         foreach (Particle p in particles)
         {
             p.graphics.SetParticleColor(p.GetParticleColor());
             if (resetVisuals) p.graphics.UpdateReset();
             else p.graphics.Update();
+        }
+        foreach (Particle p in particles)
+        {
+            p.graphics.CircuitUpdate(p.gCircuit);
         }
         renderSystem.ParticleMovementOver();
         renderSystem.CircuitCalculationOver();
