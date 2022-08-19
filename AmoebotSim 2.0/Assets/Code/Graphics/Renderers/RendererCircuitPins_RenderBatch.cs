@@ -112,8 +112,9 @@ public class RendererCircuitPins_RenderBatch
         currentIndex_connectors = 0;
     }
 
-    public void ApplyUpdates(float animationStartTime, float animationDuration)
+    public void ApplyUpdates(float animationStartTime)
     {
+        float animationDuration = RenderSystem.const_circuitAnimationDuration;
         if (properties.moving)
         {
             // Moving
@@ -128,8 +129,14 @@ public class RendererCircuitPins_RenderBatch
         }
     }
 
-    public void Render()
+    public void Render(bool firstRenderFrame)
     {
+        // Timestamp
+        if(firstRenderFrame)
+        {
+            ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp);
+        }
+
         // Pins
         int listDrawAmount = ((currentIndex - 1) / maxArraySize) + 1;
         if(currentIndex > 0)

@@ -94,9 +94,10 @@ public class RendererCircuits_RenderBatch
         currentIndex = 0;
     }
 
-    public void ApplyUpdates(float animationStartTime, float animationDuration)
+    public void ApplyUpdates(float animationStartTime)
     {
-        if(properties.moving)
+        float animationDuration = RenderSystem.const_circuitAnimationDuration;
+        if (properties.moving)
         {
             // Moving
             propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
@@ -108,14 +109,16 @@ public class RendererCircuits_RenderBatch
             propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
             propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(-1f, 0.01f);
         }
-
-        // Test
-        propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f); // Should be visible
-        propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(-1f, 0.01f);
     }
 
-    public void Render()
+    public void Render(bool firstRenderFrame)
     {
+        // Timestamp
+        if (firstRenderFrame)
+        {
+            ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp);
+        }
+
         // Null Check
         if (currentIndex == 0) return;
 

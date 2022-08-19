@@ -90,10 +90,8 @@ public class RenderSystem
     /// </summary>
     public void CircuitCalculationOver()
     {
-        
-
-        // Apply Circuit Updates
-        rendererP.circuitRenderer.ApplyUpdates(data_particleMovementFinishedTimestamp, const_circuitAnimationDuration);
+        // Switch Circuit Instances
+        rendererP.circuitRenderer.SwitchInstances();
     }
 
     public void AddReferenceToParticleSystem(ParticleSystem map)

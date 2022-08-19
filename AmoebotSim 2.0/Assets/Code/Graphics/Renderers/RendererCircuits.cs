@@ -10,7 +10,7 @@ public class RendererCircuits
     private int updateInstance = 0;
     private int drawnInstance {
         get {
-            return 1 - updateInstance;
+            return (updateInstance - 1 + renderInstances.Length) % renderInstances.Length;
         }
     }
 
@@ -19,13 +19,12 @@ public class RendererCircuits
         renderInstances[updateInstance].AddCircuits(state, snap);
     }
 
-    public void ApplyUpdates(float animationStartTime, float animationDuration)
+    public void SwitchInstances()
     {
-        // Switch + Notify Instance
-        updateInstance = 1 - updateInstance;
-        renderInstances[drawnInstance].ApplyUpdates(animationStartTime, animationDuration);
         // Clear old Instance
-        renderInstances[updateInstance].Clear();
+        renderInstances[drawnInstance].Clear();
+        // Switch + Notify Instance
+        updateInstance = (updateInstance + 1) % renderInstances.Length;
     }
 
     public void Render()
