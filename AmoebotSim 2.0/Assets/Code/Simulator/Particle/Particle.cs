@@ -1325,6 +1325,7 @@ public class Particle : IParticleState, IReplayHistory
             }
         }
 
+
         data.receivedBeepsHistory = receivedBeepsHistory.GenerateSaveData();
 
         data.mainColorHistory = mainColorHistory.GenerateSaveData();

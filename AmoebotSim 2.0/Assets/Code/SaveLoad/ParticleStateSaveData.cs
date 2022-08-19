@@ -18,14 +18,17 @@ public class ParticleStateSaveData
     public ValueHistorySaveData<Vector2Int> tailPositionHistory;
     public ValueHistorySaveData<int> expansionDirHistory;
 
-    // Attribute info, sorted by type
+    // Attribute data, sorted by type
     public List<ParticleAttributeSaveData<bool>> boolAttributes;
     public List<ParticleAttributeSaveData<int>> dirAttributes;
     public List<ParticleAttributeSaveData<int>> intAttributes;
     public List<ParticleAttributeEnumSaveData> enumAttributes;
 
+    // Circuit data
+    public PinConfigurationHistorySaveData pinConfigurationHistory;
     public ValueHistorySaveData<BitArraySaveData> receivedBeepsHistory;
 
+    // Visualization data
     public ValueHistorySaveData<Color> mainColorHistory;
     public ValueHistorySaveData<bool> mainColorSetHistory;
     public ValueHistorySaveData<Color>[] partitionSetColorHistory;

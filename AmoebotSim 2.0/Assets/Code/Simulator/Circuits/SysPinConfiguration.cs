@@ -570,6 +570,19 @@ public class SysPinConfiguration : PinConfiguration
     }
 
 
+    /**
+     * Saving and loading functionality, also used for histories.
+     */
+
+    public PinConfigurationSaveData GenerateSaveData()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public SysPinConfiguration(PinConfigurationSaveData data, Particle p)
+    {
+        throw new System.NotImplementedException();
+    }
 
     // <<<TEMPORARY, FOR DEBUGGING>>>
     public void Print()

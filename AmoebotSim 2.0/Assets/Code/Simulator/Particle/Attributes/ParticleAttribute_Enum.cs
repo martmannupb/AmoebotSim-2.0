@@ -103,7 +103,7 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
     {
         ParticleAttributeEnumSaveData data = new ParticleAttributeEnumSaveData();
         data.name = name;
-        data.enumType = nameof(T);
+        data.enumType = typeof(T).FullName;
         data.history = history.GenerateSaveDataString();
         return data;
     }
