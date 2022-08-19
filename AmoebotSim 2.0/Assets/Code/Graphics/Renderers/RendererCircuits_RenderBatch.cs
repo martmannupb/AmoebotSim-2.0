@@ -14,6 +14,7 @@ public class RendererCircuits_RenderBatch
     // Meshes
     private Mesh circuitQuad = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     const int maxArraySize = 1023;
+    private Material lineMaterial;
 
     // Settings _____
     public PropertyBlockData properties;
@@ -24,11 +25,13 @@ public class RendererCircuits_RenderBatch
     public struct PropertyBlockData
     {
         public Color color;
+        public bool isConnectorLine;
         public bool moving;
 
-        public PropertyBlockData(Color color, bool moving)
+        public PropertyBlockData(Color color, bool isConnectorLine, bool moving)
         {
             this.color = color;
+            this.isConnectorLine = isConnectorLine;
             this.moving = moving;
         }
     }
@@ -42,6 +45,10 @@ public class RendererCircuits_RenderBatch
 
     public void Init()
     {
+        // Set Material
+        if (properties.isConnectorLine) lineMaterial = MaterialDatabase.material_circuit_lineConnector;
+        else lineMaterial = MaterialDatabase.material_circuit_line;
+
         // Circle PropertyBlocks
         propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color);
         //propertyBlock_circle_contracted.ApplyColor(properties.color);
@@ -70,7 +77,8 @@ public class RendererCircuits_RenderBatch
         }
         int listNumber = currentIndex / maxArraySize;
         int listIndex = currentIndex % maxArraySize;
-        Matrix4x4 matrix = CalculateLineMatrix(globalLineStartPos, globalLineEndPos, RenderSystem.const_circuitLineWidth);
+        float lineWidth = properties.isConnectorLine ? RenderSystem.const_circuitConnectorLineWidth : RenderSystem.const_circuitLineWidth;
+        Matrix4x4 matrix = CalculateLineMatrix(globalLineStartPos, globalLineEndPos, lineWidth);
         circuitMatrices_Lines[listNumber][listIndex] = matrix;
         currentIndex++;
     }
@@ -129,7 +137,7 @@ public class RendererCircuits_RenderBatch
             if (i < listDrawAmount - 1) count = maxArraySize;
             else count = currentIndex % maxArraySize;
 
-            Graphics.DrawMeshInstanced(circuitQuad, 0, MaterialDatabase.material_circuit_line, circuitMatrices_Lines[i], count, propertyBlock_circuitMatrices_Lines.propertyBlock);
+            Graphics.DrawMeshInstanced(circuitQuad, 0, lineMaterial, circuitMatrices_Lines[i], count, propertyBlock_circuitMatrices_Lines.propertyBlock);
         }
     }
 
