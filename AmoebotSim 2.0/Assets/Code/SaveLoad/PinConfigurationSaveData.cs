@@ -29,4 +29,45 @@ public class PinConfigurationSaveData
     // Only information required for pins is the partition set ID,
     // everything else is already defined by the index
     public int[] pinPartitionSets;
+
+    // Comparison operators to easily compare compressed pin configuration data by value
+    public static bool operator ==(PinConfigurationSaveData d1, PinConfigurationSaveData d2)
+    {
+        if (d1 is null)
+            return d2 is null;
+
+        return d1.Equals(d2);
+    }
+
+    public static bool operator !=(PinConfigurationSaveData d1, PinConfigurationSaveData d2)
+    {
+        return !(d1 == d2);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj == null || GetType() != obj.GetType())
+            return false;
+        PinConfigurationSaveData d = (PinConfigurationSaveData)obj;
+        bool myArrayNull = pinPartitionSets == null;
+        bool otherArrayNull = d.pinPartitionSets == null;
+        if (expanded != d.expanded ||
+            myArrayNull != otherArrayNull ||
+            !myArrayNull && !otherArrayNull && pinPartitionSets.Length != d.pinPartitionSets.Length)
+            return false;
+        if (!myArrayNull && !otherArrayNull)
+        {
+            for (int i = 0; i < pinPartitionSets.Length; i++)
+            {
+                if (pinPartitionSets[i] != d.pinPartitionSets[i])
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(expanded, pinPartitionSets);
+    }
 }

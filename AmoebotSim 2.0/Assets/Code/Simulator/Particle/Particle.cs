@@ -64,7 +64,7 @@ public class Particle : IParticleState, IReplayHistory
     public bool isActive = false;
 
     // Pin Configuration
-    private ValueHistory<SysPinConfiguration> pinConfigurationHistory;
+    private ValueHistoryPinConfiguration pinConfigurationHistory;
     private SysPinConfiguration pinConfiguration;
     public SysPinConfiguration PinConfiguration
     {
@@ -219,7 +219,7 @@ public class Particle : IParticleState, IReplayHistory
         int maxNumPins = algorithm.PinsPerEdge * 10;
         int currentRound = system.CurrentRound;
         pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
-        pinConfigurationHistory = new ValueHistory<SysPinConfiguration>(pinConfiguration, currentRound);
+        pinConfigurationHistory = new ValueHistoryPinConfiguration(pinConfiguration, currentRound);
         receivedBeeps = new BitArray(maxNumPins);
         receivedMessages = new Message[maxNumPins];
         plannedBeeps = new BitArray(maxNumPins);
@@ -1261,7 +1261,7 @@ public class Particle : IParticleState, IReplayHistory
             pos_head = pos_tail;
         }
 
-        pinConfiguration = pinConfigurationHistory.GetMarkedValue();
+        pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
         receivedBeeps = (BitArray)receivedBeepsHistory.GetMarkedValue().Clone();
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
@@ -1325,7 +1325,7 @@ public class Particle : IParticleState, IReplayHistory
             }
         }
 
-
+        data.pinConfigurationHistory = pinConfigurationHistory.GeneratePCSaveData();
         data.receivedBeepsHistory = receivedBeepsHistory.GenerateSaveData();
 
         data.mainColorHistory = mainColorHistory.GenerateSaveData();
