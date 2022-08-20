@@ -121,7 +121,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
         Update(false, false);
     }
-    private List<PositionSnap> history = new List<PositionSnap>();
+
     private void Update(bool forceRenderUpdate, bool noAnimation)
     {
         // Previous Data
@@ -147,7 +147,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
                 state_cur.movement = ParticleMovement.Contracting;
                 state_cur.position2 = state_prev.position2; // Tail to previous Tail
             }
-        }history.Add(state_cur);
+        }
         // Update Matrix
         if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
             || state_prev.movement == ParticleMovement.Contracting

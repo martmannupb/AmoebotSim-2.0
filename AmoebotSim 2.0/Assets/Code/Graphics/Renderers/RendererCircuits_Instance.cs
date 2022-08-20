@@ -10,8 +10,9 @@ public class RendererCircuits_Instance
 
     // Data
     public bool isRenderingActive = false;
-
-    //private bool[] globalDirLineSet = new bool[] { false, false, false, false, false, false };
+    // Temporary
+    private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
+    private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
 
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
@@ -28,36 +29,51 @@ public class RendererCircuits_Instance
                 // 1. Add Pin
                 AddPin(posPartitionSet, pSet.color, moving);
                 // 2. Add Lines
-                //for (int j = 0; j < 6; j++) globalDirLineSet[j] = false;
                 foreach (var pin in pSet.pins)
                 {
                     // Inner Line
                     Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                    AddLine(posPartitionSet, posPin, pSet.color, moving);
+                    AddLine(posPartitionSet, posPin, pSet.color, false, moving);
                     // Outter Line
-                    //if (state.hasNeighbor1[pin.globalDir])
-                    //{
-                    //    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                    //    //AddLine(posPin, posOutterLineCenter, pSet.color, moving); // this does not look good enough
-                    //    AddLine(posPin, posOutterLineCenter, Color.black, moving);
-                    //    globalDirLineSet[pin.globalDir] = true;
-                    //}
+                    if (state.hasNeighbor1[pin.globalDir])
+                    {
+                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                        AddLine(posPin, posOutterLineCenter, pSet.color, true, moving);
+                        globalDirLineSet1[pin.globalDir] = true;
+                    }
+                }
+            }
+            for (int i = 0; i < state.singletonSets.Count; i++)
+            {
+                ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
+                // 1. Add Lines
+                foreach (var pin in pSet.pins)
+                {
+                    Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
+                    // Outter Line
+                    if (state.hasNeighbor1[pin.globalDir])
+                    {
+                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                        AddLine(posPin, posOutterLineCenter, pSet.color, true, moving);
+                        globalDirLineSet1[pin.globalDir] = true;
+                    }
                 }
             }
             // Add Connection Pins
             for (int i = 0; i < 6; i++)
             {
-                if(state.hasNeighbor1[i])
+                if(state.hasNeighbor1[i] && globalDirLineSet1[i] == false)
                 {
                     for (int j = 0; j < state.pinsPerSide; j++)
                     {
                         ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                         Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                        AddLine(posPin, posOutterLineCenter, Color.black, moving);
+                        AddLine(posPin, posOutterLineCenter, Color.black, true, moving);
                     }
                 }
             }
+            for (int j = 0; j < 6; j++) globalDirLineSet1[j] = false;
         }
         else
         {
@@ -74,57 +90,92 @@ public class RendererCircuits_Instance
                 AddPin(posPartitionSet2, pSet.color, moving);
                 AddConnectorPin(posPartitionSetConnectorPin1, pSet.color, moving);
                 AddConnectorPin(posPartitionSetConnectorPin2, pSet.color, moving);
-                AddLine(posPartitionSet1, posPartitionSetConnectorPin1, pSet.color, moving);
-                AddLine(posPartitionSet2, posPartitionSetConnectorPin2, pSet.color, moving);
-                AddLine(posPartitionSetConnectorPin1, posPartitionSetConnectorPin2, pSet.color, moving);
+                AddLine(posPartitionSet1, posPartitionSetConnectorPin1, pSet.color, false, moving);
+                AddLine(posPartitionSet2, posPartitionSetConnectorPin2, pSet.color, false, moving);
+                AddLine(posPartitionSetConnectorPin1, posPartitionSetConnectorPin2, pSet.color, false, moving);
+                // 2. Add Lines + Connector Lines
+                AddLines_PartitionSetExpanded(state, snap, pSet, posPartitionSet1, posPartitionSet2, moving);
+                
+            }
+            for (int i = 0; i < state.singletonSets.Count; i++)
+            {
+                ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
+                AddLines_SingletonSetExpanded(state, snap, pSet, moving);
+            }
+            AddLines_ExternalWithoutPartitionSet(state, snap, moving);
+            // Reset Temporary Data
+            for (int j = 0; j < 6; j++)
+            {
+                globalDirLineSet1[j] = false;
+                globalDirLineSet2[j] = false;
+            }
+        }
+    }
 
-                // 2. Add Lines
-                //for (int j = 0; j < 6; j++) globalDirLineSet[j] = false;
-                foreach (var pin in pSet.pins)
+    private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool moving)
+    {
+        foreach (var pin in pSet.pins)
+        {
+            // Inner Line
+            Vector2 posPin = CalculateGlobalPinPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
+            AddLine(pin.isHead ? posPartitionSet1 : posPartitionSet2, posPin, pSet.color, false, moving);
+            // Outter Line
+            if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
+            {
+                Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
+                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving);
+                if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
+                else globalDirLineSet2[pin.globalDir] = true;
+            }
+        }
+    }
+
+    private void AddLines_SingletonSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool moving)
+    {
+        foreach (var pin in pSet.pins)
+        {
+            Vector2 posPin = CalculateGlobalPinPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
+            // Outter Line
+            if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
+            {
+                Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
+                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving);
+                if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
+                else globalDirLineSet2[pin.globalDir] = true;
+            }
+        }
+    }
+
+    private void AddLines_ExternalWithoutPartitionSet(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, bool moving)
+    {
+        for (int k = 0; k < 6; k++)
+        {
+            if (state.hasNeighbor1[k] && globalDirLineSet1[k] == false && state.neighbor1ToNeighbor2Direction != k)
+            {
+                for (int j = 0; j < state.pinsPerSide; j++)
                 {
-                    // Inner Line
+                    ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, true);
                     Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                    AddLine(pin.isHead ? posPartitionSet1 : posPartitionSet2, posPin, pSet.color, moving);
-                    // Outter Line
-                    //if (state.hasNeighbor1[pin.globalDir])
-                    //{
-                    //    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                    //    //AddLine(posPin, posOutterLineCenter, pSet.color, moving); // this does not look good enough
-                    //    AddLine(posPin, posOutterLineCenter, Color.black, moving);
-                    //    globalDirLineSet[pin.globalDir] = true;
-                    //}
+                    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                    AddLine(posPin, posOutterLineCenter, Color.black, true, moving);
                 }
             }
-            // Add Connection Pins
-            for (int i = 0; i < 6; i++)
+            if (state.hasNeighbor2[k] && globalDirLineSet2[k] == false && ((state.neighbor1ToNeighbor2Direction + 3) % 6) != k)
             {
-                if (state.hasNeighbor1[i] && state.neighbor1ToNeighbor2Direction != i)
+                for (int j = 0; j < state.pinsPerSide; j++)
                 {
-                    for (int j = 0; j < state.pinsPerSide; j++)
-                    {
-                        ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
-                        Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                        AddLine(posPin, posOutterLineCenter, Color.black, moving);
-                    }
-                }
-                if (state.hasNeighbor2[i] && state.neighbor1ToNeighbor2Direction != ((i + 3) % 6))
-                {
-                    for (int j = 0; j < state.pinsPerSide; j++)
-                    {
-                        ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
-                        Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
-                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
-                        AddLine(posPin, posOutterLineCenter, Color.black, moving);
-                    }
+                    ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, false);
+                    Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
+                    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
+                    AddLine(posPin, posOutterLineCenter, Color.black, true, moving);
                 }
             }
         }
     }
 
-    public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool moving)
+    public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool moving)
     {
-        RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, moving);
+        RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, isConnectorLine, moving);
         RendererCircuits_RenderBatch batch;
         if (propertiesToRenderBatchMap.ContainsKey(propertyBlockData) == false)
         {
