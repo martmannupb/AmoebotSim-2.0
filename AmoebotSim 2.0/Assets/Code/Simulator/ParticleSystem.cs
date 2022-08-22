@@ -133,6 +133,17 @@ public class ParticleSystem : IReplayHistory
         Debug.Log(s);
     }
 
+    public void InitializeExpandedTest(int numParticles)
+    {
+        // Arrange the particles in a line
+        for (int i = 0; i < numParticles; i++)
+        {
+            Particle p = ParticleFactory.CreateExpandedTestParticle(this, new Vector2Int(0, i));
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+        }
+    }
+
     /// <summary>
     /// Initializes the system with connected LineFormationParticles for testing purposes.
     /// This should be removed after a proper initialization method has been created.
