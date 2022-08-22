@@ -30,6 +30,7 @@ public class RenderSystem
     public const float const_circuitPinSize = 0.1f;
     public const float const_circuitPinConnectorSize = 0.1f;
     public const float const_circuitAnimationDuration = 0.2f;
+    public const float const_circuitBeepDuration = 0.2f;
     // Layers
     public const float zLayer_background = 1f;
     public const float ZLayer_particlesBG = 0.1f;

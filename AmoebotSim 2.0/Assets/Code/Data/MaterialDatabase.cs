@@ -30,6 +30,8 @@ public static class MaterialDatabase
     public static Material material_circuit_line = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitMat");
     public static Material material_circuit_lineConnector = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitConnectorMat");
     public static Material material_circuit_pin = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMat");
+    // Beeps
+    public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");
 
     // UI
     public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");

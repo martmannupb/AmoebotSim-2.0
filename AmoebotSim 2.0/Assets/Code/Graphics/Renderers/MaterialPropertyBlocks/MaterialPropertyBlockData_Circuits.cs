@@ -24,6 +24,11 @@ public class MaterialPropertyBlockData_Circuits : MaterialPropertyBlockData
         propertyBlock.SetColor("_InputColor", color);
     }
 
+    public void ApplyTexture(Texture tex)
+    {
+        propertyBlock.SetTexture("_Texture2D", tex);
+    }
+
     public void ApplyAnimationTimestamp(float triggerTime, float animationLength)
     {
         propertyBlock.SetFloat("_AnimTriggerTime", triggerTime);

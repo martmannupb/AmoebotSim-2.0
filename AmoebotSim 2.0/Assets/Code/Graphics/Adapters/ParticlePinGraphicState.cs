@@ -31,7 +31,7 @@ public class ParticlePinGraphicState
         // Data
         public List<PinDef> pins; // all pins that belong to this partition set
         // Beeping
-        bool beepsThisRound;
+        public bool beepsThisRound;
 
         private PSetData()
         {

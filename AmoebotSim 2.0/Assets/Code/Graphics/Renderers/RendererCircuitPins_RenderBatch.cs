@@ -114,12 +114,11 @@ public class RendererCircuitPins_RenderBatch
 
     public void ApplyUpdates(float animationStartTime)
     {
-        float animationDuration = RenderSystem.const_circuitAnimationDuration;
         if (properties.moving)
         {
             // Moving
             propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
-            propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, animationDuration);
+            propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, RenderSystem.const_circuitAnimationDuration);
         }
         else
         {
