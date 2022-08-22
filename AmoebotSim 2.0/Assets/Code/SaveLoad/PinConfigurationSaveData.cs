@@ -24,7 +24,7 @@ using UnityEngine;
 [Serializable]
 public class PinConfigurationSaveData
 {
-    public bool expanded;   // This is actually not even needed since the particle in question knows if it is expanded or not
+    public int headDirection;
 
     // Only information required for pins is the partition set ID,
     // everything else is already defined by the index
@@ -51,7 +51,7 @@ public class PinConfigurationSaveData
         PinConfigurationSaveData d = (PinConfigurationSaveData)obj;
         bool myArrayNull = pinPartitionSets == null;
         bool otherArrayNull = d.pinPartitionSets == null;
-        if (expanded != d.expanded ||
+        if (headDirection != d.headDirection ||
             myArrayNull != otherArrayNull ||
             !myArrayNull && !otherArrayNull && pinPartitionSets.Length != d.pinPartitionSets.Length)
             return false;
@@ -68,6 +68,6 @@ public class PinConfigurationSaveData
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(expanded, pinPartitionSets);
+        return HashCode.Combine(headDirection, pinPartitionSets);
     }
 }

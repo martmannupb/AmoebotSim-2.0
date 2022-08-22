@@ -183,6 +183,16 @@ public abstract class ParticleAlgorithm
     /// type must be "committed" by calling the <see cref="ParticleAttribute{T}.SetValue(T)"/>
     /// method.
     /// </para>
+    /// <para>
+    /// Additionally, <see cref="PinConfiguration"/>s stored in attributes do not retain any
+    /// of their status flags, i.e., saving the current pin configuration in an attribute and
+    /// then reading it will return a pin configuration that is identical to the current one
+    /// but that is not marked as the current configuration and can thus not be used to read
+    /// received beeps and messages. The same holds for storing the planned pin configuration.
+    /// </para>
+    /// <para>
+    /// Note that reading stored pin configurations of other particles is not supported.
+    /// </para>
     /// </summary>
     /// <param name="name">The name of the attribute to be displayed in the UI.</param>
     /// <param name="initialValue">The initial attribute value.</param>

@@ -118,6 +118,8 @@ namespace BoundaryTestAlgo
         private ParticleAttribute<bool>[] receivedHeadsBeep;    // HEADS flag for remembering coin toss beep for each boundary
         private ParticleAttribute<int> phase2Count;             // Counter to execute the second phase kappa times
 
+        private ParticleAttribute<PinConfiguration> boundaryPC; // PinConfiguration to setup whenever we want to have one circuit for each boundary
+
         // Sum computation
         private ParticleAttribute<bool>[] isActive;             // Flag indicating whether the particle is active on each boundary
         private ParticleAttribute<bool>[] becomePassive;        // Flag indicating whether the particle should become passive in the current iteration
@@ -156,6 +158,7 @@ namespace BoundaryTestAlgo
                 heads[i] = CreateAttributeBool("Boundary " + (i + 1) + " HEADS", false);
                 receivedHeadsBeep[i] = CreateAttributeBool("Boundary " + (i + 1) + " HEADS beep", false);
             }
+            boundaryPC = CreateAttributePinConfiguration("Boundary PC", null);
 
             isActive = new ParticleAttribute<bool>[3];
             becomePassive = new ParticleAttribute<bool>[3];
@@ -320,7 +323,7 @@ namespace BoundaryTestAlgo
             else
             {
                 SetMainColor(candidate1Color);
-                SetupBoundaryCircuit(pc);
+                SetupBoundaryCircuit(ref pc);
             }
 
             SetPlannedPinConfiguration(pc);
@@ -349,7 +352,7 @@ namespace BoundaryTestAlgo
             PinConfiguration pc = GetCurrentPinConfiguration();
             bool rcvGlobalBeep = pc.ReceivedBeepOnPartitionSet(0);
             // First setup boundary circuit again (partition set ID = boundary index)
-            SetupBoundaryCircuit(pc);
+            SetupBoundaryCircuit(ref pc);
             SetPlannedPinConfiguration(pc);
 
             // if nobody beeped, continue to Phase 2
@@ -429,7 +432,7 @@ namespace BoundaryTestAlgo
             // Did not proceed to Sum Computation, so carry on or start next iteration
             // Have to continue or start next iteration
             // First setup boundary circuit again (partition set ID = boundary index)
-            SetupBoundaryCircuit(pc);
+            SetupBoundaryCircuit(ref pc);
             SetPlannedPinConfiguration(pc);
             // Every candidate has to toss a coin again and beep if the result is HEADS
             // If we start a new iteration, become a Phase 2 candidate again
@@ -781,18 +784,30 @@ namespace BoundaryTestAlgo
         // Changes the pin configuration such that partition set i is part
         // of the boundary circuit for boundary i. Has no effect for
         // particles that have no boundaries
-        private void SetupBoundaryCircuit(PinConfiguration pc)
+        private void SetupBoundaryCircuit(ref PinConfiguration pc)
         {
-            for (int boundary = 0; boundary < numBoundaries.GetValue_After(); boundary++)
+            if (numBoundaries.GetValue_After() == 0)
+                return;
+
+            PinConfiguration loadedPC = boundaryPC;
+            if (loadedPC is null)
             {
-                int predDir = boundaryNbrs[boundary, 0].GetValue_After();
-                int succDir = boundaryNbrs[boundary, 1].GetValue_After();
-                pc.MakePartitionSet(new Pin[] {
+                for (int boundary = 0; boundary < numBoundaries.GetValue_After(); boundary++)
+                {
+                    int predDir = boundaryNbrs[boundary, 0].GetValue_After();
+                    int succDir = boundaryNbrs[boundary, 1].GetValue_After();
+                    pc.MakePartitionSet(new Pin[] {
                         pc.GetPinAt(predDir, 2),
                         pc.GetPinAt(predDir, 3),
                         pc.GetPinAt(succDir, 0),
                         pc.GetPinAt(succDir, 1)
                     }, boundary);
+                }
+                boundaryPC.SetValue(pc);
+            }
+            else
+            {
+                pc = loadedPC;
             }
         }
 

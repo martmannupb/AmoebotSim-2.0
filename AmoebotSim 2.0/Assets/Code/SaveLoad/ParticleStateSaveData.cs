@@ -23,6 +23,7 @@ public class ParticleStateSaveData
     public List<ParticleAttributeSaveData<int>> dirAttributes;
     public List<ParticleAttributeSaveData<int>> intAttributes;
     public List<ParticleAttributeEnumSaveData> enumAttributes;
+    public List<ParticleAttributePCSaveData> pcAttributes;
 
     // Circuit data
     public PinConfigurationHistorySaveData pinConfigurationHistory;

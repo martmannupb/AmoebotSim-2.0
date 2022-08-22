@@ -1293,6 +1293,7 @@ public class Particle : IParticleState, IReplayHistory
         data.dirAttributes = new List<ParticleAttributeSaveData<int>>();
         data.intAttributes = new List<ParticleAttributeSaveData<int>>();
         data.enumAttributes = new List<ParticleAttributeEnumSaveData>();
+        data.pcAttributes = new List<ParticleAttributePCSaveData>();
         // Fill in the particle attributes ordered by type
         // Must use reflection here
         for (int i = 0; i < attributes.Count; i++)
@@ -1316,6 +1317,12 @@ public class Particle : IParticleState, IReplayHistory
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
                 aData.idx = i;
                 data.boolAttributes.Add(aData as ParticleAttributeSaveData<bool>);
+            }
+            else if (t == typeof(PinConfiguration))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                aData.idx = i;
+                data.pcAttributes.Add(aData as ParticleAttributePCSaveData);
             }
             else if (attributes[i].GetType().IsGenericType && attributes[i].GetType().GetGenericTypeDefinition() == typeof(ParticleAttribute_Enum<>))
             {

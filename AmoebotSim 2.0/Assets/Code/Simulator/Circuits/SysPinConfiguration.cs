@@ -578,7 +578,7 @@ public class SysPinConfiguration : PinConfiguration
     {
         PinConfigurationSaveData data = new PinConfigurationSaveData();
 
-        data.expanded = headDirection != -1;
+        data.headDirection = headDirection;
         data.pinPartitionSets = new int[numPins];
         for (int i = 0; i < numPins; i++)
         {
@@ -595,7 +595,7 @@ public class SysPinConfiguration : PinConfiguration
     {
         particle = p;
         pinsPerEdge = p.algorithm.PinsPerEdge;
-        headDirection = p.HeadDirection();
+        headDirection = data.headDirection;
 
         numPins = headDirection == -1 ? (6 * pinsPerEdge) : (10 * pinsPerEdge);
 
@@ -621,7 +621,6 @@ public class SysPinConfiguration : PinConfiguration
                     int idGlobal = globalDir * pinsPerEdge + idxGlobal;
                     SysPartitionSet ps = new SysPartitionSet(this, id, numPins);
                     SysPin pin = new SysPin(ps, id, direction, globalDir, true, idx, idxGlobal);
-                    //ps.AddPinBasic(id);
                     partitionSets[id] = ps;
                     pins[id] = pin;
                     pinsGlobal[idGlobal] = pin;
@@ -643,7 +642,6 @@ public class SysPinConfiguration : PinConfiguration
                     int idGlobal = globalLabel * pinsPerEdge + idxGlobal;
                     SysPartitionSet ps = new SysPartitionSet(this, id, numPins);
                     SysPin pin = new SysPin(ps, id, direction, globalLabel, isHead, idx, idxGlobal);
-                    //ps.AddPinBasic(id);
                     partitionSets[id] = ps;
                     pins[id] = pin;
                     pinsGlobal[idGlobal] = pin;

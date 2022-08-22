@@ -21,3 +21,9 @@ public class ParticleAttributeEnumSaveData : ParticleAttributeSaveData<string>
 {
     public string enumType;
 }
+
+[Serializable]
+public class ParticleAttributePCSaveData : ParticleAttributeSaveDataBase
+{
+    public PinConfigurationHistorySaveData history;
+}

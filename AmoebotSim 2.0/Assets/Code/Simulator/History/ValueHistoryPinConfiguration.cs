@@ -63,7 +63,10 @@ public class ValueHistoryPinConfiguration : ValueHistory<SysPinConfiguration>
     public SysPinConfiguration GetValueInRound(int round, Particle p)
     {
         int idx = idxHistory.GetValueInRound(round);
-        return new SysPinConfiguration(configs[idx], p);
+        PinConfigurationSaveData d = configs[idx];
+        if (d is null)
+            return null;
+        return new SysPinConfiguration(d, p);
     }
 
     public override void RecordValueInRound(SysPinConfiguration value, int round)
@@ -140,7 +143,10 @@ public class ValueHistoryPinConfiguration : ValueHistory<SysPinConfiguration>
     public SysPinConfiguration GetMarkedValue(Particle p)
     {
         int idx = idxHistory.GetMarkedValue();
-        return new SysPinConfiguration(configs[idx], p);
+        PinConfigurationSaveData d = configs[idx];
+        if (d is null)
+            return null;
+        return new SysPinConfiguration(d, p);
     }
 
     public override void RecordValueAtMarker(SysPinConfiguration value)
