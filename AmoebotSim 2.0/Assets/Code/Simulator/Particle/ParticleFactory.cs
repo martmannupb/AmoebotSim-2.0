@@ -28,6 +28,18 @@ public class ParticleFactory
         return p;
     }
 
+    public static Particle CreateExpandedTestParticle(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    {
+        Particle p = new Particle(system, position, compassDir, chirality);
+        p.isActive = true;
+        new ExpandedCircuitTestParticle(p);
+        p.isActive = false;
+        p.InitWithAlgorithm();
+        p.graphics.AddParticle();
+        p.graphics.Update();
+        return p;
+    }
+
     public static Particle CreateLineFormationParticleSeq(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
     {
         Particle p = new Particle(system, position, compassDir, chirality);
