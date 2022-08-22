@@ -30,6 +30,10 @@ public class ValueHistoryBitArray : ValueHistory<BitArray>
         return true;
     }
 
+    /**
+     * Saving and loading functionality.
+     */
+
     public new ValueHistorySaveData<BitArraySaveData> GenerateSaveData()
     {
         ValueHistorySaveData<BitArraySaveData> data = new ValueHistorySaveData<BitArraySaveData>();
@@ -41,5 +45,21 @@ public class ValueHistoryBitArray : ValueHistory<BitArray>
         data.lastRound = lastRound;
 
         return data;
+    }
+
+    public ValueHistoryBitArray(ValueHistorySaveData<BitArraySaveData> data)
+    {
+        values = new List<BitArray>(data.values.Count);
+        foreach (BitArraySaveData bData in data.values)
+        {
+            values.Add(bData.ToBitArray());
+        }
+        rounds = data.rounds;
+        lastRound = data.lastRound;
+
+        // Start in tracking state
+        markedRound = lastRound;
+        markedIndex = rounds.Count - 1;
+        isTracking = true;
     }
 }

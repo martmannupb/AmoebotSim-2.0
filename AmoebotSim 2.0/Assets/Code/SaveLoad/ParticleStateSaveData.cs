@@ -14,6 +14,9 @@ public class ParticleStateSaveData
     public int comDir;
     public bool chirality;
 
+    // Algorithm info
+    public string algorithmType;
+
     // Positional info
     public ValueHistorySaveData<Vector2Int> tailPositionHistory;
     public ValueHistorySaveData<int> expansionDirHistory;

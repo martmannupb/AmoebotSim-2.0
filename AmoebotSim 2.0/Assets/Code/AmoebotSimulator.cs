@@ -192,7 +192,14 @@ public class AmoebotSimulator : MonoBehaviour
     {
         if (!play)
         {
+            float t1 = Time.realtimeSinceStartup;
             SimulationStateSaveData data = SaveStateUtility.Load();
+            float t2 = Time.realtimeSinceStartup;
+            system.Reset();
+            system.InitializeFromSaveState(data);
+            UpdateRoundCounter();
+            float t3 = Time.realtimeSinceStartup;
+            Debug.Log("Loaded save data in " + (t2 - t1) + "s\nReinitialized system in " + (t3 - t2) + "s");
         }
     }
 }

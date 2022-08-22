@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -238,7 +239,7 @@ public class Particle : IParticleState, IReplayHistory
             partitionSetColors[i] = new Color();
             partitionSetColorsOverride[i] = false;
         }
-}
+    }
 
     /// <summary>
     /// This is the main activation method of the particle.
@@ -1286,6 +1287,8 @@ public class Particle : IParticleState, IReplayHistory
         data.comDir = comDir;
         data.chirality = chirality;
 
+        data.algorithmType = algorithm.GetType().FullName;
+
         data.tailPositionHistory = tailPosHistory.GenerateSaveData();
         data.expansionDirHistory = expansionDirHistory.GenerateSaveData();
 
@@ -1351,5 +1354,103 @@ public class Particle : IParticleState, IReplayHistory
         }
 
         return data;
+    }
+
+    public static Particle CreateFromSaveState(ParticleSystem system, ParticleStateSaveData data)
+    {
+        // First initialize particle's base data
+        Particle p = new Particle(system, data);
+        p.isActive = true;
+        // Then create algorithm
+        Type algoType = Type.GetType(data.algorithmType);
+        algoType.GetConstructor(new Type[] { typeof(Particle) }).Invoke(new object[] { p });
+        p.isActive = false;
+        p.InitWithAlgorithm(data);
+
+        // Finally set up the graphics info
+        p.graphics.AddParticle();
+        p.graphics.Update();
+        return p;
+    }
+
+    private Particle(ParticleSystem system, ParticleStateSaveData data)
+    {
+        this.system = system;
+
+        comDir = data.comDir;
+        chirality = data.chirality;
+
+        tailPosHistory = new ValueHistory<Vector2Int>(data.tailPositionHistory);
+        expansionDirHistory = new ValueHistory<int>(data.expansionDirHistory);
+
+        exp_expansionDir = expansionDirHistory.GetMarkedValue();
+        exp_isExpanded = exp_expansionDir != -1;
+        pos_tail = tailPosHistory.GetMarkedValue();
+        pos_head = exp_isExpanded ? ParticleSystem_Utils.GetNbrInDir(pos_tail, ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality)) : pos_tail;
+
+        mainColorHistory = new ValueHistory<Color>(data.mainColorHistory);
+        mainColorSetHistory = new ValueHistory<bool>(data.mainColorSetHistory);
+        mainColor = mainColorHistory.GetMarkedValue();
+        mainColorSet = mainColorSetHistory.GetMarkedValue();
+
+        // Add particle to the system and update the visuals of the particle
+        graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
+    }
+
+    private void InitWithAlgorithm(ParticleStateSaveData data)
+    {
+        int maxNumPins = algorithm.PinsPerEdge * 10;
+        int currentRound = system.CurrentRound;
+
+        // TODO: Check if saved data even matches the algorithm in terms of array sizes
+
+        pinConfigurationHistory = new ValueHistoryPinConfiguration(data.pinConfigurationHistory);
+        pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
+
+        receivedBeepsHistory = new ValueHistoryBitArray(data.receivedBeepsHistory);
+        receivedBeeps = (BitArray)receivedBeepsHistory.GetMarkedValue().Clone();
+
+        plannedBeeps = new BitArray(maxNumPins);
+        plannedMessages = new Message[maxNumPins];
+
+        //receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
+        partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
+        partitionSetColors = new Color[maxNumPins];
+        partitionSetColorsOverride = new bool[maxNumPins];
+        for (int i = 0; i < maxNumPins; i++)
+        {
+            //receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
+            partitionSetColorHistory[i] = new ValueHistory<Color>(data.partitionSetColorHistory[i]);
+            partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(data.partitionSetColorOverrideHistory[i]);
+            partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
+            partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
+        }
+
+
+        // TODO
+
+        //pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
+        //pinConfigurationHistory = new ValueHistoryPinConfiguration(pinConfiguration, currentRound);
+        /*
+        //receivedBeeps = new BitArray(maxNumPins);
+        receivedMessages = new Message[maxNumPins];
+        //plannedBeeps = new BitArray(maxNumPins);
+        //plannedMessages = new Message[maxNumPins];
+        //receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), currentRound);
+        receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        //partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
+        //partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
+        //partitionSetColors = new Color[maxNumPins];
+        //partitionSetColorsOverride = new bool[maxNumPins];
+        for (int i = 0; i < maxNumPins; i++)
+        {
+            receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
+            //partitionSetColorHistory[i] = new ValueHistory<Color>(new Color(), currentRound);
+            //partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(false, currentRound);
+            //partitionSetColors[i] = new Color();
+            //partitionSetColorsOverride[i] = false;
+        }
+        */
     }
 }

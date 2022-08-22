@@ -227,4 +227,10 @@ public class ValueHistoryPinConfiguration : ValueHistory<SysPinConfiguration>
 
         return data;
     }
+
+    public ValueHistoryPinConfiguration(PinConfigurationHistorySaveData data) : base()
+    {
+        idxHistory = new ValueHistory<int>(data.idxHistory);
+        configs = data.configs;
+    }
 }

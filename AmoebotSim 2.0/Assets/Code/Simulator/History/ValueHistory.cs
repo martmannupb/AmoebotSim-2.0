@@ -31,9 +31,9 @@ public class ValueHistory<T> : IReplayHistory
     protected List<int> rounds;     // Stores the rounds in which values were changed
     protected int lastRound;        // Stores the last round for which we have a certain recorded value
 
-    private int markedRound;        // The currently marked round
-    private int markedIndex;        // The index corresponding to the currently marked round for fast lookup
-    private bool isTracking;        // Is true while the marked round is tracking the last round
+    protected int markedRound;      // The currently marked round
+    protected int markedIndex;      // The index corresponding to the currently marked round for fast lookup
+    protected bool isTracking;      // Is true while the marked round is tracking the last round
 
     /// <summary>
     /// Creates a new history record for a variable of type <typeparamref name="T"/>.
@@ -52,6 +52,9 @@ public class ValueHistory<T> : IReplayHistory
         markedIndex = 0;
         isTracking = true;
     }
+
+    // Empty constructor to allow subclasses specifying their constructors freely
+    protected ValueHistory() { }
 
     // TODO: Check if the default comparison can be done better
     /// <summary>
@@ -422,5 +425,16 @@ public class ValueHistory<T> : IReplayHistory
         data.lastRound = lastRound;
 
         return data;
+    }
+
+    public ValueHistory(ValueHistorySaveData<T> data) {
+        values = data.values;
+        rounds = data.rounds;
+        lastRound = data.lastRound;
+
+        // Start in tracking state
+        markedRound = lastRound;
+        markedIndex = rounds.Count - 1;
+        isTracking = true;
     }
 }

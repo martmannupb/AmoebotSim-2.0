@@ -1749,4 +1749,24 @@ public class ParticleSystem : IReplayHistory
 
         return data;
     }
+
+    public void InitializeFromSaveState(SimulationStateSaveData data)
+    {
+        _earliestRound = data.earliestRound;
+        _latestRound = data.latestRound;
+        _currentRound = _latestRound;
+        _previousRound = _latestRound;
+
+        foreach (ParticleStateSaveData pData in data.particles)
+        {
+            Particle p = Particle.CreateFromSaveState(this, pData);
+            particles.Add(p);
+            particleMap.Add(p.Tail(), p);
+            if (p.IsExpanded())
+            {
+                particleMap.Add(p.Head(), p);
+            }
+        }
+        UpdateAllParticleVisuals(true);
+    }
 }

@@ -12,7 +12,7 @@ public static class SaveStateUtility
 
     public static bool Save(SimulationStateSaveData data)
     {
-        string json = JsonUtility.ToJson(data, true);
+        string json = JsonUtility.ToJson(data, false);
         File.WriteAllText(saveFile, json);
         return true;
     }

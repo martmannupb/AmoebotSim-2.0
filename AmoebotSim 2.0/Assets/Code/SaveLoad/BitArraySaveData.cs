@@ -19,4 +19,9 @@ public class BitArraySaveData
         ba.CopyTo(data.bits, 0);
         return data;
     }
+
+    public BitArray ToBitArray()
+    {
+        return new BitArray(bits);
+    }
 }
