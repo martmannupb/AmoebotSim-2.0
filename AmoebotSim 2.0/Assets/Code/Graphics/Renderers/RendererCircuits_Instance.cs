@@ -25,7 +25,7 @@ public class RendererCircuits_Instance
             for (int i = 0; i < state.partitionSets.Count; i++)
             {
                 ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                Vector2 posPartitionSet = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, 0f);
+                Vector2 posPartitionSet = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, 0f, false);
                 // 1. Add Pin
                 AddPin(posPartitionSet, pSet.color, moving);
                 // 2. Add Lines
@@ -81,10 +81,12 @@ public class RendererCircuits_Instance
             for (int i = 0; i < state.partitionSets.Count; i++)
             {
                 ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                Vector2 posPartitionSet1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, 60f * snap.globalExpansionDir);
-                Vector2 posPartitionSet2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, amountPartitionSets, 60f * snap.globalExpansionDir);
-                Vector2 posPartitionSetConnectorPin1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, 60f * state.neighbor1ToNeighbor2Direction);
-                Vector2 posPartitionSetConnectorPin2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6));
+                float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
+                float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
+                Vector2 posPartitionSet1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, rot1, false);
+                Vector2 posPartitionSet2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, amountPartitionSets, rot2, true);
+                Vector2 posPartitionSetConnectorPin1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, rot1, false);
+                Vector2 posPartitionSetConnectorPin2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, rot2, true);
                 // 1. Add Pins + Connectors + Internal Lines
                 AddPin(posPartitionSet1, pSet.color, moving);
                 AddPin(posPartitionSet2, pSet.color, moving);
@@ -283,16 +285,16 @@ public class RendererCircuits_Instance
         return posParticle + relPinPos;
     }
 
-    private Vector2 CalculateGlobalPartitionSetPinPosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees)
+    private Vector2 CalculateGlobalPartitionSetPinPosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
     {
         Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPosParticle);
-        return posParticle + CalculateRelativePartitionSetPinPosition(partitionSetID, amountOfPartitionSetsAtNode, rotationDegrees);
+        return posParticle + CalculateRelativePartitionSetPinPosition(partitionSetID, amountOfPartitionSetsAtNode, rotationDegrees, invertPositions);
     }
 
-    private Vector2 CalculateGlobalExpandedPartitionSetCenterNodePosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees)
+    private Vector2 CalculateGlobalExpandedPartitionSetCenterNodePosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
     {
         Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPosParticle);
-        return posParticle + CalculateRelativeExpandedPartitionSetCenterNodePosition(partitionSetID, amountOfPartitionSetsAtNode, rotationDegrees);
+        return posParticle + CalculateRelativeExpandedPartitionSetCenterNodePosition(partitionSetID, amountOfPartitionSetsAtNode, rotationDegrees, invertPositions);
     }
 
     private Vector2 CalculateGlobalOutterPinLineCenterPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
@@ -308,7 +310,7 @@ public class RendererCircuits_Instance
         return pinPos + lineCenterOffset;
     }
 
-    private Vector2 CalculateRelativePartitionSetPinPosition(int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees)
+    private Vector2 CalculateRelativePartitionSetPinPosition(int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
     {
         if (amountOfPartitionSetsAtNode == 1) return Vector2.zero;
         else
@@ -326,14 +328,16 @@ public class RendererCircuits_Instance
                     lineLength = RenderSystem.global_particleScale * 0.8f;
                     break;
             }
-            float height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
+            float height;
+            if(invertPositions) height = (lineLength / 2f) - (amountOfPartitionSetsAtNode - partitionSetID - 1) * (lineLength / (amountOfPartitionSetsAtNode - 1));
+            else height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
             Vector2 position = new Vector2(0f, height);
             position = Quaternion.Euler(0f, 0f, rotationDegrees) * position;
             return position;
         }
     }
 
-    private Vector2 CalculateRelativeExpandedPartitionSetCenterNodePosition(int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees)
+    private Vector2 CalculateRelativeExpandedPartitionSetCenterNodePosition(int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
     {
         float relXPos = RenderSystem.global_particleScale * 0.5f * 0.85f;
 
@@ -353,7 +357,9 @@ public class RendererCircuits_Instance
                     lineLength = RenderSystem.global_particleScale * 0.4f;
                     break;
             }
-            float height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
+            float height;
+            if(invertPositions) height = (lineLength / 2f) - (amountOfPartitionSetsAtNode - partitionSetID - 1) * (lineLength / (amountOfPartitionSetsAtNode - 1));
+            else height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
             Vector2 position = new Vector2(relXPos, height);
             position = Quaternion.Euler(0f, 0f, rotationDegrees) * position;
             return position;
