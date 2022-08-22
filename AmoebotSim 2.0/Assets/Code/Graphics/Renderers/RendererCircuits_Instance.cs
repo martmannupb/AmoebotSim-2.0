@@ -83,8 +83,8 @@ public class RendererCircuits_Instance
                 ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
                 Vector2 posPartitionSet1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, 60f * snap.globalExpansionDir);
                 Vector2 posPartitionSet2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, amountPartitionSets, 60f * snap.globalExpansionDir);
-                Vector2 posPartitionSetConnectorPin1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, 60f * snap.globalExpansionDir);
-                Vector2 posPartitionSetConnectorPin2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, 60f * snap.globalExpansionDir);
+                Vector2 posPartitionSetConnectorPin1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, 60f * state.neighbor1ToNeighbor2Direction);
+                Vector2 posPartitionSetConnectorPin2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6));
                 // 1. Add Pins + Connectors + Internal Lines
                 AddPin(posPartitionSet1, pSet.color, moving);
                 AddPin(posPartitionSet2, pSet.color, moving);
@@ -335,7 +335,7 @@ public class RendererCircuits_Instance
 
     private Vector2 CalculateRelativeExpandedPartitionSetCenterNodePosition(int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees)
     {
-        float relXPos = RenderSystem.global_particleScale * 0.7f;
+        float relXPos = RenderSystem.global_particleScale * 0.5f * 0.85f;
 
         if (amountOfPartitionSetsAtNode == 1) return Quaternion.Euler(0f, 0f, rotationDegrees) * new Vector2(relXPos, 0f);
         else
@@ -344,13 +344,13 @@ public class RendererCircuits_Instance
             switch (amountOfPartitionSetsAtNode)
             {
                 case 2:
-                    lineLength = RenderSystem.global_particleScale * 0.5f;
+                    lineLength = RenderSystem.global_particleScale * 0.3f;
                     break;
                 case 3:
-                    lineLength = RenderSystem.global_particleScale * 0.5f;
+                    lineLength = RenderSystem.global_particleScale * 0.4f;
                     break;
                 default:
-                    lineLength = RenderSystem.global_particleScale * 0.5f;
+                    lineLength = RenderSystem.global_particleScale * 0.4f;
                     break;
             }
             float height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
