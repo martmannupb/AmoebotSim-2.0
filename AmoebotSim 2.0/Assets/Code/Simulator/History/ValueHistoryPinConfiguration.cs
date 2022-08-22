@@ -210,7 +210,7 @@ public class ValueHistoryPinConfiguration : ValueHistory<SysPinConfiguration>
      */
 
     /// <summary>
-    /// Not supported
+    /// Not supported.
     /// </summary>
     /// <returns></returns>
     public override ValueHistorySaveData<SysPinConfiguration> GenerateSaveData()

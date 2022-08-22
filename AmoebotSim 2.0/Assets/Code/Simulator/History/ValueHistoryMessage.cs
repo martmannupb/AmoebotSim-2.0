@@ -20,4 +20,33 @@ public class ValueHistoryMessage : ValueHistory<Message>
         }
         return val1.Equals(val2);
     }
+
+    /**
+     * Saving and loading functionality.
+     */
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <returns></returns>
+    public override ValueHistorySaveData<Message> GenerateSaveData()
+    {
+        return null;
+    }
+
+    public ValueHistorySaveData<MessageSaveData> GenerateMessageSaveData()
+    {
+        ValueHistorySaveData<MessageSaveData> data = new ValueHistorySaveData<MessageSaveData>();
+
+        data.values = new List<MessageSaveData>(values.Count);
+        foreach (Message m in values)
+        {
+            data.values.Add(m is null ? null : m.GenerateSaveData());
+        }
+
+        data.rounds = rounds;
+        data.lastRound = lastRound;
+
+        return data;
+    }
 }

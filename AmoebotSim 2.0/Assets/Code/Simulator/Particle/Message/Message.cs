@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 // TODO: Could also define priorities directly using a Priority property
@@ -89,4 +90,28 @@ public abstract class Message
     /// has a strictly higher priority than the given
     /// <paramref name="other"/> message.</returns>
     public abstract bool GreaterThan(Message other);
+
+    /**
+     * Saving and loading functionality.
+     */
+
+    public MessageSaveData GenerateSaveData()
+    {
+        MessageSaveData data = new MessageSaveData();
+
+        data.messageType = this.GetType().FullName;
+        data.names = new List<string>();
+        data.types = new List<string>();
+        data.values = new List<string>();
+
+        foreach (FieldInfo field in this.GetType().GetFields())
+        {
+            data.names.Add(field.Name);
+            data.types.Add(field.FieldType.FullName);
+            object val = field.GetValue(this);
+            data.values.Add(val is null ? null : val.ToString());
+        }
+
+        return data;
+    }
 }

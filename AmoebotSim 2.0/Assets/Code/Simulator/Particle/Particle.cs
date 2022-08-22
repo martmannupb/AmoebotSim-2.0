@@ -1334,6 +1334,11 @@ public class Particle : IParticleState, IReplayHistory
 
         data.pinConfigurationHistory = pinConfigurationHistory.GeneratePCSaveData();
         data.receivedBeepsHistory = receivedBeepsHistory.GenerateSaveData();
+        data.receivedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[receivedMessagesHistory.Length];
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        {
+            data.receivedMessagesHistory[i] = receivedMessagesHistory[i].GenerateMessageSaveData();
+        }
 
         data.mainColorHistory = mainColorHistory.GenerateSaveData();
         data.mainColorSetHistory = mainColorSetHistory.GenerateSaveData();
