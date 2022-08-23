@@ -42,6 +42,10 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public readonly bool chirality;
 
+    // Special flag that is set while a particle is being reinitialized on load
+    // Prevents state changes caused by an algorithm constructor
+    private bool inReinitialize = false;
+
     // State _____
     // Position: Store tail position in history but always keep head position up to date
     private ValueHistory<Vector2Int> tailPosHistory;
@@ -543,6 +547,8 @@ public class Particle : IParticleState, IReplayHistory
     /// <param name="c">The new main color of the particle.</param>
     public void SetParticleColor(Color c)
     {
+        if (inReinitialize)
+            return;
         mainColor = c;
         mainColorSet = true;
         mainColorHistory.RecordValueInRound(c, system.CurrentRound);
@@ -559,6 +565,8 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public void ResetParticleColor()
     {
+        if (inReinitialize)
+            return;
         mainColorSet = false;
         mainColorSetHistory.RecordValueInRound(false, system.CurrentRound);
         graphics.ClearParticleColor();
@@ -571,6 +579,8 @@ public class Particle : IParticleState, IReplayHistory
     /// overwritten by the particle algorithm.</returns>
     public bool IsParticleColorSet()
     {
+        if (inReinitialize)
+            return false;
         return mainColorSet;
     }
 
@@ -1305,7 +1315,6 @@ public class Particle : IParticleState, IReplayHistory
             if (t == typeof(int))
             {
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
-                aData.idx = i;
                 if (attributes[i].GetType() == typeof(ParticleAttribute_Direction))
                 {
                     data.dirAttributes.Add(aData as ParticleAttributeSaveData<int>);
@@ -1318,19 +1327,16 @@ public class Particle : IParticleState, IReplayHistory
             else if (t == typeof(bool))
             {
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
-                aData.idx = i;
                 data.boolAttributes.Add(aData as ParticleAttributeSaveData<bool>);
             }
             else if (t == typeof(PinConfiguration))
             {
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
-                aData.idx = i;
                 data.pcAttributes.Add(aData as ParticleAttributePCSaveData);
             }
             else if (attributes[i].GetType().IsGenericType && attributes[i].GetType().GetGenericTypeDefinition() == typeof(ParticleAttribute_Enum<>))
             {
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
-                aData.idx = i;
                 data.enumAttributes.Add(aData as ParticleAttributeEnumSaveData);
             }
         }
@@ -1361,9 +1367,11 @@ public class Particle : IParticleState, IReplayHistory
         // First initialize particle's base data
         Particle p = new Particle(system, data);
         p.isActive = true;
+        p.inReinitialize = true;
         // Then create algorithm
         Type algoType = Type.GetType(data.algorithmType);
         algoType.GetConstructor(new Type[] { typeof(Particle) }).Invoke(new object[] { p });
+        p.inReinitialize = false;
         p.isActive = false;
         p.InitWithAlgorithm(data);
 
@@ -1413,20 +1421,73 @@ public class Particle : IParticleState, IReplayHistory
         plannedBeeps = new BitArray(maxNumPins);
         plannedMessages = new Message[maxNumPins];
 
-        //receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
         partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
         partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
+        receivedMessages = new Message[maxNumPins];
         partitionSetColors = new Color[maxNumPins];
         partitionSetColorsOverride = new bool[maxNumPins];
         for (int i = 0; i < maxNumPins; i++)
         {
-            //receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
+            receivedMessagesHistory[i] = new ValueHistoryMessage(data.receivedMessagesHistory[i]);
             partitionSetColorHistory[i] = new ValueHistory<Color>(data.partitionSetColorHistory[i]);
             partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(data.partitionSetColorOverrideHistory[i]);
+            receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
             partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
             partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
         }
 
+        // Finally, update the attributes
+        // The attributes have already been set up by the algorithm, we now just need to fill them with different values
+        // We store the attributes provided by the save state in a dictionary for easy access
+        Dictionary<string, ParticleAttributeSaveDataBase> savedAttrs = new Dictionary<string, ParticleAttributeSaveDataBase>();
+        foreach (var list in new IEnumerable[] { data.boolAttributes, data.dirAttributes, data.intAttributes, data.enumAttributes, data.pcAttributes })
+        {
+            foreach (ParticleAttributeSaveDataBase a in list)
+            {
+                savedAttrs.Add(a.name, a);
+            }
+        }
+
+        foreach (IParticleAttribute myAttr in attributes)
+        {
+            string name = myAttr.ToString_AttributeName();
+            if (!savedAttrs.ContainsKey(name))
+            {
+                Debug.LogError("Attribute " + name + " not stored in save data.");
+                continue;
+            }
+            // Try filling in the values
+            if (!myAttr.RestoreFromSaveData(savedAttrs[name]))
+            {
+                Debug.LogError("Unable to restore attribute " + name + " from saved data.");
+            }
+        }
+
+
+
+
+        //foreach (ParticleAttributeSaveData<bool> attr in data.boolAttributes)
+        //{
+        //    if (attr.idx >= attributes.Count)
+        //    {
+        //        Debug.LogError("Index " + attr.idx + " of saved attribute " + attr.name + " does not exist.");
+        //        continue;
+        //    }
+        //    IParticleAttribute myAttr = attributes[attr.idx];
+        //    if (myAttr.ToString_AttributeName() != attr.name)
+        //    {
+        //        Debug.LogError("Name " + attr.name + " of saved attribute does not match name " + myAttr.ToString_AttributeName() + " of attribute");
+        //        continue;
+        //    }
+        //    if (myAttr.GetAttributeType() != typeof(bool))
+        //    {
+        //        Debug.LogError("Type " + myAttr.GetAttributeType() + " of attribute " + myAttr.ToString_AttributeName() + " does not match saved type (bool)");
+        //        continue;
+        //    }
+        //    // Index, name and type match, now update the values
+        //    myAttr.RestoreFromSaveData(attr);
+        //}
 
         // TODO
 
@@ -1434,18 +1495,18 @@ public class Particle : IParticleState, IReplayHistory
         //pinConfigurationHistory = new ValueHistoryPinConfiguration(pinConfiguration, currentRound);
         /*
         //receivedBeeps = new BitArray(maxNumPins);
-        receivedMessages = new Message[maxNumPins];
+        //receivedMessages = new Message[maxNumPins];
         //plannedBeeps = new BitArray(maxNumPins);
         //plannedMessages = new Message[maxNumPins];
         //receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), currentRound);
-        receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        //receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
         //partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
         //partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
         //partitionSetColors = new Color[maxNumPins];
         //partitionSetColorsOverride = new bool[maxNumPins];
         for (int i = 0; i < maxNumPins; i++)
         {
-            receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
+            //receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
             //partitionSetColorHistory[i] = new ValueHistory<Color>(new Color(), currentRound);
             //partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(false, currentRound);
             //partitionSetColors[i] = new Color();

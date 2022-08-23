@@ -50,5 +50,7 @@ public interface IParticleAttribute : IReplayHistory
     /// </returns>
     ParticleAttributeSaveDataBase GenerateSaveData();
 
+    bool RestoreFromSaveData(ParticleAttributeSaveDataBase data);
+
     void Print();
 }

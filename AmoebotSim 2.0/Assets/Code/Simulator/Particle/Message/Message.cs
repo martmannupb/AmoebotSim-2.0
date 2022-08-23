@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -113,5 +114,31 @@ public abstract class Message
         }
 
         return data;
+    }
+
+    public static Message CreateFromSaveData(MessageSaveData data)
+    {
+        // Empty message type means null
+        if (data.messageType == "")
+            return null;
+
+        // TODO: Handle errors
+        Type msgType = Type.GetType(data.messageType);
+        Message msg = msgType.GetConstructor(new Type[] { }).Invoke(new object[] { }) as Message;
+        for (int i = 0; i < data.names.Count; i++)
+        {
+            Type fieldType = Type.GetType(data.types[i]);
+            if (fieldType.IsEnum)
+            {
+                MethodInfo parseMethod = typeof(Enum).GetMethod("Parse", new Type[] { typeof(string) });
+                MethodInfo parseMethodGen = parseMethod.MakeGenericMethod(fieldType);
+                msg.GetType().GetField(data.names[i]).SetValue(msg, parseMethodGen.Invoke(null, new object[] { data.values[i] }));
+            }
+            else
+            {
+                msg.GetType().GetField(data.names[i]).SetValue(msg, Convert.ChangeType(data.values[i], fieldType));
+            }
+        }
+        return msg;
     }
 }

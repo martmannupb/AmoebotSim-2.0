@@ -7,7 +7,6 @@ using UnityEngine;
 public abstract class ParticleAttributeSaveDataBase
 {
     public string name;
-    public int idx;         // Index in the particle's list of attributes
 }
 
 [Serializable]

@@ -91,6 +91,18 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
         return data;
     }
 
+    public virtual bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
+    {
+        ParticleAttributeSaveData<T> myData = data as ParticleAttributeSaveData<T>;
+        if (myData is null)
+        {
+            Debug.LogError("Save data has incompatible type, aborting particle attribute restoration.");
+            return false;
+        }
+        history = new ValueHistory<T>(myData.history);
+        return true;
+    }
+
 
     // <<<TEMPORARY: FOR DEBUGGING HISTORIES>>>
     public void Print()

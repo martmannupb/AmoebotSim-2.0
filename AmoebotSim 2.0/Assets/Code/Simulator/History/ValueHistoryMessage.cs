@@ -49,4 +49,20 @@ public class ValueHistoryMessage : ValueHistory<Message>
 
         return data;
     }
+
+    public ValueHistoryMessage(ValueHistorySaveData<MessageSaveData> data)
+    {
+        values = new List<Message>(data.values.Count);
+        foreach (MessageSaveData mData in data.values)
+        {
+            values.Add(Message.CreateFromSaveData(mData));
+        }
+        rounds = data.rounds;
+        lastRound = data.lastRound;
+
+        // Start in tracking state
+        markedRound = lastRound;
+        markedIndex = rounds.Count - 1;
+        isTracking = true;
+    }
 }

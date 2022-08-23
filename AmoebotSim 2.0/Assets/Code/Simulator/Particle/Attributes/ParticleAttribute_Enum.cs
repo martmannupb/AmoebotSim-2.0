@@ -107,4 +107,36 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
         data.history = history.GenerateSaveDataString();
         return data;
     }
+
+    public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
+    {
+        ParticleAttributeEnumSaveData myData = data as ParticleAttributeEnumSaveData;
+        if (myData is null || Type.GetType(myData.enumType) != typeof(T))
+        {
+            Debug.LogError("Save data for enum has incompatible type, aborting particle attribute restoration.");
+            return false;
+        }
+        // Try to convert all values into enum types
+        ValueHistorySaveData<T> enumHistory = new ValueHistorySaveData<T>();
+        enumHistory.values = new List<T>(myData.history.values.Count);
+        foreach (string enumValStr in myData.history.values)
+        {
+            object enumVal;
+            if (Enum.TryParse(typeof(T), enumValStr, true, out enumVal))
+            {
+                enumHistory.values.Add((T)enumVal);
+            }
+            else
+            {
+                Debug.LogError("Unknown saved enum value '" + enumValStr + "', aborting particle attribute restoration.");
+                return false;
+            }
+        }
+
+        enumHistory.rounds = myData.history.rounds;
+        enumHistory.lastRound = myData.history.lastRound;
+
+        history = new ValueHistory<T>(enumHistory);
+        return true;
+    }
 }

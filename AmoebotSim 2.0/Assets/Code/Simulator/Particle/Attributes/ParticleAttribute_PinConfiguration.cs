@@ -127,4 +127,16 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
         data.history = pcHistory.GeneratePCSaveData();
         return data;
     }
+
+    public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
+    {
+        ParticleAttributePCSaveData myData = data as ParticleAttributePCSaveData;
+        if (myData is null)
+        {
+            Debug.LogError("Save data for pin configuration attribute has incompatible type, aborting particle attribute restoration.");
+            return false;
+        }
+        pcHistory = new ValueHistoryPinConfiguration(myData.history);
+        return true;
+    }
 }

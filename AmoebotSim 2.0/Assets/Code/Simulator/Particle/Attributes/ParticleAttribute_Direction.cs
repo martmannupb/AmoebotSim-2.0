@@ -68,4 +68,25 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IP
             throw new System.ArgumentException("Cannot convert " + value + " to direction attribute.");
         }
     }
+
+    public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
+    {
+        ParticleAttributeSaveData<int> myData = data as ParticleAttributeSaveData<int>;
+        if (myData is null)
+        {
+            Debug.LogError("Save data has incompatible type, aborting particle attribute restoration.");
+            return false;
+        }
+        // Make sure that all values are in the correct range
+        foreach (int val in myData.history.values)
+        {
+            if (val < -1 || val > 5)
+            {
+                Debug.LogError("Save data for direction attribute has incompatible value " + val + ", aborting particle attribute restoration.");
+                return false;
+            }
+        }
+        history = new ValueHistory<int>(myData.history);
+        return true;
+    }
 }

@@ -9,6 +9,11 @@ public class MyMessage : Message
 
     public Direction dir;
 
+    public MyMessage()
+    {
+        dir = Direction.LEFT;
+    }
+
     public MyMessage(Direction dir)
     {
         this.dir = dir;

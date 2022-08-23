@@ -8,6 +8,11 @@ public class DirectionMessage : Message
 {
     public int direction;
 
+    public DirectionMessage()
+    {
+        this.direction = -1;
+    }
+
     public DirectionMessage(int direction)
     {
         this.direction = direction;

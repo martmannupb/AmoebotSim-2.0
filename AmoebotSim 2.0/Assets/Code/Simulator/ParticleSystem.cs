@@ -1767,6 +1767,6 @@ public class ParticleSystem : IReplayHistory
                 particleMap.Add(p.Head(), p);
             }
         }
-        UpdateAllParticleVisuals(true);
+        //UpdateAllParticleVisuals(true);
     }
 }
