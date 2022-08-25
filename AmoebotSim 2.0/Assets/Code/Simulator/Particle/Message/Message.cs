@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -25,6 +24,15 @@ using UnityEngine;
 /// and <see cref="Equals(Message)"/> methods must be
 /// implemented such that they define a strict total
 /// order on the set of all possible messages.
+/// </para>
+/// <para>
+/// To ensure that messages can be saved and loaded correctly,
+/// every subclass must provide a parameterless default
+/// constructor and may only have simple members of
+/// primitive types like <c>int</c>, <c>bool</c>,
+/// <c>string</c>, or enums. In particular, no reference
+/// types or data structures like lists or arrays are
+/// supported as members.
 /// </para>
 /// </summary>
 public abstract class Message
@@ -96,6 +104,15 @@ public abstract class Message
      * Saving and loading functionality.
      */
 
+    /// <summary>
+    /// Stores this instance's member variables in a serializable object.
+    /// <para>
+    /// Uses reflection to find the members' names, types and values and
+    /// stores the non-null values by their string representation.
+    /// </para>
+    /// </summary>
+    /// <returns>A <see cref="MessageSaveData"/> instance storing the
+    /// names, types and values of this message as strings.</returns>
     public MessageSaveData GenerateSaveData()
     {
         MessageSaveData data = new MessageSaveData();
@@ -116,27 +133,80 @@ public abstract class Message
         return data;
     }
 
+    /// <summary>
+    /// Reconstructs a <see cref="Message"/> subclass instance from the given
+    /// save data. Fields not stored in the save data will be left at the values set in
+    /// the default constructor and fields stored in the save data that are not defined
+    /// by the subclass will produce error messages.
+    /// </summary>
+    /// <param name="data">The serializable data storing a message's type and members.</param>
+    /// <returns>An instance of a <see cref="Message"/> subclass with the member
+    /// values stored in <paramref name="data"/>. Will be <c>null</c> if the message subtype
+    /// cannot be determined or instantiated with a default constructor.</returns>
     public static Message CreateFromSaveData(MessageSaveData data)
     {
-        // Empty message type means null
-        if (data.messageType == "")
+        // Null input or empty message type means null
+        if (data is null || data.messageType == "")
             return null;
 
-        // TODO: Handle errors
+        // Try getting the Message type
         Type msgType = Type.GetType(data.messageType);
-        Message msg = msgType.GetConstructor(new Type[] { }).Invoke(new object[] { }) as Message;
+        if (msgType is null)
+        {
+            Debug.LogError("Error: Unknown Message type '" + data.messageType + "'");
+            return null;
+        }
+        if (!msgType.IsSubclassOf(typeof(Message)))
+        {
+            Debug.LogError("Error: Type '" + data.messageType + "' is not a subclass of " + typeof(Message));
+            return null;
+        }
+
+        // Try getting the default constructor
+        ConstructorInfo ctor = msgType.GetConstructor(new Type[] { });
+        if (ctor is null)
+        {
+            Debug.LogError("Error: Message type '" + data.messageType + "' does not have a default constructor");
+            return null;
+        }
+
+        Message msg = ctor.Invoke(new object[] { }) as Message;
         for (int i = 0; i < data.names.Count; i++)
         {
-            Type fieldType = Type.GetType(data.types[i]);
-            if (fieldType.IsEnum)
+            string name = data.names[i];
+            string typeStr = data.types[i];
+            string valStr = data.values[i];
+
+            Type fieldType = Type.GetType(typeStr);
+            if (fieldType is null)
             {
-                MethodInfo parseMethod = typeof(Enum).GetMethod("Parse", new Type[] { typeof(string) });
-                MethodInfo parseMethodGen = parseMethod.MakeGenericMethod(fieldType);
-                msg.GetType().GetField(data.names[i]).SetValue(msg, parseMethodGen.Invoke(null, new object[] { data.values[i] }));
+                Debug.LogError("Error: Message field '" + name + "' has unknown type '" + typeStr + "'");
+                continue;
             }
-            else
+
+            FieldInfo field = msg.GetType().GetField(name);
+            if (field is null)
             {
-                msg.GetType().GetField(data.names[i]).SetValue(msg, Convert.ChangeType(data.values[i], fieldType));
+                Debug.LogError("Error: Message field '" + name + "' of type " + fieldType + " does not exist in " + msgType);
+                continue;
+            }
+
+            try
+            {
+                if (fieldType.IsEnum)
+                {
+                    MethodInfo parseMethod = typeof(Enum).GetMethod("Parse", new Type[] { typeof(string) });
+                    MethodInfo parseMethodGen = parseMethod.MakeGenericMethod(fieldType);
+                    field.SetValue(msg, parseMethodGen.Invoke(null, new object[] { valStr }));
+                }
+                else
+                {
+                    field.SetValue(msg, Convert.ChangeType(valStr, fieldType));
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Error: Could not parse value '" + valStr + "' of field '" + name + "' in Message subtype " + msgType + "; Exception: " + e);
             }
         }
         return msg;

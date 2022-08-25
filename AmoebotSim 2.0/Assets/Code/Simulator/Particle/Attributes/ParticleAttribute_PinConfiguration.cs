@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 // TODO: Figure out how to display and edit this in the UI
@@ -120,6 +117,11 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
      * Some methods of IParticleAttribute interface can already be implemented here
      */
 
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.GenerateSaveData"/>.
+    /// Generates data specifically for pin configuration attributes.
+    /// </summary>
+    /// <returns>A serializable representation of the attribute's state.</returns>
     public override ParticleAttributeSaveDataBase GenerateSaveData()
     {
         ParticleAttributePCSaveData data = new ParticleAttributePCSaveData();
@@ -128,6 +130,14 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
         return data;
     }
 
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
+    /// Uses additional information stored in specific pin configuration
+    /// attribute save data.
+    /// </summary>
+    /// <param name="data">A serializable representation of a
+    /// particle attribute state.</param>
+    /// <returns><c>true</c> if and only if the state update was successful.</returns>
     public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
     {
         ParticleAttributePCSaveData myData = data as ParticleAttributePCSaveData;

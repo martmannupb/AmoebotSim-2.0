@@ -1,12 +1,10 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// Compressed representation of pin configuration data.
 /// Stores all information stored in a <see cref="SysPinConfiguration"/>
-/// instance except the particle reference and state flags.
+/// instance except the particle reference, particle-specific information
+/// and state flags.
 /// <para>
 /// This class should be used for storing pin configurations in
 /// attributes and writing them to save files. The class overloads the
@@ -24,10 +22,21 @@ using UnityEngine;
 [Serializable]
 public class PinConfigurationSaveData
 {
+    /// <summary>
+    /// The (local) head direction for which the pin configuration was created.
+    /// </summary>
     public int headDirection;
 
     // Only information required for pins is the partition set ID,
     // everything else is already defined by the index
+    /// <summary>
+    /// The partition set IDs of the pins. The entry at index <c>i</c> is the
+    /// ID of the partition set to which the pin with ID <c>i</c> belongs.
+    /// <para>
+    /// Note that pin and partition set IDs can be interpreted in different
+    /// ways based on the chirality and compass orientation of the particle.
+    /// </para>
+    /// </summary>
     public int[] pinPartitionSets;
 
     // Comparison operators to easily compare compressed pin configuration data by value

@@ -7,7 +7,8 @@ using System;
 public abstract class ParticleAttributeSaveDataBase
 {
     /// <summary>
-    /// The display name given to the particle attribute.
+    /// The display name given to the particle attribute. An attribute
+    /// can only be loaded if its name is not changed.
     /// </summary>
     public string name;
 }
@@ -16,7 +17,7 @@ public abstract class ParticleAttributeSaveDataBase
 /// Container for serializing the simplest kind of particle attributes,
 /// <see cref="ParticleAttributeWithHistory{T}"/>.
 /// </summary>
-/// <typeparam name="T">The type of values stored in the particle history.</typeparam>
+/// <typeparam name="T">The type of values stored in the attribute history.</typeparam>
 [Serializable]
 public class ParticleAttributeSaveData<T> : ParticleAttributeSaveDataBase
 {

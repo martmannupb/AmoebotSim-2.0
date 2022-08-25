@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// Factory class for creating and initializing <see cref="ParticleAttribute{T}"/> subclass instances.

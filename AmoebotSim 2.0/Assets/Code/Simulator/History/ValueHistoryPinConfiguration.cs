@@ -1,14 +1,23 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// Specialized value history that stores compressed pin configuration data.
+/// <para>
+/// Each pin configuration is only stored once to save memory. The history
+/// itself simply stores identifiers instead of whole pin configurations.
+/// </para>
 /// </summary>
 public class ValueHistoryPinConfiguration : ValueHistory<SysPinConfiguration>
 {
-    private ValueHistory<int> idxHistory;           // This history stores the actual history state and the indices
-    private List<PinConfigurationSaveData> configs; // This list contains all pin configurations we have seen so far
+    /// <summary>
+    /// Stores the actual history state and indices of pin configurations.
+    /// </summary>
+    private ValueHistory<int> idxHistory;
+    /// <summary>
+    /// Contains all pin configurations we have seen so far. Pin configurations
+    /// are only stored once to save memory.
+    /// </summary>
+    private List<PinConfigurationSaveData> configs;
 
     public ValueHistoryPinConfiguration(SysPinConfiguration initialValue, int initialRound = 0) : base(null, 0)
     {
@@ -218,6 +227,12 @@ public class ValueHistoryPinConfiguration : ValueHistory<SysPinConfiguration>
         return null;
     }
 
+    /// <summary>
+    /// Generates value history save data specifically for serialized
+    /// pin configuration data. Use this instead of <see cref="GenerateSaveData"/>.
+    /// </summary>
+    /// <returns>A serializable object storing history data from which
+    /// pin configurations can be restored.</returns>
     public PinConfigurationHistorySaveData GeneratePCSaveData()
     {
         PinConfigurationHistorySaveData data = new PinConfigurationHistorySaveData();
@@ -228,7 +243,13 @@ public class ValueHistoryPinConfiguration : ValueHistory<SysPinConfiguration>
         return data;
     }
 
-    public ValueHistoryPinConfiguration(PinConfigurationHistorySaveData data) : base()
+    /// <summary>
+    /// Same as <see cref="ValueHistory{T}.ValueHistory(ValueHistorySaveData{T})"/> but
+    /// specialized for pin configuration history data.
+    /// </summary>
+    /// <param name="data">The serializable history data from which to restore the
+    /// <see cref="ValueHistoryPinConfiguration"/> instance.</param>
+    public ValueHistoryPinConfiguration(PinConfigurationHistorySaveData data)
     {
         idxHistory = new ValueHistory<int>(data.idxHistory);
         configs = data.configs;

@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -69,6 +66,13 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IP
         }
     }
 
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
+    /// Additionally checks if all stored values are valid directions.
+    /// </summary>
+    /// <param name="data">A serializable representation of a
+    /// particle attribute state.</param>
+    /// <returns><c>true</c> if and only if the state update was successful.</returns>
     public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
     {
         ParticleAttributeSaveData<int> myData = data as ParticleAttributeSaveData<int>;

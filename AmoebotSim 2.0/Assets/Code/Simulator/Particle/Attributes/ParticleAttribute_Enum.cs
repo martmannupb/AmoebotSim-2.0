@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -99,6 +98,12 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
         }
     }
 
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.GenerateSaveData"/>.
+    /// Generates data specifically for enum attributes, which includes the name of the
+    /// enum type so that it can be restored when loading.
+    /// </summary>
+    /// <returns>A serializable representation of the attribute's state.</returns>
     public override ParticleAttributeSaveDataBase GenerateSaveData()
     {
         ParticleAttributeEnumSaveData data = new ParticleAttributeEnumSaveData();
@@ -108,6 +113,14 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
         return data;
     }
 
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
+    /// Uses additional information stored in specific enum attribute save data
+    /// to restore the correct enum type.
+    /// </summary>
+    /// <param name="data">A serializable representation of a
+    /// particle attribute state.</param>
+    /// <returns><c>true</c> if and only if the state update was successful.</returns>
     public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
     {
         ParticleAttributeEnumSaveData myData = data as ParticleAttributeEnumSaveData;

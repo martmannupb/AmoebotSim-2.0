@@ -57,6 +57,8 @@ public struct Neighbor<T> where T : ParticleAlgorithm
 /// }
 /// </code>
 /// </example>
+/// Note that the display names of particle attributes must be unique because
+/// they are used to identify attributes when loading a saved simulation state.
 /// </para>
 /// </summary>
 public abstract class ParticleAlgorithm
@@ -125,7 +127,8 @@ public abstract class ParticleAlgorithm
     /// <summary>
     /// Creates a new <see cref="ParticleAttribute{T}"/> representing an integer value.
     /// </summary>
-    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
     /// <param name="initialValue">The initial attribute value.</param>
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<int> CreateAttributeInt(string name, int initialValue = 0)
@@ -137,7 +140,8 @@ public abstract class ParticleAlgorithm
     /// <summary>
     /// Creates a new <see cref="ParticleAttribute{T}"/> representing a boolean value.
     /// </summary>
-    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
     /// <param name="initialValue">The initial attribute value.</param>
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<bool> CreateAttributeBool(string name, bool initialValue = false)
@@ -153,7 +157,8 @@ public abstract class ParticleAlgorithm
     /// with <c>-1</c> representing no direction.
     /// </para>
     /// </summary>
-    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
     /// <param name="initialValue">The initial attribute value.</param>
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<int> CreateAttributeDirection(string name, int initialValue = 0)
@@ -166,7 +171,8 @@ public abstract class ParticleAlgorithm
     /// Creates a new <see cref="ParticleAttribute{T}"/> representing an enum value.
     /// </summary>
     /// <typeparam name="EnumT">The enum specifying the possible values of this attribute.</typeparam>
-    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
     /// <param name="initialValue">The initial attribute value.</param>
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<EnumT> CreateAttributeEnum<EnumT>(string name, EnumT initialValue) where EnumT : System.Enum
@@ -194,7 +200,8 @@ public abstract class ParticleAlgorithm
     /// Note that reading stored pin configurations of other particles is not supported.
     /// </para>
     /// </summary>
-    /// <param name="name">The name of the attribute to be displayed in the UI.</param>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
     /// <param name="initialValue">The initial attribute value.</param>
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<PinConfiguration> CreateAttributePinConfiguration(string name, PinConfiguration initialValue)

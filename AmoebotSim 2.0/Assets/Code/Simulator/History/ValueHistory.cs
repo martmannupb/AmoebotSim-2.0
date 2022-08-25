@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -403,6 +402,11 @@ public class ValueHistory<T> : IReplayHistory
      * Saving and loading functionality.
      */
 
+    /// <summary>
+    /// Creates a serializable object storing the history data so
+    /// that it can be saved to and loaded from a file.
+    /// </summary>
+    /// <returns>A serializable representation of the history data.</returns>
     public virtual ValueHistorySaveData<T> GenerateSaveData()
     {
         ValueHistorySaveData<T> data = new ValueHistorySaveData<T>();
@@ -414,6 +418,11 @@ public class ValueHistory<T> : IReplayHistory
         return data;
     }
 
+    /// <summary>
+    /// Same as <see cref="GenerateSaveData"/>, but all values are stored as strings.
+    /// </summary>
+    /// <returns>A serializable representation of the history data, where
+    /// the stored values are represented as strings.</returns>
     public ValueHistorySaveData<string> GenerateSaveDataString()
     {
         ValueHistorySaveData<string> data = new ValueHistorySaveData<string>();
@@ -427,6 +436,13 @@ public class ValueHistory<T> : IReplayHistory
         return data;
     }
 
+    /// <summary>
+    /// Instantiates a <see cref="ValueHistory{T}"/> from the given save data.
+    /// <para>
+    /// The instance will start in the tracking state, following the latest recorded round.
+    /// </para>
+    /// </summary>
+    /// <param name="data">A serializable object storing history data.</param>
     public ValueHistory(ValueHistorySaveData<T> data) {
         values = data.values;
         rounds = data.rounds;

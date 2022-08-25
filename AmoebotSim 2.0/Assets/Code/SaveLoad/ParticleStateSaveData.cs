@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,6 +14,13 @@ public class ParticleStateSaveData
     public bool chirality;
 
     // Algorithm info
+    /// <summary>
+    /// The full type name of the algorithm attached to the particle.
+    /// <para>
+    /// This type name is used to find the correct algorithm type by
+    /// reflection when the particle state is loaded.
+    /// </para>
+    /// </summary>
     public string algorithmType;
 
     // Positional info

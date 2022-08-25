@@ -1,7 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
+/// <summary>
+/// Specialized value history that stores <see cref="BitArray"/> data and
+/// compares bit arrays by their bit values.
+/// </summary>
 public class ValueHistoryBitArray : ValueHistory<BitArray>
 {
     public ValueHistoryBitArray(BitArray initialValue, int initialRound = 0) : base(initialValue, initialRound) { }
@@ -34,6 +37,11 @@ public class ValueHistoryBitArray : ValueHistory<BitArray>
      * Saving and loading functionality.
      */
 
+    /// <summary>
+    /// Overrides <see cref="ValueHistory{T}.GenerateSaveData"/>, returning
+    /// a serializable value history of <see cref="BitArraySaveData"/>.
+    /// </summary>
+    /// <returns>A serializable representation of the bit array history data.</returns>
     public new ValueHistorySaveData<BitArraySaveData> GenerateSaveData()
     {
         ValueHistorySaveData<BitArraySaveData> data = new ValueHistorySaveData<BitArraySaveData>();
@@ -47,6 +55,12 @@ public class ValueHistoryBitArray : ValueHistory<BitArray>
         return data;
     }
 
+    /// <summary>
+    /// Same as <see cref="ValueHistory{T}.ValueHistory(ValueHistorySaveData{T})"/> but
+    /// specialized for <see cref="BitArraySaveData"/> history data.
+    /// </summary>
+    /// <param name="data">The serializable history data from which to restore the
+    /// <see cref="ValueHistoryBitArray"/> instance.</param>
     public ValueHistoryBitArray(ValueHistorySaveData<BitArraySaveData> data)
     {
         values = new List<BitArray>(data.values.Count);

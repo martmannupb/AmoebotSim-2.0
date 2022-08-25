@@ -1,7 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// <see cref="ParticleAttribute{T}"/> subclass representing boolean values.

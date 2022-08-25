@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -83,6 +81,10 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
         return typeof(T);
     }
 
+    /// <summary>
+    /// Implementation of <see cref="IParticleAttribute.GenerateSaveData"/>.
+    /// </summary>
+    /// <returns>A serializable representation of the attribute's state.</returns>
     public virtual ParticleAttributeSaveDataBase GenerateSaveData()
     {
         ParticleAttributeSaveData<T> data = new ParticleAttributeSaveData<T>();
@@ -91,6 +93,12 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
         return data;
     }
 
+    /// <summary>
+    /// Implementation of <see cref="IParticleAttribute.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
+    /// </summary>
+    /// <param name="data">A serializable representation of a
+    /// particle attribute state.</param>
+    /// <returns><c>true</c> if and only if the state update was successful.</returns>
     public virtual bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
     {
         ParticleAttributeSaveData<T> myData = data as ParticleAttributeSaveData<T>;
