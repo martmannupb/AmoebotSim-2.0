@@ -32,6 +32,7 @@ public class ParticlePinGraphicState
         public List<PinDef> pins; // all pins that belong to this partition set
         // Beeping
         public bool beepsThisRound;
+        public bool beepOrigin;
 
         private PSetData()
         {
@@ -40,8 +41,14 @@ public class ParticlePinGraphicState
 
         public void UpdatePSetData(Color color, bool beepsThisRound, params PinDef[] pins)
         {
+            UpdatePSetData(color, beepsThisRound, false, pins);
+        }
+
+        public void UpdatePSetData(Color color, bool beepsThisRound, bool beepOrigin, params PinDef[] pins)
+        {
             this.color = color;
             this.beepsThisRound = beepsThisRound;
+            this.beepOrigin = beepOrigin;
             foreach (PinDef pin in pins)
             {
                 this.pins.Add(pin);
@@ -53,6 +60,7 @@ public class ParticlePinGraphicState
             this.color = new Color();
             this.pins.Clear();
             this.beepsThisRound = false;
+            this.beepOrigin = false;
         }
 
 

@@ -9,6 +9,7 @@ public class RendererCircuitPins_RenderBatch
     private List<Matrix4x4[]> circuitMatrices_Pins = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> circuitMatrices_PinConnectors = new List<Matrix4x4[]>();
     private MaterialPropertyBlockData_Circuits propertyBlock_circuitMatrices_Pins = new MaterialPropertyBlockData_Circuits();
+    private MaterialPropertyBlockData_Circuits propertyBlock_circuitMatrices_PinConnectors = new MaterialPropertyBlockData_Circuits();
     private int currentIndex = 0;
     private int currentIndex_connectors = 0;
 
@@ -16,6 +17,8 @@ public class RendererCircuitPins_RenderBatch
     // Meshes
     private Mesh pinQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
     const int maxArraySize = 1023;
+    private Material pinMaterial;
+    private float zOffset = 0f;
 
     // Settings _____
     public PropertyBlockData properties;
@@ -27,11 +30,13 @@ public class RendererCircuitPins_RenderBatch
     {
         public Color color;
         public bool moving;
+        public bool beeping;
 
-        public PropertyBlockData(Color color, bool moving)
+        public PropertyBlockData(Color color, bool moving, bool beeping)
         {
             this.color = color;
             this.moving = moving;
+            this.beeping = beeping;
         }
     }
 
@@ -44,24 +49,17 @@ public class RendererCircuitPins_RenderBatch
 
     public void Init()
     {
-        // Circle PropertyBlocks
-        //propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color);
-        
-        //propertyBlock_circle_contracted.ApplyColor(properties.color);
-        //propertyBlock_circle_expanded.ApplyColor(properties.color);
-        //propertyBlock_circle_expanding.ApplyColor(properties.color);
-        //propertyBlock_circle_contracting.ApplyColor(properties.color);
-        //propertyBlock_circle_contracted.ApplyUpdatedValues(false, 0, 0f, 0f, Vector3.right);
-        //propertyBlock_circle_expanded.ApplyUpdatedValues(true, 0, 1f, 1f, Vector3.right);
-        //propertyBlock_circle_expanding.ApplyUpdatedValues(true, 0, 0f, 1f, Vector3.right);
-        //propertyBlock_circle_contracting.ApplyUpdatedValues(true, 0, 1f, 0f, Vector3.right);
-        //propertyBlock_circle_connector_contracted.ApplyConnectorValues(0f, 0f, Vector3.right, Vector3.left);
-        //propertyBlock_circle_connector_expanded.ApplyConnectorValues(1f, 1f, Vector3.right, Vector3.left);
-        //propertyBlock_circle_connector_expanding.ApplyConnectorValues(0f, 1f, Vector3.right, Vector3.left);
-        //propertyBlock_circle_connector_contracting.ApplyConnectorValues(1f, 0f, Vector3.right, Vector3.left);
+        // Set Material
+        if (properties.beeping) pinMaterial = MaterialDatabase.material_circuit_pin_beep;
+        else pinMaterial = MaterialDatabase.material_circuit_pin;
 
-        // Hexagon PropertyBlocks
-        // ..
+        // PropertyBlocks
+        propertyBlock_circuitMatrices_Pins.ApplyColor(Color.black);
+        propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
+        if (properties.beeping)
+        {
+            zOffset = -0.1f;
+        }
     }
 
     public void AddPin(Vector2 pinPos)
@@ -73,7 +71,21 @@ public class RendererCircuitPins_RenderBatch
         }
         int listNumber = currentIndex / maxArraySize;
         int listIndex = currentIndex % maxArraySize;
-        Matrix4x4 matrix = CalculatePinMatrix(pinPos);
+        Matrix4x4 matrix = CalculatePinMatrix(pinPos, false);
+        circuitMatrices_Pins[listNumber][listIndex] = matrix;
+        currentIndex++;
+    }
+
+    public void AddSingletonPin(Vector2 pinPos)
+    {
+        if (currentIndex >= maxArraySize * circuitMatrices_Pins.Count)
+        {
+            // Add an Array
+            circuitMatrices_Pins.Add(new Matrix4x4[maxArraySize]);
+        }
+        int listNumber = currentIndex / maxArraySize;
+        int listIndex = currentIndex % maxArraySize;
+        Matrix4x4 matrix = CalculatePinMatrix(pinPos, true);
         circuitMatrices_Pins[listNumber][listIndex] = matrix;
         currentIndex++;
     }
@@ -92,14 +104,15 @@ public class RendererCircuitPins_RenderBatch
         currentIndex_connectors++;
     }
 
-    private Matrix4x4 CalculatePinMatrix(Vector2 pinPos)
+    private Matrix4x4 CalculatePinMatrix(Vector2 pinPos, bool isSingletonPin)
     {
-        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinSize, RenderSystem.const_circuitPinSize, 1f));
+        if(isSingletonPin) return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitSingletonPinSize, RenderSystem.const_circuitSingletonPinSize, 1f));
+        else return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinSize, RenderSystem.const_circuitPinSize, 1f));
     }
 
     private Matrix4x4 CalculatePinConnectorMatrix(Vector2 pinPos)
     {
-        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
+        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins + zOffset), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
     }
 
     /// <summary>
@@ -118,13 +131,17 @@ public class RendererCircuitPins_RenderBatch
         {
             // Moving
             propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
             propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, RenderSystem.const_circuitAnimationDuration);
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAnimationTimestamp(animationStartTime, RenderSystem.const_circuitAnimationDuration);
         }
         else
         {
             // Not Moving
             propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
             propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(-1f, 0.01f);
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAnimationTimestamp(-1f, 0.01f);
         }
     }
 
@@ -145,7 +162,7 @@ public class RendererCircuitPins_RenderBatch
                 int count;
                 if (i < listDrawAmount - 1) count = maxArraySize;
                 else count = currentIndex % maxArraySize;
-                Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_Pins[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
+                Graphics.DrawMeshInstanced(pinQuad, 0, pinMaterial, circuitMatrices_Pins[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
             }
         }
 
@@ -160,7 +177,7 @@ public class RendererCircuitPins_RenderBatch
                 else count = currentIndex_connectors % maxArraySize;
 
                 Log.Debug("Count: "+count+", ");
-                Graphics.DrawMeshInstanced(pinQuad, 0, MaterialDatabase.material_circuit_pin, circuitMatrices_PinConnectors[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
+                Graphics.DrawMeshInstanced(pinQuad, 0, pinMaterial, circuitMatrices_PinConnectors[i], count, propertyBlock_circuitMatrices_PinConnectors.propertyBlock);
             }
         }
     }
