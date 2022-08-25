@@ -62,7 +62,7 @@ public class RendererCircuitPins_RenderBatch
         }
     }
 
-    public void AddPin(Vector2 pinPos)
+    public void AddPin(Vector2 pinPos, bool singletonPin)
     {
         if(currentIndex >= maxArraySize * circuitMatrices_Pins.Count)
         {
@@ -71,21 +71,7 @@ public class RendererCircuitPins_RenderBatch
         }
         int listNumber = currentIndex / maxArraySize;
         int listIndex = currentIndex % maxArraySize;
-        Matrix4x4 matrix = CalculatePinMatrix(pinPos, false);
-        circuitMatrices_Pins[listNumber][listIndex] = matrix;
-        currentIndex++;
-    }
-
-    public void AddSingletonPin(Vector2 pinPos)
-    {
-        if (currentIndex >= maxArraySize * circuitMatrices_Pins.Count)
-        {
-            // Add an Array
-            circuitMatrices_Pins.Add(new Matrix4x4[maxArraySize]);
-        }
-        int listNumber = currentIndex / maxArraySize;
-        int listIndex = currentIndex % maxArraySize;
-        Matrix4x4 matrix = CalculatePinMatrix(pinPos, true);
+        Matrix4x4 matrix = CalculatePinMatrix(pinPos, singletonPin);
         circuitMatrices_Pins[listNumber][listIndex] = matrix;
         currentIndex++;
     }

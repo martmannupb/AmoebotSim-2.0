@@ -5,29 +5,27 @@ using TMPro;
 
 public class AmoebotSimulator : MonoBehaviour
 {
-    // <<<TEMPORARY>>> Prefab and instantiation method for simple visualization
-    public GameObject particlePrefab;
 
+    // System Data
+    public ParticleSystem system;
+    public RenderSystem renderSystem;
+    // System State
+    public bool running = true;
+    
+    // UI
+    public UIHandler uiHandler;
+
+    // Old UI (will be deleted)
     public TextMeshProUGUI roundsText;
     public TextMeshProUGUI maxRoundText;
     public TMP_InputField roundInput;
-
-    public void AddParticle(float x, float y)
-    {
-        Instantiate(particlePrefab, new Vector2(x, y), particlePrefab.transform.rotation);
-    }
-
-
-    // TODO: Make this public and assign in editor?
-    // (dont know, maybe it is better if we do like this via code, so we might be able to initialize the system with parameters for something like the graphics)
-    private ParticleSystem system;
-    private RenderSystem renderSystem;
 
     // Start is called before the first frame update
     void Start()
     {
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
+        if(uiHandler != null) uiHandler.RegisterSim(this);
 
         // Activate one particle every 1000ms (only for testing)
         //InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
@@ -36,40 +34,14 @@ public class AmoebotSimulator : MonoBehaviour
 
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(50, 50, 0.3f, -9, -5);
-        //system.InitializeLineFormation(50, 0.4f);
+        system.InitializeLineFormation(50, 0.4f);
         //system.InitializeLineFormation(25, 0.4f);
         //system.InitializeLeaderElection(50, 0.35f);
         //system.InitializeChiralityCompass(50, 0.2f);
         //system.InitializeBoundaryTest(100, 0.05f);
-        system.InitializeExpandedTest(10);
-
-
-
-        // Test Area -----
-        Debug.Log("V1: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(0, 0)));
-        Debug.Log("V2: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(0.5f, 0.1f)));
-        Debug.Log("V3: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)));
-        Debug.Log("V3 Inverted: " + AmoebotFunctions.CalculateAmoebotCenterPositionVector2(AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).x, AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).y));
-        // -----
+        //system.InitializeExpandedTest(10);
     }
 
-    public void ActivateParticle()
-    {
-        //Debug.Log("Activate");
-        //float tStart = Time.realtimeSinceStartup;
-
-        //system.ActivateRandomParticle();
-        system.SimulateRound();
-        UpdateRoundCounter();
-        //activationsText.text = "Round: " + system.CurrentRound;
-        //Debug.Log("Simulated round in " + (Time.realtimeSinceStartup - tStart) + " s");
-    }
-
-    private void UpdateRoundCounter()
-    {
-        roundsText.text = "Round: " + system.CurrentRound;
-        maxRoundText.text = "Max: " + system.LatestRound;
-    }
 
     // Update is called once per frame
     void Update()
@@ -80,21 +52,33 @@ public class AmoebotSimulator : MonoBehaviour
     // FixedUpdate is called once per Time.fixedDeltaTime interval
     void FixedUpdate()
     {
-        if(play) ActivateParticle();
+        if(running) ActivateParticle();
+    }
+
+    public void ActivateParticle()
+    {
+        //system.ActivateRandomParticle();
+        system.SimulateRound();
+        UpdateRoundCounter();
+    }
+
+    private void UpdateRoundCounter()
+    {
+        roundsText.text = "Round: " + system.CurrentRound;
+        maxRoundText.text = "Max: " + system.LatestRound;
     }
 
 
 
 
-
-    private bool play = true;
+    
 
     /// <summary>
     /// Toggles the Play/Pause functionality.
     /// </summary>
     public void TogglePlayPause()
     {
-        if (!play)
+        if (!running)
         {
             system.ContinueTracking();
         }
@@ -102,7 +86,8 @@ public class AmoebotSimulator : MonoBehaviour
         {
             //system.Print();
         }
-        play = !play;
+        running = !running;
+        if (uiHandler != null) uiHandler.NotifyPlayPause(running);
     }
 
     public void ToggleView()
@@ -122,7 +107,7 @@ public class AmoebotSimulator : MonoBehaviour
 
     public void StepBack()
     {
-        if (!play)
+        if (!running)
         {
             system.StepBack();
             UpdateRoundCounter();
@@ -131,7 +116,7 @@ public class AmoebotSimulator : MonoBehaviour
 
     public void StepForward()
     {
-        if (!play)
+        if (!running)
         {
             system.StepForward();
             UpdateRoundCounter();
@@ -140,7 +125,7 @@ public class AmoebotSimulator : MonoBehaviour
 
     public void Jump()
     {
-        if (!play)
+        if (!running)
         {
             string text = roundInput.text;
             if (int.TryParse(text, out int round))
@@ -164,7 +149,7 @@ public class AmoebotSimulator : MonoBehaviour
 
     public void CutOff()
     {
-        if (!play)
+        if (!running)
         {
             system.CutOffAtMarker();
             UpdateRoundCounter();
@@ -173,7 +158,7 @@ public class AmoebotSimulator : MonoBehaviour
 
     public void ResetSystem()
     {
-        if (!play)
+        if (!running)
         {
             system.Reset();
             system.InitializeLineFormation(50, 0.4f);

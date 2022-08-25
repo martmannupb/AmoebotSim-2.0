@@ -198,12 +198,12 @@ public class RendererCircuits_Instance
     public void AddPin(Vector2 pinPos, Color color, bool moving, bool beeping)
     {
         RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, moving, false);
-        batch.AddPin(pinPos);
+        batch.AddPin(pinPos, false);
         // Beep
         if (beeping)
         {
             batch = GetBatch_Pin(color, moving, true);
-            batch.AddPin(pinPos);
+            batch.AddPin(pinPos, false);
         }
     }
 
@@ -211,7 +211,7 @@ public class RendererCircuits_Instance
     {
         // Beep
         RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, moving, true);
-        batch.AddSingletonPin(pinPos);
+        batch.AddPin(pinPos, true);
 
     }
 
