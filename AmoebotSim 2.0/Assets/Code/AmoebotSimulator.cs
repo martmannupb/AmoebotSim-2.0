@@ -23,15 +23,17 @@ public class AmoebotSimulator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Init Renderer + Particle System
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
+        // Set Sim Speed
+        SetSimSpeed(0.005f);
+        SetSimSpeed(0.5f);
+
+        // Register UI
         if(uiHandler != null) uiHandler.RegisterSim(this);
 
-        // Activate one particle every 1000ms (only for testing)
-        //InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
-        Time.fixedDeltaTime = 0.005f;
-        Time.fixedDeltaTime = 1f;
-
+        // Init Algorithm
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(50, 50, 0.3f, -9, -5);
         system.InitializeLineFormation(50, 0.4f);
@@ -60,6 +62,13 @@ public class AmoebotSimulator : MonoBehaviour
         //system.ActivateRandomParticle();
         system.SimulateRound();
         UpdateRoundCounter();
+    }
+
+    public void SetSimSpeed(float roundTime)
+    {
+        if (roundTime == 0) roundTime = 0.02f; // dummy
+        Time.fixedDeltaTime = roundTime;
+        renderSystem.SetRoundTime(roundTime);
     }
 
     private void UpdateRoundCounter()

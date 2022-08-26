@@ -118,8 +118,8 @@ public class RendererCircuitPins_RenderBatch
             // Moving
             propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
             propertyBlock_circuitMatrices_PinConnectors.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
-            propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, RenderSystem.const_circuitAnimationDuration);
-            propertyBlock_circuitMatrices_PinConnectors.ApplyAnimationTimestamp(animationStartTime, RenderSystem.const_circuitAnimationDuration);
+            propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
         }
         else
         {

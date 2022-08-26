@@ -101,7 +101,7 @@ public class RendererCircuits_RenderBatch
         if(properties.beeping)
         {
             // Beeping Animation
-            float halfAnimationDuration = RenderSystem.const_circuitBeepDuration * 0.5f;
+            float halfAnimationDuration = RenderSystem.data_circuitBeepDuration * 0.5f;
             propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f);
             //propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(beepStartTime + halfAnimationDuration, halfAnimationDuration);
             propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, halfAnimationDuration);
@@ -113,7 +113,7 @@ public class RendererCircuits_RenderBatch
             {
                 // Moving
                 propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
-                propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, RenderSystem.const_circuitAnimationDuration);
+                propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
             }
             else
             {
@@ -129,7 +129,7 @@ public class RendererCircuits_RenderBatch
         // Timestamp
         if (firstRenderFrame)
         {
-            ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, RenderSystem.data_particleMovementFinishedTimestamp + RenderSystem.const_circuitAnimationDuration);
+            ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, RenderSystem.data_particleMovementFinishedTimestamp + RenderSystem.data_circuitAnimationDuration);
         }
 
         // Null Check

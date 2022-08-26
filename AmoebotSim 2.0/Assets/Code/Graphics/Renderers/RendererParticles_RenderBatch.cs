@@ -276,7 +276,7 @@ public class RendererParticles_RenderBatch
     {
         // 1. Update Properties
         float triggerTime = Time.timeSinceLevelLoad;
-        float animationLength = Mathf.Clamp(RenderSystem.const_hexagonalAnimationDurationDef, 0f, Time.fixedDeltaTime);
+        float animationLength = Mathf.Clamp(RenderSystem.data_hexagonalAnimationDuration, 0f, Time.fixedDeltaTime);
         if (RenderSystem.flag_particleRoundOver)
         {
             // Update PropertyBlocks Timestamps (for Animations)

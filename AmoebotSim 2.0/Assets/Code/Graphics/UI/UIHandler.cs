@@ -10,7 +10,12 @@ public class UIHandler : MonoBehaviour
     // References
     private AmoebotSimulator sim;
 
-    // UI Objects
+    // UI Objects =====
+    // Speed
+    public TextMeshProUGUI text_speed;
+    public Slider slider_speed;
+    private float[] slider_speed_values = new float[] { 4f, 2f, 1f, 0.5f, 0.2f, 0.1f, 0f };
+    // Round
     public TextMeshProUGUI text_round;
     public Slider slider_round;
     public Toggle toggle_alwaysUpdateWhenRoundSliderIsChanged;
@@ -18,13 +23,25 @@ public class UIHandler : MonoBehaviour
 
     private void Start()
     {
-        // Init Listeners
-        slider_round.onValueChanged.AddListener(delegate { SliderRound_onValueChanged(); });
+        InitUI();
     }
 
     public void RegisterSim(AmoebotSimulator sim)
     {
         this.sim = sim;
+    }
+
+    public void InitUI()
+    {
+        // Init Sim Speed Slider
+        slider_speed.wholeNumbers = true;
+        slider_speed.minValue = 0f;
+        slider_speed.maxValue = slider_speed_values.Length - 1;
+        slider_speed.value = 3f;
+        SliderSpeed_onValueChanged();
+        // Init Listeners
+        slider_round.onValueChanged.AddListener(delegate { SliderRound_onValueChanged(); });
+        slider_speed.onValueChanged.AddListener(delegate { SliderSpeed_onValueChanged(); });
     }
 
     public void Update()
@@ -81,7 +98,18 @@ public class UIHandler : MonoBehaviour
 
 
     // Callback Methods =========================
-    
+
+    public void SliderSpeed_onValueChanged()
+    {
+        // Update Sim Speed
+        int val = (int)slider_speed.value;
+        float speed = slider_speed_values[val];
+        sim.SetSimSpeed(speed);
+
+        // Update UI
+        text_speed.text = "Round Speed: " + (speed == 0f ? "max" : (speed + "s"));
+    }
+
     public void SliderRound_onValueChanged()
     {
         if(toggle_alwaysUpdateWhenRoundSliderIsChanged.isOn && sim.running == false)
