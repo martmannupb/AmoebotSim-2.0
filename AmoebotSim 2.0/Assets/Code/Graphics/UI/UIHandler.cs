@@ -210,4 +210,32 @@ public class UIHandler : MonoBehaviour
         }
     }
 
+    public void TemporaryButton_ResetAlgorithm(int algoID)
+    {
+        if (sim.running) return;
+
+        sim.system.Reset();
+        switch (algoID)
+        {
+            case 0:
+                sim.system.InitializeBoundaryTest(100, 0.05f);
+                break;
+            case 1:
+                sim.system.InitializeLineFormation(50, 0.4f);
+                break;
+            case 2:
+                sim.system.InitializeLeaderElection(50, 0.35f);
+                break;
+            case 3:
+                sim.system.InitializeChiralityCompass(50, 0.2f);
+                break;
+            case 4:
+                sim.system.InitializeExpandedTest(10);
+                break;
+            default:
+                break;
+        }
+        UpdateUI(sim.running, true);
+    }
+
 }
