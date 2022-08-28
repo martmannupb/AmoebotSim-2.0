@@ -11,6 +11,12 @@ public class UIHandler : MonoBehaviour
     private AmoebotSimulator sim;
 
     // UI Objects =====
+    // Play/Pause
+    public Image playPauseButtonImage;
+    public Sprite sprite_play;
+    public Sprite sprite_pause;
+    public Button button_stepBack;
+    public Button button_stepForward;
     // Speed
     public TextMeshProUGUI text_speed;
     public Slider slider_speed;
@@ -19,11 +25,13 @@ public class UIHandler : MonoBehaviour
     public TextMeshProUGUI text_round;
     public Slider slider_round;
     public Toggle toggle_alwaysUpdateWhenRoundSliderIsChanged;
+    public Button button_jumpCut;
 
 
     private void Start()
     {
         InitUI();
+        NotifyPlayPause(sim.running);
     }
 
     public void RegisterSim(AmoebotSimulator sim)
@@ -37,7 +45,7 @@ public class UIHandler : MonoBehaviour
         slider_speed.wholeNumbers = true;
         slider_speed.minValue = 0f;
         slider_speed.maxValue = slider_speed_values.Length - 1;
-        slider_speed.value = 3f;
+        slider_speed.value = 2f;
         SliderSpeed_onValueChanged();
         // Init Listeners
         slider_round.onValueChanged.AddListener(delegate { SliderRound_onValueChanged(); });
@@ -53,15 +61,24 @@ public class UIHandler : MonoBehaviour
 
     private void UpdateUI(bool running)
     {
-        // 
-        int curRound = sim.system.CurrentRound;
-        int maxRound = sim.system.LatestRound;
-        
+        UpdateUI(running, false);
+    }
 
+    private void UpdateUI(bool running, bool forceRoundSliderUpdate)
+    {
+        // Get Round Counter
+        int curRound = sim.system.CurrentRound;
+        int minRound = sim.system.EarliestRound;
+        int maxRound = sim.system.LatestRound;
+        int uiRound = (int)slider_round.value;
+
+        // Play/Pause/Step
+        button_stepBack.interactable = uiRound > minRound && running == false;
+        button_stepForward.interactable = uiRound < maxRound && running == false;
         // Round Slider
-        if(slider_round != null)
+        if (slider_round != null)
         {
-            if(running)
+            if(running || forceRoundSliderUpdate)
             {
                 // Sim running
                 // Update, do not allow editing of the slider
@@ -82,15 +99,14 @@ public class UIHandler : MonoBehaviour
         {
             text_round.text = "Round: " + slider_round.value + " (of " + sim.system.LatestRound + ")";
         }
+        // JumpCut Button
+        button_jumpCut.interactable = uiRound < maxRound && running == false;
     }
 
     public void NotifyPlayPause(bool running)
     {
-        if(running == false)
-        {
-            // Update the UI one more time to get the current data
-            UpdateUI(true);
-        }
+        playPauseButtonImage.sprite = running ? sprite_pause : sprite_play;
+        UpdateUI(running, true);
     }
 
 
@@ -98,6 +114,32 @@ public class UIHandler : MonoBehaviour
 
 
     // Callback Methods =========================
+
+    public void Button_StepBackPressed()
+    {
+        // Check if valid
+        if (sim.running)
+        {
+            Log.Error("Could not step back: Sim is running!");
+            return;
+        }
+
+        sim.system.StepBack();
+        UpdateUI(sim.running, true);
+    }
+
+    public void Button_StepForwardPressed()
+    {
+        // Check if valid
+        if (sim.running)
+        {
+            Log.Error("Could not step forward: Sim is running!");
+            return;
+        }
+
+        sim.system.StepForward();
+        UpdateUI(sim.running, true);
+    }
 
     public void SliderSpeed_onValueChanged()
     {
@@ -116,6 +158,7 @@ public class UIHandler : MonoBehaviour
         {
             JumpToRound((int)slider_round.value);
         }
+        UpdateUI(sim.running);
     }
 
     public void SliderRound_onDragEnd()
@@ -124,6 +167,29 @@ public class UIHandler : MonoBehaviour
         {
             JumpToRound((int)slider_round.value);
         }
+        UpdateUI(sim.running);
+    }
+    
+    public void Botton_CutPressed()
+    {
+        // Check if valid
+        int uiRound = (int)slider_round.value;
+        int maxRound = sim.system.LatestRound;
+        if (uiRound >= maxRound)
+        {
+            // Error
+            Log.Error("Cannot cut round: Current Round is not behind latest round!");
+            return;
+        }
+        if(sim.running)
+        {
+            // Error
+            Log.Error("Cannot cut round: System is still running.");
+            return;
+        }
+
+        sim.system.CutOffAtMarker();
+        UpdateUI(sim.running, true);
     }
 
     private void JumpToRound(int newRound)
