@@ -95,8 +95,11 @@ public class RendererCircuitPins_RenderBatch
 
     private Matrix4x4 CalculatePinMatrix(Vector2 pinPos, bool isSingletonPin)
     {
-        if(isSingletonPin) return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitSingletonPinSize, RenderSystem.const_circuitSingletonPinSize, 1f));
-        else return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinSize, RenderSystem.const_circuitPinSize, 1f));
+        // Calc Pin Size
+        float pinSize = isSingletonPin ? RenderSystem.const_circuitSingletonPinSize : RenderSystem.const_circuitPinSize;
+        if (properties.beeping) pinSize *= RenderSystem.const_circuitPinBeepSizePercentage;
+        // Calc Matrix
+        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(pinSize, pinSize, 1f));
     }
 
     private Matrix4x4 CalculatePinConnectorMatrix(Vector2 pinPos)
