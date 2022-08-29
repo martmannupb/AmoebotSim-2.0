@@ -54,7 +54,10 @@ public class AmoebotSimulator : MonoBehaviour
     // FixedUpdate is called once per Time.fixedDeltaTime interval
     void FixedUpdate()
     {
-        if(running) ActivateParticle();
+        if(running)
+        {
+            ActivateParticle();
+        }
     }
 
     public void ActivateParticle()
@@ -66,7 +69,11 @@ public class AmoebotSimulator : MonoBehaviour
 
     public void SetSimSpeed(float roundTime)
     {
-        if (roundTime == 0) roundTime = 0.02f; // dummy
+        if (roundTime == 0)
+        {
+            // Max Speed
+            roundTime = 0.01f;
+        }
         Time.fixedDeltaTime = roundTime;
         renderSystem.SetRoundTime(roundTime);
     }

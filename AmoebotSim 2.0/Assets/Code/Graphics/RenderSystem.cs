@@ -51,8 +51,8 @@ public class RenderSystem
     public const float const_maxCircuitAnimationDuration = 0.0f;
     public static float data_circuitBeepDuration = 0.5f;            // circuit beep duration
     public const float const_maxCircuitBeepDuration = 0.5f;
-    public const float const_animationTimePercentage = 0.7f;
-    public const float const_beepTimePercentage = 0.2f;
+    public const float const_animationTimePercentage = 0.6f;        // percentages: animation/beeps (sequentially)
+    public const float const_beepTimePercentage = 0.2f;             // percentages: animation/beeps (sequentially)
 
 
     // Renderers _____
@@ -169,6 +169,11 @@ public class RenderSystem
                 break;
         }
         QualitySettings.antiAliasing = setting_antiAliasing;
+    }
+
+    public int GetAntiAliasing()
+    {
+        return setting_antiAliasing;
     }
 
     public void AntiAliasing_Incr()

@@ -12,7 +12,7 @@ public class UIHandler : MonoBehaviour
 
     // UI Objects =====
     // Play/Pause
-    public Image playPauseButtonImage;
+    public Image image_playPauseButton;
     public Sprite sprite_play;
     public Sprite sprite_pause;
     public Button button_stepBack;
@@ -20,12 +20,18 @@ public class UIHandler : MonoBehaviour
     // Speed
     public TextMeshProUGUI text_speed;
     public Slider slider_speed;
-    private float[] slider_speed_values = new float[] { 4f, 2f, 1f, 0.5f, 0.2f, 0.1f, 0f };
+    private float[] slider_speed_values = new float[] { 4f, 2f, 1f, 0.5f, 0.2f, 0.1f, 0.05f, 0f };
     // Round
     public TextMeshProUGUI text_round;
     public Slider slider_round;
     public Toggle toggle_alwaysUpdateWhenRoundSliderIsChanged;
     public Button button_jumpCut;
+    // AntiAliasing
+    public Image image_AAButton;
+    public Sprite sprite_aa0;
+    public Sprite sprite_aa2;
+    public Sprite sprite_aa4;
+    public Sprite sprite_aa8;
 
 
     private void Start()
@@ -41,6 +47,8 @@ public class UIHandler : MonoBehaviour
 
     public void InitUI()
     {
+        // Init Visuals
+        UpdateAAButton();
         // Init Sim Speed Slider
         slider_speed.wholeNumbers = true;
         slider_speed.minValue = 0f;
@@ -105,7 +113,7 @@ public class UIHandler : MonoBehaviour
 
     public void NotifyPlayPause(bool running)
     {
-        playPauseButtonImage.sprite = running ? sprite_pause : sprite_play;
+        image_playPauseButton.sprite = running ? sprite_pause : sprite_play;
         UpdateUI(running, true);
     }
 
@@ -208,6 +216,34 @@ public class UIHandler : MonoBehaviour
             // Round Change
             sim.system.SetMarkerToRound(newRound);
         }
+    }
+
+    private void UpdateAAButton()
+    {
+        int currentAA = sim.renderSystem.GetAntiAliasing();
+        switch (currentAA)
+        {
+            case 0:
+                image_AAButton.sprite = sprite_aa0;
+                break;
+            case 2:
+                image_AAButton.sprite = sprite_aa2;
+                break;
+            case 4:
+                image_AAButton.sprite = sprite_aa4;
+                break;
+            case 8:
+                image_AAButton.sprite = sprite_aa8;
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void ToggleAA()
+    {
+        sim.renderSystem.ToggleAntiAliasing();
+        UpdateAAButton();
     }
 
     public void TemporaryButton_ResetAlgorithm(int algoID)

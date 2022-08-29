@@ -85,7 +85,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Flip: {r: 1, g: 1, b: 1, a: 1}
     - _InnerColor: {r: 0, g: 0, b: 0, a: 0}
-    - _InputColor: {r: 0, g: 0, b: 0, a: 1}
+    - _InputColor: {r: 1, g: 1, b: 1, a: 1}
     - _MeshRelativeOffset: {r: 0, g: 0, b: 0, a: 0}
     - _MeshRelativeUVOffset: {r: -0.16666667, g: 0, b: 0, a: 0}
     - _Offset: {r: -0.5, g: -0.5, b: 0, a: 0}

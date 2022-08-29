@@ -54,11 +54,14 @@ public class RendererCircuitPins_RenderBatch
         else pinMaterial = MaterialDatabase.material_circuit_pin;
 
         // PropertyBlocks
-        propertyBlock_circuitMatrices_Pins.ApplyColor(Color.black);
-        propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
         if (properties.beeping)
         {
             zOffset = -0.1f;
+        }
+        else
+        {
+            propertyBlock_circuitMatrices_Pins.ApplyColor(Color.black);
+            propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
         }
     }
 
@@ -113,6 +116,15 @@ public class RendererCircuitPins_RenderBatch
 
     public void ApplyUpdates(float animationStartTime)
     {
+        //if (properties.beeping)
+        //{
+            // Beeping Animation
+            //float halfAnimationDuration = RenderSystem.data_circuitBeepDuration * 0.5f;
+            //propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f);
+            //propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(beepStartTime + halfAnimationDuration, halfAnimationDuration);
+            //propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, halfAnimationDuration);
+        //}
+
         if (properties.moving)
         {
             // Moving
