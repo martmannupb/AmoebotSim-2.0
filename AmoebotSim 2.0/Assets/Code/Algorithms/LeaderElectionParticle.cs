@@ -62,7 +62,7 @@ public class LeaderElectionParticle : ParticleAlgorithm
             PinConfiguration pc = GetCurrentPinConfiguration();
             pc.SetToGlobal(0);  // Make partition set 0 hold all pins
             SetPlannedPinConfiguration(pc);
-            pc.SetPartitionSetColor(0, Color.white);
+            pc.SetPartitionSetColor(0, new Color(0.75f, 0.75f, 0.75f));
             firstActivation.SetValue(false);
 
             // Toss a coin and start first phase

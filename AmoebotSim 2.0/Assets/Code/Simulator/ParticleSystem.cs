@@ -747,6 +747,7 @@ public class ParticleSystem : IReplayHistory
                     pset.UpdatePSetData(
                         circuits[ps.circuit].color,
                         circuits[ps.circuit].hasBeep,
+                        p.HasPlannedBeep(ps.Id),
                         new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir, pin.globalEdgeOffset, pin.head) });
                     p.gCircuit.singletonSets.Add(pset);
                 }
@@ -768,6 +769,7 @@ public class ParticleSystem : IReplayHistory
                     pset.UpdatePSetData(
                         circuits[ps.circuit].color,
                         circuits[ps.circuit].hasBeep,
+                        p.HasPlannedBeep(ps.Id),
                         pins);
                     p.gCircuit.partitionSets.Add(pset);
                 }
