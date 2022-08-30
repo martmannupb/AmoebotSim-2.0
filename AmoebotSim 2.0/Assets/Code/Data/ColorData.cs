@@ -28,6 +28,9 @@ public static class ColorData
         new Color(127f / 255f, 255f / 255f, 0f / 255f)
     };
 
+    // Other Colors
+    public static Color beepOrigin = new Color(222f / 255f, 222f / 255f, 222f / 255f, 1f);
+
     private static Color defaultHexBGColor = new Color(121f / 255f, 121f / 255f, 121f / 255f, 1f);
 
     public static Color ConvertColorToHexBGColor(Color color)

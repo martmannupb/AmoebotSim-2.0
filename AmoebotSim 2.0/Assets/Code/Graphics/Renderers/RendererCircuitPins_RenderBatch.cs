@@ -56,6 +56,8 @@ public class RendererCircuitPins_RenderBatch
         // PropertyBlocks
         if (properties.beeping)
         {
+            propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.beepOrigin);
+            propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
             zOffset = -0.1f;
         }
         else
@@ -119,15 +121,6 @@ public class RendererCircuitPins_RenderBatch
 
     public void ApplyUpdates(float animationStartTime)
     {
-        //if (properties.beeping)
-        //{
-            // Beeping Animation
-            //float halfAnimationDuration = RenderSystem.data_circuitBeepDuration * 0.5f;
-            //propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f);
-            //propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(beepStartTime + halfAnimationDuration, halfAnimationDuration);
-            //propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, halfAnimationDuration);
-        //}
-
         if (properties.moving)
         {
             // Moving
