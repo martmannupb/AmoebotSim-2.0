@@ -43,5 +43,17 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
             }
         }
         SetPlannedPinConfiguration(pc);
+        BeepRandom(pc);
+    }
+
+    private void BeepRandom(PinConfiguration pc)
+    {
+        foreach (PartitionSet ps in pc.GetPartitionSets())
+        {
+            if (!ps.IsEmpty() && Random.Range(0.0f, 1.0f) < 0.25f)
+            {
+                ps.SendBeep();
+            }
+        }
     }
 }
