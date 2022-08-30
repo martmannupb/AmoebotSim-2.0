@@ -826,7 +826,7 @@ public class ParticleSystem : IReplayHistory
     {
         foreach (Particle p in particles)
         {
-            p.StoreReceivedBeepsAndMessages();
+            p.StoreBeepsAndMessages();
             p.ResetPlannedBeepsAndMessages();
         }
     }
@@ -1636,8 +1636,11 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
+            // TODO: This should be structured better
             DiscoverCircuits(false);
             CleanupAfterRound();
+            foreach (Particle p in particles)
+                p.ResetPlannedBeepsAndMessages();
             UpdateAllParticleVisuals(true);
         }
     }
@@ -1672,6 +1675,8 @@ public class ParticleSystem : IReplayHistory
             isTracking = false;
             DiscoverCircuits(false);
             CleanupAfterRound();
+            foreach (Particle p in particles)
+                p.ResetPlannedBeepsAndMessages();
             UpdateAllParticleVisuals(true);
         }
     }
@@ -1706,6 +1711,8 @@ public class ParticleSystem : IReplayHistory
             isTracking = false;
             DiscoverCircuits(false);
             CleanupAfterRound();
+            foreach (Particle p in particles)
+                p.ResetPlannedBeepsAndMessages();
             UpdateAllParticleVisuals(true);
         }
     }
@@ -1734,6 +1741,8 @@ public class ParticleSystem : IReplayHistory
             isTracking = true;
             DiscoverCircuits();
             CleanupAfterRound();
+            foreach (Particle p in particles)
+                p.ResetPlannedBeepsAndMessages();
             UpdateAllParticleVisuals(true);
         }
     }

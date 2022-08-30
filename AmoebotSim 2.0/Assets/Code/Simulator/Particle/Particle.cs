@@ -83,9 +83,22 @@ public class Particle : IParticleState, IReplayHistory
     public Message[] receivedMessages;
     private ValueHistoryMessage[] receivedMessagesHistory;
 
+    /// <summary>
+    /// Flags indicating which partition sets of the planned pin
+    /// configuration have scheduled sending a beep. Indices
+    /// equal (local) partition set IDs.
+    /// </summary>
+    private BitArray plannedBeeps;
+    private ValueHistory<bool>[] plannedBeepsHistory;
+    private bool hasPlannedBeeps = false;
+
+    private Message[] plannedMessages;
+    private ValueHistoryMessage[] plannedMessageHistory;
+    private bool hasPlannedMessages = false;
+
 
     // Visualization
-    
+
     // Particle fill color
     private ValueHistory<Color> mainColorHistory;
     private ValueHistory<bool> mainColorSetHistory;
@@ -169,17 +182,6 @@ public class Particle : IParticleState, IReplayHistory
     }
     private SysPinConfiguration plannedPinConfiguration;
 
-    /// <summary>
-    /// Flags indicating which partition sets of the planned pin
-    /// configuration have scheduled sending a beep. Indices
-    /// equal (local) partition set IDs.
-    /// </summary>
-    private BitArray plannedBeeps;
-    private bool hasPlannedBeeps = false;
-
-    private Message[] plannedMessages;
-    private bool hasPlannedMessages = false;
-
     // Graphical information
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
@@ -226,6 +228,8 @@ public class Particle : IParticleState, IReplayHistory
         plannedMessages = new Message[maxNumPins];
         receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), currentRound);
         receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
+        plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
         partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
         partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
         partitionSetColors = new Color[maxNumPins];
@@ -233,6 +237,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < maxNumPins; i++)
         {
             receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
+            plannedBeepsHistory[i] = new ValueHistory<bool>(false, currentRound);
+            plannedMessageHistory[i] = new ValueHistoryMessage(null, currentRound);
             partitionSetColorHistory[i] = new ValueHistory<Color>(new Color(), currentRound);
             partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(false, currentRound);
             partitionSetColors[i] = new Color();
@@ -966,17 +972,18 @@ public class Particle : IParticleState, IReplayHistory
     }
 
     /// <summary>
-    /// Triggers the insertion of the received beeps and
-    /// messagse into the history. Should be called before each
-    /// activation.
+    /// Triggers the insertion of the planned and received beeps and
+    /// messages into the history. Should be called after each activation,
+    /// after the beeps and messages have been distributed.
     /// </summary>
-    public void StoreReceivedBeepsAndMessages()
+    public void StoreBeepsAndMessages()
     {
-        // Record the value for the previous round because the final value is only available now
         receivedBeepsHistory.RecordValueInRound((BitArray)receivedBeeps.Clone(), system.CurrentRound);
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessagesHistory[i].RecordValueInRound(receivedMessages[i], system.CurrentRound);
+            plannedBeepsHistory[i].RecordValueInRound(plannedBeeps[i], system.CurrentRound);
+            plannedMessageHistory[i].RecordValueInRound(plannedMessages[i], system.CurrentRound);
         }
     }
 
@@ -1071,6 +1078,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessagesHistory[i].SetMarkerToRound(round);
+            plannedBeepsHistory[i].SetMarkerToRound(round);
+            plannedMessageHistory[i].SetMarkerToRound(round);
             partitionSetColorHistory[i].SetMarkerToRound(round);
             partitionSetColorOverrideHistory[i].SetMarkerToRound(round);
         }
@@ -1103,6 +1112,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessagesHistory[i].StepBack();
+            plannedBeepsHistory[i].StepBack();
+            plannedMessageHistory[i].StepBack();
             partitionSetColorHistory[i].StepBack();
             partitionSetColorOverrideHistory[i].StepBack();
         }
@@ -1128,6 +1139,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessagesHistory[i].StepForward();
+            plannedBeepsHistory[i].StepForward();
+            plannedMessageHistory[i].StepForward();
             partitionSetColorHistory[i].StepForward();
             partitionSetColorOverrideHistory[i].StepForward();
         }
@@ -1168,6 +1181,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessagesHistory[i].ContinueTracking();
+            plannedBeepsHistory[i].ContinueTracking();
+            plannedMessageHistory[i].ContinueTracking();
             partitionSetColorHistory[i].ContinueTracking();
             partitionSetColorOverrideHistory[i].ContinueTracking();
         }
@@ -1201,6 +1216,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessagesHistory[i].CutOffAtMarker();
+            plannedBeepsHistory[i].CutOffAtMarker();
+            plannedMessageHistory[i].CutOffAtMarker();
             partitionSetColorHistory[i].CutOffAtMarker();
             partitionSetColorOverrideHistory[i].CutOffAtMarker();
         }
@@ -1227,6 +1244,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessagesHistory[i].ShiftTimescale(amount);
+            plannedBeepsHistory[i].ShiftTimescale(amount);
+            plannedMessageHistory[i].ShiftTimescale(amount);
             partitionSetColorHistory[i].ShiftTimescale(amount);
             partitionSetColorOverrideHistory[i].ShiftTimescale(amount);
         }
@@ -1246,6 +1265,10 @@ public class Particle : IParticleState, IReplayHistory
     /// <summary>
     /// Helper that updates the private state variables after
     /// the histories were changed in any way.
+    /// <para>
+    /// Also loads planned beeps and messages from the history,
+    /// which must be reset before starting the next round.
+    /// </para>
     /// </summary>
     private void UpdateInternalState()
     {
@@ -1266,6 +1289,8 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
+            plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
+            plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
             partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
             partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
         }
