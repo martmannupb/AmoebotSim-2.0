@@ -142,6 +142,10 @@ public class ParticleSystem : IReplayHistory
             particles.Add(p);
             particleMap.Add(p.Head(), p);
         }
+
+        DiscoverCircuits(false);
+        CleanupAfterRound();
+        UpdateAllParticleVisuals(true);
     }
 
     /// <summary>
@@ -204,6 +208,10 @@ public class ParticleSystem : IReplayHistory
             s += part.Head() + "\n";
         }
         Debug.Log(s);
+
+        DiscoverCircuits(false);
+        CleanupAfterRound();
+        UpdateAllParticleVisuals(true);
     }
 
     public void InitializeLeaderElection(int numParticles, float holeProb)
@@ -253,6 +261,10 @@ public class ParticleSystem : IReplayHistory
             s += part.Head() + "\n";
         }
         Debug.Log(s);
+
+        DiscoverCircuits(false);
+        CleanupAfterRound();
+        UpdateAllParticleVisuals(true);
     }
 
     public void InitializeChiralityCompass(int numParticles, float holeProb)
@@ -302,6 +314,10 @@ public class ParticleSystem : IReplayHistory
             s += part.Head() + "\n";
         }
         Debug.Log(s);
+
+        DiscoverCircuits(false);
+        CleanupAfterRound();
+        UpdateAllParticleVisuals(true);
     }
 
     public void InitializeBoundaryTest(int numParticles, float holeProb)
@@ -351,6 +367,10 @@ public class ParticleSystem : IReplayHistory
             s += part.Head() + "\n";
         }
         Debug.Log(s);
+
+        DiscoverCircuits(false);
+        CleanupAfterRound();
+        UpdateAllParticleVisuals(true);
     }
 
     /// <summary>
