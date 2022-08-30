@@ -13,30 +13,9 @@ public class RendererCircuits_Instance
     // Temporary
     private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
     private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
-    int counter = 0;
-    int counterRound = 0;
+
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
-        //Debug.Log("ROUND " + counterRound);
-        //counterRound++;
-        //foreach (var item in state.partitionSets)
-        //{
-        //    if(item.beepOrigin)
-        //    {
-        //        Debug.Log("Beep Origin (PSet) " + counter);
-        //        counter++;
-        //    }
-        //}
-        //foreach (var item in state.singletonSets)
-        //{
-        //    if (item.pins.Count > 1) Debug.Log("More than one Pin in Singleton Set!");
-        //    if(item.beepOrigin)
-        //    {
-        //        Debug.Log("Beep Origin (SingletonSet) " + counter);
-        //        counter++;
-        //    }
-        //}
-
         bool moving = snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting;
         int amountPartitionSets = state.partitionSets.Count;
 
@@ -67,8 +46,18 @@ public class RendererCircuits_Instance
             for (int i = 0; i < state.singletonSets.Count; i++)
             {
                 ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
-                // Add Singleton Connections
-                AddLines_SingletonSetContracted(state, snap, pSet, moving);
+                // 1. Add Lines
+                foreach (var pin in pSet.pins)
+                {
+                    Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
+                    // Outter Line
+                    if (state.hasNeighbor1[pin.globalDir])
+                    {
+                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                        AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
+                        globalDirLineSet1[pin.globalDir] = true;
+                    }
+                }
             }
             // Add Connection Pins
             for (int i = 0; i < 6; i++)
@@ -139,21 +128,6 @@ public class RendererCircuits_Instance
                 AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
                 if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                 else globalDirLineSet2[pin.globalDir] = true;
-            }
-        }
-    }
-
-    private void AddLines_SingletonSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool moving)
-    {
-        foreach (var pin in pSet.pins)
-        {
-            Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-            // Outter Line
-            if (state.hasNeighbor1[pin.globalDir])
-            {
-                Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
-                globalDirLineSet1[pin.globalDir] = true;
             }
         }
     }
