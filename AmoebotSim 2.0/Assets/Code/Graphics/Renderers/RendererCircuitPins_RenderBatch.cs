@@ -50,12 +50,14 @@ public class RendererCircuitPins_RenderBatch
     public void Init()
     {
         // Set Material
-        pinMaterial = MaterialDatabase.material_circuit_pin;
+        if (properties.beeping) pinMaterial = MaterialDatabase.material_circuit_pin_beep;
+        else pinMaterial = MaterialDatabase.material_circuit_pin;
 
         // PropertyBlocks
         if (properties.beeping)
         {
             propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.beepOrigin);
+            propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
             zOffset = -0.1f;
         }
         else
@@ -119,41 +121,21 @@ public class RendererCircuitPins_RenderBatch
 
     public void ApplyUpdates(float animationStartTime)
     {
-        if (properties.beeping)
+        if (properties.moving)
         {
-            // Beeping Animation
-            if(properties.moving)
-            {
-                // Moving (Beep)
-                propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(0f, 1f);
-                propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
-            }
-            else
-            {
-                // Not Moving (Beep)
-                propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(1f, 1f);
-                propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(-1f, 0.01f);
-            }
+            // Moving
+            propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
+            propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
         }
         else
         {
-            // No Beeps
-            if (properties.moving)
-            {
-                // Moving
-                propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
-                propertyBlock_circuitMatrices_PinConnectors.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
-                propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
-                propertyBlock_circuitMatrices_PinConnectors.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
-            }
-            else
-            {
-                // Not Moving
-                propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
-                propertyBlock_circuitMatrices_PinConnectors.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
-                propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(-1f, 0.01f);
-                propertyBlock_circuitMatrices_PinConnectors.ApplyAnimationTimestamp(-1f, 0.01f);
-            }
+            // Not Moving
+            propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
+            propertyBlock_circuitMatrices_Pins.ApplyAnimationTimestamp(-1f, 0.01f);
+            propertyBlock_circuitMatrices_PinConnectors.ApplyAnimationTimestamp(-1f, 0.01f);
         }
     }
 
@@ -188,6 +170,7 @@ public class RendererCircuitPins_RenderBatch
                 if (i < listDrawAmount_connectors - 1) count = maxArraySize;
                 else count = currentIndex_connectors % maxArraySize;
 
+                Log.Debug("Count: "+count+", ");
                 Graphics.DrawMeshInstanced(pinQuad, 0, pinMaterial, circuitMatrices_PinConnectors[i], count, propertyBlock_circuitMatrices_PinConnectors.propertyBlock);
             }
         }

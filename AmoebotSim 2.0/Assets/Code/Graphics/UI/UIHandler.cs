@@ -248,7 +248,7 @@ public class UIHandler : MonoBehaviour
 
     public void TemporaryButton_ResetAlgorithm(int algoID)
     {
-        if (sim.running) return;
+        if (sim.running) sim.TogglePlayPause();
 
         sim.system.Reset();
         switch (algoID)

@@ -13,30 +13,9 @@ public class RendererCircuits_Instance
     // Temporary
     private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
     private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
-    int counter = 0;
-    int counterRound = 0;
+    
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
-        //Debug.Log("ROUND " + counterRound);
-        //counterRound++;
-        //foreach (var item in state.partitionSets)
-        //{
-        //    if(item.beepOrigin)
-        //    {
-        //        Debug.Log("Beep Origin (PSet) " + counter);
-        //        counter++;
-        //    }
-        //}
-        //foreach (var item in state.singletonSets)
-        //{
-        //    if (item.pins.Count > 1) Debug.Log("More than one Pin in Singleton Set!");
-        //    if(item.beepOrigin)
-        //    {
-        //        Debug.Log("Beep Origin (SingletonSet) " + counter);
-        //        counter++;
-        //    }
-        //}
-
         bool moving = snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting;
         int amountPartitionSets = state.partitionSets.Count;
 
