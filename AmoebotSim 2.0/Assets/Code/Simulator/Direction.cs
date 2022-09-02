@@ -34,9 +34,9 @@ public enum Direction
 
 
 /// <summary>
-/// Defines extension methods for the <see cref="Direction"/> enum.
+/// Defines extension methods and helpers for the <see cref="Direction"/> enum.
 /// </summary>
-static class DirectionExtensions
+static class DirectionHelpers
 {
     /// <summary>
     /// Returns the direction directly opposite to this direction.
@@ -120,5 +120,88 @@ static class DirectionExtensions
         if (clockwise)
             dist = (12 - dist) % 12;
         return dist;
+    }
+
+    /// <summary>
+    /// Adds this direction value to the given direction. The current direction
+    /// is interpreted as an amount of rotation relative to the
+    /// <see cref="Direction.E"/> direction that is to be added to the given
+    /// other direction. This can be used to convert local directions to global
+    /// directions.
+    /// </summary>
+    /// <param name="d">The current direction to be interpreted as an amount
+    /// of rotation.</param>
+    /// <param name="other">The offset direction to which the first direction
+    /// should be added.</param>
+    /// <param name="clockwise">If <c>true</c>, interpret the first direction
+    /// as clockwise rotation instead of counter-clockwise.</param>
+    /// <returns></returns>
+    public static Direction AddTo(this Direction d, Direction other, bool clockwise = false)
+    {
+        return (Direction)(clockwise ? (((int)other + 12 - (int)d) % 12) : (((int)other + (int)d) % 12));
+    }
+
+    /// <summary>
+    /// Subtracts the given direction from this global direction. The current
+    /// direction is interpreted as the result of adding a rotation <c>x</c> to
+    /// the given other direction, where <c>x</c> can be clockwise or counter-
+    /// clockwise rotation. This method finds and returns <c>x</c>. It can be
+    /// used to convert global directions to local directions.
+    /// </summary>
+    /// <param name="d">The current global direction.</param>
+    /// <param name="other">The global direction used as offset.</param>
+    /// <param name="clockwise">If <c>true</c>, the resulting direction is
+    /// interpreted as clockwise rotation instead of counter-clockwise.</param>
+    /// <returns>A direction indicating the amoutn of rotation that must be added
+    /// to <paramref name="other"/> to get <paramref name="d"/>.</returns>
+    public static Direction Subtract(this Direction d, Direction other, bool clockwise = false)
+    {
+        return (Direction)(clockwise ? (((int)other + 12 - (int)d) % 12) : (((int)d + 12 - (int)other) % 12));
+    }
+
+    /// <summary>
+    /// Maps this direction to its integer representation. Every cardinal
+    /// direction is mapped to the same value as the secondary direction
+    /// obtained by a 30 degree counter-clockwise rotation. Thus, there
+    /// are 6 pairs of directions, which are mapped to the integers
+    /// <c>0,...,5</c>. The integer values increase with counter-
+    /// clockwise rotation. The special direction <see cref="Direction.NONE"/>
+    /// is represented by <c>-1</c>.
+    /// </summary>
+    /// <param name="d">The direction to be mapped to an integer.</param>
+    /// <returns>The integer representing the given cardinal or secondary
+    /// direction.</returns>
+    public static int ToInt(this Direction d)
+    {
+        return d == Direction.NONE ? -1 : ((int)d / 2);
+    }
+
+    /// <summary>
+    /// Returns the cardinal direction corresponding to the given integer.
+    /// The cardinal directions are numbered <c>0,...,5</c>, with <c>0</c>
+    /// being <see cref="Direction.E"/> and values increasing counter-
+    /// clockwise.
+    /// </summary>
+    /// <param name="d">The integer representing a cardinal direction.
+    /// If negative, the result will be <see cref="Direction.NONE"/>.</param>
+    /// <returns>The cardinal direction identified by the integer <paramref name="d"/>.</returns>
+    public static Direction Cardinal(int d)
+    {
+        return d < 0 ? Direction.NONE : (Direction)((d % 6) * 2);
+    }
+
+    /// <summary>
+    /// Returns the secondary direction corresponding to the given integer.
+    /// The secondary direction for integer <c>i</c> is obtained by rotating
+    /// the cardinal direction with index <c>i</c> counter-clockwise by 30
+    /// degrees.
+    /// </summary>
+    /// <param name="d">The integer representing a cardinal direction.
+    /// If negative, the result will be <see cref="Direction.NONE"/>.</param>
+    /// <returns>The secondary direction corresponding to the cardinal
+    /// direction that is identified by the integer <paramref name="d"/>.</returns>
+    public static Direction Perpendicular(int d)
+    {
+        return d < 0 ? Direction.NONE : (Direction)((d % 6) * 2 + 1);
     }
 }
