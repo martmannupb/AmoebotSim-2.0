@@ -28,7 +28,7 @@ public static class MaterialDatabase
 
     // Circuits
     public static Material material_circuit_line = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitMat");
-    public static Material material_circuit_lineConnector = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitMat");//"HexagonalView/Circuits/CircuitConnectorMat");
+    public static Material material_circuit_lineConnector = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitConnectorMat");
     public static Material material_circuit_pin = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMat");
     // Beeps
     public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");

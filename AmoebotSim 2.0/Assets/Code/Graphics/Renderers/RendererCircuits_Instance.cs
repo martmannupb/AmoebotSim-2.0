@@ -29,35 +29,13 @@ public class RendererCircuits_Instance
                 // 1. Add Pin
                 AddPin(posPartitionSet, pSet.color, moving, pSet.beepOrigin);
                 // 2. Add Lines
-                foreach (var pin in pSet.pins)
-                {
-                    // Inner Line
-                    Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                    AddLine(posPartitionSet, posPin, pSet.color, false, moving, pSet.beepsThisRound);
-                    // Outter Line
-                    if (state.hasNeighbor1[pin.globalDir])
-                    {
-                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                        AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
-                        globalDirLineSet1[pin.globalDir] = true;
-                    }
-                }
+                AddLines_PartitionSetContracted(state, snap, pSet, posPartitionSet, moving);
             }
             for (int i = 0; i < state.singletonSets.Count; i++)
             {
                 ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
                 // 1. Add Lines
-                foreach (var pin in pSet.pins)
-                {
-                    Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                    // Outter Line
-                    if (state.hasNeighbor1[pin.globalDir])
-                    {
-                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                        AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
-                        globalDirLineSet1[pin.globalDir] = true;
-                    }
-                }
+                AddLines_SingletonSetContracted(state, snap, pSet, moving);
             }
             // Add Connection Pins
             for (int i = 0; i < 6; i++)
@@ -110,6 +88,43 @@ public class RendererCircuits_Instance
             {
                 globalDirLineSet1[j] = false;
                 globalDirLineSet2[j] = false;
+            }
+        }
+    }
+
+    private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool moving)
+    {
+        foreach (var pin in pSet.pins)
+        {
+            // Inner Line
+            Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
+            AddLine(posPartitionSet, posPin, pSet.color, false, moving, pSet.beepsThisRound);
+            // Outter Line
+            if (state.hasNeighbor1[pin.globalDir])
+            {
+                Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
+                globalDirLineSet1[pin.globalDir] = true;
+            }
+        }
+    }
+
+    private void AddLines_SingletonSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool moving)
+    {
+        foreach (var pin in pSet.pins)
+        {
+            Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
+            // Outter Line
+            if (state.hasNeighbor1[pin.globalDir])
+            {
+                Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
+                globalDirLineSet1[pin.globalDir] = true;
+            }
+            // Beep Origin
+            if (pSet.beepOrigin)
+            {
+                AddSingletonBeep(posPin, pSet.color, moving);
             }
         }
     }
