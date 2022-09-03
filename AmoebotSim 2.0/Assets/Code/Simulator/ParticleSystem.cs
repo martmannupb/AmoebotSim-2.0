@@ -171,7 +171,7 @@ public class ParticleSystem : IReplayHistory
         particleMap.Add(p.Head(), p);
 
         for (int d = 0; d < 6; d++)
-            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, d));
+            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
 
         HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
         occupied.Add(node);
@@ -187,7 +187,7 @@ public class ParticleSystem : IReplayHistory
             {
                 for (int d = 0; d < 6; d++)
                 {
-                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, d);
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
                     if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
                         candidates.Add(nbr);
                 }
@@ -225,7 +225,7 @@ public class ParticleSystem : IReplayHistory
         particleMap.Add(p.Head(), p);
 
         for (int d = 0; d < 6; d++)
-            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, d));
+            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
 
         HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
         occupied.Add(node);
@@ -241,7 +241,7 @@ public class ParticleSystem : IReplayHistory
             {
                 for (int d = 0; d < 6; d++)
                 {
-                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, d);
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
                     if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
                         candidates.Add(nbr);
                 }
@@ -278,7 +278,7 @@ public class ParticleSystem : IReplayHistory
         particleMap.Add(p.Head(), p);
 
         for (int d = 0; d < 6; d++)
-            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, d));
+            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
 
         HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
         occupied.Add(node);
@@ -294,7 +294,7 @@ public class ParticleSystem : IReplayHistory
             {
                 for (int d = 0; d < 6; d++)
                 {
-                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, d);
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
                     if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
                         candidates.Add(nbr);
                 }
@@ -331,7 +331,7 @@ public class ParticleSystem : IReplayHistory
         particleMap.Add(p.Head(), p);
 
         for (int d = 0; d < 6; d++)
-            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, d));
+            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
 
         HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
         occupied.Add(node);
@@ -347,7 +347,7 @@ public class ParticleSystem : IReplayHistory
             {
                 for (int d = 0; d < 6; d++)
                 {
-                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, d);
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
                     if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
                         candidates.Add(nbr);
                 }
@@ -588,12 +588,12 @@ public class ParticleSystem : IReplayHistory
             while (queue.Count > 0)
             {
                 Particle p = queue.Dequeue();
-                int globalHeadDir = p.GlobalHeadDirection();
+                Direction globalHeadDir = p.GlobalHeadDirection();
                 int pinsPerEdge = p.algorithm.PinsPerEdge;
 
                 // Initialize graphics computation as well
                 p.gCircuit = ParticlePinGraphicState.PoolCreate(pinsPerEdge);
-                p.gCircuit.neighbor1ToNeighbor2Direction = p.GlobalTailDirection();
+                p.gCircuit.neighbor1ToNeighbor2Direction = p.GlobalTailDirection().ToInt();
 
                 // First of all, find all neighboring particles and some relative positional information
                 int numNbrs = p.IsExpanded() ? 10 : 6;
@@ -602,7 +602,8 @@ public class ParticleSystem : IReplayHistory
                 int[] nbrLabels = new int[numNbrs]; // Stores neighbor label opposite of our label
                 for (int label = 0; label < numNbrs; label++)
                 {
-                    int dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+                    Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+                    int dirInt = dir.ToInt();
                     bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
                     Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
                     if (particleMap.TryGetValue(nbrPos, out Particle nbr))
@@ -611,12 +612,12 @@ public class ParticleSystem : IReplayHistory
                         if (p.IsExpanded() && !head)
                         {
                             // neighbor2 is tail
-                            p.gCircuit.hasNeighbor2[dir] = true;
+                            p.gCircuit.hasNeighbor2[dirInt] = true;
                         }
                         else
                         {
                             // neighbor1 is head
-                            p.gCircuit.hasNeighbor1[dir] = true;
+                            p.gCircuit.hasNeighbor1[dirInt] = true;
                         }
 
                         // If the neighbor has already been processed: Compute required information
@@ -625,7 +626,7 @@ public class ParticleSystem : IReplayHistory
                             nbrParts[label] = nbr;
                             bool isNbrHead = nbr.Head() == nbrPos;
                             nbrHead[label] = isNbrHead;
-                            nbrLabels[label] = ParticleSystem_Utils.GetLabelInDir((dir + 3) % 6, nbr.GlobalHeadDirection(), isNbrHead);
+                            nbrLabels[label] = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
                         }
                         // Otherwise: Enqueue if necessary
                         else
@@ -762,13 +763,13 @@ public class ParticleSystem : IReplayHistory
                 if (ps.NumStoredPins == 1)
                 {
                     SysPin pin = ps.GetPins()[0] as SysPin;
-                    int pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
+                    Direction pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
                     ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                     pset.UpdatePSetData(
                         circuits[ps.circuit].color,
                         circuits[ps.circuit].hasBeep,
                         p.HasPlannedBeep(ps.Id),
-                        new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir, pin.globalEdgeOffset, pin.head) });
+                        new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir.ToInt(), pin.globalEdgeOffset, pin.head) });
                     p.gCircuit.singletonSets.Add(pset);
                 }
                 // Partition Set with more than one pin
@@ -779,8 +780,8 @@ public class ParticleSystem : IReplayHistory
                     foreach (Pin _pin in ps.GetPins())
                     {
                         SysPin pin = _pin as SysPin;
-                        int pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
-                        pins[i].globalDir = pinDir;
+                        Direction pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
+                        pins[i].globalDir = pinDir.ToInt();
                         pins[i].dirID = pin.globalEdgeOffset;
                         pins[i].isHead = pin.head;
                         i++;
@@ -858,7 +859,7 @@ public class ParticleSystem : IReplayHistory
 
     /// <summary>
     /// System-side implementation of <see cref="ParticleAlgorithm.HasNeighborAt(int, bool)"/>.
-    /// <para>See also <seealso cref="GetNeighborAt(Particle, int, bool)"/>.</para>
+    /// <para>See also <seealso cref="GetNeighborAt(Particle, Direction, bool)"/>.</para>
     /// </summary>
     /// <param name="p">The particle checking for a neighbor.</param>
     /// <param name="locDir">The local direction of the particle in which to check.</param>
@@ -867,7 +868,7 @@ public class ParticleSystem : IReplayHistory
     /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
     /// relative to <paramref name="p"/>'s head or tail is occupied by a particle other
     /// than <paramref name="p"/>.</returns>
-    public bool HasNeighborAt(Particle p, int locDir, bool fromHead = true)
+    public bool HasNeighborAt(Particle p, Direction locDir, bool fromHead = true)
     {
         Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
         // Return true iff there is a particle at that position and it is not the
@@ -877,7 +878,7 @@ public class ParticleSystem : IReplayHistory
 
     /// <summary>
     /// System-side implementation of <see cref="ParticleAlgorithm.GetNeighborAt(int, bool)"/>.
-    /// <para>See also <seealso cref="HasNeighborAt(Particle, int, bool)"/>.</para>
+    /// <para>See also <seealso cref="HasNeighborAt(Particle, Direction, bool)"/>.</para>
     /// </summary>
     /// <param name="p">The particle trying to get its neighbor.</param>
     /// <param name="locDir">The local direction of the particle in which to check.</param>
@@ -886,7 +887,7 @@ public class ParticleSystem : IReplayHistory
     /// <returns>The neighboring particle in the specified position, if it exists,
     /// otherwise <c>null</c>.</returns>
     // TODO: How to handle case that neighbor does not exist? For now just return null
-    public Particle GetNeighborAt(Particle p, int locDir, bool fromHead = true)
+    public Particle GetNeighborAt(Particle p, Direction locDir, bool fromHead = true)
     {
         Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
         if (particleMap.TryGetValue(pos, out Particle nbr) && nbr != p)
@@ -905,7 +906,7 @@ public class ParticleSystem : IReplayHistory
     /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
     /// relative to <paramref name="p"/>'s head or tail is occupied by the head of a particle
     /// other than <paramref name="p"/>.</returns>
-    public bool IsHeadAt(Particle p, int locDir, bool fromHead = true)
+    public bool IsHeadAt(Particle p, Direction locDir, bool fromHead = true)
     {
         Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
         return particleMap.TryGetValue(pos, out Particle nbr) && nbr != p && nbr.Head() == pos;
@@ -921,7 +922,7 @@ public class ParticleSystem : IReplayHistory
     /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
     /// relative to <paramref name="p"/>'s head or tail is occupied by the tail of a particle
     /// other than <paramref name="p"/>.</returns>
-    public bool IsTailAt(Particle p, int locDir, bool fromHead = true)
+    public bool IsTailAt(Particle p, Direction locDir, bool fromHead = true)
     {
         Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
         return particleMap.TryGetValue(pos, out Particle nbr) && nbr != p && nbr.Tail() == pos;
@@ -945,7 +946,7 @@ public class ParticleSystem : IReplayHistory
     /// <param name="maxReturn">The maximum number of neighbors to return.</param>
     /// <returns>Every neighbor <see cref="ParticleAlgorithm"/> encountered during the
     /// search, each wrapped in a <see cref="Neighbor{T}"/> instance.</returns>
-    private IEnumerable<Neighbor<T>> IterateNeighbors<T>(Particle p, int localStartDir, bool startAtHead, bool withChirality, int maxSearch, int maxReturn) where T : ParticleAlgorithm
+    private IEnumerable<Neighbor<T>> IterateNeighbors<T>(Particle p, Direction localStartDir, bool startAtHead, bool withChirality, int maxSearch, int maxReturn) where T : ParticleAlgorithm
     {
         if (maxSearch > 6 && !p.IsExpanded() || maxSearch > 10)
         {
@@ -953,11 +954,12 @@ public class ParticleSystem : IReplayHistory
         }
         int numSearched = 0;
         int numReturned = 0;
-        int currentGlobalDir = ParticleSystem_Utils.LocalToGlobalDir(localStartDir, p.comDir, p.chirality);
+        Direction currentGlobalDir = ParticleSystem_Utils.LocalToGlobalDir(localStartDir, p.comDir, p.chirality);
         Vector2Int refNode = startAtHead ? p.Head() : p.Tail();
         bool atHead = startAtHead;
 
-        int directionIncr = ((withChirality ? 1 : -1) * (p.chirality ? 1 : -1) + 6) % 6;
+        //int directionIncr = ((withChirality ? 1 : -1) * (p.chirality ? 1 : -1) + 6) % 6;
+        int directionIncr = (withChirality ? 1 : -1) * (p.chirality ? 1 : -1);
         while (numSearched < maxSearch && numReturned < maxReturn)
         {
             // Must switch nodes if we have reached the point where we look at the other one
@@ -965,7 +967,8 @@ public class ParticleSystem : IReplayHistory
             {
                 atHead = !atHead;
                 // Turn twice against the current turn direction, i.e., 4 times in current turn direction
-                currentGlobalDir = (currentGlobalDir + 4 * directionIncr) % 6;
+                //currentGlobalDir = (currentGlobalDir + 4 * directionIncr) % 6;
+                currentGlobalDir = currentGlobalDir.Rotate60(-2 * directionIncr);
             }
 
             // Check the next position
@@ -976,15 +979,17 @@ public class ParticleSystem : IReplayHistory
                 numReturned++;
             }
             
-            currentGlobalDir = (currentGlobalDir + directionIncr) % 6;
+            currentGlobalDir = currentGlobalDir.Rotate60(directionIncr);
             numSearched++;
         }
     }
 
     // TODO: Documentation
 
-    public bool FindFirstNeighbor<T>(Particle p, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    public bool FindFirstNeighbor<T>(Particle p, out Neighbor<T> neighbor, Direction startDir = Direction.NONE, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
+        if (startDir == Direction.NONE)
+            startDir = DirectionHelpers.Cardinal(0);
         if (maxNumber == -1)
         {
             maxNumber = p.IsExpanded() ? 10 : 6;
@@ -994,12 +999,14 @@ public class ParticleSystem : IReplayHistory
             neighbor = nbr;
             return true;
         }
-        neighbor = new Neighbor<T>(null, -1, true);
+        neighbor = new Neighbor<T>(null, Direction.NONE, true);
         return false;
     }
 
-    public bool FindFirstNeighborWithProperty<T>(Particle p, System.Func<T, bool> prop, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    public bool FindFirstNeighborWithProperty<T>(Particle p, System.Func<T, bool> prop, out Neighbor<T> neighbor, Direction startDir = Direction.NONE, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
+        if (startDir == Direction.NONE)
+            startDir = DirectionHelpers.Cardinal(0);
         if (maxNumber == -1)
         {
             maxNumber = p.IsExpanded() ? 10 : 6;
@@ -1012,7 +1019,7 @@ public class ParticleSystem : IReplayHistory
                 return true;
             }
         }
-        neighbor = new Neighbor<T>(null, -1, true);
+        neighbor = new Neighbor<T>(null, Direction.NONE, true);
         return false;
     }
 
@@ -1032,7 +1039,7 @@ public class ParticleSystem : IReplayHistory
     /// </exception>
     /// <param name="p">The particle that should expand.</param>
     /// <param name="locDir">The local direction into which the particle should expand.</param>
-    public void ExpandParticle(Particle p, int locDir)
+    public void ExpandParticle(Particle p, Direction locDir)
     {
         // Reject if the particle is already expanded
         if (p.IsExpanded())
@@ -1133,7 +1140,7 @@ public class ParticleSystem : IReplayHistory
     /// </exception>
     /// <param name="p">The particle that should expand during the handover.</param>
     /// <param name="locDir">The local direction into which the particle should expand.</param>
-    public void PerformPushHandover(Particle p, int locDir)
+    public void PerformPushHandover(Particle p, Direction locDir)
     {
         // Reject if the particle is already expanded
         if (p.IsExpanded())
@@ -1179,7 +1186,7 @@ public class ParticleSystem : IReplayHistory
     /// <param name="locDir">The local direction relative to <paramref name="p"/>'s tail
     /// from where a contracted neighbor particle should be expanded to occupy the
     /// tail node.</param>
-    public void PerformPullHandoverHead(Particle p, int locDir)
+    public void PerformPullHandoverHead(Particle p, Direction locDir)
     {
         PerformPullHandover(p, locDir, true);
     }
@@ -1202,12 +1209,12 @@ public class ParticleSystem : IReplayHistory
     /// <param name="locDir">The local direction relative to <paramref name="p"/>'s head
     /// from where a contracted neighbor particle should be expanded to occupy the
     /// head node.</param>
-    public void PerformPullHandoverTail(Particle p, int locDir)
+    public void PerformPullHandoverTail(Particle p, Direction locDir)
     {
         PerformPullHandover(p, locDir, false);
     }
 
-    private void PerformPullHandover(Particle p, int locDir, bool head)
+    private void PerformPullHandover(Particle p, Direction locDir, bool head)
     {
         // Reject if the particle is already contracted
         if (p.IsContracted())
@@ -1235,11 +1242,6 @@ public class ParticleSystem : IReplayHistory
         actionQueue.Enqueue(a);
     }
 
-    public void SendParticleMessage(Particle p, Message msg, int locDir, bool fromHead = true)
-    {
-        throw new System.NotImplementedException();
-    }
-
 
     /**
      * State change functions (called to update the simulation state).
@@ -1247,7 +1249,7 @@ public class ParticleSystem : IReplayHistory
      */
 
     /// <summary>
-    /// Applies an expansion as scheduled by <see cref="ExpandParticle(Particle, int)"/>
+    /// Applies an expansion as scheduled by <see cref="ExpandParticle(Particle, Direction)"/>
     /// if the action can still be applied.
     /// <para>
     /// The action cannot be applied if the node in expansion direction is occupied by
@@ -1264,7 +1266,7 @@ public class ParticleSystem : IReplayHistory
     /// </exception>
     /// <param name="p">The particle that should expand.</param>
     /// <param name="locDir">The local direction into which the particle should expand.</param>
-    public void Apply_ExpandParticle(Particle p, int locDir)
+    public void Apply_ExpandParticle(Particle p, Direction locDir)
     {
         Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
 
@@ -1342,7 +1344,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// Applies a push handover as scheduled by <see cref="PerformPushHandover(Particle, int)"/>
+    /// Applies a push handover as scheduled by <see cref="PerformPushHandover(Particle, Direction)"/>
     /// if the action can still be applied.
     /// <para>
     /// The action cannot be applied if the node in expansion direction is occupied by
@@ -1364,7 +1366,7 @@ public class ParticleSystem : IReplayHistory
     /// </exception>
     /// <param name="p">The particle that should expand during the handover.</param>
     /// <param name="locDir">The local direction into which the particle should expand.</param>
-    public void Apply_PerformPushHandover(Particle p, int locDir)
+    public void Apply_PerformPushHandover(Particle p, Direction locDir)
     {
         Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
 
@@ -1413,7 +1415,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// Applies a pull handover as scheduled by <see cref="PerformPullHandoverHead(Particle, int)"/>
+    /// Applies a pull handover as scheduled by <see cref="PerformPullHandoverHead(Particle, Direction)"/>
     /// if the action can still be applied.
     /// <para>
     /// The action cannot be applied if the node where the neighbor to pull should be
@@ -1440,13 +1442,13 @@ public class ParticleSystem : IReplayHistory
     /// <param name="locDir">The local direction relative to <paramref name="p"/>'s tail
     /// from where a contracted neighbor particle should be expanded to occupy the
     /// tail node.</param>
-    public void Apply_PerformPullHandoverHead(Particle p, int locDir)
+    public void Apply_PerformPullHandoverHead(Particle p, Direction locDir)
     {
         Apply_PerformPullHandover(p, locDir, true);
     }
 
     /// <summary>
-    /// Applies a pull handover as scheduled by <see cref="PerformPullHandoverTail(Particle, int)"/>
+    /// Applies a pull handover as scheduled by <see cref="PerformPullHandoverTail(Particle, Direction)"/>
     /// if the action can still be applied.
     /// <para>
     /// The action cannot be applied if the node where the neighbor to pull should be
@@ -1473,12 +1475,12 @@ public class ParticleSystem : IReplayHistory
     /// <param name="locDir">The local direction relative to <paramref name="p"/>'s head
     /// from where a contracted neighbor particle should be expanded to occupy the
     /// head node.</param>
-    public void Apply_PerformPullHandoverTail(Particle p, int locDir)
+    public void Apply_PerformPullHandoverTail(Particle p, Direction locDir)
     {
         Apply_PerformPullHandover(p, locDir, false);
     }
 
-    private void Apply_PerformPullHandover(Particle p, int locDir, bool head)
+    private void Apply_PerformPullHandover(Particle p, Direction locDir, bool head)
     {
         Vector2Int targetLoc = head ? p.Tail() : p.Head();
         Vector2Int nbrLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, !head);
@@ -1510,7 +1512,7 @@ public class ParticleSystem : IReplayHistory
         {
             // p2 must be contracted at this point because it has not moved yet and cannot have been expanded when the action was scheduled
             // Expansion direction is local((global(locDir) + 3) % 6)
-            Apply_ExpandParticle(p2, ParticleSystem_Utils.GlobalToLocalDir((ParticleSystem_Utils.LocalToGlobalDir(locDir, p.comDir, p.chirality) + 3) % 6, p2.comDir, p2.chirality));
+            Apply_ExpandParticle(p2, ParticleSystem_Utils.GlobalToLocalDir(ParticleSystem_Utils.LocalToGlobalDir(locDir, p.comDir, p.chirality).Opposite(), p2.comDir, p2.chirality));
         }
 
         // Action is allowed
@@ -1531,11 +1533,6 @@ public class ParticleSystem : IReplayHistory
         }
         // Also remember that the particle has moved in this round
         p.hasMoved = true;
-    }
-
-    public void Apply_SendParticleMessage(Particle p, Message msg, int locDir, bool fromHead = true)
-    {
-        throw new System.NotImplementedException();
     }
 
 

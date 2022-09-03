@@ -177,6 +177,28 @@ static class DirectionHelpers
     }
 
     /// <summary>
+    /// Checks if this is a cardinal direction.
+    /// <para>See also <seealso cref="IsSecondary(Direction)"/>.</para>
+    /// </summary>
+    /// <param name="d">The direction to check.</param>
+    /// <returns><c>true</c> if and only if this is a cardinal direction.</returns>
+    public static bool IsCardinal(this Direction d)
+    {
+        return d != Direction.NONE && (((int)d) % 2) == 0;
+    }
+
+    /// <summary>
+    /// Checks if this is a secondary direction.
+    /// <para>See also <seealso cref="IsCardinal(Direction)"/>.</para>
+    /// </summary>
+    /// <param name="d">The direction to check.</param>
+    /// <returns><c>true</c> if and only if this is a secondary direction.</returns>
+    public static bool IsSecondary(this Direction d)
+    {
+        return d != Direction.NONE && !d.IsCardinal();
+    }
+
+    /// <summary>
     /// Returns the cardinal direction corresponding to the given integer.
     /// The cardinal directions are numbered <c>0,...,5</c>, with <c>0</c>
     /// being <see cref="Direction.E"/> and values increasing counter-
@@ -200,7 +222,7 @@ static class DirectionHelpers
     /// If negative, the result will be <see cref="Direction.NONE"/>.</param>
     /// <returns>The secondary direction corresponding to the cardinal
     /// direction that is identified by the integer <paramref name="d"/>.</returns>
-    public static Direction Perpendicular(int d)
+    public static Direction Secondary(int d)
     {
         return d < 0 ? Direction.NONE : (Direction)((d % 6) * 2 + 1);
     }

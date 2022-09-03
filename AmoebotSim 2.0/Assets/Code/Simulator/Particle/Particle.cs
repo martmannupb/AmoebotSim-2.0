@@ -34,7 +34,7 @@ public class Particle : IParticleState, IReplayHistory
     /// <summary>
     /// The compass orientation of the particle, represented as a global direction.
     /// </summary>
-    public readonly int comDir;
+    public readonly Direction comDir;
     /// <summary>
     /// If <c>true</c>, the positive rotation direction of the particle is counter-clockwise,
     /// else it is clockwise.
@@ -49,12 +49,12 @@ public class Particle : IParticleState, IReplayHistory
 
     // Expansion
     // Store expansion direction in history
-    private ValueHistory<int> expansionDirHistory;
+    private ValueHistory<Direction> expansionDirHistory;
     private bool exp_isExpanded;
     /// <summary>
     /// The local direction pointing from the particle's tail towards its head.
     /// </summary>
-    private int exp_expansionDir;
+    private Direction exp_expansionDir;
     
     // Attributes
     private List<IParticleAttribute> attributes = new List<IParticleAttribute>();
@@ -145,8 +145,8 @@ public class Particle : IParticleState, IReplayHistory
     }
     private ParticleAction scheduledMovement = null;
     private bool predictIsExpanded = false;
-    private int predictTailDir = -1;
-    private int predictHeadDir = -1;
+    private Direction predictTailDir = Direction.NONE;
+    private Direction predictHeadDir = Direction.NONE;
 
     /// <summary>
     /// Flag indicating whether the particle has moved during the current round.
@@ -186,18 +186,20 @@ public class Particle : IParticleState, IReplayHistory
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
 
-    public Particle(ParticleSystem system, Vector2Int pos, int compassDir = 0, bool chirality = true)
+    public Particle(ParticleSystem system, Vector2Int pos, Direction compassDir = Direction.NONE, bool chirality = true)
     {
         this.system = system;
         int currentRound = system.CurrentRound;
 
         // Start contracted
         tailPosHistory = new ValueHistory<Vector2Int>(pos, currentRound);
-        expansionDirHistory = new ValueHistory<int>(-1, currentRound);
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
+        expansionDirHistory = new ValueHistory<Direction>(Direction.NONE, currentRound);
         pos_head = pos;
         pos_tail = pos;
         exp_isExpanded = false;
-        exp_expansionDir = -1;
+        exp_expansionDir = Direction.NONE;
 
         comDir = compassDir;
         this.chirality = chirality;
@@ -318,8 +320,8 @@ public class Particle : IParticleState, IReplayHistory
     /// Returns the local direction pointing from the particle's tail towards its head.
     /// </summary>
     /// <returns>The local direction pointing from the particle's tail towards its head,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int HeadDirection()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction HeadDirection()
     {
         return exp_expansionDir;
     }
@@ -328,10 +330,10 @@ public class Particle : IParticleState, IReplayHistory
     /// Returns the local direction pointing from the particle's head towards its tail.
     /// </summary>
     /// <returns>The local direction pointing from the particle's head towards its tail,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int TailDirection()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction TailDirection()
     {
-        return exp_isExpanded ? (exp_expansionDir + 3) % 6 : -1;
+        return exp_isExpanded ? exp_expansionDir.Opposite() : Direction.NONE;
     }
 
     /// <summary>
@@ -339,10 +341,16 @@ public class Particle : IParticleState, IReplayHistory
     /// head into a global direction.
     /// </summary>
     /// <returns>The global direction pointing from this particle's tail towards its head,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int GlobalHeadDirection()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction GlobalHeadDirection()
     {
-        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality) : -1;
+        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality) : Direction.NONE;
+    }
+
+    // For IParticleState interface with rendering system
+    public int GlobalHeadDirectionInt()
+    {
+        return GlobalHeadDirection().ToInt();
     }
 
     /// <summary>
@@ -350,10 +358,10 @@ public class Particle : IParticleState, IReplayHistory
     /// tail into a global direction.
     /// </summary>
     /// <returns>The global direction pointing from this particle's head towards its tail,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int GlobalTailDirection()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction GlobalTailDirection()
     {
-        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir((exp_expansionDir + 3) % 6, comDir, chirality) : -1;
+        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir.Opposite(), comDir, chirality) : Direction.NONE;
     }
 
 
@@ -484,8 +492,8 @@ public class Particle : IParticleState, IReplayHistory
     /// for after the round.
     /// </summary>
     /// <returns>The local direction pointing from the particle's tail towards its head,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int HeadDirection_After()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction HeadDirection_After()
     {
         if (scheduledMovement != null)
         {
@@ -502,8 +510,8 @@ public class Particle : IParticleState, IReplayHistory
     /// for after the round.
     /// </summary>
     /// <returns>The local direction pointing from the particle's head towards its tail,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int TailDirection_After()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction TailDirection_After()
     {
         if (scheduledMovement != null)
         {
@@ -660,7 +668,7 @@ public class Particle : IParticleState, IReplayHistory
     /// The method will not check if this operation is valid.
     /// </remarks>
     /// <param name="locDir">The local direction into which this particle should expand.</param>
-    public void Apply_Expand(int locDir)
+    public void Apply_Expand(Direction locDir)
     {
         exp_isExpanded = true;
         exp_expansionDir = locDir;
@@ -677,10 +685,10 @@ public class Particle : IParticleState, IReplayHistory
     public void Apply_ContractHead()
     {
         exp_isExpanded = false;
-        exp_expansionDir = -1;
+        exp_expansionDir = Direction.NONE;
         pos_tail = pos_head;
         tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
-        expansionDirHistory.RecordValueInRound(-1, system.CurrentRound);
+        expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
     }
 
     /// <summary>
@@ -692,24 +700,26 @@ public class Particle : IParticleState, IReplayHistory
     public void Apply_ContractTail()
     {
         exp_isExpanded = false;
-        exp_expansionDir = -1;
+        exp_expansionDir = Direction.NONE;
         pos_head = pos_tail;
-        expansionDirHistory.RecordValueInRound(-1, system.CurrentRound);
+        expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
     }
 
     // TODO: Check if we need to do anything else in these 3 methods
 
     /// <summary>
-    /// Same as <see cref="Apply_Expand(int)"/>.
+    /// Same as <see cref="Apply_Expand(Direction)"/>.
     /// </summary>
     /// <remarks>
     /// The method will not check if this operation is valid.
     /// </remarks>
     /// <param name="locDir">The local direction into which to expand.</param>
-    public void Apply_PushHandover(int locDir)
+    public void Apply_PushHandover(Direction locDir)
     {
         Apply_Expand(locDir);
     }
+
+    // TODO: Remove unused parameters?
 
     /// <summary>
     /// Same as <see cref="Apply_ContractHead"/>.
@@ -720,7 +730,7 @@ public class Particle : IParticleState, IReplayHistory
     /// </remarks>
     /// <param name="locDir">The local direction from where to pull the
     /// neighbor particle, relative to this particle's tail.</param>
-    public void Apply_PullHandoverHead(int locDir)
+    public void Apply_PullHandoverHead(Direction locDir)
     {
         Apply_ContractHead();
     }
@@ -734,14 +744,9 @@ public class Particle : IParticleState, IReplayHistory
     /// </remarks>
     /// <param name="locDir">The local direction from where to pull the
     /// neighbor particle, relative to this particle's head.</param>
-    public void Apply_PullHandoverTail(int locDir)
+    public void Apply_PullHandoverTail(Direction locDir)
     {
         Apply_ContractTail();
-    }
-
-    public void Apply_SendMessage(Message msg, int locDir, bool head = true)
-    {
-        throw new System.NotImplementedException();
     }
 
     /// <summary>
@@ -800,15 +805,15 @@ public class Particle : IParticleState, IReplayHistory
             case ActionType.PUSH:
                 predictIsExpanded = true;
                 predictHeadDir = a.localDir;
-                predictTailDir = (predictHeadDir + 3) % 6;
+                predictTailDir = predictHeadDir.Opposite();
                 break;
             case ActionType.CONTRACT_HEAD:
             case ActionType.CONTRACT_TAIL:
             case ActionType.PULL_HEAD:
             case ActionType.PULL_TAIL:
                 predictIsExpanded = false;
-                predictHeadDir = -1;
-                predictTailDir = -1;
+                predictHeadDir = Direction.NONE;
+                predictTailDir = Direction.NONE;
                 break;
         }
     }
@@ -1274,7 +1279,7 @@ public class Particle : IParticleState, IReplayHistory
     {
         pos_tail = tailPosHistory.GetMarkedValue();
         exp_expansionDir = expansionDirHistory.GetMarkedValue();
-        exp_isExpanded = exp_expansionDir != -1;
+        exp_isExpanded = exp_expansionDir != Direction.NONE;
         if (exp_isExpanded)
         {
             pos_head = ParticleSystem_Utils.GetNbrInDir(pos_tail, exp_expansionDir);
