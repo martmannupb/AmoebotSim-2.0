@@ -1,34 +1,21 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// <see cref="ParticleAttribute{T}"/> subclass representing direction values.
-/// Only values in the set {-1,0,1,2,3,4,5} are permitted.
 /// </summary>
-public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IParticleAttribute
+public class ParticleAttribute_Direction : ParticleAttributeWithHistory<Direction>, IParticleAttribute
 {
-    public ParticleAttribute_Direction(Particle particle, string name, int value = 0) : base(particle, name)
+    public ParticleAttribute_Direction(Particle particle, string name, Direction value = Direction.NONE) : base(particle, name)
     {
-        CheckValue(value);
-        history = new ValueHistory<int>(value, particle.system.CurrentRound);
+        history = new ValueHistory<Direction>(value, particle.system.CurrentRound);
     }
 
-    private void CheckValue(int val)
-    {
-        if (val < -1 || val > 5)
-        {
-            throw new System.ArgumentOutOfRangeException("Direction must be value between -1 and 5, got " + val);
-        }
-    }
-
-    public override int GetValue()
+    public override Direction GetValue()
     {
         return history.GetValueInRound(particle.system.PreviousRound);
     }
 
-    public override int GetValue_After()
+    public override Direction GetValue_After()
     {
         if (!particle.isActive)
         {
@@ -37,13 +24,12 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IP
         return history.GetMarkedValue();
     }
 
-    public override void SetValue(int value)
+    public override void SetValue(Direction value)
     {
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
         }
-        CheckValue(value);
         history.RecordValueInRound(value, particle.system.CurrentRound);
     }
 
@@ -59,9 +45,9 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<int>, IP
 
     public void UpdateAttributeValue(string value)
     {
-        if (int.TryParse(value, out int parsedVal))
+        if (Enum.TryParse(typeof(Direction), value, out object parsedVal))
         {
-            SetValue(parsedVal);
+            SetValue((Direction)parsedVal);
         }
         else
         {

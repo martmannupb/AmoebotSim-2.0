@@ -14,6 +14,9 @@ using UnityEngine;
 /// direction. If it is used in any calculation, the result
 /// is undefined.
 /// </para>
+/// <para>
+/// See <see cref="DirectionHelpers"/> for additional helper functions.
+/// </para>
 /// </summary>
 public enum Direction
 {
@@ -54,8 +57,8 @@ static class DirectionHelpers
 
     /// <summary>
     /// Returns the given direction rotated by 60 degrees times the
-    /// given amount in clockwise direction. Negative values rotate
-    /// in counter-clockwise direction.
+    /// given amount in counter-clockwise direction. Negative values
+    /// rotate in clockwise direction.
     /// <para>
     /// If <paramref name="d"/> is (not) a cardinal direction, then
     /// the result will also (not) be a cardinal direction.
@@ -65,8 +68,8 @@ static class DirectionHelpers
     /// <param name="amount">The number of times to rotate by 60
     /// degrees in clockwise direction.</param>
     /// <returns>Direction <paramref name="d"/> rotated by 60
-    /// degrees times <paramref name="amount"/> in clockwise
-    /// direction.</returns>
+    /// degrees times <paramref name="amount"/> in
+    /// counter-clockwise direction.</returns>
     public static Direction Rotate60(this Direction d, int amount)
     {
         if (amount < 0)
@@ -76,8 +79,8 @@ static class DirectionHelpers
 
     /// <summary>
     /// Returns the given direction rotated by 30 degrees times the
-    /// given amount in clockwise direction. Negative values rotate
-    /// in counter-clockwise direction.
+    /// given amount in counter-clockwise direction. Negative values
+    /// rotate in clockwise direction.
     /// <para>
     /// If <paramref name="d"/> is (not) a cardinal direction, then
     /// the result will also (not) be a cardinal direction if and
@@ -91,8 +94,8 @@ static class DirectionHelpers
     /// <param name="amount">The number of times to rotate by 30
     /// degrees in clockwise direction.</param>
     /// <returns>Direction <paramref name="d"/> rotated by 30
-    /// degrees times <paramref name="amount"/> in clockwise
-    /// direction.</returns>
+    /// degrees times <paramref name="amount"/> in
+    /// counter-clockwise direction.</returns>
     public static Direction Rotate30(this Direction d, int amount)
     {
         if (amount < 0)

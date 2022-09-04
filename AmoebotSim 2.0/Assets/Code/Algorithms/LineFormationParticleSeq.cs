@@ -22,20 +22,20 @@ public class LineFormationParticleSeq : ParticleAlgorithm
     private static bool leaderCreated = false;
 
     public ParticleAttribute<LFState> state;
-    public ParticleAttribute<int> constructionDir;
-    public ParticleAttribute<int> moveDir;
-    public ParticleAttribute<int> followDir;
+    public ParticleAttribute<Direction> constructionDir;
+    public ParticleAttribute<Direction> moveDir;
+    public ParticleAttribute<Direction> followDir;
 
     // Helpers to make sure that followDir is updated only if a push handover was successful
     // TODO: Switch to only doing pull handovers (pulling particle can choose, but need message to update followDir)
     public ParticleAttribute<bool> havePushed;
-    public ParticleAttribute<int> newFollowDir;
+    public ParticleAttribute<Direction> newFollowDir;
 
     public LineFormationParticleSeq(Particle p) : base(p)
     {
-        constructionDir = CreateAttributeDirection("constructionDir", -1);
-        moveDir = CreateAttributeDirection("moveDir", -1);
-        followDir = CreateAttributeDirection("followDir", -1);
+        constructionDir = CreateAttributeDirection("constructionDir", Direction.NONE);
+        moveDir = CreateAttributeDirection("moveDir", Direction.NONE);
+        followDir = CreateAttributeDirection("followDir", Direction.NONE);
         state = CreateAttributeEnum<LFState>("State", LFState.IDLE);
 
         SetMainColor(idleColor);
@@ -44,14 +44,14 @@ public class LineFormationParticleSeq : ParticleAlgorithm
         if (!leaderCreated)
         {
             state.SetValue(LFState.LEADER);
-            constructionDir.SetValue(Random.Range(0, 6));
+            constructionDir.SetValue(DirectionHelpers.Cardinal(Random.Range(0, 6)));
             SetMainColor(leaderColor);
-            Debug.Log("Line construction dir: " + (int)constructionDir.GetValue_After());
+            Debug.Log("Line construction dir: " + constructionDir.GetValue_After());
             leaderCreated = true;
         }
 
         havePushed = CreateAttributeBool("havePushed", false);
-        newFollowDir = CreateAttributeDirection("newFollowDir", -1);
+        newFollowDir = CreateAttributeDirection("newFollowDir", Direction.NONE);
     }
 
     public override int PinsPerEdge => 3;
@@ -133,7 +133,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 
                 ComputeRootMoveDir(nbrDone);
                 // Expand if there is a free node in movement direction or try to do a push handover with another ROOT
-                int md = moveDir.GetValue_After();
+                Direction md = moveDir.GetValue_After();
                 ParticleAlgorithm nbr = GetNeighborAt(md);
                 if (nbr == null)
                 {
@@ -197,7 +197,7 @@ public class LineFormationParticleSeq : ParticleAlgorithm
                 return;
             }
             // Did not become DONE or ROOT, try pushing into followed particle
-            int fd = followDir.GetValue_After();
+            Direction fd = followDir.GetValue_After();
             ParticleAlgorithm nbr = GetNeighborAt(fd, true);
             if (nbr != null && nbr.IsExpanded() && !IsHeadAt(fd, true) /* UGLY HACK */ && !((LineFormationParticleSeq)nbr).havePushed)
             {
@@ -214,15 +214,16 @@ public class LineFormationParticleSeq : ParticleAlgorithm
         // TODO: Can simplify this using better neighbor discovery methods
         for (int d = 0; d < 6; d++)
         {
-            if (d == HeadDirection())
+            Direction dir = DirectionHelpers.Cardinal(d);
+            if (dir == HeadDirection())
                 continue;
-            ParticleAlgorithm nbr = GetNeighborAt(d, false);
-            if (nbr != null && IsHeadAt(d, false))
+            ParticleAlgorithm nbr = GetNeighborAt(dir, false);
+            if (nbr != null && IsHeadAt(dir, false))
             {
                 LineFormationParticleSeq lfp = (LineFormationParticleSeq)nbr;
-                if (lfp.state == LFState.IDLE || lfp.state == LFState.FLWR && (lfp.followDir == ((d + 3) % 6) ||
+                if (lfp.state == LFState.IDLE || lfp.state == LFState.FLWR && (lfp.followDir == dir.Opposite() ||
                     // Ugly hack: Look at followDir update mechanism to prevent disconnection
-                    lfp.havePushed && lfp.newFollowDir == ((d + 3) % 6)))
+                    lfp.havePushed && lfp.newFollowDir == dir.Opposite()))
                 {
                     return true;
                 }
@@ -233,13 +234,13 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 
     private bool TryToBecomeDone(Neighbor<LineFormationParticleSeq> nbr)
     {
-        int cd = nbr.neighbor.constructionDir;
-        if (cd == -1)
+        Direction cd = nbr.neighbor.constructionDir;
+        if (cd == Direction.NONE)
             return false;
 
         // Safe to always set constructionDir because we have common chirality and compass orientation
         constructionDir.SetValue(cd);
-        if (constructionDir.GetValue_After() == (nbr.localDir + 3) % 6)
+        if (constructionDir.GetValue_After() == nbr.localDir.Opposite())
         {
             state.SetValue(LFState.DONE);
             SetMainColor(doneColor);
@@ -252,23 +253,23 @@ public class LineFormationParticleSeq : ParticleAlgorithm
     {
         // We already know cnostructionDir, set moveDir relative to neighbor position
         // On the other end of the line => Move around the left side
-        int cd = constructionDir.GetValue_After();
+        Direction cd = constructionDir.GetValue_After();
         if (cd == nbr.localDir)
         {
-            moveDir.SetValue((cd + 1) % 6);
+            moveDir.SetValue(cd.Rotate60(1));
             return;
         }
 
         // Left or right side of the line => Move up the line
-        if (nbr.localDir == (cd + 5) % 6 || nbr.localDir == (cd + 4) % 6)
+        if (nbr.localDir == cd.Rotate60(-1) || nbr.localDir == cd.Rotate60(-2))
         {
             // On left side
             // First check if we can move to the end position of the line
-            ParticleAlgorithm nbr2 = GetNeighborAt((cd + 5) % 6);
+            ParticleAlgorithm nbr2 = GetNeighborAt(cd.Rotate60(-1));
             if (nbr2 == null || (((LineFormationParticleSeq)nbr2).state != LFState.LEADER && ((LineFormationParticleSeq)nbr2).state != LFState.DONE))
             {
                 // Position is empty or occupied by non-LEADER, non-DONE particle => try to move there
-                moveDir.SetValue((cd + 5) % 6);
+                moveDir.SetValue(cd.Rotate60(-1));
             }
             else
             {
@@ -276,15 +277,15 @@ public class LineFormationParticleSeq : ParticleAlgorithm
                 moveDir.SetValue(cd);
             }
         }
-        else if (nbr.localDir == (cd + 1) % 6 || nbr.localDir == (cd + 2) % 6)
+        else if (nbr.localDir == cd.Rotate60(1) || nbr.localDir == cd.Rotate60(2))
         {
             // On right side
             // First check if we can move to the end position of the line
-            ParticleAlgorithm nbr2 = GetNeighborAt((cd + 1) % 6);
+            ParticleAlgorithm nbr2 = GetNeighborAt(cd.Rotate60(1));
             if (nbr2 == null || (((LineFormationParticleSeq)nbr2).state != LFState.LEADER && ((LineFormationParticleSeq)nbr2).state != LFState.DONE))
             {
                 // Position is empty or occupied by non-LEADER, non-DONE particle => try to move there
-                moveDir.SetValue((cd + 1) % 6);
+                moveDir.SetValue(cd.Rotate60(1));
             }
             else
             {

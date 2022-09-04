@@ -20,7 +20,7 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
         }
         else
         {
-            Expand(0);
+            Expand(DirectionHelpers.Cardinal(0));
         }
         SetRandomPC(IsContracted());
     }

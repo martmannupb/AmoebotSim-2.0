@@ -6,9 +6,9 @@ public enum CoinTossResult { HEADS, TAILS, FAILED }
 
 public class DirectionMessage : Message
 {
-    public int direction;
+    public Direction direction;
 
-    public DirectionMessage(int direction)
+    public DirectionMessage(Direction direction)
     {
         this.direction = direction;
     }
@@ -86,8 +86,8 @@ public class DirectionMessage : Message
 public class ChiralityAndCompassParticle : ParticleAlgorithm
 {
     // GLOBAL INFO - Used only for visualization
-    public ParticleAttribute<bool> realChirality;   // Initialized to global chirality, changes when chirality is flipped
-    public ParticleAttribute<int> realCompassDir;   // Initialized to global compass direction, changes when offset is changed according to current real chirality
+    public ParticleAttribute<bool> realChirality;       // Initialized to global chirality, changes when chirality is flipped
+    public ParticleAttribute<Direction> realCompassDir; // Initialized to global compass direction, changes when offset is changed according to current real chirality
 
     private static readonly Color chir1CandColor = new Color(143f / 255f, 0f / 255f, 255f / 255f);
     private static readonly Color chir1NoCandColor = new Color(116f / 255f, 0f / 255f, 204f / 255f);
@@ -123,7 +123,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     // Compass offset is our new 0 direction encoded using the original chirality
     // If the chirality is reversed, directions now increase clockwise from the
     // compass offset
-    private ParticleAttribute<int> compassOffset;
+    private ParticleAttribute<Direction> compassOffset;
     private ParticleAttribute<bool> reverseChirality;
 
     // Flag that indicates whether we are in the chirality agreement or compass alignment phase
@@ -168,7 +168,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     {
         SetMainColor(ColorData.Particle_Green);
 
-        compassOffset = CreateAttributeDirection("Compass offset", 0);
+        compassOffset = CreateAttributeDirection("Compass offset", DirectionHelpers.Cardinal(0));
         reverseChirality = CreateAttributeBool("Reverse chirality", false);
         chiralityAgreementPhase = CreateAttributeBool("Chirality agreement phase", true);
         round = CreateAttributeInt("Round", 0);
@@ -187,13 +187,13 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         nbrOffsets = new ParticleAttribute<int>[6];
         for (int i = 0; i < 6; i++)
         {
-            nbrOffsets[i] = CreateAttributeDirection("Nbr offset [" + i + "]", -1);
+            nbrOffsets[i] = CreateAttributeInt("Nbr offset [" + i + "]", -1);
         }
-        mergeOffset = CreateAttributeDirection("Merge offset", -1);
+        mergeOffset = CreateAttributeInt("Merge offset", -1);
 
 
         realChirality = CreateAttributeBool("Real chirality", true);
-        realCompassDir = CreateAttributeDirection("Real compass dir", -1);
+        realCompassDir = CreateAttributeDirection("Real compass dir", Direction.NONE);
     }
 
     public override int PinsPerEdge => 2;
@@ -211,7 +211,8 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             bool hasAnyNeighbor = false;
             for (int i = 0; i < 6; i++)
             {
-                if (HasNeighborAt(i))
+                Direction d = DirectionHelpers.Cardinal(i);
+                if (HasNeighborAt(d))
                 {
                     nbrs[i].SetValue(true);
                     hasAnyNeighbor = true;
@@ -274,17 +275,19 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         {
             if (!nbrs[origDir]) continue;
 
+            Direction dir = DirectionHelpers.Cardinal(origDir);
+
             if (chiralityAgreementPhase)
             {
                 // Beep on the pin with offset 0
-                pc.GetPinAt(origDir, reverseChirality ? 1 : 0).PartitionSet.SendBeep();
+                pc.GetPinAt(dir, reverseChirality ? 1 : 0).PartitionSet.SendBeep();
             }
             else
             {
                 // Send message with my edge direction on pin 0
-                int dir = ToNewDir(origDir);
-                DirectionMessage msg = new DirectionMessage(dir);
-                pc.GetPinAt(origDir, reverseChirality ? 1 : 0).PartitionSet.SendMessage(msg);
+                Direction d = ToNewDir(dir);
+                DirectionMessage msg = new DirectionMessage(d);
+                pc.GetPinAt(dir, reverseChirality ? 1 : 0).PartitionSet.SendMessage(msg);
             }
         }
 
@@ -302,10 +305,12 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         {
             if (!nbrs[origDir]) continue;
 
+            Direction dir = DirectionHelpers.Cardinal(origDir);
+
             if (chiralityAgreementPhase)
             {
                 // If neighbor beeped on pin 1, then we share chirality, otherwise we don't
-                if (pc.GetPinAt(origDir, reverseChirality ? 0 : 1).PartitionSet.ReceivedBeep())
+                if (pc.GetPinAt(dir, reverseChirality ? 0 : 1).PartitionSet.ReceivedBeep())
                 {
                     // Share chirality, remember this neighbor as regional neighbor
                     regionNbrs.Add(origDir);
@@ -319,18 +324,18 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             else
             {
                 // Receive message on pin 1 (must have one) and read compass direction
-                int myDir = ToNewDir(origDir);
-                DirectionMessage msg = pc.GetPinAt(origDir, reverseChirality ? 0 : 1).PartitionSet.GetReceivedMessage() as DirectionMessage;
+                Direction myDir = ToNewDir(dir);
+                DirectionMessage msg = pc.GetPinAt(dir, reverseChirality ? 0 : 1).PartitionSet.GetReceivedMessage() as DirectionMessage;
                 if (msg == null)
                 {
-                    Debug.LogError("Did not receive direction message from neighbor in direction " + origDir);
+                    Debug.LogError("Did not receive direction message from neighbor in direction " + dir);
                     continue;
                 }
-                // Offset to neighbor dir is number of clockwise rotations we have to make to match their compass
+                // Offset to neighbor dir is number of counter-clockwise rotations we have to make to match their compass
                 // This is the direction of our neighbor corresponding to myDir
-                int nbrDir = (msg.direction + 3) % 6;
-                // One clockwise rotation increases the direction label by 1, so count how many times we have to increase it to match the labels
-                int offset = (nbrDir + 6 - myDir) % 6;
+                Direction nbrDir = msg.direction.Opposite();
+                int offset = myDir.DistanceTo(nbrDir) / 2;
+
                 if (offset == 0)
                 {
                     // No offset, neighbor is in the region
@@ -354,8 +359,9 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             int[] pinIds = new int[2 * regionNbrs.Count];
             for (int i = 0; i < regionNbrs.Count; i++)
             {
-                pinIds[2 * i] = pc.GetPinAt(regionNbrs[i], 0).Id;
-                pinIds[2 * i + 1] = pc.GetPinAt(regionNbrs[i], 1).Id;
+                Direction d = DirectionHelpers.Cardinal(regionNbrs[i]);
+                pinIds[2 * i] = pc.GetPinAt(d, 0).Id;
+                pinIds[2 * i + 1] = pc.GetPinAt(d, 1).Id;
             }
             pc.MakePartitionSet(pinIds, 0);
             SetPlannedPinConfiguration(pc);
@@ -493,7 +499,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                     {
                         if (!nbrs[i]) continue;
 
-                        ChiralityAndCompassParticle nbr = GetNeighborAt(i) as ChiralityAndCompassParticle;
+                        ChiralityAndCompassParticle nbr = GetNeighborAt(DirectionHelpers.Cardinal(i)) as ChiralityAndCompassParticle;
                         if (nbr.coinTossResult != coinTossResult.GetValue_After())
                         {
                             SetPlannedPinConfiguration(pc);
@@ -540,7 +546,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                     {
                         if (!nbrs[i]) continue;
 
-                        ChiralityAndCompassParticle nbr = GetNeighborAt(i) as ChiralityAndCompassParticle;
+                        ChiralityAndCompassParticle nbr = GetNeighborAt(DirectionHelpers.Cardinal(i)) as ChiralityAndCompassParticle;
                         if (nbr.coinTossResult != CoinTossResult.TAILS)
                         {
                             mergeIntoOtherRegion = true;
@@ -611,7 +617,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 {
                     int offset = nbrOffsets[origDir];
                     if (!nbrs[origDir] || offset == -1 || offset >= minOffset) continue;
-                    ChiralityAndCompassParticle nbr = GetNeighborAt(origDir) as ChiralityAndCompassParticle;
+                    ChiralityAndCompassParticle nbr = GetNeighborAt(DirectionHelpers.Cardinal(origDir)) as ChiralityAndCompassParticle;
                     if (nbr.coinTossResult != CoinTossResult.TAILS)
                     {
                         minOffset = offset;
@@ -630,21 +636,21 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
                 // Rotate compass direction by the offset
                 if (reverseChirality)
                 {
-                    compassOffset.SetValue((compassOffset + offset) % 6);
+                    compassOffset.SetValue(compassOffset.GetValue_After().Rotate60(offset));
                 }
                 else
                 {
-                    compassOffset.SetValue((compassOffset + 6 - offset) % 6);
+                    compassOffset.SetValue(compassOffset.GetValue_After().Rotate60(-offset));
                 }
 
                 // Also update value of real compass direction
                 if (realChirality)
                 {
-                    realCompassDir.SetValue((realCompassDir + 6 - offset) % 6);
+                    realCompassDir.SetValue(realCompassDir.GetValue_After().Rotate60(-offset));
                 }
                 else
                 {
-                    realCompassDir.SetValue((realCompassDir + offset) % 6);
+                    realCompassDir.SetValue(realCompassDir.GetValue_After().Rotate60(offset));
                 }
 
                 // Withdraw candidacy if we merge
@@ -660,29 +666,6 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     }
 
     /// <summary>
-    /// Translates the given local direction into the
-    /// original direction the particle had based on the
-    /// current compass offset and chirality.
-    /// </summary>
-    /// <param name="dir">The local direction to be
-    /// translated.</param>
-    /// <returns>The original local direction that
-    /// corresponds to the given direction
-    /// <paramref name="dir"/> with the current compass
-    /// offset and chirality inversion removed.</returns>
-    private int ToOriginalDir(int dir)
-    {
-        if (!reverseChirality)
-        {
-            return (dir + compassOffset) % 6;
-        }
-        else
-        {
-            return (compassOffset + 6 - dir) % 6;
-        }
-    }
-
-    /// <summary>
     /// Translates the given original local direction
     /// into the corresponding direction in the new
     /// system according to the current compass offset
@@ -694,16 +677,9 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     /// to the given original direction
     /// <paramref name="dir"/> with the current compass
     /// offset and chirality inversion applied.</returns>
-    private int ToNewDir(int dir)
+    private Direction ToNewDir(Direction dir)
     {
-        if (!reverseChirality)
-        {
-            return (dir + 6 - compassOffset) % 6;
-        }
-        else
-        {
-            return (6 - dir + compassOffset) % 6;
-        }
+        return DirectionHelpers.Cardinal(compassOffset.GetValue().DistanceTo(dir, reverseChirality) / 2);
     }
 
     private bool TossCoin()
@@ -729,7 +705,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
             {
                 if (!nbrs[origDir] || nbrOffsets[origDir] != offset) continue;
 
-                ChiralityAndCompassParticle nbr = GetNeighborAt(origDir) as ChiralityAndCompassParticle;
+                ChiralityAndCompassParticle nbr = GetNeighborAt(DirectionHelpers.Cardinal(origDir)) as ChiralityAndCompassParticle;
                 if (nbr.coinTossResult != CoinTossResult.TAILS)
                 {
                     // This neighbor has a matching coin toss result and offset
@@ -783,14 +759,14 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         {
             if (isCandidate.GetValue_After())
             {
-                int i = realCompassDir.GetValue_After();
-                SetMainColor(compCandColors[i]);
+                Direction i = realCompassDir.GetValue_After();
+                SetMainColor(compCandColors[i.ToInt()]);
                 if (hasRegion)
-                    pc.SetPartitionSetColor(0, compCandColors[(i + 3) % 6]);
+                    pc.SetPartitionSetColor(0, compCandColors[i.Opposite().ToInt()]);
             }
             else
             {
-                SetMainColor(compNoCandColor[realCompassDir.GetValue_After()]);
+                SetMainColor(compNoCandColor[realCompassDir.GetValue_After().ToInt()]);
             }
         }
     }

@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// Factory class for creating and initializing <see cref="ParticleAttribute{T}"/> subclass instances.
@@ -45,7 +42,7 @@ public static class ParticleAttributeFactory
     /// <param name="name">The display name of the attribute.</param>
     /// <param name="initialValue">The initial attribute value.</param>
     /// <returns>A newly initialized <see cref="ParticleAttribute_Direction"/>.</returns>
-    public static ParticleAttribute_Direction CreateParticleAttributeDirection(Particle p, string name, int initialValue)
+    public static ParticleAttribute_Direction CreateParticleAttributeDirection(Particle p, string name, Direction initialValue)
     {
         ParticleAttribute_Direction attr = new ParticleAttribute_Direction(p, name, initialValue);
         p.AddAttribute(attr);

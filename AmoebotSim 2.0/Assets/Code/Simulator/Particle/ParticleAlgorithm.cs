@@ -149,14 +149,13 @@ public abstract class ParticleAlgorithm
     /// <summary>
     /// Creates a new <see cref="ParticleAttribute{T}"/> representing a direction.
     /// <para>
-    /// Note that only values in the set <c>{-1,0,1,2,3,4,5}</c> are valid directions,
-    /// with <c>-1</c> representing no direction.
+    /// The <see cref="Direction"/> enum specifies which values can be stored in the attribute.
     /// </para>
     /// </summary>
     /// <param name="name">The name of the attribute to be displayed in the UI.</param>
     /// <param name="initialValue">The initial attribute value.</param>
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
-    public ParticleAttribute<int> CreateAttributeDirection(string name, int initialValue = 0)
+    public ParticleAttribute<Direction> CreateAttributeDirection(string name, Direction initialValue = Direction.NONE)
     {
         CheckActive("Particles can only create attributes for themselves, not for other particles");
         return ParticleAttributeFactory.CreateParticleAttributeDirection(particle, name, initialValue);
