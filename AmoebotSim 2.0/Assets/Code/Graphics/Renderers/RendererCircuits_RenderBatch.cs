@@ -96,6 +96,8 @@ public class RendererCircuits_RenderBatch
         currentIndex = 0;
     }
 
+    private float lastBeepStartTime;
+
     public void ApplyUpdates(float animationStartTime, float beepStartTime)
     {
         if(properties.beeping)
@@ -105,6 +107,7 @@ public class RendererCircuits_RenderBatch
             propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f);
             propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(beepStartTime + halfAnimationDuration, halfAnimationDuration);
             //propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, halfAnimationDuration);
+            lastBeepStartTime = beepStartTime;
         }
         else
         {
@@ -130,6 +133,12 @@ public class RendererCircuits_RenderBatch
         if (firstRenderFrame)
         {
             ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, RenderSystem.data_particleMovementFinishedTimestamp + RenderSystem.data_circuitAnimationDuration);
+        }
+        else if(properties.beeping && lastBeepStartTime + RenderSystem.data_circuitBeepDuration < Time.timeSinceLevelLoad)
+        {
+            // We show beeps and have shown the beep already
+            // Repeat Beep
+            ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, lastBeepStartTime + RenderSystem.data_circuitBeepRepeatDelay);
         }
 
         // Null Check
