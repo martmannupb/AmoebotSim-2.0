@@ -49,7 +49,7 @@ public class RendererCircuits_RenderBatch
     public void Init()
     {
         // Set Material
-        if (properties.isExternalConnectorLine) lineMaterial = MaterialDatabase.material_circuit_lineConnector;
+        if (properties.isExternalConnectorLine) lineMaterial = MaterialDatabase.material_circuit_line;//MaterialDatabase.material_circuit_lineConnector;
         else lineMaterial = MaterialDatabase.material_circuit_line;
 
         // Circle PropertyBlocks

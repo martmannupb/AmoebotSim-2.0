@@ -50,7 +50,7 @@ public class RendererCircuitPins_RenderBatch
     public void Init()
     {
         // Set Material
-        if (properties.beeping) pinMaterial = MaterialDatabase.material_circuit_pin_beep;
+        if (properties.beeping) pinMaterial = MaterialDatabase.material_circuit_pin;
         else pinMaterial = MaterialDatabase.material_circuit_pin;
 
         // PropertyBlocks
@@ -101,12 +101,12 @@ public class RendererCircuitPins_RenderBatch
         float pinSize = isSingletonPin ? RenderSystem.const_circuitSingletonPinSize : RenderSystem.const_circuitPinSize;
         if (properties.beeping) pinSize *= RenderSystem.const_circuitPinBeepSizePercentage;
         // Calc Matrix
-        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(pinSize, pinSize, 1f));
+        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins + zOffset), Quaternion.identity, new Vector3(pinSize, pinSize, 1f));
     }
 
     private Matrix4x4 CalculatePinConnectorMatrix(Vector2 pinPos)
     {
-        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins + zOffset), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
+        return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
     }
 
     /// <summary>
