@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using TMPro;
 using UnityEngine;
 
 public abstract class SettingPanel
@@ -22,10 +23,13 @@ public class SettingPanel_Slider : SettingPanel
 
     private Slider slider;
 
-    public SettingPanel_Slider(SettingsHandler settings, GameObject parent, float minValue, float maxValue, float value, bool wholeNumbers) : base(settings)
+    public SettingPanel_Slider(SettingsHandler settings, GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers) : base(settings)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.template_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
+        // Set Name
+        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        tmpro.text = name;
         // Set Values
         slider = go.GetComponentInChildren<Slider>();
         slider.minValue = minValue;

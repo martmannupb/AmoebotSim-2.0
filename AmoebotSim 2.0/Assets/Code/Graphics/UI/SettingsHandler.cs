@@ -20,18 +20,36 @@ public class SettingsHandler : MonoBehaviour
 
     private void Start()
     {
+        settingsParent.SetActive(false);
         InitSettings();
     }
 
     private void InitSettings()
     {
         // Test
-        SettingPanel testPanel = new SettingPanel_Slider(this, settingsParent, 0f, 10f, 5f, true);
+        SettingPanel_Slider testPanel = new SettingPanel_Slider(this, settingsParent, "Test Value", 0f, 10f, 5f, true);
+        
     }
 
     private void AddSetting()
     {
 
     }
+
+    public void Button_SettingsPressed()
+    {
+        settingsParent.SetActive(!settingsParent.activeInHierarchy);
+    }
+
+
+
+
+
+
+
+
+    // Setting Callbacks =========================
+
+    
 
 }
