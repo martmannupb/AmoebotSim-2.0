@@ -1333,7 +1333,7 @@ public class Particle : IParticleState, IReplayHistory
         data.expansionDirHistory = expansionDirHistory.GenerateSaveData();
 
         data.boolAttributes = new List<ParticleAttributeSaveData<bool>>();
-        data.dirAttributes = new List<ParticleAttributeSaveData<int>>();
+        data.dirAttributes = new List<ParticleAttributeSaveData<Direction>>();
         data.intAttributes = new List<ParticleAttributeSaveData<int>>();
         data.enumAttributes = new List<ParticleAttributeEnumSaveData>();
         data.pcAttributes = new List<ParticleAttributePCSaveData>();
@@ -1345,19 +1345,17 @@ public class Particle : IParticleState, IReplayHistory
             if (t == typeof(int))
             {
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
-                if (attributes[i].GetType() == typeof(ParticleAttribute_Direction))
-                {
-                    data.dirAttributes.Add(aData as ParticleAttributeSaveData<int>);
-                }
-                else
-                {
-                    data.intAttributes.Add(aData as ParticleAttributeSaveData<int>);
-                }
+                data.intAttributes.Add(aData as ParticleAttributeSaveData<int>);
             }
             else if (t == typeof(bool))
             {
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
                 data.boolAttributes.Add(aData as ParticleAttributeSaveData<bool>);
+            }
+            else if (t == typeof(Direction))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.dirAttributes.Add(aData as ParticleAttributeSaveData<Direction>);
             }
             else if (t == typeof(PinConfiguration))
             {
@@ -1374,9 +1372,13 @@ public class Particle : IParticleState, IReplayHistory
         data.pinConfigurationHistory = pinConfigurationHistory.GeneratePCSaveData();
         data.receivedBeepsHistory = receivedBeepsHistory.GenerateSaveData();
         data.receivedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[receivedMessagesHistory.Length];
+        data.plannedBeepsHistory = new ValueHistorySaveData<bool>[plannedBeepsHistory.Length];
+        data.plannedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[plannedMessageHistory.Length];
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
             data.receivedMessagesHistory[i] = receivedMessagesHistory[i].GenerateMessageSaveData();
+            data.plannedBeepsHistory[i] = plannedBeepsHistory[i].GenerateSaveData();
+            data.plannedMessagesHistory[i] = plannedMessageHistory[i].GenerateMessageSaveData();
         }
 
         data.mainColorHistory = mainColorHistory.GenerateSaveData();
@@ -1419,10 +1421,10 @@ public class Particle : IParticleState, IReplayHistory
         chirality = data.chirality;
 
         tailPosHistory = new ValueHistory<Vector2Int>(data.tailPositionHistory);
-        expansionDirHistory = new ValueHistory<int>(data.expansionDirHistory);
+        expansionDirHistory = new ValueHistory<Direction>(data.expansionDirHistory);
 
         exp_expansionDir = expansionDirHistory.GetMarkedValue();
-        exp_isExpanded = exp_expansionDir != -1;
+        exp_isExpanded = exp_expansionDir != Direction.NONE;
         pos_tail = tailPosHistory.GetMarkedValue();
         pos_head = exp_isExpanded ? ParticleSystem_Utils.GetNbrInDir(pos_tail, ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality)) : pos_tail;
 
@@ -1438,7 +1440,6 @@ public class Particle : IParticleState, IReplayHistory
     private void InitWithAlgorithm(ParticleStateSaveData data)
     {
         int maxNumPins = algorithm.PinsPerEdge * 10;
-        int currentRound = system.CurrentRound;
 
         // TODO: Check if saved data even matches the algorithm in terms of array sizes
 
@@ -1452,6 +1453,8 @@ public class Particle : IParticleState, IReplayHistory
         plannedMessages = new Message[maxNumPins];
 
         receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
+        plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
         partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
         partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
         receivedMessages = new Message[maxNumPins];
@@ -1460,9 +1463,14 @@ public class Particle : IParticleState, IReplayHistory
         for (int i = 0; i < maxNumPins; i++)
         {
             receivedMessagesHistory[i] = new ValueHistoryMessage(data.receivedMessagesHistory[i]);
+            plannedBeepsHistory[i] = new ValueHistory<bool>(data.plannedBeepsHistory[i]);
+            plannedMessageHistory[i] = new ValueHistoryMessage(data.plannedMessagesHistory[i]);
             partitionSetColorHistory[i] = new ValueHistory<Color>(data.partitionSetColorHistory[i]);
             partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(data.partitionSetColorOverrideHistory[i]);
+
             receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
+            plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
+            plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
             partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
             partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
         }
@@ -1493,55 +1501,5 @@ public class Particle : IParticleState, IReplayHistory
                 Debug.LogError("Unable to restore attribute " + name + " from saved data.");
             }
         }
-
-
-
-
-        //foreach (ParticleAttributeSaveData<bool> attr in data.boolAttributes)
-        //{
-        //    if (attr.idx >= attributes.Count)
-        //    {
-        //        Debug.LogError("Index " + attr.idx + " of saved attribute " + attr.name + " does not exist.");
-        //        continue;
-        //    }
-        //    IParticleAttribute myAttr = attributes[attr.idx];
-        //    if (myAttr.ToString_AttributeName() != attr.name)
-        //    {
-        //        Debug.LogError("Name " + attr.name + " of saved attribute does not match name " + myAttr.ToString_AttributeName() + " of attribute");
-        //        continue;
-        //    }
-        //    if (myAttr.GetAttributeType() != typeof(bool))
-        //    {
-        //        Debug.LogError("Type " + myAttr.GetAttributeType() + " of attribute " + myAttr.ToString_AttributeName() + " does not match saved type (bool)");
-        //        continue;
-        //    }
-        //    // Index, name and type match, now update the values
-        //    myAttr.RestoreFromSaveData(attr);
-        //}
-
-        // TODO
-
-        //pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
-        //pinConfigurationHistory = new ValueHistoryPinConfiguration(pinConfiguration, currentRound);
-        /*
-        //receivedBeeps = new BitArray(maxNumPins);
-        //receivedMessages = new Message[maxNumPins];
-        //plannedBeeps = new BitArray(maxNumPins);
-        //plannedMessages = new Message[maxNumPins];
-        //receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), currentRound);
-        //receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
-        //partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
-        //partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
-        //partitionSetColors = new Color[maxNumPins];
-        //partitionSetColorsOverride = new bool[maxNumPins];
-        for (int i = 0; i < maxNumPins; i++)
-        {
-            //receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
-            //partitionSetColorHistory[i] = new ValueHistory<Color>(new Color(), currentRound);
-            //partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(false, currentRound);
-            //partitionSetColors[i] = new Color();
-            //partitionSetColorsOverride[i] = false;
-        }
-        */
     }
 }

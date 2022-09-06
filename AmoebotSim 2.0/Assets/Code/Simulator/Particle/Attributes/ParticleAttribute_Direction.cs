@@ -56,31 +56,30 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<Directio
         }
     }
 
-    /// <summary>
-    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
-    /// Additionally checks if all stored values are valid directions.
-    /// </summary>
-    /// <param name="data">A serializable representation of a
-    /// particle attribute state.</param>
-    /// <returns><c>true</c> if and only if the state update was successful.</returns>
-    public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
-    {
-        ParticleAttributeSaveData<int> myData = data as ParticleAttributeSaveData<int>;
-        if (myData is null)
-        {
-            Debug.LogError("Save data has incompatible type, aborting particle attribute restoration.");
-            return false;
-        }
-        // Make sure that all values are in the correct range
-        foreach (int val in myData.history.values)
-        {
-            if (val < -1 || val > 5)
-            {
-                Debug.LogError("Save data for direction attribute has incompatible value " + val + ", aborting particle attribute restoration.");
-                return false;
-            }
-        }
-        history = new ValueHistory<int>(myData.history);
-        return true;
-    }
+    //public override ParticleAttributeSaveDataBase GenerateSaveData()
+    //{
+    //    ParticleAttributeSaveData<Direction> data = new ParticleAttributeSaveData<Direction>();
+    //    data.name = name;
+    //    data.history = history.GenerateSaveData();
+    //    return data;
+    //}
+
+    ///// <summary>
+    ///// Implementation of <see cref="ParticleAttributeWithHistory{T}.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
+    ///// Additionally checks if all stored values are valid directions.
+    ///// </summary>
+    ///// <param name="data">A serializable representation of a
+    ///// particle attribute state.</param>
+    ///// <returns><c>true</c> if and only if the state update was successful.</returns>
+    //public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
+    //{
+    //    ParticleAttributeSaveData<Direction> myData = data as ParticleAttributeSaveData<Direction>;
+    //    if (myData is null)
+    //    {
+    //        Debug.LogError("Save data has incompatible type, aborting particle attribute restoration.");
+    //        return false;
+    //    }
+    //    history = new ValueHistory<Direction>(myData.history);
+    //    return true;
+    //}
 }

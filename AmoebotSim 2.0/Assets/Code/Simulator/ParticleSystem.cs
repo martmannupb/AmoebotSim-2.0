@@ -1806,6 +1806,9 @@ public class ParticleSystem : IReplayHistory
                 particleMap.Add(p.Head(), p);
             }
         }
-        //UpdateAllParticleVisuals(true);
+
+        DiscoverCircuits(false);
+        CleanupAfterRound();
+        UpdateAllParticleVisuals(true);
     }
 }

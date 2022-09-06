@@ -598,30 +598,32 @@ public class SysPinConfiguration : PinConfiguration
         pinsPerEdge = p.algorithm.PinsPerEdge;
         headDirection = data.headDirection;
 
-        numPins = headDirection == -1 ? (6 * pinsPerEdge) : (10 * pinsPerEdge);
+        numPins = headDirection == Direction.NONE ? (6 * pinsPerEdge) : (10 * pinsPerEdge);
 
         partitionSets = new SysPartitionSet[numPins];
         pins = new SysPin[numPins];
         pinsGlobal = new SysPin[numPins];
 
-        int comDir = particle.comDir;
+        Direction comDir = particle.comDir;
         bool chirality = particle.chirality;
 
         // Initialize partition sets and pins
         // Default is singleton: Each pin is its own partition set
         // Store each pin in its local position and its global position
-        if (headDirection == -1)
+        if (headDirection == Direction.NONE)
         {
-            for (int direction = 0; direction < 6; direction++)
+            for (int d = 0; d < 6; d++)
             {
-                int globalDir = ParticleSystem_Utils.LocalToGlobalDir(direction, comDir, chirality);
+                Direction direction = DirectionHelpers.Cardinal(d);
+                Direction globalDir = ParticleSystem_Utils.LocalToGlobalDir(direction, comDir, chirality);
+                int globalDirInt = globalDir.ToInt();
                 for (int idx = 0; idx < pinsPerEdge; idx++)
                 {
                     int idxGlobal = chirality ? idx : pinsPerEdge - 1 - idx;
-                    int id = direction * pinsPerEdge + idx;
-                    int idGlobal = globalDir * pinsPerEdge + idxGlobal;
+                    int id = d * pinsPerEdge + idx;
+                    int idGlobal = globalDirInt * pinsPerEdge + idxGlobal;
                     SysPartitionSet ps = new SysPartitionSet(this, id, numPins);
-                    SysPin pin = new SysPin(ps, id, direction, globalDir, true, idx, idxGlobal);
+                    SysPin pin = new SysPin(ps, id, direction, globalDirInt, true, idx, idxGlobal);
                     partitionSets[id] = ps;
                     pins[id] = pin;
                     pinsGlobal[idGlobal] = pin;
@@ -632,8 +634,8 @@ public class SysPinConfiguration : PinConfiguration
         {
             for (int label = 0; label < 10; label++)
             {
-                int direction = ParticleSystem_Utils.GetDirOfLabel(label, headDirection);
-                int globalDir = ParticleSystem_Utils.LocalToGlobalDir(direction, comDir, chirality);
+                Direction direction = ParticleSystem_Utils.GetDirOfLabel(label, headDirection);
+                Direction globalDir = ParticleSystem_Utils.LocalToGlobalDir(direction, comDir, chirality);
                 bool isHead = ParticleSystem_Utils.IsHeadLabel(label, headDirection);
                 int globalLabel = ParticleSystem_Utils.GetLabelInDir(globalDir, ParticleSystem_Utils.LocalToGlobalDir(headDirection, comDir, chirality), isHead);
                 for (int idx = 0; idx < pinsPerEdge; idx++)

@@ -329,12 +329,6 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
         if (IsContracted())
         {
-            // Try becoming ROOT or even INLINE
-            if (TryToBecomeRootOrInline() > 0)
-            {
-                return;
-            }
-
             // Contracted FLWR must wait for followed particle to send beep
             if (pc.GetPinAt(followDir, 0).PartitionSet.ReceivedBeep())
             {
@@ -342,6 +336,12 @@ public class LineFormationParticleSync : ParticleAlgorithm
                 // Also update the follow direction
                 LineFormationParticleSync nbr = GetNeighborAt(followDir) as LineFormationParticleSync;
                 followDir.SetValue(nbr.HeadDirection());
+                return;
+            }
+
+            // Otherwise, try becoming ROOT or even INLINE
+            if (TryToBecomeRootOrInline() > 0)
+            {
                 return;
             }
         }

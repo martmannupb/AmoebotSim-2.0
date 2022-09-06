@@ -10,7 +10,7 @@ using UnityEngine;
 public class ParticleStateSaveData
 {
     // Global info
-    public int comDir;
+    public Direction comDir;
     public bool chirality;
 
     // Algorithm info
@@ -25,11 +25,11 @@ public class ParticleStateSaveData
 
     // Positional info
     public ValueHistorySaveData<Vector2Int> tailPositionHistory;
-    public ValueHistorySaveData<int> expansionDirHistory;
+    public ValueHistorySaveData<Direction> expansionDirHistory;
 
     // Attribute data, sorted by type
     public List<ParticleAttributeSaveData<bool>> boolAttributes;
-    public List<ParticleAttributeSaveData<int>> dirAttributes;
+    public List<ParticleAttributeSaveData<Direction>> dirAttributes;
     public List<ParticleAttributeSaveData<int>> intAttributes;
     public List<ParticleAttributeEnumSaveData> enumAttributes;
     public List<ParticleAttributePCSaveData> pcAttributes;
@@ -38,6 +38,8 @@ public class ParticleStateSaveData
     public PinConfigurationHistorySaveData pinConfigurationHistory;
     public ValueHistorySaveData<BitArraySaveData> receivedBeepsHistory;
     public ValueHistorySaveData<MessageSaveData>[] receivedMessagesHistory;
+    public ValueHistorySaveData<bool>[] plannedBeepsHistory;
+    public ValueHistorySaveData<MessageSaveData>[] plannedMessagesHistory;
 
     // Visualization data
     public ValueHistorySaveData<Color> mainColorHistory;

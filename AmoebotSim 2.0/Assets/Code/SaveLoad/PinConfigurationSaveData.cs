@@ -25,7 +25,7 @@ public class PinConfigurationSaveData
     /// <summary>
     /// The (local) head direction for which the pin configuration was created.
     /// </summary>
-    public int headDirection;
+    public Direction headDirection;
 
     // Only information required for pins is the partition set ID,
     // everything else is already defined by the index

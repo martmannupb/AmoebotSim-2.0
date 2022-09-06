@@ -279,4 +279,27 @@ public class UIHandler : MonoBehaviour
         UpdateUI(sim.running, true);
     }
 
+
+    public void TemporarySaveBtn()
+    {
+        if (!sim.running)
+        {
+            SimulationStateSaveData data = sim.system.GenerateSaveData();
+            SaveStateUtility.Save(data);
+        }
+    }
+
+    public void TemporaryLoadBtn()
+    {
+        if (!sim.running)
+        {
+            SimulationStateSaveData data = SaveStateUtility.Load();
+            if (data != null)
+            {
+                sim.system.Reset();
+                sim.system.InitializeFromSaveState(data);
+                UpdateUI(sim.running, true);
+            }
+        }
+    }
 }
