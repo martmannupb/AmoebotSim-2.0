@@ -55,31 +55,4 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<Directio
             throw new System.ArgumentException("Cannot convert " + value + " to direction attribute.");
         }
     }
-
-    //public override ParticleAttributeSaveDataBase GenerateSaveData()
-    //{
-    //    ParticleAttributeSaveData<Direction> data = new ParticleAttributeSaveData<Direction>();
-    //    data.name = name;
-    //    data.history = history.GenerateSaveData();
-    //    return data;
-    //}
-
-    ///// <summary>
-    ///// Implementation of <see cref="ParticleAttributeWithHistory{T}.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
-    ///// Additionally checks if all stored values are valid directions.
-    ///// </summary>
-    ///// <param name="data">A serializable representation of a
-    ///// particle attribute state.</param>
-    ///// <returns><c>true</c> if and only if the state update was successful.</returns>
-    //public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
-    //{
-    //    ParticleAttributeSaveData<Direction> myData = data as ParticleAttributeSaveData<Direction>;
-    //    if (myData is null)
-    //    {
-    //        Debug.LogError("Save data has incompatible type, aborting particle attribute restoration.");
-    //        return false;
-    //    }
-    //    history = new ValueHistory<Direction>(myData.history);
-    //    return true;
-    //}
 }
