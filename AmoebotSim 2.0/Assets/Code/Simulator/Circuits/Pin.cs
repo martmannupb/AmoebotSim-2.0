@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// Developer API for pins.
@@ -47,7 +44,7 @@ public abstract class Pin
     /// <summary>
     /// The local direction of the edge on which this pin is located.
     /// </summary>
-    public abstract int Direction
+    public abstract Direction Direction
     {
         get;
     }

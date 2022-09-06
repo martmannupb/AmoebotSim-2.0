@@ -81,9 +81,9 @@ public class LineFormationParticleSync : ParticleAlgorithm
     public static bool leaderCreated = false;
 
     public ParticleAttribute<LFState> state;
-    public ParticleAttribute<int> constructionDir;
-    public ParticleAttribute<int> moveDir;
-    public ParticleAttribute<int> followDir;
+    public ParticleAttribute<Direction> constructionDir;
+    public ParticleAttribute<Direction> moveDir;
+    public ParticleAttribute<Direction> followDir;
 
     // Helper to ensure that ROOTs only push when no handover is planned already
     public ParticleAttribute<bool> rootHandoverAvailable;
@@ -100,9 +100,9 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     public LineFormationParticleSync(Particle p) : base(p)
     {
-        constructionDir = CreateAttributeDirection("constructionDir", -1);
-        moveDir = CreateAttributeDirection("moveDir", -1);
-        followDir = CreateAttributeDirection("followDir", -1);
+        constructionDir = CreateAttributeDirection("constructionDir", Direction.NONE);
+        moveDir = CreateAttributeDirection("moveDir", Direction.NONE);
+        followDir = CreateAttributeDirection("followDir", Direction.NONE);
         state = CreateAttributeEnum<LFState>("State", LFState.IDLE);
 
         rootHandoverAvailable = CreateAttributeBool("ROOT handover OK", true);
@@ -116,7 +116,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
         if (!leaderCreated)
         {
             state.SetValue(LFState.LEADER);
-            constructionDir.SetValue(Random.Range(0, 6));
+            constructionDir.SetValue(DirectionHelpers.Cardinal(Random.Range(0, 6)));
             SetMainColor(leaderColor);
             Debug.Log("Line construction dir: " + (int)constructionDir.GetValue_After());
             leaderCreated = true;
@@ -226,7 +226,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     private void RootActivate()
     {
-        int cd = constructionDir.GetValue_After();
+        Direction cd = constructionDir.GetValue_After();
 
         // ROOT handovers take precedence: Try performing handover with ROOT first
         if (IsContracted())
@@ -240,7 +240,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
             // Always compute the move direction when contracted
             // The result indicates whether we are about to enter the end position of the line
             int moveDirResult = ComputeRootMoveDir();
-            int md = moveDir.GetValue_After();
+            Direction md = moveDir.GetValue_After();
 
             // If we are contracted and we can expand freely or push into an expanded ROOT: Do it
             // Contracted ROOTs can almost always expand
@@ -252,7 +252,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
                 if (moveDirResult == 1)
                 {
                     // We are on the left side, wait for beep from INLINE or LEADER particle
-                    if (!pc.GetPinAt((md + 5) % 6, 0).PartitionSet.ReceivedBeep())
+                    if (!pc.GetPinAt(md.Rotate60(-1), 0).PartitionSet.ReceivedBeep())
                     {
                         return;
                     }
@@ -260,14 +260,14 @@ public class LineFormationParticleSync : ParticleAlgorithm
                 else if (moveDirResult == 2)
                 {
                     // We are on the right side, wait for beep from INLINE or LEADER particle
-                    if (!pc.GetPinAt((md + 1) % 6, 0).PartitionSet.ReceivedBeep())
+                    if (!pc.GetPinAt(md.Rotate60(1), 0).PartitionSet.ReceivedBeep())
                     {
                         return;
                     }
                 }
                 if (moveDirResult == 1 || moveDirResult == 2)
                 {
-                    MyMessage msg = (MyMessage)pc.GetPinAt(moveDirResult == 1 ? (md + 5) % 6 : ((md + 1) % 6), 0).PartitionSet.GetReceivedMessage();
+                    MyMessage msg = (MyMessage)pc.GetPinAt(moveDirResult == 1 ? md.Rotate60(-1) : md.Rotate60(1), 0).PartitionSet.GetReceivedMessage();
                     Debug.Log("ALLOWED TO MOVE FROM " + msg.dir);
                 }
 
@@ -292,18 +292,18 @@ public class LineFormationParticleSync : ParticleAlgorithm
             // If there is a ROOT neighbor that we can pull: Do it
             // ROOT neighbors to pull can only be at our tail in direction
             // constructionDir + 3 or constructionDir + 4
-            LineFormationParticleSync nbr = GetNeighborAt((cd + 3) % 6, false) as LineFormationParticleSync;
+            LineFormationParticleSync nbr = GetNeighborAt(cd.Opposite(), false) as LineFormationParticleSync;
             if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
             {
-                PullHandoverHead((cd + 3) % 6);
+                PullHandoverHead(cd.Opposite());
                 return;
             }
             else
             {
-                nbr = GetNeighborAt((cd + 4) % 6, false) as LineFormationParticleSync;
+                nbr = GetNeighborAt(cd.Rotate60(4), false) as LineFormationParticleSync;
                 if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
                 {
-                    PullHandoverHead((cd + 4) % 6);
+                    PullHandoverHead(cd.Rotate60(4));
                     return;
                 }
             }
@@ -375,7 +375,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
         }
 
         PinConfiguration pc = GetCurrentPinConfiguration();
-        PartitionSet ps = pc.GetPinAt((constructionDir + 3) % 6, 0).PartitionSet;
+        PartitionSet ps = pc.GetPinAt(constructionDir.GetValue().Opposite(), 0).PartitionSet;
         if (!localLineComplete)
         {
             if (CheckLocalCompleteness() && ps.ReceivedBeep())
@@ -424,13 +424,14 @@ public class LineFormationParticleSync : ParticleAlgorithm
         // TODO: Can simplify this using better neighbor discovery methods
         for (int d = 0; d < 6; d++)
         {
-            if (d == HeadDirection())
+            Direction dir = DirectionHelpers.Cardinal(d);
+            if (dir == HeadDirection())
                 continue;
-            ParticleAlgorithm nbr = GetNeighborAt(d, false);
-            if (nbr != null && IsHeadAt(d, false))
+            ParticleAlgorithm nbr = GetNeighborAt(dir, false);
+            if (nbr != null && IsHeadAt(dir, false))
             {
                 LineFormationParticleSync lfp = (LineFormationParticleSync)nbr;
-                if (lfp.state == LFState.IDLE || lfp.state == LFState.FLWR && (lfp.followDir == ((d + 3) % 6)))
+                if (lfp.state == LFState.IDLE || lfp.state == LFState.FLWR && (lfp.followDir == dir.Opposite()))
                 {
                     return true;
                 }
@@ -441,13 +442,13 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     private bool TryToBecomeInline(Neighbor<LineFormationParticleSync> nbr)
     {
-        int cd = nbr.neighbor.constructionDir;
-        if (cd == -1)
+        Direction cd = nbr.neighbor.constructionDir;
+        if (cd == Direction.NONE)
             return false;
 
         // Safe to always set constructionDir because we have common chirality and compass orientation
         constructionDir.SetValue(cd);
-        if (constructionDir.GetValue_After() == (nbr.localDir + 3) % 6)
+        if (constructionDir.GetValue_After() == nbr.localDir.Opposite())
         {
             state.SetValue(LFState.INLINE);
             SetMainColor(inlineColor);
@@ -505,23 +506,23 @@ public class LineFormationParticleSync : ParticleAlgorithm
     {
         // We already know constructionDir, set moveDir relative to neighbor position
         // On the other end of the line => Move around the left side
-        int cd = constructionDir.GetValue_After();
+        Direction cd = constructionDir.GetValue_After();
         if (cd == nbr.localDir)
         {
-            moveDir.SetValue((cd + 1) % 6);
+            moveDir.SetValue(cd.Rotate60(1));
             return 0;
         }
 
         // Left or right side of the line => Move up the line
-        if (nbr.localDir == (cd + 5) % 6 || nbr.localDir == (cd + 4) % 6)
+        if (nbr.localDir == cd.Rotate60(-1) || nbr.localDir == cd.Rotate60(-2))
         {
             // On left side
             // First check if we can move to the end position of the line
-            ParticleAlgorithm nbr2 = GetNeighborAt((cd + 5) % 6);
+            ParticleAlgorithm nbr2 = GetNeighborAt(cd.Rotate60(-1));
             if (nbr2 == null || (((LineFormationParticleSync)nbr2).state != LFState.LEADER && ((LineFormationParticleSync)nbr2).state != LFState.INLINE))
             {
                 // Position is empty or occupied by non-LEADER, non-INLINE particle => try to move there
-                moveDir.SetValue((cd + 5) % 6);
+                moveDir.SetValue(cd.Rotate60(-1));
                 return 1;
             }
             else
@@ -530,15 +531,15 @@ public class LineFormationParticleSync : ParticleAlgorithm
                 moveDir.SetValue(cd);
             }
         }
-        else if (nbr.localDir == (cd + 1) % 6 || nbr.localDir == (cd + 2) % 6)
+        else if (nbr.localDir == cd.Rotate60(1) || nbr.localDir == cd.Rotate60(2))
         {
             // On right side
             // First check if we can move to the end position of the line
-            ParticleAlgorithm nbr2 = GetNeighborAt((cd + 1) % 6);
+            ParticleAlgorithm nbr2 = GetNeighborAt(cd.Rotate60(1));
             if (nbr2 == null || (((LineFormationParticleSync)nbr2).state != LFState.LEADER && ((LineFormationParticleSync)nbr2).state != LFState.INLINE))
             {
                 // Position is empty or occupied by non-LEADER, non-INLINE particle => try to move there
-                moveDir.SetValue((cd + 1) % 6);
+                moveDir.SetValue(cd.Rotate60(1));
                 return 2;
             }
             else
@@ -560,7 +561,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
         {
             // This should never occur
             Debug.LogError("ROOT particle does not have an INLINE or LEADER neighbor!");
-            moveDir.SetValue(-1);
+            moveDir.SetValue(Direction.NONE);
             return -1;
         }
     }
@@ -579,8 +580,9 @@ public class LineFormationParticleSync : ParticleAlgorithm
     private bool PullIfSentBeep()
     {
         PinConfiguration pc = GetCurrentPinConfiguration();
-        for (int direction = 0; direction < 6; direction++)
+        for (int d = 0; d < 6; d++)
         {
+            Direction direction = DirectionHelpers.Cardinal(d);
             if (direction == HeadDirection())
             {
                 continue;
@@ -621,14 +623,15 @@ public class LineFormationParticleSync : ParticleAlgorithm
     {
         PinConfiguration pc = GetCurrentPinConfiguration();
         // TODO: There should be a helper method for something like this (maybe change FindFirstNbrWithProperty such that Neighbor<>s can be tested)
-        for (int direction = 0; direction < 6; direction++)
+        for (int d = 0; d < 6; d++)
         {
+            Direction direction = DirectionHelpers.Cardinal(d);
             if (direction == HeadDirection())
             {
                 continue;
             }
             LineFormationParticleSync nbr = GetNeighborAt(direction, false) as LineFormationParticleSync;
-            if (nbr != null && nbr.state == LFState.FLWR && nbr.IsContracted() && nbr.followDir == ((direction + 3) % 6))
+            if (nbr != null && nbr.state == LFState.FLWR && nbr.IsContracted() && nbr.followDir == direction.Opposite())
             {
                 // Send a beep to that neighbor
                 // Current pin config is still singleton
@@ -652,7 +655,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
     /// particle.</returns>
     private bool SendBeepToWaitingRoot()
     {
-        int cd = constructionDir.GetValue_After();
+        Direction cd = constructionDir.GetValue_After();
 
         // First ensure that position in construction direction is free
         LineFormationParticleSync nbr = GetNeighborAt(cd) as LineFormationParticleSync;
@@ -662,7 +665,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
         }
         // Now check the two candidate positions for waiting ROOTs
         PinConfiguration pc = GetCurrentPinConfiguration();
-        foreach (int candidateDir in new int[] { (cd + 1) % 6, (cd + 5) % 6 })
+        foreach (Direction candidateDir in new Direction[] { cd.Rotate60(1), cd.Rotate60(-1) })
         {
             nbr = GetNeighborAt(candidateDir) as LineFormationParticleSync;
             if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
@@ -670,7 +673,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
                 // Found a waiting ROOT: Send beep
                 SetPlannedPinConfiguration(pc);
                 pc.GetPinAt(candidateDir, 0).PartitionSet.SendBeep();
-                MyMessage msg = new MyMessage(candidateDir == ((cd + 1) % 6) ? MyMessage.Direction.LEFT : MyMessage.Direction.RIGHT);
+                MyMessage msg = new MyMessage(candidateDir == cd.Rotate60(1) ? MyMessage.Direction.LEFT : MyMessage.Direction.RIGHT);
                 pc.GetPinAt(candidateDir, 0).PartitionSet.SendMessage(msg);
                 return true;
             }
@@ -686,11 +689,12 @@ public class LineFormationParticleSync : ParticleAlgorithm
     /// of the construction direction.</returns>
     private bool CheckLocalCompleteness()
     {
-        int cd = constructionDir.GetValue_After();
-        for (int direction = 0; direction < 6; direction++)
+        Direction cd = constructionDir.GetValue_After();
+        for (int d = 0; d < 6; d++)
         {
+            Direction direction = DirectionHelpers.Cardinal(d);
             LineFormationParticleSync nbr = GetNeighborAt(direction) as LineFormationParticleSync;
-            if (direction == cd || direction == ((cd + 3) % 6)) {
+            if (direction == cd || direction == cd.Opposite()) {
                 if (nbr != null && nbr.state != LFState.LEADER && nbr.state != LFState.INLINE)
                 {
                     return false;

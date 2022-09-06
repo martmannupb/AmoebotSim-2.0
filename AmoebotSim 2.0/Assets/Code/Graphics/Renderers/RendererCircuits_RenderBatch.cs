@@ -15,6 +15,7 @@ public class RendererCircuits_RenderBatch
     private Mesh circuitQuad = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     const int maxArraySize = 1023;
     private Material lineMaterial;
+    private float zOffset = 0f;
 
     // Settings _____
     public PropertyBlockData properties;
@@ -25,14 +26,16 @@ public class RendererCircuits_RenderBatch
     public struct PropertyBlockData
     {
         public Color color;
-        public bool isConnectorLine;
+        public bool isExternalConnectorLine;
         public bool moving;
+        public bool beeping;
 
-        public PropertyBlockData(Color color, bool isConnectorLine, bool moving)
+        public PropertyBlockData(Color color, bool isExternalConnectorLine, bool moving, bool beeping)
         {
             this.color = color;
-            this.isConnectorLine = isConnectorLine;
+            this.isExternalConnectorLine = isExternalConnectorLine;
             this.moving = moving;
+            this.beeping = beeping;
         }
     }
 
@@ -46,26 +49,17 @@ public class RendererCircuits_RenderBatch
     public void Init()
     {
         // Set Material
-        if (properties.isConnectorLine) lineMaterial = MaterialDatabase.material_circuit_lineConnector;
+        if (properties.isExternalConnectorLine) lineMaterial = MaterialDatabase.material_circuit_line;//MaterialDatabase.material_circuit_lineConnector;
         else lineMaterial = MaterialDatabase.material_circuit_line;
 
         // Circle PropertyBlocks
         propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color);
-        //propertyBlock_circle_contracted.ApplyColor(properties.color);
-        //propertyBlock_circle_expanded.ApplyColor(properties.color);
-        //propertyBlock_circle_expanding.ApplyColor(properties.color);
-        //propertyBlock_circle_contracting.ApplyColor(properties.color);
-        //propertyBlock_circle_contracted.ApplyUpdatedValues(false, 0, 0f, 0f, Vector3.right);
-        //propertyBlock_circle_expanded.ApplyUpdatedValues(true, 0, 1f, 1f, Vector3.right);
-        //propertyBlock_circle_expanding.ApplyUpdatedValues(true, 0, 0f, 1f, Vector3.right);
-        //propertyBlock_circle_contracting.ApplyUpdatedValues(true, 0, 1f, 0f, Vector3.right);
-        //propertyBlock_circle_connector_contracted.ApplyConnectorValues(0f, 0f, Vector3.right, Vector3.left);
-        //propertyBlock_circle_connector_expanded.ApplyConnectorValues(1f, 1f, Vector3.right, Vector3.left);
-        //propertyBlock_circle_connector_expanding.ApplyConnectorValues(0f, 1f, Vector3.right, Vector3.left);
-        //propertyBlock_circle_connector_contracting.ApplyConnectorValues(1f, 0f, Vector3.right, Vector3.left);
-
-        // Hexagon PropertyBlocks
-        // ..
+        if(properties.beeping)
+        {
+            propertyBlock_circuitMatrices_Lines.ApplyTexture(lineMaterial.GetTexture("_Texture2D"));
+            lineMaterial = MaterialDatabase.material_circuit_beep;
+            zOffset = -0.1f;
+        }
     }
 
     public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos)
@@ -77,7 +71,7 @@ public class RendererCircuits_RenderBatch
         }
         int listNumber = currentIndex / maxArraySize;
         int listIndex = currentIndex % maxArraySize;
-        float lineWidth = properties.isConnectorLine ? RenderSystem.const_circuitConnectorLineWidth : RenderSystem.const_circuitLineWidth;
+        float lineWidth = properties.isExternalConnectorLine ? RenderSystem.const_circuitConnectorLineWidth : RenderSystem.const_circuitLineWidth;
         Matrix4x4 matrix = CalculateLineMatrix(globalLineStartPos, globalLineEndPos, lineWidth);
         circuitMatrices_Lines[listNumber][listIndex] = matrix;
         currentIndex++;
@@ -90,7 +84,7 @@ public class RendererCircuits_RenderBatch
         Quaternion q;
         q = Quaternion.FromToRotation(Vector2.right, vec);
         if (q.eulerAngles.y >= 179.99) q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
-        return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, RenderSystem.zLayer_circuits), q, new Vector3(length, width, 1f));
+        return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, RenderSystem.zLayer_circuits + zOffset), q, new Vector3(length, width, 1f));
     }
 
     /// <summary>
@@ -102,20 +96,34 @@ public class RendererCircuits_RenderBatch
         currentIndex = 0;
     }
 
-    public void ApplyUpdates(float animationStartTime)
+    private float lastBeepStartTime;
+
+    public void ApplyUpdates(float animationStartTime, float beepStartTime)
     {
-        float animationDuration = RenderSystem.const_circuitAnimationDuration;
-        if (properties.moving)
+        if(properties.beeping)
         {
-            // Moving
-            propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
-            propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, animationDuration);
+            // Beeping Animation
+            float halfAnimationDuration = RenderSystem.data_circuitBeepDuration * 0.5f;
+            propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f);
+            propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(beepStartTime + halfAnimationDuration, halfAnimationDuration);
+            //propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, halfAnimationDuration);
+            lastBeepStartTime = beepStartTime;
         }
         else
         {
-            // Not Moving
-            propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
-            propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(-1f, 0.01f);
+            // Static / Moving Animation
+            if (properties.moving)
+            {
+                // Moving
+                propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
+                propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, RenderSystem.data_circuitAnimationDuration);
+            }
+            else
+            {
+                // Not Moving
+                propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(1f, 1f); // Visible
+                propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(-1f, 0.01f);
+            }
         }
     }
 
@@ -124,7 +132,13 @@ public class RendererCircuits_RenderBatch
         // Timestamp
         if (firstRenderFrame)
         {
-            ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp);
+            ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, RenderSystem.data_particleMovementFinishedTimestamp + RenderSystem.data_circuitAnimationDuration);
+        }
+        else if(properties.beeping && lastBeepStartTime + RenderSystem.data_circuitBeepDuration < Time.timeSinceLevelLoad)
+        {
+            // We show beeps and have shown the beep already
+            // Repeat Beep
+            ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, lastBeepStartTime + RenderSystem.data_circuitBeepRepeatDelay);
         }
 
         // Null Check

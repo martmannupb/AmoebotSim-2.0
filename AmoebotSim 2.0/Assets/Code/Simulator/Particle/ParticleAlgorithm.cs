@@ -14,10 +14,10 @@ using UnityEngine;
 public struct Neighbor<T> where T : ParticleAlgorithm
 {
     public T neighbor;
-    public int localDir;
+    public Direction localDir;
     public bool atHead;
 
-    public Neighbor(T neighbor, int localDir, bool atHead)
+    public Neighbor(T neighbor, Direction localDir, bool atHead)
     {
         this.neighbor = neighbor;
         this.localDir = localDir;
@@ -153,15 +153,14 @@ public abstract class ParticleAlgorithm
     /// <summary>
     /// Creates a new <see cref="ParticleAttribute{T}"/> representing a direction.
     /// <para>
-    /// Note that only values in the set <c>{-1,0,1,2,3,4,5}</c> are valid directions,
-    /// with <c>-1</c> representing no direction.
+    /// The <see cref="Direction"/> enum specifies which values can be stored in the attribute.
     /// </para>
     /// </summary>
     /// <param name="name">The name of the attribute to be displayed in the UI.
     /// Must be unique for saving and loading of simulation states to work correctly.</param>
     /// <param name="initialValue">The initial attribute value.</param>
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
-    public ParticleAttribute<int> CreateAttributeDirection(string name, int initialValue = 0)
+    public ParticleAttribute<Direction> CreateAttributeDirection(string name, Direction initialValue = Direction.NONE)
     {
         CheckActive("Particles can only create attributes for themselves, not for other particles");
         return ParticleAttributeFactory.CreateParticleAttributeDirection(particle, name, initialValue);
@@ -272,7 +271,7 @@ public abstract class ParticleAlgorithm
     /// </summary>
     /// <returns>The local direction pointing from the particle's tail towards its head,
     /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int HeadDirection()
+    public Direction HeadDirection()
     {
         return particle.HeadDirection();
     }
@@ -289,44 +288,9 @@ public abstract class ParticleAlgorithm
     /// </summary>
     /// <returns>The local direction pointing from the particle's head towards its tail,
     /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int TailDirection()
+    public Direction TailDirection()
     {
         return particle.TailDirection();
-    }
-
-    /**
-     * Messages
-     */
-    // TODO: Implement these
-
-    public void SendMessage(Message msg, int locDir, bool head = true)
-    {
-        particle.system.SendParticleMessage(particle, msg, locDir, head);
-    }
-
-    public bool HasMsgOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public T GetMsgOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public List<T> GetMsgsOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public T PopMsgOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public List<T> PopMsgsOfType<T>() where T : Message
-    {
-        throw new System.NotImplementedException();
     }
 
 
@@ -367,7 +331,7 @@ public abstract class ParticleAlgorithm
     /// </summary>
     /// <returns>The local direction pointing from the particle's tail towards its head,
     /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int HeadDirection_After()
+    public Direction HeadDirection_After()
     {
         CheckActive("Predicted state information is not available for other particles.");
         return particle.HeadDirection_After();
@@ -379,7 +343,7 @@ public abstract class ParticleAlgorithm
     /// </summary>
     /// <returns>The local direction pointing from the particle's head towards its tail,
     /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int TailDirection_After()
+    public Direction TailDirection_After()
     {
         CheckActive("Predicted state information is not available for other particles.");
         return particle.TailDirection_After();
@@ -406,7 +370,7 @@ public abstract class ParticleAlgorithm
     /// </para>
     /// <para>
     /// See also <seealso cref="GetContractedPinConfiguration"/>,
-    /// <seealso cref="GetExpandedPinConfiguration(int)"/>,
+    /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
     /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
     /// <seealso cref="GetPlannedPinConfiguration"/>.
     /// </para>
@@ -429,7 +393,7 @@ public abstract class ParticleAlgorithm
     /// </para>
     /// <para>
     /// See also <seealso cref="GetCurrentPinConfiguration"/>,
-    /// <seealso cref="GetExpandedPinConfiguration(int)"/>,
+    /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
     /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
     /// <seealso cref="GetPlannedPinConfiguration"/>.
     /// </para>
@@ -462,7 +426,7 @@ public abstract class ParticleAlgorithm
     /// expansion state for which the pin configuration should be created.</param>
     /// <returns>A new singleton pin configuration for the specified
     /// expansion state that can be modified arbitrarily.</returns>
-    public PinConfiguration GetExpandedPinConfiguration(int headDirection)
+    public PinConfiguration GetExpandedPinConfiguration(Direction headDirection)
     {
         CheckActive("Pin configurations cannot be obtained from other particles.");
         return new SysPinConfiguration(particle, PinsPerEdge, headDirection);
@@ -520,7 +484,7 @@ public abstract class ParticleAlgorithm
     /// Checks if this particle has a neighboring particle in the given local direction.
     /// For expanded particles, there are two different nodes in the same local direction,
     /// one seen from the particle's head and one seen from its tail.
-    /// <para>See also <see cref="GetNeighborAt(int, bool)"/>.</para>
+    /// <para>See also <see cref="GetNeighborAt(Direction, bool)"/>.</para>
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
@@ -531,7 +495,7 @@ public abstract class ParticleAlgorithm
     /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
     /// the particle's tail (only relevant if this particle is expanded).</param>
     /// <returns><c>true</c> if and only if there is a different particle in the specified position.</returns>
-    public bool HasNeighborAt(int locDir, bool fromHead = true)
+    public bool HasNeighborAt(Direction locDir, bool fromHead = true)
     {
         CheckActive("Neighbor information is not available for other particles.");
         return particle.system.HasNeighborAt(particle, locDir, fromHead);
@@ -540,7 +504,7 @@ public abstract class ParticleAlgorithm
     // TODO: What to do if there is no neighbor? Check beforehand, throw exception?
     /// <summary>
     /// Gets this particle's neighbor in the given local direction. The position to
-    /// check is determined in the same way as in <see cref="HasNeighborAt(int, bool)"/>.
+    /// check is determined in the same way as in <see cref="HasNeighborAt(Direction, bool)"/>.
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
@@ -551,7 +515,7 @@ public abstract class ParticleAlgorithm
     /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
     /// the particle's tail (only relevant if this particle is expanded).</param>
     /// <returns>The neighboring particle in the specified position.</returns>
-    public ParticleAlgorithm GetNeighborAt(int locDir, bool fromHead = true)
+    public ParticleAlgorithm GetNeighborAt(Direction locDir, bool fromHead = true)
     {
         CheckActive("Neighbor information is not available for other particles.");
         Particle p = particle.system.GetNeighborAt(particle, locDir, fromHead);
@@ -568,7 +532,7 @@ public abstract class ParticleAlgorithm
     /// <summary>
     /// Checks if the part of the neighboring particle in the given local direction is
     /// the neighbor's head. The position to check is determined in the same way as in
-    /// <see cref="HasNeighborAt(int, bool)"/>.
+    /// <see cref="HasNeighborAt(Direction, bool)"/>.
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
@@ -581,7 +545,7 @@ public abstract class ParticleAlgorithm
     /// <returns><c>true</c> if and only if the grid node in the specified position is
     /// occupied by the head of a neighboring particle (for contracted particles, head and
     /// tail occupy the same node.)</returns>
-    public bool IsHeadAt(int locDir, bool fromHead = true)
+    public bool IsHeadAt(Direction locDir, bool fromHead = true)
     {
         CheckActive("Neighbor information is not available for other particles.");
         return particle.system.IsHeadAt(particle, locDir, fromHead);
@@ -590,7 +554,7 @@ public abstract class ParticleAlgorithm
     /// <summary>
     /// Checks if the part of the neighboring particle in the given local direction is
     /// the neighbor's tail. The position to check is determined in the same way as in
-    /// <see cref="HasNeighborAt(int, bool)"/>.
+    /// <see cref="HasNeighborAt(Direction, bool)"/>.
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
@@ -603,7 +567,7 @@ public abstract class ParticleAlgorithm
     /// <returns><c>true</c> if and only if the grid node in the specified position is
     /// occupied by the tail of a neighboring particle (for contracted particles, head and
     /// tail occupy the same node.)</returns>
-    public bool IsTailAt(int locDir, bool fromHead = true)
+    public bool IsTailAt(Direction locDir, bool fromHead = true)
     {
         CheckActive("Neighbor information is not available for other particles.");
         return particle.system.IsTailAt(particle, locDir, fromHead);
@@ -611,13 +575,13 @@ public abstract class ParticleAlgorithm
 
     // TODO: Documentation
 
-    public bool FindFirstNeighbor<T>(out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    public bool FindFirstNeighbor<T>(out Neighbor<T> neighbor, Direction startDir = Direction.NONE, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
         CheckActive("Neighbor information is not available for other particles.");
         return particle.system.FindFirstNeighbor<T>(particle, out neighbor, startDir, startAtHead, withChirality, maxNumber);
     }
 
-    public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, int startDir = 0, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, Direction startDir = Direction.NONE, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
         
         CheckActive("Neighbor information is not available for other particles.");
@@ -640,11 +604,11 @@ public abstract class ParticleAlgorithm
     /// method will have no immediate effect.</para>
     /// <para>
     /// See also <seealso cref="ContractHead"/>, <seealso cref="ContractTail"/>,
-    /// <seealso cref="PushHandover(int)"/>.
+    /// <seealso cref="PushHandover(Direction)"/>.
     /// </para>
     /// </summary>
     /// <param name="locDir">The local direction in which to expand.</param>
-    public void Expand(int locDir)
+    public void Expand(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.ExpandParticle(particle, locDir);
@@ -659,9 +623,9 @@ public abstract class ParticleAlgorithm
     /// i.e., after the activation is over. This means that calling this
     /// method will have no immediate effect.</para>
     /// <para>
-    /// See also <seealso cref="Expand(int)"/>,
+    /// See also <seealso cref="Expand(Direction)"/>,
     /// <seealso cref="ContractTail"/>,
-    /// <seealso cref="PullHandoverHead(int)"/>.
+    /// <seealso cref="PullHandoverHead(Direction)"/>.
     /// </para>
     /// </summary>
     public void ContractHead()
@@ -679,9 +643,9 @@ public abstract class ParticleAlgorithm
     /// i.e., after the activation is over. This means that calling this
     /// method will have no immediate effect.</para>
     /// <para>
-    /// See also <seealso cref="Expand(int)"/>,
+    /// See also <seealso cref="Expand(Direction)"/>,
     /// <seealso cref="ContractHead"/>,
-    /// <seealso cref="PullHandoverTail(int)"/>.
+    /// <seealso cref="PullHandoverTail(Direction)"/>.
     /// </para>
     /// </summary>
     public void ContractTail()
@@ -708,13 +672,13 @@ public abstract class ParticleAlgorithm
     /// i.e., after the activation is over. This means that calling this
     /// method will have no immediate effect.</para>
     /// <para>
-    /// See also <seealso cref="Expand(int)"/>,
-    /// <seealso cref="PullHandoverHead(int)"/>,
-    /// <seealso cref="PullHandoverTail(int)"/>.
+    /// See also <seealso cref="Expand(Direction)"/>,
+    /// <seealso cref="PullHandoverHead(Direction)"/>,
+    /// <seealso cref="PullHandoverTail(Direction)"/>.
     /// </para>
     /// </summary>
     /// <param name="locDir">The local direction into which the particle should expand.</param>
-    public void PushHandover(int locDir)
+    public void PushHandover(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.PerformPushHandover(particle, locDir);
@@ -739,14 +703,14 @@ public abstract class ParticleAlgorithm
     /// i.e., after the activation is over. This means that calling this
     /// method will have no immediate effect.</para>
     /// <para>
-    /// See also <seealso cref="PushHandover(int)"/>,
+    /// See also <seealso cref="PushHandover(Direction)"/>,
     /// <seealso cref="ContractHead"/>,
-    /// <seealso cref="PullHandoverTail(int)"/>.
+    /// <seealso cref="PullHandoverTail(Direction)"/>.
     /// </para>
     /// </summary>
     /// <param name="locDir">The local direction relative to this particle's
     /// tail from which the contracted neighbor particle should be pulled.</param>
-    public void PullHandoverHead(int locDir)
+    public void PullHandoverHead(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.PerformPullHandoverHead(particle, locDir);
@@ -771,14 +735,14 @@ public abstract class ParticleAlgorithm
     /// i.e., after the activation is over. This means that calling this
     /// method will have no immediate effect.</para>
     /// <para>
-    /// See also <seealso cref="PushHandover(int)"/>,
+    /// See also <seealso cref="PushHandover(Direction)"/>,
     /// <seealso cref="ContractTail"/>,
-    /// <seealso cref="PullHandoverHead(int)"/>.
+    /// <seealso cref="PullHandoverHead(Direction)"/>.
     /// </para>
     /// </summary>
     /// <param name="locDir">The local direction relative to this particle's
     /// head from which the contracted neighbor particle should be pulled.</param>
-    public void PullHandoverTail(int locDir)
+    public void PullHandoverTail(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
         particle.system.PerformPullHandoverTail(particle, locDir);

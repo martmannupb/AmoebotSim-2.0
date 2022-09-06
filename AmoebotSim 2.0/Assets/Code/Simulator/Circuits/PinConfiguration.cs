@@ -35,14 +35,14 @@ public abstract class PinConfiguration
     /// <summary>
     /// The head direction which encodes the expansion state of
     /// this pin configuration. If the state is contracted, this
-    /// value is <c>-1</c>.
+    /// value is <see cref="Direction.NONE"/>.
     /// <para>
     /// A pin configuration can only be applied if its expansion
     /// state matches the particle's expansion state at the end of
     /// the round.
     /// </para>
     /// </summary>
-    public abstract int HeadDirection
+    public abstract Direction HeadDirection
     {
         get;
     }
@@ -72,27 +72,25 @@ public abstract class PinConfiguration
     /// <summary>
     /// Returns the pin with the given offset at the given edge.
     /// </summary>
-    /// <param name="direction">The direction of the edge containing the pin.
-    /// Must be in the range <c>0,...,5</c>.</param>
+    /// <param name="direction">The direction of the edge containing the pin.</param>
     /// <param name="offset">The pin offset on the specified edge. Must be in
     /// the range <c>0,...,<see cref="PinsPerEdge"/>-1</c>.</param>
     /// <param name="head">If the expansion state of the pin configuration is
     /// expanded, use this flag to indicate whether the edge belongs to the
     /// particle's head or not.</param>
     /// <returns>The pin in the specified location.</returns>
-    public abstract Pin GetPinAt(int direction, int offset, bool head = true);
+    public abstract Pin GetPinAt(Direction direction, int offset, bool head = true);
 
     /// <summary>
     /// Returns all pins at the given edge.
     /// </summary>
-    /// <param name="direction">The direction of the edge containing the pin.
-    /// Must be in the range <c>0,...,5</c>.</param>
+    /// <param name="direction">The direction of the edge containing the pins.</param>
     /// <param name="head">If the expansion state of the pin configuration is
     /// expanded, use this flag to indicate whether the edge belongs to the
     /// particle's head or not.</param>
     /// <returns>An array of size <see cref="PinsPerEdge"/> containing the
     /// pins at the specified edge, ordered by their edge offsets.</returns>
-    public abstract Pin[] GetPinsAtEdge(int direction, bool head = true);
+    public abstract Pin[] GetPinsAtEdge(Direction direction, bool head = true);
 
     /// <summary>
     /// Returns the partition set with the given ID.

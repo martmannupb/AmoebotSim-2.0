@@ -38,12 +38,13 @@ public class ExampleParticle : ParticleAlgorithm
         else
         {
             // Expand in random free direction
-            List<int> freeDirs = new List<int>();
+            List<Direction> freeDirs = new List<Direction>();
             for (int i = 0; i < 6; i++)
             {
-                if (!HasNeighborAt(i))
+                Direction d = DirectionHelpers.Cardinal(i);
+                if (!HasNeighborAt(d))
                 {
-                    freeDirs.Add(i);
+                    freeDirs.Add(d);
                 }
             }
             if (freeDirs.Count > 0)

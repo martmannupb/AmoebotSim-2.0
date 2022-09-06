@@ -23,13 +23,12 @@ public class RenderSystem
     public const float const_hexagonalScale = 1f;
     public const float const_hexagonalBorderWidth = 0.12f;
     public const int const_hexagonalBGHexLineAmount = 200;
-    public const float const_hexagonalAnimationDurationDef = 0.5f;
-    public const float const_hexagonalAnimationDurationMax = 1f;
     public const float const_circuitLineWidth = 0.02f;
     public const float const_circuitConnectorLineWidth = 0.06f;
     public const float const_circuitPinSize = 0.1f;
-    public const float const_circuitPinConnectorSize = 0.1f;
-    public const float const_circuitAnimationDuration = 0.2f;
+    public const float const_circuitSingletonPinSize = 0.085f;
+    public const float const_circuitPinConnectorSize = 0.02f;
+    public const float const_circuitPinBeepSizePercentage = 0.5f;
     // Layers
     public const float zLayer_background = 1f;
     public const float ZLayer_particlesBG = 0.1f;
@@ -46,6 +45,17 @@ public class RenderSystem
 
     // Dynamic Data _____
     public static float data_particleMovementFinishedTimestamp;
+    // Animation + Beep Timing
+    public static float data_hexagonalAnimationDuration = 0.5f;     // particle animation duration
+    public const float const_maxHexagonalAnimationDuration = 1f;
+    public static float data_circuitAnimationDuration = 0.0f;       // pin/circuit fade in time after movement
+    public const float const_maxCircuitAnimationDuration = 0.0f;
+    public static float data_circuitBeepDuration = 0.5f;            // circuit beep duration
+    public const float const_maxCircuitBeepDuration = 0.5f;
+    public const float const_animationTimePercentage = 0.6f;        // percentages: animation/beeps (sequentially)
+    public const float const_beepTimePercentage = 0.2f;             // percentages: animation/beeps (sequentially)
+    public static float data_circuitBeepRepeatDelay = 4f;
+
 
     // Renderers _____
     public RendererBackground rendererBG;
@@ -101,6 +111,27 @@ public class RenderSystem
         rendererUI.AddReferenceToMap(map);
     }
 
+    //public static float data_hexagonalAnimationDuration = 0.5f;
+    //public const float data_maxHexagonalAnimationDuration = 1f;
+    //public static float data_circuitAnimationDuration = 0.2f;
+    //public const float data_maxCircuitAnimationDuration = 0.2f;
+    //public static float data_circuitBeepDuration = 0.5f;
+    //public const float data_maxCircuitBeepDuration = 0.5f;
+    //public const float data_animationTimePercentage = 0.7f;
+    //public const float data_beepTimePercentage = 0.2f;
+    public void SetRoundTime(float roundTime)
+    {
+        if (roundTime == 0f) throw new System.NotImplementedException();
+
+        // Particle Animation Duration
+        data_hexagonalAnimationDuration = roundTime * const_animationTimePercentage;
+        data_hexagonalAnimationDuration = Mathf.Clamp(data_hexagonalAnimationDuration, 0f, const_maxHexagonalAnimationDuration);
+        // Beep Duration
+        data_circuitBeepDuration = roundTime * const_beepTimePercentage;
+        data_circuitBeepDuration = Mathf.Clamp(data_circuitBeepDuration, 0f, const_maxCircuitBeepDuration);
+
+    }
+
 
     public void ToggleViewType()
     {
@@ -140,6 +171,11 @@ public class RenderSystem
                 break;
         }
         QualitySettings.antiAliasing = setting_antiAliasing;
+    }
+
+    public int GetAntiAliasing()
+    {
+        return setting_antiAliasing;
     }
 
     public void AntiAliasing_Incr()

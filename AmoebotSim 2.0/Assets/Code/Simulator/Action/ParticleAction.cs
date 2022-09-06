@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 public enum ActionType { EXPAND, CONTRACT_HEAD, CONTRACT_TAIL, PUSH, PULL_HEAD, PULL_TAIL, NULL }
 
@@ -17,9 +14,9 @@ public class ParticleAction
 {
     public Particle particle;
     public ActionType type;
-    public int localDir;
+    public Direction localDir;
 
-    public ParticleAction(Particle particle = null, ActionType type = ActionType.NULL, int localDir = -1)
+    public ParticleAction(Particle particle = null, ActionType type = ActionType.NULL, Direction localDir = Direction.NONE)
     {
         this.particle = particle;
         this.type = type;

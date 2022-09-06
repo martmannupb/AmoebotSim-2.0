@@ -266,7 +266,7 @@ namespace BoundaryTestAlgo
             int firstNbrDir = -1;
             for (int dir = 0; dir < 6; dir++)
             {
-                nbrs[dir] = HasNeighborAt(dir);
+                nbrs[dir] = HasNeighborAt(DirectionHelpers.Cardinal(dir));
                 if (firstNbrDir == -1 && nbrs[dir])
                 {
                     firstNbrDir = dir;
@@ -638,9 +638,10 @@ namespace BoundaryTestAlgo
                     {
                         // Turn primary partition set into one set containing only
                         // connections to the predecessor
+                        Direction d = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0]);
                         planned.MakePartitionSet(new Pin[] {
-                            planned.GetPinAt(boundaryNbrs[boundary, 0], 2),
-                            planned.GetPinAt(boundaryNbrs[boundary, 0], 3)
+                            planned.GetPinAt(d, 2),
+                            planned.GetPinAt(d, 3)
                         }, boundary * 2);
 
                         // Send beep if current angle value is 1
@@ -657,9 +658,10 @@ namespace BoundaryTestAlgo
                     if (isCandidate[boundary])
                     {
                         // Connect primary and secondary circuit
+                        Direction d = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
                         planned.MakePartitionSet(new Pin[] {
-                            planned.GetPinAt(boundaryNbrs[boundary, 1], 0),
-                            planned.GetPinAt(boundaryNbrs[boundary, 1], 1)
+                            planned.GetPinAt(d, 0),
+                            planned.GetPinAt(d, 1)
                         }, boundary * 2);
                         // Send beep if final angle result is 1
                         if (boundaryAngles[boundary] == 1)
@@ -794,8 +796,8 @@ namespace BoundaryTestAlgo
             {
                 for (int boundary = 0; boundary < numBoundaries.GetValue_After(); boundary++)
                 {
-                    int predDir = boundaryNbrs[boundary, 0].GetValue_After();
-                    int succDir = boundaryNbrs[boundary, 1].GetValue_After();
+                    Direction predDir = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0].GetValue_After());
+                    Direction succDir = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1].GetValue_After());
                     pc.MakePartitionSet(new Pin[] {
                         pc.GetPinAt(predDir, 2),
                         pc.GetPinAt(predDir, 3),
@@ -827,16 +829,19 @@ namespace BoundaryTestAlgo
                 if (isCandidate[boundary])
                 {
                     // If we are still a candidate, that means we are the leader of the boundary
-                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(boundaryNbrs[boundary, 1], 0) }, boundary * 2);
-                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(boundaryNbrs[boundary, 1], 1) }, boundary * 2 + 1);
+                    Direction d = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
+                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(d, 0) }, boundary * 2);
+                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(d, 1) }, boundary * 2 + 1);
                 }
                 else
                 {
                     // We are not the leader of the boundary
-                    Pin pSucc = pc.GetPinAt(boundaryNbrs[boundary, 1], 0);
-                    Pin sSucc = pc.GetPinAt(boundaryNbrs[boundary, 1], 1);
-                    Pin pPred = pc.GetPinAt(boundaryNbrs[boundary, 0], 3);
-                    Pin sPred = pc.GetPinAt(boundaryNbrs[boundary, 0], 2);
+                    Direction ds = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
+                    Direction dp = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0]);
+                    Pin pSucc = pc.GetPinAt(ds, 0);
+                    Pin sSucc = pc.GetPinAt(ds, 1);
+                    Pin pPred = pc.GetPinAt(dp, 3);
+                    Pin sPred = pc.GetPinAt(dp, 2);
                     if (isActive[boundary].GetValue_After())
                     {
                         // Active particles cross their connections

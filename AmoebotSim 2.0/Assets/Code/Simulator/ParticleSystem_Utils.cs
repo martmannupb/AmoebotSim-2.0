@@ -21,6 +21,11 @@ public static class ParticleSystem_Utils
      * directions 0,1,2. For head directions 0,1,2, label 0 belongs
      * to the head, and for directions 3,4,5, label 0 belongs to
      * the tail.
+     * 
+     * Label computations are always based on the integer mapping
+     * of cardinal directions. Computing labels for secondary
+     * directions does not make sense and using integers allows
+     * a fast lookup with array indices.
      */
 
     /// <summary>
@@ -103,29 +108,29 @@ public static class ParticleSystem_Utils
     /// Computes the edge label corresponding to the given direction and
     /// expansion state.
     /// <para>
-    /// If <paramref name="headDir"/> is <c>-1</c>, i.e., the
-    /// particle is contracted, the label always equals the given
-    /// <paramref name="direction"/>.
+    /// If <paramref name="headDir"/> is <see cref="Direction.NONE"/>,
+    /// i.e., the particle is contracted, the label always equals the
+    /// given <paramref name="direction"/>'s int representation.
     /// </para>
     /// </summary>
     /// <param name="direction">The direction of the edge marked by
     /// the returned label.</param>
     /// <param name="headDir">The head direction of the particle, if
-    /// it is expanded. Leave it at <c>-1</c> otherwise.</param>
+    /// it is expanded. Leave it at <see cref="Direction.NONE"/> otherwise.</param>
     /// <param name="head">If the particle is expanded, this flag
     /// determines whether the label belongs to the particle's head
     /// or tail.</param>
     /// <returns>The label of the edge specified by the direction
     /// and expansion state of a particle.</returns>
-    public static int GetLabelInDir(int direction, int headDir = -1, bool head = true)
+    public static int GetLabelInDir(Direction direction, Direction headDir = Direction.NONE, bool head = true)
     {
-        if (headDir == -1)
+        if (headDir == Direction.NONE)
         {
-            return direction;
+            return direction.ToInt();
         }
         else
         {
-            return expandedLabels[head ? headDir : ((headDir + 3) % 6), direction];
+            return expandedLabels[head ? headDir.ToInt() : ((headDir.ToInt() + 3) % 6), direction.ToInt()];
         }
     }
 
@@ -134,64 +139,66 @@ public static class ParticleSystem_Utils
     /// </summary>
     /// <param name="label">The label of which to compute the direction.</param>
     /// <param name="headDir">The head direction of the particle, if it is
-    /// expanded. Leave it at <c>-1</c> otherwise.</param>
+    /// expanded. Leave it at <see cref="Direction.NONE"/> otherwise.</param>
     /// <returns>The direction of the edge label <paramref name="label"/>
     /// of a particle with head direction <paramref name="headDir"/>.</returns>
-    public static int GetDirOfLabel(int label, int headDir = -1)
+    public static Direction GetDirOfLabel(int label, Direction headDir = Direction.NONE)
     {
-        if (headDir == -1)
+        if (headDir == Direction.NONE)
         {
-            return label;
+            return DirectionHelpers.Cardinal(label);
         }
         else
         {
-            return labelDirections[headDir, label];
+            return DirectionHelpers.Cardinal(labelDirections[headDir.ToInt(), label]);
         }
     }
 
     /// <summary>
     /// Checks if the given label belongs to the particle's head.
     /// <para>
-    /// If <paramref name="headDir"/> is <c>-1</c>, i.e., the
-    /// particle is contracted, the result will always be <c>true</c>.
+    /// If <paramref name="headDir"/> is <see cref="Direction.NONE"/>,
+    /// i.e., the particle is contracted, the result will always be <c>true</c>.
     /// </para>
     /// </summary>
     /// <param name="label">The edge label to check.</param>
     /// <param name="headDir">The head direction of the particle, if
-    /// it is expanded. Leave it at <c>-1</c> otherwise.</param>
-    /// <returns></returns>
-    public static bool IsHeadLabel(int label, int headDir = -1)
+    /// it is expanded. Leave it at <see cref="Direction.NONE"/> otherwise.</param>
+    /// <returns><c>true</c> if and only if the given <paramref name="label"/>
+    /// represents an edge incident to the particle's head.</returns>
+    public static bool IsHeadLabel(int label, Direction headDir = Direction.NONE)
     {
-        if (headDir == -1)
+        if (headDir == Direction.NONE)
         {
             return true;
         }
         else
         {
-            return isHeadLabel[headDir, label];
+            return isHeadLabel[headDir.ToInt(), label];
         }
     }
 
     /// <summary>
     /// Checks if the given label belongs to the particle's tail.
     /// <para>
-    /// If <paramref name="headDir"/> is <c>-1</c>, i.e., the
-    /// particle is contracted, the result will always be <c>true</c>.
+    /// If <paramref name="headDir"/> is <see cref="Direction.NONE"/>,
+    /// i.e., the particle is contracted, the result will always be <c>true</c>.
     /// </para>
     /// </summary>
     /// <param name="label">The edge label to check.</param>
     /// <param name="headDir">The head direction of the particle, if
-    /// it is expanded. Leave it at <c>-1</c> otherwise.</param>
-    /// <returns></returns>
-    public static bool IsTailLabel(int label, int headDir = -1)
+    /// it is expanded. Leave it at <see cref="Direction.NONE"/> otherwise.</param>
+    /// <returns><c>true</c> if and only if the given <paramref name="label"/>
+    /// represents an edge incident to the particle's tail.</returns>
+    public static bool IsTailLabel(int label, Direction headDir = Direction.NONE)
     {
-        if (headDir == -1)
+        if (headDir == Direction.NONE)
         {
             return true;
         }
         else
         {
-            return !isHeadLabel[headDir, label];
+            return !isHeadLabel[headDir.ToInt(), label];
         }
     }
 
@@ -200,14 +207,14 @@ public static class ParticleSystem_Utils
     /// </summary>
     /// <param name="pos">The original grid node position.</param>
     /// <param name="globalDir">The global direction in which the neighbor lies.
-    /// <c>0</c> means "right" and the direction increases counter-clockwise.
-    /// Allowed values are <p>{0,1,2,3,4,5}</p>.</param>
+    /// Secondary directions are mapped back to their cardinal directions.</param>
     /// <param name="distance">The number of steps to reach the neighbor from the original position.</param>
     /// <returns>The node that lies <paramref name="distance"/> steps in direction <paramref name="globalDir"/>
     /// from node <paramref name="pos"/>.</returns>
-    public static Vector2Int GetNbrInDir(Vector2Int pos, int globalDir, int distance = 1)
+    public static Vector2Int GetNbrInDir(Vector2Int pos, Direction globalDir, int distance = 1)
     {
-        switch (globalDir)
+        int dirId = globalDir.ToInt();
+        switch (dirId)
         {
             case 0:
                 return new Vector2Int(pos.x + distance, pos.y);
@@ -230,28 +237,36 @@ public static class ParticleSystem_Utils
     /// Turns the given local direction into the corresponding global direction
     /// based on the given compass orientation and chirality.
     /// </summary>
-    /// <param name="locDir">The local direction in <c>{0,1,2,3,4,5}</c>.</param>
-    /// <param name="compassDir">The offset of the compass direction in <c>{0,1,2,3,4,5}</c>.</param>
-    /// <param name="chirality">The direction in which rotation is applied. <c>true</c> means
-    /// counter-clockwise is positive rotation and <c>false</c> means clockwise.</param>
+    /// <param name="locDir">The local direction.</param>
+    /// <param name="compassDir">The global offset of the compass direction (independent of chirality).
+    /// This is the global direction that is interpreted as <see cref="Direction.E"/> by the
+    /// local direction.</param>
+    /// <param name="chirality">The direction in which rotation is applied for the
+    /// local direction. <c>true</c> means counter-clockwise is positive rotation and
+    /// <c>false</c> means clockwise.</param>
     /// <returns>The global direction corresponding to <paramref name="locDir"/> offset by <paramref name="compassDir"/>.</returns>
-    public static int LocalToGlobalDir(int locDir, int compassDir, bool chirality)
+    public static Direction LocalToGlobalDir(Direction locDir, Direction compassDir, bool chirality)
     {
-        return chirality ? (compassDir + locDir) % 6 : (compassDir - locDir + 6) % 6;
+        return locDir.AddTo(compassDir, !chirality);
+        //return chirality ? (compassDir + locDir) % 6 : (compassDir - locDir + 6) % 6;
     }
 
     /// <summary>
     /// Turns the given global direction into the corresponding local direction
     /// based on the given compass orientation and chirality.
     /// </summary>
-    /// <param name="globalDir">The global direction in <c>{0,1,2,3,4,5}</c>.</param>
-    /// <param name="compassDir">The offset of the compass direction in <c>{0,1,2,3,4,5}</c> (independent of chirality).</param>
-    /// <param name="chirality">The direction in which rotation is applied. <c>true</c> means
-    /// counter-clockwise is positive rotation and <c>false</c> means clockwise.</param>
+    /// <param name="globalDir">The global direction.</param>
+    /// <param name="compassDir">The global offset of the compass direction (independent of chirality).
+    /// This is the global direction that is interpreted as <see cref="Direction.E"/> by the
+    /// local direction.</param>
+    /// <param name="chirality">The direction in which rotation is applied for the
+    /// local direction. <c>true</c> means counter-clockwise is positive rotation and
+    /// <c>false</c> means clockwise.</param>
     /// <returns>The local direction corresponding to <paramref name="globalDir"/> offset by <paramref name="compassDir"/>.</returns>
-    public static int GlobalToLocalDir(int globalDir, int compassDir, bool chirality)
+    public static Direction GlobalToLocalDir(Direction globalDir, Direction compassDir, bool chirality)
     {
-        return chirality ? (globalDir - compassDir + 6) % 6 : (compassDir - globalDir + 6) % 6;
+        return globalDir.Subtract(compassDir, !chirality);
+        //return chirality ? (globalDir - compassDir + 6) % 6 : (compassDir - globalDir + 6) % 6;
     }
 
     /// <summary>
@@ -265,7 +280,7 @@ public static class ParticleSystem_Utils
     /// otherwise use the Particle's tail.</param>
     /// <returns>The grid node in direction <paramref name="locDir"/> relative to
     /// Particle <paramref name="p"/>'s head or tail, depending on <paramref name="fromHead"/>.</returns>
-    public static Vector2Int GetNeighborPosition(Particle p, int locDir, bool fromHead)
+    public static Vector2Int GetNeighborPosition(Particle p, Direction locDir, bool fromHead)
     {
         return GetNbrInDir(fromHead ? p.Head() : p.Tail(), LocalToGlobalDir(locDir, p.comDir, p.chirality));
     }

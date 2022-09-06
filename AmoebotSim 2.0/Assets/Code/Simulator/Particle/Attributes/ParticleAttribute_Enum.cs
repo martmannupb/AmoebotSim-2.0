@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
-
 
 /// <summary>
 /// <see cref="ParticleAttribute{T}"/> subclass representing enum values.

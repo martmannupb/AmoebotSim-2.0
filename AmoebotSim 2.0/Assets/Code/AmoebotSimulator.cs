@@ -5,70 +5,45 @@ using TMPro;
 
 public class AmoebotSimulator : MonoBehaviour
 {
-    // <<<TEMPORARY>>> Prefab and instantiation method for simple visualization
-    public GameObject particlePrefab;
 
+    // System Data
+    public ParticleSystem system;
+    public RenderSystem renderSystem;
+    // System State
+    public bool running = true;
+    
+    // UI
+    public UIHandler uiHandler;
+
+    // Old UI (will be deleted)
     public TextMeshProUGUI roundsText;
     public TextMeshProUGUI maxRoundText;
     public TMP_InputField roundInput;
 
-    public void AddParticle(float x, float y)
-    {
-        Instantiate(particlePrefab, new Vector2(x, y), particlePrefab.transform.rotation);
-    }
-
-
-    // TODO: Make this public and assign in editor?
-    // (dont know, maybe it is better if we do like this via code, so we might be able to initialize the system with parameters for something like the graphics)
-    private ParticleSystem system;
-    private RenderSystem renderSystem;
-
     // Start is called before the first frame update
     void Start()
     {
+        // Init Renderer + Particle System
         renderSystem = new RenderSystem();
         system = new ParticleSystem(this, renderSystem);
+        // Set Sim Speed (not necessary with the new UI)
+        //SetSimSpeed(0.005f);
+        //SetSimSpeed(0.5f);
 
-        // Activate one particle every 1000ms (only for testing)
-        //InvokeRepeating(nameof(ActivateParticle), 0.0f, 1.0f);
-        Time.fixedDeltaTime = 0.005f;
-        Time.fixedDeltaTime = 0.2f;
+        // Register UI
+        if(uiHandler != null) uiHandler.RegisterSim(this);
 
+        // Init Algorithm
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(50, 50, 0.3f, -9, -5);
-        //system.InitializeLineFormation(50, 0.4f);
-        //system.InitializeLineFormation(100, 0.4f);
+        system.InitializeLineFormation(50, 0.4f);
+        //system.InitializeLineFormation(25, 0.4f);
         //system.InitializeLeaderElection(50, 0.35f);
-        system.InitializeChiralityCompass(100, 0.2f);
+        //system.InitializeChiralityCompass(50, 0.2f);
         //system.InitializeBoundaryTest(100, 0.05f);
-
-
-
-        // Test Area -----
-        Debug.Log("V1: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(0, 0)));
-        Debug.Log("V2: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(0.5f, 0.1f)));
-        Debug.Log("V3: " + AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)));
-        Debug.Log("V3 Inverted: " + AmoebotFunctions.CalculateAmoebotCenterPositionVector2(AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).x, AmoebotFunctions.GetGridPositionFromWorldPosition(new Vector2(50f, 42.2f)).y));
-        // -----
+        //system.InitializeExpandedTest(10);
     }
 
-    public void ActivateParticle()
-    {
-        //Debug.Log("Activate");
-        //float tStart = Time.realtimeSinceStartup;
-
-        //system.ActivateRandomParticle();
-        system.SimulateRound();
-        UpdateRoundCounter();
-        //activationsText.text = "Round: " + system.CurrentRound;
-        //Debug.Log("Simulated round in " + (Time.realtimeSinceStartup - tStart) + " s");
-    }
-
-    private void UpdateRoundCounter()
-    {
-        roundsText.text = "Round: " + system.CurrentRound;
-        maxRoundText.text = "Max: " + system.LatestRound;
-    }
 
     // Update is called once per frame
     void Update()
@@ -79,21 +54,40 @@ public class AmoebotSimulator : MonoBehaviour
     // FixedUpdate is called once per Time.fixedDeltaTime interval
     void FixedUpdate()
     {
-        if(play) ActivateParticle();
+        if(running)
+        {
+            ActivateParticle();
+        }
+    }
+
+    public void ActivateParticle()
+    {
+        //system.ActivateRandomParticle();
+        system.SimulateRound();
+    }
+
+    public void SetSimSpeed(float roundTime)
+    {
+        if (roundTime == 0)
+        {
+            // Max Speed
+            roundTime = 0.01f;
+        }
+        Time.fixedDeltaTime = roundTime;
+        renderSystem.SetRoundTime(roundTime);
     }
 
 
 
 
-
-    private bool play = true;
+    
 
     /// <summary>
     /// Toggles the Play/Pause functionality.
     /// </summary>
     public void TogglePlayPause()
     {
-        if (!play)
+        if (!running)
         {
             system.ContinueTracking();
         }
@@ -101,7 +95,8 @@ public class AmoebotSimulator : MonoBehaviour
         {
             //system.Print();
         }
-        play = !play;
+        running = !running;
+        if (uiHandler != null) uiHandler.NotifyPlayPause(running);
     }
 
     public void ToggleView()
@@ -112,94 +107,5 @@ public class AmoebotSimulator : MonoBehaviour
     public void ToggleCircuits()
     {
         renderSystem.ToggleCircuits();
-    }
-
-    public void StepBack()
-    {
-        if (!play)
-        {
-            system.StepBack();
-            UpdateRoundCounter();
-        }
-    }
-
-    public void StepForward()
-    {
-        if (!play)
-        {
-            system.StepForward();
-            UpdateRoundCounter();
-        }
-    }
-
-    public void Jump()
-    {
-        if (!play)
-        {
-            string text = roundInput.text;
-            if (int.TryParse(text, out int round))
-            {
-                if (round < system.EarliestRound || round > system.LatestRound)
-                {
-                    Debug.LogWarning("Round must be between earliest round (" + system.EarliestRound + ") and latest round (" + system.LatestRound + ")");
-                }
-                else
-                {
-                    system.SetMarkerToRound(round);
-                    UpdateRoundCounter();
-                }
-            }
-            else
-            {
-                Debug.LogWarning("Must enter a number");
-            }
-        }
-    }
-
-    public void CutOff()
-    {
-        if (!play)
-        {
-            system.CutOffAtMarker();
-            UpdateRoundCounter();
-        }
-    }
-
-    public void ResetSystem()
-    {
-        if (!play)
-        {
-            system.Reset();
-            system.InitializeLineFormation(50, 0.4f);
-            UpdateRoundCounter();
-        }
-    }
-
-    public void Save()
-    {
-        if (!play)
-        {
-            float t1 = Time.realtimeSinceStartup;
-            SimulationStateSaveData data = system.GenerateSaveData();
-            float t2 = Time.realtimeSinceStartup;
-            SaveStateUtility.Save(data);
-            float t3 = Time.realtimeSinceStartup;
-            Debug.Log("Created save state in " + (t2 - t1) + "s\nWrote save file in " + (t3 - t2) + "s");
-        }
-    }
-
-    public void Load()
-    {
-        if (!play)
-        {
-            float t1 = Time.realtimeSinceStartup;
-            SimulationStateSaveData data = SaveStateUtility.Load();
-            float t2 = Time.realtimeSinceStartup;
-            system.Reset();
-            system.InitializeFromSaveState(data);
-            UpdateRoundCounter();
-            float t3 = Time.realtimeSinceStartup;
-            Debug.Log("Loaded save data in " + (t2 - t1) + "s\nReinitialized system in " + (t3 - t2) + "s");
-        }
     }
 }
