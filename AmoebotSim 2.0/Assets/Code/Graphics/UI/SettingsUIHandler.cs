@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine;
 
-public class SettingsHandler : MonoBehaviour
+public class SettingsUIHandler : MonoBehaviour
 {
 
     // References

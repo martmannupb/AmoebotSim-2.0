@@ -90,7 +90,6 @@ public class ParticleSystem : IReplayHistory
     {
         this.sim = sim;
         this.renderSystem = renderSystem;
-        this.renderSystem.AddReferenceToParticleSystem(this);
     }
 
 

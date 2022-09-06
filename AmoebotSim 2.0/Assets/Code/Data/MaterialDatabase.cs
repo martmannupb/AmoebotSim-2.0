@@ -36,5 +36,8 @@ public static class MaterialDatabase
 
     // UI
     public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");
+    public static Material material_hexagonal_ui_baseHexagonAddMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonAddMaterial");
+    public static Material material_hexagonal_ui_baseHexagonRemoveMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonRemoveMaterial");
+    public static Material material_hexagonal_ui_baseHexagonMoveMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonMoveMaterial");
 
 }

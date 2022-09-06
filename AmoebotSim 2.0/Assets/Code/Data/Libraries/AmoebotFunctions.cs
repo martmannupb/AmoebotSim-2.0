@@ -77,6 +77,15 @@ public static class AmoebotFunctions
         return Mathf.Round(value / multipleOf) * multipleOf;
     }
 
+    public static bool AreNodesNeighbors(Vector2Int node1, Vector2Int node2)
+    {
+        if (node1.y == node2.y - 1 && (node1.x == node2.x || node1.x == node2.x + 1)) return true;
+        if (node1.y == node2.y + 1 && (node1.x == node2.x || node1.x == node2.x - 1)) return true;
+        if (node1.y == node2.y && Mathf.Abs(node1.x - node2.x) == 1) return true;
+
+        return false;
+    }
+
     // Circuits ===============
 
     public static Vector2 CalculateRelativePinPosition(ParticlePinGraphicState.PinDef pinDef, int particlesPerSide, float particleScale)

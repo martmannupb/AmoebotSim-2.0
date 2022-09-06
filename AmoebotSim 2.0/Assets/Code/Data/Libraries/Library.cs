@@ -5,8 +5,8 @@ using UnityEngine;
 using Engine;
 
 // Copyright ©
-// Part of the personal code library of Tobias Maurer.
-// Usage by any current or previous members the University of paderborn and projects associated with it is permitted.
+// Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
+// Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
 
 namespace Engine.Library {
 

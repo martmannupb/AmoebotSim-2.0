@@ -26,12 +26,27 @@ public class UIHandler : MonoBehaviour
     public Slider slider_round;
     public Toggle toggle_alwaysUpdateWhenRoundSliderIsChanged;
     public Button button_jumpCut;
+    // Tool Panel
+    public Button button_toolStandard;
+    public Button button_toolAdd;
+    public Button button_toolRemove;
+    public Button button_toolMove;
+    private Color toolColor_active;
+    private Color toolColor_inactive;
     // AntiAliasing
     public Image image_AAButton;
     public Sprite sprite_aa0;
     public Sprite sprite_aa2;
     public Sprite sprite_aa4;
     public Sprite sprite_aa8;
+
+    // State
+    public UITool activeTool = UITool.Standard;
+
+    public enum UITool
+    {
+        Standard, Add, Remove, Move
+    }
 
 
     private void Start()
@@ -58,6 +73,9 @@ public class UIHandler : MonoBehaviour
         // Init Listeners
         slider_round.onValueChanged.AddListener(delegate { SliderRound_onValueChanged(); });
         slider_speed.onValueChanged.AddListener(delegate { SliderSpeed_onValueChanged(); });
+        // Init Colors
+        if (button_toolStandard != null) toolColor_active = button_toolStandard.gameObject.GetComponent<Image>().color;
+        if (button_toolAdd != null) toolColor_inactive = button_toolAdd.gameObject.GetComponent<Image>().color;
     }
 
     public void Update()
@@ -216,6 +234,62 @@ public class UIHandler : MonoBehaviour
             // Round Change
             sim.system.SetMarkerToRound(newRound);
         }
+    }
+
+    public void Button_ToolStandardPressed()
+    {
+        activeTool = UITool.Standard;
+        UpdateTools();
+    }
+
+    public void Button_ToolAddPressed()
+    {
+        activeTool = UITool.Add;
+        UpdateTools();
+    }
+
+    public void Button_ToolRemovePressed()
+    {
+        activeTool = UITool.Remove;
+        UpdateTools();
+    }
+
+    public void Button_ToolMovePressed()
+    {
+        activeTool = UITool.Move;
+        UpdateTools();
+    }
+
+    private void UpdateTools()
+    {
+        // Reset Colors
+        SetButtonColor(button_toolStandard, toolColor_inactive);
+        SetButtonColor(button_toolAdd, toolColor_inactive);
+        SetButtonColor(button_toolRemove, toolColor_inactive);
+        SetButtonColor(button_toolMove, toolColor_inactive);
+        // Set Active Tool Color
+        switch (activeTool)
+        {
+            case UITool.Standard:
+                SetButtonColor(button_toolStandard, toolColor_active);
+                break;
+            case UITool.Add:
+                SetButtonColor(button_toolAdd, toolColor_active);
+                break;
+            case UITool.Remove:
+                SetButtonColor(button_toolRemove, toolColor_active);
+                break;
+            case UITool.Move:
+                SetButtonColor(button_toolMove, toolColor_active);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void SetButtonColor(Button button, Color color)
+    {
+        button.gameObject.GetComponent<Image>().color = color;
     }
 
     private void UpdateAAButton()

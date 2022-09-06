@@ -24,7 +24,7 @@ public class AmoebotSimulator : MonoBehaviour
     void Start()
     {
         // Init Renderer + Particle System
-        renderSystem = new RenderSystem();
+        renderSystem = new RenderSystem(this, FindObjectOfType<InputController>());
         system = new ParticleSystem(this, renderSystem);
         // Set Sim Speed (not necessary with the new UI)
         //SetSimSpeed(0.005f);
@@ -87,7 +87,7 @@ public class AmoebotSimulator : MonoBehaviour
     /// </summary>
     public void TogglePlayPause()
     {
-        if (!running)
+        if (running == false)
         {
             system.ContinueTracking();
         }
@@ -97,6 +97,22 @@ public class AmoebotSimulator : MonoBehaviour
         }
         running = !running;
         if (uiHandler != null) uiHandler.NotifyPlayPause(running);
+    }
+
+    public void PlaySim()
+    {
+        if(running == false)
+        {
+            TogglePlayPause();
+        }
+    }
+
+    public void PauseSim()
+    {
+        if(running)
+        {
+            TogglePlayPause();
+        }
     }
 
     public void ToggleView()

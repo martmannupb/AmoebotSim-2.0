@@ -7,12 +7,12 @@ using UnityEngine;
 public abstract class SettingPanel
 {
     // References
-    protected SettingsHandler settings;
+    protected SettingsUIHandler settings;
 
     // Data
     protected GameObject go;
 
-    public SettingPanel(SettingsHandler settings)
+    public SettingPanel(SettingsUIHandler settings)
     {
         this.settings = settings;
     }
@@ -23,7 +23,7 @@ public class SettingPanel_Slider : SettingPanel
 
     private Slider slider;
 
-    public SettingPanel_Slider(SettingsHandler settings, GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers) : base(settings)
+    public SettingPanel_Slider(SettingsUIHandler settings, GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers) : base(settings)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.template_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);

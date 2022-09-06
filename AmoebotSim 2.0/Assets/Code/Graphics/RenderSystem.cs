@@ -66,11 +66,11 @@ public class RenderSystem
 
 
 
-    public RenderSystem()
+    public RenderSystem(AmoebotSimulator sim, InputController inputController)
     {
         rendererBG = new RendererBackground();
         rendererP = new RendererParticles();
-        rendererUI = new RendererUI();
+        rendererUI = new RendererUI(sim, inputController);
     }
 
     public void Render()
@@ -103,12 +103,6 @@ public class RenderSystem
     {
         // Switch Circuit Instances
         rendererP.circuitRenderer.SwitchInstances();
-    }
-
-    public void AddReferenceToParticleSystem(ParticleSystem map)
-    {
-        this.map = map;
-        rendererUI.AddReferenceToMap(map);
     }
 
     //public static float data_hexagonalAnimationDuration = 0.5f;
