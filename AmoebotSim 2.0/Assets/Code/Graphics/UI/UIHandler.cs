@@ -246,6 +246,11 @@ public class UIHandler : MonoBehaviour
         UpdateAAButton();
     }
 
+    public void Botton_ExitPressed()
+    {
+        Application.Quit();
+    }
+
     public void TemporaryButton_ResetAlgorithm(int algoID)
     {
         if (sim.running) sim.TogglePlayPause();

@@ -227,7 +227,6 @@ public class RendererCircuits_Instance
         // Beep
         RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, moving, true);
         batch.AddPin(pinPos, true);
-
     }
 
     public void AddConnectorPin(Vector2 pinPos, Color color, bool moving)
