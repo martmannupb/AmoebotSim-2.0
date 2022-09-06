@@ -72,7 +72,7 @@ public class RendererUI
                         if(action.ongoing == false)
                         {
                             // Click has been executed
-                            Log.Debug("Click!");
+                            //Log.Debug("Click!");
                             if (state_pointerOverMap)
                             {
                                 if (state_particleUnderPointer != null)
@@ -122,7 +122,7 @@ public class RendererUI
                         if(action.ongoing)
                         {
                             // Drag ongoing
-                            Log.Debug("Dragging...");
+                            //Log.Debug("Dragging...");
                             currentlyDragging = true;
                             if(activeTool == UIHandler.UITool.Add)
                             {
@@ -160,7 +160,7 @@ public class RendererUI
                         else
                         {
                             // Drag finished
-                            Log.Debug("Drag finished.");
+                            //Log.Debug("Drag finished.");
                         }
                         break;
                     default:
