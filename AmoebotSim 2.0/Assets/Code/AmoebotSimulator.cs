@@ -77,9 +77,6 @@ public class AmoebotSimulator : MonoBehaviour
         renderSystem.SetRoundTime(roundTime);
     }
 
-
-
-
     
 
     /// <summary>

@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// Representation of an attribute that is part of a particle's state.
@@ -9,11 +6,10 @@ using UnityEngine;
 /// <see cref="ParticleAttribute{T}"/> to represent their state
 /// variables. Only these attributes are displayed and editable in the
 /// simulation UI and recorded in a simulation history. They also provide
-/// correct read and write behavior in synchronous rounds, i.e., if a
-/// <see cref="ParticleAttribute{T}"/> is read by the particle it belongs to,
-/// the value will be the most recently written one, but if another
-/// particle reads its value, the value from the previous round will be
-/// returned.
+/// correct read and write behavior in synchronous rounds, i.e., a
+/// <see cref="ParticleAttribute{T}"/> provides its most recently written
+/// value only to the particle it belongs to, and it always returns the
+/// value from the previous round to other particles.
 /// </para>
 /// <para>
 /// <see cref="ParticleAttribute{T}"/>s are created using the factory
@@ -29,6 +25,8 @@ using UnityEngine;
 ///     }
 /// }
 /// </code>
+/// Display names of attributes must be unique because they are used to
+/// identify attributes when saving and loading simulation states.
 /// </para>
 /// <para>
 /// Note the difference between the <see cref="GetValue"/> and

@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 // TODO: Figure out how to display and edit this in the UI
@@ -17,23 +14,32 @@ using UnityEngine;
 /// </summary>
 public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<PinConfiguration>, IParticleAttribute
 {
+    // This implementation internally uses a specific kind of history - it does not store SysPinConfiguration instances
+    // This also means that most of the API methods have to be overridden
+    private ValueHistoryPinConfiguration pcHistory;
+
     public ParticleAttribute_PinConfiguration(Particle particle, string name, PinConfiguration value = null) : base(particle, name)
     {
-        history = new ValueHistory<PinConfiguration>(value, particle.system.CurrentRound);
+        history = null;
+        pcHistory = new ValueHistoryPinConfiguration(value as SysPinConfiguration, particle.system.CurrentRound);
     }
 
     public override PinConfiguration GetValue()
     {
-        return ((SysPinConfiguration)history.GetValueInRound(particle.system.PreviousRound)).Copy();
+        if (!particle.isActive)
+        {
+            throw new System.InvalidOperationException("Particles are not allowed to read other particles' pin configurations!");
+        }
+        return pcHistory.GetValueInRound(particle.system.PreviousRound, particle);
     }
 
     public override PinConfiguration GetValue_After()
     {
         if (!particle.isActive)
         {
-            throw new System.InvalidOperationException("Particles are not allowed to read other particles' updated states!");
+            throw new System.InvalidOperationException("Particles are not allowed to read other particles' pin configurations!");
         }
-        return ((SysPinConfiguration)history.GetMarkedValue()).Copy();
+        return pcHistory.GetMarkedValue(particle);
     }
 
     public override void SetValue(PinConfiguration value)
@@ -42,7 +48,7 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
         }
-        history.RecordValueInRound(((SysPinConfiguration)value).Copy(), particle.system.CurrentRound);
+        pcHistory.RecordValueInRound(value as SysPinConfiguration, particle.system.CurrentRound);
     }
 
     public override string ToString()
@@ -52,11 +58,95 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
 
     public string ToString_AttributeValue()
     {
-        return history.GetMarkedValue().ToString();
+        return pcHistory.GetMarkedValue(particle).ToString();
     }
 
     public void UpdateAttributeValue(string value)
     {
         throw new System.NotImplementedException();
+    }
+
+    // Override methods of ParticleAttributeWithHistory
+
+    public override int GetFirstRecordedRound()
+    {
+        return pcHistory.GetFirstRecordedRound();
+    }
+
+    public override bool IsTracking()
+    {
+        return pcHistory.IsTracking();
+    }
+
+    public override void SetMarkerToRound(int round)
+    {
+        pcHistory.SetMarkerToRound(round);
+    }
+
+    public override void StepBack()
+    {
+        pcHistory.StepBack();
+    }
+
+    public override void StepForward()
+    {
+        pcHistory.StepForward();
+    }
+
+    public override int GetMarkedRound()
+    {
+        return pcHistory.GetMarkedRound();
+    }
+
+    public override void ContinueTracking()
+    {
+        pcHistory.ContinueTracking();
+    }
+
+    public override void CutOffAtMarker()
+    {
+        pcHistory.CutOffAtMarker();
+    }
+
+    public override void ShiftTimescale(int amount)
+    {
+        pcHistory.ShiftTimescale(amount);
+    }
+
+    /**
+     * Some methods of IParticleAttribute interface can already be implemented here
+     */
+
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.GenerateSaveData"/>.
+    /// Generates data specifically for pin configuration attributes.
+    /// </summary>
+    /// <returns>A serializable representation of the attribute's state.</returns>
+    public override ParticleAttributeSaveDataBase GenerateSaveData()
+    {
+        ParticleAttributePCSaveData data = new ParticleAttributePCSaveData();
+        data.name = name;
+        data.history = pcHistory.GeneratePCSaveData();
+        return data;
+    }
+
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
+    /// Uses additional information stored in specific pin configuration
+    /// attribute save data.
+    /// </summary>
+    /// <param name="data">A serializable representation of a
+    /// particle attribute state.</param>
+    /// <returns><c>true</c> if and only if the state update was successful.</returns>
+    public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
+    {
+        ParticleAttributePCSaveData myData = data as ParticleAttributePCSaveData;
+        if (myData is null)
+        {
+            Debug.LogError("Save data for pin configuration attribute has incompatible type, aborting particle attribute restoration.");
+            return false;
+        }
+        pcHistory = new ValueHistoryPinConfiguration(myData.history);
+        return true;
     }
 }

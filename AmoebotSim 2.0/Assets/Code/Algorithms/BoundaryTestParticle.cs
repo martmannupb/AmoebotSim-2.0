@@ -118,6 +118,8 @@ namespace BoundaryTestAlgo
         private ParticleAttribute<bool>[] receivedHeadsBeep;    // HEADS flag for remembering coin toss beep for each boundary
         private ParticleAttribute<int> phase2Count;             // Counter to execute the second phase kappa times
 
+        private ParticleAttribute<PinConfiguration> boundaryPC; // PinConfiguration to setup whenever we want to have one circuit for each boundary
+
         // Sum computation
         private ParticleAttribute<bool>[] isActive;             // Flag indicating whether the particle is active on each boundary
         private ParticleAttribute<bool>[] becomePassive;        // Flag indicating whether the particle should become passive in the current iteration
@@ -156,6 +158,7 @@ namespace BoundaryTestAlgo
                 heads[i] = CreateAttributeBool("Boundary " + (i + 1) + " HEADS", false);
                 receivedHeadsBeep[i] = CreateAttributeBool("Boundary " + (i + 1) + " HEADS beep", false);
             }
+            boundaryPC = CreateAttributePinConfiguration("Boundary PC", null);
 
             isActive = new ParticleAttribute<bool>[3];
             becomePassive = new ParticleAttribute<bool>[3];
@@ -263,7 +266,7 @@ namespace BoundaryTestAlgo
             int firstNbrDir = -1;
             for (int dir = 0; dir < 6; dir++)
             {
-                nbrs[dir] = HasNeighborAt(dir);
+                nbrs[dir] = HasNeighborAt(DirectionHelpers.Cardinal(dir));
                 if (firstNbrDir == -1 && nbrs[dir])
                 {
                     firstNbrDir = dir;
@@ -320,7 +323,7 @@ namespace BoundaryTestAlgo
             else
             {
                 SetMainColor(candidate1Color);
-                SetupBoundaryCircuit(pc);
+                SetupBoundaryCircuit(ref pc);
             }
 
             SetPlannedPinConfiguration(pc);
@@ -349,7 +352,7 @@ namespace BoundaryTestAlgo
             PinConfiguration pc = GetCurrentPinConfiguration();
             bool rcvGlobalBeep = pc.ReceivedBeepOnPartitionSet(0);
             // First setup boundary circuit again (partition set ID = boundary index)
-            SetupBoundaryCircuit(pc);
+            SetupBoundaryCircuit(ref pc);
             SetPlannedPinConfiguration(pc);
 
             // if nobody beeped, continue to Phase 2
@@ -429,7 +432,7 @@ namespace BoundaryTestAlgo
             // Did not proceed to Sum Computation, so carry on or start next iteration
             // Have to continue or start next iteration
             // First setup boundary circuit again (partition set ID = boundary index)
-            SetupBoundaryCircuit(pc);
+            SetupBoundaryCircuit(ref pc);
             SetPlannedPinConfiguration(pc);
             // Every candidate has to toss a coin again and beep if the result is HEADS
             // If we start a new iteration, become a Phase 2 candidate again
@@ -635,9 +638,10 @@ namespace BoundaryTestAlgo
                     {
                         // Turn primary partition set into one set containing only
                         // connections to the predecessor
+                        Direction d = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0]);
                         planned.MakePartitionSet(new Pin[] {
-                            planned.GetPinAt(boundaryNbrs[boundary, 0], 2),
-                            planned.GetPinAt(boundaryNbrs[boundary, 0], 3)
+                            planned.GetPinAt(d, 2),
+                            planned.GetPinAt(d, 3)
                         }, boundary * 2);
 
                         // Send beep if current angle value is 1
@@ -654,9 +658,10 @@ namespace BoundaryTestAlgo
                     if (isCandidate[boundary])
                     {
                         // Connect primary and secondary circuit
+                        Direction d = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
                         planned.MakePartitionSet(new Pin[] {
-                            planned.GetPinAt(boundaryNbrs[boundary, 1], 0),
-                            planned.GetPinAt(boundaryNbrs[boundary, 1], 1)
+                            planned.GetPinAt(d, 0),
+                            planned.GetPinAt(d, 1)
                         }, boundary * 2);
                         // Send beep if final angle result is 1
                         if (boundaryAngles[boundary] == 1)
@@ -781,18 +786,30 @@ namespace BoundaryTestAlgo
         // Changes the pin configuration such that partition set i is part
         // of the boundary circuit for boundary i. Has no effect for
         // particles that have no boundaries
-        private void SetupBoundaryCircuit(PinConfiguration pc)
+        private void SetupBoundaryCircuit(ref PinConfiguration pc)
         {
-            for (int boundary = 0; boundary < numBoundaries.GetValue_After(); boundary++)
+            if (numBoundaries.GetValue_After() == 0)
+                return;
+
+            PinConfiguration loadedPC = boundaryPC;
+            if (loadedPC is null)
             {
-                int predDir = boundaryNbrs[boundary, 0].GetValue_After();
-                int succDir = boundaryNbrs[boundary, 1].GetValue_After();
-                pc.MakePartitionSet(new Pin[] {
+                for (int boundary = 0; boundary < numBoundaries.GetValue_After(); boundary++)
+                {
+                    Direction predDir = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0].GetValue_After());
+                    Direction succDir = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1].GetValue_After());
+                    pc.MakePartitionSet(new Pin[] {
                         pc.GetPinAt(predDir, 2),
                         pc.GetPinAt(predDir, 3),
                         pc.GetPinAt(succDir, 0),
                         pc.GetPinAt(succDir, 1)
                     }, boundary);
+                }
+                boundaryPC.SetValue(pc);
+            }
+            else
+            {
+                pc = loadedPC;
             }
         }
 
@@ -812,16 +829,19 @@ namespace BoundaryTestAlgo
                 if (isCandidate[boundary])
                 {
                     // If we are still a candidate, that means we are the leader of the boundary
-                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(boundaryNbrs[boundary, 1], 0) }, boundary * 2);
-                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(boundaryNbrs[boundary, 1], 1) }, boundary * 2 + 1);
+                    Direction d = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
+                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(d, 0) }, boundary * 2);
+                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(d, 1) }, boundary * 2 + 1);
                 }
                 else
                 {
                     // We are not the leader of the boundary
-                    Pin pSucc = pc.GetPinAt(boundaryNbrs[boundary, 1], 0);
-                    Pin sSucc = pc.GetPinAt(boundaryNbrs[boundary, 1], 1);
-                    Pin pPred = pc.GetPinAt(boundaryNbrs[boundary, 0], 3);
-                    Pin sPred = pc.GetPinAt(boundaryNbrs[boundary, 0], 2);
+                    Direction ds = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
+                    Direction dp = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0]);
+                    Pin pSucc = pc.GetPinAt(ds, 0);
+                    Pin sSucc = pc.GetPinAt(ds, 1);
+                    Pin pPred = pc.GetPinAt(dp, 3);
+                    Pin sPred = pc.GetPinAt(dp, 2);
                     if (isActive[boundary].GetValue_After())
                     {
                         // Active particles cross their connections

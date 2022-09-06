@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// Interface defining how particle attributes can be used
@@ -40,6 +37,27 @@ public interface IParticleAttribute : IReplayHistory
     /// </summary>
     /// <returns>The type of value stored in the attribute.</returns>
     Type GetAttributeType();
+
+    /// <summary>
+    /// Returns a serializable object representing the attribute's data.
+    /// </summary>
+    /// <returns>An instance of a subclass of
+    /// <see cref="ParticleAttributeSaveDataBase"/> matching the
+    /// attribute's type.
+    /// </returns>
+    ParticleAttributeSaveDataBase GenerateSaveData();
+
+    /// <summary>
+    /// Loads the attribute data from the given serializable object and
+    /// resets this attribute to the state encoded in that data.
+    /// </summary>
+    /// <param name="data">A serializable representation of a
+    /// particle attribute state.</param>
+    /// <returns><c>true</c> if and only if the state update was
+    /// successful.</returns>
+    bool RestoreFromSaveData(ParticleAttributeSaveDataBase data);
+
+    // TEMPORARY FOR DEBUGGING
 
     void Print();
 }

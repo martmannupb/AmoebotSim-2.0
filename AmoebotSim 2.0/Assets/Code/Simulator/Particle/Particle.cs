@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -34,12 +35,16 @@ public class Particle : IParticleState, IReplayHistory
     /// <summary>
     /// The compass orientation of the particle, represented as a global direction.
     /// </summary>
-    public readonly int comDir;
+    public readonly Direction comDir;
     /// <summary>
     /// If <c>true</c>, the positive rotation direction of the particle is counter-clockwise,
     /// else it is clockwise.
     /// </summary>
     public readonly bool chirality;
+
+    // Special flag that is set while a particle is being reinitialized on load
+    // Prevents state changes caused by an algorithm constructor
+    private bool inReinitialize = false;
 
     // State _____
     // Position: Store tail position in history but always keep head position up to date
@@ -49,12 +54,12 @@ public class Particle : IParticleState, IReplayHistory
 
     // Expansion
     // Store expansion direction in history
-    private ValueHistory<int> expansionDirHistory;
+    private ValueHistory<Direction> expansionDirHistory;
     private bool exp_isExpanded;
     /// <summary>
     /// The local direction pointing from the particle's tail towards its head.
     /// </summary>
-    private int exp_expansionDir;
+    private Direction exp_expansionDir;
     
     // Attributes
     private List<IParticleAttribute> attributes = new List<IParticleAttribute>();
@@ -64,7 +69,7 @@ public class Particle : IParticleState, IReplayHistory
     public bool isActive = false;
 
     // Pin Configuration
-    private ValueHistory<SysPinConfiguration> pinConfigurationHistory;
+    private ValueHistoryPinConfiguration pinConfigurationHistory;
     private SysPinConfiguration pinConfiguration;
     public SysPinConfiguration PinConfiguration
     {
@@ -145,8 +150,8 @@ public class Particle : IParticleState, IReplayHistory
     }
     private ParticleAction scheduledMovement = null;
     private bool predictIsExpanded = false;
-    private int predictTailDir = -1;
-    private int predictHeadDir = -1;
+    private Direction predictTailDir = Direction.NONE;
+    private Direction predictHeadDir = Direction.NONE;
 
     /// <summary>
     /// Flag indicating whether the particle has moved during the current round.
@@ -186,18 +191,20 @@ public class Particle : IParticleState, IReplayHistory
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
 
-    public Particle(ParticleSystem system, Vector2Int pos, int compassDir = 0, bool chirality = true)
+    public Particle(ParticleSystem system, Vector2Int pos, Direction compassDir = Direction.NONE, bool chirality = true)
     {
         this.system = system;
         int currentRound = system.CurrentRound;
 
         // Start contracted
         tailPosHistory = new ValueHistory<Vector2Int>(pos, currentRound);
-        expansionDirHistory = new ValueHistory<int>(-1, currentRound);
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
+        expansionDirHistory = new ValueHistory<Direction>(Direction.NONE, currentRound);
         pos_head = pos;
         pos_tail = pos;
         exp_isExpanded = false;
-        exp_expansionDir = -1;
+        exp_expansionDir = Direction.NONE;
 
         comDir = compassDir;
         this.chirality = chirality;
@@ -221,7 +228,7 @@ public class Particle : IParticleState, IReplayHistory
         int maxNumPins = algorithm.PinsPerEdge * 10;
         int currentRound = system.CurrentRound;
         pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
-        pinConfigurationHistory = new ValueHistory<SysPinConfiguration>(pinConfiguration, currentRound);
+        pinConfigurationHistory = new ValueHistoryPinConfiguration(pinConfiguration, currentRound);
         receivedBeeps = new BitArray(maxNumPins);
         receivedMessages = new Message[maxNumPins];
         plannedBeeps = new BitArray(maxNumPins);
@@ -244,7 +251,7 @@ public class Particle : IParticleState, IReplayHistory
             partitionSetColors[i] = new Color();
             partitionSetColorsOverride[i] = false;
         }
-}
+    }
 
     /// <summary>
     /// This is the main activation method of the particle.
@@ -318,8 +325,8 @@ public class Particle : IParticleState, IReplayHistory
     /// Returns the local direction pointing from the particle's tail towards its head.
     /// </summary>
     /// <returns>The local direction pointing from the particle's tail towards its head,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int HeadDirection()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction HeadDirection()
     {
         return exp_expansionDir;
     }
@@ -328,10 +335,10 @@ public class Particle : IParticleState, IReplayHistory
     /// Returns the local direction pointing from the particle's head towards its tail.
     /// </summary>
     /// <returns>The local direction pointing from the particle's head towards its tail,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int TailDirection()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction TailDirection()
     {
-        return exp_isExpanded ? (exp_expansionDir + 3) % 6 : -1;
+        return exp_isExpanded ? exp_expansionDir.Opposite() : Direction.NONE;
     }
 
     /// <summary>
@@ -339,10 +346,16 @@ public class Particle : IParticleState, IReplayHistory
     /// head into a global direction.
     /// </summary>
     /// <returns>The global direction pointing from this particle's tail towards its head,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int GlobalHeadDirection()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction GlobalHeadDirection()
     {
-        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality) : -1;
+        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality) : Direction.NONE;
+    }
+
+    // For IParticleState interface with rendering system
+    public int GlobalHeadDirectionInt()
+    {
+        return GlobalHeadDirection().ToInt();
     }
 
     /// <summary>
@@ -350,10 +363,10 @@ public class Particle : IParticleState, IReplayHistory
     /// tail into a global direction.
     /// </summary>
     /// <returns>The global direction pointing from this particle's head towards its tail,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int GlobalTailDirection()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction GlobalTailDirection()
     {
-        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir((exp_expansionDir + 3) % 6, comDir, chirality) : -1;
+        return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir.Opposite(), comDir, chirality) : Direction.NONE;
     }
 
 
@@ -484,8 +497,8 @@ public class Particle : IParticleState, IReplayHistory
     /// for after the round.
     /// </summary>
     /// <returns>The local direction pointing from the particle's tail towards its head,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int HeadDirection_After()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction HeadDirection_After()
     {
         if (scheduledMovement != null)
         {
@@ -502,8 +515,8 @@ public class Particle : IParticleState, IReplayHistory
     /// for after the round.
     /// </summary>
     /// <returns>The local direction pointing from the particle's head towards its tail,
-    /// if it is expanded, otherwise <c>-1</c>.</returns>
-    public int TailDirection_After()
+    /// if it is expanded, otherwise <see cref="Direction.NONE"/>.</returns>
+    public Direction TailDirection_After()
     {
         if (scheduledMovement != null)
         {
@@ -548,6 +561,8 @@ public class Particle : IParticleState, IReplayHistory
     /// <param name="c">The new main color of the particle.</param>
     public void SetParticleColor(Color c)
     {
+        if (inReinitialize)
+            return;
         mainColor = c;
         mainColorSet = true;
         mainColorHistory.RecordValueInRound(c, system.CurrentRound);
@@ -564,6 +579,8 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public void ResetParticleColor()
     {
+        if (inReinitialize)
+            return;
         mainColorSet = false;
         mainColorSetHistory.RecordValueInRound(false, system.CurrentRound);
         graphics.ClearParticleColor();
@@ -576,6 +593,8 @@ public class Particle : IParticleState, IReplayHistory
     /// overwritten by the particle algorithm.</returns>
     public bool IsParticleColorSet()
     {
+        if (inReinitialize)
+            return false;
         return mainColorSet;
     }
 
@@ -660,7 +679,7 @@ public class Particle : IParticleState, IReplayHistory
     /// The method will not check if this operation is valid.
     /// </remarks>
     /// <param name="locDir">The local direction into which this particle should expand.</param>
-    public void Apply_Expand(int locDir)
+    public void Apply_Expand(Direction locDir)
     {
         exp_isExpanded = true;
         exp_expansionDir = locDir;
@@ -677,10 +696,10 @@ public class Particle : IParticleState, IReplayHistory
     public void Apply_ContractHead()
     {
         exp_isExpanded = false;
-        exp_expansionDir = -1;
+        exp_expansionDir = Direction.NONE;
         pos_tail = pos_head;
         tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
-        expansionDirHistory.RecordValueInRound(-1, system.CurrentRound);
+        expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
     }
 
     /// <summary>
@@ -692,24 +711,26 @@ public class Particle : IParticleState, IReplayHistory
     public void Apply_ContractTail()
     {
         exp_isExpanded = false;
-        exp_expansionDir = -1;
+        exp_expansionDir = Direction.NONE;
         pos_head = pos_tail;
-        expansionDirHistory.RecordValueInRound(-1, system.CurrentRound);
+        expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
     }
 
     // TODO: Check if we need to do anything else in these 3 methods
 
     /// <summary>
-    /// Same as <see cref="Apply_Expand(int)"/>.
+    /// Same as <see cref="Apply_Expand(Direction)"/>.
     /// </summary>
     /// <remarks>
     /// The method will not check if this operation is valid.
     /// </remarks>
     /// <param name="locDir">The local direction into which to expand.</param>
-    public void Apply_PushHandover(int locDir)
+    public void Apply_PushHandover(Direction locDir)
     {
         Apply_Expand(locDir);
     }
+
+    // TODO: Remove unused parameters?
 
     /// <summary>
     /// Same as <see cref="Apply_ContractHead"/>.
@@ -720,7 +741,7 @@ public class Particle : IParticleState, IReplayHistory
     /// </remarks>
     /// <param name="locDir">The local direction from where to pull the
     /// neighbor particle, relative to this particle's tail.</param>
-    public void Apply_PullHandoverHead(int locDir)
+    public void Apply_PullHandoverHead(Direction locDir)
     {
         Apply_ContractHead();
     }
@@ -734,14 +755,9 @@ public class Particle : IParticleState, IReplayHistory
     /// </remarks>
     /// <param name="locDir">The local direction from where to pull the
     /// neighbor particle, relative to this particle's head.</param>
-    public void Apply_PullHandoverTail(int locDir)
+    public void Apply_PullHandoverTail(Direction locDir)
     {
         Apply_ContractTail();
-    }
-
-    public void Apply_SendMessage(Message msg, int locDir, bool head = true)
-    {
-        throw new System.NotImplementedException();
     }
 
     /// <summary>
@@ -800,15 +816,15 @@ public class Particle : IParticleState, IReplayHistory
             case ActionType.PUSH:
                 predictIsExpanded = true;
                 predictHeadDir = a.localDir;
-                predictTailDir = (predictHeadDir + 3) % 6;
+                predictTailDir = predictHeadDir.Opposite();
                 break;
             case ActionType.CONTRACT_HEAD:
             case ActionType.CONTRACT_TAIL:
             case ActionType.PULL_HEAD:
             case ActionType.PULL_TAIL:
                 predictIsExpanded = false;
-                predictHeadDir = -1;
-                predictTailDir = -1;
+                predictHeadDir = Direction.NONE;
+                predictTailDir = Direction.NONE;
                 break;
         }
     }
@@ -1274,7 +1290,7 @@ public class Particle : IParticleState, IReplayHistory
     {
         pos_tail = tailPosHistory.GetMarkedValue();
         exp_expansionDir = expansionDirHistory.GetMarkedValue();
-        exp_isExpanded = exp_expansionDir != -1;
+        exp_isExpanded = exp_expansionDir != Direction.NONE;
         if (exp_isExpanded)
         {
             pos_head = ParticleSystem_Utils.GetNbrInDir(pos_tail, exp_expansionDir);
@@ -1284,7 +1300,7 @@ public class Particle : IParticleState, IReplayHistory
             pos_head = pos_tail;
         }
 
-        pinConfiguration = pinConfigurationHistory.GetMarkedValue();
+        pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
         receivedBeeps = (BitArray)receivedBeepsHistory.GetMarkedValue().Clone();
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
@@ -1297,5 +1313,193 @@ public class Particle : IParticleState, IReplayHistory
 
         mainColor = mainColorHistory.GetMarkedValue();
         mainColorSet = mainColorSetHistory.GetMarkedValue();
+    }
+
+
+    /**
+     * Saving and loading functionality.
+     */
+
+    public ParticleStateSaveData GenerateSaveData()
+    {
+        ParticleStateSaveData data = new ParticleStateSaveData();
+
+        data.comDir = comDir;
+        data.chirality = chirality;
+
+        data.algorithmType = algorithm.GetType().FullName;
+
+        data.tailPositionHistory = tailPosHistory.GenerateSaveData();
+        data.expansionDirHistory = expansionDirHistory.GenerateSaveData();
+
+        data.boolAttributes = new List<ParticleAttributeSaveData<bool>>();
+        data.dirAttributes = new List<ParticleAttributeSaveData<Direction>>();
+        data.intAttributes = new List<ParticleAttributeSaveData<int>>();
+        data.enumAttributes = new List<ParticleAttributeEnumSaveData>();
+        data.pcAttributes = new List<ParticleAttributePCSaveData>();
+        // Fill in the particle attributes ordered by type
+        // Must use reflection here
+        for (int i = 0; i < attributes.Count; i++)
+        {
+            System.Type t = attributes[i].GetAttributeType();
+            if (t == typeof(int))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.intAttributes.Add(aData as ParticleAttributeSaveData<int>);
+            }
+            else if (t == typeof(bool))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.boolAttributes.Add(aData as ParticleAttributeSaveData<bool>);
+            }
+            else if (t == typeof(Direction))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.dirAttributes.Add(aData as ParticleAttributeSaveData<Direction>);
+            }
+            else if (t == typeof(PinConfiguration))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.pcAttributes.Add(aData as ParticleAttributePCSaveData);
+            }
+            else if (attributes[i].GetType().IsGenericType && attributes[i].GetType().GetGenericTypeDefinition() == typeof(ParticleAttribute_Enum<>))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.enumAttributes.Add(aData as ParticleAttributeEnumSaveData);
+            }
+        }
+
+        data.pinConfigurationHistory = pinConfigurationHistory.GeneratePCSaveData();
+        data.receivedBeepsHistory = receivedBeepsHistory.GenerateSaveData();
+        data.receivedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[receivedMessagesHistory.Length];
+        data.plannedBeepsHistory = new ValueHistorySaveData<bool>[plannedBeepsHistory.Length];
+        data.plannedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[plannedMessageHistory.Length];
+        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        {
+            data.receivedMessagesHistory[i] = receivedMessagesHistory[i].GenerateMessageSaveData();
+            data.plannedBeepsHistory[i] = plannedBeepsHistory[i].GenerateSaveData();
+            data.plannedMessagesHistory[i] = plannedMessageHistory[i].GenerateMessageSaveData();
+        }
+
+        data.mainColorHistory = mainColorHistory.GenerateSaveData();
+        data.mainColorSetHistory = mainColorSetHistory.GenerateSaveData();
+        data.partitionSetColorHistory = new ValueHistorySaveData<Color>[partitionSetColorHistory.Length];
+        data.partitionSetColorOverrideHistory = new ValueHistorySaveData<bool>[partitionSetColorOverrideHistory.Length];
+        for (int i = 0; i < partitionSetColorHistory.Length; i++)
+        {
+            data.partitionSetColorHistory[i] = partitionSetColorHistory[i].GenerateSaveData();
+            data.partitionSetColorOverrideHistory[i] = partitionSetColorOverrideHistory[i].GenerateSaveData();
+        }
+
+        return data;
+    }
+
+    public static Particle CreateFromSaveState(ParticleSystem system, ParticleStateSaveData data)
+    {
+        // First initialize particle's base data
+        Particle p = new Particle(system, data);
+        p.isActive = true;
+        p.inReinitialize = true;
+        // Then create algorithm
+        Type algoType = Type.GetType(data.algorithmType);
+        algoType.GetConstructor(new Type[] { typeof(Particle) }).Invoke(new object[] { p });
+        p.inReinitialize = false;
+        p.isActive = false;
+        p.InitWithAlgorithm(data);
+
+        // Finally set up the graphics info
+        p.graphics.AddParticle();
+        p.graphics.Update();
+        return p;
+    }
+
+    private Particle(ParticleSystem system, ParticleStateSaveData data)
+    {
+        this.system = system;
+
+        comDir = data.comDir;
+        chirality = data.chirality;
+
+        tailPosHistory = new ValueHistory<Vector2Int>(data.tailPositionHistory);
+        expansionDirHistory = new ValueHistory<Direction>(data.expansionDirHistory);
+
+        exp_expansionDir = expansionDirHistory.GetMarkedValue();
+        exp_isExpanded = exp_expansionDir != Direction.NONE;
+        pos_tail = tailPosHistory.GetMarkedValue();
+        pos_head = exp_isExpanded ? ParticleSystem_Utils.GetNbrInDir(pos_tail, ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality)) : pos_tail;
+
+        mainColorHistory = new ValueHistory<Color>(data.mainColorHistory);
+        mainColorSetHistory = new ValueHistory<bool>(data.mainColorSetHistory);
+        mainColor = mainColorHistory.GetMarkedValue();
+        mainColorSet = mainColorSetHistory.GetMarkedValue();
+
+        // Add particle to the system and update the visuals of the particle
+        graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
+    }
+
+    private void InitWithAlgorithm(ParticleStateSaveData data)
+    {
+        int maxNumPins = algorithm.PinsPerEdge * 10;
+
+        // TODO: Check if saved data even matches the algorithm in terms of array sizes
+
+        pinConfigurationHistory = new ValueHistoryPinConfiguration(data.pinConfigurationHistory);
+        pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
+
+        receivedBeepsHistory = new ValueHistoryBitArray(data.receivedBeepsHistory);
+        receivedBeeps = (BitArray)receivedBeepsHistory.GetMarkedValue().Clone();
+
+        plannedBeeps = new BitArray(maxNumPins);
+        plannedMessages = new Message[maxNumPins];
+
+        receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
+        plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
+        plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
+        partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
+        partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
+        receivedMessages = new Message[maxNumPins];
+        partitionSetColors = new Color[maxNumPins];
+        partitionSetColorsOverride = new bool[maxNumPins];
+        for (int i = 0; i < maxNumPins; i++)
+        {
+            receivedMessagesHistory[i] = new ValueHistoryMessage(data.receivedMessagesHistory[i]);
+            plannedBeepsHistory[i] = new ValueHistory<bool>(data.plannedBeepsHistory[i]);
+            plannedMessageHistory[i] = new ValueHistoryMessage(data.plannedMessagesHistory[i]);
+            partitionSetColorHistory[i] = new ValueHistory<Color>(data.partitionSetColorHistory[i]);
+            partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(data.partitionSetColorOverrideHistory[i]);
+
+            receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
+            plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
+            plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
+            partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
+            partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
+        }
+
+        // Finally, update the attributes
+        // The attributes have already been set up by the algorithm, we now just need to fill them with different values
+        // We store the attributes provided by the save state in a dictionary for easy access
+        Dictionary<string, ParticleAttributeSaveDataBase> savedAttrs = new Dictionary<string, ParticleAttributeSaveDataBase>();
+        foreach (var list in new IEnumerable[] { data.boolAttributes, data.dirAttributes, data.intAttributes, data.enumAttributes, data.pcAttributes })
+        {
+            foreach (ParticleAttributeSaveDataBase a in list)
+            {
+                savedAttrs.Add(a.name, a);
+            }
+        }
+
+        foreach (IParticleAttribute myAttr in attributes)
+        {
+            string name = myAttr.ToString_AttributeName();
+            if (!savedAttrs.ContainsKey(name))
+            {
+                Debug.LogError("Attribute " + name + " not stored in save data.");
+                continue;
+            }
+            // Try filling in the values
+            if (!myAttr.RestoreFromSaveData(savedAttrs[name]))
+            {
+                Debug.LogError("Unable to restore attribute " + name + " from saved data.");
+            }
+        }
     }
 }

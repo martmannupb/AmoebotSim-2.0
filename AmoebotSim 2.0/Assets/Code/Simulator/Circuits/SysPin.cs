@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// System-side implementation of the abstract base class
@@ -11,13 +8,13 @@ public class SysPin : Pin
 {
     public SysPartitionSet partitionSet;
     public int id;
-    public int localDir;
+    public Direction localDir;
     public int globalLabel;
     public bool head;
     public int localEdgeOffset;
     public int globalEdgeOffset;
 
-    public SysPin(SysPartitionSet partitionSet, int id, int localDir, int globalLabel, bool head, int localEdgeOffset, int globalEdgeOffset)
+    public SysPin(SysPartitionSet partitionSet, int id, Direction localDir, int globalLabel, bool head, int localEdgeOffset, int globalEdgeOffset)
     {
         this.partitionSet = partitionSet;
         this.id = id;
@@ -43,7 +40,7 @@ public class SysPin : Pin
         get { return id; }
     }
 
-    public override int Direction
+    public override Direction Direction
     {
         get { return localDir; }
     }

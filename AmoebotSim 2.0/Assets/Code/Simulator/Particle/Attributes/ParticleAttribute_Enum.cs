@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 
 /// <summary>
 /// <see cref="ParticleAttribute{T}"/> subclass representing enum values.
@@ -97,5 +95,60 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
         {
             throw new System.ArgumentException("Cannot convert " + value + " to enum attribute of type " + GetType());
         }
+    }
+
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.GenerateSaveData"/>.
+    /// Generates data specifically for enum attributes, which includes the name of the
+    /// enum type so that it can be restored when loading.
+    /// </summary>
+    /// <returns>A serializable representation of the attribute's state.</returns>
+    public override ParticleAttributeSaveDataBase GenerateSaveData()
+    {
+        ParticleAttributeEnumSaveData data = new ParticleAttributeEnumSaveData();
+        data.name = name;
+        data.enumType = typeof(T).FullName;
+        data.history = history.GenerateSaveDataString();
+        return data;
+    }
+
+    /// <summary>
+    /// Implementation of <see cref="ParticleAttributeWithHistory{T}.RestoreFromSaveData(ParticleAttributeSaveDataBase)"/>.
+    /// Uses additional information stored in specific enum attribute save data
+    /// to restore the correct enum type.
+    /// </summary>
+    /// <param name="data">A serializable representation of a
+    /// particle attribute state.</param>
+    /// <returns><c>true</c> if and only if the state update was successful.</returns>
+    public override bool RestoreFromSaveData(ParticleAttributeSaveDataBase data)
+    {
+        ParticleAttributeEnumSaveData myData = data as ParticleAttributeEnumSaveData;
+        if (myData is null || Type.GetType(myData.enumType) != typeof(T))
+        {
+            Debug.LogError("Save data for enum has incompatible type, aborting particle attribute restoration.");
+            return false;
+        }
+        // Try to convert all values into enum types
+        ValueHistorySaveData<T> enumHistory = new ValueHistorySaveData<T>();
+        enumHistory.values = new List<T>(myData.history.values.Count);
+        foreach (string enumValStr in myData.history.values)
+        {
+            object enumVal;
+            if (Enum.TryParse(typeof(T), enumValStr, true, out enumVal))
+            {
+                enumHistory.values.Add((T)enumVal);
+            }
+            else
+            {
+                Debug.LogError("Unknown saved enum value '" + enumValStr + "', aborting particle attribute restoration.");
+                return false;
+            }
+        }
+
+        enumHistory.rounds = myData.history.rounds;
+        enumHistory.lastRound = myData.history.lastRound;
+
+        history = new ValueHistory<T>(enumHistory);
+        return true;
     }
 }

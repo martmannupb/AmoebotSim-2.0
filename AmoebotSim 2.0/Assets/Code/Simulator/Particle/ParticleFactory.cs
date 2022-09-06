@@ -16,8 +16,10 @@ using UnityEngine;
 /// </summary>
 public class ParticleFactory
 {
-    public static Particle CreateExampleParticle(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    public static Particle CreateExampleParticle(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
         new ExampleParticle(p);
@@ -28,8 +30,10 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateExpandedTestParticle(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    public static Particle CreateExpandedTestParticle(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
         new ExpandedCircuitTestParticle(p);
@@ -40,8 +44,10 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateLineFormationParticleSeq(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    public static Particle CreateLineFormationParticleSeq(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
         new LineFormationParticleSeq(p);
@@ -52,8 +58,10 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateLineFormationParticleSync(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    public static Particle CreateLineFormationParticleSync(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
         new LineFormationParticleSync(p);
@@ -64,8 +72,10 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateLeaderElectionParticle(ParticleSystem system , Vector2Int position, int compassDir = 0, bool chirality = true)
+    public static Particle CreateLeaderElectionParticle(ParticleSystem system , Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
         new LeaderElectionParticle(p);
@@ -76,9 +86,9 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateChiralityAndCompassParticle(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    public static Particle CreateChiralityAndCompassParticle(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
-        Particle p = new Particle(system, position, Random.Range(0, 6), Random.Range(0f, 1f) <= 0.5f);
+        Particle p = new Particle(system, position, DirectionHelpers.Cardinal(Random.Range(0, 6)), Random.Range(0f, 1f) <= 0.5f);
         p.isActive = true;
         ChiralityAndCompassParticle alg = new ChiralityAndCompassParticle(p);
         alg.realChirality.SetValue(p.chirality);
@@ -90,8 +100,10 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateBoundaryTestParticle(ParticleSystem system, Vector2Int position, int compassDir = 0, bool chirality = true)
+    public static Particle CreateBoundaryTestParticle(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
         new BoundaryTestAlgo.BoundaryTestParticle(p);

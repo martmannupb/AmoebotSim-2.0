@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -27,13 +26,13 @@ using UnityEngine;
 /// implement an equality check.</typeparam>
 public class ValueHistory<T> : IReplayHistory
 {
-    private List<T> values;     // Stores the different values
-    private List<int> rounds;   // Stores the rounds in which values were changed
-    private int lastRound;      // Stores the last round for which we have a certain recorded value
+    protected List<T> values;       // Stores the different values
+    protected List<int> rounds;     // Stores the rounds in which values were changed
+    protected int lastRound;        // Stores the last round for which we have a certain recorded value
 
-    private int markedRound;    // The currently marked round
-    private int markedIndex;    // The index corresponding to the currently marked round for fast lookup
-    private bool isTracking;    // Is true while the marked round is tracking the last round
+    protected int markedRound;      // The currently marked round
+    protected int markedIndex;      // The index corresponding to the currently marked round for fast lookup
+    protected bool isTracking;      // Is true while the marked round is tracking the last round
 
     /// <summary>
     /// Creates a new history record for a variable of type <typeparamref name="T"/>.
@@ -52,6 +51,9 @@ public class ValueHistory<T> : IReplayHistory
         markedIndex = 0;
         isTracking = true;
     }
+
+    // Empty constructor to allow subclasses specifying their constructors freely
+    protected ValueHistory() { }
 
     // TODO: Check if the default comparison can be done better
     /// <summary>
@@ -80,7 +82,7 @@ public class ValueHistory<T> : IReplayHistory
     /// <para>See also <seealso cref="GetLastRecordedRound"/>.</para>
     /// </summary>
     /// <returns>The first round with a recorded value.</returns>
-    public int GetFirstRecordedRound()
+    public virtual int GetFirstRecordedRound()
     {
         return rounds[0];
     }
@@ -93,7 +95,7 @@ public class ValueHistory<T> : IReplayHistory
     /// <para>See also <seealso cref="GetFirstRecordedRound"/>.</para>
     /// </summary>
     /// <returns>The last round with a recorded value.</returns>
-    public int GetLastRecordedRound()
+    public virtual int GetLastRecordedRound()
     {
         return lastRound;
     }
@@ -104,7 +106,7 @@ public class ValueHistory<T> : IReplayHistory
     /// <param name="round">The round for which to query. Must be at least
     /// <see cref="GetFirstRecordedRound"/>.</param>
     /// <returns>The value of the represented variable in round <paramref name="round"/>.</returns>
-    public T GetValueInRound(int round)
+    public virtual T GetValueInRound(int round)
     {
         return values[GetIndexOfRound(round)];
     }
@@ -119,7 +121,7 @@ public class ValueHistory<T> : IReplayHistory
     /// <param name="value">The value to be recorded.</param>
     /// <param name="round">The round for which the value should be recorded.
     /// Must be greater than or equal to the last recorded round.</param>
-    public void RecordValueInRound(T value, int round)
+    public virtual void RecordValueInRound(T value, int round)
     {
         if (round < lastRound)
         {
@@ -147,7 +149,7 @@ public class ValueHistory<T> : IReplayHistory
         }
     }
 
-    public bool IsTracking()
+    public virtual bool IsTracking()
     {
         return isTracking;
     }
@@ -161,7 +163,7 @@ public class ValueHistory<T> : IReplayHistory
     /// <exception cref="System.ArgumentOutOfRangeException">
     /// Thrown if <paramref name="round"/> is less than the first recorded round.
     /// </exception>
-    public void SetMarkerToRound(int round)
+    public virtual void SetMarkerToRound(int round)
     {
         if (round < rounds[0])
         {
@@ -175,7 +177,7 @@ public class ValueHistory<T> : IReplayHistory
     /// <summary>
     /// Resets the marker to continue tracking the last recorded round.
     /// </summary>
-    public void ContinueTracking()
+    public virtual void ContinueTracking()
     {
         isTracking = true;
         markedRound = rounds[rounds.Count - 1];
@@ -190,7 +192,7 @@ public class ValueHistory<T> : IReplayHistory
     /// <exception cref="System.InvalidOperationException">
     /// Thrown when the marker is already at the first recorded round.
     /// </exception>
-    public void StepBack()
+    public virtual void StepBack()
     {
         if (markedRound == rounds[0])
         {
@@ -207,7 +209,7 @@ public class ValueHistory<T> : IReplayHistory
     /// <summary>
     /// Moves the marker one round forward and stops it from tracking the last round.
     /// </summary>
-    public void StepForward()
+    public virtual void StepForward()
     {
         markedRound++;
         if (markedIndex < rounds.Count - 1 && markedRound == rounds[markedIndex + 1])
@@ -225,7 +227,7 @@ public class ValueHistory<T> : IReplayHistory
     /// </para>
     /// </summary>
     /// <returns>The currently marked round.</returns>
-    public int GetMarkedRound()
+    public virtual int GetMarkedRound()
     {
         return markedRound;
     }
@@ -239,7 +241,7 @@ public class ValueHistory<T> : IReplayHistory
     /// </para>
     /// </summary>
     /// <returns>The recorded or predicted value for the currently marked round.</returns>
-    public T GetMarkedValue()
+    public virtual T GetMarkedValue()
     {
         return values[markedIndex];
     }
@@ -249,7 +251,7 @@ public class ValueHistory<T> : IReplayHistory
     /// round that is currently marked.
     /// </summary>
     /// <param name="value">The value to record in the currently marked round.</param>
-    public void RecordValueAtMarker(T value)
+    public virtual void RecordValueAtMarker(T value)
     {
         if (markedRound < lastRound)
         {
@@ -279,7 +281,7 @@ public class ValueHistory<T> : IReplayHistory
     /// </summary>
     /// <param name="amount">The number of rounds to add to each entry.
     /// May be negative.</param>
-    public void ShiftTimescale(int amount)
+    public virtual void ShiftTimescale(int amount)
     {
         for (int i = 0; i < rounds.Count; i++)
         {
@@ -295,7 +297,7 @@ public class ValueHistory<T> : IReplayHistory
     /// last round.
     /// </summary>
     /// <param name="round">The round after which all records should be removed.</param>
-    public void CutOffAfterRound(int round)
+    public virtual void CutOffAfterRound(int round)
     {
         int idx = GetIndexOfRound(round);
         // Cut off list elements after index
@@ -321,7 +323,7 @@ public class ValueHistory<T> : IReplayHistory
     /// If the marked round is earlier than the current
     /// last round, the marked round becomes the new last round.
     /// </summary>
-    public void CutOffAtMarker()
+    public virtual void CutOffAtMarker()
     {
         if (markedIndex < rounds.Count)
         {
@@ -393,5 +395,62 @@ public class ValueHistory<T> : IReplayHistory
             s += v + " ";
         }
         Debug.Log(s);
+    }
+
+
+    /**
+     * Saving and loading functionality.
+     */
+
+    /// <summary>
+    /// Creates a serializable object storing the history data so
+    /// that it can be saved to and loaded from a file.
+    /// </summary>
+    /// <returns>A serializable representation of the history data.</returns>
+    public virtual ValueHistorySaveData<T> GenerateSaveData()
+    {
+        ValueHistorySaveData<T> data = new ValueHistorySaveData<T>();
+
+        data.values = values;
+        data.rounds = rounds;
+        data.lastRound = lastRound;
+
+        return data;
+    }
+
+    /// <summary>
+    /// Same as <see cref="GenerateSaveData"/>, but all values are stored as strings.
+    /// </summary>
+    /// <returns>A serializable representation of the history data, where
+    /// the stored values are represented as strings.</returns>
+    public ValueHistorySaveData<string> GenerateSaveDataString()
+    {
+        ValueHistorySaveData<string> data = new ValueHistorySaveData<string>();
+
+        data.values = new List<string>(values.Count);
+        foreach (T val in values)
+            data.values.Add(val.ToString());
+        data.rounds = rounds;
+        data.lastRound = lastRound;
+
+        return data;
+    }
+
+    /// <summary>
+    /// Instantiates a <see cref="ValueHistory{T}"/> from the given save data.
+    /// <para>
+    /// The instance will start in the tracking state, following the latest recorded round.
+    /// </para>
+    /// </summary>
+    /// <param name="data">A serializable object storing history data.</param>
+    public ValueHistory(ValueHistorySaveData<T> data) {
+        values = data.values;
+        rounds = data.rounds;
+        lastRound = data.lastRound;
+
+        // Start in tracking state
+        markedRound = lastRound;
+        markedIndex = rounds.Count - 1;
+        isTracking = true;
     }
 }
