@@ -1709,7 +1709,7 @@ public class ParticleSystem : IReplayHistory
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
+            UpdateAllParticleVisuals(false);
         }
     }
 
