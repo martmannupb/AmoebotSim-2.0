@@ -23,6 +23,8 @@ public class RendererParticles_RenderBatch
     private List<Matrix4x4[]> particleMatricesCircle_ConnectionMatrices_Expanded = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_ConnectionMatrices_Expanding = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_ConnectionMatrices_Contracting = new List<Matrix4x4[]>();
+    // Joint Movements
+    private List<Vector2[]> particlePositionOffsets_jointMovements = new List<Vector2[]>();
     // PropertyBlocks
     private MaterialPropertyBlockData_CircParticles propertyBlock_circle_contracted = new MaterialPropertyBlockData_CircParticles();
     private MaterialPropertyBlockData_CircParticles propertyBlock_circle_expanded = new MaterialPropertyBlockData_CircParticles();
@@ -127,6 +129,7 @@ public class RendererParticles_RenderBatch
             particleMatricesCircle_ConnectionMatrices_Expanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_ConnectionMatrices_Expanding.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_ConnectionMatrices_Contracting.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+            particlePositionOffsets_jointMovements.Add(new Vector2[maxArraySize]);
 
         }
 
@@ -187,6 +190,7 @@ public class RendererParticles_RenderBatch
             particleMatricesCircle_ConnectionMatrices_Expanded.RemoveAt(indexOfLastList);
             particleMatricesCircle_ConnectionMatrices_Expanding.RemoveAt(indexOfLastList);
             particleMatricesCircle_ConnectionMatrices_Contracting.RemoveAt(indexOfLastList);
+            particlePositionOffsets_jointMovements.RemoveAt(indexOfLastList);
 
             // ..
         }
@@ -209,6 +213,7 @@ public class RendererParticles_RenderBatch
         particleMatricesCircle_ConnectionMatrices_Expanded[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Expanded[orig_ListNumber][orig_ListID];
         particleMatricesCircle_ConnectionMatrices_Expanding[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Expanding[orig_ListNumber][orig_ListID];
         particleMatricesCircle_ConnectionMatrices_Contracting[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Contracting[orig_ListNumber][orig_ListID];
+        particlePositionOffsets_jointMovements[moved_ListNumber][moved_ListID] = particlePositionOffsets_jointMovements[orig_ListNumber][orig_ListID];
 
         // 2. Reset Matrices
         ResetMatrices(orig_ListNumber, orig_ListID);
@@ -228,12 +233,22 @@ public class RendererParticles_RenderBatch
         particleMatricesCircle_ConnectionMatrices_Expanded[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_ConnectionMatrices_Expanding[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_ConnectionMatrices_Contracting[listNumber][listID] = matrixTRS_zero;
+        particlePositionOffsets_jointMovements[listNumber][listID] = Vector2.zero;
     }
     
-    public void UpdateMatrix(ParticleGraphicsAdapterImpl gd)
+    public void UpdateMatrix(ParticleGraphicsAdapterImpl gd, bool executeJointMovement)
     {
-        // Reset Matrices
-        ResetMatrices(gd.graphics_listNumber, gd.graphics_listID);
+        float jmInterpolation = 0f;
+        if (executeJointMovement)
+        {
+            // Interpolate
+            jmInterpolation = ...;
+        }
+        else
+        {
+            // Reset Matrices
+            ResetMatrices(gd.graphics_listNumber, gd.graphics_listID);
+        }
         
         // Calculate Rotation
         Quaternion rotation = Quaternion.identity;
@@ -270,6 +285,20 @@ public class RendererParticles_RenderBatch
             default:
                 break;
         }
+
+        // Joint Movements
+        if(gd.state_cur.isJointMovement)
+        {
+            // Calc Joint Movement Position Offset
+            Vector2Int jointMovementPositionOffset = gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding ? gd.state_cur.position2 - gd.state_prev.position2 : gd.state_cur.position1 - gd.state_prev.position1;
+            // Set World Offset
+            Vector2 absPositionOffset = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(jointMovementPositionOffset);
+            particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID] = absPositionOffset;
+        }
+        else
+        {
+            particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID] = Vector2.zero;
+        }
     }
 
     public void Render(ViewType viewType)
@@ -291,7 +320,23 @@ public class RendererParticles_RenderBatch
             RenderSystem.data_particleMovementFinishedTimestamp = triggerTime + animationLength;
         }
 
-        // 2. Render
+        // 2. Update Joint Movement Positions
+        for (int i = 0; i < particlePositionOffsets_jointMovements.Count; i++)
+        {
+            Vector2[] offsets = particlePositionOffsets_jointMovements[i];
+            for (int j = 0; j < offsets.Length; j++)
+            {
+                Vector2 offset = offsets[j];
+                if(offset != Vector2.zero)
+                {
+                    // We have a joint movement
+                    // Interpolate
+
+                }
+            }
+        }
+
+        // 3. Render
         switch (viewType)
         {
             case ViewType.Hexagonal:
