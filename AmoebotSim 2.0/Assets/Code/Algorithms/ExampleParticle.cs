@@ -22,6 +22,16 @@ public class ExampleParticle : ParticleAlgorithm
 
     public override int PinsPerEdge => 0;
 
+    public override void ActivateBeep()
+    {
+
+    }
+
+    public override void ActivateMove()
+    {
+
+    }
+
     public override void Activate()
     {
         //Debug.Log("myInt: " + myInt.ToString());

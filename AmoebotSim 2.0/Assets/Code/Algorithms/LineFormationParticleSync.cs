@@ -127,6 +127,16 @@ public class LineFormationParticleSync : ParticleAlgorithm
     // is very simple
     public override int PinsPerEdge => 1;
 
+    public override void ActivateBeep()
+    {
+
+    }
+
+    public override void ActivateMove()
+    {
+
+    }
+
     public override void Activate()
     {
         switch ((LFState)state)

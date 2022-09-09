@@ -202,6 +202,16 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     public override int PinsPerEdge => 2;
 
+    public override void ActivateBeep()
+    {
+
+    }
+
+    public override void ActivateMove()
+    {
+
+    }
+
     public override void Activate()
     {
         if (finished)

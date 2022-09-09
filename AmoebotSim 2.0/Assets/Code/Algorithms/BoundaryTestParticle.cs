@@ -175,6 +175,16 @@ namespace BoundaryTestAlgo
 
         public override int PinsPerEdge => 4;
 
+        public override void ActivateBeep()
+        {
+
+        }
+
+        public override void ActivateMove()
+        {
+
+        }
+
         public override void Activate()
         {
             if (firstActivation)

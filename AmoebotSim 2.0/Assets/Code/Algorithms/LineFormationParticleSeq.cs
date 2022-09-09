@@ -56,6 +56,16 @@ public class LineFormationParticleSeq : ParticleAlgorithm
 
     public override int PinsPerEdge => 3;
 
+    public override void ActivateBeep()
+    {
+
+    }
+
+    public override void ActivateMove()
+    {
+
+    }
+
     public override void Activate()
     {
         switch ((LFState)state)

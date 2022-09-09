@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using UnityEngine;
 
 /// <summary>
@@ -67,6 +68,14 @@ public class Particle : IParticleState, IReplayHistory
     // (Causes ParticleAttributes to behave differently for this particle than
     // for others)
     public bool isActive = false;
+
+    // Bonds
+    /// <summary>
+    /// Flags indicating which bonds should be active. Indices are
+    /// local labels. Only the 10 lowest bits are used.
+    /// </summary>
+    private BitVector32 activeBonds;
+    private ValueHistory<int> activeBondHistory;
 
     // Pin Configuration
     private ValueHistoryPinConfiguration pinConfigurationHistory;
@@ -209,6 +218,8 @@ public class Particle : IParticleState, IReplayHistory
         comDir = compassDir;
         this.chirality = chirality;
 
+        activeBonds = new BitVector32(1023); // All flags set to true
+        activeBondHistory = new ValueHistory<int>(activeBonds.Data, currentRound);
 
         // Graphics
         // Initialize color
@@ -367,6 +378,23 @@ public class Particle : IParticleState, IReplayHistory
     public Direction GlobalTailDirection()
     {
         return exp_isExpanded ? ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir.Opposite(), comDir, chirality) : Direction.NONE;
+    }
+
+
+    /**
+     * Bonds
+     */
+
+    // TODO
+
+    public void SetBond(int label, bool value)
+    {
+        activeBonds[1 << label] = value;
+    }
+
+    public bool BondActive(int label)
+    {
+        return activeBonds[1 << label];
     }
 
 

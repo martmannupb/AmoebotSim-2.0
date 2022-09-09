@@ -26,7 +26,7 @@ public class ParticleFactory
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.UpdateReset();
         return p;
     }
 
@@ -40,7 +40,7 @@ public class ParticleFactory
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.UpdateReset();
         return p;
     }
 
@@ -54,7 +54,7 @@ public class ParticleFactory
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.UpdateReset();
         return p;
     }
 
@@ -68,7 +68,7 @@ public class ParticleFactory
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.UpdateReset();
         return p;
     }
 
@@ -82,7 +82,7 @@ public class ParticleFactory
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.UpdateReset();
         return p;
     }
 
@@ -96,7 +96,7 @@ public class ParticleFactory
         p.InitWithAlgorithm();
         p.isActive = false;
         p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.UpdateReset();
         return p;
     }
 
@@ -110,7 +110,7 @@ public class ParticleFactory
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.UpdateReset();
         return p;
     }
 }

@@ -95,6 +95,40 @@ public abstract class ParticleAlgorithm
     public abstract void Activate();
 
     /// <summary>
+    /// This is one part of the main activation logic of the particle.
+    /// It is called exactly once in each round and should contain the
+    /// algorithm code that implements the look-compute-move cycle.
+    /// After the movements are executed, <see cref="ActivateBeep"/>
+    /// is called within the same round.
+    /// <para>
+    /// Inside of this method, particles are allowed to release bonds,
+    /// define which bonds should be moved or transferred, and
+    /// schedule movements. Only the last movement operation scheduled
+    /// in this method will be applied.
+    /// </para>
+    /// </summary>
+    public abstract void ActivateMove();
+
+    /// <summary>
+    /// This is the second part of the main activation logic of the
+    /// particle. It is called exactly once in each round, after the
+    /// movements scheduled in <see cref="ActivateMove"/> have been
+    /// executed, and should contain the algorithm code that
+    /// implements the look-compute-beep cycle.
+    /// <para>
+    /// Inside of this method, particles are allowed to change their
+    /// pin configuration and send beeps and messages on the updated
+    /// configuration.
+    /// </para>
+    /// <para>
+    /// Note that beeps and messages sent in the current round will
+    /// be readable in both the <see cref="ActivateMove"/> and
+    /// <see cref="ActivateBeep"/> calls in the next round.
+    /// </para>
+    /// </summary>
+    public abstract void ActivateBeep();
+
+    /// <summary>
     /// Checks if the particle is currently active and throws
     /// an exception if it is not.
     /// <para>

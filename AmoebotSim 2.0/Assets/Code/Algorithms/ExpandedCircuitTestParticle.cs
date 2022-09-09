@@ -12,6 +12,16 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
         SetMainColor(Color.gray);
     }
 
+    public override void ActivateBeep()
+    {
+
+    }
+
+    public override void ActivateMove()
+    {
+
+    }
+
     public override void Activate()
     {
         if (IsExpanded())
