@@ -64,10 +64,6 @@ public class Particle : IParticleState, IReplayHistory
     
     // Attributes
     private List<IParticleAttribute> attributes = new List<IParticleAttribute>();
-    // Flag used to indicate that the particle is currently being activated
-    // (Causes ParticleAttributes to behave differently for this particle than
-    // for others)
-    public bool isActive = false;
 
     // Bonds
     /// <summary>
@@ -76,6 +72,15 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     private BitVector32 activeBonds;
     private ValueHistory<int> activeBondHistory;
+
+    /// <summary>
+    /// Flags indicating which bonds have been marked for special
+    /// behavior. This includes being pulled with an expansion and
+    /// being transferred during a handover. Indices are local
+    /// labels and only the 10 lowest bits are used.
+    /// </summary>
+    private BitVector32 markedBonds;
+    private ValueHistory<int> markedBondHistory;
 
     // Pin Configuration
     private ValueHistoryPinConfiguration pinConfigurationHistory;
@@ -196,6 +201,18 @@ public class Particle : IParticleState, IReplayHistory
     }
     private SysPinConfiguration plannedPinConfiguration;
 
+    // Flag used to indicate that the particle is currently being activated
+    // (Causes ParticleAttributes to behave differently for this particle than
+    // for others)
+    public bool isActive = false;
+
+    // Flags indicating whether this particle is currently executing the
+    // move or the beep cycle. Used to check whether certain operations
+    // are allowed. Whenever isActive is true, exactly one of these two
+    // flags is also true.
+    public bool inActivateMove = false;
+    public bool inActivateBeep = false;
+
     // Graphical information
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
@@ -218,8 +235,10 @@ public class Particle : IParticleState, IReplayHistory
         comDir = compassDir;
         this.chirality = chirality;
 
-        activeBonds = new BitVector32(1023); // All flags set to true
+        activeBonds = new BitVector32(1023);    // All flags set to true
         activeBondHistory = new ValueHistory<int>(activeBonds.Data, currentRound);
+        markedBonds = new BitVector32(0);       // All flags are set to false
+        markedBondHistory = new ValueHistory<int>(markedBonds.Data, currentRound);
 
         // Graphics
         // Initialize color
@@ -385,16 +404,52 @@ public class Particle : IParticleState, IReplayHistory
      * Bonds
      */
 
-    // TODO
-
-    public void SetBond(int label, bool value)
+    /// <summary>
+    /// Marks the bond with the given label to be released before the scheduled movement.
+    /// <para>See <see cref="BondActive(int)"/>.</para>
+    /// </summary>
+    /// <param name="label">The local label of the bond to be released.</param>
+    public void ReleaseBond(int label)
     {
-        activeBonds[1 << label] = value;
+        activeBonds[1 << label] = false;
     }
 
+    /// <summary>
+    /// Checks if the bond at the given label is still marked as active or
+    /// will be released.
+    /// <para>See <see cref="ReleaseBond(int)"/>.</para>
+    /// </summary>
+    /// <param name="label">The local label of the bond to be checked.</param>
+    /// <returns><c>true</c> if and only if the bond at the given label is
+    /// still marked as active.</returns>
     public bool BondActive(int label)
     {
         return activeBonds[1 << label];
+    }
+
+    /// <summary>
+    /// Marks the bond with the given label to have special behavior.
+    /// This means that it will be pulled with an expansion movement
+    /// or transferred during a handover contraction.
+    /// <para>See <see cref="BondMarked(int)"/>.</para>
+    /// </summary>
+    /// <param name="label">The local label of the bond to be marked.</param>
+    public void MarkBond(int label)
+    {
+        markedBonds[1 << label] = true;
+    }
+
+    /// <summary>
+    /// Checks if the bond at the given label is marked for special
+    /// behavior.
+    /// <para>See <see cref="MarkBond(int)"/>.</para>
+    /// </summary>
+    /// <param name="label">The local label of the bond to be checked.</param>
+    /// <returns><c>true</c> if and only if the bond at the given label has
+    /// been marked.</returns>
+    public bool BondMarked(int label)
+    {
+        return markedBonds[1 << label];
     }
 
 

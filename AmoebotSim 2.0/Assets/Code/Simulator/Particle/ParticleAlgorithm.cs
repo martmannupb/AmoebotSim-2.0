@@ -149,6 +149,26 @@ public abstract class ParticleAlgorithm
         }
     }
 
+    /// <summary>
+    /// Checks if the particle is currently in the movement activation method.
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle is in the
+    /// <see cref="ActivateMove"/> method.</returns>
+    private bool CheckInMove()
+    {
+        return particle.inActivateMove;
+    }
+
+    /// <summary>
+    /// Checks if the particle is currently in the beep activation method.
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle is in the
+    /// <see cref="ActivateBeep"/> method.</returns>
+    private bool CheckInBeep()
+    {
+        return particle.inActivateBeep;
+    }
+
 
     /**
      * Attribute creation methods.
@@ -620,6 +640,72 @@ public abstract class ParticleAlgorithm
         
         CheckActive("Neighbor information is not available for other particles.");
         return particle.system.FindFirstNeighborWithProperty<T>(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
+    }
+
+    /**
+     * Bond management
+     */
+
+    /// <summary>
+    /// Marks the specified bond to be released before the
+    /// scheduled movement. Only works in <see cref="ActivateMove"/>.
+    /// </summary>
+    /// <param name="locDir">The local direction into which the bond
+    /// is pointing.</param>
+    /// <param name="head">If the particle is expanded, this flag
+    /// indicates whether the bond is located at the head or the tail.</param>
+    public void ReleaseBond(Direction locDir, bool head = true)
+    {
+        int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
+        particle.ReleaseBond(label);
+    }
+
+    /// <summary>
+    /// Checks if the specified bond is still active or marked to
+    /// be released.
+    /// </summary>
+    /// <param name="locDir">The local direction into which the bond
+    /// is pointing.</param>
+    /// <param name="head">If the particle is expanded, this flag
+    /// indicates whether the bond is located at the head or the tail.</param>
+    /// <returns><c>true</c> if and only if the specified bond is
+    /// still marked as active.</returns>
+    public bool BondActive(Direction locDir, bool head = true)
+    {
+        int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
+        return particle.BondActive(label);
+    }
+
+    /// <summary>
+    /// Marks the specified bond to have special behavior.
+    /// This means that it will be pulled with an expansion
+    /// movement or transferred during a handover contraction.
+    /// </summary>
+    /// <param name="locDir">The local direction into which the bond
+    /// is pointing.</param>
+    /// <param name="head">If the particle is expanded, this flag
+    /// indicates whether the bond is located at the head or the tail.</param>
+    public void MarkBond(Direction locDir, bool head = true)
+    {
+        int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
+        particle.MarkBond(label);
+    }
+
+    /// <summary>
+    /// Checks if the bond at the given label is marked for special
+    /// behavior.
+    /// <para>See <see cref="MarkBond(int)"/>.</para>
+    /// </summary>
+    /// <param name="locDir">The local direction into which the bond
+    /// is pointing.</param>
+    /// <param name="head">If the particle is expanded, this flag
+    /// indicates whether the bond is located at the head or the tail.</param>
+    /// <returns><c>true</c> if and only if the bond at the given label has
+    /// been marked.</returns>
+    public bool BondMarked(Direction locDir, bool head = true)
+    {
+        int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
+        return particle.BondMarked(label);
     }
 
 
