@@ -68,7 +68,7 @@ public class RendererParticles_RenderBatch
     // Dynamic Data _____
     private float curAnimationTriggerTime = 0f;
     private float curAnimationLength = 0f;
-    private float curTimestamp = 0f;
+    private float jmInterpolation = 0f;
 
     // Settings _____
     public PropertyBlockData properties;
@@ -256,13 +256,6 @@ public class RendererParticles_RenderBatch
         if (executeJointMovement)
         {
             // Interpolate
-            float animationStartTime = curAnimationTriggerTime;
-            float animationEndTime = curAnimationTriggerTime + curAnimationLength;
-            float nextFramePredictedTimetamp = curTimestamp;// + Time.deltaTime;
-            float curAnimationPercentage = Mathf.Clamp(nextFramePredictedTimetamp - animationStartTime, 0f, curAnimationLength) / curAnimationLength;
-            float jmInterpolation = Engine.Library.InterpolationConstants.SmoothLerp(curAnimationPercentage);
-
-            // Assign new position
             Vector3 interpolatedOffset = jmInterpolation * particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID];
             particle_position1world = particle_position1world + interpolatedOffset;
             particle_position2world = particle_position2world + interpolatedOffset;
@@ -349,7 +342,13 @@ public class RendererParticles_RenderBatch
         }
 
         // 2. Update Joint Movement Positions
-        curTimestamp = Time.timeSinceLevelLoad;
+        // Update Interpolation Values
+        float animationStartTime = curAnimationTriggerTime;
+        float animationEndTime = curAnimationTriggerTime + curAnimationLength;
+        float nextFramePredictedTimetamp = Time.timeSinceLevelLoad;// + Time.deltaTime;
+        float curAnimationPercentage = Mathf.Clamp(nextFramePredictedTimetamp - animationStartTime, 0f, curAnimationLength) / curAnimationLength;
+        jmInterpolation = Engine.Library.InterpolationConstants.SmoothLerp(curAnimationPercentage);
+        // Update all JM Positions
         for (int i = 0; i < particlePositionOffsets_jointMovements.Count; i++)
         {
             Vector3[] offsets = particlePositionOffsets_jointMovements[i];
