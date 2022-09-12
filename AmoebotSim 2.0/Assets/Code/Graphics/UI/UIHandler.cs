@@ -8,7 +8,7 @@ public class UIHandler : MonoBehaviour
 {
 
     // References
-    private AmoebotSimulator sim;
+    public AmoebotSimulator sim;
 
     // UI Objects =====
     // Play/Pause
@@ -317,6 +317,12 @@ public class UIHandler : MonoBehaviour
     public void ToggleAA()
     {
         sim.renderSystem.ToggleAntiAliasing();
+        UpdateAAButton();
+    }
+
+    public void SetAA(int value)
+    {
+        sim.renderSystem.SetAntiAliasing(value);
         UpdateAAButton();
     }
 

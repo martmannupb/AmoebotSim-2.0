@@ -256,7 +256,9 @@ public class RendererParticles_RenderBatch
         if (executeJointMovement)
         {
             // Interpolate
-            Vector3 interpolatedOffset = jmInterpolation * particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID];
+            Vector3 interpolatedOffset;
+            if (RenderSystem.animationsOn) interpolatedOffset = jmInterpolation * particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID];
+            else interpolatedOffset = particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID];
             particle_position1world = particle_position1world + interpolatedOffset;
             particle_position2world = particle_position2world + interpolatedOffset;
             pin_position1world = new Vector3(particle_position1world.x, particle_position1world.y, RenderSystem.zLayer_pins);
@@ -294,7 +296,13 @@ public class RendererParticles_RenderBatch
             rotation = Quaternion.Euler(0f, 0f, (60f * gd.state_prev.globalExpansionDir + 180f) % 360f) * Quaternion.identity;
         }
         // Update Matrices
-        switch (gd.state_cur.movement)
+        ParticleGraphicsAdapterImpl.ParticleMovement movement = gd.state_cur.movement;
+        if(RenderSystem.animationsOn == false)
+        {
+            if (movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting) movement = ParticleGraphicsAdapterImpl.ParticleMovement.Contracted;
+            else if (movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding) movement = ParticleGraphicsAdapterImpl.ParticleMovement.Expanded;
+        }
+        switch (movement)
         {
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracted:
                 particleMatricesCircle_Contracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position1world, rotation, Vector3.one);

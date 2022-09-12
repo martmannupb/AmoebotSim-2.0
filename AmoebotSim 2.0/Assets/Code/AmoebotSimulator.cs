@@ -15,11 +15,6 @@ public class AmoebotSimulator : MonoBehaviour
     // UI
     public UIHandler uiHandler;
 
-    // Old UI (will be deleted)
-    public TextMeshProUGUI roundsText;
-    public TextMeshProUGUI maxRoundText;
-    public TMP_InputField roundInput;
-
     // Start is called before the first frame update
     void Start()
     {
