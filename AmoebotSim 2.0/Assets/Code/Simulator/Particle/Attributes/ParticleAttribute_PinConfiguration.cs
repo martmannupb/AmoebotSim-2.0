@@ -30,7 +30,15 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
         {
             throw new System.InvalidOperationException("Particles are not allowed to read other particles' pin configurations!");
         }
-        return pcHistory.GetValueInRound(particle.system.PreviousRound, particle);
+
+        if (particle.system.InMovePhase || !hasIntermediateVal)
+        {
+            return pcHistory.GetValueInRound(particle.system.PreviousRound, particle);
+        }
+        else
+        {
+            return intermediateVal != null ? ((SysPinConfiguration)intermediateVal).Copy() : null;
+        }
     }
 
     public override PinConfiguration GetValue_After()
@@ -47,6 +55,17 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+        }
+        if (particle.system.InMovePhase)
+        {
+            hasIntermediateVal = true;
+            SysPinConfiguration copy = (value as SysPinConfiguration).Copy();
+            if (copy != null)
+            {
+                copy.isCurrent = false;
+                copy.isPlanned = false;
+            }
+            intermediateVal = copy;
         }
         pcHistory.RecordValueInRound(value as SysPinConfiguration, particle.system.CurrentRound);
     }

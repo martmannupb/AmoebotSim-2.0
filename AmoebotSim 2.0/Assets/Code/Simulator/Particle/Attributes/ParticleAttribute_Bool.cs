@@ -11,7 +11,14 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
 
     public override bool GetValue()
     {
-        return history.GetValueInRound(particle.system.PreviousRound);
+        if (particle.system.InMovePhase || !hasIntermediateVal)
+        {
+            return history.GetValueInRound(particle.system.PreviousRound);
+        }
+        else
+        {
+            return intermediateVal;
+        }
     }
 
     public override bool GetValue_After()
@@ -28,6 +35,11 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+        }
+        if (particle.system.InMovePhase)
+        {
+            hasIntermediateVal = true;
+            intermediateVal = value;
         }
         history.RecordValueInRound(value, particle.system.CurrentRound);
     }

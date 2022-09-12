@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -150,25 +148,44 @@ public abstract class ParticleAlgorithm
     }
 
     /// <summary>
-    /// Checks if the particle is currently in the movement activation method.
+    /// Checks if we are currently in the move phase and logs
+    /// a warning message if we are not.
     /// </summary>
-    /// <returns><c>true</c> if and only if the particle is in the
-    /// <see cref="ActivateMove"/> method.</returns>
-    private bool CheckInMove()
+    /// <param name="warningMessage">The warning message to be logged
+    /// if we are not in the move phase. No warning will be logged if
+    /// this is <c>null</c>.</param>
+    /// <returns><c>true</c> if and only if the system is currently
+    /// simulating the move phase.</returns>
+    private bool CheckMove(string warningMessage)
     {
-        return particle.inActivateMove;
+        if (!particle.system.InMovePhase)
+        {
+            if (warningMessage != null)
+                Debug.LogWarning(warningMessage);
+            return false;
+        }
+        return true;
     }
 
     /// <summary>
-    /// Checks if the particle is currently in the beep activation method.
+    /// Checks if we are currently in the beep phase and logs
+    /// a warning message if we are not.
     /// </summary>
-    /// <returns><c>true</c> if and only if the particle is in the
-    /// <see cref="ActivateBeep"/> method.</returns>
-    private bool CheckInBeep()
+    /// <param name="warningMessage">The warning message to be logged
+    /// if we are not in the beep phase. No warning will be logged if
+    /// this is <c>null</c>.</param>
+    /// <returns><c>true</c> if and only if the system is currently
+    /// simulating the beep phase.</returns>
+    private bool CheckBeep(string warningMessage)
     {
-        return particle.inActivateBeep;
+        if (!particle.system.InBeepPhase)
+        {
+            if (warningMessage != null)
+                Debug.LogWarning(warningMessage);
+            return false;
+        }
+        return true;
     }
-
 
     /**
      * Attribute creation methods.
@@ -177,6 +194,8 @@ public abstract class ParticleAlgorithm
      * (There is currently no way to check if they are called
      * anywhere else, but this is strongly discouraged)
      */
+
+    #region AttributeCreation
 
     /// <summary>
     /// Creates a new <see cref="ParticleAttribute{T}"/> representing an integer value.
@@ -263,10 +282,12 @@ public abstract class ParticleAlgorithm
         return ParticleAttributeFactory.CreateParticleAttributePinConfiguration(particle, name, initialValue);
     }
 
+    #endregion // AttributeCreation
+
 
     /** ====================================================================================================
      * Particle actions defining the API.
-     * These methods should be called from the Activate() method.
+     * These methods should be called from the ActivateX() methods.
      * ====================================================================================================
      */
 
@@ -488,7 +509,7 @@ public abstract class ParticleAlgorithm
 
     /// <summary>
     /// Sets the pin configuration that should be applied to the particle
-    /// at the end of this round.
+    /// at the end of this round. Only works in <see cref="ActivateBeep"/>.
     /// <para>
     /// The expansion state of the pin configuration must match the planned
     /// expansion state of the particle, i.e., if the particle plans to be
@@ -509,13 +530,18 @@ public abstract class ParticleAlgorithm
     public void SetPlannedPinConfiguration(PinConfiguration pinConfiguration)
     {
         CheckActive("Cannot set pin configuration of other particles.");
+        if (!CheckBeep("Cannot set pin configuration during move phase."))
+        {
+            return;
+        }
         particle.SetPlannedPinConfiguration((SysPinConfiguration)pinConfiguration);
     }
 
     /// <summary>
     /// Returns the pin configuration set using
     /// <see cref="SetPlannedPinConfiguration(PinConfiguration)"/> in
-    /// this round.
+    /// this round. Always returns <c>null</c> when called in
+    /// <see cref="ActivateMove"/>.
     /// </summary>
     /// <returns>The pin configuration planned to be applied at the end of
     /// the current round. <c>null</c> if no configuration was planned yet.</returns>
@@ -531,7 +557,6 @@ public abstract class ParticleAlgorithm
      * Mainly for finding neighbor particles
      */
 
-    // TODO: Decide on uniform interface for specifying ports (through labels or direction + head/tail (or both))
     // TODO: Add many more helper functions (like firstNbrWithProperty etc.)
 
     /// <summary>
@@ -555,7 +580,6 @@ public abstract class ParticleAlgorithm
         return particle.system.HasNeighborAt(particle, locDir, fromHead);
     }
 
-    // TODO: What to do if there is no neighbor? Check beforehand, throw exception?
     /// <summary>
     /// Gets this particle's neighbor in the given local direction. The position to
     /// check is determined in the same way as in <see cref="HasNeighborAt(Direction, bool)"/>.
@@ -656,13 +680,18 @@ public abstract class ParticleAlgorithm
     /// indicates whether the bond is located at the head or the tail.</param>
     public void ReleaseBond(Direction locDir, bool head = true)
     {
+        if (!CheckMove("Cannot release bonds during beep phase."))
+        {
+            return;
+        }
         int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
         particle.ReleaseBond(label);
     }
 
     /// <summary>
     /// Checks if the specified bond is still active or marked to
-    /// be released.
+    /// be released. Always returns <c>true</c> when called in
+    /// <see cref="ActivateBeep"/>.
     /// </summary>
     /// <param name="locDir">The local direction into which the bond
     /// is pointing.</param>
@@ -672,6 +701,8 @@ public abstract class ParticleAlgorithm
     /// still marked as active.</returns>
     public bool BondActive(Direction locDir, bool head = true)
     {
+        if (!CheckMove(null))
+            return true;
         int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
         return particle.BondActive(label);
     }
@@ -680,6 +711,7 @@ public abstract class ParticleAlgorithm
     /// Marks the specified bond to have special behavior.
     /// This means that it will be pulled with an expansion
     /// movement or transferred during a handover contraction.
+    /// Only works in <see cref="ActivateMove"/>.
     /// </summary>
     /// <param name="locDir">The local direction into which the bond
     /// is pointing.</param>
@@ -687,13 +719,18 @@ public abstract class ParticleAlgorithm
     /// indicates whether the bond is located at the head or the tail.</param>
     public void MarkBond(Direction locDir, bool head = true)
     {
+        if (!CheckMove("Cannot mark bonds during beep phase."))
+        {
+            return;
+        }
         int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
         particle.MarkBond(label);
     }
 
     /// <summary>
     /// Checks if the bond at the given label is marked for special
-    /// behavior.
+    /// behavior. Always returns <c>false</c> when called in
+    /// <see cref="ActivateBeep"/>.
     /// <para>See <see cref="MarkBond(int)"/>.</para>
     /// </summary>
     /// <param name="locDir">The local direction into which the bond
@@ -704,6 +741,8 @@ public abstract class ParticleAlgorithm
     /// been marked.</returns>
     public bool BondMarked(Direction locDir, bool head = true)
     {
+        if (!CheckMove(null))
+            return false;
         int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
         return particle.BondMarked(label);
     }
@@ -717,6 +756,7 @@ public abstract class ParticleAlgorithm
     /// Expands this particle in the specified local direction.
     /// After the expansion, the particle's head will occupy the grid node
     /// in that direction, and its tail will remain at its current position.
+    /// Only works in <see cref="ActivateMove"/>.
     /// <para>Only allowed if there is no contracted particle in the
     /// specified direction.</para>
     /// <para>Note that movements are only applied at the end of a round,
@@ -731,6 +771,8 @@ public abstract class ParticleAlgorithm
     public void Expand(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
+        if (!CheckMove("Cannot schedule extension movement during beep phase."))
+            return;
         particle.system.ExpandParticle(particle, locDir);
     }
 
@@ -738,7 +780,7 @@ public abstract class ParticleAlgorithm
     /// Contracts this particle into the grid node that is currently
     /// occupied by the particle's head.
     /// After the contraction, the head and tail will both occupy this
-    /// node.
+    /// node. Only works in <see cref="ActivateMove"/>.
     /// <para>Note that movements are only applied at the end of a round,
     /// i.e., after the activation is over. This means that calling this
     /// method will have no immediate effect.</para>
@@ -751,6 +793,8 @@ public abstract class ParticleAlgorithm
     public void ContractHead()
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
+        if (!CheckMove("Cannot schedule contraction movement during beep phase."))
+            return;
         particle.system.ContractParticleHead(particle);
     }
 
@@ -758,7 +802,7 @@ public abstract class ParticleAlgorithm
     /// Contracts this particle into the grid node that is currently
     /// occupied by the particle's tail.
     /// After the contraction, the head and tail will both occupy this
-    /// node.
+    /// node. Only works in <see cref="ActivateMove"/>.
     /// <para>Note that movements are only applied at the end of a round,
     /// i.e., after the activation is over. This means that calling this
     /// method will have no immediate effect.</para>
@@ -771,6 +815,8 @@ public abstract class ParticleAlgorithm
     public void ContractTail()
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
+        if (!CheckMove("Cannot schedule contraction movement during beep phase."))
+            return;
         particle.system.ContractParticleTail(particle);
     }
 
@@ -780,6 +826,7 @@ public abstract class ParticleAlgorithm
     /// After the expansion, the particle's head will occupy the grid node
     /// in that direction, and its tail will remain at its current position.
     /// The neighbor will have contracted away from that node.
+    /// Only works in <see cref="ActivateMove"/>.
     /// <para>
     /// Only allowed if there is an expanded particle in the
     /// specified direction.
@@ -801,6 +848,8 @@ public abstract class ParticleAlgorithm
     public void PushHandover(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
+        if (!CheckMove("Cannot schedule handover movement during beep phase."))
+            return;
         particle.system.PerformPushHandover(particle, locDir);
     }
 
@@ -812,6 +861,7 @@ public abstract class ParticleAlgorithm
     /// After the contraction, the head and tail of this particle will both
     /// occupy the current head node and the current tail node will be
     /// occupied by the neighbor.
+    /// Only works in <see cref="ActivateMove"/>.
     /// <para>
     /// Only allowed if there is a contracted particle in the specified
     /// direction relative to this particle's tail.
@@ -833,6 +883,8 @@ public abstract class ParticleAlgorithm
     public void PullHandoverHead(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
+        if (!CheckMove("Cannot schedule handover movement during beep phase."))
+            return;
         particle.system.PerformPullHandoverHead(particle, locDir);
     }
 
@@ -844,6 +896,7 @@ public abstract class ParticleAlgorithm
     /// After the contraction, the head and tail of this particle will both
     /// occupy the current tail node and the current head node will be
     /// occupied by the neighbor.
+    /// Only works in <see cref="ActivateMove"/>.
     /// <para>
     /// Only allowed if there is a contracted particle in the specified
     /// direction relative to this particle's head.
@@ -865,6 +918,8 @@ public abstract class ParticleAlgorithm
     public void PullHandoverTail(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
+        if (!CheckMove("Cannot schedule handover movement during beep phase."))
+            return;
         particle.system.PerformPullHandoverTail(particle, locDir);
     }
 
@@ -893,7 +948,8 @@ public abstract class ParticleAlgorithm
     }
 
     /// <summary>
-    /// Sets the main color of this particle.
+    /// Sets the main color of this particle. The color will be displayed
+    /// as soon as the round computation is finished.
     /// </summary>
     /// <param name="c">The color to be applied to the particle.</param>
     public void SetMainColor(Color c)
@@ -903,7 +959,8 @@ public abstract class ParticleAlgorithm
     }
 
     /// <summary>
-    /// Resets the particle's main color to its default value.
+    /// Resets the particle's main color to its default value. The color will
+    /// be shown as soon as the round computation is finished.
     /// </summary>
     public void ResetMainColor()
     {

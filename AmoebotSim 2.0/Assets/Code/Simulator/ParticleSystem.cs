@@ -75,6 +75,28 @@ public class ParticleSystem : IReplayHistory
 
     private bool isTracking = true;     // For IReplayHistory
 
+    // Simulation phase flags
+    // Used to indicate which of the two cycles is currently being executed
+    // so that all parts of the simulator have the corresponding behavior
+    private bool inMovePhase = false;
+    private bool inBeepPhase = false;
+
+    /// <summary>
+    /// <c>true</c> while the look-compute-move cycle of a round is being simulated.
+    /// </summary>
+    public bool InMovePhase
+    {
+        get { return inMovePhase; }
+    }
+
+    /// <summary>
+    /// <c>true</c> while the look-compute-beep cycle of a round is being simulated.
+    /// </summary>
+    public bool InBeepPhase
+    {
+        get { return inBeepPhase; }
+    }
+
     // References
     public AmoebotSimulator sim;
     public RenderSystem renderSystem;
@@ -876,7 +898,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// System-side implementation of <see cref="ParticleAlgorithm.GetNeighborAt(int, bool)"/>.
+    /// System-side implementation of <see cref="ParticleAlgorithm.GetNeighborAt(Direction, bool)"/>.
     /// <para>See also <seealso cref="HasNeighborAt(Particle, Direction, bool)"/>.</para>
     /// </summary>
     /// <param name="p">The particle trying to get its neighbor.</param>

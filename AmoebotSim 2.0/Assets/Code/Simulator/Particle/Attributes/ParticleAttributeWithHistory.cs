@@ -14,6 +14,20 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
     /// </summary>
     protected ValueHistory<T> history;
 
+    /// <summary>
+    /// The value written to the attribute in the move activation phase.
+    /// This value is not stored in the internal history. It is written
+    /// during the move phase and serves as previous value during the
+    /// beep phase.
+    /// </summary>
+    protected T intermediateVal;
+
+    /// <summary>
+    /// Flag that indicates whether the intermediate value has been
+    /// written. Will be reset after each round.
+    /// </summary>
+    protected bool hasIntermediateVal = false;
+
     public ParticleAttributeWithHistory(Particle p, string name) : base(p, name) { }
 
     /**

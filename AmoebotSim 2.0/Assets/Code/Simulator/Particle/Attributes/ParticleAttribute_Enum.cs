@@ -44,7 +44,14 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
 
     public override T GetValue()
     {
-        return history.GetValueInRound(particle.system.PreviousRound);
+        if (particle.system.InMovePhase || !hasIntermediateVal)
+        {
+            return history.GetValueInRound(particle.system.PreviousRound);
+        }
+        else
+        {
+            return intermediateVal;
+        }
     }
 
     public override T GetValue_After()
@@ -61,6 +68,11 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
+        }
+        if (particle.system.InMovePhase)
+        {
+            hasIntermediateVal = true;
+            intermediateVal = value;
         }
         history.RecordValueInRound(value, particle.system.CurrentRound);
     }

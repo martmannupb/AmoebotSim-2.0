@@ -206,13 +206,6 @@ public class Particle : IParticleState, IReplayHistory
     // for others)
     public bool isActive = false;
 
-    // Flags indicating whether this particle is currently executing the
-    // move or the beep cycle. Used to check whether certain operations
-    // are allowed. Whenever isActive is true, exactly one of these two
-    // flags is also true.
-    public bool inActivateMove = false;
-    public bool inActivateBeep = false;
-
     // Graphical information
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
