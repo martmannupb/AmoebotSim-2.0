@@ -168,6 +168,28 @@ public class Particle : IParticleState, IReplayHistory
     private Direction predictHeadDir = Direction.NONE;
 
     /// <summary>
+    /// The absolute offset from the particle's initial location,
+    /// accumulated by joint movements.
+    /// </summary>
+    public Vector2Int jmOffset;
+
+    /// <summary>
+    /// Flag indicating whether the particle has already been
+    /// processed for joint movements. Becomes <c>true</c> as
+    /// soon as the particle's movement has been validated
+    /// against all of its neighbors' movements and its new
+    /// location has been determined.
+    /// </summary>
+    public bool processedJointMovement = false;
+
+    /// <summary>
+    /// Flag indicating whether the particle has been added to the BFS
+    /// queue for joint movement simulation. Used to ensure that each
+    /// particle is only added to the queue once.
+    /// </summary>
+    public bool queuedForJMProcessing = false;
+
+    /// <summary>
     /// Flag indicating whether the particle has moved during the current round.
     /// Used to determine whether a particle can be pushed or pulled by a
     /// handover.
@@ -285,6 +307,20 @@ public class Particle : IParticleState, IReplayHistory
     {
         isActive = true;
         algorithm.Activate();
+        isActive = false;
+    }
+
+    public void ActivateMove()
+    {
+        isActive = true;
+        algorithm.ActivateMove();
+        isActive = false;
+    }
+
+    public void ActivateBeep()
+    {
+        isActive = true;
+        algorithm.ActivateBeep();
         isActive = false;
     }
 

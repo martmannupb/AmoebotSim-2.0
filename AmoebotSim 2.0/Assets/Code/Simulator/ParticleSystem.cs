@@ -489,6 +489,33 @@ public class ParticleSystem : IReplayHistory
         UpdateAllParticleVisuals(false);
     }
 
+    public void SimulateJMRound()
+    {
+        _currentRound++;
+        Debug.Log("Simulate round " + _currentRound + " (previous round: " + _previousRound + ")");
+        _latestRound++;
+
+        // First: Move cycle
+        // All particles set their new bonds and schedule movements
+        // Then the movements are evaluated and applied
+        inMovePhase = true;
+        ActivateParticlesMove();
+        inMovePhase = false;
+        SimulateJointMovements();
+
+        // Second: Beep cycle
+        // All particles set their new pin configurations and send beeps and messages
+        // Then the circuits are computed and the sent information is distributed
+        inBeepPhase = true;
+        ActivateParticlesBeep();
+        inBeepPhase = false;
+        DiscoverCircuits();
+        FinishBeepAndMessageInfo();
+        CleanupAfterRound();
+        _previousRound++;
+        UpdateAllParticleVisuals(false);
+    }
+
     /// <summary>
     /// Activates each particle once.
     /// </summary>
@@ -497,6 +524,22 @@ public class ParticleSystem : IReplayHistory
         for (int i = 0; i < particles.Count; i++)
         {
             particles[i].Activate();
+        }
+    }
+
+    private void ActivateParticlesMove()
+    {
+        for (int i = 0; i < particles.Count; i++)
+        {
+            particles[i].ActivateMove();
+        }
+    }
+
+    private void ActivateParticlesBeep()
+    {
+        for (int i = 0; i < particles.Count; i++)
+        {
+            particles[i].ActivateBeep();
         }
     }
 
@@ -570,6 +613,114 @@ public class ParticleSystem : IReplayHistory
         {
             p.ApplyPlannedPinConfiguration();
         }
+    }
+
+    private void SimulateJointMovements()
+    {
+        float tStart = Time.realtimeSinceStartup;
+
+        // New particle positions will be stored in new map
+        Dictionary<Vector2Int, Particle> newPositions = new Dictionary<Vector2Int, Particle>(particles.Count);
+
+        // Use BFS
+        Queue<Particle> queue = new Queue<Particle>();
+
+        // Start with the anchor particle
+        Particle anchor = particles[0];
+        anchor.jmOffset = Vector2Int.zero;
+
+        queue.Enqueue(anchor);
+        anchor.queuedForJMProcessing = true;
+
+        // A particle's processing is finished when its final location in the new configuration has
+        // been determined and its movement has been validated against its bonded neighbors.
+        // Every particle added to the queue already has an offset vector and may have been validated
+        // against some of its neighbors.
+        // To complete a particle's processing, the remaining neighbors must be validated. For those
+        // neighbors that have already been added to the queue, the offset vectors must be compared.
+
+        while (queue.Count > 0)
+        {
+            Particle p = queue.Dequeue();
+
+            Direction globalHeadDir = p.GlobalHeadDirection();
+
+            //// First of all, find all neighboring particles and some relative positional information
+            //int numNbrs = p.IsExpanded() ? 10 : 6;
+            //Particle[] nbrParts = new Particle[numNbrs];
+            //bool[] nbrHead = new bool[numNbrs]; // True if the neighbor's head is at this position
+            //int[] nbrLabels = new int[numNbrs]; // Stores neighbor label opposite of our label
+            //for (int label = 0; label < numNbrs; label++)
+            //{
+            //    Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+            //    int dirInt = dir.ToInt();
+            //    bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
+            //    Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
+            //    if (particleMap.TryGetValue(nbrPos, out Particle nbr))
+            //    {
+            //        // If the neighbor has already been processed: Compute required information
+            //        if (nbr.processedJointMovement)
+            //        {
+            //            nbrParts[label] = nbr;
+            //            bool isNbrHead = nbr.Head() == nbrPos;
+            //            nbrHead[label] = isNbrHead;
+            //            nbrLabels[label] = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
+            //        }
+            //        // Otherwise: Enqueue if necessary
+            //        else
+            //        {
+            //            if (!nbr.queuedForPinConfigProcessing)
+            //            {
+            //                nbr.queuedForPinConfigProcessing = true;
+            //                queue.Enqueue(nbr);
+            //            }
+            //            nbrParts[label] = null;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        nbrParts[label] = null;
+            //    }
+            //}
+
+            // Neighbors have been handled, now perform our movement
+            // TODO: Need to actually apply the particle movement!
+            if (p.ScheduledMovement == null && p.IsExpanded() ||
+                p.ScheduledMovement != null && (
+                p.ScheduledMovement.type == ActionType.EXPAND || p.ScheduledMovement.type == ActionType.PUSH))
+            {
+                // p is expanded at the end of the round
+                Vector2Int tailPos = p.Tail();
+                Vector2Int headPos = p.IsExpanded() ? p.Head() : ParticleSystem_Utils.GetNeighborPosition(p, p.ScheduledMovement.localDir, false);
+                tailPos += p.jmOffset;
+                headPos += p.jmOffset;
+                if (newPositions.ContainsKey(tailPos) || newPositions.ContainsKey(headPos))
+                {
+                    Debug.LogError("Error: Conflict during joint movement, target location of expanded particle is already occupied.");
+                    throw new System.InvalidOperationException();
+                }
+                newPositions[tailPos] = p;
+                newPositions[headPos] = p;
+            }
+            else
+            {
+                // p is contracted at the end of the round
+                Vector2Int pos = p.IsContracted() ? p.Tail() : (p.ScheduledMovement.type == ActionType.CONTRACT_HEAD || p.ScheduledMovement.type == ActionType.PULL_HEAD ? p.Head() : p.Tail());
+                if (newPositions.ContainsKey(pos))
+                {
+                    Debug.LogError("Error: Conflict during joint movement, target location of contracted particle is already occupied.");
+                    throw new System.InvalidOperationException();
+                }
+                newPositions[pos] = p;
+            }
+
+
+            // TODO
+
+            p.processedJointMovement = true;
+        }
+
+        // TODO
     }
 
     // TODO: Circuit computation and beep/message handling should probably be done separately
@@ -833,6 +984,8 @@ public class ParticleSystem : IReplayHistory
         foreach (Particle p in particles)
         {
             p.hasMoved = false;
+            p.processedJointMovement = false;
+            p.queuedForJMProcessing = false;
             p.processedPinConfig = false;
             p.queuedForPinConfigProcessing = false;
         }
