@@ -111,7 +111,7 @@ public class RendererUI
                                         // Update State
                                         selectionState = ParticleSelectionState.NoSelection;
                                         // Close particle panel
-                                        if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.ExitParticlePanel();
+                                        if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.HideParticlePanel();
                                     }
                                 }
                             }

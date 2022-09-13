@@ -7,19 +7,13 @@ using UnityEngine;
 
 public abstract class UISetting
 {
-    // References
-    protected SettingsUIHandler settings;
-
     // Data
     protected GameObject go;
     protected string name;
 
-    public UISetting(SettingsUIHandler settings, string name)
+    public GameObject GetGameObject()
     {
-        // Store reference
-        this.settings = settings;
-
-        
+        return go;
     }
 }
 
@@ -28,7 +22,7 @@ public class UISetting_Slider : UISetting
 
     private Slider slider;
 
-    public UISetting_Slider(SettingsUIHandler settings, GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers) : base(settings, name)
+    public UISetting_Slider(GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
@@ -73,7 +67,7 @@ public class UISetting_Text : UISetting
         Text, Int, Float
     }
 
-    public UISetting_Text(SettingsUIHandler settings, GameObject parent, string name, string text, InputType inputType) : base(settings, name)
+    public UISetting_Text(GameObject parent, string name, string text, InputType inputType)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_text, Vector3.zero, Quaternion.identity, parent.transform);
@@ -136,7 +130,7 @@ public class UISetting_Dropdown : UISetting
 {
     private TMP_Dropdown dropdown;
 
-    public UISetting_Dropdown(SettingsUIHandler settings, GameObject parent, string name, string[] choices, string initialChoice) : base(settings, name)
+    public UISetting_Dropdown(GameObject parent, string name, string[] choices, string initialChoice)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_dropdown, Vector3.zero, Quaternion.identity, parent.transform);
@@ -151,7 +145,7 @@ public class UISetting_Dropdown : UISetting
         dropdown.onValueChanged.AddListener(delegate { OnValueChanged(); });
     }
 
-    public UISetting_Dropdown(SettingsUIHandler settings, GameObject parent, string name, Enum[] choices, Enum initialChoice) : base(settings, name)
+    public UISetting_Dropdown(SettingsUIHandler settings, GameObject parent, string name, Enum[] choices, Enum initialChoice)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_dropdown, Vector3.zero, Quaternion.identity, parent.transform);
@@ -190,7 +184,7 @@ public class UISetting_Toggle : UISetting
 {
     private Toggle toggle;
 
-    public UISetting_Toggle(SettingsUIHandler settings, GameObject parent, string name, bool isOn) : base(settings, name)
+    public UISetting_Toggle(GameObject parent, string name, bool isOn)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_toggle, Vector3.zero, Quaternion.identity, parent.transform);
@@ -225,7 +219,7 @@ public class UISetting_ValueSlider : UISetting
     private bool mappingActive = false;
     private string[] mapping;
 
-    public UISetting_ValueSlider(SettingsUIHandler settings, GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers) : base(settings, name)
+    public UISetting_ValueSlider(GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
@@ -249,7 +243,7 @@ public class UISetting_ValueSlider : UISetting
 
     }
 
-    public UISetting_ValueSlider(SettingsUIHandler settings, GameObject parent, string name, string[] values, float initialIndex) : base(settings, name)
+    public UISetting_ValueSlider(GameObject parent, string name, string[] values, float initialIndex)
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_valueSlider, Vector3.zero, Quaternion.identity, parent.transform);

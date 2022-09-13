@@ -32,16 +32,16 @@ public class SettingsUIHandler : MonoBehaviour
     {
         // Settings _________________________
         // Animations On/Off
-        UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(this, settingsParent, "Animations On/Off", RenderSystem.animationsOn);
+        UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(settingsParent, "Animations On/Off", RenderSystem.animationsOn);
         setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
         // Camera Angle
-        UISetting_Slider setting_cameraAngle = new UISetting_Slider(this, settingsParent, "Camera Angle", 0f, 11f, 0f, true);
+        UISetting_Slider setting_cameraAngle = new UISetting_Slider(settingsParent, "Camera Angle", 0f, 11f, 0f, true);
         setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
         // Circuit Connections Look
-        UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(this, settingsParent, "Circuit Border", SettingsGlobal.circuitBorderActive);
+        UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(settingsParent, "Circuit Border", SettingsGlobal.circuitBorderActive);
         setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
         // Anti Aliasing
-        UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(this, settingsParent, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
+        UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(settingsParent, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
         setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
         uiHandler.SetAA(8);
     }
@@ -97,15 +97,6 @@ public class SettingsUIHandler : MonoBehaviour
             case "Animations On/Off":
                 RenderSystem.animationsOn = isOn;
                 break;
-            default:
-                break;
-        }
-    }
-
-    private void SettingChanged_Value(string name, string value)
-    {
-        switch (name)
-        {
             default:
                 break;
         }
