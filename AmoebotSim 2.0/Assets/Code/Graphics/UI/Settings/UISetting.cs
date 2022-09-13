@@ -15,6 +15,9 @@ public abstract class UISetting
     {
         return go;
     }
+
+    public abstract void Lock();
+    public abstract void Unlock();
 }
 
 public class UISetting_Slider : UISetting
@@ -40,6 +43,21 @@ public class UISetting_Slider : UISetting
         // Add Callbacks
         slider.onValueChanged.AddListener(delegate { OnValueChanged(); });
 
+    }
+
+    public override void Lock()
+    {
+        slider.enabled = false;
+    }
+
+    public override void Unlock()
+    {
+        slider.enabled = true;
+    }
+
+    public void UpdateValue(float value)
+    {
+        slider.value = value;
     }
 
     // Callbacks
@@ -107,6 +125,21 @@ public class UISetting_Text : UISetting
         }
     }
 
+    public override void Lock()
+    {
+        input.enabled = false;
+    }
+
+    public override void Unlock()
+    {
+        input.enabled = true;
+    }
+
+    public void UpdateValue(string text)
+    {
+        input.text = text;
+    }
+
     // Callbacks
 
     public Action<string, string> onValueChangedEvent;
@@ -160,6 +193,7 @@ public class UISetting_Dropdown : UISetting
         // Add Callbacks
         dropdown.onValueChanged.AddListener(delegate { OnValueChanged(); });
     }
+
     protected void InitDropdown(string[] choices, string initialChoice)
     {
         dropdown = go.GetComponentInChildren<TMP_Dropdown>();
@@ -169,6 +203,31 @@ public class UISetting_Dropdown : UISetting
         dropdown.AddOptions(options);
         if (options.Contains(initialChoice) == false) Log.Error("Setting_Dropdown: Constructor: choice not contained in choices!");
         dropdown.value = options.IndexOf(initialChoice);
+    }
+
+    public override void Lock()
+    {
+        dropdown.enabled = false;
+    }
+
+    public override void Unlock()
+    {
+        dropdown.enabled = true;
+    }
+
+    public void UpdateValue(string value)
+    {
+        List<TMPro.TMP_Dropdown.OptionData> options = dropdown.options;
+        for (int i = 0; i < options.Count; i++)
+        {
+            TMPro.TMP_Dropdown.OptionData option = options[i];
+            if(option.text.Equals(value))
+            {
+                dropdown.value = i;
+                return;
+            }
+        }
+        Log.Error("Dropdown Value could not be updated, value not found!");
     }
 
     // Callbacks
@@ -198,6 +257,21 @@ public class UISetting_Toggle : UISetting
 
         // Add Callbacks
         toggle.onValueChanged.AddListener(delegate { OnValueChanged(); });
+    }
+
+    public override void Lock()
+    {
+        toggle.enabled = false;
+    }
+
+    public override void Unlock()
+    {
+        toggle.enabled = true;
+    }
+
+    public void UpdateValue(bool isOn)
+    {
+        toggle.isOn = isOn;
     }
 
     // Callbacks
@@ -280,6 +354,46 @@ public class UISetting_ValueSlider : UISetting
             // No Mapping (1-1 conversion from input field)
             input.text = slider.wholeNumbers ? ((int)slider.value).ToString() : slider.value.ToString();
         }
+    }
+
+    public override void Lock()
+    {
+        slider.enabled = false;
+    }
+
+    public override void Unlock()
+    {
+        slider.enabled = true;
+    }
+
+    public void UpdateValue(string text)
+    {
+        if(mappingActive == false)
+        {
+            Log.Error("ValueSlider: Cannot set a text for a ValueSlider with no mapping!");
+            return;
+        }
+
+        for (int i = 0; i < mapping.Length; i++)
+        {
+            if(text.Equals(mapping[i]))
+            {
+                slider.value = i;
+                return;
+            }
+        }
+        Log.Error("ValueSlider: Value could not be updated, value not found!");
+    }
+
+    public void UpdateValue(float value)
+    {
+        if (mappingActive)
+        {
+            Log.Error("ValueSlider: Cannot set a float for a ValueSlider with a mapping!");
+            return;
+        }
+
+        slider.value = value;
     }
 
     // Callbacks

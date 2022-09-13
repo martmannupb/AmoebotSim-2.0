@@ -8,7 +8,10 @@ public class UIHandler : MonoBehaviour
 {
 
     // References
+    [HideInInspector]
     public AmoebotSimulator sim;
+    public ParticleUIHandler particleUI;
+    public SettingsUIHandler settingsUI;
 
     // UI Objects =====
     // Play/Pause
@@ -133,6 +136,7 @@ public class UIHandler : MonoBehaviour
     {
         image_playPauseButton.sprite = running ? sprite_pause : sprite_play;
         UpdateUI(running, true);
+        particleUI.SimState_RunningToggled(running);
     }
 
 
@@ -151,6 +155,7 @@ public class UIHandler : MonoBehaviour
         }
 
         sim.system.StepBack();
+        sim.RoundChanged();
         UpdateUI(sim.running, true);
     }
 
@@ -164,6 +169,7 @@ public class UIHandler : MonoBehaviour
         }
 
         sim.system.StepForward();
+        sim.RoundChanged();
         UpdateUI(sim.running, true);
     }
 
@@ -233,6 +239,7 @@ public class UIHandler : MonoBehaviour
         {
             // Round Change
             sim.system.SetMarkerToRound(newRound);
+            sim.RoundChanged();
         }
     }
 

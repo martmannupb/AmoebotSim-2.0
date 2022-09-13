@@ -1878,7 +1878,7 @@ GameObject:
   - component: {fileID: 226934758}
   - component: {fileID: 226934757}
   m_Layer: 5
-  m_Name: Text (State)
+  m_Name: Description
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6066,6 +6066,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sim: {fileID: 0}
+  particleUI: {fileID: 1212791404}
+  settingsUI: {fileID: 1212791403}
   image_playPauseButton: {fileID: 2133705220}
   sprite_play: {fileID: 21300000, guid: 537a05c19b1bc114793c91e2a87f7307, type: 3}
   sprite_pause: {fileID: 21300000, guid: 2162944db6e24a443a2d774e10b7a975, type: 3}
@@ -6112,6 +6114,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 922e23857e179e74f96f46fcb85b3924, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  headerText: {fileID: 0}
   go_particlePanel: {fileID: 1245996986}
   go_attributeParent: {fileID: 42931430}
 --- !u!1 &1215037102
@@ -7916,7 +7919,7 @@ GameObject:
   - component: {fileID: 1778364559}
   - component: {fileID: 1778364558}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: Header
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

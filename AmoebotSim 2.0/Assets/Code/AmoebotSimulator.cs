@@ -59,6 +59,12 @@ public class AmoebotSimulator : MonoBehaviour
     {
         //system.ActivateRandomParticle();
         system.SimulateRound();
+        RoundChanged();
+    }
+
+    public void RoundChanged()
+    {
+        uiHandler.particleUI.SimState_RoundChanged();
     }
 
     public void SetSimSpeed(float roundTime)
