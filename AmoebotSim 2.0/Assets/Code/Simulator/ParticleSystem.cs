@@ -1810,4 +1810,9 @@ public class ParticleSystem : IReplayHistory
         CleanupAfterRound();
         UpdateAllParticleVisuals(true);
     }
+
+    public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality)
+    {
+        throw new System.NotImplementedException();
+    }
 }
