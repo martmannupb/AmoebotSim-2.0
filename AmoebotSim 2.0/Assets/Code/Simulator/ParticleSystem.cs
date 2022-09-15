@@ -1815,4 +1815,17 @@ public class ParticleSystem : IReplayHistory
     {
         throw new System.NotImplementedException();
     }
+
+    public void InitializationModeStarted()
+    {
+        // Note: The initialization window has just been opened. So it might be possible to save the state of a running algorithm and convert its particles to the initialization particles
+        // in order to be able to use the given state for new algorithms / save the particle configuration.
+        Log.Debug("InitializationModeStarted: Not implemented yet (I dont wanna throw an error here).");
+    }
+
+    public void InitializationModeAborted()
+    {
+        // Note: The initialization mode has just been aborted and the window is closed. Here the previously saved state could be loaded again to continue with the old algorithm.
+        Log.Debug("InitializationModeAborted: Not implemented yet (I dont wanna throw an error here).");
+    }
 }

@@ -90,7 +90,7 @@ public class RendererUI
                                             selectedParticle_pos1 = state_particleUnderPointer.Head();
                                             selectedParticle_pos2 = state_particleUnderPointer.Tail();
                                             // Open Particle Panel
-                                            if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.ShowParticlePanel(state_particleUnderPointer);
+                                            if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Open(state_particleUnderPointer);
                                             break;
                                         case UIHandler.UITool.Add:
                                             break;
@@ -111,7 +111,7 @@ public class RendererUI
                                         // Update State
                                         selectionState = ParticleSelectionState.NoSelection;
                                         // Close particle panel
-                                        if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.HideParticlePanel();
+                                        if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Close();
                                     }
                                 }
                             }

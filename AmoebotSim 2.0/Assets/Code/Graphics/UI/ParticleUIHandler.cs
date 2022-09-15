@@ -38,7 +38,7 @@ public class ParticleUIHandler : MonoBehaviour
         }
 
         // Hide Panel
-        HideParticlePanel();
+        Close();
         // Clear Panel
         ClearPanel();
     }
@@ -213,13 +213,13 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
-    public void ShowParticlePanel(Particle p)
+    public void Open(Particle p)
     {
         ReinitParticlePanel(p);
         go_particlePanel.SetActive(true);
     }
 
-    public void HideParticlePanel()
+    public void Close()
     {
         go_particlePanel.SetActive(false);
         ClearPanel();

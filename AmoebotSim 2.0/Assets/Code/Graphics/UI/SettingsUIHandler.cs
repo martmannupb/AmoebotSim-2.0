@@ -117,6 +117,11 @@ public class SettingsUIHandler : MonoBehaviour
         settingsParent.SetActive(!settingsParent.activeInHierarchy);
     }
 
+    public void Close()
+    {
+        settingsParent.SetActive(false);
+    }
+
 
 
 

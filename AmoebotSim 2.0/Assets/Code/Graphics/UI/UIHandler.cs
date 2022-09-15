@@ -42,6 +42,9 @@ public class UIHandler : MonoBehaviour
     public Sprite sprite_aa2;
     public Sprite sprite_aa4;
     public Sprite sprite_aa8;
+    // Settings/Exit
+    public Button button_settings;
+    public Button button_exit;
 
     // State
     public UITool activeTool = UITool.Standard;
@@ -336,6 +339,18 @@ public class UIHandler : MonoBehaviour
     public void Botton_ExitPressed()
     {
         Application.Quit();
+    }
+
+    public void HideTopRightButtons()
+    {
+        button_settings.gameObject.SetActive(false);
+        button_exit.gameObject.SetActive(false);
+    }
+
+    public void ShowTopRightButtons()
+    {
+        button_settings.gameObject.SetActive(true);
+        button_exit.gameObject.SetActive(true);
     }
 
     public void TemporaryButton_ResetAlgorithm(int algoID)
