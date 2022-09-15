@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public static class ParticleSystem_Utils
@@ -203,6 +201,37 @@ public static class ParticleSystem_Utils
     }
 
     /// <summary>
+    /// Computes the unit vector in the grid coordinate system that
+    /// points in the given direction.
+    /// </summary>
+    /// <param name="globalDir">The global direction of the vector.</param>
+    /// <returns>A grid vector representing one step in the indicated
+    /// global direction. Will be <c>(0,0)</c> if <paramref name="globalDir"/>
+    /// is <see cref="Direction.NONE"/>.</returns>
+    public static Vector2Int DirectionToVector(Direction globalDir)
+    {
+        if (globalDir == Direction.NONE) return Vector2Int.zero;
+        int dirId = globalDir.ToInt();
+        switch (dirId)
+        {
+            case 0:
+                return new Vector2Int(1, 0);
+            case 1:
+                return new Vector2Int(0, 1);
+            case 2:
+                return new Vector2Int(-1, 1);
+            case 3:
+                return new Vector2Int(-1, 0);
+            case 4:
+                return new Vector2Int(0, -1);
+            case 5:
+                return new Vector2Int(1, -1);
+            default:
+                throw new System.ArgumentOutOfRangeException("globalDir", "Direction must have int representation in {0,1,2,3,4,5}.");
+        }
+    }
+
+    /// <summary>
     /// Computes the neighbor of a grid node position in the given direction and distance.
     /// </summary>
     /// <param name="pos">The original grid node position.</param>
@@ -213,24 +242,7 @@ public static class ParticleSystem_Utils
     /// from node <paramref name="pos"/>.</returns>
     public static Vector2Int GetNbrInDir(Vector2Int pos, Direction globalDir, int distance = 1)
     {
-        int dirId = globalDir.ToInt();
-        switch (dirId)
-        {
-            case 0:
-                return new Vector2Int(pos.x + distance, pos.y);
-            case 1:
-                return new Vector2Int(pos.x, pos.y + distance);
-            case 2:
-                return new Vector2Int(pos.x - distance, pos.y + distance);
-            case 3:
-                return new Vector2Int(pos.x - distance, pos.y);
-            case 4:
-                return new Vector2Int(pos.x, pos.y - distance);
-            case 5:
-                return new Vector2Int(pos.x + distance, pos.y - distance);
-            default:
-                throw new System.ArgumentOutOfRangeException("globalDir", "Direction must be in set {0,1,2,3,4,5}.");
-        }
+        return pos + distance * DirectionToVector(globalDir);
     }
 
     /// <summary>
@@ -267,6 +279,42 @@ public static class ParticleSystem_Utils
     {
         return globalDir.Subtract(compassDir, !chirality);
         //return chirality ? (globalDir - compassDir + 6) % 6 : (compassDir - globalDir + 6) % 6;
+    }
+
+    /// <summary>
+    /// Translates the given local label into the corresponding global label.
+    /// </summary>
+    /// <param name="localLabel">The local label to be translated.</param>
+    /// <param name="localHeadDirection">The local head direction of the particle.</param>
+    /// <param name="compassDir">The global compass direction of the particle.</param>
+    /// <param name="chirality">The chirality of the particle.</param>
+    /// <returns>The global label that identifies the same port as the given
+    /// local label.</returns>
+    public static int LocalToGlobalLabel(int localLabel, Direction localHeadDirection, Direction compassDir, bool chirality)
+    {
+        Direction localDir = GetDirOfLabel(localLabel, localHeadDirection);
+        bool head = IsHeadLabel(localLabel, localHeadDirection);
+        Direction globalDir = LocalToGlobalDir(localDir, compassDir, chirality);
+        Direction globalHeadDir = LocalToGlobalDir(localHeadDirection, compassDir, chirality);
+        return GetLabelInDir(globalDir, globalHeadDir, head);
+    }
+
+    /// <summary>
+    /// Translates the given global label into the corresponding local label.
+    /// </summary>
+    /// <param name="globalLabel">The global label to be translated.</param>
+    /// <param name="globalHeadDirection">The global head direction of the particle.</param>
+    /// <param name="compassDir">The global compass direction of the particle.</param>
+    /// <param name="chirality">The chirality of the particle.</param>
+    /// <returns>The local label that identifies the same port as the given
+    /// global label.</returns>
+    public static int GlobalToLocalLabel(int globalLabel, Direction globalHeadDirection, Direction compassDir, bool chirality)
+    {
+        Direction globalDir = GetDirOfLabel(globalLabel, globalHeadDirection);
+        bool head = IsHeadLabel(globalLabel, globalHeadDirection);
+        Direction localDir = GlobalToLocalDir(globalDir, compassDir, chirality);
+        Direction localHeadDirection = GlobalToLocalDir(globalHeadDirection, compassDir, chirality);
+        return GetLabelInDir(localDir, localHeadDirection, head);
     }
 
     /// <summary>

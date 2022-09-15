@@ -394,6 +394,78 @@ public class ParticleSystem : IReplayHistory
         UpdateAllParticleVisuals(true);
     }
 
+    public void InitializeJMTest()
+    {
+        // A block of particles that expands East
+        Particle p;
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(x, y), 0, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+            }
+        }
+
+
+
+
+
+
+
+        //// Always start by adding a particle at position (0, 0)
+        //List<Vector2Int> candidates = new List<Vector2Int>();
+        //Vector2Int node = new Vector2Int(0, 0);
+        ////Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
+        //Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
+        //particles.Add(p);
+        //particleMap.Add(p.Head(), p);
+
+        //for (int d = 0; d < 6; d++)
+        //    candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
+
+        //HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
+        //occupied.Add(node);
+
+        //while (n < numParticles && candidates.Count > 0)
+        //{
+        //    int randIdx = Random.Range(0, candidates.Count);
+        //    Vector2Int newPos = candidates[randIdx];
+        //    candidates.RemoveAt(randIdx);
+
+        //    // Either use newPos to insert particle or to insert hole
+        //    if (Random.Range(0.0f, 1.0f) >= holeProb)
+        //    {
+        //        for (int d = 0; d < 6; d++)
+        //        {
+        //            Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
+        //            if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
+        //                candidates.Add(nbr);
+        //        }
+
+        //        //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
+        //        p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
+        //        particles.Add(p);
+        //        particleMap.Add(p.Head(), p);
+
+        //        n++;
+        //    }
+
+        //    occupied.Add(newPos);
+        //}
+        //string s = "Created system with " + n + " particles:\n";
+        //foreach (Particle part in particles)
+        //{
+        //    s += part.Head() + "\n";
+        //}
+        //Debug.Log(s);
+
+        DiscoverCircuits(false);
+        CleanupAfterRound();
+        UpdateAllParticleVisuals(true);
+    }
+
     /// <summary>
     /// Resets the entire system to a state from which it can be
     /// initialized again.
@@ -509,11 +581,12 @@ public class ParticleSystem : IReplayHistory
         inBeepPhase = true;
         ActivateParticlesBeep();
         inBeepPhase = false;
+        ApplyNewPinConfigurations();
         DiscoverCircuits();
         FinishBeepAndMessageInfo();
         CleanupAfterRound();
         _previousRound++;
-        UpdateAllParticleVisuals(false);
+        UpdateAllParticleVisuals(true);
     }
 
     /// <summary>
@@ -531,7 +604,78 @@ public class ParticleSystem : IReplayHistory
     {
         for (int i = 0; i < particles.Count; i++)
         {
-            particles[i].ActivateMove();
+            Particle p = particles[i];
+            p.ActivateMove();
+
+            // Compute bonds by global labels
+            int numLabels = p.IsExpanded() ? 10 : 6;
+            for (int label = 0; label < numLabels; label++)
+            {
+                int localLabel = ParticleSystem_Utils.GlobalToLocalLabel(label, p.GlobalHeadDirection(), p.comDir, p.chirality);
+                p.activeBondsGlobal[label] = p.BondActive(localLabel);
+                p.markedBondsGlobal[label] = p.BondMarked(localLabel);
+            }
+
+            p.movementOffset = Vector2Int.zero;
+
+            ParticleAction a = p.ScheduledMovement;
+
+            // Determine the local origin
+            p.isHeadOrigin = p.IsContracted() && a == null || p.IsExpanded() && a != null && (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD);
+
+            // Apply automatic bond restrictions
+            if (a == null) continue;
+
+            // For expanding particles: Bond in expansion direction is always active, opposite bond is always passive
+            if (a.type == ActionType.EXPAND)
+            {
+                Direction d = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
+                p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d)] = true;
+                p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d.Opposite())] = false;
+            }
+            // For pushing particles in handover: Only opposite bond is passive
+            else if (a.type == ActionType.PUSH)
+            {
+                Direction d = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
+                p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d.Opposite())] = false;
+            }
+            // For pulling particles in handover: Bonds at origin (non-moving part) cannot be active
+            else if (a.type == ActionType.PULL_HEAD)
+            {
+                for (int l = 0; l < 10; l++)
+                {
+                    if (ParticleSystem_Utils.IsHeadLabel(l, p.GlobalHeadDirection()))
+                    {
+                        p.markedBondsGlobal[l] = false;
+                    }
+                }
+            }
+            else if (a.type == ActionType.PULL_TAIL)
+            {
+                for (int l = 0; l < 10; l++)
+                {
+                    if (ParticleSystem_Utils.IsTailLabel(l, p.GlobalHeadDirection()))
+                    {
+                        p.markedBondsGlobal[l] = false;
+                    }
+                }
+            }
+
+            // Compute movement offset
+            Direction offsetDir = Direction.NONE;
+            if (a.type == ActionType.EXPAND || a.type == ActionType.PUSH)
+            {
+                offsetDir = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
+            }
+            else if (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD)
+            {
+                offsetDir = p.GlobalHeadDirection();
+            }
+            else if (a.type == ActionType.CONTRACT_TAIL || a.type == ActionType.PULL_TAIL)
+            {
+                offsetDir = p.GlobalTailDirection();
+            }
+            p.movementOffset = ParticleSystem_Utils.DirectionToVector(offsetDir);
         }
     }
 
@@ -644,83 +788,174 @@ public class ParticleSystem : IReplayHistory
             Particle p = queue.Dequeue();
 
             Direction globalHeadDir = p.GlobalHeadDirection();
+            ParticleAction movementAction = p.ScheduledMovement;
 
-            //// First of all, find all neighboring particles and some relative positional information
-            //int numNbrs = p.IsExpanded() ? 10 : 6;
-            //Particle[] nbrParts = new Particle[numNbrs];
-            //bool[] nbrHead = new bool[numNbrs]; // True if the neighbor's head is at this position
-            //int[] nbrLabels = new int[numNbrs]; // Stores neighbor label opposite of our label
-            //for (int label = 0; label < numNbrs; label++)
-            //{
-            //    Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
-            //    int dirInt = dir.ToInt();
-            //    bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
-            //    Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
-            //    if (particleMap.TryGetValue(nbrPos, out Particle nbr))
-            //    {
-            //        // If the neighbor has already been processed: Compute required information
-            //        if (nbr.processedJointMovement)
-            //        {
-            //            nbrParts[label] = nbr;
-            //            bool isNbrHead = nbr.Head() == nbrPos;
-            //            nbrHead[label] = isNbrHead;
-            //            nbrLabels[label] = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
-            //        }
-            //        // Otherwise: Enqueue if necessary
-            //        else
-            //        {
-            //            if (!nbr.queuedForPinConfigProcessing)
-            //            {
-            //                nbr.queuedForPinConfigProcessing = true;
-            //                queue.Enqueue(nbr);
-            //            }
-            //            nbrParts[label] = null;
-            //        }
-            //    }
-            //    else
-            //    {
-            //        nbrParts[label] = null;
-            //    }
-            //}
+            // Find the bonded neighbors of the particle
+            int numNbrs = p.IsExpanded() ? 10 : 6;
+            Particle[] nbrParts = new Particle[numNbrs];
+            bool[] nbrHead = new bool[numNbrs]; // True if the neighbor's head is at this position
+            int[] nbrLabels = new int[numNbrs]; // Stores global neighbor label opposite of our label
 
-            // Neighbors have been handled, now perform our movement
-            // TODO: Need to actually apply the particle movement!
-            if (p.ScheduledMovement == null && p.IsExpanded() ||
-                p.ScheduledMovement != null && (
-                p.ScheduledMovement.type == ActionType.EXPAND || p.ScheduledMovement.type == ActionType.PUSH))
+            for (int label = 0; label < numNbrs; label++)
             {
-                // p is expanded at the end of the round
-                Vector2Int tailPos = p.Tail();
-                Vector2Int headPos = p.IsExpanded() ? p.Head() : ParticleSystem_Utils.GetNeighborPosition(p, p.ScheduledMovement.localDir, false);
-                tailPos += p.jmOffset;
-                headPos += p.jmOffset;
-                if (newPositions.ContainsKey(tailPos) || newPositions.ContainsKey(headPos))
+                Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+                bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
+                Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
+                if (particleMap.TryGetValue(nbrPos, out Particle nbr))
+                {
+                    // We have a neighbor at this location
+                    bool isNbrHead = nbr.Head() == nbrPos;
+                    int nbrLabel = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
+
+                    // Now check if both of the bonds are active
+                    bool myBondActive = p.activeBondsGlobal[label];
+                    bool nbrBondActive = nbr.activeBondsGlobal[nbrLabel];
+
+                    bool bondsActive = myBondActive && nbrBondActive;
+                    bool bondsDisagree = myBondActive ^ nbrBondActive;
+                    // TODO: Maybe remove this warning?
+                    if (bondsDisagree)
+                    {
+                        Debug.LogWarning("Bonds disagree at position " + nbrPos);
+                    }
+
+                    if (bondsActive)
+                    {
+                        // Neighbors are connected by a bond
+                        // Add the neighbor to the list if it has not been processed yet
+                        if (!nbr.processedJointMovement)
+                        {
+                            nbrParts[label] = nbr;
+                            nbrHead[label] = isNbrHead;
+                            nbrLabels[label] = nbrLabel;
+                        }
+                    }
+                }
+            }
+
+            // Neighbors have been found
+            // Now check if the particle's movement agrees with its neighbors
+            for (int label = 0; label < numNbrs; label++)
+            {
+                Particle nbr = nbrParts[label];
+                if (nbr == null)
+                    continue;
+
+                // The offset by which the neighbor's origin will move relative to our origin
+                Vector2Int nbrOffset = Vector2Int.zero;
+
+                // Easy case: Both particles are contracted
+                // There is only a single bond between the two particles
+                if (p.IsContracted() && nbrParts[label].IsContracted())
+                {
+                    bool weMove = movementAction != null;
+                    bool nbrMove = nbr.ScheduledMovement != null;
+                    bool weMarked = p.markedBondsGlobal[label];
+                    bool nbrMarked = nbr.markedBondsGlobal[nbrLabels[label]];
+
+                    // If we have marked the bond and want to move, we will definitely apply our own movement offset
+                    if (weMove && weMarked)
+                        nbrOffset = p.movementOffset;
+
+                    // If the neighbor has marked the bond and wants to move, its offset has to be applied in reverse direction
+                    if (nbrMove && nbrMarked)
+                        nbrOffset -= nbr.movementOffset;
+                }
+                // TODO: Other initial expansion cases
+
+
+
+
+                // Have computed the relative offset of this neighbor
+                // If the neighbor is already queued, its offset has already been set by another particle
+                // and we must check if it matches our computed offset
+                nbrOffset += p.jmOffset;
+                if (nbr.queuedForJMProcessing)
+                {
+                    if (nbr.jmOffset != nbrOffset)
+                    {
+                        Debug.LogError("Offset for particle does not match! Previous offset: " + nbr.jmOffset + ", new offset: " + nbrOffset);
+                        throw new System.InvalidOperationException("Conflict during joint movement");
+                    }
+                }
+                else
+                {
+                    nbr.jmOffset = nbrOffset;
+                    queue.Enqueue(nbr);
+                    nbr.queuedForJMProcessing = true;
+                }
+            }
+
+
+            // Neighbors have been handled, now compute our location in the new particle system
+            // and place it if the location is not already occupied
+            bool expandedAfterMovement = p.IsExpanded() && movementAction == null ||
+                movementAction != null && (movementAction.type == ActionType.EXPAND || movementAction.type == ActionType.PUSH);
+            if (expandedAfterMovement)
+            {
+                Vector2Int head = p.Head() + p.jmOffset;
+                Vector2Int tail = p.Tail() + p.jmOffset;
+                if (movementAction != null)
+                {
+                    head = tail + p.movementOffset;
+                }
+
+                if (newPositions.ContainsKey(head) || newPositions.ContainsKey(tail))
                 {
                     Debug.LogError("Error: Conflict during joint movement, target location of expanded particle is already occupied.");
                     throw new System.InvalidOperationException();
                 }
-                newPositions[tailPos] = p;
-                newPositions[headPos] = p;
+                newPositions[head] = p;
+                newPositions[tail] = p;
             }
             else
             {
-                // p is contracted at the end of the round
-                Vector2Int pos = p.IsContracted() ? p.Tail() : (p.ScheduledMovement.type == ActionType.CONTRACT_HEAD || p.ScheduledMovement.type == ActionType.PULL_HEAD ? p.Head() : p.Tail());
-                if (newPositions.ContainsKey(pos))
+                Vector2Int pos = p.Head() + p.jmOffset;
+                if (movementAction != null && (movementAction.type == ActionType.CONTRACT_TAIL || movementAction.type == ActionType.PULL_TAIL))
                 {
-                    Debug.LogError("Error: Conflict during joint movement, target location of contracted particle is already occupied.");
-                    throw new System.InvalidOperationException();
+                    pos += p.movementOffset;
+                    if (newPositions.ContainsKey(pos))
+                    {
+                        Debug.LogError("Error: Conflict during joint movement, target location of contracted particle is already occupied.");
+                        throw new System.InvalidOperationException();
+                    }
+                    newPositions[pos] = p;
                 }
-                newPositions[pos] = p;
             }
-
-
-            // TODO
 
             p.processedJointMovement = true;
         }
 
+        // BFS has finished, now apply the movements to the particles locally
+        // Also, check if any particle was not processed
+        foreach (Particle p in particles)
+        {
+            if (!p.processedJointMovement)
+            {
+                Debug.LogWarning("Bond structure is not connected, some particle movements were not processed!");
+            }
+            else if (p.ScheduledMovement != null)
+            {
+                if (p.ScheduledMovement.type == ActionType.EXPAND || p.ScheduledMovement.type == ActionType.PUSH)
+                {
+                    p.Apply_Expand(p.ScheduledMovement.localDir, p.jmOffset);
+                }
+                else if (p.ScheduledMovement.type == ActionType.CONTRACT_HEAD || p.ScheduledMovement.type == ActionType.PULL_HEAD)
+                {
+                    p.Apply_ContractHead(p.jmOffset);
+                }
+                else if (p.ScheduledMovement.type == ActionType.CONTRACT_TAIL || p.ScheduledMovement.type == ActionType.PULL_TAIL)
+                {
+                    p.Apply_ContractTail(p.jmOffset);
+                }
+            }
+        }
+
+        particleMap = newPositions;
+
         // TODO
+
+        Debug.Log("Computed joint movements in " + (Time.realtimeSinceStartup - tStart) + "s");
     }
 
     // TODO: Circuit computation and beep/message handling should probably be done separately
@@ -972,15 +1207,11 @@ public class ParticleSystem : IReplayHistory
 
     /// <summary>
     /// Resets the helper information of all particles to prepare for
-    /// the simulation of the next round. This includes the
-    /// <see cref="Particle.hasMoved"/>, <see cref="Particle.processedPinConfig"/>
-    /// and the <see cref="Particle.queuedForPinConfigProcessing"/> flags.
+    /// the simulation of the next round.
     /// </summary>
     public void CleanupAfterRound()
     {
-        // Remove hasMoved flags from all particles
-        // TODO: Maybe remove scheduled actions too? Should actually be removed after processing
-        // (No scheduled action should remain after processing the queue)
+        // Remove simulation state flags from all particles
         foreach (Particle p in particles)
         {
             p.hasMoved = false;
@@ -988,6 +1219,7 @@ public class ParticleSystem : IReplayHistory
             p.queuedForJMProcessing = false;
             p.processedPinConfig = false;
             p.queuedForPinConfigProcessing = false;
+            p.ScheduledMovement = null;
         }
     }
 
@@ -1198,18 +1430,16 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// System-side implementation of <see cref="ParticleAlgorithm.Expand(int)"/>.
+    /// System-side implementation of <see cref="ParticleAlgorithm.Expand(Direction)"/>.
     /// <para>
     /// Schedules a <see cref="ParticleAction"/> to expand the given particle in the
     /// specified direction if the action is applicable.
     /// An expansion action is definitely not applicable if the particle is already
-    /// expanded or the node in expansion direction is occupied by a contracted
-    /// particle.
+    /// expanded.
     /// </para>
     /// </summary>
     /// <exception cref="System.InvalidOperationException">
-    /// Thrown if the particle is already expanded or the node in expansion direction
-    /// is occupied by a contracted particle.
+    /// Thrown if the particle is already expanded.
     /// </exception>
     /// <param name="p">The particle that should expand.</param>
     /// <param name="locDir">The local direction into which the particle should expand.</param>
@@ -1221,13 +1451,6 @@ public class ParticleSystem : IReplayHistory
             throw new System.InvalidOperationException("Expanded particle cannot expand again.");
         }
 
-        // Reject if there is a contracted particle on the target node
-        Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
-        if (particleMap.TryGetValue(targetLoc, out Particle p2) && p2.IsContracted())
-        {
-            throw new System.InvalidOperationException("Particle cannot expand onto node occupied by contracted particle.");
-        }
-
         // Warning if particle already has a scheduled movement operation
         // TODO: Turn this into an error?
         if (p.ScheduledMovement != null)
@@ -1235,10 +1458,10 @@ public class ParticleSystem : IReplayHistory
             Debug.LogWarning("Expanding particle already has a scheduled movement.");
         }
 
-        // Store expansion action in particle and queue
+        // Store expansion action in particle
         ParticleAction a = new ParticleAction(p, ActionType.EXPAND, locDir);
         p.ScheduledMovement = a;
-        actionQueue.Enqueue(a);
+        //actionQueue.Enqueue(a);
     }
 
     /// <summary>

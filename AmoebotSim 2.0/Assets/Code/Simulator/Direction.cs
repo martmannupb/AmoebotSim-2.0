@@ -50,6 +50,7 @@ static class DirectionHelpers
     /// <returns>The direction directly opposite of <paramref name="d"/>.</returns>
     public static Direction Opposite(this Direction d)
     {
+        if (d == Direction.NONE) return Direction.NONE;
         return (Direction)(((int)d + 6) % 12);
     }
 
@@ -70,6 +71,7 @@ static class DirectionHelpers
     /// counter-clockwise direction.</returns>
     public static Direction Rotate60(this Direction d, int amount)
     {
+        if (d == Direction.NONE) return Direction.NONE;
         if (amount < 0)
             amount = 5 * Mathf.Abs(amount);
         return (Direction)(((int)d + 2 * amount) % 12);
@@ -96,6 +98,7 @@ static class DirectionHelpers
     /// counter-clockwise direction.</returns>
     public static Direction Rotate30(this Direction d, int amount)
     {
+        if (d == Direction.NONE) return Direction.NONE;
         if (amount < 0)
             amount = 11 * Mathf.Abs(amount);
         return (Direction)(((int)d + amount) % 12);
@@ -113,6 +116,7 @@ static class DirectionHelpers
     /// necessary to align <paramref name="d"/> with <paramref name="target"/>.</returns>
     public static int DistanceTo(this Direction d, Direction target, bool clockwise = false)
     {
+        if (d == Direction.NONE || target == Direction.NONE) return -1;
         int dInt = (int)d;
         int tInt = (int)target;
         if (tInt < dInt)
@@ -139,6 +143,7 @@ static class DirectionHelpers
     /// <returns></returns>
     public static Direction AddTo(this Direction d, Direction other, bool clockwise = false)
     {
+        if (d == Direction.NONE || other == Direction.NONE) return Direction.NONE;
         return (Direction)(clockwise ? (((int)other + 12 - (int)d) % 12) : (((int)other + (int)d) % 12));
     }
 
@@ -157,6 +162,7 @@ static class DirectionHelpers
     /// to <paramref name="other"/> to get <paramref name="d"/>.</returns>
     public static Direction Subtract(this Direction d, Direction other, bool clockwise = false)
     {
+        if (d == Direction.NONE || other == Direction.NONE) return Direction.NONE;
         return (Direction)(clockwise ? (((int)other + 12 - (int)d) % 12) : (((int)d + 12 - (int)other) % 12));
     }
 

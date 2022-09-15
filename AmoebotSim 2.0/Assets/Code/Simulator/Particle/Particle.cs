@@ -174,6 +174,23 @@ public class Particle : IParticleState, IReplayHistory
     public Vector2Int jmOffset;
 
     /// <summary>
+    /// The global offset by which the particle would move a
+    /// bonded neighbor relative to its own origin if the bond
+    /// moves relative to the origin. This is simply the
+    /// direction of movement written as a vector.
+    /// </summary>
+    public Vector2Int movementOffset;
+
+    /// <summary>
+    /// Indicates whether the particle's head is its local origin,
+    /// i.e., the part that would stay at its absolute position if
+    /// the particle was the anchor of the system. The head is the
+    /// anchor if the particle is and stays contracted or if it is
+    /// expanded and contracts into its head.
+    /// </summary>
+    public bool isHeadOrigin;
+
+    /// <summary>
     /// Flag indicating whether the particle has already been
     /// processed for joint movements. Becomes <c>true</c> as
     /// soon as the particle's movement has been validated
@@ -188,6 +205,15 @@ public class Particle : IParticleState, IReplayHistory
     /// particle is only added to the queue once.
     /// </summary>
     public bool queuedForJMProcessing = false;
+
+    /// <summary>
+    /// Active bonds indexed by global labels.
+    /// </summary>
+    public bool[] activeBondsGlobal = new bool[10];
+    /// <summary>
+    /// Marked bonds indexed by global labels.
+    /// </summary>
+    public bool[] markedBondsGlobal = new bool[10];
 
     /// <summary>
     /// Flag indicating whether the particle has moved during the current round.
@@ -785,6 +811,25 @@ public class Particle : IParticleState, IReplayHistory
      */
 
     /// <summary>
+    /// Expands this particle in the specified local direction and moves
+    /// it by the specified global offset.
+    /// </summary>
+    /// <remarks>
+    /// The method will not check if this operation is valid.
+    /// </remarks>
+    /// <param name="locDir">The local direction into which this particle should expand.</param>
+    /// <param name="offset">The global offset by which this particle moves in the system.</param>
+    public void Apply_Expand(Direction locDir, Vector2Int offset)
+    {
+        exp_isExpanded = true;
+        exp_expansionDir = locDir;
+        pos_head = ParticleSystem_Utils.GetNbrInDir(pos_head, ParticleSystem_Utils.LocalToGlobalDir(locDir, comDir, chirality)) + offset;
+        pos_tail += offset;
+        expansionDirHistory.RecordValueInRound(exp_expansionDir, system.CurrentRound);
+        tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
+    }
+
+    /// <summary>
     /// Expands this particle in the specified local direction.
     /// </summary>
     /// <remarks>
@@ -793,10 +838,26 @@ public class Particle : IParticleState, IReplayHistory
     /// <param name="locDir">The local direction into which this particle should expand.</param>
     public void Apply_Expand(Direction locDir)
     {
-        exp_isExpanded = true;
-        exp_expansionDir = locDir;
-        pos_head = ParticleSystem_Utils.GetNbrInDir(pos_head, ParticleSystem_Utils.LocalToGlobalDir(locDir, comDir, chirality));
-        expansionDirHistory.RecordValueInRound(exp_expansionDir, system.CurrentRound);
+        Apply_Expand(locDir, Vector2Int.zero);
+    }
+
+    /// <summary>
+    /// Contracts this particle into the node occupied by its head and
+    /// moves the particle by the specified global offset.
+    /// </summary>
+    /// <remarks>
+    /// The method will not check if this operation is valid.
+    /// </remarks>
+    /// <param name="offset">The global offset by which this particle
+    /// moves in the system.</param>
+    public void Apply_ContractHead(Vector2Int offset)
+    {
+        exp_isExpanded = false;
+        exp_expansionDir = Direction.NONE;
+        pos_head += offset;
+        pos_tail = pos_head;
+        tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
+        expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
     }
 
     /// <summary>
@@ -807,10 +868,24 @@ public class Particle : IParticleState, IReplayHistory
     /// </remarks>
     public void Apply_ContractHead()
     {
+        Apply_ContractHead(Vector2Int.zero);
+    }
+
+    /// <summary>
+    /// Contracts this particle into the node occupied by its tail and
+    /// moves the particle by the specified global offset.
+    /// </summary>
+    /// <remarks>
+    /// The method will not check if this operation is valid.
+    /// </remarks>
+    /// <param name="offset">The global offset by which this particle
+    /// moves in the system.</param>
+    public void Apply_ContractTail(Vector2Int offset)
+    {
         exp_isExpanded = false;
         exp_expansionDir = Direction.NONE;
-        pos_tail = pos_head;
-        tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
+        pos_tail += offset;
+        pos_head = pos_tail;
         expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
     }
 
@@ -822,10 +897,7 @@ public class Particle : IParticleState, IReplayHistory
     /// </remarks>
     public void Apply_ContractTail()
     {
-        exp_isExpanded = false;
-        exp_expansionDir = Direction.NONE;
-        pos_head = pos_tail;
-        expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
+        Apply_ContractTail(Vector2Int.zero);
     }
 
     // TODO: Check if we need to do anything else in these 3 methods
