@@ -113,4 +113,18 @@ public class ParticleFactory
         p.graphics.UpdateReset();
         return p;
     }
+
+    public static Particle CreateJMTestParticle(ParticleSystem system, Vector2Int position, int i, Direction compassDir = Direction.NONE, bool chirality = true)
+    {
+        if (compassDir == Direction.NONE)
+            compassDir = DirectionHelpers.Cardinal(0);
+        Particle p = new Particle(system, position, compassDir, chirality);
+        p.isActive = true;
+        new JMTestParticle(p, i);
+        p.isActive = false;
+        p.InitWithAlgorithm();
+        p.graphics.AddParticle();
+        p.graphics.UpdateReset();
+        return p;
+    }
 }

@@ -24,15 +24,6 @@ public class AmoebotSimulator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        BitVector32 v = new BitVector32(1023);
-        Debug.Log(v);
-        Debug.Log(v[1 << 0]);
-        Debug.Log(v[1 << 8]);
-        Debug.Log(v[1 << 9]);
-        Debug.Log(v[1 << 10]);
-        v[1 << 5] = false;
-        Debug.Log(v);
-
         // Init Renderer + Particle System
         renderSystem = new RenderSystem(this, FindObjectOfType<InputController>());
         system = new ParticleSystem(this, renderSystem);
@@ -46,12 +37,13 @@ public class AmoebotSimulator : MonoBehaviour
         // Init Algorithm
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(50, 50, 0.3f, -9, -5);
-        system.InitializeLineFormation(50, 0.4f);
+        //system.InitializeLineFormation(50, 0.4f);
         //system.InitializeLineFormation(25, 0.4f);
         //system.InitializeLeaderElection(50, 0.35f);
         //system.InitializeChiralityCompass(50, 0.2f);
         //system.InitializeBoundaryTest(100, 0.05f);
         //system.InitializeExpandedTest(10);
+        system.InitializeJMTest();
     }
 
 
@@ -73,7 +65,8 @@ public class AmoebotSimulator : MonoBehaviour
     public void ActivateParticle()
     {
         //system.ActivateRandomParticle();
-        system.SimulateRound();
+        //system.SimulateRound();
+        system.SimulateJMRound();
     }
 
     public void SetSimSpeed(float roundTime)
