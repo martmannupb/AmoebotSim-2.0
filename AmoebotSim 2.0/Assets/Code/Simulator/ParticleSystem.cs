@@ -394,72 +394,38 @@ public class ParticleSystem : IReplayHistory
         UpdateAllParticleVisuals(true);
     }
 
-    public void InitializeJMTest()
+    public void InitializeJMTest(int mode)
     {
-        // A block of particles that expands East
         Particle p;
-        for (int x = 0; x < 5; x++)
+
+        if (mode == 0)
         {
-            for (int y = 0; y < 10; y++)
+            // A block of particles that expands East while being sheared
+            for (int x = 0; x < 5; x++)
             {
-                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(x, y), 0, Direction.E);
-                particles.Add(p);
-                particleMap.Add(p.Head(), p);
+                for (int y = 0; y < 10; y++)
+                {
+                    p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(x, y), 0, Direction.E);
+                    particles.Add(p);
+                    particleMap.Add(p.Head(), p);
+                }
+            }
+        }
+        else if (mode == 1)
+        {
+            // A block of particles that expands East without being sheared
+            for (int x = 0; x < 5; x++)
+            {
+                for (int y = 0; y < 10; y++)
+                {
+                    p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(x, y), 1, Direction.E);
+                    particles.Add(p);
+                    particleMap.Add(p.Head(), p);
+                }
             }
         }
 
 
-
-
-
-
-
-        //// Always start by adding a particle at position (0, 0)
-        //List<Vector2Int> candidates = new List<Vector2Int>();
-        //Vector2Int node = new Vector2Int(0, 0);
-        ////Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
-        //Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
-        //particles.Add(p);
-        //particleMap.Add(p.Head(), p);
-
-        //for (int d = 0; d < 6; d++)
-        //    candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
-
-        //HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
-        //occupied.Add(node);
-
-        //while (n < numParticles && candidates.Count > 0)
-        //{
-        //    int randIdx = Random.Range(0, candidates.Count);
-        //    Vector2Int newPos = candidates[randIdx];
-        //    candidates.RemoveAt(randIdx);
-
-        //    // Either use newPos to insert particle or to insert hole
-        //    if (Random.Range(0.0f, 1.0f) >= holeProb)
-        //    {
-        //        for (int d = 0; d < 6; d++)
-        //        {
-        //            Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
-        //            if (!occupied.Contains(nbr) && !candidates.Contains(nbr))
-        //                candidates.Add(nbr);
-        //        }
-
-        //        //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
-        //        p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
-        //        particles.Add(p);
-        //        particleMap.Add(p.Head(), p);
-
-        //        n++;
-        //    }
-
-        //    occupied.Add(newPos);
-        //}
-        //string s = "Created system with " + n + " particles:\n";
-        //foreach (Particle part in particles)
-        //{
-        //    s += part.Head() + "\n";
-        //}
-        //Debug.Log(s);
 
         DiscoverCircuits(false);
         CleanupAfterRound();
@@ -574,6 +540,7 @@ public class ParticleSystem : IReplayHistory
         ActivateParticlesMove();
         inMovePhase = false;
         SimulateJointMovements();
+        FinishMovementInfo();
 
         // Second: Beep cycle
         // All particles set their new pin configurations and send beeps and messages
@@ -846,7 +813,7 @@ public class ParticleSystem : IReplayHistory
 
                 // Easy case: Both particles are contracted
                 // There is only a single bond between the two particles
-                if (p.IsContracted() && nbrParts[label].IsContracted())
+                if (p.IsContracted() && nbr.IsContracted())
                 {
                     bool weMove = movementAction != null;
                     bool nbrMove = nbr.ScheduledMovement != null;
@@ -860,6 +827,88 @@ public class ParticleSystem : IReplayHistory
                     // If the neighbor has marked the bond and wants to move, its offset has to be applied in reverse direction
                     if (nbrMove && nbrMarked)
                         nbrOffset -= nbr.movementOffset;
+                }
+                // We are contracted and the neighbor is expanded
+                else if (p.IsContracted() && nbr.IsExpanded())
+                {
+                    Direction bondDir = ParticleSystem_Utils.GetDirOfLabel(label);
+                    // First check if we have two bonds to this neighbor
+                    // If that is the case, remove the second occurrence from the list of neighbors
+                    Direction secondBondDir = Direction.NONE;
+                    if (nbrParts[(label + 1) % 6] == nbr)
+                    {
+                        secondBondDir = bondDir.Rotate60(1);
+                        nbrParts[(label + 1) % 6] = null;
+                    }
+                    else if (nbrParts[(label + 5) % 6] == nbr)
+                    {
+                        secondBondDir = bondDir.Rotate60(-1);
+                        nbrParts[(label + 5) % 6] = null;
+                    }
+
+                    if (secondBondDir == Direction.NONE)
+                    {
+                        // We have only one bond
+                        // Check if we want to perform a handover
+                        bool weWantHandover = movementAction != null &&
+                            movementAction.type == ActionType.PUSH &&
+                            ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality) == bondDir;
+                        ParticleAction nbrAction = nbr.ScheduledMovement;
+                        bool nbrWantsHandover = nbrAction != null &&
+                            (nbrAction.type == ActionType.PULL_HEAD && !nbrHead[label] ||
+                            nbrAction.type == ActionType.PULL_TAIL && nbrHead[label]) &&
+                            ParticleSystem_Utils.LocalToGlobalDir(nbrAction.localDir, nbr.comDir, nbr.chirality) == bondDir.Opposite();
+
+                        if (weWantHandover ^ nbrWantsHandover)
+                        {
+                            Debug.LogError("Error: Disagreement on handover");
+                            throw new System.InvalidOperationException("Conflict during movements");
+                        }
+
+                        if (weWantHandover)
+                        {
+                            // Easy: No offset is applied at all
+                        }
+                        else
+                        {
+                            // No handover
+                            // Apply both offsets
+                            if (movementAction != null && p.markedBondsGlobal[label])
+                            {
+                                nbrOffset += p.movementOffset;
+                            }
+                            // Neighbor offset only applies if we are not bonded to its origin
+                            if (nbrAction != null &&
+                                (nbrHead[label] && (nbrAction.type == ActionType.CONTRACT_TAIL || nbrAction.type == ActionType.PULL_TAIL) ||
+                                !nbrHead[label] && (nbrAction.type == ActionType.CONTRACT_HEAD || nbrAction.type == ActionType.PULL_HEAD)))
+                            {
+                                if (nbr.markedBondsGlobal[nbrLabels[label]] && (nbrAction.type == ActionType.PULL_HEAD || nbrAction.type == ActionType.PULL_TAIL))
+                                {
+                                    // Neighbor has marked this bond and is performing a handover
+                                    // We stay in place, the neighbor contracts toward the other direction
+                                    // The effect is that we do not apply any offset
+                                }
+                                else
+                                {
+                                    // Bond is not marked for handover transferral, movement creates offset
+                                    nbrOffset -= nbr.movementOffset;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // We have two bonds
+                        // TODO
+                        // If handover to one of the two positions:
+                        //  The other bond must not be marked
+                        //  Everything else is as in the first case but with the correct position
+                        // If no handover:
+                        //  Neighbor must not contract
+                        //  Both bonds must have the same marked status
+                    }
+
+                    // TODO
                 }
                 // TODO: Other initial expansion cases
 
@@ -1220,6 +1269,19 @@ public class ParticleSystem : IReplayHistory
             p.processedPinConfig = false;
             p.queuedForPinConfigProcessing = false;
             p.ScheduledMovement = null;
+        }
+    }
+
+    /// <summary>
+    /// Stores the released and marked bonds and resets
+    /// them for each particle. Use this to prepare the
+    /// particles for the joint movements in the next round.
+    /// </summary>
+    public void FinishMovementInfo()
+    {
+        foreach (Particle p in particles)
+        {
+            p.StoreAndResetMovementInfo();
         }
     }
 

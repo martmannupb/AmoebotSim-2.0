@@ -1019,6 +1019,19 @@ public class Particle : IParticleState, IReplayHistory
     }
 
     /// <summary>
+    /// Stores the active and marked bond info in the particle's history
+    /// and resets their values for the next round. All bonds are active
+    /// again and no bonds are marked after this method is called.
+    /// </summary>
+    public void StoreAndResetMovementInfo()
+    {
+        activeBondHistory.RecordValueInRound(activeBonds.Data, system.CurrentRound);
+        markedBondHistory.RecordValueInRound(markedBonds.Data, system.CurrentRound);
+        activeBonds = new BitVector32(1023);    // All flags set to true
+        markedBonds = new BitVector32(0);       // All flags set to false
+    }
+
+    /// <summary>
     /// Checks if the specified partition set has received
     /// a beep.
     /// </summary>

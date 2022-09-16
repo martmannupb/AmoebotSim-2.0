@@ -31,11 +31,13 @@ public class JMTestParticle : ParticleAlgorithm
         {
             case 0: Activate0();
                 break;
+            case 1: Activate1();
+                break;
             default: return;
         }
     }
 
-    // Two contracted particles, not doing anything
+    // Expand East with shearing
     private void Activate0()
     {
         Expand(Direction.E);
@@ -43,6 +45,15 @@ public class JMTestParticle : ParticleAlgorithm
         {
             MarkBond(Direction.NNE);
         }
+        terminated.SetValue(true);
+    }
+
+    // Expand East without shearing
+    private void Activate1()
+    {
+        Expand(Direction.E);
+        ReleaseBond(Direction.SSE);
+        ReleaseBond(Direction.NNW);
         terminated.SetValue(true);
     }
 }
