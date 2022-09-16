@@ -42,7 +42,7 @@ public class ParticleUIHandler : MonoBehaviour
         }
 
         // Register Events
-        sim.eventSimStartedStopped += SimState_RunningToggled;
+        EventDatabase.event_sim_startedStopped += SimState_RunningToggled;
 
         // Hide Panel
         Close();

@@ -19,9 +19,6 @@ public class AmoebotSimulator : MonoBehaviour
     // UI
     public UIHandler uiHandler;
 
-    // Actions
-    public Action<bool> eventSimStartedStopped; // true = started, false = stopped
-
     public AmoebotSimulator()
     {
         instance = this;
@@ -100,12 +97,12 @@ public class AmoebotSimulator : MonoBehaviour
         if (running == false)
         {
             system.ContinueTracking();
-            eventSimStartedStopped(true);
+            if(EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(true);
         }
         else
         {
             //system.Print();
-            eventSimStartedStopped(false);
+            if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(false);
         }
         running = !running;
         if (uiHandler != null) uiHandler.NotifyPlayPause(running);

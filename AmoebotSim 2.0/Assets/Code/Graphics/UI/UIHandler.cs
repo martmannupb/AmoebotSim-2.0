@@ -339,7 +339,11 @@ public class UIHandler : MonoBehaviour
 
     public void Botton_ExitPressed()
     {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
         Application.Quit();
+#endif
     }
 
     public void HideTopRightButtons()

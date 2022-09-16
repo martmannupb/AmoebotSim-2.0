@@ -43,20 +43,24 @@ public class InitializationUIHandler : MonoBehaviour
         uiHandler = FindObjectOfType<UIHandler>();
         if (uiHandler == null) Log.Error("Could not find UIHandler.");
 
-        // Init
-        InitUI();
-    }
-
-    public void InitUI()
-    {
         // Hide Panel
         panel.SetActive(false);
         // Collect Data
         camColorBG = Camera.main.backgroundColor;
+        // Init
+        ResetUI();
+    }
+
+    public void ResetUI()
+    {
         // Particle Generation
+        field_particle_amountParticles.text = "50";
+        dropdown_particle_chirality.ClearOptions();
         dropdown_particle_chirality.AddOptions(new List<string>(System.Enum.GetNames(typeof(SettingChirality))));
         List<string> directionList = new List<string>(System.Enum.GetNames(typeof(Direction)));
         directionList.Insert(0, "Random");
+        dropdown_particle_compassDir.value = 0;
+        dropdown_particle_compassDir.ClearOptions();
         dropdown_particle_compassDir.AddOptions(directionList);
         // Algorithm Generation
         Type[] algorithmClasses = typeof(ParticleAlgorithm).Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(ParticleAlgorithm))).ToArray();
@@ -65,6 +69,8 @@ public class InitializationUIHandler : MonoBehaviour
         {
             algoStrings.Add(algorithmClasses[i].ToString());
         }
+        dropdown_algorithm_algo.value = 0;
+        dropdown_algorithm_algo.ClearOptions();
         dropdown_algorithm_algo.AddOptions(algoStrings);
     }
 
@@ -80,6 +86,8 @@ public class InitializationUIHandler : MonoBehaviour
         // Notify System
         uiHandler.sim.PauseSim();
         uiHandler.sim.system.InitializationModeStarted();
+        // Event
+        if(EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(true);
     }
 
     public void Close(bool aborted)
@@ -91,6 +99,8 @@ public class InitializationUIHandler : MonoBehaviour
         Camera.main.backgroundColor = camColorBG;
         // Notify System
         if (aborted) uiHandler.sim.system.InitializationModeAborted();
+        // Event
+        if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(false);
     }
 
     /// <summary>
