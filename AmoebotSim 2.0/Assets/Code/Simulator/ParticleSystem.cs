@@ -1816,8 +1816,9 @@ public class ParticleSystem : IReplayHistory
 
     
 
-    public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality)
+    public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality, bool randomCompassDir, Direction compassDir)
     {
+        // If randomCompassDir is true the value of direction can be ignored
         throw new System.NotImplementedException();
     }
 

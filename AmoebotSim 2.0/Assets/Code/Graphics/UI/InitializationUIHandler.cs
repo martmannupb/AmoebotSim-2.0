@@ -55,7 +55,9 @@ public class InitializationUIHandler : MonoBehaviour
         camColorBG = Camera.main.backgroundColor;
         // Particle Generation
         dropdown_particle_chirality.AddOptions(new List<string>(System.Enum.GetNames(typeof(SettingChirality))));
-        dropdown_particle_compassDir.AddOptions(new List<string>(System.Enum.GetNames(typeof(Direction))));
+        List<string> directionList = new List<string>(System.Enum.GetNames(typeof(Direction)));
+        directionList.Insert(0, "Random");
+        dropdown_particle_compassDir.AddOptions(directionList);
         // Algorithm Generation
         Type[] algorithmClasses = typeof(ParticleAlgorithm).Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(ParticleAlgorithm))).ToArray();
         List<string> algoStrings = new List<string>();
@@ -125,10 +127,23 @@ public class InitializationUIHandler : MonoBehaviour
             Log.Error("Initialization: Generate: Could not parse chirality!");
             return;
         }
+        bool randomCompassDir = dropdown_particle_compassDir.value == 0;
+        Direction compassDir = Direction.N;
+        if(randomCompassDir == false)
+        {
+            object output;
+            if (Direction.TryParse(typeof(Direction), dropdown_particle_compassDir.options[dropdown_particle_compassDir.value].text, out output) == false)
+            {
+                Log.Error("Initialization: Generate: Could not parse direction!");
+                return;
+            }
+            compassDir = (Direction)output;
+        }
+        
 
         // Call Generation Method
         uiHandler.sim.system.Reset();
-        uiHandler.sim.system.GenerateParticles(amountParticles, chirality);
+        uiHandler.sim.system.GenerateParticles(amountParticles, chirality, randomCompassDir, compassDir);
     }
 
     public void ButtonPressed_StartAlgorithm()
