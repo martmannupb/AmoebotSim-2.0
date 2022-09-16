@@ -9,9 +9,10 @@ public class ParticleUIHandler : MonoBehaviour
 
     // Singleton
     public static ParticleUIHandler instance;
-
+    
     // References
-    private UIHandler uiHandler;
+    private AmoebotSimulator sim;
+
     // UI References
     public TMPro.TextMeshProUGUI headerText;
     public GameObject go_particlePanel;
@@ -27,6 +28,9 @@ public class ParticleUIHandler : MonoBehaviour
         // Singleton
         instance = this;
 
+        // References
+        sim = AmoebotSimulator.instance;
+
         // Find elements
         for (int i = 0; i < go_attributeParent.transform.childCount; i++)
         {
@@ -37,10 +41,46 @@ public class ParticleUIHandler : MonoBehaviour
             }
         }
 
+        // Register Events
+        sim.eventSimStartedStopped += SimState_RunningToggled;
+
         // Hide Panel
         Close();
         // Clear Panel
         ClearPanel();
+    }
+
+    public void Open(Particle p)
+    {
+        ReinitParticlePanel(p);
+        go_particlePanel.SetActive(true);
+    }
+
+    public void Close()
+    {
+        go_particlePanel.SetActive(false);
+        ClearPanel();
+    }
+
+    /// <summary>
+    /// Called every frame. Used for dynamic updates of the visual interface.
+    /// </summary>
+    public void UpdateUI()
+    {
+        if (go_particlePanel.activeSelf)
+        {
+            // Read Sim State
+            if (sim.system.IsInLatestRound())
+            {
+                // In Latest round
+                UnlockAttributes();
+            }
+            else
+            {
+                // Not in latest round
+                LockAttributes();
+            }
+        }
     }
 
     private void ReinitParticlePanel(Particle p)
@@ -213,18 +253,6 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
-    public void Open(Particle p)
-    {
-        ReinitParticlePanel(p);
-        go_particlePanel.SetActive(true);
-    }
-
-    public void Close()
-    {
-        go_particlePanel.SetActive(false);
-        ClearPanel();
-    }
-
     private bool IsParticlePanelActive()
     {
         return go_particlePanel.activeSelf;
@@ -250,12 +278,14 @@ public class ParticleUIHandler : MonoBehaviour
         RefreshParticlePanel();
     }
 
-
+    
 
     // Callbacks
 
     private void SettingChanged_Value(string name, float value)
     {
+        if (AttributeChangeValid() == false) return;
+
         foreach (var attribute in particle.GetAttributes())
         {
             if (attribute.ToString_AttributeName().Equals(name))
@@ -268,6 +298,8 @@ public class ParticleUIHandler : MonoBehaviour
 
     private void SettingChanged_Text(string name, string text)
     {
+        if (AttributeChangeValid() == false) return;
+        
         foreach (var attribute in particle.GetAttributes())
         {
             if(attribute.ToString_AttributeName().Equals(name))
@@ -280,6 +312,8 @@ public class ParticleUIHandler : MonoBehaviour
 
     private void SettingChanged_Toggle(string name, bool isOn)
     {
+        if (AttributeChangeValid() == false) return;
+        
         foreach (var attribute in particle.GetAttributes())
         {
             if (attribute.ToString_AttributeName().Equals(name))
@@ -292,6 +326,8 @@ public class ParticleUIHandler : MonoBehaviour
 
     private void SettingChanged_Dropdown(string name, string value)
     {
+        if (AttributeChangeValid() == false) return;
+        
         foreach (var attribute in particle.GetAttributes())
         {
             if (attribute.ToString_AttributeName().Equals(name))
@@ -300,6 +336,11 @@ public class ParticleUIHandler : MonoBehaviour
                 return;
             }
         }
+    }
+
+    private bool AttributeChangeValid()
+    {
+        return go_particlePanel.activeSelf && sim.system.IsInLatestRound() && sim.running == false;
     }
 
 }

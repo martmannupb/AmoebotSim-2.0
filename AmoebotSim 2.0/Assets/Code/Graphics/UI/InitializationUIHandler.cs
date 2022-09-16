@@ -42,7 +42,7 @@ public class InitializationUIHandler : MonoBehaviour
         // Set References
         uiHandler = FindObjectOfType<UIHandler>();
         if (uiHandler == null) Log.Error("Could not find UIHandler.");
-        
+
         // Init
         InitUI();
     }

@@ -12,6 +12,7 @@ public class UIHandler : MonoBehaviour
     public AmoebotSimulator sim;
     public ParticleUIHandler particleUI;
     public SettingsUIHandler settingsUI;
+    public InitializationUIHandler initializationUI;
 
     // UI Objects =====
     // Play/Pause
@@ -89,6 +90,7 @@ public class UIHandler : MonoBehaviour
         if (sim == null) return;
 
         UpdateUI(sim.running);
+        particleUI.UpdateUI();
     }
 
     private void UpdateUI(bool running)
@@ -139,7 +141,6 @@ public class UIHandler : MonoBehaviour
     {
         image_playPauseButton.sprite = running ? sprite_pause : sprite_play;
         UpdateUI(running, true);
-        particleUI.SimState_RunningToggled(running);
     }
 
 

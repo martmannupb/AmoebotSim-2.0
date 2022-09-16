@@ -1811,6 +1811,11 @@ public class ParticleSystem : IReplayHistory
         UpdateAllParticleVisuals(true);
     }
 
+
+
+
+    
+
     public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality)
     {
         throw new System.NotImplementedException();
@@ -1827,5 +1832,10 @@ public class ParticleSystem : IReplayHistory
     {
         // Note: The initialization mode has just been aborted and the window is closed. Here the previously saved state could be loaded again to continue with the old algorithm.
         Log.Debug("InitializationModeAborted: Not implemented yet (I dont wanna throw an error here).");
+    }
+
+    public bool IsInLatestRound()
+    {
+        return CurrentRound == LatestRound;
     }
 }

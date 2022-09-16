@@ -1,10 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 using TMPro;
 
 public class AmoebotSimulator : MonoBehaviour
 {
+
+    // Singleton
+    public static AmoebotSimulator instance;
 
     // System Data
     public ParticleSystem system;
@@ -14,6 +18,14 @@ public class AmoebotSimulator : MonoBehaviour
     
     // UI
     public UIHandler uiHandler;
+
+    // Actions
+    public Action<bool> eventSimStartedStopped; // true = started, false = stopped
+
+    public AmoebotSimulator()
+    {
+        instance = this;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -88,10 +100,12 @@ public class AmoebotSimulator : MonoBehaviour
         if (running == false)
         {
             system.ContinueTracking();
+            eventSimStartedStopped(true);
         }
         else
         {
             //system.Print();
+            eventSimStartedStopped(false);
         }
         running = !running;
         if (uiHandler != null) uiHandler.NotifyPlayPause(running);
@@ -122,4 +136,5 @@ public class AmoebotSimulator : MonoBehaviour
     {
         renderSystem.ToggleCircuits();
     }
+
 }
