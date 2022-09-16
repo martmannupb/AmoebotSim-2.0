@@ -31,9 +31,20 @@ public class SettingsUIHandler : MonoBehaviour
     private void InitSettings()
     {
         // Settings _________________________
+        // Header
+        UISetting_Header setting_header_animationsBeeps = new UISetting_Header(settingsParent, "Animations and Circuits");
         // Animations On/Off
         UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(settingsParent, "Animations On/Off", RenderSystem.animationsOn);
         setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
+        // Circuit Beep Repeating
+        UISetting_Toggle setting_beepRepeat = new UISetting_Toggle(settingsParent, "Beep Repeat On/Off", RenderSystem.data_circuitBeepRepeatOn);
+        setting_beepRepeat.onValueChangedEvent += SettingChanged_Toggle;
+        // Circuit Beep Repeating Time
+        UISetting_ValueSlider setting_beepRepeatTime = new UISetting_ValueSlider(settingsParent, "Beep Repeat Time (s)", new string[] { "1", "2", "4", "8", "16" }, 2);
+        setting_beepRepeatTime.onValueChangedEventString += SettingChanged_Text;
+        // Header
+        UISetting_Spacing setting_spacing = new UISetting_Spacing(settingsParent, "Spacing");
+        UISetting_Header setting_header_graphics = new UISetting_Header(settingsParent, "Graphics");
         // Camera Angle
         UISetting_Slider setting_cameraAngle = new UISetting_Slider(settingsParent, "Camera Angle", 0f, 11f, 0f, true);
         setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
@@ -63,6 +74,13 @@ public class SettingsUIHandler : MonoBehaviour
     {
         switch (name)
         {
+            case "Beep Repeat Time (s)":
+                float beepRepeatTime;
+                if(float.TryParse(text, out beepRepeatTime))
+                {
+                    RenderSystem.data_circuitBeepRepeatDelay = beepRepeatTime;
+                }
+                break;
             case "Anti Aliasing":
                 if(text.Equals("0") || text.Equals("2") || text.Equals("4") || text.Equals("8"))
                 {
@@ -96,6 +114,9 @@ public class SettingsUIHandler : MonoBehaviour
                 break;
             case "Animations On/Off":
                 RenderSystem.animationsOn = isOn;
+                break;
+            case "Beep Repeat On/Off":
+                RenderSystem.data_circuitBeepRepeatOn = isOn;
                 break;
             default:
                 break;

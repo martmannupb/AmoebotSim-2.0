@@ -20,6 +20,53 @@ public abstract class UISetting
     public abstract void Unlock();
 }
 
+public class UISetting_Header : UISetting
+{
+
+    public UISetting_Header(GameObject parent, string name)
+    {
+        // Add GameObject
+        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_header, Vector3.zero, Quaternion.identity, parent.transform);
+        // Set Name
+        this.name = name;
+        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        tmpro.text = name;
+    }
+
+    public override void Lock()
+    {
+        // empty
+    }
+
+    public override void Unlock()
+    {
+        // empty
+    }
+}
+
+public class UISetting_Spacing : UISetting
+{
+    protected static int id = 0;
+
+    public UISetting_Spacing(GameObject parent, string name)
+    {
+        // Add GameObject
+        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_spacing, Vector3.zero, Quaternion.identity, parent.transform);
+        // Set Name
+        this.name = name + " (" + id++ + ")";
+    }
+
+    public override void Lock()
+    {
+        // empty
+    }
+
+    public override void Unlock()
+    {
+        // empty
+    }
+}
+
 public class UISetting_Slider : UISetting
 {
 

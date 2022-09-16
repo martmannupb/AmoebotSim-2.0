@@ -200,7 +200,7 @@ public class RendererUI
             switch (activeTool)
             {
                 case UIHandler.UITool.Standard:
-                    if (state_pointerOverMap)
+                    if (state_pointerOverMap  && sim.uiHandler.particleUI.IsOpen() == false)
                     {
                         // Show Particle Selection Overlay
                         if (state_particleUnderPointer != null)
@@ -212,6 +212,21 @@ public class RendererUI
                             if (state_particleUnderPointer.IsExpanded())
                             {
                                 Vector3 worldPos_tail = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(state_particleUnderPointer.Tail());
+                                Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+                            }
+                        }
+                    }
+                    else if(sim.uiHandler.particleUI.IsOpen())
+                    {
+                        Particle activeParticle = sim.uiHandler.particleUI.GetShownParticle();
+                        if(activeParticle != null)
+                        {
+                            Vector3 worldPos_head = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(activeParticle.Head());
+                            Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_head + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+                            // Render Tail Overlay
+                            if (activeParticle.IsExpanded())
+                            {
+                                Vector3 worldPos_tail = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(activeParticle.Tail());
                                 Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
                             }
                         }

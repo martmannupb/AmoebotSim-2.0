@@ -62,6 +62,16 @@ public class ParticleUIHandler : MonoBehaviour
         ClearPanel();
     }
 
+    public bool IsOpen()
+    {
+        return go_particlePanel.activeSelf;
+    }
+
+    public Particle GetShownParticle()
+    {
+        return particle;
+    }
+
     /// <summary>
     /// Called every frame. Used for dynamic updates of the visual interface.
     /// </summary>

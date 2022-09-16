@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public static class UIDatabase
 {
+    public static GameObject prefab_setting_header = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Header");
+    public static GameObject prefab_setting_spacing = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Spacing");
     public static GameObject prefab_setting_slider = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Slider");
     public static GameObject prefab_setting_text = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Value");
     public static GameObject prefab_setting_toggle = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Toggle");

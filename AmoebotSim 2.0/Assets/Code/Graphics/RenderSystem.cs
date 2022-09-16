@@ -56,6 +56,7 @@ public class RenderSystem
     public const float const_animationTimePercentage = 0.6f;        // percentages: animation/beeps (sequentially)
     public const float const_beepTimePercentage = 0.2f;             // percentages: animation/beeps (sequentially)
     public static float data_circuitBeepRepeatDelay = 4f;
+    public static bool data_circuitBeepRepeatOn = true;
     // Animation Toggle
     public static bool animationsOn = true;
 
