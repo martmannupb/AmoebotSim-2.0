@@ -241,7 +241,6 @@ public class ParticleUIHandler : MonoBehaviour
     public void ClearPanel()
     {
         particle = null;
-        settings.Clear();
         for (int i = 0; i < go_attributeParent.transform.childCount; i++)
         {
             if (go_attributeParent.transform.GetChild(i).gameObject.name.Equals("Delimiter"))
@@ -258,6 +257,12 @@ public class ParticleUIHandler : MonoBehaviour
                     }
                     Destroy(go);
                 }
+                // Remove Callbacks + Clear References
+                foreach (var setting in settings.Values)
+                {
+                    setting.Clear();
+                }
+                settings.Clear();
                 return;
             }
         }

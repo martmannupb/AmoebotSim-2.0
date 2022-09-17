@@ -18,6 +18,7 @@ public abstract class UISetting
 
     public abstract void Lock();
     public abstract void Unlock();
+    public abstract void Clear();
 }
 
 public class UISetting_Header : UISetting
@@ -42,6 +43,11 @@ public class UISetting_Header : UISetting
     {
         // empty
     }
+
+    public override void Clear()
+    {
+        // empty
+    }
 }
 
 public class UISetting_Spacing : UISetting
@@ -62,6 +68,11 @@ public class UISetting_Spacing : UISetting
     }
 
     public override void Unlock()
+    {
+        // empty
+    }
+
+    public override void Clear()
     {
         // empty
     }
@@ -100,6 +111,11 @@ public class UISetting_Slider : UISetting
     public override void Unlock()
     {
         slider.enabled = true;
+    }
+
+    public override void Clear()
+    {
+        onValueChangedEvent = null;
     }
 
     public void UpdateValue(float value)
@@ -182,6 +198,11 @@ public class UISetting_Text : UISetting
         input.enabled = true;
     }
 
+    public override void Clear()
+    {
+        onValueChangedEvent = null;
+    }
+
     public void UpdateValue(string text)
     {
         input.text = text;
@@ -262,6 +283,11 @@ public class UISetting_Dropdown : UISetting
         dropdown.enabled = true;
     }
 
+    public override void Clear()
+    {
+        onValueChangedEvent = null;
+    }
+
     public void UpdateValue(string value)
     {
         List<TMPro.TMP_Dropdown.OptionData> options = dropdown.options;
@@ -314,6 +340,11 @@ public class UISetting_Toggle : UISetting
     public override void Unlock()
     {
         toggle.enabled = true;
+    }
+
+    public override void Clear()
+    {
+        onValueChangedEvent = null;
     }
 
     public void UpdateValue(bool isOn)
@@ -411,6 +442,12 @@ public class UISetting_ValueSlider : UISetting
     public override void Unlock()
     {
         slider.enabled = true;
+    }
+
+    public override void Clear()
+    {
+        onValueChangedEvent = null;
+        onValueChangedEventString = null;
     }
 
     public void UpdateValue(string text)
