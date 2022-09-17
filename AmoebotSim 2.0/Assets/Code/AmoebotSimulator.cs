@@ -2,10 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using UnityEngine;
+using System;
 using TMPro;
 
 public class AmoebotSimulator : MonoBehaviour
 {
+
+    // Singleton
+    public static AmoebotSimulator instance;
 
     // System Data
     public ParticleSystem system;
@@ -16,10 +20,10 @@ public class AmoebotSimulator : MonoBehaviour
     // UI
     public UIHandler uiHandler;
 
-    // Old UI (will be deleted)
-    public TextMeshProUGUI roundsText;
-    public TextMeshProUGUI maxRoundText;
-    public TMP_InputField roundInput;
+    public AmoebotSimulator()
+    {
+        instance = this;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -67,6 +71,12 @@ public class AmoebotSimulator : MonoBehaviour
         //system.ActivateRandomParticle();
         //system.SimulateRound();
         system.SimulateJMRound();
+        RoundChanged();
+    }
+
+    public void RoundChanged()
+    {
+        uiHandler.particleUI.SimState_RoundChanged();
     }
 
     public void SetSimSpeed(float roundTime)
@@ -90,10 +100,12 @@ public class AmoebotSimulator : MonoBehaviour
         if (running == false)
         {
             system.ContinueTracking();
+            if(EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(true);
         }
         else
         {
             //system.Print();
+            if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(false);
         }
         running = !running;
         if (uiHandler != null) uiHandler.NotifyPlayPause(running);
@@ -124,4 +136,5 @@ public class AmoebotSimulator : MonoBehaviour
     {
         renderSystem.ToggleCircuits();
     }
+
 }

@@ -8,7 +8,11 @@ public class UIHandler : MonoBehaviour
 {
 
     // References
-    private AmoebotSimulator sim;
+    [HideInInspector]
+    public AmoebotSimulator sim;
+    public ParticleUIHandler particleUI;
+    public SettingsUIHandler settingsUI;
+    public InitializationUIHandler initializationUI;
 
     // UI Objects =====
     // Play/Pause
@@ -39,6 +43,9 @@ public class UIHandler : MonoBehaviour
     public Sprite sprite_aa2;
     public Sprite sprite_aa4;
     public Sprite sprite_aa8;
+    // Settings/Exit
+    public Button button_settings;
+    public Button button_exit;
 
     // State
     public UITool activeTool = UITool.Standard;
@@ -83,6 +90,7 @@ public class UIHandler : MonoBehaviour
         if (sim == null) return;
 
         UpdateUI(sim.running);
+        particleUI.UpdateUI();
     }
 
     private void UpdateUI(bool running)
@@ -151,6 +159,7 @@ public class UIHandler : MonoBehaviour
         }
 
         sim.system.StepBack();
+        sim.RoundChanged();
         UpdateUI(sim.running, true);
     }
 
@@ -164,6 +173,7 @@ public class UIHandler : MonoBehaviour
         }
 
         sim.system.StepForward();
+        sim.RoundChanged();
         UpdateUI(sim.running, true);
     }
 
@@ -233,6 +243,7 @@ public class UIHandler : MonoBehaviour
         {
             // Round Change
             sim.system.SetMarkerToRound(newRound);
+            sim.RoundChanged();
         }
     }
 
@@ -320,9 +331,31 @@ public class UIHandler : MonoBehaviour
         UpdateAAButton();
     }
 
+    public void SetAA(int value)
+    {
+        sim.renderSystem.SetAntiAliasing(value);
+        UpdateAAButton();
+    }
+
     public void Botton_ExitPressed()
     {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
         Application.Quit();
+#endif
+    }
+
+    public void HideTopRightButtons()
+    {
+        button_settings.gameObject.SetActive(false);
+        button_exit.gameObject.SetActive(false);
+    }
+
+    public void ShowTopRightButtons()
+    {
+        button_settings.gameObject.SetActive(true);
+        button_exit.gameObject.SetActive(true);
     }
 
     public void TemporaryButton_ResetAlgorithm(int algoID)

@@ -20,6 +20,13 @@ public interface IParticleGraphicsAdapter
     void Update();
 
     /// <summary>
+    /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
+    /// Example: A particle has expanded. Call Update() to update the visuals.
+    /// </summary>
+    /// <param name="isJointExpansion">Defines if a joint expansion has taken place. The animation looks and works different in that case.</param>
+    void Update(bool isJointExpansion);
+
+    /// <summary>
     /// Like Update(), but forces the update to be applied visually without an animation, even if the particle positions are the same as in the previous frame.
     /// </summary>
     void UpdateReset();

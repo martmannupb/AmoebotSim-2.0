@@ -49,7 +49,7 @@ public class RendererCircuits_RenderBatch
     public void Init()
     {
         // Set Material
-        if (properties.isExternalConnectorLine) lineMaterial = MaterialDatabase.material_circuit_line;//MaterialDatabase.material_circuit_lineConnector;
+        if (properties.isExternalConnectorLine) lineMaterial = SettingsGlobal.circuitBorderActive ? MaterialDatabase.material_circuit_lineConnector : MaterialDatabase.material_circuit_line;
         else lineMaterial = MaterialDatabase.material_circuit_line;
 
         // Circle PropertyBlocks
@@ -134,7 +134,7 @@ public class RendererCircuits_RenderBatch
         {
             ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, RenderSystem.data_particleMovementFinishedTimestamp + RenderSystem.data_circuitAnimationDuration);
         }
-        else if(properties.beeping && lastBeepStartTime + RenderSystem.data_circuitBeepDuration < Time.timeSinceLevelLoad)
+        else if(properties.beeping && RenderSystem.data_circuitBeepRepeatOn && lastBeepStartTime + RenderSystem.data_circuitBeepDuration < Time.timeSinceLevelLoad)
         {
             // We show beeps and have shown the beep already
             // Repeat Beep
