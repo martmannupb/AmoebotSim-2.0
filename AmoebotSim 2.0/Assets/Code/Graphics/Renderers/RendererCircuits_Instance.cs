@@ -16,7 +16,7 @@ public class RendererCircuits_Instance
 
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
-        bool moving = RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
+        bool moving = snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting;
         int amountPartitionSets = state.partitionSets.Count;
 
         if(state.isExpanded == false)
@@ -272,21 +272,6 @@ public class RendererCircuits_Instance
     }
 
 
-
-    /// <summary>
-    /// Reinitializes the Batches. Helpful in case settings have been changed.
-    /// </summary>
-    public void ReinitBatches()
-    {
-        foreach (var batch in propertiesToRenderBatchMap.Values)
-        {
-            batch.Init();
-        }
-        foreach (var batch in propertiesToPinRenderBatchMap.Values)
-        {
-            batch.Init();
-        }
-    }
 
     public void Render()
     {

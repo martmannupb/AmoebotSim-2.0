@@ -14,8 +14,8 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     // Data
     // Current Round
-    public PositionSnap state_cur = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, ParticleMovement.Contracted, false, 0f);
-    public PositionSnap state_prev = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, ParticleMovement.Contracted, false, 0f);
+    public PositionSnap state_cur = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, ParticleMovement.Contracted, 0f);
+    public PositionSnap state_prev = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, ParticleMovement.Contracted, 0f);
 
     // Graphical Data
     public bool graphics_isRegistered = false;
@@ -32,17 +32,15 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         public bool isExpanded;
         public int globalExpansionDir;
         public ParticleMovement movement;
-        public bool isJointMovement;
         public float timestamp;
 
-        public PositionSnap(Vector2Int p1, Vector2Int p2, bool isExpanded, int globalExpansionDir, ParticleMovement movement, bool isJointMovement, float timestamp)
+        public PositionSnap(Vector2Int p1, Vector2Int p2, bool isExpanded, int globalExpansionDir, ParticleMovement movement, float timestamp)
         {
             this.position1 = p1;
             this.position2 = p2;
             this.isExpanded = isExpanded;
             this.globalExpansionDir = globalExpansionDir;
             this.movement = movement;
-            this.isJointMovement = isJointMovement;
             this.timestamp = timestamp;
         }
 
@@ -53,7 +51,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
                 s1.isExpanded == s2.isExpanded &&
                 s1.globalExpansionDir == s2.globalExpansionDir &&
                 s1.movement == s2.movement &&
-                s1.isJointMovement == s2.isJointMovement &&
                 s1.timestamp == s2.timestamp;
         }
 
@@ -64,7 +61,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
                 s1.isExpanded != s2.isExpanded ||
                 s1.globalExpansionDir != s2.globalExpansionDir ||
                 s1.movement != s2.movement ||
-                s1.isJointMovement != s2.isJointMovement ||
                 s1.timestamp != s2.timestamp;
         }
 
@@ -118,27 +114,21 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         if (particle.IsParticleColorSet()) graphics_color = particle.GetParticleColor();
         else graphics_color = defColor;
         renderer.Particle_Add(this);
-        Update(true, false, true);
+        Update(true, true);
     }
 
     public void Update()
     {
-        Update(false, false, false);
+        Update(false, false);
     }
 
-    public void Update(bool isJointExpansion)
-    {
-        Update(false, isJointExpansion, false);
-    }
-
-    private void Update(bool forceRenderUpdate, bool isJointExpansion, bool noAnimation)
+    private void Update(bool forceRenderUpdate, bool noAnimation)
     {
         // Previous Data
         state_prev = state_cur;
         // Current Data
-        state_cur = new PositionSnap(particle.Head(), particle.Tail(), particle.IsExpanded(), particle.GlobalHeadDirectionInt(), ParticleMovement.Contracted, isJointExpansion && noAnimation == false, Time.timeSinceLevelLoad);
+        state_cur = new PositionSnap(particle.Head(), particle.Tail(), particle.IsExpanded(), particle.GlobalHeadDirectionInt(), ParticleMovement.Contracted, Time.timeSinceLevelLoad);
 
-        // Get Expanded State
         if (state_cur.isExpanded)
         {
             // Expanded
@@ -158,17 +148,16 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
                 state_cur.position2 = state_prev.position2; // Tail to previous Tail
             }
         }
-
         // Update Matrix
         if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
             || state_prev.movement == ParticleMovement.Contracting
             || state_prev.movement == ParticleMovement.Expanding
-            || forceRenderUpdate) graphics_colorRenderer.UpdateMatrix(this, false); //renderer.UpdateMatrix(this);
+            || forceRenderUpdate) graphics_colorRenderer.UpdateMatrix(this); //renderer.UpdateMatrix(this);
     }
 
     public void UpdateReset()
     {
-        Update(true, false, true);
+        Update(true, true);
     }
 
     public void CircuitUpdate(ParticlePinGraphicState state)

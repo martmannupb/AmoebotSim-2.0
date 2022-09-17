@@ -46,7 +46,6 @@ public class RenderSystem
     // Dynamic Data _____
     public static float data_particleMovementFinishedTimestamp;
     // Animation + Beep Timing
-    public static float data_roundTime;
     public static float data_hexagonalAnimationDuration = 0.5f;     // particle animation duration
     public const float const_maxHexagonalAnimationDuration = 1f;
     public static float data_circuitAnimationDuration = 0.0f;       // pin/circuit fade in time after movement
@@ -56,9 +55,6 @@ public class RenderSystem
     public const float const_animationTimePercentage = 0.6f;        // percentages: animation/beeps (sequentially)
     public const float const_beepTimePercentage = 0.2f;             // percentages: animation/beeps (sequentially)
     public static float data_circuitBeepRepeatDelay = 4f;
-    public static bool data_circuitBeepRepeatOn = true;
-    // Animation Toggle
-    public static bool animationsOn = true;
 
 
     // Renderers _____
@@ -109,13 +105,16 @@ public class RenderSystem
         rendererP.circuitRenderer.SwitchInstances();
     }
 
-    /// <summary>
-    /// Updates the timing of the animations.
-    /// </summary>
-    /// <param name="roundTime"></param>
+    //public static float data_hexagonalAnimationDuration = 0.5f;
+    //public const float data_maxHexagonalAnimationDuration = 1f;
+    //public static float data_circuitAnimationDuration = 0.2f;
+    //public const float data_maxCircuitAnimationDuration = 0.2f;
+    //public static float data_circuitBeepDuration = 0.5f;
+    //public const float data_maxCircuitBeepDuration = 0.5f;
+    //public const float data_animationTimePercentage = 0.7f;
+    //public const float data_beepTimePercentage = 0.2f;
     public void SetRoundTime(float roundTime)
     {
-        data_roundTime = roundTime;
         if (roundTime == 0f) throw new System.NotImplementedException();
 
         // Particle Animation Duration
@@ -125,7 +124,6 @@ public class RenderSystem
         data_circuitBeepDuration = roundTime * const_beepTimePercentage;
         data_circuitBeepDuration = Mathf.Clamp(data_circuitBeepDuration, 0f, const_maxCircuitBeepDuration);
 
-        //if(animationsOn == false) data_hexagonalAnimationDuration = 0f;
     }
 
 
@@ -147,12 +145,6 @@ public class RenderSystem
     public void ToggleCircuits()
     {
         flag_showCircuitView = !flag_showCircuitView;
-    }
-
-    public void SetAntiAliasing(int value)
-    {
-        if(value == 0 || value == 2 || value == 4 || value == 8) setting_antiAliasing = value;
-        QualitySettings.antiAliasing = setting_antiAliasing;
     }
 
     public void ToggleAntiAliasing()

@@ -450,35 +450,4 @@ namespace Engine.Library {
 
     }
 
-
-    public static class InterpolationConstants
-    {
-
-        public static float OneMinus(float percentage)
-        {
-            return 1.0f - percentage;
-        }
-
-        public static float EaseIn(float percentage)
-        {
-            return percentage * percentage;
-        }
-
-        public static float EaseOut(float percentage)
-        {
-            return OneMinus(EaseIn(OneMinus(percentage)));
-        }
-
-        public static float Lerp(float s1, float s2, float percentage)
-        {
-            return (s1 + (s2 - s1) * percentage);
-        }
-
-        public static float SmoothLerp(float percentage)
-        {
-            return Lerp(EaseIn(percentage), EaseOut(percentage), percentage);
-        }
-
-    }
-
 }

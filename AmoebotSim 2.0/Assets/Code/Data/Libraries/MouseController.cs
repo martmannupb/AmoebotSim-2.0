@@ -148,11 +148,6 @@ public class MouseController : MonoBehaviour {
         }
 
         // Scrollwheel
-        // If we're over a UI element, then bail out from this
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-        {
-            return;
-        }
         switch (useSystemNr) {
             case 0:
                 // Set target orthographic size

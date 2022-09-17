@@ -39,15 +39,13 @@ public class RendererBackground
         // Camera
         Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
         Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
-        Vector2 camLowest = GetLowestXYCameraWorldPositions();
-        Vector2 camHighest = GetHightestXYCameraWorldPositions();
-        Vector2 screenSize = camHighest - camLowest;
+        Vector2 screenSize = camPosTR - camPosBL;
 
         // 1. Background
-        Vector2 bgPosBL = camLowest + new Vector2(-3f, -10f);
-        Vector2 bgPosTR = camHighest + new Vector2(3f, 10f);
+        Vector2 bgPosBL = camPosBL + new Vector2(-3f, -10f);
+        Vector2 bgPosTR = camPosTR + new Vector2(3f, 10f);
         Vector2Int screenSizeForBGAdjusted = new Vector2Int((int)(bgPosTR.x - bgPosBL.x), (int)(bgPosTR.y - bgPosBL.y));
-        int amountLines = Mathf.CeilToInt(screenSizeForBGAdjusted.y / AmoebotFunctions.HeightDifferenceBetweenRows());
+        int amountLines = screenSizeForBGAdjusted.y;
 
         // Calc pos of first mesh
         Vector2Int firstBgGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
@@ -83,17 +81,15 @@ public class RendererBackground
         // Camera
         Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
         Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
-        Vector2 camLowest = GetLowestXYCameraWorldPositions();
-        Vector2 camHighest = GetHightestXYCameraWorldPositions();
-        Vector2 screenSize = camHighest - camLowest;
+        Vector2 screenSize = camPosTR - camPosBL;
         float widthHeightRatio = screenSize.y / screenSize.x;
 
         // 1. Background
         // We need to adjust the bounds so the grid ist evenly placed on the screen
-        Vector2 bgPosBL = camLowest + new Vector2(-10f - screenSize.y * widthHeightRatio * 1.5f, -10f);
-        Vector2 bgPosTR = camHighest + new Vector2(10f + screenSize.y * widthHeightRatio * 1.5f, 10f);
+        Vector2 bgPosBL = camPosBL + new Vector2(-10f - screenSize.y * widthHeightRatio * 1.5f, -10f);
+        Vector2 bgPosTR = camPosTR + new Vector2(10f + screenSize.y * widthHeightRatio * 1.5f, 10f);
         int amountDiagonalMeshes = Mathf.CeilToInt(bgPosTR.x - bgPosBL.x + 2) / RenderSystem.const_amountOfLinesPerMesh + 1;
-        int amountHorizontalMeshes = (int)(camHighest.y - camLowest.y + 4) / RenderSystem.const_amountOfLinesPerMesh + 1;
+        int amountHorizontalMeshes = (int)(camPosTR.y - camPosBL.y + 4) / RenderSystem.const_amountOfLinesPerMesh + 1;
         // Calc pos of first mesh
         Vector2Int firstBgGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
         Vector3 firstBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(firstBgGridPos);
@@ -123,23 +119,5 @@ public class RendererBackground
             Graphics.DrawMesh(mesh_circ_bgDiaBLTR[i], matrix_circ_bgDia[i], MaterialDatabase.material_circular_bgLines, 0);
             Graphics.DrawMesh(mesh_circ_bgDiaBRTL[i], matrix_circ_bgDia[i], MaterialDatabase.material_circular_bgLines, 0);
         }
-    }
-
-    private Vector2 GetLowestXYCameraWorldPositions()
-    {
-        Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
-        Vector2 camPosBR = CameraUtils.MainCamera_WorldPosition_BottomRight();
-        Vector2 camPosTL = CameraUtils.MainCamera_WorldPosition_TopLeft();
-        Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
-        return new Vector2(Mathf.Min(camPosBL.x, camPosBR.x, camPosTL.x, camPosTR.x), Mathf.Min(camPosBL.y, camPosBR.y, camPosTL.y, camPosTR.y));
-    }
-
-    private Vector2 GetHightestXYCameraWorldPositions()
-    {
-        Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
-        Vector2 camPosBR = CameraUtils.MainCamera_WorldPosition_BottomRight();
-        Vector2 camPosTL = CameraUtils.MainCamera_WorldPosition_TopLeft();
-        Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
-        return new Vector2(Mathf.Max(camPosBL.x, camPosBR.x, camPosTL.x, camPosTR.x), Mathf.Max(camPosBL.y, camPosBR.y, camPosTL.y, camPosTR.y));
     }
 }

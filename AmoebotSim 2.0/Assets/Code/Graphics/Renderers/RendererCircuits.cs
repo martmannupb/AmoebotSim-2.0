@@ -19,17 +19,6 @@ public class RendererCircuits
         renderInstances[updateInstance].AddCircuits(state, snap);
     }
 
-    /// <summary>
-    /// Reinits the batches in the instances. Helpful in case settings have been changed.
-    /// </summary>
-    public void ReinitBatches()
-    {
-        foreach (var instance in renderInstances)
-        {
-            instance.ReinitBatches();
-        }
-    }
-
     public void SwitchInstances()
     {
         // Clear old Instance
