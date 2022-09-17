@@ -835,15 +835,18 @@ public class ParticleSystem : IReplayHistory
                     // First check if we have two bonds to this neighbor
                     // If that is the case, remove the second occurrence from the list of neighbors
                     Direction secondBondDir = Direction.NONE;
+                    int secondLabel = -1;
                     if (nbrParts[(label + 1) % 6] == nbr)
                     {
                         secondBondDir = bondDir.Rotate60(1);
                         nbrParts[(label + 1) % 6] = null;
+                        secondLabel = (label + 1) % 6;
                     }
                     else if (nbrParts[(label + 5) % 6] == nbr)
                     {
                         secondBondDir = bondDir.Rotate60(-1);
                         nbrParts[(label + 5) % 6] = null;
+                        secondLabel = (label + 5) % 6;
                     }
 
                     if (secondBondDir == Direction.NONE)
@@ -861,7 +864,7 @@ public class ParticleSystem : IReplayHistory
 
                         if (weWantHandover ^ nbrWantsHandover)
                         {
-                            Debug.LogError("Error: Disagreement on handover");
+                            Debug.LogError("Error: Disagreement on handover with one bond");
                             throw new System.InvalidOperationException("Conflict during movements");
                         }
 
@@ -899,6 +902,61 @@ public class ParticleSystem : IReplayHistory
                     else
                     {
                         // We have two bonds
+                        // Check if we want to perform a handover on either bond
+                        bool weWantHandover = movementAction != null &&
+                            movementAction.type == ActionType.PUSH;
+                        bool weWantHandoverFirst = weWantHandover &&
+                            ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality) == bondDir;
+                        bool weWantHandoverSecond = weWantHandover &&
+                            ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality) == secondBondDir;
+
+                        ParticleAction nbrAction = nbr.ScheduledMovement;
+                        bool nbrWantsHandoverFirst = nbrAction != null &&
+                            (nbrAction.type == ActionType.PULL_HEAD && !nbrHead[label] ||
+                            nbrAction.type == ActionType.PULL_TAIL && nbrHead[label]) &&
+                            ParticleSystem_Utils.LocalToGlobalDir(nbrAction.localDir, nbr.comDir, nbr.chirality) == bondDir.Opposite();
+                        bool nbrWantsHandoverSecond = nbrAction != null &&
+                            (nbrAction.type == ActionType.PULL_HEAD && !nbrHead[secondLabel] ||
+                            nbrAction.type == ActionType.PULL_TAIL && nbrHead[secondLabel]) &&
+                            ParticleSystem_Utils.LocalToGlobalDir(nbrAction.localDir, nbr.comDir, nbr.chirality) == secondBondDir.Opposite();
+
+                        if ((weWantHandoverFirst ^ nbrWantsHandoverFirst) || (weWantHandoverSecond ^ nbrWantsHandoverSecond))
+                        {
+                            Debug.LogError("Error: Disagreement on handover with two bonds");
+                            throw new System.InvalidOperationException("Conflict during movements");
+                        }
+
+                        bool handoverFirst = weWantHandoverFirst && nbrWantsHandoverFirst;
+                        bool handoverSecond = weWantHandoverSecond && nbrWantsHandoverSecond;
+                        if (handoverFirst || handoverSecond)
+                        {
+                            // We want a handover on one of the two bonds
+                            // Easy: No offset must be applied
+                            // But we have to check that the other bond is not marked
+                            if (handoverFirst && p.markedBondsGlobal[secondLabel] || handoverSecond && p.markedBondsGlobal[label])
+                            {
+                                Debug.LogError("Error: Handover with two bonds and one bond is marked");
+                                throw new System.InvalidOperationException("Conflict during movements");
+                            }
+                        }
+                        else
+                        {
+                            // No handover
+                            // Neighbor must not contract and both bonds must have the same marked status
+                            if (nbrAction != null)
+                            {
+                                Debug.LogError("Error: Expanded neighbor with two bonds tries to contract");
+                                throw new System.InvalidOperationException("Conflict during movements");
+                            }
+
+                            if (p.markedBondsGlobal[label] ^ p.markedBondsGlobal[secondLabel])
+                            {
+                                Debug.LogError("Error: Bonds to expanded neighbor have different marked status");
+                                throw new System.InvalidOperationException("Conflict during movements");
+                            }
+                        }
+
+
                         // TODO
                         // If handover to one of the two positions:
                         //  The other bond must not be marked
