@@ -427,9 +427,14 @@ public class ParticleSystem : IReplayHistory
         else if (mode == 2)
         {
             // A contracted and an expanded particle
+            // Can also swap the order of the two to make the expanded particle the seed
+
+            // Contracted
             p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E);
             particles.Add(p);
             particleMap.Add(p.Head(), p);
+
+            // Expanded
             p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-1, 1), mode, 1, Direction.E, true, Direction.E);
             particles.Add(p);
             particleMap.Add(p.Head(), p);
@@ -840,11 +845,6 @@ public class ParticleSystem : IReplayHistory
                         nbrOffset -= nbr.movementOffset;
                 }
                 // We are contracted and the neighbor is expanded
-
-
-                // TODO: Find out what is wrong with these two cases
-
-
                 else if (p.IsContracted() && nbr.IsExpanded())
                 {
                     Direction bondDir = ParticleSystem_Utils.GetDirOfLabel(label);
@@ -864,121 +864,6 @@ public class ParticleSystem : IReplayHistory
                         nbrParts[(label + 5) % 6] = null;
                         secondLabel = (label + 5) % 6;
                     }
-
-                    //if (secondBondDir == Direction.NONE)
-                    //{
-                    //    // We have only one bond
-                    //    // Check if we want to perform a handover
-                    //    bool weWantHandover = movementAction != null &&
-                    //        movementAction.type == ActionType.PUSH &&
-                    //        ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality) == bondDir;
-                    //    ParticleAction nbrAction = nbr.ScheduledMovement;
-                    //    bool nbrWantsHandover = nbrAction != null &&
-                    //        (nbrAction.type == ActionType.PULL_HEAD && !nbrHead[label] ||
-                    //        nbrAction.type == ActionType.PULL_TAIL && nbrHead[label]) &&
-                    //        ParticleSystem_Utils.LocalToGlobalDir(nbrAction.localDir, nbr.comDir, nbr.chirality) == bondDir.Opposite();
-
-                    //    if (weWantHandover ^ nbrWantsHandover)
-                    //    {
-                    //        Debug.LogError("Error: Disagreement on handover with one bond");
-                    //        throw new System.InvalidOperationException("Conflict during movements");
-                    //    }
-
-                    //    if (weWantHandover)
-                    //    {
-                    //        // Easy: No offset is applied at all
-                    //    }
-                    //    else
-                    //    {
-                    //        // No handover
-                    //        // Apply both offsets
-                    //        if (movementAction != null && p.markedBondsGlobal[label])
-                    //        {
-                    //            nbrOffset += p.movementOffset;
-                    //        }
-                    //        // Neighbor offset only applies if we are not bonded to its origin
-                    //        if (nbrAction != null &&
-                    //            (nbrHead[label] && (nbrAction.type == ActionType.CONTRACT_TAIL || nbrAction.type == ActionType.PULL_TAIL) ||
-                    //            !nbrHead[label] && (nbrAction.type == ActionType.CONTRACT_HEAD || nbrAction.type == ActionType.PULL_HEAD)))
-                    //        {
-                    //            if (nbr.markedBondsGlobal[nbrLabels[label]] && (nbrAction.type == ActionType.PULL_HEAD || nbrAction.type == ActionType.PULL_TAIL))
-                    //            {
-                    //                // Neighbor has marked this bond and is performing a handover
-                    //                // We stay in place, the neighbor contracts toward the other direction
-                    //                // The effect is that we do not apply any offset
-                    //            }
-                    //            else
-                    //            {
-                    //                // Bond is not marked for handover transferral, movement creates offset
-                    //                nbrOffset -= nbr.movementOffset;
-                    //            }
-                    //        }
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    // We have two bonds
-                    //    // Check if we want to perform a handover on either bond
-                    //    bool weWantHandover = movementAction != null &&
-                    //        movementAction.type == ActionType.PUSH;
-                    //    bool weWantHandoverFirst = weWantHandover &&
-                    //        ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality) == bondDir;
-                    //    bool weWantHandoverSecond = weWantHandover &&
-                    //        ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality) == secondBondDir;
-
-                    //    ParticleAction nbrAction = nbr.ScheduledMovement;
-                    //    bool nbrWantsHandoverFirst = nbrAction != null &&
-                    //        (nbrAction.type == ActionType.PULL_HEAD && !nbrHead[label] ||
-                    //        nbrAction.type == ActionType.PULL_TAIL && nbrHead[label]) &&
-                    //        ParticleSystem_Utils.LocalToGlobalDir(nbrAction.localDir, nbr.comDir, nbr.chirality) == bondDir.Opposite();
-                    //    bool nbrWantsHandoverSecond = nbrAction != null &&
-                    //        (nbrAction.type == ActionType.PULL_HEAD && !nbrHead[secondLabel] ||
-                    //        nbrAction.type == ActionType.PULL_TAIL && nbrHead[secondLabel]) &&
-                    //        ParticleSystem_Utils.LocalToGlobalDir(nbrAction.localDir, nbr.comDir, nbr.chirality) == secondBondDir.Opposite();
-
-                    //    if ((weWantHandoverFirst ^ nbrWantsHandoverFirst) || (weWantHandoverSecond ^ nbrWantsHandoverSecond))
-                    //    {
-                    //        Debug.LogError("Error: Disagreement on handover with two bonds");
-                    //        throw new System.InvalidOperationException("Conflict during movements");
-                    //    }
-
-                    //    bool handoverFirst = weWantHandoverFirst && nbrWantsHandoverFirst;
-                    //    bool handoverSecond = weWantHandoverSecond && nbrWantsHandoverSecond;
-                    //    if (handoverFirst || handoverSecond)
-                    //    {
-                    //        // We want a handover on one of the two bonds
-                    //        // Easy: No offset must be applied
-                    //        // But we have to check that the other bond is not marked
-                    //        if (handoverFirst && p.markedBondsGlobal[secondLabel] || handoverSecond && p.markedBondsGlobal[label])
-                    //        {
-                    //            Debug.LogError("Error: Handover with two bonds and one bond is marked");
-                    //            throw new System.InvalidOperationException("Conflict during movements");
-                    //        }
-                    //    }
-                    //    else
-                    //    {
-                    //        // No handover
-                    //        // Neighbor must not contract and both bonds must have the same marked status if we want to move
-                    //        if (nbrAction != null)
-                    //        {
-                    //            Debug.LogError("Error: Expanded neighbor with two bonds tries to contract");
-                    //            throw new System.InvalidOperationException("Conflict during movements");
-                    //        }
-
-                    //        if (p.ScheduledMovement != null)
-                    //        {
-                    //            if (p.markedBondsGlobal[label] ^ p.markedBondsGlobal[secondLabel])
-                    //            {
-                    //                Debug.LogError("Error: Bonds to expanded neighbor have different marked status");
-                    //                throw new System.InvalidOperationException("Conflict during movements");
-                    //            }
-
-                    //            // If the bonds are marked, we apply our offset
-                    //            if (p.markedBondsGlobal[label])
-                    //                nbrOffset += p.movementOffset;
-                    //        }
-                    //    }
-                    //}
 
                     nbrOffset = JointMovementContractedExpanded(p, nbr, bondDir, secondBondDir,
                         label, secondLabel, nbrLabels[label], secondLabel != -1 ? nbrLabels[secondLabel] : -1,
@@ -1104,6 +989,10 @@ public class ParticleSystem : IReplayHistory
                 {
                     p.Apply_ContractTail(p.jmOffset);
                 }
+            }
+            else
+            {
+                p.Apply_Offset(p.jmOffset);
             }
         }
 

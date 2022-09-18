@@ -299,7 +299,7 @@ public class Particle : IParticleState, IReplayHistory
     {
         int maxNumPins = algorithm.PinsPerEdge * 10;
         int currentRound = system.CurrentRound;
-        pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge);
+        pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
         pinConfigurationHistory = new ValueHistoryPinConfiguration(pinConfiguration, currentRound);
         receivedBeeps = new BitArray(maxNumPins);
         receivedMessages = new Message[maxNumPins];
@@ -943,6 +943,19 @@ public class Particle : IParticleState, IReplayHistory
     public void Apply_PullHandoverTail(Direction locDir)
     {
         Apply_ContractTail();
+    }
+
+    /// <summary>
+    /// Moves the particle by the given global offset in the grid,
+    /// without changing its expansion state.
+    /// </summary>
+    /// <param name="offset">The global offset by which the
+    /// particle should be moved.</param>
+    public void Apply_Offset(Vector2Int offset)
+    {
+        pos_tail += offset;
+        pos_head += offset;
+        tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
     }
 
     /// <summary>
