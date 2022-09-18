@@ -258,20 +258,21 @@ public class Particle : IParticleState, IReplayHistory
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
 
-    public Particle(ParticleSystem system, Vector2Int pos, Direction compassDir = Direction.NONE, bool chirality = true)
+    public Particle(ParticleSystem system, Vector2Int pos, Direction compassDir = Direction.NONE, bool chirality = true, Direction initialHeadDir = Direction.NONE)
     {
         this.system = system;
         int currentRound = system.CurrentRound;
 
-        // Start contracted
+        // Initialize position
         tailPosHistory = new ValueHistory<Vector2Int>(pos, currentRound);
         if (compassDir == Direction.NONE)
             compassDir = DirectionHelpers.Cardinal(0);
-        expansionDirHistory = new ValueHistory<Direction>(Direction.NONE, currentRound);
-        pos_head = pos;
+
+        expansionDirHistory = new ValueHistory<Direction>(initialHeadDir, currentRound);
         pos_tail = pos;
-        exp_isExpanded = false;
-        exp_expansionDir = Direction.NONE;
+        exp_isExpanded = initialHeadDir != Direction.NONE;
+        exp_expansionDir = initialHeadDir;
+        pos_head = exp_isExpanded ? ParticleSystem_Utils.GetNbrInDir(pos, ParticleSystem_Utils.LocalToGlobalDir(initialHeadDir, compassDir, chirality)) : pos;
 
         comDir = compassDir;
         this.chirality = chirality;
@@ -1228,6 +1229,16 @@ public class Particle : IParticleState, IReplayHistory
         return attributes;
     }
 
+    /// <summary>
+    /// Resets the intermediate values of all attributes so that they can be
+    /// reused in the next round.
+    /// </summary>
+    public void ResetAttributeIntermediateValues()
+    {
+        foreach (IParticleAttribute attr in attributes)
+            attr.ResetIntermediateValue();
+    }
+
     public void Print()
     {
         Debug.Log("Position history:");
@@ -1285,6 +1296,10 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.SetMarkerToRound(round);
         expansionDirHistory.SetMarkerToRound(round);
 
+        // Reset bonds
+        activeBondHistory.SetMarkerToRound(round);
+        markedBondHistory.SetMarkerToRound(round);
+
         // Reset pin configuration
         pinConfigurationHistory.SetMarkerToRound(round);
         receivedBeepsHistory.SetMarkerToRound(round);
@@ -1320,6 +1335,9 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.StepBack();
         expansionDirHistory.StepBack();
 
+        activeBondHistory.StepBack();
+        markedBondHistory.StepBack();
+
         pinConfigurationHistory.StepBack();
         receivedBeepsHistory.StepBack();
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
@@ -1346,6 +1364,9 @@ public class Particle : IParticleState, IReplayHistory
     {
         tailPosHistory.StepForward();
         expansionDirHistory.StepForward();
+
+        activeBondHistory.StepForward();
+        markedBondHistory.StepForward();
 
         pinConfigurationHistory.StepForward();
         receivedBeepsHistory.StepForward();
@@ -1389,6 +1410,9 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.ContinueTracking();
         expansionDirHistory.ContinueTracking();
 
+        activeBondHistory.ContinueTracking();
+        markedBondHistory.ContinueTracking();
+
         pinConfigurationHistory.ContinueTracking();
         receivedBeepsHistory.ContinueTracking();
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
@@ -1424,6 +1448,9 @@ public class Particle : IParticleState, IReplayHistory
         tailPosHistory.CutOffAtMarker();
         expansionDirHistory.CutOffAtMarker();
 
+        activeBondHistory.CutOffAtMarker();
+        markedBondHistory.CutOffAtMarker();
+
         pinConfigurationHistory.CutOffAtMarker();
         receivedBeepsHistory.CutOffAtMarker();
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
@@ -1451,6 +1478,9 @@ public class Particle : IParticleState, IReplayHistory
     {
         tailPosHistory.ShiftTimescale(amount);
         expansionDirHistory.ShiftTimescale(amount);
+
+        activeBondHistory.ShiftTimescale(amount);
+        markedBondHistory.ShiftTimescale(amount);
 
         pinConfigurationHistory.ShiftTimescale(amount);
         receivedBeepsHistory.ShiftTimescale(amount);

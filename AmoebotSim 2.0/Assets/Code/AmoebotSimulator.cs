@@ -47,7 +47,7 @@ public class AmoebotSimulator : MonoBehaviour
         //system.InitializeChiralityCompass(50, 0.2f);
         //system.InitializeBoundaryTest(100, 0.05f);
         //system.InitializeExpandedTest(10);
-        system.InitializeJMTest(0);
+        system.InitializeJMTest(2);
     }
 
 
@@ -69,7 +69,6 @@ public class AmoebotSimulator : MonoBehaviour
     public void ActivateParticle()
     {
         //system.ActivateRandomParticle();
-        //system.SimulateRound();
         system.SimulateJMRound();
         RoundChanged();
     }

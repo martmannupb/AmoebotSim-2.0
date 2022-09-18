@@ -114,13 +114,13 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateJMTestParticle(ParticleSystem system, Vector2Int position, int i, Direction compassDir = Direction.NONE, bool chirality = true)
+    public static Particle CreateJMTestParticle(ParticleSystem system, Vector2Int position, int mode, int role, Direction compassDir = Direction.NONE, bool chirality = true, Direction initialHeadDir = Direction.NONE)
     {
         if (compassDir == Direction.NONE)
             compassDir = DirectionHelpers.Cardinal(0);
-        Particle p = new Particle(system, position, compassDir, chirality);
+        Particle p = new Particle(system, position, compassDir, chirality, initialHeadDir);
         p.isActive = true;
-        new JMTestParticle(p, i);
+        new JMTestParticle(p, mode, role);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();

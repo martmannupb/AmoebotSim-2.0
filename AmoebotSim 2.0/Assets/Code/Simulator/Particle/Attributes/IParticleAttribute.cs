@@ -39,6 +39,12 @@ public interface IParticleAttribute : IReplayHistory
     Type GetAttributeType();
 
     /// <summary>
+    /// Resets the attribute's intermediate value state. Must be called
+    /// after each simulated round.
+    /// </summary>
+    void ResetIntermediateValue();
+
+    /// <summary>
     /// Returns a serializable object representing the attribute's data.
     /// </summary>
     /// <returns>An instance of a subclass of

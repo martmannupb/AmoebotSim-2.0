@@ -95,6 +95,11 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
         return typeof(T);
     }
 
+    public void ResetIntermediateValue()
+    {
+        hasIntermediateVal = false;
+    }
+
     /// <summary>
     /// Implementation of <see cref="IParticleAttribute.GenerateSaveData"/>.
     /// </summary>
