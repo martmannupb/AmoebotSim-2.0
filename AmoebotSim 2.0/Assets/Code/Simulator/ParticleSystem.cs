@@ -426,7 +426,23 @@ public class ParticleSystem : IReplayHistory
         }
         else if (mode == 2)
         {
-            // A contracted and an expanded particle
+            // A contracted and an expanded particle (will have two bonds)
+            // Can also swap the order of the two to make the expanded particle the seed
+
+            // Contracted
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+
+            // Expanded
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-1, 1), mode, 1, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+        }
+        else if (mode == 3)
+        {
+            // A contracted and an expanded particle (will have only one bond)
             // Can also swap the order of the two to make the expanded particle the seed
 
             // Contracted
@@ -606,23 +622,25 @@ public class ParticleSystem : IReplayHistory
             // Determine the local origin
             p.isHeadOrigin = p.IsContracted() && a == null || p.IsExpanded() && a != null && (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD);
 
+            // TODO: For handovers check if the bond in handover direction is active
+
             // Apply automatic bond restrictions
             if (a == null) continue;
 
-            // For expanding particles: Bond in expansion direction is always active, opposite bond is always passive
+            // For expanding particles: Bond in expansion direction is always marked, opposite bond is never marked
             if (a.type == ActionType.EXPAND)
             {
                 Direction d = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
                 p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d)] = true;
                 p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d.Opposite())] = false;
             }
-            // For pushing particles in handover: Only opposite bond is passive
+            // For pushing particles in handover: Opposite bond is not marked
             else if (a.type == ActionType.PUSH)
             {
                 Direction d = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
                 p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d.Opposite())] = false;
             }
-            // For pulling particles in handover: Bonds at origin (non-moving part) cannot be active
+            // For pulling particles in handover: Bonds at origin (non-moving part) cannot be marked
             else if (a.type == ActionType.PULL_HEAD)
             {
                 for (int l = 0; l < 10; l++)
@@ -787,10 +805,16 @@ public class ParticleSystem : IReplayHistory
                 if (particleMap.TryGetValue(nbrPos, out Particle nbr))
                 {
                     // We have a neighbor at this location
+
+                    // Skip if the neighbor was already processed
+                    if (nbr.processedJointMovement)
+                        continue;
+
+                    // Collect information and check if we have a bond to this neighbor
                     bool isNbrHead = nbr.Head() == nbrPos;
                     int nbrLabel = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
 
-                    // Now check if both of the bonds are active
+                    // Have connection if both of the bonds are active
                     bool myBondActive = p.activeBondsGlobal[label];
                     bool nbrBondActive = nbr.activeBondsGlobal[nbrLabel];
 
@@ -802,16 +826,12 @@ public class ParticleSystem : IReplayHistory
                         Debug.LogWarning("Bonds disagree at position " + nbrPos);
                     }
 
+                    // Add the neighbor to the list if there is a bond
                     if (bondsActive)
                     {
-                        // Neighbors are connected by a bond
-                        // Add the neighbor to the list if it has not been processed yet
-                        if (!nbr.processedJointMovement)
-                        {
-                            nbrParts[label] = nbr;
-                            nbrHead[label] = isNbrHead;
-                            nbrLabels[label] = nbrLabel;
-                        }
+                        nbrParts[label] = nbr;
+                        nbrHead[label] = isNbrHead;
+                        nbrLabels[label] = nbrLabel;
                     }
                 }
             }
@@ -952,16 +972,17 @@ public class ParticleSystem : IReplayHistory
             else
             {
                 Vector2Int pos = p.Head() + p.jmOffset;
+                // If the origin is not the head, add the movement offset
                 if (movementAction != null && (movementAction.type == ActionType.CONTRACT_TAIL || movementAction.type == ActionType.PULL_TAIL))
                 {
                     pos += p.movementOffset;
-                    if (newPositions.ContainsKey(pos))
-                    {
-                        Debug.LogError("Error: Conflict during joint movement, target location of contracted particle is already occupied.");
-                        throw new System.InvalidOperationException();
-                    }
-                    newPositions[pos] = p;
                 }
+                if (newPositions.ContainsKey(pos))
+                {
+                    Debug.LogError("Error: Conflict during joint movement, target location of contracted particle is already occupied.");
+                    throw new System.InvalidOperationException();
+                }
+                newPositions[pos] = p;
             }
 
             p.processedJointMovement = true;
@@ -973,7 +994,7 @@ public class ParticleSystem : IReplayHistory
         {
             if (!p.processedJointMovement)
             {
-                Debug.LogWarning("Bond structure is not connected, some particle movements were not processed!");
+                Debug.LogError("Bond structure is not connected, some particle movements were not processed!");
             }
             else if (p.ScheduledMovement != null)
             {
@@ -1025,13 +1046,14 @@ public class ParticleSystem : IReplayHistory
     /// expanded particle.</param>
     /// <param name="eHead2">Flag indicating whether the second bond is incident to the head of the
     /// expanded particle. Must be <c>false</c> if there is no second bond.</param>
-    /// <returns>The local offset vector of the expanded particle's origin relative to the
+    /// <returns>The global offset vector of the expanded particle's origin relative to the
     /// contracted particle's origin.</returns>
     private Vector2Int JointMovementContractedExpanded(Particle c, Particle e, Direction bondDir, Direction secondBondDir,
         int cLabel1, int cLabel2, int eLabel1, int eLabel2, bool eHead1, bool eHead2)
     {
         Vector2Int eOffset = Vector2Int.zero;
         ParticleAction cAction = c.ScheduledMovement;
+        ParticleAction eAction = e.ScheduledMovement;
 
         if (secondBondDir == Direction.NONE)
         {
@@ -1040,7 +1062,6 @@ public class ParticleSystem : IReplayHistory
             bool weWantHandover = cAction != null &&
                 cAction.type == ActionType.PUSH &&
                 ParticleSystem_Utils.LocalToGlobalDir(cAction.localDir, c.comDir, c.chirality) == bondDir;
-            ParticleAction eAction = e.ScheduledMovement;
             bool nbrWantsHandover = eAction != null &&
                 (eAction.type == ActionType.PULL_HEAD && !eHead1 ||
                 eAction.type == ActionType.PULL_TAIL && eHead1) &&
@@ -1094,7 +1115,6 @@ public class ParticleSystem : IReplayHistory
             bool weWantHandoverSecond = weWantHandover &&
                 ParticleSystem_Utils.LocalToGlobalDir(cAction.localDir, c.comDir, c.chirality) == secondBondDir;
 
-            ParticleAction eAction = e.ScheduledMovement;
             bool nbrWantsHandoverFirst = eAction != null &&
                 (eAction.type == ActionType.PULL_HEAD && !eHead1 ||
                 eAction.type == ActionType.PULL_TAIL && eHead1) &&

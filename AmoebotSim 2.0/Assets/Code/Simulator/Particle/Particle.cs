@@ -819,13 +819,14 @@ public class Particle : IParticleState, IReplayHistory
     /// The method will not check if this operation is valid.
     /// </remarks>
     /// <param name="locDir">The local direction into which this particle should expand.</param>
-    /// <param name="offset">The global offset by which this particle moves in the system.</param>
+    /// <param name="offset">The global offset by which this particle moves in the system,
+    /// relative to its tail.</param>
     public void Apply_Expand(Direction locDir, Vector2Int offset)
     {
         exp_isExpanded = true;
         exp_expansionDir = locDir;
-        pos_head = ParticleSystem_Utils.GetNbrInDir(pos_head, ParticleSystem_Utils.LocalToGlobalDir(locDir, comDir, chirality)) + offset;
         pos_tail += offset;
+        pos_head = ParticleSystem_Utils.GetNbrInDir(pos_tail, ParticleSystem_Utils.LocalToGlobalDir(locDir, comDir, chirality));
         expansionDirHistory.RecordValueInRound(exp_expansionDir, system.CurrentRound);
         tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
     }
@@ -850,7 +851,7 @@ public class Particle : IParticleState, IReplayHistory
     /// The method will not check if this operation is valid.
     /// </remarks>
     /// <param name="offset">The global offset by which this particle
-    /// moves in the system.</param>
+    /// moves in the system, relative to its head.</param>
     public void Apply_ContractHead(Vector2Int offset)
     {
         exp_isExpanded = false;
@@ -880,7 +881,7 @@ public class Particle : IParticleState, IReplayHistory
     /// The method will not check if this operation is valid.
     /// </remarks>
     /// <param name="offset">The global offset by which this particle
-    /// moves in the system.</param>
+    /// moves in the system, relative to its tail.</param>
     public void Apply_ContractTail(Vector2Int offset)
     {
         exp_isExpanded = false;
