@@ -52,6 +52,7 @@ public class ParticleUIHandler : MonoBehaviour
 
     public void Open(Particle p)
     {
+        bool inInitMode = sim.uiHandler.initializationUI.IsOpen();
         ReinitParticlePanel(p);
         go_particlePanel.SetActive(true);
     }

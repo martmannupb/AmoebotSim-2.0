@@ -95,6 +95,7 @@ public class InitializationUIHandler : MonoBehaviour
     {
         // Update UI
         uiHandler.ShowTopRightButtons();
+        uiHandler.particleUI.Close();
         panel.SetActive(false);
         // Update Cam Color
         Camera.main.backgroundColor = camColorBG;
@@ -102,6 +103,11 @@ public class InitializationUIHandler : MonoBehaviour
         if (aborted) uiHandler.sim.system.InitializationModeAborted();
         // Event
         if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(false);
+    }
+
+    public bool IsOpen()
+    {
+        return panel.activeSelf;
     }
 
     /// <summary>

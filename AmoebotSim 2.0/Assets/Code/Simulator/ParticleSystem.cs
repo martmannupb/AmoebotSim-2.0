@@ -1839,4 +1839,40 @@ public class ParticleSystem : IReplayHistory
     {
         return CurrentRound == LatestRound;
     }
+
+    public void AddParticleContracted(Vector2Int gridPos)
+    {
+        Log.Debug("ParticleSystem: AddParticleContracted called.");
+    }
+
+    public void AddParticleExpanded(Vector2Int gridPosHead, Vector2Int gridPosTail)
+    {
+        Log.Debug("ParticleSystem: AddParticleExpanded called.");
+    }
+
+    public void RemoveParticle(Particle p)
+    {
+        Log.Debug("ParticleSystem: Remove Particle called.");
+    }
+
+    /// <summary>
+    /// Here we want to move a particle (contracted or expanded) to a new place where it is contracted.
+    /// </summary>
+    /// <param name="p"></param>
+    /// <param name="gridPos"></param>
+    public void MoveParticleToNewContractedPosition(Particle p, Vector2Int gridPos)
+    {
+        Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
+    }
+
+    /// <summary>
+    /// Here we want to move a particle (contracted or expanded) to a new place where it is expanded.
+    /// </summary>
+    /// <param name="p"></param>
+    /// <param name="gridPosHead"></param>
+    /// <param name="gridPosTail"></param>
+    public void MoveParticleToNewExpandedPosition(Particle p, Vector2Int gridPosHead, Vector2Int gridPosTail)
+    {
+        Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
+    }
 }
