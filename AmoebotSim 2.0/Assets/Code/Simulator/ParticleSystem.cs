@@ -456,6 +456,63 @@ public class ParticleSystem : IReplayHistory
             particleMap.Add(p.Head(), p);
             particleMap.Add(p.Tail(), p);
         }
+        else if (mode == 4)
+        {
+            // A contracted and an expanded particle (will have only one bond and perform handover)
+            // Can also swap the order of the two to make the expanded particle the seed
+
+            // Contracted
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+
+            // Expanded
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-1, 1), mode, 1, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+        }
+        else if (mode == 5)
+        {
+            // A contracted and an expanded particle (will have two bonds and perform handover)
+            // Can also swap the order of the two to make the expanded particle the seed
+
+            // Contracted
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+
+            // Expanded
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-1, 1), mode, 1, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+        }
+        else if (mode == 6)
+        {
+            // A contracted and an expanded particle performing a handover with additional particles
+            // being pulled or transferred
+
+            // Contracted particle pushing
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+
+            // Expanded particle pulling
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-1, 1), mode, 1, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+
+            // Four particles that are passive and will be moved around by the other particles
+            int role = 2;
+            foreach (Vector2Int pos in new Vector2Int[] { new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(-2, 2), new Vector2Int(-1, 2) }) {
+                p = ParticleFactory.CreateJMTestParticle(this, pos, mode, role, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+                role++;
+            }
+        }
 
 
 
@@ -867,7 +924,9 @@ public class ParticleSystem : IReplayHistory
                 // We are contracted and the neighbor is expanded
                 else if (p.IsContracted() && nbr.IsExpanded())
                 {
+                    Debug.Log("Label: " + label);
                     Direction bondDir = ParticleSystem_Utils.GetDirOfLabel(label);
+                    Debug.Log("bondDir: " + bondDir);
                     // First check if we have two bonds to this neighbor
                     // If that is the case, remove the second occurrence from the list of neighbors
                     Direction secondBondDir = Direction.NONE;
@@ -894,7 +953,7 @@ public class ParticleSystem : IReplayHistory
                 {
                     // This is the inverse of the previous case and we can handle it with the same logic
 
-                    Direction bondDir = ParticleSystem_Utils.GetDirOfLabel(label);
+                    Direction bondDir = ParticleSystem_Utils.GetDirOfLabel(label, p.GlobalHeadDirection());
                     // First check if we have two bonds to this neighbor
                     // If that is the case, remove the second occurrence from the list of neighbors
                     // Note that since this is from the view of the expanded particle, the directions
@@ -1132,6 +1191,7 @@ public class ParticleSystem : IReplayHistory
 
             bool handoverFirst = weWantHandoverFirst && nbrWantsHandoverFirst;
             bool handoverSecond = weWantHandoverSecond && nbrWantsHandoverSecond;
+
             if (handoverFirst || handoverSecond)
             {
                 // We want a handover on one of the two bonds
