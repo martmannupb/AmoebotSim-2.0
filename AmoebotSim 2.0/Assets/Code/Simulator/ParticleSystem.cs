@@ -513,6 +513,100 @@ public class ParticleSystem : IReplayHistory
                 role++;
             }
         }
+        else if (mode == 7)
+        {
+            // Two expanded particles with one bond, randomly moving or not
+
+            // Bottom particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+
+            // Top particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 1), mode, 1, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+        }
+        else if (mode == 8)
+        {
+            // Two expanded particles with one bond and contracted neighbors, randomly decide to mark bond or not
+
+            // Bottom particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+
+            // Top particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 1), mode, 1, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+
+            // Contracted neighbors
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, -1), mode, 2, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-1, 2), mode, 3, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+        }
+        else if (mode == 9)
+        {
+            // Two expanded particles with two bonds sharing one end
+            // Swap the particles to change the anchor
+
+            // Left particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+
+            // Right particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(2, 0), mode, 1, Direction.E, true, Direction.NNW);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+        }
+        else if (mode == 10)
+        {
+            // Same as mode 9 but with a contracted particle for handover
+            // Swap the particles to change the anchor
+
+            // Left particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+
+            // Right particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(2, 0), mode, 1, Direction.E, true, Direction.NNW);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+
+            // Contracted particle
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(1, 2), mode, 2, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+        }
+        else if (mode == 11)
+        {
+            // Two parallel expanded particles with two parallel bonds
+            // Both contract but the direction is random
+
+            for (int i = 0; i < 10; i++)
+            {
+                // Bottom particle
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, i), mode, 0, Direction.E, true, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+                particleMap.Add(p.Tail(), p);
+            }
+        }
 
 
 
@@ -924,9 +1018,7 @@ public class ParticleSystem : IReplayHistory
                 // We are contracted and the neighbor is expanded
                 else if (p.IsContracted() && nbr.IsExpanded())
                 {
-                    Debug.Log("Label: " + label);
                     Direction bondDir = ParticleSystem_Utils.GetDirOfLabel(label);
-                    Debug.Log("bondDir: " + bondDir);
                     // First check if we have two bonds to this neighbor
                     // If that is the case, remove the second occurrence from the list of neighbors
                     Direction secondBondDir = Direction.NONE;
@@ -981,10 +1073,196 @@ public class ParticleSystem : IReplayHistory
                         ParticleSystem_Utils.IsHeadLabel(label, p.GlobalHeadDirection()),
                         secondLabel != -1 && ParticleSystem_Utils.IsHeadLabel(secondLabel, p.GlobalHeadDirection()));
                 }
-                // TODO: Other initial expansion cases
+                // We and the neighbor are both expanded
+                else if (p.IsExpanded() && nbr.IsExpanded())
+                {
+                    // First find all bonds connecting the two neighbors
+                    int numBonds = 0;
+                    int[] bondLabels = new int[3] { -1, -1, -1 };
+                    int[] nbrBondLabels = new int[3] { -1, -1, -1 };
+                    bool[] bondNbrHead = new bool[] { false, false, false };
+                    bool[] bondOwnHead = new bool[] { false, false, false };
 
+                    // We can have a maximum of 3 bonds, must look 2 positions in each direction (middle is the current bond)
+                    // Also, remove the other occurrences from the list of neighbors
+                    foreach (int offset in new int[] { 8, 9, 0, 1, 2 })
+                    {
+                        int lb = (label + offset) % 10;
+                        if (nbrParts[lb] == nbr)
+                        {
+                            bondLabels[numBonds] = lb;
+                            nbrBondLabels[numBonds] = nbrLabels[lb];
+                            bondNbrHead[numBonds] = nbrHead[lb];
+                            bondOwnHead[numBonds] = ParticleSystem_Utils.IsHeadLabel(lb, p.GlobalHeadDirection());
+                            if (offset != 0)
+                            {
+                                nbrParts[lb] = null;
+                            }
+                            numBonds++;
+                        }
+                    }
 
+                    // Exactly one bond:
+                    //      Apply our movement and the inverted neighbor movement
+                    // Exactly two bonds:
+                    //      Both to the same part of the neighbor:
+                    //          We must not contract normally
+                    //          If we move: Only handover is allowed
+                    //              The bond on our moving part must be marked
+                    //          If we do not move: Neighbor must have same marked status on the bonds
+                    //      Both start at the same part of us:
+                    //          Inverse case to above
+                    //          Uses the same logic
+                    //      From different parts to different parts (neighbor is parallel):
+                    //          Both can contract simultaneously (origin is determined by us)
+                    //              Also works with handovers without marked bonds
+                    //          If one performs a handover with one of its bonds marked, the neighbor
+                    //              must not move or it must perform a handover with a marked bond as well
+                    //              TODO: Are two handovers with the same marked bond allowed?
+                    //                  Answer: Same result as handover with both bonds unmarked!
+                    //                  Demand that both have the same marked status
+                    // Three bonds:
+                    //      None of the bonds must move
+                    //      Only allowed movements are handovers where bonds at moving parts are marked
 
+                    if (numBonds == 1)
+                    {
+                        // Apply our own movement offset
+                        // Only necessary if the bond is not at the origin and not marked for handover transferral
+                        if (movementAction != null && (p.isHeadOrigin ^ bondOwnHead[0]) &&
+                            (!p.markedBondsGlobal[bondLabels[0]] ||
+                            movementAction.type == ActionType.CONTRACT_HEAD || movementAction.type == ActionType.CONTRACT_TAIL))
+                        {
+                            nbrOffset += p.movementOffset;
+                        }
+
+                        // Apply inverted neighbor movement offset
+                        // Only necessary if we are not bonded to its origin and the bond is not marked for handover transferral
+                        if (nbr.ScheduledMovement != null && (nbr.isHeadOrigin ^ bondNbrHead[0]) &&
+                            (!nbr.markedBondsGlobal[nbrBondLabels[0]]
+                            || nbr.ScheduledMovement.type == ActionType.CONTRACT_HEAD || nbr.ScheduledMovement.type == ActionType.CONTRACT_TAIL))
+                        {
+                            nbrOffset -= nbr.movementOffset;
+                        }
+                    }
+                    else if (numBonds == 2)
+                    {
+                        // Case distinction: Either the two bonds share one end or they do not
+                        // They share an end iff the two bond labels are consecutive
+                        if (bondLabels[1] == (bondLabels[0] + 1) % 10)
+                        {
+                            // The bonds share one end: Find out which particle that end belongs to
+                            if (bondOwnHead[0] == bondOwnHead[1])
+                            {
+                                // Shared end belongs to us
+                                int nbrHeadLabel = bondNbrHead[0] ? nbrBondLabels[0] : nbrBondLabels[1];
+                                int nbrTailLabel = bondNbrHead[0] ? nbrBondLabels[1] : nbrBondLabels[0];
+
+                                nbrOffset += JointMovementExpandedTwoBonds(p, nbr, bondOwnHead[0],
+                                    p.markedBondsGlobal[bondLabels[0]], p.markedBondsGlobal[bondLabels[1]],
+                                    nbr.markedBondsGlobal[nbrHeadLabel], nbr.markedBondsGlobal[nbrTailLabel]);
+                            }
+                            else
+                            {
+                                // Shared end belongs to neighbor
+                                int headLabel = bondOwnHead[0] ? bondLabels[0] : bondLabels[1];
+                                int tailLabel = bondOwnHead[0] ? bondLabels[1] : bondLabels[0];
+
+                                // Must apply inverted offset
+                                nbrOffset -= JointMovementExpandedTwoBonds(nbr, p, bondNbrHead[0],
+                                    nbr.markedBondsGlobal[nbrBondLabels[0]], nbr.markedBondsGlobal[nbrBondLabels[1]],
+                                    p.markedBondsGlobal[headLabel], p.markedBondsGlobal[tailLabel]);
+                            }
+                        }
+                        else
+                        {
+                            // The bonds do not share an end, so the particles are parallel
+                            // Both particles must agree on the bonds either merging or staying apart
+
+                            // Find out the kind of the two movements
+                            int headLabel = bondOwnHead[0] ? bondLabels[0] : bondLabels[1];
+                            int tailLabel = bondOwnHead[0] ? bondLabels[1] : bondLabels[0];
+                            int nbrHeadLabel = bondNbrHead[0] ? nbrBondLabels[0] : nbrBondLabels[1];
+                            int nbrTailLabel = bondNbrHead[0] ? nbrBondLabels[1] : nbrBondLabels[0];
+
+                            ParticleAction nbrMovement = nbr.ScheduledMovement;
+
+                            bool weDoHandover = movementAction != null && (
+                                movementAction.type == ActionType.PULL_HEAD && p.markedBondsGlobal[tailLabel] ||
+                                movementAction.type == ActionType.PULL_TAIL && p.markedBondsGlobal[headLabel]);
+                            bool weMove = movementAction != null && (
+                                movementAction.type == ActionType.CONTRACT_HEAD ||
+                                movementAction.type == ActionType.CONTRACT_TAIL ||
+                                weDoHandover);
+
+                            bool nbrDoesHandover = nbrMovement != null && (
+                                nbrMovement.type == ActionType.PULL_HEAD && nbr.markedBondsGlobal[nbrTailLabel] ||
+                                nbrMovement.type == ActionType.PULL_TAIL && nbr.markedBondsGlobal[nbrHeadLabel]);
+                            bool nbrMoves = nbrMovement != null && (
+                                nbrMovement.type == ActionType.CONTRACT_HEAD ||
+                                nbrMovement.type == ActionType.CONTRACT_TAIL ||
+                                nbrDoesHandover);
+
+                            if (weMove ^ nbrMoves)
+                            {
+                                Debug.LogError("Error: Two parallel expanded particles with two bonds have conflicting movements.");
+                                throw new System.InvalidOperationException("Conflict during joint movement");
+                            }
+
+                            // If we move, we have to apply an offset if the movement directions are inverted
+                            if (weMove && p.movementOffset != nbr.movementOffset)
+                            {
+                                nbrOffset += p.movementOffset;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // 3 bonds
+                        // No relative movement occurs, we only have to check if the movements are valid
+                        // The only allowed movements are no movement at all or handovers where all involved bonds
+                        // are marked for transfer
+                        if (movementAction != null)
+                        {
+                            if (movementAction.type == ActionType.CONTRACT_HEAD || movementAction.type == ActionType.CONTRACT_TAIL)
+                            {
+                                Debug.LogError("Error: Expanded particle with three bonds to expanded neighbor tries to contract.");
+                                throw new System.InvalidOperationException("Conflict during joint movement");
+                            }
+
+                            // Movement is handover, check if the non-origin bonds are marked
+                            for (int i = 0; i < 3; i++)
+                            {
+                                if ((p.isHeadOrigin ^ bondOwnHead[i]) && !p.markedBondsGlobal[bondLabels[i]])
+                                {
+                                    Debug.LogError("Error: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond.");
+                                    throw new System.InvalidOperationException("Conflict during joint movement");
+                                }
+                            }
+                        }
+
+                        // Same check for the neighbor
+                        ParticleAction nbrAction = nbr.ScheduledMovement;
+                        if (nbrAction != null)
+                        {
+                            if (nbrAction.type == ActionType.CONTRACT_HEAD || nbrAction.type == ActionType.CONTRACT_TAIL)
+                            {
+                                Debug.LogError("Error: Expanded particle with three bonds to expanded neighbor tries to contract.");
+                                throw new System.InvalidOperationException("Conflict during joint movement");
+                            }
+
+                            // Movement is handover, check if the non-origin bonds are marked
+                            for (int i = 0; i < 3; i++)
+                            {
+                                if ((nbr.isHeadOrigin ^ bondNbrHead[i]) && !nbr.markedBondsGlobal[nbrBondLabels[i]])
+                                {
+                                    Debug.LogError("Error: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond.");
+                                    throw new System.InvalidOperationException("Conflict during joint movement");
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // Have computed the relative offset of this neighbor
                 // If the neighbor is already queued, its offset has already been set by another particle
@@ -1077,8 +1355,6 @@ public class ParticleSystem : IReplayHistory
         }
 
         particleMap = newPositions;
-
-        // TODO
 
         Debug.Log("Computed joint movements in " + (Time.realtimeSinceStartup - tStart) + "s");
     }
@@ -1231,6 +1507,76 @@ public class ParticleSystem : IReplayHistory
             }
         }
         return eOffset;
+    }
+
+    /// <summary>
+    /// Helper method for handling the joint movements of two neighboring expanded
+    /// particles that from a triangle with two bonds.
+    /// </summary>
+    /// <param name="pCorner">The particle owning the part where the two bonds meet.</param>
+    /// <param name="pEdge">The particle having one bond on each of its parts.</param>
+    /// <param name="cornerAtHead">Indicates whether the part where the two bonds meet
+    /// is the head of the <paramref name="pCorner"/> particle.</param>
+    /// <param name="cornerMarked1">Indicates whether the particle owning the corner has
+    /// marked the first bond.</param>
+    /// <param name="cornerMarked2">Indicates whether the particle owning the corner has
+    /// marked the second bond.</param>
+    /// <param name="edgeMarkedHead">Indicates whether the edge particle has marked the
+    /// bond at its head.</param>
+    /// <param name="edgeMarkedTail">Indicates whether the edge particle has marked the
+    /// bond at its tail.</param>
+    /// <returns>The global offset vector of the edge particle's origin relative to the
+    /// corner particle's origin.</returns>
+    private Vector2Int JointMovementExpandedTwoBonds(Particle pCorner, Particle pEdge, bool cornerAtHead,
+        bool cornerMarked1, bool cornerMarked2,
+        bool edgeMarkedHead, bool edgeMarkedTail)
+    {
+        Vector2Int edgeOffset = Vector2Int.zero;
+
+        ParticleAction cAction = pCorner.ScheduledMovement;
+        ParticleAction eAction = pEdge.ScheduledMovement;
+
+        // The particle with the edge cannot add any offset, but its movements must be checked
+        if (eAction != null)
+        {
+            // The particle must not contract without handover
+            if (eAction.type == ActionType.CONTRACT_HEAD || eAction.type == ActionType.CONTRACT_TAIL)
+            {
+                Debug.LogError("Error: Two expanded particles form triangle of bonds which is broken by contraction.");
+                throw new System.InvalidOperationException("Conflict during joint movements");
+            }
+
+            // It may perform a handover if it has marked the moving bond
+            if (eAction.type == ActionType.PULL_HEAD && !edgeMarkedTail || eAction.type == ActionType.PULL_TAIL && !edgeMarkedHead)
+            {
+                Debug.LogError("Error: Two expanded particles form triangle of bonds which is broken by handover.");
+                throw new System.InvalidOperationException("Conflict during joint movements");
+            }
+        }
+
+        // If the particle with the corner moves the part with the two bonds, its offset may be applied
+        if (cAction != null && (cornerAtHead ^ pCorner.isHeadOrigin))
+        {
+            // Bonds are not adjacent to the origin
+            // Apply offset if this is not a handover with both bonds marked
+            bool applyOffset = true;
+            if (cAction.type == ActionType.PULL_HEAD || cAction.type == ActionType.PULL_TAIL)
+            {
+                if (cornerMarked1 ^ cornerMarked2)
+                {
+                    Debug.LogError("Error: Two expanded particles form triangle of bonds which is broken by unequal handover transfer.");
+                    throw new System.InvalidOperationException("Conflict during joint movements");
+                }
+                if (cornerMarked1)
+                    applyOffset = false;
+            }
+            if (applyOffset)
+            {
+                edgeOffset += pCorner.movementOffset;
+            }
+        }
+
+        return edgeOffset;
     }
 
     // TODO: Circuit computation and beep/message handling should probably be done separately

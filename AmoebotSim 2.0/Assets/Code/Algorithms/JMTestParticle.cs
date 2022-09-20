@@ -64,6 +64,17 @@ public class JMTestParticle : ParticleAlgorithm
                 break;
             case 6: Activate6();
                 break;
+            case 7: Activate7();
+                break;
+            case 8: Activate8();
+                break;
+            case 9:
+            case 10:
+                Activate9_10();
+                break;
+            case 11:
+                Activate11();
+                break;
             default: return;
         }
     }
@@ -297,6 +308,180 @@ public class JMTestParticle : ParticleAlgorithm
         {
             ReleaseBond(Direction.W);
             ReleaseBond(Direction.SSE);
+        }
+        terminated.SetValue(true);
+    }
+
+    // Two expanded particles with a single bond
+    private void Activate7()
+    {
+        string s = "";
+        // Particle 0 is bottom, 1 is top
+        if (role == 0)
+        {
+            // Release two of the bonds
+            ReleaseBond(Direction.NNW, true);
+            ReleaseBond(Direction.NNE, true);
+
+            s += "Bottom particle:\n";
+        }
+        else
+        {
+            // Release two of the bonds
+            ReleaseBond(Direction.SSE, false);
+            ReleaseBond(Direction.SSW, true);
+
+            s += "Top particle:\n";
+        }
+
+        // Randomly decide to contract
+        if (Random.Range(0, 2) == 0)
+        {
+            if (Random.Range(0, 2) == 0)
+            {
+                s += "Contract HEAD";
+                ContractHead();
+            }
+            else
+            {
+                s += "Contract TAIL";
+                ContractTail();
+            }
+        }
+        else
+        {
+            s += "Do not contract";
+        }
+
+        Debug.Log(s);
+        terminated.SetValue(true);
+    }
+
+    // Two expanded particles with one bond plus contracted neighbors for handover
+    private void Activate8()
+    {
+        string s = "";
+        // Particles 0 and 1 are the bottom and top expanded ones
+        // Particles 2 and 3 are the bottom and top contracted neighbors
+        if (role == 0)
+        {
+            // Release two of the bonds
+            ReleaseBond(Direction.NNW, true);
+            ReleaseBond(Direction.NNE, true);
+
+            // Perform handover with bottom neighbor
+            PullHandoverHead(Direction.SSW);
+
+            s += "Bottom particle:\n";
+
+            // Randomly mark the bond to the expanded neighbor or not
+            if (Random.Range(0, 2) == 0)
+            {
+                s += "MARK";
+                MarkBond(Direction.NNE, false);
+                SetMainColor(ColorData.Particle_Green);
+            }
+            else
+            {
+                s += "Do not mark";
+                SetMainColor(ColorData.Particle_Red);
+            }
+            Debug.Log(s);
+        }
+        else if (role == 1)
+        {
+            // Release two of the bonds
+            ReleaseBond(Direction.SSE, false);
+            ReleaseBond(Direction.SSW, true);
+
+            // Perform handover with top neighbor
+            PullHandoverHead(Direction.NNW);
+
+            s += "Top particle:\n";
+
+            // Randomly mark the bond to the expanded neighbor or not
+            if (Random.Range(0, 2) == 0)
+            {
+                s += "MARK";
+                MarkBond(Direction.SSW, false);
+                SetMainColor(ColorData.Particle_Green);
+            }
+            else
+            {
+                s += "Do not mark";
+                SetMainColor(ColorData.Particle_Red);
+            }
+            Debug.Log(s);
+        }
+        else if (role == 2)
+        {
+            // Perform handover with top neighbor
+            PushHandover(Direction.NNE);
+        }
+        else if (role == 3)
+        {
+            // Perform handover with bottom neighbor
+            PushHandover(Direction.SSE);
+        }
+
+        terminated.SetValue(true);
+    }
+
+    // Two expanded particles with two bonds that share an end
+    // In mode 10, there is also a contracted particle for handover
+    private void Activate9_10()
+    {
+        if (role == 0)
+        {
+            // Randomly decide to contract or not
+            if (Random.Range(0, 2) == 0)
+            {
+                if (Random.Range(0, 2) == 0)
+                {
+                    ContractHead();
+                    SetMainColor(ColorData.Particle_Green);
+                }
+                else
+                {
+                    ContractTail();
+                    SetMainColor(ColorData.Particle_Blue);
+                }
+            }
+        }
+        else if (mode == 10)
+        {
+            // Expanded and contracted particle perform handover and transfer one of the bonds
+            if (role == 1)
+            {
+                PullHandoverTail(Direction.NNE);
+                MarkBond(Direction.SSW, true);
+            }
+            else if (role == 2)
+            {
+                PushHandover(Direction.SSW);
+            }
+        }
+        terminated.SetValue(true);
+    }
+
+    // Multiple parallel expanded particles with parallel bonds
+    // All contract in random directions
+    private void Activate11()
+    {
+        // Release the unused bonds
+        ReleaseBond(Direction.SSE, false);
+        ReleaseBond(Direction.NNW, true);
+
+        // Contract in random direction
+        if (Random.Range(0, 2) == 0)
+        {
+            ContractHead();
+            SetMainColor(ColorData.Particle_Green);
+        }
+        else
+        {
+            ContractTail();
+            SetMainColor(ColorData.Particle_Blue);
         }
         terminated.SetValue(true);
     }

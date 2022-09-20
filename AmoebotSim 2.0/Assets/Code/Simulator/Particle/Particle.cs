@@ -888,6 +888,7 @@ public class Particle : IParticleState, IReplayHistory
         exp_expansionDir = Direction.NONE;
         pos_tail += offset;
         pos_head = pos_tail;
+        tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
         expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
     }
 
