@@ -25,6 +25,7 @@ public class LogUIHandler : MonoBehaviour
     // Data
     public List<GameObject> logElementList = new List<GameObject>();
     private int maxLogEntries = 30;
+    private int logEntryID = 1;
 
     // Timestamp
     private float timestampLastInteraction = 0f;
@@ -63,13 +64,22 @@ public class LogUIHandler : MonoBehaviour
             }
         }
 
-        AddLogEntry("Welcome to AmoebotSim 2.0!", EntryType.Log);
+        AddLogEntry("Welcome to AmoebotSim 2.0!", EntryType.Log, false);
+        //AddLogEntry("=============================================================================================", EntryType.Log, false);
+        AddLogEntry("University of Paderborn, Theory of Distributed Systems (Prof. Dr. Christian Scheideler)", EntryType.Log, false);
+        AddLogEntry("Created by Matthias Artmann [System + Functionality] and Tobias Maurer [Rendering + UI], project lead by Andreas Padalkin and Daniel Warner.", EntryType.Log, false);
+        //AddLogEntry("=============================================================================================", EntryType.Log, false);
+        AddLogEntry("                                                                                                                              ___/|", EntryType.Log, false);
+        AddLogEntry("                                                                                                                              \\o.O|", EntryType.Log, false);
+        AddLogEntry("                                                                                                                              (___)", EntryType.Log, false);
+        AddLogEntry("                                                                                                                              U", EntryType.Log, false);
         AddLogEntry("", EntryType.Empty);
-        AddLogEntry("", EntryType.Empty);
-        AddLogEntry("Log       =======================", EntryType.Log);
-        AddLogEntry("", EntryType.Empty);
-        AddLogEntry("All systems initialized.", EntryType.Log);
-        AddLogEntry("", EntryType.Empty);
+        AddLogEntry("Log  ========================================================================================", EntryType.Log, false);
+        
+        // Hide Log
+        Hide();
+        timeVisibleInitial = 0f;
+        timestampLastInteraction = -100f;
     }
 
     public void Update()
@@ -95,27 +105,33 @@ public class LogUIHandler : MonoBehaviour
 
     public void AddLogEntry(string text, EntryType type)
     {
+        AddLogEntry(text, type, true);
+    }
+
+    protected void AddLogEntry(string text, EntryType type, bool showNumberOfEntry)
+    {
         GameObject go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_log_element, Vector3.zero, Quaternion.identity, go_elementParent.transform);
         logElementList.Add(go);
         
         TextMeshProUGUI tmp_header = GetLogElementTMPHeader(go);
         TextMeshProUGUI tmp_text = GetLogElementTMPText(go);
+        string preText = showNumberOfEntry && type != EntryType.Empty ? "[" + (logEntryID++) + "] " : "";
         switch (type)
         {
             case EntryType.Log:
-                tmp_header.text = "Log:";
+                tmp_header.text = preText;
                 tmp_header.color = color_log;
                 break;
             case EntryType.Debug:
-                tmp_header.text = "Debug:";
+                tmp_header.text = preText + "Debug:";
                 tmp_header.color = color_debug;
                 break;
             case EntryType.Error:
-                tmp_header.text = "Error:";
+                tmp_header.text = preText + "Error:";
                 tmp_header.color = color_error;
                 break;
             case EntryType.Warning:
-                tmp_header.text = "Warning:";
+                tmp_header.text = preText + "Warning:";
                 tmp_header.color = color_warning;
                 break;
             case EntryType.Empty:
