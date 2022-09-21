@@ -77,6 +77,8 @@ public class JMTestParticle : ParticleAlgorithm
                 break;
             case 12: Activate12();
                 break;
+            case 13: Activate13();
+                break;
             default: return;
         }
     }
@@ -561,5 +563,40 @@ public class JMTestParticle : ParticleAlgorithm
         }
 
         terminated.SetValue(true);
+    }
+
+    // Parallelogram of particles with one open side
+    private void Activate13()
+    {
+        // Particles 0 and 2 are lower and upper row, particles 1 are vertical column
+        if (IsContracted())
+        {
+            // Everybody expands
+            if (role == 0 || role == 2)
+            {
+                // Release bond to NNW because of the tight corner
+                ReleaseBond(Direction.NNW);
+                Expand(Direction.E);
+            }
+            else
+            {
+                // Release bond to SSE because of the tight corner
+                ReleaseBond(Direction.SSE);
+                Expand(Direction.NNE);
+            }
+        }
+        else
+        {
+            // Everybody contracts
+            if (role == 0)
+            {
+                ReleaseBond(Direction.NNW, true);
+            }
+            else if (role == 1)
+            {
+                ReleaseBond(Direction.SSE, false);
+            }
+            ContractTail();
+        }
     }
 }

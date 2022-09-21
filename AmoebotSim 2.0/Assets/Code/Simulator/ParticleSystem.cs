@@ -648,6 +648,38 @@ public class ParticleSystem : IReplayHistory
                 }
             }
         }
+        else if (mode == 13)
+        {
+            // Three lines of particles forming a parallelogram with one missing side
+            // All of the particles expand and contract alternatingly
+            int widthLower = 10;
+            int widthUpper = 12;
+            int height = 8;
+
+            // Lower row
+            for (int i = 0; i < widthLower; i++)
+            {
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(i, 0), mode, 0, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+            }
+
+            // Vertical column
+            for (int i = 0; i < height; i++)
+            {
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, i + 1), mode, 1, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+            }
+
+            // Upper row
+            for (int i = 0; i < widthUpper; i++)
+            {
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(i, height + 1), mode, 2, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+            }
+        }
 
 
 
@@ -1930,7 +1962,7 @@ public class ParticleSystem : IReplayHistory
         {
             p.graphics.SetParticleColor(p.GetParticleColor());
             if (resetVisuals) p.graphics.UpdateReset();
-            else p.graphics.Update(true);
+            else p.graphics.Update(p.jmOffset != Vector2Int.zero);
         }
         foreach (Particle p in particles)
         {
