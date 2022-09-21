@@ -75,6 +75,8 @@ public class JMTestParticle : ParticleAlgorithm
             case 11:
                 Activate11();
                 break;
+            case 12: Activate12();
+                break;
             default: return;
         }
     }
@@ -246,9 +248,6 @@ public class JMTestParticle : ParticleAlgorithm
         // Particle 0 is contracted, particle 1 is expanded
         if (role == 0)
         {
-            // Only keep the NNW bond
-            ReleaseBond(Direction.NNE);
-
             // Push in that direction
             PushHandover(Direction.NNW);
         }
@@ -483,6 +482,84 @@ public class JMTestParticle : ParticleAlgorithm
             ContractTail();
             SetMainColor(ColorData.Particle_Blue);
         }
+        terminated.SetValue(true);
+    }
+
+    // Multiple parallel expanded particles with parallel bonds and some with neighbors
+    // All either contract/perform handover with unmarked bonds or do not contract/
+    // perform handover with marked bonds
+    private void Activate12()
+    {
+        Debug.Log("Role: " + role.GetValue());
+        // Roles 0-5 are expanded
+        if (role < 6)
+        {
+            // Release diagonal bonds
+            ReleaseBond(Direction.NNW, true);
+            ReleaseBond(Direction.SSE, false);
+
+            // Also release bonds to top and bottom contracted neighbors
+            ReleaseBond(Direction.NNW, false);
+            ReleaseBond(Direction.SSE, true);
+
+            // 0 = do nothing (no neighbor), 1 = contract in random direction (no neighbor),
+            // 2 = handover head with marked bond, 3 = handover tail with marked bond,
+            // 4 = handover head with unmarked bond, 5 = handover tail with unmarked bond
+            if (role == 1)
+            {
+                // Contract in random direction
+                if (Random.Range(0, 2) == 0)
+                {
+                    ContractHead();
+                    SetMainColor(ColorData.Particle_Green);
+                }
+                else
+                {
+                    ContractTail();
+                    SetMainColor(ColorData.Particle_Blue);
+                }
+            }
+            else if (role == 2 || role == 4)
+            {
+                // Pull into head and maybe mark bonds
+                PullHandoverHead(Direction.W);
+                SetMainColor(ColorData.Particle_Green);
+                if (role == 2)
+                {
+                    // Mark tail bonds
+                    MarkBond(Direction.NNE, false);
+                    MarkBond(Direction.SSW, false);
+                }
+            }
+            else if (role == 3 || role == 5)
+            {
+                // Pull into tail and maybe mark bonds
+                PullHandoverTail(Direction.E);
+                SetMainColor(ColorData.Particle_Blue);
+                if (role == 3)
+                {
+                    // Mark head bonds
+                    MarkBond(Direction.NNE, true);
+                    MarkBond(Direction.SSW, true);
+                }
+            }
+        }
+        else if (role == 6)
+        {
+            // Left contracted neighbor: Perform handover to the right
+            PushHandover(Direction.E);
+            // Must release one bond to make movement valid
+            // (cannot mark because that neighbor may not want to contract)
+            ReleaseBond(Direction.SSE);
+        }
+        else if (role == 7)
+        {
+            // Right contracted neighbor: Perform handover to the left
+            PushHandover(Direction.W);
+            // Must release one bond to make movement valid
+            ReleaseBond(Direction.NNW);
+        }
+
         terminated.SetValue(true);
     }
 }

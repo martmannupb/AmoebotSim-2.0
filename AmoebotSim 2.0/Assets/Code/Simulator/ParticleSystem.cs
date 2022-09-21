@@ -595,16 +595,57 @@ public class ParticleSystem : IReplayHistory
         }
         else if (mode == 11)
         {
-            // Two parallel expanded particles with two parallel bonds
-            // Both contract but the direction is random
+            // Stack of parallel expanded particles with two parallel bonds
+            // All of them contract but the direction is random
 
             for (int i = 0; i < 10; i++)
             {
-                // Bottom particle
                 p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, i), mode, 0, Direction.E, true, Direction.E);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
                 particleMap.Add(p.Tail(), p);
+            }
+        }
+        else if (mode == 12)
+        {
+            // Stack of parallel expanded particles with two parallel bonds
+            // Some of them have a contracted neighbor for handover
+            // The system either contracts or stays expanded
+
+            bool contract = Random.Range(0, 2) == 0;
+
+            for (int i = 0; i < 15; i++)
+            {
+                // Randomly either place just the expanded particle or an additional contracted particle on one side
+                // 0 = none, 1 = left, 2 = right
+                int neighbor = Random.Range(0, 3);
+
+                // 0 = do nothing (no neighbor), 1 = contract in random direction (no neighbor),
+                // 2 = handover head with marked bond, 3 = handover tail with marked bond,
+                // 4 = handover head with unmarked bond, 5 = handover tail with unmarked bond
+                int role = neighbor == 0 ? (contract ? 1 : 0) :
+                    neighbor == 1 ? (contract ? 4 : 2) :
+                    (contract ? 5 : 3);
+
+                // Expanded particle
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, i), mode, role, Direction.E, true, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+                particleMap.Add(p.Tail(), p);
+
+                // Place the neighbor
+                if (neighbor == 1)
+                {
+                    p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-1, i), mode, 6, Direction.E);
+                    particles.Add(p);
+                    particleMap.Add(p.Head(), p);
+                }
+                else if (neighbor == 2)
+                {
+                    p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(2, i), mode, 7, Direction.E);
+                    particles.Add(p);
+                    particleMap.Add(p.Head(), p);
+                }
             }
         }
 
@@ -1187,17 +1228,19 @@ public class ParticleSystem : IReplayHistory
 
                             ParticleAction nbrMovement = nbr.ScheduledMovement;
 
+                            // Doing a handover with marked bonds has the same effect as not moving at all,
+                            // so we only check for handovers where the moving bond is not marked
                             bool weDoHandover = movementAction != null && (
-                                movementAction.type == ActionType.PULL_HEAD && p.markedBondsGlobal[tailLabel] ||
-                                movementAction.type == ActionType.PULL_TAIL && p.markedBondsGlobal[headLabel]);
+                                movementAction.type == ActionType.PULL_HEAD && !p.markedBondsGlobal[tailLabel] ||
+                                movementAction.type == ActionType.PULL_TAIL && !p.markedBondsGlobal[headLabel]);
                             bool weMove = movementAction != null && (
                                 movementAction.type == ActionType.CONTRACT_HEAD ||
                                 movementAction.type == ActionType.CONTRACT_TAIL ||
                                 weDoHandover);
 
                             bool nbrDoesHandover = nbrMovement != null && (
-                                nbrMovement.type == ActionType.PULL_HEAD && nbr.markedBondsGlobal[nbrTailLabel] ||
-                                nbrMovement.type == ActionType.PULL_TAIL && nbr.markedBondsGlobal[nbrHeadLabel]);
+                                nbrMovement.type == ActionType.PULL_HEAD && !nbr.markedBondsGlobal[nbrTailLabel] ||
+                                nbrMovement.type == ActionType.PULL_TAIL && !nbr.markedBondsGlobal[nbrHeadLabel]);
                             bool nbrMoves = nbrMovement != null && (
                                 nbrMovement.type == ActionType.CONTRACT_HEAD ||
                                 nbrMovement.type == ActionType.CONTRACT_TAIL ||
@@ -1273,6 +1316,8 @@ public class ParticleSystem : IReplayHistory
                     if (nbr.jmOffset != nbrOffset)
                     {
                         Debug.LogError("Offset for particle does not match! Previous offset: " + nbr.jmOffset + ", new offset: " + nbrOffset);
+                        Debug.Log("Current particle at " + p.Head() + ", " + p.Tail());
+                        Debug.Log("Neighbor at " + nbr.Head() + ", " + nbr.Tail());
                         throw new System.InvalidOperationException("Conflict during joint movement");
                     }
                 }
