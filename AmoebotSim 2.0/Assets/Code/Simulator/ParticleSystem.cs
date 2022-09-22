@@ -1005,6 +1005,21 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    /// <summary>
+    /// Computes the joint movements of the particle system after
+    /// all movement activations were executed. Each particle gets
+    /// a global offset that is applied in addition to its own local
+    /// movement.
+    /// <para>
+    /// Performs a breadth-first search on the graph induced by the
+    /// particles' bonds, starting at the anchor particle. For each
+    /// visited particle, offsets for all of its unvisited neighbors
+    /// are computed based on the particle's own offset. The computation
+    /// fails if two neighboring particles try to perform conflicting
+    /// movements or any two particles end up at the same final
+    /// location.
+    /// </para>
+    /// </summary>
     private void SimulateJointMovements()
     {
         float tStart = Time.realtimeSinceStartup;
@@ -1042,18 +1057,29 @@ public class ParticleSystem : IReplayHistory
             bool[] nbrHead = new bool[numNbrs]; // True if the neighbor's head is at this position
             int[] nbrLabels = new int[numNbrs]; // Stores global neighbor label opposite of our label
 
+            // If a handover is scheduled, also ensure that there is a bond to the
+            // partner in the handover
+            int handoverLabelToCheck = -1;
+            if (movementAction != null)
+            {
+                Direction dir = ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality);
+                if (movementAction.type == ActionType.PUSH)
+                    handoverLabelToCheck = ParticleSystem_Utils.GetLabelInDir(dir, globalHeadDir);
+                else if (movementAction.type == ActionType.PULL_HEAD)
+                    handoverLabelToCheck = ParticleSystem_Utils.GetLabelInDir(dir, globalHeadDir, false);
+                else if (movementAction.type == ActionType.PULL_TAIL)
+                    handoverLabelToCheck = ParticleSystem_Utils.GetLabelInDir(dir, globalHeadDir, true);
+            }
+
             for (int label = 0; label < numNbrs; label++)
             {
                 Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
                 bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
                 Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
+                bool haveBondedNeighbor = false;
                 if (particleMap.TryGetValue(nbrPos, out Particle nbr))
                 {
                     // We have a neighbor at this location
-
-                    // Skip if the neighbor was already processed
-                    if (nbr.processedJointMovement)
-                        continue;
 
                     // Collect information and check if we have a bond to this neighbor
                     bool isNbrHead = nbr.Head() == nbrPos;
@@ -1071,13 +1097,25 @@ public class ParticleSystem : IReplayHistory
                         Debug.LogWarning("Bonds disagree at position " + nbrPos);
                     }
 
-                    // Add the neighbor to the list if there is a bond
+                    // Add the neighbor to the list if there is a bond and the neighbor has not been processed yet
                     if (bondsActive)
                     {
-                        nbrParts[label] = nbr;
-                        nbrHead[label] = isNbrHead;
-                        nbrLabels[label] = nbrLabel;
+                        haveBondedNeighbor = true;
+                        if (!nbr.processedJointMovement)
+                        {
+                            nbrParts[label] = nbr;
+                            nbrHead[label] = isNbrHead;
+                            nbrLabels[label] = nbrLabel;
+                        }
                     }
+                }
+
+                // Error if there is no neighbor here although a handover is scheduled
+                if (label == handoverLabelToCheck && !haveBondedNeighbor)
+                {
+                    Debug.LogError("Error: Particle at position " + p.Head() + ", " + p.Tail() + " has scheduled handover at label " + handoverLabelToCheck
+                        + " but has no neighbor at that label");
+                    throw new System.InvalidOperationException("Error computing movements");
                 }
             }
 
