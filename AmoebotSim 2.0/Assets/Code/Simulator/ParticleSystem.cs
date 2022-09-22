@@ -701,6 +701,53 @@ public class ParticleSystem : IReplayHistory
             particles.Add(p);
             particleMap.Add(p.Head(), p);
         }
+        else if (mode == 15)
+        {
+            // Block of particles with a stripe in the middle that expands and contracts
+            // to move the entire block
+
+            int width = 20;
+            int height = 10;
+            // Idle particles have role 0, stripe particles have role 1
+            // The lowest stripe particle is the anchor
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(width / 2, 0), mode, 1, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+
+            for (int x = 0; x < width; x++)
+            {
+                int role = x == width / 2 ? 1 : 0;
+                for (int y = (role == 0 ? 0 : 1); y < height; y++)
+                {
+                    p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(x, y), mode, role, Direction.E);
+                    particles.Add(p);
+                    particleMap.Add(p.Head(), p);
+                }
+            }
+        }
+        else if (mode == 16)
+        {
+            // A "floor" made out of contracted particles and a "worm" of particles that moves
+            // across it by expanding and contracting
+            int floorSize = 250;
+            int wormSize = 7;
+
+            // Role 0 is floor, role 1 is worm
+            // Anchor is part of the floor
+            for (int i = 0; i < floorSize; i++)
+            {
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(i, 0), mode, 0, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+            }
+
+            for (int i = 0; i < wormSize; i++)
+            {
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(i, 1), mode, 1, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+            }
+        }
 
 
 
@@ -814,9 +861,12 @@ public class ParticleSystem : IReplayHistory
         // All particles set their new bonds and schedule movements
         // Then the movements are evaluated and applied
         inMovePhase = true;
-        ActivateParticlesMove();
+        bool particlesMove = ActivateParticlesMove();
         inMovePhase = false;
-        SimulateJointMovements();
+        // Skip the movement computation if no particle has moved
+        // TODO: No connectivity check is performed then! Should this always be executed?
+        if (particlesMove)
+            SimulateJointMovements();
         FinishMovementInfo();
 
         // Second: Beep cycle
@@ -844,8 +894,21 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
-    private void ActivateParticlesMove()
+    /// <summary>
+    /// Executes the movement activations of all particles in the system and
+    /// prepares the particles for the joint movement computation.
+    /// <para>
+    /// The final bonds of each particle are computed by their global positions
+    /// and adjusted based on the scheduled movement. Additionally, it is
+    /// determined whether the head of the particle is its local origin and
+    /// the local movement offset is calculated. The global offset of the
+    /// particles is reset to <c>(0, 0)</c>.
+    /// </para>
+    /// </summary>
+    /// <returns><c>true</c> if any particle has scheduled a movement.</returns>
+    private bool ActivateParticlesMove()
     {
+        bool anyParticleMoved = false;
         for (int i = 0; i < particles.Count; i++)
         {
             Particle p = particles[i];
@@ -861,16 +924,17 @@ public class ParticleSystem : IReplayHistory
             }
 
             p.movementOffset = Vector2Int.zero;
+            p.jmOffset = Vector2Int.zero;
 
             ParticleAction a = p.ScheduledMovement;
 
             // Determine the local origin
             p.isHeadOrigin = p.IsContracted() && a == null || p.IsExpanded() && a != null && (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD);
 
-            // TODO: For handovers check if the bond in handover direction is active
-
             // Apply automatic bond restrictions
             if (a == null) continue;
+
+            anyParticleMoved = true;
 
             // For expanding particles: Bond in expansion direction is always marked, opposite bond is never marked
             if (a.type == ActionType.EXPAND)
@@ -923,8 +987,13 @@ public class ParticleSystem : IReplayHistory
             }
             p.movementOffset = ParticleSystem_Utils.DirectionToVector(offsetDir);
         }
+
+        return anyParticleMoved;
     }
 
+    /// <summary>
+    /// Executes the beep activation of each particle.
+    /// </summary>
     private void ActivateParticlesBeep()
     {
         for (int i = 0; i < particles.Count; i++)
@@ -1490,6 +1559,7 @@ public class ParticleSystem : IReplayHistory
             }
         }
 
+        // Replace the particle map with the new positions
         particleMap = newPositions;
 
         Debug.Log("Computed joint movements in " + (Time.realtimeSinceStartup - tStart) + "s");

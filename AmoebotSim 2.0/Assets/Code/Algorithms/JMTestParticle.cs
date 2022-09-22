@@ -25,6 +25,17 @@ public class JMTestParticle : ParticleAlgorithm
                 SetMainColor(ColorData.Particle_Orange);
             }
         }
+        else if (mode_ == 15)
+        {
+            if (role_ == 1)
+            {
+                SetMainColor(ColorData.Particle_Green);
+            }
+            else
+            {
+                SetMainColor(ColorData.Particle_Black);
+            }
+        }
         else
         {
             SetMainColor(ColorData.Particle_Black);
@@ -80,6 +91,10 @@ public class JMTestParticle : ParticleAlgorithm
             case 13: Activate13();
                 break;
             case 14: Activate14();
+                break;
+            case 15: Activate15();
+                break;
+            case 16: Activate16();
                 break;
             default: return;
         }
@@ -658,5 +673,90 @@ public class JMTestParticle : ParticleAlgorithm
             PushHandover(Direction.SSE);
         }
         terminated.SetValue(true);
+    }
+
+    // Block of particles with a stripe of expanding and contracting particles
+    private void Activate15()
+    {
+        // Role 0 is idle, role 1 moves
+        if (role == 1)
+        {
+            if (IsContracted())
+            {
+                Expand(Direction.E);
+                MarkBond(Direction.SSE);
+            }
+            else
+            {
+                ReleaseBond(Direction.NNW, true);
+                ReleaseBond(Direction.SSE, false);
+                ContractHead();
+            }
+        }
+    }
+
+    // "Floor" and "worm" of particles
+    private void Activate16()
+    {
+        // Role 0 is floor, role 1 is worm
+        if (role == 0)
+        {
+            // Floor disconnects all bonds unless it is the leftmost or rightmost particle of the worm
+            bool hasNbrLeft = HasNeighborAt(Direction.NNW);
+            bool hasNbrRight = HasNeighborAt(Direction.NNE);
+
+            if (hasNbrLeft && hasNbrRight)
+            {
+                ReleaseBond(Direction.NNW);
+                ReleaseBond(Direction.NNE);
+            }
+            else if (hasNbrLeft)
+            {
+                ReleaseBond(Direction.NNE);
+                ParticleAlgorithm nbr = GetNeighborAt(Direction.NNW);
+                if (nbr.IsContracted())
+                {
+                    ReleaseBond(Direction.NNW);
+                }
+            }
+            else if (hasNbrRight)
+            {
+                ReleaseBond(Direction.NNW);
+                ParticleAlgorithm nbr = GetNeighborAt(Direction.NNE);
+                if (nbr.IsExpanded())
+                {
+                    ReleaseBond(Direction.NNE);
+                }
+            }
+        }
+        else
+        {
+            if (IsContracted())
+            {
+                // Only the leftmost particle keeps its bonds to the floor
+                ReleaseBond(Direction.SSE);
+                if (HasNeighborAt(Direction.W))
+                {
+                    ReleaseBond(Direction.SSW);
+                }
+
+                // Expand right
+                Expand(Direction.E);
+            }
+            else
+            {
+                // Only the rightmost particle keeps its head bonded to the floor
+                ReleaseBond(Direction.SSW, false);
+                ReleaseBond(Direction.SSE, false);
+                ReleaseBond(Direction.SSW, true);
+                if (HasNeighborAt(Direction.E, true))
+                {
+                    ReleaseBond(Direction.SSE, true);
+                }
+
+                // Contract right
+                ContractHead();
+            }
+        }
     }
 }
