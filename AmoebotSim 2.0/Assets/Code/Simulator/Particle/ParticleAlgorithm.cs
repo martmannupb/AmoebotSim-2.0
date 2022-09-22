@@ -747,6 +747,23 @@ public abstract class ParticleAlgorithm
         return particle.BondMarked(label);
     }
 
+    /// <summary>
+    /// Switches to automatic bond mode, causing the movements of the
+    /// particle to behave like in the original model without joint
+    /// movements.
+    /// <para>
+    /// Any changes made to the bond setup will be overwritten by the
+    /// automatic bonds. Setting this mode will also avoid warning
+    /// messages caused by disagreeing bonds.
+    /// Only works in <see cref="ActivateMove"/>.
+    /// </para>
+    /// </summary>
+    public void UseAutomaticBonds()
+    {
+        if (!CheckMove(null)) return;
+        particle.markedForAutomaticBonds = true;
+    }
+
 
     /**
      * Movement actions

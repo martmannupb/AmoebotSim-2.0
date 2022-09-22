@@ -968,23 +968,75 @@ public class ParticleSystem : IReplayHistory
         {
             Particle p = particles[i];
             p.ActivateMove();
+            ParticleAction a = p.ScheduledMovement;
+            // Determine the local origin
+            p.isHeadOrigin = p.IsContracted() && a == null || p.IsExpanded() && a != null && (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD);
 
             // Compute bonds by global labels
             int numLabels = p.IsExpanded() ? 10 : 6;
-            for (int label = 0; label < numLabels; label++)
+            if (p.markedForAutomaticBonds)
             {
-                int localLabel = ParticleSystem_Utils.GlobalToLocalLabel(label, p.GlobalHeadDirection(), p.comDir, p.chirality);
-                p.activeBondsGlobal[label] = p.BondActive(localLabel);
-                p.markedBondsGlobal[label] = p.BondMarked(localLabel);
+                for (int label = 0; label < numLabels; label++)
+                {
+                    // Default (e.g. no action): All bonds are active, none are marked
+                    bool active = true;
+                    bool marked = false;
+                    if (a != null)
+                    {
+                        Direction gDir = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
+                        int dirLabelHead = ParticleSystem_Utils.GetLabelInDir(gDir, p.GlobalHeadDirection(), true);
+                        int dirLabelTail = ParticleSystem_Utils.GetLabelInDir(gDir, p.GlobalHeadDirection(), false);
+                        bool isHeadLabel = ParticleSystem_Utils.IsHeadLabel(label, p.GlobalHeadDirection());
+
+                        // Expansion and Push: Leading bond must be marked
+                        // We log a warning if the target node is occupied in a normal expansion
+                        if (a.type == ActionType.EXPAND || a.type == ActionType.PUSH)
+                        {
+                            if (label == dirLabelHead)
+                            {
+                                marked = true;
+                                if (a.type == ActionType.EXPAND)
+                                {
+                                    Vector2Int targetPos = ParticleSystem_Utils.GetNbrInDir(p.Head(), gDir);
+                                    if (particleMap.ContainsKey(targetPos))
+                                    {
+                                        Debug.LogWarning("Particle at position " + p.Head() +
+                                            " has switched to automatic bonds but expands into neighbor in global direction " + gDir);
+                                    }
+                                }
+                            }
+                        }
+                        // Contraction: Release bond if it is not at the origin
+                        else if (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.CONTRACT_TAIL)
+                        {
+                            if (isHeadLabel ^ p.isHeadOrigin)
+                                active = false;
+                        }
+                        // Pull handover: Mark all non-origin bonds
+                        else if (a.type == ActionType.PULL_HEAD || a.type == ActionType.PULL_TAIL)
+                        {
+                            if (isHeadLabel ^ p.isHeadOrigin)
+                                marked = true;
+                        }
+                    }
+
+                    p.activeBondsGlobal[label] = active;
+                    p.markedBondsGlobal[label] = marked;
+                }
+            }
+            else
+            {
+                // Bonds are not automatic: Use bonds set by algorithm
+                for (int label = 0; label < numLabels; label++)
+                {
+                    int localLabel = ParticleSystem_Utils.GlobalToLocalLabel(label, p.GlobalHeadDirection(), p.comDir, p.chirality);
+                    p.activeBondsGlobal[label] = p.BondActive(localLabel);
+                    p.markedBondsGlobal[label] = p.BondMarked(localLabel);
+                }
             }
 
             p.movementOffset = Vector2Int.zero;
             p.jmOffset = Vector2Int.zero;
-
-            ParticleAction a = p.ScheduledMovement;
-
-            // Determine the local origin
-            p.isHeadOrigin = p.IsContracted() && a == null || p.IsExpanded() && a != null && (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD);
 
             // Apply automatic bond restrictions
             if (a == null) continue;
@@ -1216,9 +1268,9 @@ public class ParticleSystem : IReplayHistory
                     bool bondsActive = myBondActive && nbrBondActive;
                     bool bondsDisagree = myBondActive ^ nbrBondActive;
                     // TODO: Maybe remove this warning?
-                    if (bondsDisagree)
+                    if (bondsDisagree && !p.markedForAutomaticBonds && !nbr.markedForAutomaticBonds)
                     {
-                        Debug.LogWarning("Bonds disagree at position " + nbrPos);
+                        Debug.LogWarning("Bonds disagree between particles at " + p.Head() + ", " + p.Tail() + " and " + nbrPos);
                     }
 
                     // Add the neighbor to the list if there is a bond and the neighbor has not been processed yet
@@ -2109,6 +2161,7 @@ public class ParticleSystem : IReplayHistory
             p.processedPinConfig = false;
             p.queuedForPinConfigProcessing = false;
             p.ScheduledMovement = null;
+            p.markedForAutomaticBonds = false;
             // Also reset attribute intermediate values
             p.ResetAttributeIntermediateValues();
         }

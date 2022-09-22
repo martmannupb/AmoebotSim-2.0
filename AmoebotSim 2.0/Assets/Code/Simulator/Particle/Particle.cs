@@ -168,6 +168,14 @@ public class Particle : IParticleState, IReplayHistory
     private Direction predictHeadDir = Direction.NONE;
 
     /// <summary>
+    /// Flag indicating that the particle switched to automatic
+    /// bonds mode, which will cause the bonds to create movements
+    /// like in the original movement model, with no joint
+    /// movements.
+    /// </summary>
+    public bool markedForAutomaticBonds;
+
+    /// <summary>
     /// The absolute offset from the particle's initial location,
     /// accumulated by joint movements.
     /// </summary>
