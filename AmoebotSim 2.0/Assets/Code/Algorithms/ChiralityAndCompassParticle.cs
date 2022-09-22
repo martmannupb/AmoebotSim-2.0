@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -202,7 +201,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     public override int PinsPerEdge => 2;
 
-    public override void ActivateBeep()
+    public override void Activate()
     {
 
     }
@@ -212,7 +211,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     }
 
-    public override void Activate()
+    public override void ActivateBeep()
     {
         if (finished)
         {

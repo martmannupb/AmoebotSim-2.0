@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -175,7 +174,7 @@ namespace BoundaryTestAlgo
 
         public override int PinsPerEdge => 4;
 
-        public override void ActivateBeep()
+        public override void Activate()
         {
 
         }
@@ -185,7 +184,7 @@ namespace BoundaryTestAlgo
 
         }
 
-        public override void Activate()
+        public override void ActivateBeep()
         {
             if (firstActivation)
             {
