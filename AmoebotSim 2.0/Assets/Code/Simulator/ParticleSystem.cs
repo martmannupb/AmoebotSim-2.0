@@ -680,6 +680,27 @@ public class ParticleSystem : IReplayHistory
                 particleMap.Add(p.Head(), p);
             }
         }
+        else if (mode == 14)
+        {
+            // Contracted and expanded particle with 2 bonds
+            // Expanded particle performs handover with another contracted neighbor
+
+            // Contracted
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, 0), mode, 0, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+
+            // Expanded
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-1, 1), mode, 1, Direction.E, true, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+            particleMap.Add(p.Tail(), p);
+
+            // Contracted neighbor for handover
+            p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(-2, 2), mode, 2, Direction.E);
+            particles.Add(p);
+            particleMap.Add(p.Head(), p);
+        }
 
 
 
@@ -1559,14 +1580,21 @@ public class ParticleSystem : IReplayHistory
             else
             {
                 // No handover
-                // Neighbor must not contract and both bonds must have the same marked status if we want to move
+                // Neighbor must not contract without leaving one bond and both bonds must have the same
+                // marked status if we want to move
 
-                // TODO: Maybe a handover would be possible if one of the bonds stays in place
-
+                // Handover is possible for neighbor if one of the bonds stays in place
                 if (eAction != null)
                 {
-                    Debug.LogError("Error: Expanded neighbor with two bonds tries to contract");
-                    throw new System.InvalidOperationException("Conflict during movements");
+                    int eHeadBond = eHead1 ? eLabel1 : eLabel2;
+                    int eTailBond = eHead1 ? eLabel2 : eLabel1;
+                    if (eAction.type == ActionType.CONTRACT_HEAD || eAction.type == ActionType.CONTRACT_TAIL ||
+                        (eAction.type == ActionType.PULL_HEAD && !e.markedBondsGlobal[eTailBond]) ||
+                        (eAction.type == ActionType.PULL_TAIL && !e.markedBondsGlobal[eHeadBond]))
+                    {
+                        Debug.LogError("Error: Expanded neighbor with two bonds tries to contract");
+                        throw new System.InvalidOperationException("Conflict during movements");
+                    }
                 }
 
                 if (c.ScheduledMovement != null)

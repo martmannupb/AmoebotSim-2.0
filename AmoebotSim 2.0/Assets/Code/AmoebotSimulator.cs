@@ -47,7 +47,7 @@ public class AmoebotSimulator : MonoBehaviour
         //system.InitializeChiralityCompass(50, 0.2f);
         //system.InitializeBoundaryTest(100, 0.05f);
         //system.InitializeExpandedTest(10);
-        system.InitializeJMTest(13);
+        system.InitializeJMTest(14);
     }
 
 

@@ -79,6 +79,8 @@ public class JMTestParticle : ParticleAlgorithm
                 break;
             case 13: Activate13();
                 break;
+            case 14: Activate14();
+                break;
             default: return;
         }
     }
@@ -598,5 +600,63 @@ public class JMTestParticle : ParticleAlgorithm
             }
             ContractTail();
         }
+    }
+
+    // Contracted and expanded particle with two bonds,
+    // expanded particle performs handover
+    // Tests a special case that was allowed later
+    private void Activate14()
+    {
+        // 0 is contracted, 1 is expanded, 2 is contracted for handover
+        if (role == 0)
+        {
+            // Expand randomly
+            if (Random.Range(0, 2) == 0)
+            {
+                Direction d = DirectionHelpers.Cardinal(Random.Range(0, 6));
+                // Expanding up: Both bonds must be marked
+                if (d == Direction.NNE || d == Direction.NNW)
+                {
+                    MarkBond(Direction.NNE);
+                    MarkBond(Direction.NNW);
+                    SetMainColor(ColorData.Particle_Green);
+                }
+                // Expanding left or right: Both bonds may be marked
+                else if (d == Direction.W || d == Direction.E)
+                {
+                    if (Random.Range(0, 2) == 0)
+                    {
+                        MarkBond(Direction.NNE);
+                        MarkBond(Direction.NNW);
+                        SetMainColor(ColorData.Particle_Green);
+                    }
+                    else
+                    {
+                        SetMainColor(ColorData.Particle_Blue);
+                    }
+                }
+                else
+                {
+                    SetMainColor(ColorData.Particle_Blue);
+                }
+                Expand(d);
+            }
+            else
+            {
+                SetMainColor(ColorData.Particle_Red);
+            }
+        }
+        else if (role == 1)
+        {
+            // Perform handover with contracted neighbor, mark the left bond
+            MarkBond(Direction.SSE, false);
+            PullHandoverHead(Direction.NNW);
+        }
+        else if (role == 2)
+        {
+            // Perform handover with expanded neighbor
+            PushHandover(Direction.SSE);
+        }
+        terminated.SetValue(true);
     }
 }
