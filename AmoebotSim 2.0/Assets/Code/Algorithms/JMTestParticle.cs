@@ -96,6 +96,8 @@ public class JMTestParticle : ParticleAlgorithm
                 break;
             case 16: Activate16();
                 break;
+            case 17: Activate17();
+                break;
             default: return;
         }
     }
@@ -756,6 +758,49 @@ public class JMTestParticle : ParticleAlgorithm
 
                 // Contract right
                 ContractHead();
+            }
+        }
+    }
+
+    // Parallelogram where the bottom line consists of
+    // expanding and contracting particles
+    private void Activate17()
+    {
+        // Role 0 is static, role 1 is dynamic (bottom line)
+        if (role == 0)
+        {
+            // Release bonds to simplify movements
+            ReleaseBond(Direction.SSE);
+            ReleaseBond(Direction.NNW);
+        }
+        else
+        {
+            if (IsContracted())
+            {
+                ReleaseBond(Direction.NNW);
+                // Expand randomly to left or right
+                if (Random.Range(0, 2) == 0)
+                {
+                    Expand(Direction.W);
+                }
+                else
+                {
+                    Expand(Direction.E);
+                }
+            }
+            else
+            {
+                ReleaseBond(Direction.NNW, false);
+                ReleaseBond(Direction.NNW, true);
+                // Contract randomly to head or tail
+                if (Random.Range(0, 2) == 0)
+                {
+                    ContractHead();
+                }
+                else
+                {
+                    ContractTail();
+                }
             }
         }
     }

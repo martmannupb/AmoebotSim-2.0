@@ -748,6 +748,61 @@ public class ParticleSystem : IReplayHistory
                 particleMap.Add(p.Head(), p);
             }
         }
+        else if (mode == 17)
+        {
+            // A parallelogram of particles where the bottom line consists of expanded and contracted
+            // particles which alternatingly expand and contract
+
+            int numSegments = 5;
+            int height = 4;     // Must not be less than 3
+
+            // Role 0 means static, role 1 means moving
+            // Left and right sides
+            for (int i = 0; i < height; i++)
+            {
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(0, i), mode, 0, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(3 * numSegments + 1, i), mode, 0, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+            }
+            // Top line
+            for (int i = 1; i < numSegments * 3 + 1; i++)
+            {
+                p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(i, height - 1), mode, 0, Direction.E);
+                particles.Add(p);
+                particleMap.Add(p.Head(), p);
+            }
+
+            // Bottom line
+            int numExpanded = 0;
+            int numContracted = 0;
+            int x = 1;
+            for (int i = 0; i < numSegments * 2; i++)
+            {
+                bool random = Random.Range(0, 2) == 0;
+                bool expanded = numContracted == numSegments || (numExpanded < numSegments && random);
+                if (expanded)
+                {
+                    p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(x, 0), mode, 1, Direction.E, true, Direction.E);
+                    particles.Add(p);
+                    particleMap.Add(p.Head(), p);
+                    particleMap.Add(p.Tail(), p);
+                    numExpanded++;
+                    x += 2;
+                }
+                else
+                {
+                    p = ParticleFactory.CreateJMTestParticle(this, new Vector2Int(x, 0), mode, 1, Direction.E);
+                    particles.Add(p);
+                    particleMap.Add(p.Head(), p);
+                    numContracted++;
+                    x++;
+                }
+            }
+        }
+
 
 
 
