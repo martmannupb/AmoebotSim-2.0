@@ -49,11 +49,6 @@ public class LeaderElectionParticle : ParticleAlgorithm
     // Algorithm only requires one pin
     public override int PinsPerEdge => 1;
 
-    public override void Activate()
-    {
-
-    }
-
     public override void ActivateMove()
     {
 

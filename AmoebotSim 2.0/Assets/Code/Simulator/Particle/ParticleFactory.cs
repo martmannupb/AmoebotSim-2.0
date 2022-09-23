@@ -16,20 +16,6 @@ using UnityEngine;
 /// </summary>
 public class ParticleFactory
 {
-    public static Particle CreateExampleParticle(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
-    {
-        if (compassDir == Direction.NONE)
-            compassDir = DirectionHelpers.Cardinal(0);
-        Particle p = new Particle(system, position, compassDir, chirality);
-        p.isActive = true;
-        new ExampleParticle(p);
-        p.isActive = false;
-        p.InitWithAlgorithm();
-        p.graphics.AddParticle();
-        p.graphics.UpdateReset();
-        return p;
-    }
-
     public static Particle CreateExpandedTestParticle(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
         if (compassDir == Direction.NONE)
@@ -37,20 +23,6 @@ public class ParticleFactory
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
         new ExpandedCircuitTestParticle(p);
-        p.isActive = false;
-        p.InitWithAlgorithm();
-        p.graphics.AddParticle();
-        p.graphics.UpdateReset();
-        return p;
-    }
-
-    public static Particle CreateLineFormationParticleSeq(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
-    {
-        if (compassDir == Direction.NONE)
-            compassDir = DirectionHelpers.Cardinal(0);
-        Particle p = new Particle(system, position, compassDir, chirality);
-        p.isActive = true;
-        new LineFormationParticleSeq(p);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();

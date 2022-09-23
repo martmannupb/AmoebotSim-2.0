@@ -171,31 +171,6 @@ public class LineFormationParticleSync : ParticleAlgorithm
         }
     }
 
-    public override void Activate()
-    {
-        switch ((LFState)state)
-        {
-            case LFState.FINISHED:
-                return;
-            case LFState.LEADER:
-                LeaderActivate();
-                break;
-            case LFState.IDLE:
-                IdleActivate();
-                break;
-            case LFState.ROOT:
-                RootActivate();
-                break;
-            case LFState.FLWR:
-                FlwrActivate();
-                break;
-            case LFState.INLINE:
-                InlineActivate();
-                break;
-            default: throw new System.InvalidOperationException("Undefined state " + state);
-        }
-    }
-
     private void LeaderActivate()
     {
         if (!localLineComplete)

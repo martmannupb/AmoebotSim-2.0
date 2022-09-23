@@ -29,10 +29,6 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
         }
     }
 
-    public override void Activate()
-    {
-    }
-
     private void SetRandomPC(bool expanded)
     {
         PinConfiguration pc = expanded ? GetExpandedPinConfiguration(0) : GetContractedPinConfiguration();

@@ -46,10 +46,6 @@ public class JMTestParticle : ParticleAlgorithm
         terminated = CreateAttributeBool("Terminated", false);
     }
 
-    public override void Activate()
-    {
-    }
-
     public override void ActivateBeep()
     {
     }

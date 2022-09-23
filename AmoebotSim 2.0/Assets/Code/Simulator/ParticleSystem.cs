@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -104,10 +103,6 @@ public class ParticleSystem : IReplayHistory
     public List<Particle> particles = new List<Particle>();
     private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
-    public Queue<ParticleAction> actionQueue = new Queue<ParticleAction>();
-
-    public bool useFCFS = true;     // <<<TEMPORARY>>> If true, do not crash on expansion conflicts but simply abort the expansion
-
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
         this.sim = sim;
@@ -119,40 +114,7 @@ public class ParticleSystem : IReplayHistory
      * Methods for controlling the system
      */
 
-    /// <summary>
-    /// Initializes the system with ExampleParticles for testing purposes.
-    /// This should be removed after a proper initialization method has been created.
-    /// </summary>
-    public void InitializeExample(int width, int height, float spawnProb, int left = 0, int bottom = 0)
-    {
-        // Fill a "rectangle" randomly with particles (it should be an actual rectangle)
-        int num = 0;
-        
-        for (int col = 0; col < width; ++col)
-        {
-            for (int row = 0; row < height; ++row)
-            {
-                if (Random.Range(0f, 1f) <= spawnProb)
-                {
-                    // TODO: Create functions for adding and removing particles
-                    // Don't use column as x coordinate but shift it to stay in a rectangular shape
-                    Particle p = ParticleFactory.CreateExampleParticle(this, new Vector2Int(left + col - row / 2, bottom + row));
-                    particles.Add(p);
-                    particleMap.Add(p.Head(), p);
-                    ++num;
-
-                    // <<<TEMPORARY>>> Add GameObject to the scene for visualization
-                    //sim.AddParticle(p.Head().x + 0.5f * p.Head().y, p.Head().y * Mathf.Sqrt(0.75f));      // Note: Replaced by RenderSystem
-                }
-            }
-        }
-        string s = "Created system with " + num + " particles:\n";
-        foreach (Particle part in particles)
-        {
-            s += part.Head() + "\n";
-        }
-        Debug.Log(s);
-    }
+    #region AlgorithmInitialization
 
     public void InitializeExpandedTest(int numParticles)
     {
@@ -811,6 +773,8 @@ public class ParticleSystem : IReplayHistory
         UpdateAllParticleVisuals(true);
     }
 
+    #endregion
+
     /// <summary>
     /// Resets the entire system to a state from which it can be
     /// initialized again.
@@ -861,52 +825,16 @@ public class ParticleSystem : IReplayHistory
      */
 
     /// <summary>
-    /// Simulates a round in which a single, randomly chosen particle
-    /// is activated and all other particles remain inactive.
-    /// </summary>
-    public void ActivateRandomParticle()
-    {
-        if (particles.Count > 0)
-        {
-            _currentRound++;
-            _latestRound++;
-            int pIdx = Random.Range(0, particles.Count);
-            particles[pIdx].Activate();
-            ApplyAllActionsInQueue();
-            particles[pIdx].ApplyPlannedPinConfiguration();
-            DiscoverCircuits();
-            FinishBeepAndMessageInfo();
-            CleanupAfterRound();
-            _previousRound++;
-            UpdateAllParticleVisuals(false);     // Need to update all visuals because handovers can affect multiple particles! (Could use queue though)
-            //particles[pIdx].graphics.Update();
-        }
-    }
-
-    // TODO: Refactor the sequence of phases (including cleanup)
-
-    /// <summary>
     /// Simulates a round in which each particle is activated
-    /// exactly once. The order of activations is the same in
-    /// each round as long as no particles are added to or
+    /// twice. First, all particles execute their movement activations
+    /// and the resulting movements are simulated and applied. Afterwards,
+    /// the particles' beep activations are executed, the resulting circuits
+    /// are determined and the sent beeps and messages are delivered.
+    /// The order of activations is the same in
+    /// both rounds as long as no particles are added to or
     /// removed from the system.
     /// </summary>
     public void SimulateRound()
-    {
-        _currentRound++;
-        Debug.Log("Simulate round " + _currentRound + " (previous round: " + _previousRound + ")");
-        _latestRound++;
-        ActivateParticles();
-        ApplyAllActionsInQueue();
-        ApplyNewPinConfigurations();
-        DiscoverCircuits();
-        FinishBeepAndMessageInfo();
-        CleanupAfterRound();
-        _previousRound++;
-        UpdateAllParticleVisuals(false);
-    }
-
-    public void SimulateJMRound()
     {
         _currentRound++;
         Debug.Log("Simulate round " + _currentRound + " (previous round: " + _previousRound + ")");
@@ -936,17 +864,6 @@ public class ParticleSystem : IReplayHistory
         CleanupAfterRound();
         _previousRound++;
         UpdateAllParticleVisuals(false);
-    }
-
-    /// <summary>
-    /// Activates each particle once.
-    /// </summary>
-    public void ActivateParticles()
-    {
-        for (int i = 0; i < particles.Count; i++)
-        {
-            particles[i].Activate();
-        }
     }
 
     /// <summary>
@@ -1105,62 +1022,6 @@ public class ParticleSystem : IReplayHistory
         for (int i = 0; i < particles.Count; i++)
         {
             particles[i].ActivateBeep();
-        }
-    }
-
-    /// <summary>
-    /// Applies <see cref="ParticleAction"/>s from the <see cref="ParticleSystem.actionQueue"/>
-    /// until the queue is empty.
-    /// </summary>
-    public void ApplyAllActionsInQueue()
-    {
-        while (actionQueue.Count > 0)
-        {
-            ApplyParticleAction(actionQueue.Dequeue());
-        }
-    }
-
-    /// <summary>
-    /// Applies the next <see cref="ParticleAction"/> from the <see cref="ParticleSystem.actionQueue"/>,
-    /// if the queue is not empty.
-    /// </summary>
-    public void ApplyNextActionInQueue()
-    {
-        if (actionQueue.Count > 0)
-        {
-            ApplyParticleAction(actionQueue.Dequeue());
-        }
-    }
-
-    /// <summary>
-    /// Applies the given action to the particle for which it was created.
-    /// If the particle's <see cref="Particle.ScheduledMovement"/> is the
-    /// same as this one, it is reset to <c>null</c>.
-    /// </summary>
-    /// <param name="a">The action to be applied.</param>
-    public void ApplyParticleAction(ParticleAction a)
-    {
-        switch (a.type)
-        {
-            case ActionType.EXPAND: Apply_ExpandParticle(a.particle, a.localDir);
-                break;
-            case ActionType.CONTRACT_HEAD: Apply_ContractParticleHead(a.particle);
-                break;
-            case ActionType.CONTRACT_TAIL: Apply_ContractParticleTail(a.particle);
-                break;
-            case ActionType.PUSH: Apply_PerformPushHandover(a.particle, a.localDir);
-                break;
-            case ActionType.PULL_HEAD: Apply_PerformPullHandoverHead(a.particle, a.localDir);
-                break;
-            case ActionType.PULL_TAIL: Apply_PerformPullHandoverTail(a.particle, a.localDir);
-                break;
-            default:
-                throw new System.ArgumentException("Unknown ParticleAction type " + a.type);
-        }
-        // Finally remove the particle's scheduled action if it is this one
-        if (a == a.particle.ScheduledMovement)
-        {
-            a.particle.ScheduledMovement = null;
         }
     }
 
@@ -2417,7 +2278,6 @@ public class ParticleSystem : IReplayHistory
         // Store expansion action in particle
         ParticleAction a = new ParticleAction(p, ActionType.EXPAND, locDir);
         p.ScheduledMovement = a;
-        //actionQueue.Enqueue(a);
     }
 
     /// <summary>
@@ -2471,10 +2331,9 @@ public class ParticleSystem : IReplayHistory
             Debug.LogWarning("Contracting particle already has a scheduled movement.");
         }
 
-        // Store contraction action in particle and queue
+        // Store contraction action in particle
         ParticleAction a = new ParticleAction(p, head ? ActionType.CONTRACT_HEAD : ActionType.CONTRACT_TAIL);
         p.ScheduledMovement = a;
-        actionQueue.Enqueue(a);
     }
 
     /// <summary>
@@ -2515,10 +2374,9 @@ public class ParticleSystem : IReplayHistory
             Debug.LogWarning("Particle scheduling push handover already has a scheduled movement.");
         }
 
-        // Store push handover action in particle and queue
+        // Store push handover action in particle
         ParticleAction a = new ParticleAction(p, ActionType.PUSH, locDir);
         p.ScheduledMovement = a;
-        actionQueue.Enqueue(a);
     }
 
     /// <summary>
@@ -2589,349 +2447,9 @@ public class ParticleSystem : IReplayHistory
             Debug.LogWarning("Particle scheduling pull handover already has a scheduled movement.");
         }
 
-        // Store pull handover action in particle and queue
+        // Store pull handover action in particle
         ParticleAction a = new ParticleAction(p, head ? ActionType.PULL_HEAD : ActionType.PULL_TAIL, locDir);
         p.ScheduledMovement = a;
-        actionQueue.Enqueue(a);
-    }
-
-
-    /**
-     * State change functions (called to update the simulation state).
-     * These should be called after all particles were activated.
-     */
-
-    /// <summary>
-    /// Applies an expansion as scheduled by <see cref="ExpandParticle(Particle, Direction)"/>
-    /// if the action can still be applied.
-    /// <para>
-    /// The action cannot be applied if the node in expansion direction is occupied by
-    /// a particle that has already moved or that does not intend to move away from the
-    /// node within this round.
-    /// This will lead to an exception unless the <see cref="useFCFS"/> flag is set,
-    /// in which case the action is simply aborted and counted as a movement without
-    /// effect.
-    /// </para>
-    /// </summary>
-    /// <exception cref="System.InvalidOperationException">
-    /// Thrown if the node in expansion direction is occupied by a particle blocking
-    /// this particle's expansion and the <see cref="useFCFS"/> flag is not set.
-    /// </exception>
-    /// <param name="p">The particle that should expand.</param>
-    /// <param name="locDir">The local direction into which the particle should expand.</param>
-    public void Apply_ExpandParticle(Particle p, Direction locDir)
-    {
-        Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
-
-        // Error if the target location is already occupied and the occupying particle
-        // does not intend to move away
-        if (particleMap.TryGetValue(targetLoc, out Particle p2))
-        {
-            // Target node is occupied, check if the occupying particle intends to move away
-            if (p2.hasMoved || !MovementMatchesExpansion(p, p2, targetLoc))
-            {
-                if (!useFCFS)
-                {
-                    throw new System.InvalidOperationException("Particle tries to expand onto occupied node and occupying particle does not intend to move away.");
-                }
-                else
-                {
-                    // This movement would lead to a conflict, abort
-                    p.hasMoved = true;
-                    return;
-                }
-            }
-        }
-
-        // Action is allowed
-        // First let the particle update its internal state
-        p.Apply_Expand(locDir);
-        // Then update the particle map (need a second entry that points to this particle)
-        particleMap[p.Head()] = p;
-        // Also remember that the particle has moved in this round
-        p.hasMoved = true;
-    }
-
-    /// <summary>
-    /// Applies a contraction as scheduled by <see cref="ContractParticleHead(Particle)"/>.
-    /// This action can always be applied.
-    /// The case that another particle has already expanded onto the node occupied by this
-    /// particle's tail is accounted for.
-    /// </summary>
-    /// <param name="p">The particle that should contract.</param>
-    public void Apply_ContractParticleHead(Particle p)
-    {
-        // Action is always allowed
-        // First let the particle update its internal state
-        Vector2Int tailPos = p.Tail();
-        p.Apply_ContractHead();
-        // Then update the particle map (need to remove the particle's tail entry if not removed yet)
-        if (particleMap.TryGetValue(tailPos, out Particle p2) && p2 == p)
-        {
-            particleMap.Remove(tailPos);
-        }
-        // Also remember that the particle has moved in this round
-        p.hasMoved = true;
-    }
-
-    /// <summary>
-    /// Applies a contraction as scheduled by <see cref="ContractParticleTail(Particle)"/>.
-    /// This action can always be applied.
-    /// The case that another particle has already expanded onto the node occupied by this
-    /// particle's head is accounted for.
-    /// </summary>
-    /// <param name="p">The particle that should contract.</param>
-    public void Apply_ContractParticleTail(Particle p)
-    {
-        // Action is always allowed
-        // First let the particle update its internal state
-        Vector2Int headPos = p.Head();
-        p.Apply_ContractTail();
-        // Then update the particle map (need to remove the particle's head entry if not removed yet)
-        if (particleMap.TryGetValue(headPos, out Particle p2) && p2 == p)
-        {
-            particleMap.Remove(headPos);
-        }
-        // Also remember that the particle has moved in this round
-        p.hasMoved = true;
-    }
-
-    /// <summary>
-    /// Applies a push handover as scheduled by <see cref="PerformPushHandover(Particle, Direction)"/>
-    /// if the action can still be applied.
-    /// <para>
-    /// The action cannot be applied if the node in expansion direction is occupied by
-    /// a particle that has already moved or that intends to perform a movement that is
-    /// inconsistent with the handover, such as contracting into the target node or
-    /// performing a pull handover that is directed at a third particle.
-    /// This will lead to an exception unless the <see cref="useFCFS"/> flag is set,
-    /// in which case the action is simply aborted and counted as a movement without
-    /// effect.
-    /// </para>
-    /// <para>
-    /// If the node in expansion direction is occupied by an expanded particle without
-    /// a scheduled movement, this particle is contracted away from that node.
-    /// </para>
-    /// </summary>
-    /// <exception cref="System.InvalidOperationException">
-    /// Thrown if the node in expansion direction is occupied by a particle blocking
-    /// the handover and the <see cref="useFCFS"/> flag is not set.
-    /// </exception>
-    /// <param name="p">The particle that should expand during the handover.</param>
-    /// <param name="locDir">The local direction into which the particle should expand.</param>
-    public void Apply_PerformPushHandover(Particle p, Direction locDir)
-    {
-        Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
-
-        // If the target location is already occupied: Make sure that the occupying particle
-        // has not moved already (i.e., is the same one as before), and maybe move it if it
-        // has a null action
-        if (particleMap.TryGetValue(targetLoc, out Particle p2))
-        {
-            // Error if the other particle has already moved or intends to perform a non-matching movement
-            if (p2.hasMoved || p2.ScheduledMovement != null && !MovementMatchesExpansion(p, p2, targetLoc))
-            {
-                if (!useFCFS)
-                {
-                    throw new System.InvalidOperationException("Particle tries to perform push handover but pushed particle has already moved or intends to perform a different movement.");
-                }
-                else
-                {
-                    // This movement would lead to a conflict, abort
-                    p.hasMoved = true;
-                    return;
-                }
-            }
-            
-            // If the other particle does not intend to do anything: Contract it manually
-            if (p2.ScheduledMovement == null)
-            {
-                // p2 must be expanded at this point because it has not moved yet and cannot have been contracted when the action was scheduled
-                if (targetLoc == p2.Tail())
-                {
-                    Apply_ContractParticleHead(p2);
-                }
-                else
-                {
-                    Apply_ContractParticleTail(p2);
-                }
-            }
-        }
-
-        // Action is allowed
-        // First let the particle update its internal state
-        p.Apply_PushHandover(locDir);
-        // Then update the particle map (need a second entry that points to this particle)
-        particleMap[p.Head()] = p;
-        // Also remember that the particle has moved in this round
-        p.hasMoved = true;
-    }
-
-    /// <summary>
-    /// Applies a pull handover as scheduled by <see cref="PerformPullHandoverHead(Particle, Direction)"/>
-    /// if the action can still be applied.
-    /// <para>
-    /// The action cannot be applied if the node where the neighbor to pull should be
-    /// is unoccupied or the neighbor has performed or intends to perform a movement
-    /// that is inconsistent with the handover, such as expanding into a different
-    /// direction.
-    /// This will lead to an exception unless the <see cref="useFCFS"/> flag is set,
-    /// in which case the action is simply aborted and counted as a movement without
-    /// effect.
-    /// </para>
-    /// <para>
-    /// If the node where the pulled neighbour should be is occupied by a contracted
-    /// particle without a scheduled movement, that particle is expanded onto the
-    /// current tail node of this particle.
-    /// </para>
-    /// </summary>
-    /// <exception cref="System.InvalidOperationException">
-    /// Thrown if the node where the neighbor should be is unoccupied or the neighbor
-    /// particle has moved or intends to move inconsistently with the handover.
-    /// The second case only throws an exception if the <see cref="useFCFS"/> flag is
-    /// not set.
-    /// </exception>
-    /// <param name="p">The particle that should contract during the handover.</param>
-    /// <param name="locDir">The local direction relative to <paramref name="p"/>'s tail
-    /// from where a contracted neighbor particle should be expanded to occupy the
-    /// tail node.</param>
-    public void Apply_PerformPullHandoverHead(Particle p, Direction locDir)
-    {
-        Apply_PerformPullHandover(p, locDir, true);
-    }
-
-    /// <summary>
-    /// Applies a pull handover as scheduled by <see cref="PerformPullHandoverTail(Particle, Direction)"/>
-    /// if the action can still be applied.
-    /// <para>
-    /// The action cannot be applied if the node where the neighbor to pull should be
-    /// is unoccupied or the neighbor has performed or intends to perform a movement
-    /// that is inconsistent with the handover, such as expanding into a different
-    /// direction.
-    /// This will lead to an exception unless the <see cref="useFCFS"/> flag is set,
-    /// in which case the action is simply aborted and counted as a movement without
-    /// effect.
-    /// </para>
-    /// <para>
-    /// If the node where the pulled neighbour should be is occupied by a contracted
-    /// particle without a scheduled movement, that particle is expanded onto the
-    /// current head node of this particle.
-    /// </para>
-    /// </summary>
-    /// <exception cref="System.InvalidOperationException">
-    /// Thrown if the node where the neighbor should be is unoccupied or the neighbor
-    /// particle has moved or intends to move inconsistently with the handover.
-    /// The second case only throws an exception if the <see cref="useFCFS"/> flag is
-    /// not set.
-    /// </exception>
-    /// <param name="p">The particle that should contract during the handover.</param>
-    /// <param name="locDir">The local direction relative to <paramref name="p"/>'s head
-    /// from where a contracted neighbor particle should be expanded to occupy the
-    /// head node.</param>
-    public void Apply_PerformPullHandoverTail(Particle p, Direction locDir)
-    {
-        Apply_PerformPullHandover(p, locDir, false);
-    }
-
-    private void Apply_PerformPullHandover(Particle p, Direction locDir, bool head)
-    {
-        Vector2Int targetLoc = head ? p.Tail() : p.Head();
-        Vector2Int nbrLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, !head);
-
-        // Error if the position from which we wanted to pull the particle is empty
-        if (!particleMap.TryGetValue(nbrLoc, out Particle p2))
-        {
-            // FCFS: This should not happen at all, so throwing an exception is fine
-            throw new System.InvalidOperationException("Particle tries to perform pull handover but there is no particle to pull.");
-        }
-
-        // Also throw error if the neighbor has already moved to a different position or intends to perform a different non-matching movement
-        if (p2.hasMoved && p2.Head() != targetLoc && p2.Tail() != targetLoc || p2.ScheduledMovement != null && !MovementMatchesContraction(p, p2, targetLoc))
-        {
-            if (!useFCFS)
-            {
-                throw new System.InvalidOperationException("Particle tries to perform pull handover but pulled particle has already expanded somewhere else or intends to perform a different non-matching movement.");
-            }
-            else
-            {
-                // This movement would lead to a conflict, abort
-                p.hasMoved = true;
-                return;
-            }
-        }
-
-        // If the other particle does not intend to do anything and has not moved yet: Expand it manually
-        if (!p2.hasMoved && p2.ScheduledMovement == null)
-        {
-            // p2 must be contracted at this point because it has not moved yet and cannot have been expanded when the action was scheduled
-            // Expansion direction is local((global(locDir) + 3) % 6)
-            Apply_ExpandParticle(p2, ParticleSystem_Utils.GlobalToLocalDir(ParticleSystem_Utils.LocalToGlobalDir(locDir, p.comDir, p.chirality).Opposite(), p2.comDir, p2.chirality));
-        }
-
-        // Action is allowed
-        // First let the particle update its internal state
-        Vector2Int rmPos = head ? p.Tail() : p.Head();
-        if (head)
-        {
-            p.Apply_PullHandoverHead(locDir);
-        }
-        else
-        {
-            p.Apply_PullHandoverTail(locDir);
-        }
-        // Then update the particle map (need to remove the particle's second entry if not removed yet)
-        if (particleMap.TryGetValue(targetLoc, out p2) && p2 == p)
-        {
-            particleMap.Remove(rmPos);
-        }
-        // Also remember that the particle has moved in this round
-        p.hasMoved = true;
-    }
-
-
-    /**
-     * Helpers
-     */
-
-    /// <summary>
-    /// Checks if the scheduled <see cref="ParticleAction"/> of an expanded Particle
-    /// matches the expansion action of a contracted neighbor.
-    /// </summary>
-    /// <param name="expandingPart">The Particle that wants to expand.</param>
-    /// <param name="otherPart">The Particle whose action should be checked.</param>
-    /// <param name="targetLoc">The grid node onto which <paramref name="expandingPart"/>
-    /// wants to expand and which is occupied by <paramref name="otherPart"/>.</param>
-    /// <returns><c>true</c> if and only if the <see cref="Particle.ScheduledMovement"/> of
-    /// <paramref name="otherPart"/> is not <c>null</c> and allows <paramref name="expandingPart"/>
-    /// to expand, i.e., if <paramref name="otherPart"/> intends to contract away from
-    /// <paramref name="targetLoc"/> either through a regular contraction or through a
-    /// pull handover directed at <paramref name="expandingPart"/>.</returns>
-    private bool MovementMatchesExpansion(Particle expandingPart, Particle otherPart, Vector2Int targetLoc)
-    {
-        return otherPart.ScheduledMovement != null && (
-            (otherPart.ScheduledMovement.type == ActionType.CONTRACT_HEAD && otherPart.Tail() == targetLoc) ||
-            (otherPart.ScheduledMovement.type == ActionType.CONTRACT_TAIL && otherPart.Head() == targetLoc) ||
-            (otherPart.ScheduledMovement.type == ActionType.PULL_HEAD && otherPart.Tail() == targetLoc && ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.ScheduledMovement.localDir, false) == expandingPart.Head()) ||
-            (otherPart.ScheduledMovement.type == ActionType.PULL_TAIL && otherPart.Head() == targetLoc && ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.ScheduledMovement.localDir, true) == expandingPart.Head()));
-    }
-
-    /// <summary>
-    /// Checks if the scheduled <see cref="ParticleAction"/> of a contracted Particle
-    /// matches the contraction action of an expanded neighbor.
-    /// </summary>
-    /// <param name="contractingPart">The Particle that wants to contract with a pull handover.</param>
-    /// <param name="otherPart">The Particle that is supposed to follow using an expansion.</param>
-    /// <param name="targetLoc">The grid node from which <paramref name="contractingPart"/> wants to
-    /// contract and onto which <paramref name="otherPart"/> is supposed to expand.</param>
-    /// <returns><c>true</c> if and only if the <see cref="Particle.ScheduledMovement"/> of
-    /// <paramref name="otherPart"/> is not <c>null</c> and follows the pull handover of
-    /// <paramref name="contractingPart"/>, i.e., it is a regular expansion or a push handover
-    /// directed at <paramref name="contractingPart"/>.</returns>
-    private bool MovementMatchesContraction(Particle contractingPart, Particle otherPart, Vector2Int targetLoc)
-    {
-        return otherPart.ScheduledMovement != null && (
-            (otherPart.ScheduledMovement.type == ActionType.EXPAND && targetLoc == ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.ScheduledMovement.localDir, true)) ||
-            (otherPart.ScheduledMovement.type == ActionType.PUSH && targetLoc == ParticleSystem_Utils.GetNeighborPosition(otherPart, otherPart.ScheduledMovement.localDir, true)));
     }
 
 

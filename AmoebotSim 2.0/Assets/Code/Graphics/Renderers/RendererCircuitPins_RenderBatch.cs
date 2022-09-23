@@ -170,7 +170,6 @@ public class RendererCircuitPins_RenderBatch
                 if (i < listDrawAmount_connectors - 1) count = maxArraySize;
                 else count = currentIndex_connectors % maxArraySize;
 
-                Log.Debug("Count: "+count+", ");
                 Graphics.DrawMeshInstanced(pinQuad, 0, pinMaterial, circuitMatrices_PinConnectors[i], count, propertyBlock_circuitMatrices_PinConnectors.propertyBlock);
             }
         }

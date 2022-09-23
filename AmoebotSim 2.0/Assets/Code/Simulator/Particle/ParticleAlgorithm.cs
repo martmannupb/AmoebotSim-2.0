@@ -27,8 +27,8 @@ public struct Neighbor<T> where T : ParticleAlgorithm
 /// The abstract base class for particle algorithms in the Amoebot model.
 /// <para>
 /// Every algorithm that should run in the simulation must be implemented
-/// as a subclass of the <see cref="ParticleAlgorithm"/> class through its <see cref="Activate"/>
-/// method.
+/// as a subclass of the <see cref="ParticleAlgorithm"/> class through its
+/// <see cref="ActivateMove"/> and <see cref="ActivateBeep"/> methods.
 /// </para>
 /// <para>
 /// The subclass constructor must call the base class constructor as follows:
@@ -79,18 +79,6 @@ public abstract class ParticleAlgorithm
     /// </para>
     /// </summary>
     public abstract int PinsPerEdge { get;}
-
-    /// <summary>
-    /// This is the main activation method of the particle.
-    /// It is called exactly once in each round and should contain
-    /// the particle algorithm code.
-    /// <para>
-    /// Only one movement operation may be performed during an
-    /// execution of this method. If a second movement is performed,
-    /// the previous movement will be nullified.
-    /// </para>
-    /// </summary>
-    public abstract void Activate();
 
     /// <summary>
     /// This is one part of the main activation logic of the particle.
@@ -305,9 +293,8 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
-    /// this execution of the <see cref="Activate"/> method. Use
-    /// <see cref="IsExpanded_After"/> to get the predicted value for after the
-    /// round.
+    /// this activation. Use <see cref="IsExpanded_After"/> to get the predicted
+    /// value for after the round.
     /// </para>
     /// </summary>
     /// <returns><c>true</c> if and only if the particle is expanded.</returns>
@@ -323,9 +310,8 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
-    /// this execution of the <see cref="Activate"/> method. Use
-    /// <see cref="IsContracted_After"/> to get the predicted value for after the
-    /// round.
+    /// this activation. Use <see cref="IsContracted_After"/> to get the predicted
+    /// value for after the round.
     /// </para>
     /// </summary>
     /// <returns><c>true</c> if and only if the particle is contracted.</returns>
@@ -339,9 +325,8 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
-    /// this execution of the <see cref="Activate"/> method. Use
-    /// <see cref="HeadDirection_After"/> to get the predicted value for after the
-    /// round.
+    /// this activation. Use <see cref="HeadDirection_After"/> to get the predicted
+    /// value for after the round.
     /// </para>
     /// </summary>
     /// <returns>The local direction pointing from the particle's tail towards its head,
@@ -356,9 +341,8 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
-    /// this execution of the <see cref="Activate"/> method. Use
-    /// <see cref="TailDirection_After"/> to get the predicted value for after the
-    /// round.
+    /// this activation. Use <see cref="TailDirection_After"/> to get the predicted
+    /// value for after the round.
     /// </para>
     /// </summary>
     /// <returns>The local direction pointing from the particle's head towards its tail,
@@ -373,7 +357,7 @@ public abstract class ParticleAlgorithm
      * Predicted state information retrieval
      * These methods return the predicted values for after the
      * current round based on the particle's actions during this
-     * call of <see cref="Activate"/>.
+     * call of <see cref="ActivateMove"/>.
      */
 
     /// <summary>
@@ -567,7 +551,7 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
-    /// this execution of the <see cref="Activate"/> method.
+    /// this activation.
     /// </para>
     /// </summary>
     /// <param name="locDir">The local direction in which to search for a neighbor particle.</param>
@@ -586,7 +570,7 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
-    /// this execution of the <see cref="Activate"/> method.
+    /// this activation.
     /// </para>
     /// </summary>
     /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
@@ -614,7 +598,7 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
-    /// this execution of the <see cref="Activate"/> method.
+    /// this activation.
     /// </para>
     /// </summary>
     /// <param name="locDir">The local direction from which to get the neighbor particle.</param>
@@ -636,7 +620,7 @@ public abstract class ParticleAlgorithm
     /// <para>
     /// Note: This method returns information from the snapshot taken at the
     /// beginning of the current round. Its return value will not change during
-    /// this execution of the <see cref="Activate"/> method.
+    /// this activation.
     /// </para>
     /// </summary>
     /// <param name="locDir">The local direction from which to get the neighbor particle.</param>

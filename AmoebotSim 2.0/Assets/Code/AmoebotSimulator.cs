@@ -69,7 +69,7 @@ public class AmoebotSimulator : MonoBehaviour
     public void ActivateParticle()
     {
         //system.ActivateRandomParticle();
-        system.SimulateJMRound();
+        system.SimulateRound();
         RoundChanged();
     }
 

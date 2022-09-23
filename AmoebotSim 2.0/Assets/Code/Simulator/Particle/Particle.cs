@@ -334,17 +334,11 @@ public class Particle : IParticleState, IReplayHistory
     }
 
     /// <summary>
-    /// This is the main activation method of the particle.
-    /// It is implemented by the particle algorithm and should
-    /// be called exactly once in each round.
+    /// This is the movement activation method of the particle.
+    /// It is implemented by the particle algorithm and should be
+    /// called exactly once in each round, before the beep
+    /// activation.
     /// </summary>
-    public void Activate()
-    {
-        isActive = true;
-        algorithm.Activate();
-        isActive = false;
-    }
-
     public void ActivateMove()
     {
         isActive = true;
@@ -352,6 +346,12 @@ public class Particle : IParticleState, IReplayHistory
         isActive = false;
     }
 
+    /// <summary>
+    /// This is the beep activation method of the particle.
+    /// It is implemented by the particle algorithm and should be
+    /// called exactly once in each round, after the movement
+    /// activation.
+    /// </summary>
     public void ActivateBeep()
     {
         isActive = true;

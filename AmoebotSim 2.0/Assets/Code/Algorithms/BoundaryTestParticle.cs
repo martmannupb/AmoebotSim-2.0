@@ -174,11 +174,6 @@ namespace BoundaryTestAlgo
 
         public override int PinsPerEdge => 4;
 
-        public override void Activate()
-        {
-
-        }
-
         public override void ActivateMove()
         {
 
