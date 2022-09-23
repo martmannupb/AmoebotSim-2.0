@@ -25,6 +25,9 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public RendererParticles_RenderBatch graphics_colorRenderer;
     public Color graphics_color;
 
+    /// <summary>
+    /// A snap of a position that is used to determine the current state of the particle.
+    /// </summary>
     public struct PositionSnap
     {
         public Vector2Int position1;
@@ -106,6 +109,9 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         this.renderer = renderer;
     }
 
+    /// <summary>
+    /// Adds the particle to the renderer. Only needs to be called once to register a particle.
+    /// </summary>
     public void AddParticle()
     {
         // Check if already added to the system
@@ -121,6 +127,14 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         Update(true, false, true);
     }
 
+    /// <summary>
+    /// Removes a particle from the renderer. Only needs to be called once when the particle is removed from the system.
+    /// </summary>
+    public void RemoveParticle()
+    {
+        renderer.Particle_Remove(this);
+    }
+
     public void Update()
     {
         Update(false, false, false);
@@ -130,7 +144,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
         Update(false, isJointExpansion, false);
     }
-
+    
     private void Update(bool forceRenderUpdate, bool isJointExpansion, bool noAnimation)
     {
         // Previous Data
@@ -196,10 +210,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         throw new System.NotImplementedException();
     }
 
-    public void RemoveParticle()
-    {
-        renderer.Particle_Remove(this);
-    }
 
     public enum ParticleMovement
     {

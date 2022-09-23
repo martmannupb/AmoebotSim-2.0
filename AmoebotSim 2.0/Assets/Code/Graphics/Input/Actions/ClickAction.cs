@@ -5,6 +5,9 @@ using System.Collections;
 // Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
 // Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
 
+/// <summary>
+/// This class contains the information of a click, drag that is finished or ongoing.
+/// </summary>
 public class ClickAction : InputAction
 {
 

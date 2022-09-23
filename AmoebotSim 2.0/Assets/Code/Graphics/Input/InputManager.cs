@@ -30,7 +30,10 @@ public class InputManager {
     }
 
 
-
+    /// <summary>
+    /// Receives actions from the InputHandler and handles them accordingly.
+    /// </summary>
+    /// <param name="inputAction"></param>
     public void ProcessInput(InputAction inputAction)
     {
         switch (inputAction.inputType)
@@ -49,6 +52,11 @@ public class InputManager {
 
     // Mouse ClickActions ===============
 
+    /// <summary>
+    /// Receives mouse actions and processes inputs.
+    /// Addition: A "clickActionEvent" is called that other classes can subscribe to in order to receive updates of the input.
+    /// </summary>
+    /// <param name="clickAction"></param>
     private void ProcessInput_Mouse(ClickAction clickAction)
     {
         switch (clickAction.clickButton)

@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using System.Linq;
 using System;
+using SFB;
 
 public class InitializationUIHandler : MonoBehaviour
 {
@@ -94,6 +95,7 @@ public class InitializationUIHandler : MonoBehaviour
     {
         // Update UI
         uiHandler.ShowTopRightButtons();
+        uiHandler.particleUI.Close();
         panel.SetActive(false);
         // Update Cam Color
         Camera.main.backgroundColor = camColorBG;
@@ -103,12 +105,19 @@ public class InitializationUIHandler : MonoBehaviour
         if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(false);
     }
 
+    public bool IsOpen()
+    {
+        return panel.activeSelf;
+    }
+
     /// <summary>
     /// Opens a file chooser that loads an algorithm.
     /// </summary>
     public void ButtonPressed_Load()
     {
-        throw new System.NotImplementedException();
+        string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "amsetup", false);
+        if (paths.Length != 0) Log.Debug("Here we should load the file " + paths[0] + ".");
+        else Log.Debug("No file chosen.");
     }
 
     /// <summary>
@@ -116,7 +125,9 @@ public class InitializationUIHandler : MonoBehaviour
     /// </summary>
     public void ButtonPressed_Save()
     {
-        throw new System.NotImplementedException();
+        string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "state", "amsetup");
+        if (path.Equals("") == false) Log.Debug("Here we should save the file " + path + ".");
+        else Log.Debug("No file chosen.");
     }
 
     /// <summary>

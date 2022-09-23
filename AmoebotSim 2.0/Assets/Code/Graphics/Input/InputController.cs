@@ -21,7 +21,10 @@ public class InputController : MonoBehaviour
         mouseState = new InputHandler.MouseState();
     }
 
-    // Update is called once per frame (here it is called manually once per frame)
+    /// <summary>
+    /// Call this once per frame.
+    /// Reads the information from the mouse and keyboard and sends it to the InputHandler.
+    /// </summary>
     public void ManUpdate()
     {
         // Debugging

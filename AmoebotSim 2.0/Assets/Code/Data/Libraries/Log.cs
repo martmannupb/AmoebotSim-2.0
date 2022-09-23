@@ -10,16 +10,26 @@ public static class Log {
     public static void Error(string text) {
         UnityEngine.Debug.LogError("[" + logID + "] " + text);
         logID++;
+        if (LogUIHandler.instance != null) LogUIHandler.instance.AddLogEntry(text, LogUIHandler.EntryType.Error);
     }
 
     public static void Debug(string text) {
         UnityEngine.Debug.Log("[" + logID + "] " + text);
         logID++;
+        if (LogUIHandler.instance != null) LogUIHandler.instance.AddLogEntry(text, LogUIHandler.EntryType.Debug);
     }
 
     public static void Warning(string text) {
         UnityEngine.Debug.Log("[" + logID + "] " + text);
         logID++;
+        if (LogUIHandler.instance != null) LogUIHandler.instance.AddLogEntry(text, LogUIHandler.EntryType.Warning);
+    }
+
+    public static void Entry(string text)
+    {
+        UnityEngine.Debug.Log("[" + logID + "] " + text);
+        logID++;
+        if (LogUIHandler.instance != null) LogUIHandler.instance.AddLogEntry(text, LogUIHandler.EntryType.Log);
     }
 
 }
