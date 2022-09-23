@@ -1619,6 +1619,9 @@ public class Particle : IParticleState, IReplayHistory
             }
         }
 
+        data.activeBondHistory = activeBondHistory.GenerateSaveData();
+        data.markedBondHistory = markedBondHistory.GenerateSaveData();
+
         data.pinConfigurationHistory = pinConfigurationHistory.GeneratePCSaveData();
         data.receivedBeepsHistory = receivedBeepsHistory.GenerateSaveData();
         data.receivedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[receivedMessagesHistory.Length];
@@ -1677,6 +1680,9 @@ public class Particle : IParticleState, IReplayHistory
         exp_isExpanded = exp_expansionDir != Direction.NONE;
         pos_tail = tailPosHistory.GetMarkedValue();
         pos_head = exp_isExpanded ? ParticleSystem_Utils.GetNbrInDir(pos_tail, ParticleSystem_Utils.LocalToGlobalDir(exp_expansionDir, comDir, chirality)) : pos_tail;
+
+        activeBondHistory = new ValueHistory<int>(data.activeBondHistory);
+        markedBondHistory = new ValueHistory<int>(data.markedBondHistory);
 
         mainColorHistory = new ValueHistory<Color>(data.mainColorHistory);
         mainColorSetHistory = new ValueHistory<bool>(data.mainColorSetHistory);

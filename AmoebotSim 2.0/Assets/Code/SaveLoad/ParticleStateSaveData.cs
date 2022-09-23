@@ -34,6 +34,10 @@ public class ParticleStateSaveData
     public List<ParticleAttributeEnumSaveData> enumAttributes;
     public List<ParticleAttributePCSaveData> pcAttributes;
 
+    // Bond data
+    public ValueHistorySaveData<int> activeBondHistory;
+    public ValueHistorySaveData<int> markedBondHistory;
+
     // Circuit data
     public PinConfigurationHistorySaveData pinConfigurationHistory;
     public ValueHistorySaveData<BitArraySaveData> receivedBeepsHistory;
