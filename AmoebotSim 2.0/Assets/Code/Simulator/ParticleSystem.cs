@@ -984,8 +984,7 @@ public class ParticleSystem : IReplayHistory
                     if (a != null)
                     {
                         Direction gDir = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
-                        int dirLabelHead = ParticleSystem_Utils.GetLabelInDir(gDir, p.GlobalHeadDirection(), true);
-                        int dirLabelTail = ParticleSystem_Utils.GetLabelInDir(gDir, p.GlobalHeadDirection(), false);
+                        int dirLabelHead = gDir != Direction.NONE ? ParticleSystem_Utils.GetLabelInDir(gDir, p.GlobalHeadDirection(), true) : -1;
                         bool isHeadLabel = ParticleSystem_Utils.IsHeadLabel(label, p.GlobalHeadDirection());
 
                         // Expansion and Push: Leading bond must be marked

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -59,12 +57,6 @@ public class MyMessage : Message
 /// <para>
 /// The algorithm uses only 1 pin per edge.
 /// </para>
-/// <para>
-/// Known bug: FLWR particles can accidentally pull ROOT particles if
-/// they only become a ROOT in the round they receive the beep.
-/// Possible solution: FLWRs and ROOTs must check where the beep was
-/// sent and where it came from before starting a handover
-/// </para>
 /// </summary>
 public class LineFormationParticleSync : ParticleAlgorithm
 {
@@ -88,6 +80,10 @@ public class LineFormationParticleSync : ParticleAlgorithm
     // Helper to ensure that ROOTs only push when no handover is planned already
     public ParticleAttribute<bool> rootHandoverAvailable;
 
+    // The direction into which we should send a beep in the next beep phase. Is set in a move phase
+    // and read and reset in the following beep phase
+    private ParticleAttribute<Direction> handoverBeepDirection;
+
     // Flag to indicate when the LEADER or an INLINE particle has decided that a ROOT may move
     private ParticleAttribute<bool> hasChosenRoot;
 
@@ -106,6 +102,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
         state = CreateAttributeEnum<LFState>("State", LFState.IDLE);
 
         rootHandoverAvailable = CreateAttributeBool("ROOT handover OK", true);
+        handoverBeepDirection = CreateAttributeDirection("Handover dir", Direction.NONE);
         hasChosenRoot = CreateAttributeBool("Has chosen ROOT", false);
         localLineComplete = CreateAttributeBool("Local line complete", false);
         beepInLastRound = CreateAttributeBool("Beep in last round", false);
@@ -118,7 +115,6 @@ public class LineFormationParticleSync : ParticleAlgorithm
             state.SetValue(LFState.LEADER);
             constructionDir.SetValue(DirectionHelpers.Cardinal(Random.Range(0, 6)));
             SetMainColor(leaderColor);
-            Debug.Log("Line construction dir: " + (int)constructionDir.GetValue_After());
             leaderCreated = true;
         }
     }
@@ -127,14 +123,52 @@ public class LineFormationParticleSync : ParticleAlgorithm
     // is very simple
     public override int PinsPerEdge => 1;
 
-    public override void ActivateBeep()
-    {
-
-    }
-
     public override void ActivateMove()
     {
+        // Use old movement system - we don't have to worry about bonds
+        UseAutomaticBonds();
 
+        switch ((LFState) state)
+        {
+            case LFState.FINISHED:
+            case LFState.LEADER:
+            case LFState.IDLE:
+            case LFState.INLINE:
+                // LEADER, IDLEs, INLINEs and FINISHED do not move, don't do anything here
+                return;
+            case LFState.ROOT:
+                RootMove();
+                break;
+            case LFState.FLWR:
+                FlwrMove();
+                break;
+            default: throw new System.InvalidOperationException("Undefined state " + state);
+        }
+    }
+
+    public override void ActivateBeep()
+    {
+        switch ((LFState)state)
+        {
+            case LFState.FINISHED:
+                return;
+            case LFState.LEADER:
+                LeaderActivate();
+                break;
+            case LFState.IDLE:
+                IdleActivate();
+                break;
+            case LFState.ROOT:
+                RootBeep();
+                break;
+            case LFState.FLWR:
+                FlwrBeep();
+                break;
+            case LFState.INLINE:
+                InlineActivate();
+                break;
+            default: throw new System.InvalidOperationException("Undefined state " + state);
+        }
     }
 
     public override void Activate()
@@ -234,6 +268,124 @@ public class LineFormationParticleSync : ParticleAlgorithm
         }
     }
 
+    private void RootMove()
+    {
+        Direction cd = constructionDir.GetValue_After();
+
+        // ROOT handovers take precedence: Try performing handover with ROOT first
+        if (IsContracted())
+        {
+            // Always compute the move direction when contracted
+            // The result indicates whether we are about to enter the end position of the line
+            int moveDirResult = ComputeRootMoveDir();
+            Direction md = moveDir.GetValue_After();
+
+            // If we are contracted and we can expand freely or push into an expanded ROOT: Do it
+            // Contracted ROOTs can almost always expand
+            LineFormationParticleSync nbr = GetNeighborAt(md) as LineFormationParticleSync;
+            if (nbr == null)
+            {
+                // Special case: We are almost at the end of the line
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                if (moveDirResult == 1)
+                {
+                    // We are on the left side, wait for beep from INLINE or LEADER particle
+                    if (!pc.GetPinAt(md.Rotate60(-1), 0).PartitionSet.ReceivedBeep())
+                    {
+                        return;
+                    }
+                }
+                else if (moveDirResult == 2)
+                {
+                    // We are on the right side, wait for beep from INLINE or LEADER particle
+                    if (!pc.GetPinAt(md.Rotate60(1), 0).PartitionSet.ReceivedBeep())
+                    {
+                        return;
+                    }
+                }
+                if (moveDirResult == 1 || moveDirResult == 2)
+                {
+                    MyMessage msg = (MyMessage)pc.GetPinAt(moveDirResult == 1 ? md.Rotate60(-1) : md.Rotate60(1), 0).PartitionSet.GetReceivedMessage();
+                    Debug.Log("ALLOWED TO MOVE FROM " + msg.dir);
+                }
+
+                // No reason not to expand
+                Expand(md);
+            }
+            else if (nbr.state == LFState.ROOT && nbr.IsExpanded() && nbr.rootHandoverAvailable && IsTailAt(md))
+            {
+                PushHandover(md);
+            }
+        }
+        else
+        {
+            // If we have sent a beep to a FLWR neighbor in the last round: Perform pull handover
+            if (PullIfSentBeep())
+            {
+                // Also reset handover flag
+                rootHandoverAvailable.SetValue(true);
+                return;
+            }
+
+            // If there is a ROOT neighbor that we can pull: Do it
+            // ROOT neighbors to pull can only be at our tail in direction
+            // constructionDir + 3 or constructionDir + 4
+            LineFormationParticleSync nbr = GetNeighborAt(cd.Opposite(), false) as LineFormationParticleSync;
+            if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
+            {
+                PullHandoverHead(cd.Opposite());
+                return;
+            }
+            else
+            {
+                nbr = GetNeighborAt(cd.Rotate60(4), false) as LineFormationParticleSync;
+                if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
+                {
+                    PullHandoverHead(cd.Rotate60(4));
+                    return;
+                }
+            }
+
+            // ROOT handover did not work: Try pulling a FLWR instead (this can prevent a ROOT handover in the next round)
+            if (SendBeepForPull())
+            {
+                rootHandoverAvailable.SetValue(false);
+                return;
+            }
+
+            // No handover possible: Contract on our own if there is no blocking tail neighbor
+            if (!HaveBlockingTailNeighbor())
+            {
+                ContractHead();
+            }
+        }
+    }
+
+    private void RootBeep()
+    {
+        if (IsContracted())
+        {
+            // State change happens in beep phase
+            if (TryToBecomeInline())
+            {
+                return;
+            }
+        }
+        else
+        {
+            // If we have scheduled a beep for a pull: Send the beep now
+            if (handoverBeepDirection != Direction.NONE)
+            {
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                // Current pin config is still singleton
+                SetPlannedPinConfiguration(pc);
+                pc.GetPinAt(handoverBeepDirection, 0, false).PartitionSet.SendBeep();
+                // Reset the handover direction
+                handoverBeepDirection.SetValue(Direction.NONE);
+            }
+        }
+    }
+
     private void RootActivate()
     {
         Direction cd = constructionDir.GetValue_After();
@@ -326,6 +478,67 @@ public class LineFormationParticleSync : ParticleAlgorithm
             }
 
             // No handover possible: Contract on our own if there is no blocking tail neighbor
+            if (!HaveBlockingTailNeighbor())
+            {
+                ContractHead();
+            }
+        }
+    }
+
+    private void FlwrBeep()
+    {
+        if (IsContracted())
+        {
+            // State change happens in beep phase
+            if (TryToBecomeRootOrInline() > 0)
+            {
+                return;
+            }
+        }
+        else
+        {
+            // If we have scheduled a beep for a pull: Send the beep now
+            if (handoverBeepDirection != Direction.NONE)
+            {
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                // Current pin config is still singleton
+                SetPlannedPinConfiguration(pc);
+                pc.GetPinAt(handoverBeepDirection, 0, false).PartitionSet.SendBeep();
+                // Reset the handover direction
+                handoverBeepDirection.SetValue(Direction.NONE);
+            }
+        }
+    }
+
+    private void FlwrMove()
+    {
+        if (IsContracted())
+        {
+            // Contracted FLWR must wait for followed particle to send beep
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            if (pc.GetPinAt(followDir, 0).PartitionSet.ReceivedBeep())
+            {
+                PushHandover(followDir);
+                // Also update the follow direction
+                LineFormationParticleSync nbr = GetNeighborAt(followDir) as LineFormationParticleSync;
+                followDir.SetValue(nbr.HeadDirection());
+                return;
+            }
+        }
+        else
+        {
+            // Expanded FLWR can pull other FLWR just like ROOTs do when they cannot pull a ROOT
+            if (PullIfSentBeep())
+            {
+                return;
+            }
+
+            if (SendBeepForPull())
+            {
+                return;
+            }
+
+            // Could not pull a FLWR: Try contracting if we are not blocked
             if (!HaveBlockingTailNeighbor())
             {
                 ContractHead();
@@ -620,7 +833,8 @@ public class LineFormationParticleSync : ParticleAlgorithm
     /// <summary>
     /// Assuming that we are expanded, search for a contracted FLWR particle
     /// that is following our tail and send a beep in its direction if we
-    /// find one. Sends the beep immediately if possible.
+    /// find one. Schedules the beep using <see cref="handoverBeepDirection"/>
+    /// so it can be sent in the next beep phase.
     /// <para>
     /// In the next round, <see cref="PullIfSentBeep"/> can be used to check
     /// if and where we have sent a beep and perform the corresponding pull
@@ -631,7 +845,6 @@ public class LineFormationParticleSync : ParticleAlgorithm
     /// FLWR following our tail.</returns>
     private bool SendBeepForPull()
     {
-        PinConfiguration pc = GetCurrentPinConfiguration();
         // TODO: There should be a helper method for something like this (maybe change FindFirstNbrWithProperty such that Neighbor<>s can be tested)
         for (int d = 0; d < 6; d++)
         {
@@ -644,9 +857,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
             if (nbr != null && nbr.state == LFState.FLWR && nbr.IsContracted() && nbr.followDir == direction.Opposite())
             {
                 // Send a beep to that neighbor
-                // Current pin config is still singleton
-                SetPlannedPinConfiguration(pc);
-                pc.GetPinAt(direction, 0, false).PartitionSet.SendBeep();
+                handoverBeepDirection.SetValue(direction);
                 return true;
             }
         }

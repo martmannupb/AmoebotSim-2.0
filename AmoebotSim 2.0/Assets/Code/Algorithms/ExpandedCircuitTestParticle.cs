@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ExpandedCircuitTestParticle : ParticleAlgorithm
@@ -14,16 +12,13 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
 
     public override void ActivateBeep()
     {
-
+        SetRandomPC(IsExpanded());
     }
 
     public override void ActivateMove()
     {
+        UseAutomaticBonds();
 
-    }
-
-    public override void Activate()
-    {
         if (IsExpanded())
         {
             ContractHead();
@@ -32,7 +27,10 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
         {
             Expand(DirectionHelpers.Cardinal(0));
         }
-        SetRandomPC(IsContracted());
+    }
+
+    public override void Activate()
+    {
     }
 
     private void SetRandomPC(bool expanded)

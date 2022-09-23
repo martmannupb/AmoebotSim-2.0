@@ -41,13 +41,13 @@ public class AmoebotSimulator : MonoBehaviour
         // Init Algorithm
         //system.InitializeExample(1, 1, 1f, -9, -5);
         //system.InitializeExample(50, 50, 0.3f, -9, -5);
-        //system.InitializeLineFormation(50, 0.4f);
+        system.InitializeLineFormation(50, 0.4f);
         //system.InitializeLineFormation(25, 0.4f);
         //system.InitializeLeaderElection(50, 0.35f);
         //system.InitializeChiralityCompass(50, 0.2f);
         //system.InitializeBoundaryTest(100, 0.05f);
         //system.InitializeExpandedTest(10);
-        system.InitializeJMTest(17);
+        //system.InitializeJMTest(17);
     }
 
 
