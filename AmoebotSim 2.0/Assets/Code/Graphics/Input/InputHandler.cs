@@ -43,7 +43,10 @@ public static class InputHandler
     public static float mouseMiddle_clickAction_timePassed;
     public static int mouseMiddle_scroll;
 
-
+    /// <summary>
+    /// Receives information from the InputController and converts all inputs from the mouse and keyboard into ClickAction objects that are sent to the InputManager.
+    /// </summary>
+    /// <param name="mouseState"></param>
     public static void InputTick(MouseState mouseState)
     {
         // Left Mouse Button

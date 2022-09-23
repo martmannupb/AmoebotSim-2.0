@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// A class that is created by the system to store a simplified version of the current state of the circuits of a single particle.
+/// This serves as a data container which updates the render system in each new configuration of the system.
+/// </summary>
 public class ParticlePinGraphicState
 {
 
@@ -25,6 +29,9 @@ public class ParticlePinGraphicState
 
     // Structs ====================
 
+    /// <summary>
+    /// Stores the references to pins in a single partition set.
+    /// </summary>
     public class PSetData
     {
         public Color color;
@@ -39,11 +46,24 @@ public class ParticlePinGraphicState
             this.pins = new List<PinDef>(10);
         }
 
+        /// <summary>
+        /// Updates the state of this container.
+        /// </summary>
+        /// <param name="color">The color the partition set lines should have.</param>
+        /// <param name="beepsThisRound">True if there is a beep in this round.</param>
+        /// <param name="pins">An array of pin references that show the pins contained in this system.</param>
         public void UpdatePSetData(Color color, bool beepsThisRound, params PinDef[] pins)
         {
             UpdatePSetData(color, beepsThisRound, false, pins);
         }
 
+        /// <summary>
+        /// Updates the state of this container.
+        /// </summary>
+        /// <param name="color">The color the partition set lines should have.</param>
+        /// <param name="beepsThisRound">True if there is a beep in this round.</param>
+        /// <param name="beepOrigin">True if the origin of the beep came from this particle.</param>
+        /// <param name="pins">An array of pin references that show the pins contained in this system.</param>
         public void UpdatePSetData(Color color, bool beepsThisRound, bool beepOrigin, params PinDef[] pins)
         {
             this.color = color;
@@ -55,6 +75,9 @@ public class ParticlePinGraphicState
             }
         }
 
+        /// <summary>
+        /// Clears the system for pooling.
+        /// </summary>
         public void Clear()
         {
             this.color = new Color();
@@ -68,6 +91,10 @@ public class ParticlePinGraphicState
 
         private static Stack<PSetData> pool = new Stack<PSetData>();
 
+        /// <summary>
+        /// Instantiates an object or uses pooling to recycle an old object.
+        /// </summary>
+        /// <returns></returns>
         public static PSetData PoolCreate()
         {
             if (pool.Count > 0) return pool.Pop();
@@ -77,6 +104,10 @@ public class ParticlePinGraphicState
             }
         }
 
+        /// <summary>
+        /// Clears and adds the object instance to the pool.
+        /// </summary>
+        /// <param name="obj"></param>
         public static void PoolRelease(PSetData obj)
         {
             obj.Clear();
@@ -85,6 +116,9 @@ public class ParticlePinGraphicState
 
     }
 
+    /// <summary>
+    /// The definition of a single pin. Contains directions, id and if this pin is in the head of the particle.
+    /// </summary>
     public struct PinDef
     {
         public int globalDir; // e.g. 0 to 5 for all directions (starting to the right counterclockwise)
