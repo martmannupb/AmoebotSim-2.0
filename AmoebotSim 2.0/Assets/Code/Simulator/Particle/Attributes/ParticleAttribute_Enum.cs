@@ -97,15 +97,17 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
         return history.GetMarkedValue().ToString();
     }
 
-    public void UpdateAttributeValue(string value)
+    public bool UpdateAttributeValue(string value)
     {
         if (Enum.TryParse(typeof(T), value, true, out object parsedVal))
         {
             history.RecordValueInRound((T)parsedVal, particle.system.CurrentRound);
+            return true;
         }
         else
         {
-            throw new System.ArgumentException("Cannot convert " + value + " to enum attribute of type " + GetType());
+            Debug.LogWarning("Cannot convert " + value + " to enum attribute of type " + GetType());
+            return false;
         }
     }
 

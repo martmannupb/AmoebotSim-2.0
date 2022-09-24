@@ -1584,9 +1584,12 @@ public class Particle : IParticleState, IReplayHistory
 
         data.boolAttributes = new List<ParticleAttributeSaveData<bool>>();
         data.dirAttributes = new List<ParticleAttributeSaveData<Direction>>();
+        data.floatAttributes = new List<ParticleAttributeSaveData<float>>();
         data.intAttributes = new List<ParticleAttributeSaveData<int>>();
         data.enumAttributes = new List<ParticleAttributeEnumSaveData>();
         data.pcAttributes = new List<ParticleAttributePCSaveData>();
+        data.stringAttributes = new List<ParticleAttributeSaveData<string>>();
+
         // Fill in the particle attributes ordered by type
         // Must use reflection here
         for (int i = 0; i < attributes.Count; i++)
@@ -1606,6 +1609,16 @@ public class Particle : IParticleState, IReplayHistory
             {
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
                 data.dirAttributes.Add(aData as ParticleAttributeSaveData<Direction>);
+            }
+            else if (t == typeof(float))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.floatAttributes.Add(aData as ParticleAttributeSaveData<float>);
+            }
+            else if (t == typeof(string))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.stringAttributes.Add(aData as ParticleAttributeSaveData<string>);
             }
             else if (t == typeof(PinConfiguration))
             {
@@ -1735,7 +1748,8 @@ public class Particle : IParticleState, IReplayHistory
         // The attributes have already been set up by the algorithm, we now just need to fill them with different values
         // We store the attributes provided by the save state in a dictionary for easy access
         Dictionary<string, ParticleAttributeSaveDataBase> savedAttrs = new Dictionary<string, ParticleAttributeSaveDataBase>();
-        foreach (var list in new IEnumerable[] { data.boolAttributes, data.dirAttributes, data.intAttributes, data.enumAttributes, data.pcAttributes })
+        foreach (var list in new IEnumerable[] { data.boolAttributes, data.dirAttributes, data.floatAttributes, data.intAttributes,
+            data.enumAttributes, data.pcAttributes, data.stringAttributes })
         {
             foreach (ParticleAttributeSaveDataBase a in list)
             {

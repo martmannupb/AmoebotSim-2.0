@@ -1,3 +1,4 @@
+using UnityEngine;
 
 /// <summary>
 /// <see cref="ParticleAttribute{T}"/> subclass representing integer values.
@@ -54,15 +55,17 @@ public class ParticleAttribute_Int : ParticleAttributeWithHistory<int>, IParticl
         return history.GetMarkedValue().ToString();
     }
 
-    public void UpdateAttributeValue(string value)
+    public bool UpdateAttributeValue(string value)
     {
         if (int.TryParse(value, out int parsedVal))
         {
             history.RecordValueInRound(parsedVal, particle.system.CurrentRound);
+            return true;
         }
         else
         {
-            throw new System.ArgumentException("Cannot convert " + value + " to int attribute.");
+            Debug.LogWarning("Cannot convert " + value + " to int attribute.");
+            return false;
         }
     }
 }

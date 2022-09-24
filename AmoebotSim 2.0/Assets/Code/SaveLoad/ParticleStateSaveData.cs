@@ -30,9 +30,11 @@ public class ParticleStateSaveData
     // Attribute data, sorted by type
     public List<ParticleAttributeSaveData<bool>> boolAttributes;
     public List<ParticleAttributeSaveData<Direction>> dirAttributes;
+    public List<ParticleAttributeSaveData<float>> floatAttributes;
     public List<ParticleAttributeSaveData<int>> intAttributes;
     public List<ParticleAttributeEnumSaveData> enumAttributes;
     public List<ParticleAttributePCSaveData> pcAttributes;
+    public List<ParticleAttributeSaveData<string>> stringAttributes;
 
     // Bond data
     public ValueHistorySaveData<int> activeBondHistory;

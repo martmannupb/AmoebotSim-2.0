@@ -28,6 +28,9 @@ public class AmoebotSimulator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log(float.TryParse("3.7", out float result) + ", " + result);
+        Debug.Log(float.TryParse("3.7f", out float result2) + ", " + result2);
+
         // Init Renderer + Particle System
         renderSystem = new RenderSystem(this, FindObjectOfType<InputController>());
         system = new ParticleSystem(this, renderSystem);

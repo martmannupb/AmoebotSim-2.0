@@ -154,6 +154,16 @@ public class ParticleUIHandler : MonoBehaviour
                 UISetting_Text setting = (UISetting_Text)settings[particleAttribute.ToString_AttributeName()];
                 setting.UpdateValue(particleAttribute.ToString_AttributeValue());
             }
+            else if (type == typeof(float))
+            {
+                UISetting_Text setting = (UISetting_Text)settings[particleAttribute.ToString_AttributeName()];
+                setting.UpdateValue(particleAttribute.ToString_AttributeValue());
+            }
+            else if (type == typeof(string))
+            {
+                UISetting_Text setting = (UISetting_Text)settings[particleAttribute.ToString_AttributeName()];
+                setting.UpdateValue(particleAttribute.ToString_AttributeValue());
+            }
             else if (type == typeof(Direction))
             {
                 UISetting_Dropdown setting = (UISetting_Dropdown)settings[particleAttribute.ToString_AttributeName()];
@@ -190,6 +200,20 @@ public class ParticleUIHandler : MonoBehaviour
         else if(type == typeof(int))
         {
             UISetting_Text setting = new UISetting_Text(go_attributeParent, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Int);
+            setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
+            setting.onValueChangedEvent += SettingChanged_Text;
+            settings.Add(particleAttribute.ToString_AttributeName(), setting);
+        }
+        else if (type == typeof(float))
+        {
+            UISetting_Text setting = new UISetting_Text(go_attributeParent, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Float);
+            setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
+            setting.onValueChangedEvent += SettingChanged_Text;
+            settings.Add(particleAttribute.ToString_AttributeName(), setting);
+        }
+        else if (type == typeof(string))
+        {
+            UISetting_Text setting = new UISetting_Text(go_attributeParent, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Text);
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Text;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);

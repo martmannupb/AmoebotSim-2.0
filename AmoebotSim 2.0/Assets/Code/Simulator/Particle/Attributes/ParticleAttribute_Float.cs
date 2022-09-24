@@ -1,16 +1,16 @@
 using UnityEngine;
 
 /// <summary>
-/// <see cref="ParticleAttribute{T}"/> subclass representing boolean values.
+/// <see cref="ParticleAttribute{T}"/> subclass representing float values.
 /// </summary>
-public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParticleAttribute
+public class ParticleAttribute_Float : ParticleAttributeWithHistory<float>, IParticleAttribute
 {
-    public ParticleAttribute_Bool(Particle particle, string name, bool value = false) : base(particle, name)
+    public ParticleAttribute_Float(Particle particle, string name, float value = 0f) : base(particle, name)
     {
-        history = new ValueHistory<bool>(value, particle.system.CurrentRound);
+        history = new ValueHistory<float>(value, particle.system.CurrentRound);
     }
 
-    public override bool GetValue()
+    public override float GetValue()
     {
         if (particle.system.InMovePhase || !hasIntermediateVal)
         {
@@ -22,7 +22,7 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
         }
     }
 
-    public override bool GetValue_After()
+    public override float GetValue_After()
     {
         if (!particle.isActive)
         {
@@ -31,7 +31,7 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
         return history.GetMarkedValue();
     }
 
-    public override void SetValue(bool value)
+    public override void SetValue(float value)
     {
         if (!particle.isActive)
         {
@@ -47,7 +47,7 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
 
     public override string ToString()
     {
-        return "ParticleAttribute (bool) with name " + name + " and value " + ToString_AttributeValue();
+        return "ParticleAttribute (float) with name " + name + " and value " + ToString_AttributeValue();
     }
 
     public string ToString_AttributeValue()
@@ -57,14 +57,16 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
 
     public bool UpdateAttributeValue(string value)
     {
-        if (bool.TryParse(value, out bool parsedVal))
+        Debug.Log("Parsing string '" + value + "'");
+        if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float parsedVal))
         {
+            Debug.Log("Success: " + parsedVal);
             history.RecordValueInRound(parsedVal, particle.system.CurrentRound);
             return true;
         }
         else
         {
-            Debug.LogWarning("Cannot convert " + value + " to bool attribute.");
+            Debug.LogWarning("Cannot convert " + value + " to float attribute.");
             return false;
         }
     }

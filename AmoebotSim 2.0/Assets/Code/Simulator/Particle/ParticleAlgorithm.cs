@@ -199,6 +199,32 @@ public abstract class ParticleAlgorithm
     }
 
     /// <summary>
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing a float value.
+    /// </summary>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<float> CreateAttributeFloat(string name, float initialValue = 0f)
+    {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        return ParticleAttributeFactory.CreateParticleAttributeFloat(particle, name, initialValue);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing a string value.
+    /// </summary>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<string> CreateAttributeString(string name, string initialValue = "")
+    {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        return ParticleAttributeFactory.CreateParticleAttributeString(particle, name, initialValue);
+    }
+
+    /// <summary>
     /// Creates a new <see cref="ParticleAttribute{T}"/> representing a boolean value.
     /// </summary>
     /// <param name="name">The name of the attribute to be displayed in the UI.
