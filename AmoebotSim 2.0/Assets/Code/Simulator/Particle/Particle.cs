@@ -31,6 +31,10 @@ public class Particle : IParticleState, IReplayHistory
     // Graphics _____
     public IParticleGraphicsAdapter graphics;
 
+    // ID _____
+    public int id = curID++;
+    protected static int curID = 1;
+
     // Data _____
     // General
     /// <summary>

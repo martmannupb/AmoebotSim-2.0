@@ -142,6 +142,10 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void Update(bool isJointExpansion)
     {
+        if(((Particle)particle).id == 24)
+        {
+            Log.Debug("Here");
+        }
         Update(false, isJointExpansion, false);
     }
     

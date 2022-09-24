@@ -380,6 +380,9 @@ public class UIHandler : MonoBehaviour
             case 4:
                 sim.system.InitializeExpandedTest(10);
                 break;
+            case 5:
+                sim.system.InitializeJMTest(1);
+                break;
             default:
                 break;
         }
