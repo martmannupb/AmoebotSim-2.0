@@ -58,7 +58,7 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
     {
         if (bool.TryParse(value, out bool parsedVal))
         {
-            SetValue(parsedVal);
+            history.RecordValueInRound(parsedVal, particle.system.CurrentRound);
         }
         else
         {

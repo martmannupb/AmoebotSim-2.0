@@ -58,7 +58,7 @@ public class ParticleAttribute_Int : ParticleAttributeWithHistory<int>, IParticl
     {
         if (int.TryParse(value, out int parsedVal))
         {
-            SetValue(parsedVal);
+            history.RecordValueInRound(parsedVal, particle.system.CurrentRound);
         }
         else
         {

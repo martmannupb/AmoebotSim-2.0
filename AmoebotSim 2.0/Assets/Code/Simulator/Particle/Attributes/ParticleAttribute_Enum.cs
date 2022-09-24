@@ -101,7 +101,7 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
     {
         if (Enum.TryParse(typeof(T), value, true, out object parsedVal))
         {
-            SetValue((T)parsedVal);
+            history.RecordValueInRound((T)parsedVal, particle.system.CurrentRound);
         }
         else
         {
