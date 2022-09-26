@@ -145,6 +145,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         if(((Particle)particle).id == 24)
         {
             Log.Debug("Here");
+            Log.Debug("Is joint: " + isJointExpansion);
         }
         Update(false, isJointExpansion, false);
     }
