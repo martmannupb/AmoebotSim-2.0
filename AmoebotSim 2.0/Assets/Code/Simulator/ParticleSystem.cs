@@ -6,7 +6,12 @@ using UnityEngine;
 
 /// <summary>
 /// Main container for a system of particles in the grid together with
-/// the execution logic for simulating particle activations and entire rounds.
+/// the execution logic for simulating rounds.
+/// <para>
+/// Unlike other <see cref="IReplayHistory"/> implementations, the system will
+/// automatically reactivate the tracking state as soon as the marker is set to
+/// the latest round.
+/// </para>
 /// </summary>
 public class ParticleSystem : IReplayHistory
 {
@@ -2487,8 +2492,13 @@ public class ParticleSystem : IReplayHistory
         {
             throw new System.ArgumentOutOfRangeException("Cannot set system to round " + round + "; must be between " + _earliestRound + " and " + _latestRound);
         }
-        if (isTracking || round != _currentRound)
+        if (round != _currentRound)
         {
+            if (round == _latestRound)
+            {
+                ContinueTracking();
+                return;
+            }
             _currentRound = round;
             _previousRound = round;
             // Set all particles to track the given round
@@ -2555,12 +2565,10 @@ public class ParticleSystem : IReplayHistory
         {
             throw new System.InvalidOperationException("Cannot step forward because the system is in the latest round " + _latestRound);
         }
-        // Have to synchronize to given round if we are still tracking
-        if (isTracking)
+        if (_currentRound == _latestRound - 1)
         {
-            SetMarkerToRound(_currentRound + 1);
+            ContinueTracking();
         }
-        // Otherwise particles are already synchronized
         else
         {
             _currentRound++;
@@ -2623,7 +2631,9 @@ public class ParticleSystem : IReplayHistory
             foreach (Particle p in particles)
             {
                 p.CutOffAtMarker();
+                p.ContinueTracking();
             }
+            isTracking = true;
         }
     }
 
