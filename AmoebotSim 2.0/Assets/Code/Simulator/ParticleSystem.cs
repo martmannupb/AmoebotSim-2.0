@@ -2067,8 +2067,9 @@ public class ParticleSystem : IReplayHistory
             p.graphics.SetParticleColor(p.GetParticleColor());
             if (resetVisuals) p.graphics.UpdateReset();
             // Joint movement if offset is not zero and not directly opposite of local movement offset
-            else p.graphics.Update(p.jmOffset != Vector2Int.zero &&
-                !(p.ScheduledMovement != null && p.movementOffset == -p.jmOffset));
+            //else p.graphics.Update(p.jmOffset != Vector2Int.zero &&
+            //    !(p.ScheduledMovement != null && p.movementOffset == -p.jmOffset));
+            else p.graphics.Update(p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.movementOffset) : ParticleJointMovementState.None);
         }
         foreach (Particle p in particles)
         {
