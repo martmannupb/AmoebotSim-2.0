@@ -2069,7 +2069,7 @@ public class ParticleSystem : IReplayHistory
             // Joint movement if offset is not zero and not directly opposite of local movement offset
             //else p.graphics.Update(p.jmOffset != Vector2Int.zero &&
             //    !(p.ScheduledMovement != null && p.movementOffset == -p.jmOffset));
-            else p.graphics.Update(p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.movementOffset) : ParticleJointMovementState.None);
+            else p.graphics.Update(p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.jmOffset) : ParticleJointMovementState.None);
         }
         foreach (Particle p in particles)
         {
