@@ -189,6 +189,11 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         Update(true, false, true);
     }
 
+    public void BondUpdate(ParticleBondGraphicState bondState)
+    {
+        //renderer.
+    }
+
     public void CircuitUpdate(ParticlePinGraphicState state)
     {
         renderer.circuitRenderer.AddCircuits(state, state_cur);
@@ -213,7 +218,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
         throw new System.NotImplementedException();
     }
-
 
     public enum ParticleMovement
     {

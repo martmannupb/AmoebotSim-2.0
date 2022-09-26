@@ -5,6 +5,8 @@ using UnityEngine;
 public class RendererParticles
 {
 
+    // Bonds ===============
+    public RendererBonds bondRenderer = new RendererBonds();
     // Circuits ===============
     public RendererCircuits circuitRenderer = new RendererCircuits();
 

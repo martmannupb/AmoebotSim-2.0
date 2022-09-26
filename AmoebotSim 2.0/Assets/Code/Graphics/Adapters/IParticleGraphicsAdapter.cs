@@ -32,6 +32,13 @@ public interface IParticleGraphicsAdapter
     void UpdateReset();
 
     /// <summary>
+    /// Renders a particle bond for this round. Only call this on one of the two connected particles.
+    /// Call Order: Update() methods of all particles, then all UpdateBond() methods so that all bonds are rendered.
+    /// </summary>
+    /// <param name="bondState">Data about the current state of the bond.</param>
+    void BondUpdate(ParticleBondGraphicState bondState);
+
+    /// <summary>
     /// Pushes an Update for the internal circuits of the particle and the immediate connections to neighboring particles.
     /// </summary>
     /// <param name="data"></param>
