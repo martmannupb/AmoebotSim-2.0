@@ -275,7 +275,7 @@ public class RendererParticles_RenderBatch
             {
                 // Calc Joint Movement Position Offset
                 //Vector2Int jointMovementPositionOffsetInv = gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding ? gd.state_prev.position2 - gd.state_cur.position2 : gd.state_prev.position1 - gd.state_cur.position1;
-                Vector2Int jointMovementPositionOffsetInv = new Vector2Int(gd.state_cur.jointMovementState.jointExpansionOffset.x, gd.state_cur.jointMovementState.jointExpansionOffset.y);
+                Vector2Int jointMovementPositionOffsetInv = new Vector2Int(-gd.state_cur.jointMovementState.jointExpansionOffset.x, -gd.state_cur.jointMovementState.jointExpansionOffset.y);
                 // Set World Offset
                 Vector3 absPositionOffsetInv = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(jointMovementPositionOffsetInv);
                 particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID] = absPositionOffsetInv;

@@ -142,7 +142,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void Update(ParticleJointMovementState jointMovementState)
     {
-        if(((Particle)particle).id == 24)
+        if(((Particle)particle).id == 33)
         {
             Log.Debug("Here");
             Log.Debug("Is joint: " + jointMovementState.isJointMovement);

@@ -358,6 +358,7 @@ public class UIHandler : MonoBehaviour
         button_exit.gameObject.SetActive(true);
     }
 
+    public TMP_InputField temporaryBox;
     public void TemporaryButton_ResetAlgorithm(int algoID)
     {
         if (sim.running) sim.TogglePlayPause();
@@ -381,7 +382,7 @@ public class UIHandler : MonoBehaviour
                 sim.system.InitializeExpandedTest(10);
                 break;
             case 5:
-                sim.system.InitializeJMTest(1);
+                sim.system.InitializeJMTest(int.Parse(temporaryBox.text));
                 break;
             default:
                 break;
