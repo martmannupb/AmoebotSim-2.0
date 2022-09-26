@@ -861,9 +861,9 @@ public class ParticleSystem : IReplayHistory
         ApplyNewPinConfigurations();
         DiscoverCircuits();
         FinishBeepAndMessageInfo();
-        CleanupAfterRound();
         _previousRound++;
         UpdateAllParticleVisuals(false);
+        CleanupAfterRound();
     }
 
     /// <summary>
@@ -2066,7 +2066,9 @@ public class ParticleSystem : IReplayHistory
         {
             p.graphics.SetParticleColor(p.GetParticleColor());
             if (resetVisuals) p.graphics.UpdateReset();
-            else p.graphics.Update(p.jmOffset != Vector2Int.zero);
+            // Joint movement if offset is not zero and not directly opposite of local movement offset
+            else p.graphics.Update(p.jmOffset != Vector2Int.zero &&
+                !(p.ScheduledMovement != null && p.movementOffset == -p.jmOffset));
         }
         foreach (Particle p in particles)
         {
