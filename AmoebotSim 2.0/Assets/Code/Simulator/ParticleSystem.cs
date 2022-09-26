@@ -79,6 +79,28 @@ public class ParticleSystem : IReplayHistory
 
     private bool isTracking = true;     // For IReplayHistory
 
+    // State information
+
+    /// <summary>
+    /// Indicates whether the system is currently in the initialization state.
+    /// In this state, particles can be added, removed, moved and modified
+    /// freely and new configurations can be generated.
+    /// <para>
+    /// In this state, no methods controlling the simulation or the history
+    /// replay should be called.
+    /// </para>
+    /// </summary>
+    public bool InInitializationState
+    {
+        get { return inInitializationState; }
+    }
+    private bool inInitializationState = false;
+
+    // Is true when we entered initialization mode and saved the previous simulation state
+    private bool storedSimulationState = false;
+    // The round we were in when we stored the simulation state
+    private int storedSimulationRound = -1;
+
     // Simulation phase flags
     // Used to indicate which of the two cycles is currently being executed
     // so that all parts of the simulator have the corresponding behavior
@@ -2654,6 +2676,12 @@ public class ParticleSystem : IReplayHistory
      * Saving and loading functionality.
      */
 
+    /// <summary>
+    /// Writes the current simulation state including its
+    /// entire history into a serializable object.
+    /// </summary>
+    /// <returns>A serializable object containing the current
+    /// simulation state.</returns>
     public SimulationStateSaveData GenerateSaveData()
     {
         SimulationStateSaveData data = new SimulationStateSaveData();
@@ -2670,7 +2698,20 @@ public class ParticleSystem : IReplayHistory
         return data;
     }
 
-    public void InitializeFromSaveState(SimulationStateSaveData data)
+    /// <summary>
+    /// Initializes the system to the state that is stored in
+    /// the given save data object.
+    /// <para>
+    /// This only works correctly if the system was reset using
+    /// the <see cref="Reset"/> method before.
+    /// </para>
+    /// </summary>
+    /// <param name="data">The object containing the saved
+    /// simulation state.</param>
+    /// <param name="updateVisuals">If <c>true</c>, the render system
+    /// is notified about the updated system immediately after
+    /// loading the simulation state.</param>
+    public void InitializeFromSaveState(SimulationStateSaveData data, bool updateVisuals = true)
     {
         _earliestRound = data.earliestRound;
         _latestRound = data.latestRound;
@@ -2688,15 +2729,18 @@ public class ParticleSystem : IReplayHistory
             }
         }
 
-        DiscoverCircuits(false);
-        CleanupAfterRound();
-        UpdateAllParticleVisuals(true);
+        if (updateVisuals)
+        {
+            DiscoverCircuits(false);
+            CleanupAfterRound();
+            UpdateAllParticleVisuals(true);
+        }
     }
 
 
-
-
-    
+    /**
+     * Initialization state functionality.
+     */
 
     public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality, bool randomCompassDir, Direction compassDir)
     {
@@ -2709,13 +2753,42 @@ public class ParticleSystem : IReplayHistory
     {
         // Note: The initialization window has just been opened. So it might be possible to save the state of a running algorithm and convert its particles to the initialization particles
         // in order to be able to use the given state for new algorithms / save the particle configuration.
-        Log.Debug("InitializationModeStarted: Not implemented yet (I dont wanna throw an error here).");
+
+        // Use the current system if we have one
+        if (particles.Count > 0)
+        {
+            // Store the simulation state
+            SimulationStateSaveData saveData = GenerateSaveData();
+            SaveStateUtility.Save(saveData, SaveStateUtility.tmpSaveFile);
+            storedSimulationState = true;
+            storedSimulationRound = _currentRound;
+
+            // TODO: Use current system state as starting point
+        }
+
+        Reset();
     }
 
     public void InitializationModeAborted()
     {
         // Note: The initialization mode has just been aborted and the window is closed. Here the previously saved state could be loaded again to continue with the old algorithm.
-        Log.Debug("InitializationModeAborted: Not implemented yet (I dont wanna throw an error here).");
+        
+        // Load previous system state if we have one
+        if (storedSimulationState)
+        {
+            storedSimulationState = false;
+            SimulationStateSaveData saveData = SaveStateUtility.Load(SaveStateUtility.tmpSaveFile);
+            if (saveData == null)
+            {
+                Debug.LogWarning("Unable to load previous simulation state.");
+                return;
+            }
+            InitializeFromSaveState(saveData, false);
+            SetMarkerToRound(storedSimulationRound);
+            DiscoverCircuits(false);
+            CleanupAfterRound();
+            UpdateAllParticleVisuals(true);
+        }
     }
 
     public bool IsInLatestRound()
