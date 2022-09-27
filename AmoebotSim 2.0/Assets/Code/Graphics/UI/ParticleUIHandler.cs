@@ -131,7 +131,10 @@ public class ParticleUIHandler : MonoBehaviour
     /// </summary>
     private void RefreshHeader()
     {
-        if (particle != null) headerText.text = "ID: " + particle.id + "\n" + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.ToString2() + "\nPosition: (" + (particle.IsExpanded() ? (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y) : (particle.Head().x + "," + particle.Head().y)) + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted") + "\nChirality: " + (particle.chirality ? "CC" : "C") + "\nCompass Dir: " + particle.comDir.ToString();
+        if (particle != null) headerText.text = "ID: " + particle.id + "\n" + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.Description() +
+                "\nPos Cur (no jms): " + (RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.isJointMovement ? RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.position1 - RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.jointExpansionOffset : RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.position1) +
+                "\nPos Cur: " + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.ToString() + "\nPos Prev: " + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_prev.ToString() +
+                "\nPosition: (" + (particle.IsExpanded() ? (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y) : (particle.Head().x + "," + particle.Head().y)) + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted") + "\nChirality: " + (particle.chirality ? "CC" : "C") + "\nCompass Dir: " + particle.comDir.ToString();
     }
 
     /// <summary>

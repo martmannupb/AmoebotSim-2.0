@@ -257,7 +257,7 @@ public class RendererParticles_RenderBatch
         {
             // Interpolate
             Vector3 interpolatedOffset;
-            if (RenderSystem.animationsOn) interpolatedOffset = (1f - jmInterpolation) * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
+            if (RenderSystem.animationsOn && false) interpolatedOffset = (1f - jmInterpolation) * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
             else interpolatedOffset = 0f * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
             particle_position1world = particle_position1world + interpolatedOffset;
             particle_position2world = particle_position2world + interpolatedOffset;
@@ -294,7 +294,39 @@ public class RendererParticles_RenderBatch
         }
         else if (gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting)
         {
-            rotation = Quaternion.Euler(0f, 0f, (60f * gd.state_prev.globalExpansionDir + 180f) % 360f) * Quaternion.identity;
+            // Find Rotation Dir
+            Vector2Int curPosWithoutJointMovements1 = gd.state_cur.jointMovementState.isJointMovement ? gd.state_cur.position1 - gd.state_cur.jointMovementState.jointExpansionOffset : gd.state_cur.position1;
+            Vector2Int posOffset1 = curPosWithoutJointMovements1 - gd.state_prev.position1;
+            Vector2Int posOffset2 = curPosWithoutJointMovements1 - gd.state_prev.position2;
+            Vector2Int offsetVector = Vector2Int.zero;
+            bool contractsIntoPos1 = false;
+            if (posOffset1 != Vector2Int.zero && posOffset2 != Vector2Int.zero) Log.Error("Particle Render Batch: UpdateMatrix: PosOffsets are both not zero!");
+            else if (posOffset1 != Vector2Int.zero)
+            {
+                offsetVector = posOffset1;
+                contractsIntoPos1 = true;
+            }
+            else if (posOffset2 != Vector2Int.zero)
+            {
+                offsetVector = posOffset2;
+                contractsIntoPos1 = false;
+            }
+            else Log.Error("Particle Render Batch: UpdateMatrix: Both PosOffsets are zero!");
+            int expansionDir = 0;
+            if (offsetVector == new Vector2Int(1, 0)) expansionDir = 0;
+            else if (offsetVector == new Vector2Int(0, 1)) expansionDir = 1;
+            else if (offsetVector == new Vector2Int(-1, 1)) expansionDir = 2;
+            else if (offsetVector == new Vector2Int(-1, 0)) expansionDir = 3;
+            else if (offsetVector == new Vector2Int(0, -1)) expansionDir = 4;
+            else if (offsetVector == new Vector2Int(1, -1)) expansionDir = 5;
+            else Log.Error("Particle Render Batch: UpdateMatrix: offset vector (" + offsetVector.x + "," + offsetVector.y + ") is too big!");
+            if (contractsIntoPos1) expansionDir = (expansionDir + 3) % 6;
+            // Apply Rotation
+            rotation = Quaternion.Euler(0f, 0f, (60f * expansionDir) % 360f) * Quaternion.identity;
+            if(((Particle)gd.particle).id == 24)
+            {
+                Log.Debug("HERE");
+            }
         }
         // Update Matrices
         ParticleGraphicsAdapterImpl.ParticleMovement movement = gd.state_cur.movement;

@@ -98,8 +98,8 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         /// <returns></returns>
         public override string ToString()
         {
-            if (isExpanded) return "Expanded Particle: Head: " + position1 + ", Tail: " + position2;
-            else return "Contracted Particle: Head: " + position1;
+            if (isExpanded) return "Head: " + position1 + ", Tail: " + position2;
+            else return "Head/Tail: " + position1;
         }
     }
 
@@ -182,6 +182,8 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
             || state_prev.movement == ParticleMovement.Contracting
             || state_prev.movement == ParticleMovement.Expanding
+            || state_prev.jointMovementState.isJointMovement
+            || state_cur.jointMovementState.isJointMovement
             || forceRenderUpdate) graphics_colorRenderer.UpdateMatrix(this, false); //renderer.UpdateMatrix(this);
     }
 
