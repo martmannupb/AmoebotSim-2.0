@@ -123,6 +123,8 @@ public class LineFormationParticleSync : ParticleAlgorithm
     // is very simple
     public override int PinsPerEdge => 1;
 
+    public static new string Name => "Line Formation";
+
     public override void ActivateMove()
     {
         // Use old movement system - we don't have to worry about bonds

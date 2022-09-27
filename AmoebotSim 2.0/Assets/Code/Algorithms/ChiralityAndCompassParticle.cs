@@ -201,6 +201,10 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     public override int PinsPerEdge => 2;
 
+    public static new InitializationUIHandler.SettingChirality Chirality => InitializationUIHandler.SettingChirality.Random;
+
+    public static new Direction Compass => Direction.NONE;
+
     public override void ActivateMove()
     {
 

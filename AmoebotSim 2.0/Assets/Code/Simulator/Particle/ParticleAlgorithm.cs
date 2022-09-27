@@ -80,6 +80,12 @@ public abstract class ParticleAlgorithm
     /// </summary>
     public abstract int PinsPerEdge { get;}
 
+    public static string Name { get { return ""; } }
+
+    public static InitializationUIHandler.SettingChirality Chirality { get { return InitializationUIHandler.SettingChirality.Clockwise; } }
+
+    public static Direction Compass { get { return Direction.E; } }
+
     /// <summary>
     /// This is one part of the main activation logic of the particle.
     /// It is called exactly once in each round and should contain the
