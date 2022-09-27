@@ -5,6 +5,8 @@ using UnityEngine;
 public class RendererParticles
 {
 
+    public static RendererParticles instance;
+
     // Bonds ===============
     public RendererBonds bondRenderer = new RendererBonds();
     // Circuits ===============
@@ -17,6 +19,17 @@ public class RendererParticles
     // Data _____
     // Particles
     private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
+
+    public RendererParticles()
+    {
+        instance = this;
+    }
+
+    public ParticleGraphicsAdapterImpl GetGraphicsAdapterImpl(Particle particle)
+    {
+        if (particleToParticleGraphicalDataMap.ContainsKey((IParticleState)particle)) return particleToParticleGraphicalDataMap[(IParticleState)particle];
+        return null;
+    }
 
     /// <summary>
     /// Adds the particle to a new RenderBatch with the same properties (like color).
@@ -41,6 +54,7 @@ public class RendererParticles
             propertiesToRenderBatchMap.Add(block, renderBatch);
             renderBatch.Particle_Add(graphicalData);
         }
+        particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
         return true;
     }
 

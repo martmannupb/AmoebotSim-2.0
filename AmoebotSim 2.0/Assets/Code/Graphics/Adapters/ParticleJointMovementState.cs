@@ -49,6 +49,11 @@ public struct ParticleJointMovementState : IEquatable<ParticleJointMovementState
     {
         return HashCode.Combine(isJointMovement, jointExpansionOffset);
     }
+
+    public string ToString2()
+    {
+        return "JM: " + isJointMovement + "\nJEO:" + jointExpansionOffset;
+    }
 }
 
 
