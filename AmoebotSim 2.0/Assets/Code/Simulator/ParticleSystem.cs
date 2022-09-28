@@ -2774,13 +2774,17 @@ public class ParticleSystem : IReplayHistory
             // Use the current system state as starting point for initialization system
             foreach (Particle p in particles)
             {
-                InitializationParticle ip = new InitializationParticle(p.Tail(), p.chirality, p.comDir, p.GlobalHeadDirection());
+                InitializationParticle ip = new InitializationParticle(this, p.Tail(), p.chirality, p.comDir, p.GlobalHeadDirection());
                 particlesInit.Add(ip);
                 particleMapInit[p.Tail()] = ip;
                 if (p.IsExpanded())
                     particleMapInit[p.Head()] = ip;
+                ip.graphics.AddParticle();
+                ip.graphics.UpdateReset();
             }
         }
+        // Hide the circuits
+        renderSystem.CircuitCalculationOver();
 
         Reset();
     }
@@ -2789,6 +2793,14 @@ public class ParticleSystem : IReplayHistory
     {
         // Note: The initialization mode has just been aborted and the window is closed. Here the previously saved state could be loaded again to continue with the old algorithm.
         
+        // Unload the temporary initialization system
+        foreach (InitializationParticle p in particlesInit)
+        {
+            p.graphics.RemoveParticle();
+        }
+        particlesInit.Clear();
+        particleMapInit.Clear();
+
         // Load previous system state if we have one
         if (storedSimulationState)
         {

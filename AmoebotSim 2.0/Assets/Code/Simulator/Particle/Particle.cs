@@ -1696,6 +1696,8 @@ public class Particle : IParticleState, IReplayHistory
 
         activeBondHistory = new ValueHistory<int>(data.activeBondHistory);
         markedBondHistory = new ValueHistory<int>(data.markedBondHistory);
+        activeBonds = new BitVector32(1023);    // All flags set to true
+        markedBonds = new BitVector32(0);       // All flags are set to false
 
         mainColorHistory = new ValueHistory<Color>(data.mainColorHistory);
         mainColorSetHistory = new ValueHistory<bool>(data.mainColorSetHistory);

@@ -15,8 +15,10 @@ public class InitializationParticle : IParticleState
     private Direction expansionDir;
     private bool chirality;
     private Direction compassDir;
+    public ParticleGraphicsAdapterImpl graphics;
+    private ParticleSystem system;
 
-    public InitializationParticle(Vector2Int position, bool chirality, Direction compassDir, Direction expansionDir = Direction.NONE)
+    public InitializationParticle(ParticleSystem system, Vector2Int position, bool chirality, Direction compassDir, Direction expansionDir = Direction.NONE)
     {
         tailPos = position;
         this.chirality = chirality;
@@ -26,6 +28,10 @@ public class InitializationParticle : IParticleState
             headPos = tailPos;
         else
             headPos = ParticleSystem_Utils.GetNbrInDir(tailPos, expansionDir);
+        this.system = system;
+
+        // Add particle to the system and update the visuals of the particle
+        graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
     }
 
     public int GetCircuitPinsPerSide()
