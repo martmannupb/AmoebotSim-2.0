@@ -127,8 +127,13 @@ public class ParticleSystem : IReplayHistory
     public AmoebotSimulator sim;
     public RenderSystem renderSystem;
 
+    // Main data structures
     public List<Particle> particles = new List<Particle>();
     private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
+
+    // Initialization mode data structures
+    private List<InitializationParticle> particlesInit = new List<InitializationParticle>();
+    private Dictionary<Vector2Int, InitializationParticle> particleMapInit = new Dictionary<Vector2Int, InitializationParticle>();
 
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
@@ -2754,6 +2759,9 @@ public class ParticleSystem : IReplayHistory
         // Note: The initialization window has just been opened. So it might be possible to save the state of a running algorithm and convert its particles to the initialization particles
         // in order to be able to use the given state for new algorithms / save the particle configuration.
 
+        particlesInit.Clear();
+        particleMapInit.Clear();
+
         // Use the current system if we have one
         if (particles.Count > 0)
         {
@@ -2763,7 +2771,15 @@ public class ParticleSystem : IReplayHistory
             storedSimulationState = true;
             storedSimulationRound = _currentRound;
 
-            // TODO: Use current system state as starting point
+            // Use the current system state as starting point for initialization system
+            foreach (Particle p in particles)
+            {
+                InitializationParticle ip = new InitializationParticle(p.Tail(), p.chirality, p.comDir, p.GlobalHeadDirection());
+                particlesInit.Add(ip);
+                particleMapInit[p.Tail()] = ip;
+                if (p.IsExpanded())
+                    particleMapInit[p.Head()] = ip;
+            }
         }
 
         Reset();
