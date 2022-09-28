@@ -832,6 +832,20 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
+    /// Resets the current particle configuration while in
+    /// initialization mode.
+    /// </summary>
+    public void ResetInit()
+    {
+        foreach (InitializationParticle p in particlesInit)
+        {
+            p.graphics.RemoveParticle();
+        }
+        particlesInit.Clear();
+        particleMapInit.Clear();
+    }
+
+    /// <summary>
     /// Tries to get the <see cref="Particle"/> at the given position.
     /// </summary>
     /// <param name="position">The grid position at which to look for the particle.</param>
@@ -2747,11 +2761,97 @@ public class ParticleSystem : IReplayHistory
      * Initialization state functionality.
      */
 
+    // TODO: Implement different system for initializing the particles
     public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality, bool randomCompassDir, Direction compassDir)
     {
         // If randomCompassDir is true the value of direction can be ignored
         // The system has been already Reset by the UI at this point
-        Log.Debug("GenerateParticles: Not implemented yet (I dont wanna throw an error here).");
+        ResetInit();
+
+        if (particleAmount < 1)
+            return;
+
+        if (randomCompassDir)
+            compassDir = Direction.NONE;
+
+        // TODO: Add this as parameter
+        float holeProb = 0.5f;
+
+        int n = 1;
+        // Always start by adding a particle at position (0, 0)
+        List<Vector2Int> candidates = new List<Vector2Int>();
+        Vector2Int node = new Vector2Int(0, 0);
+        AddInitParticle(node, chirality, compassDir);
+
+        for (int d = 0; d < 6; d++)
+            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
+
+        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();       // Occupied by particles
+        HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Reserved for holes
+        occupied.Add(node);
+
+        int numExcludedChosen = 0;
+
+        while (n < particleAmount)
+        {
+            // Find next position
+            Vector2Int newPos = Vector2Int.zero;
+            bool choseExcluded = false;
+            if (candidates.Count > 0)
+            {
+                int randIdx = Random.Range(0, candidates.Count);
+                newPos = candidates[randIdx];
+                candidates.RemoveAt(randIdx);
+            }
+            else
+            {
+                // Choose random excluded position
+                Log.Debug("Must choose random excluded position");
+                int randIdx = Random.Range(0, excluded.Count);
+                int i = 0;
+                foreach (Vector2Int v in excluded)
+                {
+                    if (i == randIdx)
+                    {
+                        newPos = v;
+                        break;
+                    }
+                    i++;
+                }
+                Log.Debug("Chosen position: " + newPos);
+                numExcludedChosen++;
+                excluded.Remove(newPos);
+                choseExcluded = true;
+            }
+
+            // Either use newPos to insert particle or to insert hole
+            if (choseExcluded || Random.Range(0.0f, 1.0f) >= holeProb)
+            {
+                for (int d = 0; d < 6; d++)
+                {
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
+                    if (!occupied.Contains(nbr) && !excluded.Contains(nbr) && !candidates.Contains(nbr))
+                        candidates.Add(nbr);
+                }
+
+                AddInitParticle(newPos, chirality, compassDir);
+
+                occupied.Add(newPos);
+                n++;
+            }
+            else
+            {
+                excluded.Add(newPos);
+            }
+        }
+        Log.Debug("Created system with " + n + " particles, had to choose " + numExcludedChosen + " excluded positions");
+        //string s = "Created system with " + n + " particles:\n";
+        //foreach (InitializationParticle part in particlesInit)
+        //{
+        //    s += part.Head() + "\n";
+        //}
+        //Log.Debug(s);
+
     }
 
     public void InitializationModeStarted()
@@ -2793,14 +2893,9 @@ public class ParticleSystem : IReplayHistory
     public void InitializationModeAborted()
     {
         // Note: The initialization mode has just been aborted and the window is closed. Here the previously saved state could be loaded again to continue with the old algorithm.
-        
+
         // Unload the temporary initialization system
-        foreach (InitializationParticle p in particlesInit)
-        {
-            p.graphics.RemoveParticle();
-        }
-        particlesInit.Clear();
-        particleMapInit.Clear();
+        ResetInit();
 
         // Load previous system state if we have one
         if (storedSimulationState)
@@ -2842,7 +2937,7 @@ public class ParticleSystem : IReplayHistory
             return;
         }
 
-        AddInitParticle(gridPos);
+        AddInitParticle(gridPos, InitializationUIHandler.SettingChirality.Clockwise, Direction.E);
     }
 
     public void AddParticleExpanded(Vector2Int gridPosHead, Vector2Int gridPosTail)
@@ -2868,19 +2963,35 @@ public class ParticleSystem : IReplayHistory
             Log.Warning("Grid positions " + gridPosTail + " and " + gridPosHead + " are not valid for expanded particle.");
             return;
         }
-        AddInitParticle(gridPosTail, expansionDir);
+        AddInitParticle(gridPosTail, InitializationUIHandler.SettingChirality.Clockwise, Direction.E, expansionDir);
     }
 
-    private void AddInitParticle(Vector2Int tailPos, Direction headDirection = Direction.NONE)
+    private InitializationParticle AddInitParticle(Vector2Int tailPos, InitializationUIHandler.SettingChirality chirality, Direction compassDir, Direction headDirection = Direction.NONE)
     {
-        // TODO: Use more parameters
-        InitializationParticle ip = new InitializationParticle(this, tailPos, true, Direction.E, headDirection);
+        // TODO: Use different parameters?
+        bool partChirality = true;
+        switch (chirality)
+        {
+            case InitializationUIHandler.SettingChirality.Counterclockwise:
+                partChirality = false;
+                break;
+            case InitializationUIHandler.SettingChirality.Random:
+                partChirality = Random.Range(0, 2) == 0;
+                break;
+        }
+        if (compassDir == Direction.NONE)
+        {
+            compassDir = DirectionHelpers.Cardinal(Random.Range(0, 6));
+        }
+
+        InitializationParticle ip = new InitializationParticle(this, tailPos, partChirality, compassDir, headDirection);
         particlesInit.Add(ip);
         particleMapInit[tailPos] = ip;
         if (headDirection != Direction.NONE)
             particleMapInit[ip.Head()] = ip;
         ip.graphics.AddParticle();
         ip.graphics.UpdateReset();
+        return ip;
     }
 
     public void RemoveParticle(Particle p)
