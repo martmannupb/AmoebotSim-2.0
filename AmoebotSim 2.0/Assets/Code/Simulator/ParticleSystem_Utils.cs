@@ -232,6 +232,41 @@ public static class ParticleSystem_Utils
     }
 
     /// <summary>
+    /// Computes the global direction into which the given grid vector is pointing.
+    /// </summary>
+    /// <param name="vector">The grid vector whose direction should be found.</param>
+    /// <returns>The direction into which <paramref name="vector"/> is pointing, if
+    /// it is a multiple of the corresponding unit vector, otherwise
+    /// <see cref="Direction.NONE"/>.</returns>
+    public static Direction VectorToDirection(Vector2Int vector)
+    {
+        int x = vector.x;
+        int y = vector.y;
+        if (x > 0)
+        {
+            if (y == 0)
+                return Direction.E;
+            else if (y == -x)
+                return Direction.SSE;
+        }
+        else if (x < 0)
+        {
+            if (y == 0)
+                return Direction.W;
+            else if (y == -x)
+                return Direction.NNW;
+        }
+        else // x == 0
+        {
+            if (y > 0)
+                return Direction.NNE;
+            else if (y < 0)
+                return Direction.SSW;
+        }
+        return Direction.NONE;
+    }
+
+    /// <summary>
     /// Computes the neighbor of a grid node position in the given direction and distance.
     /// </summary>
     /// <param name="pos">The original grid node position.</param>

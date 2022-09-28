@@ -2787,6 +2787,7 @@ public class ParticleSystem : IReplayHistory
         renderSystem.CircuitCalculationOver();
 
         Reset();
+        inInitializationState = true;
     }
 
     public void InitializationModeAborted()
@@ -2817,6 +2818,7 @@ public class ParticleSystem : IReplayHistory
             CleanupAfterRound();
             UpdateAllParticleVisuals(true);
         }
+        inInitializationState = false;
     }
 
     public bool IsInLatestRound()
@@ -2827,11 +2829,58 @@ public class ParticleSystem : IReplayHistory
     public void AddParticleContracted(Vector2Int gridPos)
     {
         Log.Debug("ParticleSystem: AddParticleContracted called.");
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot add particles in simulation mode.");
+            return;
+        }
+
+        // Only add the particle if the position is not occupied yet
+        if (particleMapInit.ContainsKey(gridPos))
+        {
+            Log.Warning("Position " + gridPos + " is already occupied, cannot add particle there.");
+            return;
+        }
+
+        AddInitParticle(gridPos);
     }
 
     public void AddParticleExpanded(Vector2Int gridPosHead, Vector2Int gridPosTail)
     {
         Log.Debug("ParticleSystem: AddParticleExpanded called.");
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot add particles in simulation mode.");
+            return;
+        }
+
+        // Only add the particle if the position is not occupied yet
+        if (particleMapInit.ContainsKey(gridPosHead) || particleMapInit.ContainsKey(gridPosTail))
+        {
+            Log.Warning("Position " + gridPosHead + ", " + gridPosTail + " is already occupied, cannot add particle there.");
+            return;
+        }
+
+        Vector2Int expansionVector = gridPosHead - gridPosTail;
+        Direction expansionDir = ParticleSystem_Utils.VectorToDirection(expansionVector);
+        if (expansionDir == Direction.NONE)
+        {
+            Log.Warning("Grid positions " + gridPosTail + " and " + gridPosHead + " are not valid for expanded particle.");
+            return;
+        }
+        AddInitParticle(gridPosTail, expansionDir);
+    }
+
+    private void AddInitParticle(Vector2Int tailPos, Direction headDirection = Direction.NONE)
+    {
+        // TODO: Use more parameters
+        InitializationParticle ip = new InitializationParticle(this, tailPos, true, Direction.E, headDirection);
+        particlesInit.Add(ip);
+        particleMapInit[tailPos] = ip;
+        if (headDirection != Direction.NONE)
+            particleMapInit[ip.Head()] = ip;
+        ip.graphics.AddParticle();
+        ip.graphics.UpdateReset();
     }
 
     public void RemoveParticle(Particle p)
