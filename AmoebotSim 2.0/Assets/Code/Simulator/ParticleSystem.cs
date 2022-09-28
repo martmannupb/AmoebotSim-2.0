@@ -2806,7 +2806,6 @@ public class ParticleSystem : IReplayHistory
             else
             {
                 // Choose random excluded position
-                Log.Debug("Must choose random excluded position");
                 int randIdx = Random.Range(0, excluded.Count);
                 int i = 0;
                 foreach (Vector2Int v in excluded)
@@ -2818,7 +2817,6 @@ public class ParticleSystem : IReplayHistory
                     }
                     i++;
                 }
-                Log.Debug("Chosen position: " + newPos);
                 numExcludedChosen++;
                 excluded.Remove(newPos);
                 choseExcluded = true;
