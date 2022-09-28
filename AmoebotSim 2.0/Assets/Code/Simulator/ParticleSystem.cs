@@ -2073,7 +2073,7 @@ public class ParticleSystem : IReplayHistory
                     (p.ScheduledMovement.type == ActionType.CONTRACT_HEAD || p.ScheduledMovement.type == ActionType.CONTRACT_TAIL ||
                     p.ScheduledMovement.type == ActionType.PULL_HEAD || p.ScheduledMovement.type == ActionType.PULL_TAIL))
                     contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).ToInt();
-                p.graphics.Update(p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.jmOffset, contractionDir) : ParticleJointMovementState.None);
+                p.graphics.Update(p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.jmOffset) : ParticleJointMovementState.None);
             }
         }
         foreach (Particle p in particles)

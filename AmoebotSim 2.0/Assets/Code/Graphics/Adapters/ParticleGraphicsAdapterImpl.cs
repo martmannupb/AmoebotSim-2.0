@@ -33,17 +33,17 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         public Vector2Int position1;
         public Vector2Int position2;
         public bool isExpanded;
-        public int globalExpansionDir;
+        public int globalExpansionOrContractionDir;
         public ParticleMovement movement;
         public ParticleJointMovementState jointMovementState;
         public float timestamp;
 
-        public PositionSnap(Vector2Int p1, Vector2Int p2, bool isExpanded, int globalExpansionDir, ParticleMovement movement, ParticleJointMovementState jointMovementState, float timestamp)
+        public PositionSnap(Vector2Int p1, Vector2Int p2, bool isExpanded, int globalExpansionOrContractionDir, ParticleMovement movement, ParticleJointMovementState jointMovementState, float timestamp)
         {
             this.position1 = p1;
             this.position2 = p2;
             this.isExpanded = isExpanded;
-            this.globalExpansionDir = globalExpansionDir;
+            this.globalExpansionOrContractionDir = globalExpansionOrContractionDir;
             this.movement = movement;
             this.jointMovementState = jointMovementState;
             this.timestamp = timestamp;
@@ -54,7 +54,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
             return s1.position1 == s2.position1 &&
                 s1.position2 == s2.position2 &&
                 s1.isExpanded == s2.isExpanded &&
-                s1.globalExpansionDir == s2.globalExpansionDir &&
+                s1.globalExpansionOrContractionDir == s2.globalExpansionOrContractionDir &&
                 s1.movement == s2.movement &&
                 s1.jointMovementState == s2.jointMovementState &&
                 s1.timestamp == s2.timestamp;
@@ -65,7 +65,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
             return s1.position1 != s2.position1 ||
                 s1.position2 != s2.position2 ||
                 s1.isExpanded != s2.isExpanded ||
-                s1.globalExpansionDir != s2.globalExpansionDir ||
+                s1.globalExpansionOrContractionDir != s2.globalExpansionOrContractionDir ||
                 s1.movement != s2.movement ||
                 s1.jointMovementState != s2.jointMovementState ||
                 s1.timestamp != s2.timestamp;
@@ -133,6 +133,48 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public void RemoveParticle()
     {
         renderer.Particle_Remove(this);
+    }
+
+    public void Update(ParticleMovementState movementState)
+    {
+        Update(false, movementState, false);
+    }
+
+    private void Update(bool forceRenderUpdate, ParticleMovementState movementState, bool noAnimation)
+    {
+        // Previous Data
+        state_prev = state_cur;
+        // Current Data
+        state_cur = new PositionSnap(movementState.posHead, movementState.posTail, movementState.isExpanded, movementState.expansionOrContractionDir, ParticleMovement.Contracted, noAnimation == false ? movementState.jointMovement : ParticleJointMovementState.None, Time.timeSinceLevelLoad);
+
+        // Get Expanded State
+        if (state_cur.isExpanded)
+        {
+            // Expanded
+            if (state_prev.isExpanded || noAnimation) state_cur.movement = ParticleMovement.Expanded;
+            else state_cur.movement = ParticleMovement.Expanding;
+        }
+        else
+        {
+            // Contracted
+            if (state_prev.isExpanded == false || noAnimation)
+            {
+                state_cur.movement = ParticleMovement.Contracted;
+            }
+            else
+            {
+                state_cur.movement = ParticleMovement.Contracting;
+                state_cur.position2 = state_prev.position2; // Tail to previous Tail
+            }
+        }
+
+        // Update Matrix
+        if (PositionSnap.IsPositionEqual(state_cur, state_prev) == false
+            || state_prev.movement == ParticleMovement.Contracting
+            || state_prev.movement == ParticleMovement.Expanding
+            || state_prev.jointMovementState.isJointMovement
+            || state_cur.jointMovementState.isJointMovement
+            || forceRenderUpdate) graphics_colorRenderer.UpdateMatrix(this, false);
     }
 
     public void Update()
@@ -221,6 +263,8 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
         throw new System.NotImplementedException();
     }
+
+    
 
     public enum ParticleMovement
     {
