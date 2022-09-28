@@ -33,6 +33,8 @@ public static class MaterialDatabase
     // Beeps
     public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");
     public static Material material_circuit_pin_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinBeepMat");
+    // Bonds
+    public static Material material_bond_line = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondsMat");
 
     // UI
     public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");

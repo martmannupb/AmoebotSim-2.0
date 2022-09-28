@@ -66,7 +66,6 @@ public class RendererParticles_RenderBatch
     const int maxArraySize = 1023;
 
     // Dynamic Data _____
-    private float curAnimationTriggerTime = 0f;
     private float curAnimationLength = 0f;
     private float jmInterpolation = 0f;
 
@@ -365,26 +364,22 @@ public class RendererParticles_RenderBatch
         curAnimationLength = Mathf.Clamp(RenderSystem.data_hexagonalAnimationDuration, 0f, Time.fixedDeltaTime);
         if (RenderSystem.flag_particleRoundOver)
         {
-            curAnimationTriggerTime = Time.timeSinceLevelLoad;
+            RenderSystem.animation_animationTriggerTimestamp = Time.timeSinceLevelLoad;
             // Update PropertyBlocks Timestamps (for Animations)
-            propertyBlock_circle_contracted.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_expanded.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_expanding.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_contracting.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_connector_contracted.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_connector_expanded.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_connector_expanding.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_connector_contracting.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            RenderSystem.data_particleMovementFinishedTimestamp = curAnimationTriggerTime + curAnimationLength;
+            propertyBlock_circle_contracted.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_expanded.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_expanding.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_contracting.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_connector_contracted.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_connector_expanded.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_connector_expanding.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_connector_contracting.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            RenderSystem.data_particleMovementFinishedTimestamp = RenderSystem.animation_animationTriggerTimestamp + curAnimationLength;
         }
 
         // 2. Update Joint Movement Positions
-        // Update Interpolation Values
-        float animationStartTime = curAnimationTriggerTime;
-        float animationEndTime = curAnimationTriggerTime + curAnimationLength;
-        float nextFramePredictedTimetamp = Time.timeSinceLevelLoad;// + Time.deltaTime;
-        float curAnimationPercentage = Mathf.Clamp(nextFramePredictedTimetamp - animationStartTime, 0f, curAnimationLength) / curAnimationLength;
-        jmInterpolation = Engine.Library.InterpolationConstants.SmoothLerp(curAnimationPercentage);
+        // Update Interpolation Value
+        jmInterpolation = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
         // Update all JM Positions
         for (int i = 0; i < particlePositionOffsets_jointMovementsInv.Count; i++)
         {

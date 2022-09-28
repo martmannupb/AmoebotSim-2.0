@@ -7,10 +7,8 @@ public class RendererParticles
 
     public static RendererParticles instance;
 
-    // Bonds ===============
-    public RendererBonds bondRenderer = new RendererBonds();
-    // Circuits ===============
-    public RendererCircuits circuitRenderer = new RendererCircuits();
+    // Circuits + Bonds ===============
+    public RendererCircuitsBonds circuitAndBondRenderer = new RendererCircuitsBonds();
 
     // Particles ===============
     // Render Batch
@@ -103,7 +101,7 @@ public class RendererParticles
             item.Render(viewType);
         }
         // Circuits
-        if(RenderSystem.flag_showCircuitView && viewType != ViewType.Circular) circuitRenderer.Render();
+        if(viewType != ViewType.Circular) circuitAndBondRenderer.Render();
     }
 
 }

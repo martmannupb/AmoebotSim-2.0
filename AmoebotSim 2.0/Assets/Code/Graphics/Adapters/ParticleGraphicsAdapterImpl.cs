@@ -236,12 +236,12 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     public void BondUpdate(ParticleBondGraphicState bondState)
     {
-        //renderer.
+        renderer.circuitAndBondRenderer.AddBond(bondState);
     }
 
     public void CircuitUpdate(ParticlePinGraphicState state)
     {
-        renderer.circuitRenderer.AddCircuits(state, state_cur);
+        renderer.circuitAndBondRenderer.AddCircuits(state, state_cur);
     }
 
     public void SetParticleColor(Color color)

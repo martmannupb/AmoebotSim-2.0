@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RendererCircuits
+public class RendererCircuitsBonds
 {
 
     // Instances
@@ -17,6 +17,11 @@ public class RendererCircuits
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
         renderInstances[updateInstance].AddCircuits(state, snap);
+    }
+
+    public void AddBond(ParticleBondGraphicState bondState)
+    {
+        renderInstances[updateInstance].AddBond(bondState);
     }
 
     /// <summary>

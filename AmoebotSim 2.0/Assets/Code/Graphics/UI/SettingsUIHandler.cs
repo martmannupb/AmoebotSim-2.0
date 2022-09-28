@@ -109,7 +109,7 @@ public class SettingsUIHandler : MonoBehaviour
                     .sim
                     .renderSystem
                     .rendererP
-                    .circuitRenderer
+                    .circuitAndBondRenderer
                     .ReinitBatches();
                 break;
             case "Animations On/Off":

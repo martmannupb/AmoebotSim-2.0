@@ -10,12 +10,19 @@ public class RendererCircuits_RenderBatch
     private MaterialPropertyBlockData_Circuits propertyBlock_circuitMatrices_Lines = new MaterialPropertyBlockData_Circuits();
     private int currentIndex = 0;
 
+    // Animations (only used if properties.animated = true)
+    private List<Vector2[]> startPositions1 = new List<Vector2[]>();
+    private List<Vector2[]> endPositions1 = new List<Vector2[]>();
+    private List<Vector2[]> startPositions2 = new List<Vector2[]>();
+    private List<Vector2[]> endPositions2 = new List<Vector2[]>();
+
     // Precalculated Data _____
     // Meshes
     private Mesh circuitQuad = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
     const int maxArraySize = 1023;
     private Material lineMaterial;
     private float zOffset = 0f;
+    private float lineWidth = 0f;
 
     // Settings _____
     public PropertyBlockData properties;
@@ -25,17 +32,26 @@ public class RendererCircuits_RenderBatch
     /// </summary>
     public struct PropertyBlockData
     {
-        public Color color;
-        public bool isExternalConnectorLine;
-        public bool moving;
-        public bool beeping;
+        public enum LineType
+        {
+            InternalLine,
+            ExternalLine,
+            Bond
+        }
 
-        public PropertyBlockData(Color color, bool isExternalConnectorLine, bool moving, bool beeping)
+        public Color color;
+        public LineType lineType;
+        public bool delayed;
+        public bool beeping;
+        public bool animated;
+
+        public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animated)
         {
             this.color = color;
-            this.isExternalConnectorLine = isExternalConnectorLine;
-            this.moving = moving;
+            this.lineType = lineType;
+            this.delayed = delayed;
             this.beeping = beeping;
+            this.animated = animated;
         }
     }
 
@@ -49,8 +65,20 @@ public class RendererCircuits_RenderBatch
     public void Init()
     {
         // Set Material
-        if (properties.isExternalConnectorLine) lineMaterial = SettingsGlobal.circuitBorderActive ? MaterialDatabase.material_circuit_lineConnector : MaterialDatabase.material_circuit_line;
-        else lineMaterial = MaterialDatabase.material_circuit_line;
+        switch (properties.lineType)
+        {
+            case PropertyBlockData.LineType.InternalLine:
+                lineMaterial = MaterialDatabase.material_circuit_line;
+                break;
+            case PropertyBlockData.LineType.ExternalLine:
+                lineMaterial = SettingsGlobal.circuitBorderActive ? MaterialDatabase.material_circuit_lineConnector : MaterialDatabase.material_circuit_line;
+                break;
+            case PropertyBlockData.LineType.Bond:
+                lineMaterial = MaterialDatabase.material_bond_line;
+                break;
+            default:
+                break;
+        }
 
         // Circle PropertyBlocks
         propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color);
@@ -59,6 +87,22 @@ public class RendererCircuits_RenderBatch
             propertyBlock_circuitMatrices_Lines.ApplyTexture(lineMaterial.GetTexture("_Texture2D"));
             lineMaterial = MaterialDatabase.material_circuit_beep;
             zOffset = -0.1f;
+        }
+
+        // Settings
+        switch (properties.lineType)
+        {
+            case PropertyBlockData.LineType.InternalLine:
+                lineWidth = RenderSystem.const_circuitLineWidth;
+                break;
+            case PropertyBlockData.LineType.ExternalLine:
+                lineWidth = RenderSystem.const_circuitConnectorLineWidth;
+                break;
+            case PropertyBlockData.LineType.Bond:
+                lineWidth = RenderSystem.const_bondsLineWidth;
+                break;
+            default:
+                break;
         }
     }
 
@@ -71,21 +115,59 @@ public class RendererCircuits_RenderBatch
         }
         int listNumber = currentIndex / maxArraySize;
         int listIndex = currentIndex % maxArraySize;
-        float lineWidth = properties.isExternalConnectorLine ? RenderSystem.const_circuitConnectorLineWidth : RenderSystem.const_circuitLineWidth;
-        Matrix4x4 matrix = CalculateLineMatrix(globalLineStartPos, globalLineEndPos, lineWidth);
-        circuitMatrices_Lines[listNumber][listIndex] = matrix;
+        circuitMatrices_Lines[listNumber][listIndex] = CalculateLineMatrix(globalLineStartPos, globalLineEndPos);
         currentIndex++;
     }
 
-    private Matrix4x4 CalculateLineMatrix(Vector2 posInitial, Vector2 posEnd, float width)
+    public void AddAnimatedLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Vector2 globalLineStartPos2, Vector2 globalLineEndPos2)
+    {
+        if (currentIndex >= maxArraySize * circuitMatrices_Lines.Count)
+        {
+            // Add an Array
+            circuitMatrices_Lines.Add(new Matrix4x4[maxArraySize]);
+            startPositions1.Add(new Vector2[maxArraySize]);
+            endPositions1.Add(new Vector2[maxArraySize]);
+            startPositions2.Add(new Vector2[maxArraySize]);
+            endPositions2.Add(new Vector2[maxArraySize]);
+        }
+        int listNumber = currentIndex / maxArraySize;
+        int listIndex = currentIndex % maxArraySize;
+        circuitMatrices_Lines[listNumber][listIndex] = CalculateLineMatrix(globalLineStartPos, globalLineEndPos);
+        startPositions1[listNumber][listIndex] = globalLineStartPos;
+        endPositions2[listNumber][listIndex] = globalLineEndPos;
+        startPositions2[listNumber][listIndex] = globalLineStartPos2;
+        endPositions2[listNumber][listIndex] = globalLineEndPos2;
+        currentIndex++;
+    }
+
+    private Matrix4x4 CalculateLineMatrix(Vector2 posInitial, Vector2 posEnd)
     {
         Vector2 vec = posEnd - posInitial;
         float length = vec.magnitude;
         Quaternion q;
         q = Quaternion.FromToRotation(Vector2.right, vec);
-        if (q.eulerAngles.y >= 179.99) q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
-        return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, RenderSystem.zLayer_circuits + zOffset), q, new Vector3(length, width, 1f));
+        if (q.eulerAngles.y >= 179.999) q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
+        return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, RenderSystem.zLayer_circuits + zOffset), q, new Vector3(length, lineWidth, 1f));
     }
+
+    private void CalculateAnimationFrame()
+    {
+        float interpolationPercentage;
+        if (properties.animated) interpolationPercentage = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
+        else interpolationPercentage = 1f;
+        for (int i = 0; i < currentIndex; i++)
+        {
+            int listNumber = currentIndex / maxArraySize;
+            int listIndex = currentIndex % maxArraySize;
+            Vector2 posStart1 = startPositions1[listNumber][listIndex];
+            Vector2 posEnd1 = endPositions1[listNumber][listIndex];
+            Vector2 posStart2 = startPositions1[listNumber][listIndex];
+            Vector2 posEnd2 = endPositions1[listNumber][listIndex];
+            circuitMatrices_Lines[listNumber][listIndex] = CalculateLineMatrix(posStart1 + interpolationPercentage * (posStart2 - posStart1), posEnd2 + interpolationPercentage * (posEnd2 - posEnd1));
+        }
+    }
+
+
 
     /// <summary>
     /// Clears the matrices, so nothing gets rendered anymore. The lists can be filled with new data now.
@@ -112,7 +194,7 @@ public class RendererCircuits_RenderBatch
         else
         {
             // Static / Moving Animation
-            if (properties.moving)
+            if (properties.delayed)
             {
                 // Moving
                 propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
@@ -129,6 +211,18 @@ public class RendererCircuits_RenderBatch
 
     public void Render(bool firstRenderFrame)
     {
+        // Visibility Check
+        if(properties.lineType == PropertyBlockData.LineType.InternalLine || properties.lineType == PropertyBlockData.LineType.ExternalLine)
+        {
+            // Circuits
+            if (RenderSystem.flag_showCircuitView == false) return;
+        }
+        else
+        {
+            // Bonds
+            if (RenderSystem.flag_showBonds == false) return;
+        }
+
         // Timestamp
         if (firstRenderFrame)
         {
@@ -143,6 +237,9 @@ public class RendererCircuits_RenderBatch
 
         // Null Check
         if (currentIndex == 0) return;
+
+        // Animations
+        if(properties.animated) CalculateAnimationFrame();
 
         int listDrawAmount = ((currentIndex - 1) / maxArraySize) + 1;
         for (int i = 0; i < listDrawAmount; i++)

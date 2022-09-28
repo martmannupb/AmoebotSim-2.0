@@ -29,6 +29,7 @@ public class RenderSystem
     public const float const_circuitSingletonPinSize = 0.085f;
     public const float const_circuitPinConnectorSize = 0.02f;
     public const float const_circuitPinBeepSizePercentage = 0.5f;
+    public const float const_bondsLineWidth = 0.1f;
     // Layers
     public const float zLayer_background = 1f;
     public const float ZLayer_particlesBG = 0.1f;
@@ -42,6 +43,7 @@ public class RenderSystem
     // Dynamic Params _____
     public static bool flag_particleRoundOver = true;
     public static bool flag_showCircuitView = true;
+    public static bool flag_showBonds = true;
 
     // Dynamic Data _____
     public static float data_particleMovementFinishedTimestamp;
@@ -59,6 +61,9 @@ public class RenderSystem
     public static bool data_circuitBeepRepeatOn = true;
     // Animation Toggle
     public static bool animationsOn = true;
+    // Trigger Times
+    public static float animation_animationTriggerTimestamp;
+    public static float animation_curAnimationPercentage;
 
 
     // Renderers _____
@@ -79,6 +84,9 @@ public class RenderSystem
 
     public void Render()
     {
+        // Calculate Progress
+        animation_curAnimationPercentage = Mathf.Clamp(Time.timeSinceLevelLoad - animation_animationTriggerTimestamp, 0f, data_hexagonalAnimationDuration) / data_hexagonalAnimationDuration;
+
         // Render
         rendererBG.Render(setting_viewType);
         rendererP.Render(setting_viewType);
@@ -95,8 +103,7 @@ public class RenderSystem
     {
         // Apply Particle Updates
         flag_particleRoundOver = true;
-        // (so far we only use one array and apply updates directly)
-        // (later we could use two arrays here)
+        animation_animationTriggerTimestamp = Time.timeSinceLevelLoad;
     }
 
     /// <summary>
@@ -106,7 +113,7 @@ public class RenderSystem
     public void CircuitCalculationOver()
     {
         // Switch Circuit Instances
-        rendererP.circuitRenderer.SwitchInstances();
+        rendererP.circuitAndBondRenderer.SwitchInstances();
     }
 
     /// <summary>

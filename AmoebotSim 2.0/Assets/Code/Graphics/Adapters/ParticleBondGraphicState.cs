@@ -6,10 +6,10 @@ public struct ParticleBondGraphicState
 {
 
     // Variables (positions before and after the movement)
-    public Vector2Int bondPos1_prev;
-    public Vector2Int bondPos1_after;
-    public Vector2Int bondPos2_prev;
-    public Vector2Int bondPos2_after;
+    public Vector2Int curBondPos1;
+    public Vector2Int curBondPos2;
+    public Vector2Int prevBondPos1;
+    public Vector2Int prevBondPos2;
     
     // Movement Data
     /// <summary>
@@ -17,13 +17,22 @@ public struct ParticleBondGraphicState
     /// </summary>
     public bool addedThisRound;
 
-    public ParticleBondGraphicState(Vector2Int bondPos1_prev, Vector2Int bondPos1_after, Vector2Int bondPos2_prev, Vector2Int bondPos2_after, bool addedThisRound)
+    public ParticleBondGraphicState(Vector2Int curBondPos1, Vector2Int curBondPos2, Vector2Int prevBondPos1, Vector2Int prevBondPos2, bool addedThisRound)
     {
-        this.bondPos1_prev = bondPos1_prev;
-        this.bondPos1_after = bondPos1_after;
-        this.bondPos2_prev = bondPos2_prev;
-        this.bondPos2_after = bondPos2_after;
+        this.curBondPos1 = curBondPos1;
+        this.curBondPos2 = curBondPos2;
+        this.prevBondPos1 = prevBondPos1;
+        this.prevBondPos2 = prevBondPos2;
         this.addedThisRound = addedThisRound;
+    }
+
+    /// <summary>
+    /// The bond is animated if previous and current positions differ.
+    /// </summary>
+    /// <returns></returns>
+    public bool IsAnimated()
+    {
+        return prevBondPos1 != curBondPos1 || prevBondPos2 != curBondPos2;
     }
 }
 

@@ -29,13 +29,13 @@ public class RendererCircuitPins_RenderBatch
     public struct PropertyBlockData
     {
         public Color color;
-        public bool moving;
+        public bool delayed;
         public bool beeping;
 
-        public PropertyBlockData(Color color, bool moving, bool beeping)
+        public PropertyBlockData(Color color, bool delayed, bool beeping)
         {
             this.color = color;
-            this.moving = moving;
+            this.delayed = delayed;
             this.beeping = beeping;
         }
     }
@@ -121,7 +121,7 @@ public class RendererCircuitPins_RenderBatch
 
     public void ApplyUpdates(float animationStartTime)
     {
-        if (properties.moving)
+        if (properties.delayed)
         {
             // Moving
             propertyBlock_circuitMatrices_Pins.ApplyAlphaPercentagesToBlock(0f, 1f); // Transparent to Visible
@@ -141,8 +141,10 @@ public class RendererCircuitPins_RenderBatch
 
     public void Render(bool firstRenderFrame)
     {
+        if (RenderSystem.flag_showCircuitView == false) return;
+
         // Timestamp
-        if(firstRenderFrame)
+        if (firstRenderFrame)
         {
             ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp);
         }
