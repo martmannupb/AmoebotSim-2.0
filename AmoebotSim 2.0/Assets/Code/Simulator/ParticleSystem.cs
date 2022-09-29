@@ -2992,9 +2992,81 @@ public class ParticleSystem : IReplayHistory
         return ip;
     }
 
+    // TODO: Documentation
+    // This is the interface method for adding new particles
+    public InitializationParticle AddInitParticle(Vector2Int tailPos, bool chirality, Direction compassDir, Direction headDirection = Direction.NONE)
+    {
+        InitializationParticle ip = new InitializationParticle(this, tailPos, chirality, compassDir, headDirection);
+
+        if (particleMapInit.ContainsKey(ip.Tail()) || ip.IsExpanded() && particleMapInit.ContainsKey(ip.Head()))
+        {
+            Log.Error("Cannot add particle at " + ip.Tail() + ", " + ip.Head() + ", position is already occupied.");
+            return null;
+        }
+
+        particlesInit.Add(ip);
+        particleMapInit[tailPos] = ip;
+        if (headDirection != Direction.NONE)
+            particleMapInit[ip.Head()] = ip;
+        ip.graphics.AddParticle();
+        ip.graphics.UpdateReset();
+        return ip;
+    }
+
+    // Should not be called from outside
+    public bool TryChangeInitParticleExpansion(InitializationParticle ip, Direction newHeadDir)
+    {
+        if (newHeadDir == Direction.NONE)
+        {
+            if (ip.IsExpanded())
+                particleMapInit.Remove(ip.Head());
+        }
+        else if (!newHeadDir.IsCardinal())
+        {
+            return false;
+        }
+        else
+        {
+            if (!ip.IsExpanded() || newHeadDir != ip.ExpansionDir)
+            {
+                Vector2Int newHeadPos = ParticleSystem_Utils.GetNbrInDir(ip.Tail(), newHeadDir);
+                if (TryGetInitParticleAt(newHeadPos, out _))
+                {
+                    Log.Warning("Cannot expand particle at " + ip.Tail() + " in direction " + newHeadDir + ", position is already occupied.");
+                    return false;
+                }
+                if (ip.IsExpanded())
+                    particleMapInit.Remove(ip.Head());
+                particleMapInit[newHeadPos] = ip;
+            }
+        }
+
+        return true;
+    }
+
     public void RemoveParticle(Particle p)
     {
         Log.Debug("ParticleSystem: Remove Particle called.");
+    }
+
+    /// <summary>
+    /// Tries to get the <see cref="InitializationParticle"/> at the given position.
+    /// </summary>
+    /// <param name="position">The grid position at which to look for the particle.</param>
+    /// <param name="particle">The particle at the given position, if it exists,
+    /// otherwise <c>null</c>.</param>
+    /// <returns><c>true</c> if and only if a particle was found at the given position.</returns>
+    public bool TryGetInitParticleAt(Vector2Int position, out InitializationParticle particle)
+    {
+        if (particleMapInit.TryGetValue(position, out particle))
+        {
+            return true;
+        }
+        else
+        {
+            particle = null;
+            return false;
+        }
     }
 
     /// <summary>

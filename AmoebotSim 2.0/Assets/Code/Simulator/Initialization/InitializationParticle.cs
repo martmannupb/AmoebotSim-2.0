@@ -12,9 +12,50 @@ public class InitializationParticle : IParticleState
 {
     private Vector2Int tailPos;
     private Vector2Int headPos;
+
     private Direction expansionDir;
+    public Direction ExpansionDir
+    {
+        get { return expansionDir; }
+        set
+        {
+            if (system.TryChangeInitParticleExpansion(this, value))
+            {
+                if (value == Direction.NONE)
+                {
+                    headPos = tailPos;
+                }
+                else
+                {
+                    headPos = ParticleSystem_Utils.GetNbrInDir(tailPos, value);
+                }
+                expansionDir = value;
+            }
+        }
+    }
+
     private bool chirality;
+    public bool Chirality
+    {
+        get { return chirality; }
+        set { chirality = value; }
+    }
+
     private Direction compassDir;
+    public Direction CompassDir
+    {
+        get { return compassDir; }
+        set
+        {
+            if (!value.IsCardinal())
+                Log.Warning("Compass direction '" + value + "' is not valid, must be cardinal.");
+            else
+                compassDir = value;
+        }
+    }
+
+
+    public int[] genericParams = new int[Initialization.NumGenericParams];
     public ParticleGraphicsAdapterImpl graphics;
     private ParticleSystem system;
 
@@ -29,8 +70,8 @@ public class InitializationParticle : IParticleState
         else
             headPos = ParticleSystem_Utils.GetNbrInDir(tailPos, expansionDir);
         this.system = system;
-
-        // Add particle to the system and update the visuals of the particle
+        
+        // Add particle to the render system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
     }
 
