@@ -1666,7 +1666,7 @@ public class Particle : IParticleState, IReplayHistory
 
         // Finally set up the graphics info
         p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.UpdateReset();
         return p;
     }
 

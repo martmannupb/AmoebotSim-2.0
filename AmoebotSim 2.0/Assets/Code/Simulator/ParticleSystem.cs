@@ -2078,6 +2078,8 @@ public class ParticleSystem : IReplayHistory
                     else
                         contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).Opposite().ToInt();
                 }
+                else if (p.IsExpanded())
+                    contractionDir = p.GlobalHeadDirectionInt();
 
                 ParticleJointMovementState pjms = p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.jmOffset) : ParticleJointMovementState.None;
                 ParticleMovementState pms = new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), contractionDir, pjms);
