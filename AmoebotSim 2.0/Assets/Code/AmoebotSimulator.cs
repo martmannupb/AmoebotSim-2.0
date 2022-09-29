@@ -126,14 +126,4 @@ public class AmoebotSimulator : MonoBehaviour
         }
     }
 
-    public void ToggleView()
-    {
-        renderSystem.ToggleViewType();
-    }
-
-    public void ToggleCircuits()
-    {
-        renderSystem.ToggleCircuits();
-    }
-
 }

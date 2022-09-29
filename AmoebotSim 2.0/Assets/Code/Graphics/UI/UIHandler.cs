@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine;
+using SFB;
 
 public class UIHandler : MonoBehaviour
 {
@@ -37,12 +38,13 @@ public class UIHandler : MonoBehaviour
     public Button button_toolMove;
     private Color toolColor_active;
     private Color toolColor_inactive;
-    // AntiAliasing
-    public Image image_AAButton;
-    public Sprite sprite_aa0;
-    public Sprite sprite_aa2;
-    public Sprite sprite_aa4;
-    public Sprite sprite_aa8;
+    // Overlay Panel
+    public Image image_viewType;
+    public Sprite sprite_viewTypeCircular;
+    public Sprite sprite_viewTypeHexagonal;
+    public Image image_circuitViewType;
+    public Sprite sprite_circuitViewTypeCircuitsEnabled;
+    public Sprite sprite_circuitViewTypeCircuitsDisabled;
     // Settings/Exit
     public Button button_settings;
     public Button button_exit;
@@ -69,8 +71,6 @@ public class UIHandler : MonoBehaviour
 
     public void InitUI()
     {
-        // Init Visuals
-        UpdateAAButton();
         // Init Sim Speed Slider
         slider_speed.wholeNumbers = true;
         slider_speed.minValue = 0f;
@@ -135,6 +135,22 @@ public class UIHandler : MonoBehaviour
         }
         // JumpCut Button
         button_jumpCut.interactable = uiRound < maxRound && running == false;
+        // View Button Images
+        // View Type
+        switch (sim.renderSystem.GetCurrentViewType())
+        {
+            case ViewType.Hexagonal:
+                if (image_viewType.sprite != sprite_viewTypeHexagonal) image_viewType.sprite = sprite_viewTypeHexagonal;
+                break;
+            case ViewType.Circular:
+                if (image_viewType.sprite != sprite_viewTypeCircular) image_viewType.sprite = sprite_viewTypeCircular;
+                break;
+            default:
+                break;
+        }
+        // Circuit View Type
+        if (sim.renderSystem.IsCircuitViewActive() && image_circuitViewType.sprite != sprite_circuitViewTypeCircuitsEnabled) image_circuitViewType.sprite = sprite_circuitViewTypeCircuitsEnabled;
+        else if (sim.renderSystem.IsCircuitViewActive() == false && image_circuitViewType.sprite != sprite_circuitViewTypeCircuitsDisabled) image_circuitViewType.sprite = sprite_circuitViewTypeCircuitsDisabled;
     }
 
     public void NotifyPlayPause(bool running)
@@ -247,6 +263,60 @@ public class UIHandler : MonoBehaviour
         }
     }
 
+    public void Button_OpenPressed()
+    {
+        if(initializationUI.IsOpen() == false)
+        {
+            bool isSimRunning = sim.running;
+            sim.PauseSim();
+            string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Algorithm State", "", "amalgo", false);
+            if (paths.Length != 0)
+            {
+                if (!sim.running)
+                {
+                    SimulationStateSaveData data = SaveStateUtility.Load(paths[0]);
+                    if (data != null)
+                    {
+                        sim.system.Reset();
+                        sim.system.InitializeFromSaveState(data);
+                        UpdateUI(sim.running, true);
+                    }
+                }
+                else
+                {
+                    Log.Error("Please pause the sim before loading an algorithm state!");
+                }
+            }
+            else
+            {
+                if (isSimRunning) sim.PlaySim();
+            }
+        }
+    }
+
+    public void Button_SavePressed()
+    {
+        if(initializationUI.IsOpen() == false)
+        {
+            // Initialization Handler closed
+            // Save File
+            string path = StandaloneFileBrowser.SaveFilePanel("Save Algorithm State", "", "algorithm", "amalgo");
+            if (path.Equals("") == false)
+            {
+                if (!sim.running)
+                {
+                    SimulationStateSaveData data = sim.system.GenerateSaveData();
+                    SaveStateUtility.Save(data, path);
+                    Log.Entry("Algorithm state has been saved successfully!");
+                }
+                else
+                {
+                    Log.Error("Please pause the sim before saving the algorithm state!");
+                }
+            }
+        }
+    }
+
     public void Button_ToolStandardPressed()
     {
         activeTool = UITool.Standard;
@@ -269,6 +339,16 @@ public class UIHandler : MonoBehaviour
     {
         activeTool = UITool.Move;
         UpdateTools();
+    }
+
+    public void Button_ToggleViewPressed()
+    {
+        sim.renderSystem.ToggleViewType();
+    }
+
+    public void Button_ToggleCircuitViewPressed()
+    {
+        sim.renderSystem.ToggleCircuits();
     }
 
     private void UpdateTools()
@@ -301,40 +381,6 @@ public class UIHandler : MonoBehaviour
     private void SetButtonColor(Button button, Color color)
     {
         button.gameObject.GetComponent<Image>().color = color;
-    }
-
-    private void UpdateAAButton()
-    {
-        int currentAA = sim.renderSystem.GetAntiAliasing();
-        switch (currentAA)
-        {
-            case 0:
-                image_AAButton.sprite = sprite_aa0;
-                break;
-            case 2:
-                image_AAButton.sprite = sprite_aa2;
-                break;
-            case 4:
-                image_AAButton.sprite = sprite_aa4;
-                break;
-            case 8:
-                image_AAButton.sprite = sprite_aa8;
-                break;
-            default:
-                break;
-        }
-    }
-
-    public void ToggleAA()
-    {
-        sim.renderSystem.ToggleAntiAliasing();
-        UpdateAAButton();
-    }
-
-    public void SetAA(int value)
-    {
-        sim.renderSystem.SetAntiAliasing(value);
-        UpdateAAButton();
     }
 
     public void Botton_ExitPressed()

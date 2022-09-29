@@ -151,9 +151,19 @@ public class RenderSystem
         }
     }
 
+    public ViewType GetCurrentViewType()
+    {
+        return setting_viewType;
+    }
+
     public void ToggleCircuits()
     {
         flag_showCircuitView = !flag_showCircuitView;
+    }
+
+    public bool IsCircuitViewActive()
+    {
+        return flag_showCircuitView;
     }
 
     public void SetAntiAliasing(int value)
