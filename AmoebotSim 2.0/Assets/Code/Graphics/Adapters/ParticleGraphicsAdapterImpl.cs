@@ -181,16 +181,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
         Update(false, ParticleJointMovementState.None, false);
     }
-
-    public void Update(ParticleJointMovementState jointMovementState)
-    {
-        if(((Particle)particle).id == 33)
-        {
-            Log.Debug("Here");
-            Log.Debug("Is joint: " + jointMovementState.isJointMovement);
-        }
-        Update(false, jointMovementState, false);
-    }
     
     private void Update(bool forceRenderUpdate, ParticleJointMovementState jointMovementState, bool noAnimation)
     {

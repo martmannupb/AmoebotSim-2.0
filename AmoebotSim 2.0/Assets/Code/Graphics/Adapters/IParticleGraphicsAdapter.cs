@@ -23,14 +23,6 @@ public interface IParticleGraphicsAdapter
     /// <summary>
     /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
     /// Example: A particle has expanded. Call Update() to update the visuals.
-    /// DEPRECATED!
-    /// </summary>
-    /// <param name="jointMovementState">Defines if a joint expansion has taken place and how far the particle is moved. The animation looks and works different in that case.</param>
-    void Update(ParticleJointMovementState jointMovementState);
-
-    /// <summary>
-    /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
-    /// Example: A particle has expanded. Call Update() to update the visuals.
     /// (replaces the old Update() and Update(ParticleJointMovementState jointMovementState) methods)
     /// </summary>
     /// <param name="movementState"></param>
