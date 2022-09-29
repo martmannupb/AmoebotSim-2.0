@@ -2068,12 +2068,20 @@ public class ParticleSystem : IReplayHistory
             if (resetVisuals) p.graphics.UpdateReset();
             else
             {
+                // Direction is expansion direction for expansions and the opposite
+                // movement direction for contractions
                 int contractionDir = -1;
-                if (p.ScheduledMovement != null &&
-                    (p.ScheduledMovement.type == ActionType.CONTRACT_HEAD || p.ScheduledMovement.type == ActionType.CONTRACT_TAIL ||
-                    p.ScheduledMovement.type == ActionType.PULL_HEAD || p.ScheduledMovement.type == ActionType.PULL_TAIL))
-                    contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).ToInt();
-                p.graphics.Update(p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.jmOffset) : ParticleJointMovementState.None);
+                if (p.ScheduledMovement != null)
+                {
+                    if (p.ScheduledMovement.type == ActionType.EXPAND || p.ScheduledMovement.type == ActionType.PUSH)
+                        contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).ToInt();
+                    else
+                        contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).Opposite().ToInt();
+                }
+
+                ParticleJointMovementState pjms = p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.jmOffset) : ParticleJointMovementState.None;
+                ParticleMovementState pms = new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), contractionDir, pjms);
+                p.graphics.Update(pms);
             }
         }
         foreach (Particle p in particles)
