@@ -17,6 +17,7 @@ public class RendererParticles
     // Data _____
     // Particles
     private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
+    private Dictionary<IParticleState, GameObject> particleToParticleTextUIMap = new Dictionary<IParticleState, GameObject>();
 
     public RendererParticles()
     {
@@ -52,7 +53,10 @@ public class RendererParticles
             propertiesToRenderBatchMap.Add(block, renderBatch);
             renderBatch.Particle_Add(graphicalData);
         }
-        if(particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle) == false) particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
+        if(particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle) == false)
+        {
+            particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
+        }
         return true;
     }
 

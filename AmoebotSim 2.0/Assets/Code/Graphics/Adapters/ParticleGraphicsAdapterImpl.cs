@@ -108,18 +108,23 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         this.particle = particle;
         this.renderer = renderer;
     }
-
+    bool alreadyCalled = false;
     /// <summary>
     /// Adds the particle to the renderer. Only needs to be called once to register a particle.
     /// </summary>
     public void AddParticle()
     {
+        if (alreadyCalled) Log.Error("AddParticleCalled twice!");
+        alreadyCalled = true;
         // Check if already added to the system
         if(graphics_isRegistered)
         {
             Log.Error("Error: Particle has already been added!");
         }
 
+        // Add Particle Text UI
+        WorldSpaceUIHandler.instance.AddParticleTextUI(particle, state_cur.position1);
+        // Register Particle
         graphics_isRegistered = true;
         if (particle.IsParticleColorSet()) graphics_color = particle.GetParticleColor();
         else graphics_color = defColor;
@@ -128,11 +133,35 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     }
 
     /// <summary>
+    /// Adds the particle to the renderer. Only needs to be called once to register a particle.
+    /// </summary>
+    public void AddParticle(ParticleMovementState movementState)
+    {
+        // Check if already added to the system
+        if (graphics_isRegistered)
+        {
+            Log.Error("Error: Particle has already been added!");
+        }
+
+        // Add Particle Text UI
+        WorldSpaceUIHandler.instance.AddParticleTextUI(particle, state_cur.position1);
+        // Register Particle
+        graphics_isRegistered = true;
+        if (particle.IsParticleColorSet()) graphics_color = particle.GetParticleColor();
+        else graphics_color = defColor;
+        renderer.Particle_Add(this);
+        Update(true, movementState, true);
+    }
+
+    /// <summary>
     /// Removes a particle from the renderer. Only needs to be called once when the particle is removed from the system.
     /// </summary>
     public void RemoveParticle()
     {
+        alreadyCalled = false;
         renderer.Particle_Remove(this);
+        // Remove Particle Text UI
+        WorldSpaceUIHandler.instance.RemoveParticleTextUI(particle);
     }
 
     public void Update(ParticleMovementState movementState)
@@ -175,11 +204,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
             || state_prev.jointMovementState.isJointMovement
             || state_cur.jointMovementState.isJointMovement
             || forceRenderUpdate) graphics_colorRenderer.UpdateMatrix(this, false);
-    }
-
-    public void Update()
-    {
-        Update(false, ParticleJointMovementState.None, false);
     }
     
     private void Update(bool forceRenderUpdate, ParticleJointMovementState jointMovementState, bool noAnimation)

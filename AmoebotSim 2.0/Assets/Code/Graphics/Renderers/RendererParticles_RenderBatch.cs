@@ -136,7 +136,6 @@ public class RendererParticles_RenderBatch
             particleMatricesCircle_ConnectionMatrices_Contracting.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particlePositionOffsets_jointMovementsInv.Add(new Vector3[maxArraySize]);
             particleReferences.Add(new ParticleGraphicsAdapterImpl[maxArraySize]);
-
         }
 
         // References
@@ -335,21 +334,25 @@ public class RendererParticles_RenderBatch
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracted:
                 particleMatricesCircle_Contracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position1world, rotation, Vector3.one);
                 particleMatricesPins_Contracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(pin_position1world, rotation, Vector3.one);
+                WorldSpaceUIHandler.instance.ParticleUpdate(gd.particle, particle_position1world);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Expanded:
                 particleMatricesCircle_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position2world, rotation, Vector3.one);
                 particleMatricesPins_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(pin_position2world, rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position2world + new Vector3(0f, 0f, 0.1f), rotation, Vector3.one);
+                WorldSpaceUIHandler.instance.ParticleUpdate(gd.particle, particle_position2world);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Expanding:
                 particleMatricesCircle_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position2world, rotation, Vector3.one);
                 particleMatricesPins_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(pin_position2world, rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position2world + new Vector3(0f, 0f, 0.1f), rotation, Vector3.one);
+                WorldSpaceUIHandler.instance.ParticleUpdate(gd.particle, particle_position2world);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracting:
                 particleMatricesCircle_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position1world, rotation, Vector3.one);
                 particleMatricesPins_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(pin_position1world, rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position1world + new Vector3(0f, 0f, 0.1f), rotation, Vector3.one);
+                WorldSpaceUIHandler.instance.ParticleUpdate(gd.particle, particle_position1world);
                 break;
             default:
                 break;

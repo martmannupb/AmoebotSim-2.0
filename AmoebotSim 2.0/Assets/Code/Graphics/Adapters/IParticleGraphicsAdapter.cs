@@ -10,15 +10,16 @@ public interface IParticleGraphicsAdapter
     /// <summary>
     /// Adds and initializes the graphics of the particle. Call this each time a new particle has been added to the RenderSystem.
     /// Afterwards use Update() repeatedly to update the particle visuals.
+    /// DEPRECATED! (use AddParticle(ParticleMovementState movementState) instead)
     /// </summary>
     void AddParticle();
 
     /// <summary>
-    /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
-    /// Example: A particle has expanded. Call Update() to update the visuals.
-    /// DEPRECATED!
+    /// Adds and initializes the graphics of the particle. Call this each time a new particle has been added to the RenderSystem.
+    /// Afterwards use Update() repeatedly to update the particle visuals.
     /// </summary>
-    void Update();
+    /// <param name="movementState"></param>
+    void AddParticle(ParticleMovementState movementState);
 
     /// <summary>
     /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
