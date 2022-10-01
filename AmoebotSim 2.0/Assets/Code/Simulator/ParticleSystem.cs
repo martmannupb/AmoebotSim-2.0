@@ -1157,6 +1157,8 @@ public class ParticleSystem : IReplayHistory
 
             // Neighbors have been found
             // Now check if the particle's movement agrees with its neighbors
+            // While doing this, we compute the movement of all bonds that have not been considered yet,
+            // i.e., all bonds to neighbors that have not been processed
             for (int label = 0; label < numNbrs; label++)
             {
                 Particle nbr = nbrParts[label];
@@ -1175,13 +1177,26 @@ public class ParticleSystem : IReplayHistory
                     bool weMarked = p.markedBondsGlobal[label];
                     bool nbrMarked = nbr.markedBondsGlobal[nbrLabels[label]];
 
+                    // Initialize bond info
+                    Vector2Int bondStart1 = p.Tail();
+                    Vector2Int bondEnd1 = nbr.Tail();
+                    Vector2Int bondStart2 = p.Tail() + p.jmOffset;
+                    Vector2Int bondEnd2 = nbr.Tail() + p.jmOffset;
+
                     // If we have marked the bond and want to move, we will definitely apply our own movement offset
                     if (weMove && weMarked)
+                    {
                         nbrOffset = p.movementOffset;
+                        // Bond moves as well
+                        bondStart2 += p.movementOffset;
+                        bondEnd2 += p.movementOffset;
+                    }
 
                     // If the neighbor has marked the bond and wants to move, its offset has to be applied in reverse direction
                     if (nbrMove && nbrMarked)
                         nbrOffset -= nbr.movementOffset;
+
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1, true));
                 }
                 // We are contracted and the neighbor is expanded
                 else if (p.IsContracted() && nbr.IsExpanded())
@@ -1239,7 +1254,9 @@ public class ParticleSystem : IReplayHistory
                         nbrLabels[label], secondLabel != -1 ? nbrLabels[secondLabel] : -1,
                         label, secondLabel,
                         ParticleSystem_Utils.IsHeadLabel(label, p.GlobalHeadDirection()),
-                        secondLabel != -1 && ParticleSystem_Utils.IsHeadLabel(secondLabel, p.GlobalHeadDirection()));
+                        secondLabel != -1 && ParticleSystem_Utils.IsHeadLabel(secondLabel, p.GlobalHeadDirection()),
+                        // Associate bond with us, not with the neighbor
+                        false);
                 }
                 // We and the neighbor are both expanded
                 else if (p.IsExpanded() && nbr.IsExpanded())
@@ -1269,6 +1286,12 @@ public class ParticleSystem : IReplayHistory
                             numBonds++;
                         }
                     }
+
+                    // Prepare bond info
+                    Vector2Int ourBond1_1 = bondOwnHead[0] ? p.Head() : p.Tail();
+                    Vector2Int nbrBond1_1 = bondNbrHead[0] ? nbr.Head() : nbr.Tail();
+                    Vector2Int ourBond1_2 = ourBond1_1 + p.jmOffset;
+                    Vector2Int nbrBond1_2 = nbrBond1_1 + p.jmOffset;
 
                     // Exactly one bond:
                     //      Apply our movement and the inverted neighbor movement
@@ -1302,6 +1325,9 @@ public class ParticleSystem : IReplayHistory
                             movementAction.type == ActionType.CONTRACT_HEAD || movementAction.type == ActionType.CONTRACT_TAIL))
                         {
                             nbrOffset += p.movementOffset;
+                            // Also apply offset to bond
+                            ourBond1_2 += p.movementOffset;
+                            nbrBond1_2 += p.movementOffset;
                         }
 
                         // Apply inverted neighbor movement offset
@@ -1312,9 +1338,18 @@ public class ParticleSystem : IReplayHistory
                         {
                             nbrOffset -= nbr.movementOffset;
                         }
+
+                        // Store the bond info
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, true));
                     }
                     else if (numBonds == 2)
                     {
+                        // Prepare bond info for second bond
+                        Vector2Int ourBond2_1 = bondOwnHead[1] ? p.Head() : p.Tail();
+                        Vector2Int nbrBond2_1 = bondNbrHead[1] ? nbr.Head() : nbr.Tail();
+                        Vector2Int ourBond2_2 = ourBond2_1 + p.jmOffset;
+                        Vector2Int nbrBond2_2 = nbrBond2_1 + p.jmOffset;
+
                         // Case distinction: Either the two bonds share one end or they do not
                         // They share an end iff the two bond labels are consecutive
                         if (bondLabels[1] == (bondLabels[0] + 1) % 10)
@@ -1329,6 +1364,15 @@ public class ParticleSystem : IReplayHistory
                                 nbrOffset += JointMovementExpandedTwoBonds(p, nbr, bondOwnHead[0],
                                     p.markedBondsGlobal[bondLabels[0]], p.markedBondsGlobal[bondLabels[1]],
                                     nbr.markedBondsGlobal[nbrHeadLabel], nbr.markedBondsGlobal[nbrTailLabel]);
+
+                                // We have to move both bonds if we move and the bonds are not at our origin
+                                if (movementAction != null && (bondOwnHead[0] ^ p.isHeadOrigin))
+                                {
+                                    ourBond1_2 += p.movementOffset;
+                                    nbrBond1_2 += p.movementOffset;
+                                    ourBond2_2 += p.movementOffset;
+                                    nbrBond2_2 += p.movementOffset;
+                                }
                             }
                             else
                             {
@@ -1384,7 +1428,44 @@ public class ParticleSystem : IReplayHistory
                             {
                                 nbrOffset += p.movementOffset;
                             }
+
+                            // The moving bond needs an offset
+                            if (weMove)
+                            {
+                                if (movementAction.type == ActionType.CONTRACT_HEAD || movementAction.type == ActionType.PULL_HEAD)
+                                {
+                                    // Tail moves
+                                    if (bondOwnHead[0])
+                                    {
+                                        ourBond2_2 += p.movementOffset;
+                                        nbrBond2_2 += p.movementOffset;
+                                    }
+                                    else
+                                    {
+                                        ourBond1_2 += p.movementOffset;
+                                        nbrBond1_2 += p.movementOffset;
+                                    }
+                                }
+                                else
+                                {
+                                    // Head moves
+                                    if (bondOwnHead[0])
+                                    {
+                                        ourBond1_2 += p.movementOffset;
+                                        nbrBond1_2 += p.movementOffset;
+                                    }
+                                    else
+                                    {
+                                        ourBond2_2 += p.movementOffset;
+                                        nbrBond2_2 += p.movementOffset;
+                                    }
+                                }
+                            }
                         }
+
+                        // Store the bond info
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, true));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, true));
                     }
                     else
                     {
@@ -1431,6 +1512,20 @@ public class ParticleSystem : IReplayHistory
                                 }
                             }
                         }
+
+                        // We still need to draw the bonds
+                        Vector2Int ourBond2_1 = bondOwnHead[1] ? p.Head() : p.Tail();
+                        Vector2Int nbrBond2_1 = bondNbrHead[1] ? nbr.Head() : nbr.Tail();
+                        Vector2Int ourBond2_2 = ourBond2_1 + p.jmOffset;
+                        Vector2Int nbrBond2_2 = nbrBond2_1 + p.jmOffset;
+                        Vector2Int ourBond3_1 = bondOwnHead[2] ? p.Head() : p.Tail();
+                        Vector2Int nbrBond3_1 = bondNbrHead[2] ? nbr.Head() : nbr.Tail();
+                        Vector2Int ourBond3_2 = ourBond3_1 + p.jmOffset;
+                        Vector2Int nbrBond3_2 = nbrBond3_1 + p.jmOffset;
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, true));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, true));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1, true));
+
                     }
                 }
 
@@ -1554,14 +1649,23 @@ public class ParticleSystem : IReplayHistory
     /// expanded particle.</param>
     /// <param name="eHead2">Flag indicating whether the second bond is incident to the head of the
     /// expanded particle. Must be <c>false</c> if there is no second bond.</param>
+    /// <param name="bondForContracted">Flag indicating whether the bond info should be
+    /// associated with the contracted particle.</param>
     /// <returns>The global offset vector of the expanded particle's origin relative to the
     /// contracted particle's origin.</returns>
     private Vector2Int JointMovementContractedExpanded(Particle c, Particle e, Direction bondDir, Direction secondBondDir,
-        int cLabel1, int cLabel2, int eLabel1, int eLabel2, bool eHead1, bool eHead2)
+        int cLabel1, int cLabel2, int eLabel1, int eLabel2, bool eHead1, bool eHead2,
+        bool bondForContracted = true)
     {
         Vector2Int eOffset = Vector2Int.zero;
         ParticleAction cAction = c.ScheduledMovement;
         ParticleAction eAction = e.ScheduledMovement;
+
+        // Setup bond info (for first bond only)
+        Vector2Int cBond1 = c.Tail();
+        Vector2Int eBond1 = eHead1 ? e.Head() : e.Tail();
+        Vector2Int cBond2 = cBond1;
+        Vector2Int eBond2 = eBond1;
 
         if (secondBondDir == Direction.NONE)
         {
@@ -1584,6 +1688,9 @@ public class ParticleSystem : IReplayHistory
             if (weWantHandover)
             {
                 // Easy: No offset is applied at all
+                // Bond rotates, both ends are moved with the particles
+                cBond2 += c.movementOffset;
+                eBond2 += e.movementOffset;
             }
             else
             {
@@ -1592,6 +1699,12 @@ public class ParticleSystem : IReplayHistory
                 if (cAction != null && c.markedBondsGlobal[cLabel1])
                 {
                     eOffset += c.movementOffset;
+                    // This only affects the bond if it is associated with the contracted particle
+                    if (bondForContracted)
+                    {
+                        cBond2 += c.movementOffset;
+                        eBond2 += c.movementOffset;
+                    }
                 }
                 // Neighbor offset only applies if we are not bonded to its origin
                 if (eAction != null &&
@@ -1608,8 +1721,25 @@ public class ParticleSystem : IReplayHistory
                     {
                         // Bond is not marked for handover transferral, movement creates offset
                         eOffset -= e.movementOffset;
+
+                        // Have to move the bond if it belongs to the expanded particle
+                        if (!bondForContracted)
+                        {
+                            cBond2 += e.movementOffset;
+                            eBond2 += e.movementOffset;
+                        }
                     }
                 }
+            }
+
+            // Store the bond info
+            if (bondForContracted)
+            {
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, true));
+            }
+            else
+            {
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, true));
             }
         }
         else
@@ -1637,6 +1767,10 @@ public class ParticleSystem : IReplayHistory
                 Debug.LogError("Error: Disagreement on handover with two bonds");
                 throw new System.InvalidOperationException("Conflict during movements");
             }
+            
+            // Prepare info for second bond
+            Vector2Int cBond2_2 = cBond1;
+            Vector2Int eBond2_2 = eBond1;
 
             bool handoverFirst = weWantHandoverFirst && nbrWantsHandoverFirst;
             bool handoverSecond = weWantHandoverSecond && nbrWantsHandoverSecond;
@@ -1645,11 +1779,23 @@ public class ParticleSystem : IReplayHistory
             {
                 // We want a handover on one of the two bonds
                 // Easy: No offset must be applied
-                // But we have to check that the other bond is not marked
+                // But we have to check that the other bond is not marked by the contracted particle
                 if (handoverFirst && c.markedBondsGlobal[cLabel2] || handoverSecond && c.markedBondsGlobal[cLabel1])
                 {
                     Debug.LogError("Error: Handover with two bonds and one bond is marked");
                     throw new System.InvalidOperationException("Conflict during movements");
+                }
+
+                // We also have to rotate the corresponding bond
+                if (handoverFirst)
+                {
+                    cBond2 += c.movementOffset;
+                    eBond2 += e.movementOffset;
+                }
+                else
+                {
+                    cBond2_2 += c.movementOffset;
+                    eBond2_2 += e.movementOffset;
                 }
             }
             else
@@ -1682,8 +1828,30 @@ public class ParticleSystem : IReplayHistory
 
                     // If the bonds are marked, we apply our offset
                     if (c.markedBondsGlobal[cLabel1])
+                    {
                         eOffset += c.movementOffset;
+                        // Also apply the offset to the bonds if they are associated to the contracted particle
+                        if (bondForContracted)
+                        {
+                            cBond2 += c.movementOffset;
+                            eBond2 += c.movementOffset;
+                            cBond2_2 += c.movementOffset;
+                            eBond2_2 += c.movementOffset;
+                        }
+                    }
                 }
+            }
+
+            // Store the bond info
+            if (bondForContracted)
+            {
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, true));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1, true));
+            }
+            else
+            {
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, true));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1, cBond1, true));
             }
         }
         return eOffset;
@@ -2024,6 +2192,8 @@ public class ParticleSystem : IReplayHistory
             p.markedForAutomaticBonds = false;
             // Also reset attribute intermediate values
             p.ResetAttributeIntermediateValues();
+
+            p.bondGraphicInfo.Clear();
         }
     }
 
@@ -2085,6 +2255,11 @@ public class ParticleSystem : IReplayHistory
                 ParticleMovementState pms = new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), contractionDir, pjms);
                 p.graphics.Update(pms);
             }
+        }
+        foreach (Particle p in particles)
+        {
+            foreach (ParticleBondGraphicState pbgs in p.bondGraphicInfo)
+                p.graphics.BondUpdate(pbgs);
         }
         foreach (Particle p in particles)
         {

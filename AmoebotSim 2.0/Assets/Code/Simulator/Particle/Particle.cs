@@ -270,6 +270,9 @@ public class Particle : IParticleState, IReplayHistory
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
 
+    // Stores visualization info about some of the bonds incident to this particle
+    public List<ParticleBondGraphicState> bondGraphicInfo = new List<ParticleBondGraphicState>();
+
     public Particle(ParticleSystem system, Vector2Int pos, Direction compassDir = Direction.NONE, bool chirality = true, Direction initialHeadDir = Direction.NONE)
     {
         this.system = system;
