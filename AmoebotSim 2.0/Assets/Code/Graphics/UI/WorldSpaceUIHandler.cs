@@ -50,8 +50,8 @@ public class WorldSpaceUIHandler : MonoBehaviour
         instance = this;
 
         // Test
-        DisplayText(TextType.Text, "Hi");
-        HideAll();
+        DisplayText(TextType.Text, "Contract");
+        //HideAll();
     }
 
     public enum TextType
@@ -156,7 +156,7 @@ public class WorldSpaceUIHandler : MonoBehaviour
     private void UpdateParticleTextPosition(IParticleState particle, Vector2 particlePosition)
     {
         ParticleTextUIData data = particleTextUIData[particle];
-        data.go.transform.position = new Vector3(particlePosition.x, particlePosition.y, RenderSystem.zLayer_worldSpaceUI);
+        data.go.transform.position = new Vector3(particlePosition.x, particlePosition.y, 0f); //RenderSystem.zLayer_worldSpaceUI); // this somehow prevents automatic batching
         data.pos = new Vector2(particlePosition.x, particlePosition.y);
     }
 
@@ -197,7 +197,7 @@ public class WorldSpaceUIHandler : MonoBehaviour
     {
         GameObject go;
         if (pool_particleTextUI.Count > 0) go = pool_particleTextUI.Pop();
-        else go = Instantiate<GameObject>(UIDatabase.prefab_worldSpace_particleTextUI, new Vector3(0f, 0f, RenderSystem.zLayer_worldSpaceUI), Quaternion.identity, go_worldSpaceUI.transform);
+        else go = Instantiate<GameObject>(UIDatabase.prefab_worldSpace_particleTextUI, new Vector3(0f, 0f, 0f), Quaternion.identity, go_worldSpaceUI.transform);
         go.SetActive(display_isVisible && isVisible);
         particleTextUIData.Add(particle, new ParticleTextUIData(go, Vector2.zero, isVisible));
         return go;

@@ -16,6 +16,7 @@ public class UIHandler : MonoBehaviour
     public InitializationUIHandler initializationUI;
 
     // UI Objects =====
+    public GameObject ui;
     // Play/Pause
     public Image image_playPauseButton;
     public Sprite sprite_play;
@@ -39,12 +40,16 @@ public class UIHandler : MonoBehaviour
     private Color toolColor_active;
     private Color toolColor_inactive;
     // Overlay Panel
+    public Button button_viewType;
     public Image image_viewType;
     public Sprite sprite_viewTypeCircular;
     public Sprite sprite_viewTypeHexagonal;
+    public Button button_circuitViewType;
     public Image image_circuitViewType;
     public Sprite sprite_circuitViewTypeCircuitsEnabled;
     public Sprite sprite_circuitViewTypeCircuitsDisabled;
+    private Color overlayColor_active;
+    private Color overlayColor_inactive;
     // Settings/Exit
     public Button button_settings;
     public Button button_exit;
@@ -83,7 +88,10 @@ public class UIHandler : MonoBehaviour
         // Init Colors
         if (button_toolStandard != null) toolColor_active = button_toolStandard.gameObject.GetComponent<Image>().color;
         if (button_toolAdd != null) toolColor_inactive = button_toolAdd.gameObject.GetComponent<Image>().color;
+        if (button_viewType != null) overlayColor_active = button_circuitViewType.gameObject.GetComponent<Image>().color;
+        overlayColor_inactive = toolColor_inactive;
     }
+        
 
     public void Update()
     {
@@ -91,6 +99,48 @@ public class UIHandler : MonoBehaviour
 
         UpdateUI(sim.running);
         particleUI.UpdateUI();
+
+        ProcessInputs();
+    }
+
+    private float timestamp_hidden;
+
+    private void ProcessInputs()
+    {
+        // Process Inputs
+        if(Input.GetKey(KeyCode.LeftControl))
+        {
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                // Hide UI
+                HideUI();
+            }
+            if(Input.GetKeyDown(KeyCode.C))
+            {
+                // Screenshot
+                Button_ScreenshotPressed();
+            }
+            if(Input.GetKeyDown(KeyCode.S))
+            {
+                // Save
+                Button_SavePressed();
+            }
+            if(Input.GetKeyDown(KeyCode.O))
+            {
+                // Open
+                Button_OpenPressed();
+            }
+            if(Input.GetKeyDown(KeyCode.Q))
+            {
+                // Quit
+                Botton_ExitPressed();
+            }
+        }
+        else if (Input.GetKeyDown(KeyCode.H))
+        {
+            // Show UI
+            ShowUI();
+        }
     }
 
     private void UpdateUI(bool running)
@@ -149,8 +199,8 @@ public class UIHandler : MonoBehaviour
                 break;
         }
         // Circuit View Type
-        if (sim.renderSystem.IsCircuitViewActive() && image_circuitViewType.sprite != sprite_circuitViewTypeCircuitsEnabled) image_circuitViewType.sprite = sprite_circuitViewTypeCircuitsEnabled;
-        else if (sim.renderSystem.IsCircuitViewActive() == false && image_circuitViewType.sprite != sprite_circuitViewTypeCircuitsDisabled) image_circuitViewType.sprite = sprite_circuitViewTypeCircuitsDisabled;
+        if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
+        else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
     }
 
     public void NotifyPlayPause(bool running)
@@ -158,6 +208,17 @@ public class UIHandler : MonoBehaviour
         image_playPauseButton.sprite = running ? sprite_pause : sprite_play;
         UpdateUI(running, true);
     }
+
+    public void ShowUI()
+    {
+        ui.SetActive(true);
+    }
+    
+    public void HideUI()
+    {
+        ui.SetActive(false);
+    }
+
 
 
 
@@ -317,6 +378,15 @@ public class UIHandler : MonoBehaviour
         }
     }
 
+    public void Button_ScreenshotPressed()
+    {
+        string path = StandaloneFileBrowser.SaveFilePanel("Save Screenshot", "", "AmoebotScreenshot", "png");
+        if(path.Equals("") == false)
+        {
+            ScreenCapture.CaptureScreenshot(path);
+        }
+    }
+
     public void Button_ToolStandardPressed()
     {
         activeTool = UITool.Standard;
@@ -381,6 +451,12 @@ public class UIHandler : MonoBehaviour
     private void SetButtonColor(Button button, Color color)
     {
         button.gameObject.GetComponent<Image>().color = color;
+    }
+
+    public void Button_CameraCenterPressed()
+    {
+        Camera.main.transform.position = new Vector3(0f, 0f, Camera.main.transform.position.z); // dummy
+        Log.Debug("Todo: Implement center camera to root particle.");
     }
 
     public void Botton_ExitPressed()
