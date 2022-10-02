@@ -1092,6 +1092,7 @@ public class ParticleSystem : IReplayHistory
             Particle[] nbrParts = new Particle[numNbrs];
             bool[] nbrHead = new bool[numNbrs]; // True if the neighbor's head is at this position
             int[] nbrLabels = new int[numNbrs]; // Stores global neighbor label opposite of our label
+            bool[] bondNbrs = new bool[numNbrs];    // True wherever we have a bonded neighbor
 
             // If a handover is scheduled, also ensure that there is a bond to the
             // partner in the handover
@@ -1112,7 +1113,6 @@ public class ParticleSystem : IReplayHistory
                 Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
                 bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
                 Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
-                bool haveBondedNeighbor = false;
                 if (particleMap.TryGetValue(nbrPos, out Particle nbr))
                 {
                     // We have a neighbor at this location
@@ -1136,7 +1136,7 @@ public class ParticleSystem : IReplayHistory
                     // Add the neighbor to the list if there is a bond and the neighbor has not been processed yet
                     if (bondsActive)
                     {
-                        haveBondedNeighbor = true;
+                        bondNbrs[label] = true;
                         if (!nbr.processedJointMovement)
                         {
                             nbrParts[label] = nbr;
@@ -1147,7 +1147,7 @@ public class ParticleSystem : IReplayHistory
                 }
 
                 // Error if there is no neighbor here although a handover is scheduled
-                if (label == handoverLabelToCheck && !haveBondedNeighbor)
+                if (label == handoverLabelToCheck && !bondNbrs[label])
                 {
                     Debug.LogError("Error: Particle at position " + p.Head() + ", " + p.Tail() + " has scheduled handover at label " + handoverLabelToCheck
                         + " but has no neighbor at that label");
@@ -1196,7 +1196,7 @@ public class ParticleSystem : IReplayHistory
                     if (nbrMove && nbrMarked)
                         nbrOffset -= nbr.movementOffset;
 
-                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1, true));
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1, !p.bondsAfterRound[label]));
                 }
                 // We are contracted and the neighbor is expanded
                 else if (p.IsContracted() && nbr.IsExpanded())
@@ -1340,7 +1340,7 @@ public class ParticleSystem : IReplayHistory
                         }
 
                         // Store the bond info
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, true));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, !p.bondsAfterRound[bondLabels[0]]));
                     }
                     else if (numBonds == 2)
                     {
@@ -1464,8 +1464,8 @@ public class ParticleSystem : IReplayHistory
                         }
 
                         // Store the bond info
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, true));
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, true));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, !p.bondsAfterRound[bondLabels[0]]));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, !p.bondsAfterRound[bondLabels[1]]));
                     }
                     else
                     {
@@ -1522,9 +1522,9 @@ public class ParticleSystem : IReplayHistory
                         Vector2Int nbrBond3_1 = bondNbrHead[2] ? nbr.Head() : nbr.Tail();
                         Vector2Int ourBond3_2 = ourBond3_1 + p.jmOffset;
                         Vector2Int nbrBond3_2 = nbrBond3_1 + p.jmOffset;
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, true));
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, true));
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1, true));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, !p.bondsAfterRound[bondLabels[0]]));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, !p.bondsAfterRound[bondLabels[1]]));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1, !p.bondsAfterRound[bondLabels[2]]));
 
                     }
                 }
@@ -1550,7 +1550,6 @@ public class ParticleSystem : IReplayHistory
                     nbr.queuedForJMProcessing = true;
                 }
             }
-
 
             // Neighbors have been handled, now compute our location in the new particle system
             // and place it if the location is not already occupied
@@ -1587,6 +1586,132 @@ public class ParticleSystem : IReplayHistory
                     throw new System.InvalidOperationException();
                 }
                 newPositions[pos] = p;
+            }
+
+            // Finally, compute the bonds we will have at the start of the next round
+            if (movementAction == null)
+            {
+                // No movement: Just copy the current set of bonds
+                // We have a bond wherever we found a neighbor with a bond
+                for (int l = 0; l < numNbrs; l++)
+                {
+                    p.bondsAfterRound[l] = bondNbrs[l];
+                }
+            }
+            else if (movementAction.type == ActionType.EXPAND || movementAction.type == ActionType.PUSH)
+            {
+                // Expansion movement: Have to set values for 10 labels based on current bonds
+                // and potential handovers
+                Direction globalMoveDir = ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality);
+                // Bond opposite of movement direction always stays where it is
+                int curLabel = ParticleSystem_Utils.GetLabelInDir(globalMoveDir.Opposite(), Direction.NONE);
+                int newLabel = ParticleSystem_Utils.GetLabelInDir(globalMoveDir.Opposite(), globalMoveDir, false);
+                p.bondsAfterRound[newLabel] = bondNbrs[curLabel];
+
+                // The 4 potential bonds that are not in movement direction can move or stay
+                foreach (int turns in new int[] { 1, 2, 4, 5 })
+                {
+                    Direction dir = globalMoveDir.Rotate60(turns);
+                    curLabel = ParticleSystem_Utils.GetLabelInDir(dir, Direction.NONE);
+                    int newLabelHead = ParticleSystem_Utils.GetLabelInDir(dir, globalMoveDir, true);
+                    int newLabelTail = ParticleSystem_Utils.GetLabelInDir(dir, globalMoveDir, false);
+
+                    p.bondsAfterRound[newLabelHead] = false;
+                    p.bondsAfterRound[newLabelTail] = false;
+
+                    // If we have a bond, one of the two resulting bonds will be true
+                    // Head if the bond is marked, tail otherwise
+                    if (bondNbrs[curLabel])
+                    {
+                        p.bondsAfterRound[p.markedBondsGlobal[curLabel] ? newLabelHead : newLabelTail] = true;
+                    }
+                }
+
+                // Bond in expansion direction has different behavior based on whether or not we perform a handover
+                curLabel = ParticleSystem_Utils.GetLabelInDir(globalMoveDir, Direction.NONE);
+                newLabel = ParticleSystem_Utils.GetLabelInDir(globalMoveDir, globalMoveDir, true);
+                p.bondsAfterRound[newLabel] = false;
+                if (bondNbrs[curLabel])
+                {
+                    if (movementAction.type == ActionType.EXPAND)
+                    {
+                        // Regular expansion: The bond is implicitly marked and moves
+                        p.bondsAfterRound[newLabel] = true;
+                    }
+                    else
+                    {
+                        // Handover: We have an expanded neighbor here and its expansion direction determines
+                        // where the bond will point
+                        // Additionally, if the neighbor has marked any non-origin bonds, they are transferred to us
+                        Vector2Int nbrNode = ParticleSystem_Utils.GetNbrInDir(p.Tail(), globalMoveDir);
+                        // Must get the neighbor manually because it may have been removed from the neighbor list
+                        Particle nbr = particleMap[nbrNode];
+                        Direction nbrMoveDir = nbrHead[curLabel] ? nbr.GlobalTailDirection() : nbr.GlobalHeadDirection();
+                        newLabel = ParticleSystem_Utils.GetLabelInDir(nbrMoveDir, globalMoveDir, true);
+                        p.bondsAfterRound[newLabel] = true;
+
+                        // Now check for marked bonds of neighbor
+                        for (int i = 0; i < 6; i++)
+                        {
+                            Direction d = DirectionHelpers.Cardinal(i);
+                            if (d == nbrMoveDir || d == globalMoveDir.Opposite())
+                                continue;
+
+                            // If the neighbor has a marked bond here, this bond will be transferred to us
+                            // We must also check if the neighbor's neighbor has an active bond here
+                            int nbrLabel = ParticleSystem_Utils.GetLabelInDir(d, nbr.GlobalHeadDirection(), nbrHead[curLabel]);
+                            if (nbr.activeBondsGlobal[nbrLabel] && nbr.markedBondsGlobal[nbrLabel])
+                            {
+                                // If the neighbor's neighbor has an active bond here, this bond will be transferred to us
+                                Vector2Int nbrNbrPos = ParticleSystem_Utils.GetNbrInDir(nbrNode, d);
+                                if (TryGetParticleAt(nbrNbrPos, out Particle nbrNbr))
+                                {
+                                    int nbrNbrLabel = ParticleSystem_Utils.GetLabelInDir(d.Opposite(), nbrNbr.GlobalHeadDirection(), nbrNbr.Head() == nbrNbrPos);
+                                    if (nbrNbr.activeBondsGlobal[nbrNbrLabel])
+                                    {
+                                        newLabel = ParticleSystem_Utils.GetLabelInDir(d, globalMoveDir, true);
+                                        p.bondsAfterRound[newLabel] = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Contraction movement: Set values for 6 bonds based on current 10 bonds and potential handover
+                // Default value is false
+                for (int i = 0; i < 6; i++)
+                    p.bondsAfterRound[i] = false;
+
+                // Get handover information
+                bool handover = movementAction.type == ActionType.PULL_HEAD || movementAction.type == ActionType.PULL_TAIL;
+                Direction handoverDir = ParticleSystem_Utils.LocalToGlobalDir(movementAction.localDir, p.comDir, p.chirality);
+                int handoverLabel = handover ?
+                    ParticleSystem_Utils.GetLabelInDir(handoverDir, globalHeadDir, movementAction.type == ActionType.PULL_TAIL)
+                    : -1;
+
+                // If we perform a handover, the bond will rotate
+                if (handover)
+                {
+                    Direction d = movementAction.type == ActionType.PULL_HEAD ? p.GlobalTailDirection() : globalHeadDir;
+                    p.bondsAfterRound[ParticleSystem_Utils.GetLabelInDir(d, Direction.NONE)] = true;
+                }
+
+                for (int l = 0; l < 10; l++)
+                {
+                    if (!p.activeBondsGlobal[l] || l == handoverLabel)
+                        continue;
+                    Direction d = ParticleSystem_Utils.GetDirOfLabel(l, globalHeadDir);
+                    bool isHeadLabel = ParticleSystem_Utils.IsHeadLabel(l, globalHeadDir);
+
+                    // Only do not include this bond if we perform a handover and the bond is marked
+                    if (p.markedBondsGlobal[l] && (movementAction.type == ActionType.PULL_HEAD && !isHeadLabel || movementAction.type == ActionType.PULL_TAIL && isHeadLabel))
+                        continue;
+
+                    p.bondsAfterRound[ParticleSystem_Utils.GetLabelInDir(d, Direction.NONE)] = true;
+                }
             }
 
             p.processedJointMovement = true;
@@ -1735,11 +1860,11 @@ public class ParticleSystem : IReplayHistory
             // Store the bond info
             if (bondForContracted)
             {
-                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, true));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, !c.bondsAfterRound[cLabel1]));
             }
             else
             {
-                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, true));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, !c.bondsAfterRound[eLabel1]));
             }
         }
         else
@@ -1845,13 +1970,13 @@ public class ParticleSystem : IReplayHistory
             // Store the bond info
             if (bondForContracted)
             {
-                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, true));
-                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1, true));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, !c.bondsAfterRound[cLabel1]));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1, !c.bondsAfterRound[cLabel2]));
             }
             else
             {
-                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, true));
-                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1, cBond1, true));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, !e.bondsAfterRound[eLabel1]));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1, cBond1, !e.bondsAfterRound[eLabel2]));
             }
         }
         return eOffset;
