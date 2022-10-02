@@ -171,6 +171,9 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
 
     private void Update(bool forceRenderUpdate, ParticleMovementState movementState, bool noAnimation)
     {
+        // Test: Bonds
+        //BondUpdate(new ParticleBondGraphicState(movementState.posHead + new Vector2Int(0, -1), movementState.posTail + new Vector2Int(0, -1), movementState.posHead + new Vector2Int(0, -2), movementState.posTail + new Vector2Int(0, -2), false));
+
         // Previous Data
         state_prev = state_cur;
         // Current Data

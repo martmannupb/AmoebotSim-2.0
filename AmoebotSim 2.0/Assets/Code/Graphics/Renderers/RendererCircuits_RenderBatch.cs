@@ -134,7 +134,7 @@ public class RendererCircuits_RenderBatch
         int listIndex = currentIndex % maxArraySize;
         circuitMatrices_Lines[listNumber][listIndex] = CalculateLineMatrix(globalLineStartPos, globalLineEndPos);
         startPositions1[listNumber][listIndex] = globalLineStartPos;
-        endPositions2[listNumber][listIndex] = globalLineEndPos;
+        endPositions1[listNumber][listIndex] = globalLineEndPos;
         startPositions2[listNumber][listIndex] = globalLineStartPos2;
         endPositions2[listNumber][listIndex] = globalLineEndPos2;
         currentIndex++;
@@ -160,12 +160,12 @@ public class RendererCircuits_RenderBatch
         else interpolationPercentage = 1f;
         for (int i = 0; i < currentIndex; i++)
         {
-            int listNumber = currentIndex / maxArraySize;
-            int listIndex = currentIndex % maxArraySize;
+            int listNumber = i / maxArraySize;
+            int listIndex = i % maxArraySize;
             Vector2 posStart1 = startPositions1[listNumber][listIndex];
             Vector2 posEnd1 = endPositions1[listNumber][listIndex];
-            Vector2 posStart2 = startPositions1[listNumber][listIndex];
-            Vector2 posEnd2 = endPositions1[listNumber][listIndex];
+            Vector2 posStart2 = startPositions2[listNumber][listIndex];
+            Vector2 posEnd2 = endPositions2[listNumber][listIndex];
             circuitMatrices_Lines[listNumber][listIndex] = CalculateLineMatrix(posStart1 + interpolationPercentage * (posStart2 - posStart1), posEnd2 + interpolationPercentage * (posEnd2 - posEnd1));
         }
     }
