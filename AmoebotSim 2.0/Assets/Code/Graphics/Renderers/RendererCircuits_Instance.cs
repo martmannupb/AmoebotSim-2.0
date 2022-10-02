@@ -273,10 +273,15 @@ public class RendererCircuits_Instance
 
     public void AddBond(ParticleBondGraphicState bondState)
     {
+        // Convert Grid to World Space
+        Vector2 prevBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos1);
+        Vector2 prevBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos2);
+        Vector2 curBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos1);
+        Vector2 curBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos2);
         // Normal Circuit
         RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.Bond, bondState.addedThisRound, false, bondState.IsAnimated());
-        if (bondState.IsAnimated()) batch.AddAnimatedLine(bondState.prevBondPos1, bondState.prevBondPos2, bondState.curBondPos1, bondState.curBondPos2);
-        else batch.AddLine(bondState.curBondPos1, bondState.curBondPos2);
+        if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
+        else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
     }
 
 

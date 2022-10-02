@@ -51,7 +51,7 @@ public class WorldSpaceUIHandler : MonoBehaviour
 
         // Test
         DisplayText(TextType.Text, "Contract");
-        //HideAll();
+        HideAll();
     }
 
     public enum TextType

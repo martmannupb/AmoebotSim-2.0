@@ -81,7 +81,7 @@ public class RendererCircuits_RenderBatch
         }
 
         // Circle PropertyBlocks
-        propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color);
+        if(properties.lineType != PropertyBlockData.LineType.Bond) propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Bond Color stays
         if(properties.beeping)
         {
             propertyBlock_circuitMatrices_Lines.ApplyTexture(lineMaterial.GetTexture("_Texture2D"));
@@ -144,10 +144,13 @@ public class RendererCircuits_RenderBatch
     {
         Vector2 vec = posEnd - posInitial;
         float length = vec.magnitude;
+        float z;
+        if(properties.lineType == PropertyBlockData.LineType.Bond) z = RenderSystem.ZLayer_bonds;
+        else z = RenderSystem.zLayer_circuits + zOffset;
         Quaternion q;
         q = Quaternion.FromToRotation(Vector2.right, vec);
         if (q.eulerAngles.y >= 179.999) q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
-        return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, RenderSystem.zLayer_circuits + zOffset), q, new Vector3(length, lineWidth, 1f));
+        return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, z), q, new Vector3(length, lineWidth, 1f));
     }
 
     private void CalculateAnimationFrame()
