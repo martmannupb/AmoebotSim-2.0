@@ -1650,7 +1650,6 @@ public class ParticleSystem : IReplayHistory
                         Particle nbr = particleMap[nbrNode];
                         Direction nbrMoveDir = nbrHead[curLabel] ? nbr.GlobalTailDirection() : nbr.GlobalHeadDirection();
                         newLabel = ParticleSystem_Utils.GetLabelInDir(nbrMoveDir, globalMoveDir, true);
-                        Log.Debug("Particle at " + p.Head() + ": newLabel = " + newLabel + ", nbrMoveDir: " + nbrMoveDir + ", globalMoveDir: " + globalMoveDir + ", nbrHead: " + nbrHead[curLabel] + ", curLabel: " + curLabel + ", nbr head: " + nbr.GlobalHeadDirection() + ", nbr tail: " + nbr.GlobalTailDirection());
                         p.bondsAfterRound[newLabel] = true;
 
                         // Now check for marked bonds of neighbor
