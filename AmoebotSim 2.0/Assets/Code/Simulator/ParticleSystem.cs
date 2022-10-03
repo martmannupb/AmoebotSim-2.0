@@ -2792,9 +2792,9 @@ public class ParticleSystem : IReplayHistory
      */
 
     /// <summary>
-    /// Calculates the average grid position of all particles in the system.
+    /// Calculates the average world position of all particles in the system.
     /// </summary>
-    /// <returns>The average grid coordinates of all particles. Will be
+    /// <returns>The average world of all particles. Will be
     /// <c>(0, 0)</c> if there are no particles.</returns>
     public Vector2 CenterPosition()
     {
@@ -2808,13 +2808,13 @@ public class ParticleSystem : IReplayHistory
         if (particleMap.Count > 0)
             avg /= particleMap.Count;
 
-        return avg;
+        return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(avg.x, avg.y);
     }
 
     /// <summary>
     /// Calculates the center position of the bounding box that encloses
     /// the particle system.
-    /// <returns>The center of the bounding box of the system in grid coordinates.
+    /// <returns>The center of the bounding box of the system in world coordinates.
     /// Will be <c>(0, 0)</c> if there are no particles.</returns>
     public Vector2 BBoxCenterPosition()
     {
@@ -2825,31 +2825,35 @@ public class ParticleSystem : IReplayHistory
 
         foreach (Vector2Int pos in particleMap.Keys)
         {
-            if (pos.x < xMin)
-                xMin = pos.x;
-            else if (pos.x > xMax)
-                xMax = pos.x;
+            Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
+            if (abs.x < xMin)
+                xMin = abs.x;
+            else if (abs.x > xMax)
+                xMax = abs.x;
 
-            if (pos.y < yMin)
-                yMin = pos.y;
-            else if (pos.y > yMax)
-                yMax = pos.y;
+            if (abs.y < yMin)
+                yMin = abs.y;
+            else if (abs.y > yMax)
+                yMax = abs.y;
         }
 
         return new Vector2((xMin + xMax) / 2.0f, (yMin + yMax) / 2.0f);
     }
 
     /// <summary>
-    /// Returns the grid coordinates of the system's current seed particle.
+    /// Returns the world coordinates of the system's current seed particle.
     /// </summary>
-    /// <returns>The grid coordinates of the system's seed particle, if it
+    /// <returns>The world coordinates of the system's seed particle, if it
     /// exists, otherwise <c>(0, 0)</c>.</returns>
     public Vector2 SeedPosition()
     {
+        Vector2 result;
         if (particles.Count > 0)
-            return 0.5f * (Vector2)(particles[0].Head() + particles[0].Tail());
+            result = 0.5f * (Vector2)(particles[0].Head() + particles[0].Tail());
         else
-            return Vector2.zero;
+            result = Vector2.zero;
+
+        return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(result.x, result.y);
     }
 
 

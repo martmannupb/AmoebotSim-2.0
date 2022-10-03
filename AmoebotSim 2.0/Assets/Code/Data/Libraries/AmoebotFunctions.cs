@@ -4,7 +4,8 @@ using UnityEngine;
 
 public static class AmoebotFunctions
 {
-    public static Vector2 CalculateAmoebotCenterPositionVector2(int gridPosX, int gridPosY)
+    // TODO: Put constant values into constants
+    public static Vector2 CalculateAmoebotCenterPositionVector2(float gridPosX, float gridPosY)
     {
         //height difference: sin(60 / 180 * pi)
         //width difference: 0.5
