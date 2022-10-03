@@ -28,10 +28,6 @@ public class AmoebotSimulator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        AlgorithmManager man = AlgorithmManager.Instance;
-        foreach (string name in man.GetAlgorithmNames())
-            Debug.Log("Algorithm with name " + name);
-
         // Init Renderer + Particle System
         renderSystem = new RenderSystem(this, FindObjectOfType<InputController>());
         system = new ParticleSystem(this, renderSystem);

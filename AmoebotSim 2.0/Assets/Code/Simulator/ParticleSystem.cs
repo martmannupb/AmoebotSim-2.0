@@ -2766,90 +2766,93 @@ public class ParticleSystem : IReplayHistory
     {
         // If randomCompassDir is true the value of direction can be ignored
         // The system has been already Reset by the UI at this point
+
         ResetInit();
 
-        if (particleAmount < 1)
-            return;
+        InitializationMethodManager man = InitializationMethodManager.Instance;
+        man.GenerateSystem(this, "Random With Holes", new object[] { particleAmount, 0.25f, Initialization.Chirality.Random, Initialization.Compass.Random });
 
-        if (randomCompassDir)
-            compassDir = Direction.NONE;
+        //if (particleAmount < 1)
+        //    return;
 
-        // TODO: Add this as parameter
-        float holeProb = 0.5f;
+        //if (randomCompassDir)
+        //    compassDir = Direction.NONE;
 
-        int n = 1;
-        // Always start by adding a particle at position (0, 0)
-        List<Vector2Int> candidates = new List<Vector2Int>();
-        Vector2Int node = new Vector2Int(0, 0);
-        AddInitParticle(node, chirality, compassDir);
+        //// TODO: Add this as parameter
+        //float holeProb = 0.5f;
 
-        for (int d = 0; d < 6; d++)
-            candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
+        //int n = 1;
+        //// Always start by adding a particle at position (0, 0)
+        //List<Vector2Int> candidates = new List<Vector2Int>();
+        //Vector2Int node = new Vector2Int(0, 0);
+        //AddInitParticle(node, chirality, compassDir);
 
-        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();       // Occupied by particles
-        HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Reserved for holes
-        occupied.Add(node);
+        //for (int d = 0; d < 6; d++)
+        //    candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
 
-        int numExcludedChosen = 0;
+        //HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();       // Occupied by particles
+        //HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Reserved for holes
+        //occupied.Add(node);
 
-        while (n < particleAmount)
-        {
-            // Find next position
-            Vector2Int newPos = Vector2Int.zero;
-            bool choseExcluded = false;
-            if (candidates.Count > 0)
-            {
-                int randIdx = Random.Range(0, candidates.Count);
-                newPos = candidates[randIdx];
-                candidates.RemoveAt(randIdx);
-            }
-            else
-            {
-                // Choose random excluded position
-                int randIdx = Random.Range(0, excluded.Count);
-                int i = 0;
-                foreach (Vector2Int v in excluded)
-                {
-                    if (i == randIdx)
-                    {
-                        newPos = v;
-                        break;
-                    }
-                    i++;
-                }
-                numExcludedChosen++;
-                excluded.Remove(newPos);
-                choseExcluded = true;
-            }
+        //int numExcludedChosen = 0;
 
-            // Either use newPos to insert particle or to insert hole
-            if (choseExcluded || Random.Range(0.0f, 1.0f) >= holeProb)
-            {
-                for (int d = 0; d < 6; d++)
-                {
-                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
-                    if (!occupied.Contains(nbr) && !excluded.Contains(nbr) && !candidates.Contains(nbr))
-                        candidates.Add(nbr);
-                }
-
-                AddInitParticle(newPos, chirality, compassDir);
-
-                occupied.Add(newPos);
-                n++;
-            }
-            else
-            {
-                excluded.Add(newPos);
-            }
-        }
-        Log.Debug("Created system with " + n + " particles, had to choose " + numExcludedChosen + " excluded positions");
-        //string s = "Created system with " + n + " particles:\n";
-        //foreach (InitializationParticle part in particlesInit)
+        //while (n < particleAmount)
         //{
-        //    s += part.Head() + "\n";
-        //}
-        //Log.Debug(s);
+        //    // Find next position
+        //    Vector2Int newPos = Vector2Int.zero;
+        //    bool choseExcluded = false;
+        //    if (candidates.Count > 0)
+        //    {
+        //        int randIdx = Random.Range(0, candidates.Count);
+        //        newPos = candidates[randIdx];
+        //        candidates.RemoveAt(randIdx);
+        //    }
+        //    else
+        //    {
+        //        // Choose random excluded position
+        //        int randIdx = Random.Range(0, excluded.Count);
+        //        int i = 0;
+        //        foreach (Vector2Int v in excluded)
+        //        {
+        //            if (i == randIdx)
+        //            {
+        //                newPos = v;
+        //                break;
+        //            }
+        //            i++;
+        //        }
+        //        numExcludedChosen++;
+        //        excluded.Remove(newPos);
+        //        choseExcluded = true;
+        //    }
 
+        //    // Either use newPos to insert particle or to insert hole
+        //    if (choseExcluded || Random.Range(0.0f, 1.0f) >= holeProb)
+        //    {
+        //        for (int d = 0; d < 6; d++)
+        //        {
+        //            Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
+        //            if (!occupied.Contains(nbr) && !excluded.Contains(nbr) && !candidates.Contains(nbr))
+        //                candidates.Add(nbr);
+        //        }
+
+        //        AddInitParticle(newPos, chirality, compassDir);
+
+        //        occupied.Add(newPos);
+        //        n++;
+        //    }
+        //    else
+        //    {
+        //        excluded.Add(newPos);
+        //    }
+        //}
+        //Log.Debug("Created system with " + n + " particles, had to choose " + numExcludedChosen + " excluded positions");
+        ////string s = "Created system with " + n + " particles:\n";
+        ////foreach (InitializationParticle part in particlesInit)
+        ////{
+        ////    s += part.Head() + "\n";
+        ////}
+        ////Log.Debug(s);
     }
 
     public void InitializationModeStarted()
