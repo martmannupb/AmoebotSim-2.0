@@ -166,7 +166,7 @@ public class RendererCircuits_RenderBatch
             Vector2 posEnd1 = endPositions1[listNumber][listIndex];
             Vector2 posStart2 = startPositions2[listNumber][listIndex];
             Vector2 posEnd2 = endPositions2[listNumber][listIndex];
-            circuitMatrices_Lines[listNumber][listIndex] = CalculateLineMatrix(posStart1 + interpolationPercentage * (posStart2 - posStart1), posEnd2 + interpolationPercentage * (posEnd2 - posEnd1));
+            circuitMatrices_Lines[listNumber][listIndex] = CalculateLineMatrix(posStart1 + interpolationPercentage * (posStart2 - posStart1), posEnd1 + interpolationPercentage * (posEnd2 - posEnd1));
         }
     }
 
