@@ -10,10 +10,34 @@ public abstract class UISetting
     // Data
     protected GameObject go;
     protected string name;
+    // Background Button
+    protected Button button;
+
+    protected void InitBackgroundButton()
+    {
+        button = go.GetComponent<Button>();
+        if(button != null)
+        {
+            button.onClick.AddListener(delegate { OnButtonPressed(); });
+        }
+    }
 
     public GameObject GetGameObject()
     {
         return go;
+    }
+
+    // Callbacks
+
+    public Action<string> backgroundButton_onButtonPressedEvent;
+    private void OnButtonPressed()
+    {
+        if(backgroundButton_onButtonPressedEvent != null) backgroundButton_onButtonPressedEvent(name);
+    }
+
+    public Button GetBackgroundButton()
+    {
+        return button;
     }
 
     public abstract void Lock();
@@ -28,6 +52,7 @@ public class UISetting_Header : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_header, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -58,6 +83,7 @@ public class UISetting_Spacing : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_spacing, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name + " (" + id++ + ")";
     }
@@ -87,6 +113,7 @@ public class UISetting_Slider : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -152,6 +179,7 @@ public class UISetting_Text : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_text, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -235,6 +263,7 @@ public class UISetting_Dropdown : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_dropdown, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -320,6 +349,7 @@ public class UISetting_Toggle : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_toggle, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -375,6 +405,7 @@ public class UISetting_ValueSlider : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();

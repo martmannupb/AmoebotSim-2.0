@@ -36,10 +36,13 @@ public class WorldSpaceUIHandler : MonoBehaviour
     private TextType display_type;
     private string display_identifier;
 
+    // Temporary Data
+    private Stack<IParticleState> tempParticleStack = new Stack<IParticleState>();
+
     // Defaults
-    public Color color_particleTextBackgroundDefault = new Color(1f, 1f, 1f, 172f / 255f);
-    public Color color_particleTextBackgroundTrue = new Color(255f / 255f, 255f / 255f, 255f / 255f, 255f / 255f);
-    public Color color_particleTextBackgroundFalse = new Color(90f / 255f, 255f / 255f, 99f / 255f, 172f / 255f);
+    private Color color_particleTextBackgroundDefault = new Color(1f, 1f, 1f, 172f / 255f);
+    private Color color_particleTextBackgroundTrue = new Color(90f / 255f, 255f / 255f, 99f / 255f, 172f / 255f);
+    private Color color_particleTextBackgroundFalse = new Color(255f / 255f, 101f / 255f, 90f / 255f, 172f / 255f);
 
     // Pooling
     private Stack<GameObject> pool_particleTextUI = new Stack<GameObject>();
@@ -67,21 +70,32 @@ public class WorldSpaceUIHandler : MonoBehaviour
         // Update Texts
         foreach (var particle in particleTextUIData.Keys)
         {
+            tempParticleStack.Push(particle);
+        }
+        while(tempParticleStack.Count > 0)
+        {
+            IParticleState particle = tempParticleStack.Pop();
             DisplayTextForParticle(particle);
         }
+        tempParticleStack.Clear();
         // Show
         ShowVisible();
     }
 
     private void DisplayTextForParticle(IParticleState particle)
     {
-        if (display_isVisible == false) return;
-
         ParticleTextUIData data = particleTextUIData[particle];
 
         switch (this.display_type)
         {
             case TextType.Attribute:
+                IParticleAttribute attribute = particle.TryGetAttributeByName(display_identifier);
+                if(attribute != null)
+                {
+                    // Show attribute
+                    if (attribute is ParticleAttribute_Bool) UpdateParticleText(particle, ((ParticleAttribute_Bool)attribute).GetValue());
+                    else UpdateParticleText(particle, attribute.ToString_AttributeValue());
+                }
                 break;
             case TextType.Chirality:
                 break;
