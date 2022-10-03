@@ -8,7 +8,7 @@ public class RendererParticles
     public static RendererParticles instance;
 
     // Circuits + Bonds ===============
-    public RendererCircuitsBonds circuitAndBondRenderer = new RendererCircuitsBonds();
+    public RendererCircuitsAndBonds circuitAndBondRenderer = new RendererCircuitsAndBonds();
 
     // Particles ===============
     // Render Batch

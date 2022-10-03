@@ -10,13 +10,6 @@ public interface IParticleGraphicsAdapter
     /// <summary>
     /// Adds and initializes the graphics of the particle. Call this each time a new particle has been added to the RenderSystem.
     /// Afterwards use Update() repeatedly to update the particle visuals.
-    /// DEPRECATED! (use AddParticle(ParticleMovementState movementState) instead)
-    /// </summary>
-    void AddParticle();
-
-    /// <summary>
-    /// Adds and initializes the graphics of the particle. Call this each time a new particle has been added to the RenderSystem.
-    /// Afterwards use Update() repeatedly to update the particle visuals.
     /// </summary>
     /// <param name="movementState"></param>
     void AddParticle(ParticleMovementState movementState);
@@ -31,8 +24,15 @@ public interface IParticleGraphicsAdapter
 
     /// <summary>
     /// Like Update(), but forces the update to be applied visually without an animation, even if the particle positions are the same as in the previous frame.
+    /// DEPRECATED! (use UpdateReset(ParticleMovementState movementState) instead)
     /// </summary>
     void UpdateReset();
+
+    /// <summary>
+    /// Like Update(), but forces the update to be applied visually without an animation, even if the particle positions are the same as in the previous frame.
+    /// </summary>
+    /// <param name="movementState"></param>
+    void UpdateReset(ParticleMovementState movementState);
 
     /// <summary>
     /// Renders a particle bond for this round. Only call this on one of the two connected particles.

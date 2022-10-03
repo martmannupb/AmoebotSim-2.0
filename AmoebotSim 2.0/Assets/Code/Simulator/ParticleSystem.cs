@@ -1200,7 +1200,7 @@ public class ParticleSystem : IReplayHistory
                     if (nbrMove && nbrMarked)
                         nbrOffset -= nbr.movementOffset;
 
-                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1, !p.bondsAfterRound[label]));
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1));
                 }
                 // We are contracted and the neighbor is expanded
                 else if (p.IsContracted() && nbr.IsExpanded())
@@ -1344,7 +1344,7 @@ public class ParticleSystem : IReplayHistory
                         }
 
                         // Store the bond info
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, !p.bondsAfterRound[bondLabels[0]]));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
                     }
                     else if (numBonds == 2)
                     {
@@ -1468,8 +1468,8 @@ public class ParticleSystem : IReplayHistory
                         }
 
                         // Store the bond info
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, !p.bondsAfterRound[bondLabels[0]]));
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, !p.bondsAfterRound[bondLabels[1]]));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
                     }
                     else
                     {
@@ -1526,9 +1526,9 @@ public class ParticleSystem : IReplayHistory
                         Vector2Int nbrBond3_1 = bondNbrHead[2] ? nbr.Head() : nbr.Tail();
                         Vector2Int ourBond3_2 = ourBond3_1 + p.jmOffset;
                         Vector2Int nbrBond3_2 = nbrBond3_1 + p.jmOffset;
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, !p.bondsAfterRound[bondLabels[0]]));
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, !p.bondsAfterRound[bondLabels[1]]));
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1, !p.bondsAfterRound[bondLabels[2]]));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1));
 
                     }
                 }
@@ -1864,11 +1864,11 @@ public class ParticleSystem : IReplayHistory
             // Store the bond info
             if (bondForContracted)
             {
-                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, !c.bondsAfterRound[cLabel1]));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
             }
             else
             {
-                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, !c.bondsAfterRound[eLabel1]));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
             }
         }
         else
@@ -1974,13 +1974,13 @@ public class ParticleSystem : IReplayHistory
             // Store the bond info
             if (bondForContracted)
             {
-                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, !c.bondsAfterRound[cLabel1]));
-                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1, !c.bondsAfterRound[cLabel2]));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1));
             }
             else
             {
-                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, !e.bondsAfterRound[eLabel1]));
-                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1, cBond1, !e.bondsAfterRound[eLabel2]));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1, cBond1));
             }
         }
         return eOffset;

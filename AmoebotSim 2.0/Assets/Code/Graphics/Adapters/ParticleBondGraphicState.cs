@@ -10,20 +10,13 @@ public struct ParticleBondGraphicState
     public Vector2Int curBondPos2;
     public Vector2Int prevBondPos1;
     public Vector2Int prevBondPos2;
-    
-    // Movement Data
-    /// <summary>
-    /// True if the bond has been added in this round, false if the bond has been added in a previous round. Variable is not important if there is no animation or we just jumped into this round.
-    /// </summary>
-    public bool addedThisRound;
 
-    public ParticleBondGraphicState(Vector2Int curBondPos1, Vector2Int curBondPos2, Vector2Int prevBondPos1, Vector2Int prevBondPos2, bool addedThisRound)
+    public ParticleBondGraphicState(Vector2Int curBondPos1, Vector2Int curBondPos2, Vector2Int prevBondPos1, Vector2Int prevBondPos2)
     {
         this.curBondPos1 = curBondPos1;
         this.curBondPos2 = curBondPos2;
         this.prevBondPos1 = prevBondPos1;
         this.prevBondPos2 = prevBondPos2;
-        this.addedThisRound = addedThisRound;
     }
 
     /// <summary>

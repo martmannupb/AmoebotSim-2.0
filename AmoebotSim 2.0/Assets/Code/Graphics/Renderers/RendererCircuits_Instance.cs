@@ -279,7 +279,7 @@ public class RendererCircuits_Instance
         Vector2 curBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos1);
         Vector2 curBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos2);
         // Normal Circuit
-        RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.Bond, bondState.addedThisRound, false, bondState.IsAnimated());
+        RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.Bond, false, false, bondState.IsAnimated());
         if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
         else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
     }

@@ -108,29 +108,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
         this.particle = particle;
         this.renderer = renderer;
     }
-    bool alreadyCalled = false;
-    /// <summary>
-    /// Adds the particle to the renderer. Only needs to be called once to register a particle.
-    /// </summary>
-    public void AddParticle()
-    {
-        if (alreadyCalled) Log.Error("AddParticleCalled twice!");
-        alreadyCalled = true;
-        // Check if already added to the system
-        if(graphics_isRegistered)
-        {
-            Log.Error("Error: Particle has already been added!");
-        }
-
-        // Add Particle Text UI
-        WorldSpaceUIHandler.instance.AddParticleTextUI(particle, state_cur.position1);
-        // Register Particle
-        graphics_isRegistered = true;
-        if (particle.IsParticleColorSet()) graphics_color = particle.GetParticleColor();
-        else graphics_color = defColor;
-        renderer.Particle_Add(this);
-        Update(true, ParticleJointMovementState.None, true);
-    }
 
     /// <summary>
     /// Adds the particle to the renderer. Only needs to be called once to register a particle.
@@ -158,7 +135,6 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     /// </summary>
     public void RemoveParticle()
     {
-        alreadyCalled = false;
         renderer.Particle_Remove(this);
         // Remove Particle Text UI
         WorldSpaceUIHandler.instance.RemoveParticleTextUI(particle);
@@ -249,6 +225,11 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     public void UpdateReset()
     {
         Update(true, ParticleJointMovementState.None, true);
+    }
+
+    public void UpdateReset(ParticleMovementState movementState)
+    {
+        Update(true, movementState, true);
     }
 
     public void BondUpdate(ParticleBondGraphicState bondState)

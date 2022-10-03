@@ -115,7 +115,12 @@ public class UIHandler : MonoBehaviour
                 // Hide UI
                 HideUI();
             }
-            if(Input.GetKeyDown(KeyCode.C))
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                // Center Camera
+                Button_CameraCenterPressed();
+            }
+            if(Input.GetKeyDown(KeyCode.P))
             {
                 // Screenshot
                 Button_ScreenshotPressed();
@@ -455,8 +460,11 @@ public class UIHandler : MonoBehaviour
 
     public void Button_CameraCenterPressed()
     {
-        Camera.main.transform.position = new Vector3(0f, 0f, Camera.main.transform.position.z); // dummy
-        Log.Debug("Todo: Implement center camera to root particle.");
+        Vector2 pos;
+        if (sim.system.particles.Count <= 1000) pos = sim.system.BBoxCenterPosition();
+        else pos = sim.system.SeedPosition();
+        pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2((int)pos.x, (int)pos.y);
+        Camera.main.transform.position = new Vector3(pos.x, pos.y, Camera.main.transform.position.z);
     }
 
     public void Botton_ExitPressed()
