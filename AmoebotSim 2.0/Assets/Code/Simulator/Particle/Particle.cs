@@ -1271,6 +1271,26 @@ public class Particle : IParticleState, IReplayHistory
             attr.ResetIntermediateValue();
     }
 
+    public IParticleAttribute TryGetAttributeByName(string attrName)
+    {
+        foreach (IParticleAttribute attr in attributes)
+        {
+            if (attr.ToString_AttributeName() == attrName)
+                return attr;
+        }
+        return null;
+    }
+
+    public bool Chirality()
+    {
+        return chirality;
+    }
+
+    public Direction CompassDir()
+    {
+        return comDir;
+    }
+
     public void Print()
     {
         Debug.Log("Position history:");
@@ -1670,7 +1690,7 @@ public class Particle : IParticleState, IReplayHistory
         p.InitWithAlgorithm(data);
 
         // Finally set up the graphics info
-        p.graphics.AddParticle();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         p.graphics.UpdateReset();
         return p;
     }

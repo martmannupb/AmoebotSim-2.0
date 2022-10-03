@@ -824,6 +824,8 @@ public class ParticleSystem : IReplayHistory
      * Simulation functions
      */
 
+    #region Simulation
+
     /// <summary>
     /// Simulates a round in which each particle is activated
     /// twice. First, all particles execute their movement activations
@@ -2396,6 +2398,8 @@ public class ParticleSystem : IReplayHistory
         renderSystem.CircuitCalculationOver();
     }
 
+    #endregion
+
     /**
      * Particle functions (called by particles to get information or trigger actions)
      */
@@ -2781,6 +2785,71 @@ public class ParticleSystem : IReplayHistory
             Debug.Log("========== Particle " + i + " ==========");
             particles[i].Print();
         }
+    }
+
+    /**
+     * Other system info and control
+     */
+
+    /// <summary>
+    /// Calculates the average grid position of all particles in the system.
+    /// </summary>
+    /// <returns>The average grid coordinates of all particles. Will be
+    /// <c>(0, 0)</c> if there are no particles.</returns>
+    public Vector2 CenterPosition()
+    {
+        Vector2 avg = Vector2.zero;
+
+        foreach (Vector2Int pos in particleMap.Keys)
+        {
+            avg += pos;
+        }
+
+        if (particleMap.Count > 0)
+            avg /= particleMap.Count;
+
+        return avg;
+    }
+
+    /// <summary>
+    /// Calculates the center position of the bounding box that encloses
+    /// the particle system.
+    /// <returns>The center of the bounding box of the system in grid coordinates.
+    /// Will be <c>(0, 0)</c> if there are no particles.</returns>
+    public Vector2 BBoxCenterPosition()
+    {
+        float xMin = 0f;
+        float xMax = 0f;
+        float yMin = 0f;
+        float yMax = 0f;
+
+        foreach (Vector2Int pos in particleMap.Keys)
+        {
+            if (pos.x < xMin)
+                xMin = pos.x;
+            else if (pos.x > xMax)
+                xMax = pos.x;
+
+            if (pos.y < yMin)
+                yMin = pos.y;
+            else if (pos.y > yMax)
+                yMax = pos.y;
+        }
+
+        return new Vector2((xMin + xMax) / 2.0f, (yMin + yMax) / 2.0f);
+    }
+
+    /// <summary>
+    /// Returns the grid coordinates of the system's current seed particle.
+    /// </summary>
+    /// <returns>The grid coordinates of the system's seed particle, if it
+    /// exists, otherwise <c>(0, 0)</c>.</returns>
+    public Vector2 SeedPosition()
+    {
+        if (particles.Count > 0)
+            return 0.5f * (Vector2)(particles[0].Head() + particles[0].Tail());
+        else
+            return Vector2.zero;
     }
 
 
