@@ -3303,9 +3303,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1212791402}
-        m_TargetAssemblyTypeName: UIHandler, Assembly-CSharp
-        m_MethodName: Button_ToggleCircuitViewPressed
+      - m_Target: {fileID: 1212791407}
+        m_TargetAssemblyTypeName: WorldSpaceUIHandler, Assembly-CSharp
+        m_MethodName: HideAll
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -11511,6 +11511,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   go_worldSpaceUI: {fileID: 624619504}
+  button_hideOverlay: {fileID: 272770167}
 --- !u!1 &1215037102
 GameObject:
   m_ObjectHideFlags: 0

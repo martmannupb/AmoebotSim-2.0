@@ -336,6 +336,7 @@ public class ParticleUIHandler : MonoBehaviour
             if (attribute.ToString_AttributeName().Equals(name))
             {
                 attribute.UpdateAttributeValue(value.ToString());
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
         }
@@ -350,6 +351,7 @@ public class ParticleUIHandler : MonoBehaviour
             if(attribute.ToString_AttributeName().Equals(name))
             {
                 attribute.UpdateAttributeValue(text);
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
         }
@@ -364,6 +366,7 @@ public class ParticleUIHandler : MonoBehaviour
             if (attribute.ToString_AttributeName().Equals(name))
             {
                 attribute.UpdateAttributeValue(isOn ? "True" : "False");
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
         }
@@ -378,6 +381,7 @@ public class ParticleUIHandler : MonoBehaviour
             if (attribute.ToString_AttributeName().Equals(name))
             {
                 attribute.UpdateAttributeValue(value);
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
         }

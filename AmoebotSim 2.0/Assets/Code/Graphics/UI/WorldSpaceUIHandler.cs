@@ -13,6 +13,8 @@ public class WorldSpaceUIHandler : MonoBehaviour
 
     // World Space UI
     public GameObject go_worldSpaceUI;
+    // Buttons
+    public Button button_hideOverlay;
 
     public struct ParticleTextUIData
     {
@@ -51,6 +53,12 @@ public class WorldSpaceUIHandler : MonoBehaviour
     {
         // Singleton
         instance = this;
+    }
+
+    private void Start()
+    {
+        // Disable Hide Button
+        button_hideOverlay.interactable = false;
 
         // Test
         DisplayText(TextType.Text, "Contract");
@@ -62,7 +70,13 @@ public class WorldSpaceUIHandler : MonoBehaviour
         Attribute, Chirality, CompassDir, Text
     }
 
-    public void DisplayText(TextType type, string identifier)
+    /// <summary>
+    /// Displays the overlay over every particle that has the given attribute/value/text.
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="identifier"></param>
+    /// <param name="showOverlay"></param>
+    public void DisplayText(TextType type, string identifier, bool showOverlay = true)
     {
         // Save what we display
         this.display_type = type;
@@ -78,8 +92,37 @@ public class WorldSpaceUIHandler : MonoBehaviour
             DisplayTextForParticle(particle);
         }
         tempParticleStack.Clear();
+        // Print Message
+        //switch (type)
+        //{
+        //    case TextType.Attribute:
+        //        Log.Entry("Showing: Overlay for particle attribute " + identifier + ".");
+        //        break;
+        //    case TextType.Chirality:
+        //        Log.Entry("Showing: Overlay for particle chiralities.");
+        //        break;
+        //    case TextType.CompassDir:
+        //        Log.Entry("Showing: Overlay for compass direction.");
+        //        break;
+        //    case TextType.Text:
+        //        //Log.Entry("This is text..");
+        //        break;
+        //    default:
+        //        break;
+        //}
         // Show
-        ShowVisible();
+        if(showOverlay) ShowVisible();
+    }
+
+    /// <summary>
+    /// Refreshes the overlay if it is already shown. Call this when something has changed in the shown attributes.
+    /// </summary>
+    public void Refresh()
+    {
+        if(display_isVisible)
+        {
+            DisplayText(display_type, display_identifier);
+        }
     }
 
     private void DisplayTextForParticle(IParticleState particle)
@@ -95,6 +138,12 @@ public class WorldSpaceUIHandler : MonoBehaviour
                     // Show attribute
                     if (attribute is ParticleAttribute_Bool) UpdateParticleText(particle, ((ParticleAttribute_Bool)attribute).GetValue());
                     else UpdateParticleText(particle, attribute.ToString_AttributeValue());
+                    data.isVisible = true;
+                }
+                else
+                {
+                    // Attribute not available
+                    data.isVisible = false;
                 }
                 break;
             case TextType.Chirality:
@@ -185,6 +234,7 @@ public class WorldSpaceUIHandler : MonoBehaviour
             if(item.isVisible) item.go.SetActive(true);
         }
         display_isVisible = true;
+        button_hideOverlay.interactable = true;
     }
 
     /// <summary>
@@ -198,6 +248,7 @@ public class WorldSpaceUIHandler : MonoBehaviour
             item.go.SetActive(false);
         }
         display_isVisible = false;
+        button_hideOverlay.interactable = false;
     }
 
 
