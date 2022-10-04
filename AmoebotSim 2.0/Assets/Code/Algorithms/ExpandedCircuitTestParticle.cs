@@ -5,7 +5,7 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
     public override int PinsPerEdge => 2;
 
 
-    public ExpandedCircuitTestParticle(Particle p) : base(p)
+    public ExpandedCircuitTestParticle(Particle p, int[] genericParams) : base(p)
     {
         SetMainColor(Color.gray);
     }

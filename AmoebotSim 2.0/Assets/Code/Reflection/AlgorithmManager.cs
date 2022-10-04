@@ -23,13 +23,15 @@ public class AlgorithmManager
     {
         public string name;
         public Type type;
+        public ConstructorInfo ctor;
         public InitializationUIHandler.SettingChirality chirality;
         public Direction compassDir;
 
-        public AlgorithmInfo(string name, Type type, InitializationUIHandler.SettingChirality chirality, Direction compassDir)
+        public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, InitializationUIHandler.SettingChirality chirality, Direction compassDir)
         {
             this.name = name;
             this.type = type;
+            this.ctor = ctor;
             this.chirality = chirality;
             this.compassDir = compassDir;
         }
@@ -74,13 +76,20 @@ public class AlgorithmManager
             if (compassProp != null)
                 compass = (Direction)compassProp.GetValue(null);
 
+            ConstructorInfo ctor = algoType.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) });
+            if (ctor == null)
+            {
+                Debug.LogWarning("ParticleAlgorithm with name '" + name + "' does not declare a constructor with parameters (Particle, int[]), cannot load algorithm");
+                continue;
+            }
+
             if (algorithms.ContainsKey(name))
             {
                 Debug.LogWarning("ParticleAlgorithm with name '" + name + "' already exists, cannot load algorithm");
             }
             else
             {
-                algorithms[name] = new AlgorithmInfo(name, algoType, chirality, compass);
+                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, chirality, compass);
             }
         }
 
@@ -122,7 +131,7 @@ public class AlgorithmManager
             throw new System.ArgumentException("Could not find algorithm");
     }
 
-    public ParticleAlgorithm Instantiate(string name, Particle particle)
+    public ParticleAlgorithm Instantiate(string name, Particle particle, int[] genericParams)
     {
         AlgorithmInfo info = FindAlgorithm(name);
         if (info == null)
@@ -130,8 +139,8 @@ public class AlgorithmManager
             throw new System.ArgumentException("Could not find algorithm");
         }
 
-        ConstructorInfo ctor = info.type.GetConstructor(new Type[] { typeof(Particle) });
-        return (ParticleAlgorithm)ctor.Invoke(new object[] { particle });
+        //ConstructorInfo ctor = info.type.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) });
+        return (ParticleAlgorithm)info.ctor.Invoke(new object[] { particle, genericParams });
     }
 
     public List<string> GetAlgorithmNames()

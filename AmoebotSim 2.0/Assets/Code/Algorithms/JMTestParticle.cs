@@ -8,7 +8,7 @@ public class JMTestParticle : ParticleAlgorithm
     private ParticleAttribute<int> role;
     private ParticleAttribute<bool> terminated;
 
-    public JMTestParticle(Particle p) : base(p)
+    public JMTestParticle(Particle p, int[] genericParams) : base(p)
     {
         mode = CreateAttributeInt("Mode", -1);
         role = CreateAttributeInt("Role", -1);

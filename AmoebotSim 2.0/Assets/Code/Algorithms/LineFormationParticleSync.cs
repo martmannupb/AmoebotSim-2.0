@@ -94,7 +94,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
     // Flag to make LEADER send a beep every 2 rounds and recognize when the line is complete
     private ParticleAttribute<bool> beepInLastRound;
 
-    public LineFormationParticleSync(Particle p) : base(p)
+    public LineFormationParticleSync(Particle p, int[] genericParams) : base(p)
     {
         constructionDir = CreateAttributeDirection("constructionDir", Direction.NONE);
         moveDir = CreateAttributeDirection("moveDir", Direction.NONE);

@@ -31,10 +31,13 @@ public struct Neighbor<T> where T : ParticleAlgorithm
 /// <see cref="ActivateMove"/> and <see cref="ActivateBeep"/> methods.
 /// </para>
 /// <para>
-/// The subclass constructor must call the base class constructor as follows:
+/// The subclass constructor must have the following signature and call the
+/// base class constructor:
 /// <code>
-/// public MyClass(Particle p) : base(p) { ... }
+/// public MyClass(Particle p, int[] genericParams) : base(p) { ... }
 /// </code>
+/// The <c>genericParams</c> array contains the generic initialization
+/// parameters, which can be freely interpreted by the algorithm.
 /// </para>
 /// <para>
 /// The number of pins used by the algorithm must be specified by overriding

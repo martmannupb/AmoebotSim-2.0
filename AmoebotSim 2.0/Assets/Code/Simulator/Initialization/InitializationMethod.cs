@@ -47,4 +47,60 @@ public abstract class InitializationMethod
     {
         return system.TryGetInitParticleAt(position, out particle);
     }
+
+    /// <summary>
+    /// Assigns values to the generic parameters of a fixed number of particles.
+    /// The values of the other particles can be reset to 0 if desired. Each
+    /// chosen particle's value is set to a random value between
+    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
+    /// </summary>
+    /// <param name="paramIdx">The index of the generic parameter to set.</param>
+    /// <param name="minVal">The minimum value to be set.</param>
+    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
+    /// the same value as <paramref name="minVal"/> to fix the value.</param>
+    /// <param name="numParticles">The number of particles to get assigned
+    /// a new value.</param>
+    /// <param name="reset">Flag indicating whether the parameter values should
+    /// be reset to 0 before assigning the new values.</param>
+    public void SetGenericParameterFixed(int paramIdx, int minVal, int maxVal, int numParticles, bool reset = true)
+    {
+        system.SetGenericParameterFixed(paramIdx, minVal, maxVal, numParticles, reset);
+    }
+
+    /// <summary>
+    /// Assigns values to the generic parameters of a fixed fraction of particles.
+    /// The values of the other particles can be reset to 0 if desired. Each
+    /// chosen particle's value is set to a random value between
+    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
+    /// </summary>
+    /// <param name="paramIdx">The index of the generic parameter to set.</param>
+    /// <param name="minVal">The minimum value to be set.</param>
+    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
+    /// the same value as <paramref name="minVal"/> to fix the value.</param>
+    /// <param name="fraction">The fraction of particles to receive a new value.</param>
+    /// <param name="reset">Flag indicating whether the parameter values should
+    /// be reset to 0 before assigning the new values.</param>
+    public void SetGenericParameterFraction(int paramIdx, int minVal, int maxVal, float fraction, bool reset = true)
+    {
+        system.SetGenericParameterFraction(paramIdx, minVal, maxVal, fraction, reset);
+    }
+
+    /// <summary>
+    /// Assigns values to the generic parameters of randomly chosen particles.
+    /// The values of the other particles can be reset to 0 if desired. Each
+    /// chosen particle's value is set to a random value between
+    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
+    /// </summary>
+    /// <param name="paramIdx">The index of the generic parameter to set.</param>
+    /// <param name="minVal">The minimum value to be set.</param>
+    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
+    /// the same value as <paramref name="minVal"/> to fix the value.</param>
+    /// <param name="prob">The probability with which each particle is chosen to
+    /// get a new value.</param>
+    /// <param name="reset">Flag indicating whether the parameter values should
+    /// be reset to 0 before assigning the new values.</param>
+    public void SetGenericParameterProb(int paramIdx, int minVal, int maxVal, float prob, bool reset = true)
+    {
+        system.SetGenericParameterProb(paramIdx, minVal, maxVal, prob, reset);
+    }
 }

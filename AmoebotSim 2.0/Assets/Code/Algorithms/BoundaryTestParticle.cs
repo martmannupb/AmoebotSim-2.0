@@ -124,7 +124,7 @@ namespace BoundaryTestAlgo
         private ParticleAttribute<bool>[] becomePassive;        // Flag indicating whether the particle should become passive in the current iteration
         private ParticleAttribute<SCMode>[] scMode;             // Mode of the Sum Computation on each boundary
 
-        public BoundaryTestParticle(Particle p) : base(p)
+        public BoundaryTestParticle(Particle p, int[] genericParams) : base(p)
         {
             firstActivation = CreateAttributeBool("First Activation", true);
             round = CreateAttributeInt("Round", 0);

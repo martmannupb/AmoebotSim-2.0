@@ -1668,7 +1668,7 @@ public class Particle : IParticleState, IReplayHistory
         p.inReinitialize = true;
         // Then create algorithm
         Type algoType = Type.GetType(data.algorithmType);
-        algoType.GetConstructor(new Type[] { typeof(Particle) }).Invoke(new object[] { p });
+        algoType.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) }).Invoke(new object[] { p, new int[Initialization.NumGenericParams] });
         p.inReinitialize = false;
         p.isActive = false;
         p.InitWithAlgorithm(data);
