@@ -492,6 +492,8 @@ public class UIHandler : MonoBehaviour
     {
         if (sim.running) sim.TogglePlayPause();
 
+        particleUI.Close();
+        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.HideAll();
         sim.system.Reset();
         switch (algoID)
         {
@@ -517,6 +519,7 @@ public class UIHandler : MonoBehaviour
                 break;
         }
         UpdateUI(sim.running, true);
+        sim.RoundChanged();
     }
 
 

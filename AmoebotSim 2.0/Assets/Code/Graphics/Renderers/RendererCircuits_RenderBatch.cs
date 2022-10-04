@@ -156,7 +156,7 @@ public class RendererCircuits_RenderBatch
     private void CalculateAnimationFrame()
     {
         float interpolationPercentage;
-        if (properties.animated) interpolationPercentage = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
+        if (properties.animated && RenderSystem.animationsOn) interpolationPercentage = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
         else interpolationPercentage = 1f;
         for (int i = 0; i < currentIndex; i++)
         {

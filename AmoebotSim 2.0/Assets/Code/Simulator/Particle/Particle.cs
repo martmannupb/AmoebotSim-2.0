@@ -1275,7 +1275,7 @@ public class Particle : IParticleState, IReplayHistory
     {
         foreach (IParticleAttribute attr in attributes)
         {
-            if (attr.ToString_AttributeName() == attrName)
+            if (attr.ToString_AttributeName().Equals(attrName))
                 return attr;
         }
         return null;
