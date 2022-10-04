@@ -272,8 +272,6 @@ public class Particle : IParticleState, IReplayHistory
 
     // Stores visualization info about some of the bonds incident to this particle
     public List<ParticleBondGraphicState> bondGraphicInfo = new List<ParticleBondGraphicState>();
-    // Stores the bonds that remain after a round of joint movements by global labels
-    public bool[] bondsAfterRound = new bool[10];
 
     public Particle(ParticleSystem system, Vector2Int pos, Direction compassDir = Direction.NONE, bool chirality = true, Direction initialHeadDir = Direction.NONE)
     {
