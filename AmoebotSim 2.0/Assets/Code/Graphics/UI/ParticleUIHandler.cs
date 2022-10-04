@@ -85,6 +85,10 @@ public class ParticleUIHandler : MonoBehaviour
             {
                 // In Latest round
                 UnlockAttributes();
+                foreach (var setting in settings.Values)
+                {
+                    setting.InteractiveBarUpdate();
+                }
             }
             else
             {
@@ -190,6 +194,7 @@ public class ParticleUIHandler : MonoBehaviour
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Toggle;
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else if(type == typeof(int))
@@ -198,6 +203,7 @@ public class ParticleUIHandler : MonoBehaviour
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Text;
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else if(type == typeof(Direction))
@@ -207,6 +213,7 @@ public class ParticleUIHandler : MonoBehaviour
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Dropdown;
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else if(type.IsEnum) // Enum (other than Direction)
@@ -216,6 +223,7 @@ public class ParticleUIHandler : MonoBehaviour
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Dropdown;
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else
@@ -326,6 +334,17 @@ public class ParticleUIHandler : MonoBehaviour
     
 
     // Callbacks
+
+    private void SettingHeldDown(string name, float duration)
+    {
+        if(IsOpen() && duration >= 2f)
+        {
+            // Setting held down long enough to apply attribute value to all particles (of same type)
+            Log.Debug("Setting " + name + " with value "+particle.TryGetAttributeByName(name).ToString_AttributeValue()+" is applied to all particles of the same type. However, this feature is not implemented yet.");
+            //sim.system.
+            if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
+        }
+    }
 
     private void SettingChanged_Value(string name, float value)
     {
