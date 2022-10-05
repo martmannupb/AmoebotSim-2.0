@@ -36,7 +36,8 @@ public class RendererCircuits_RenderBatch
         {
             InternalLine,
             ExternalLine,
-            Bond
+            BondHexagonal,
+            BondCircular
         }
 
         public Color color;
@@ -73,15 +74,21 @@ public class RendererCircuits_RenderBatch
             case PropertyBlockData.LineType.ExternalLine:
                 lineMaterial = SettingsGlobal.circuitBorderActive ? MaterialDatabase.material_circuit_lineConnector : MaterialDatabase.material_circuit_line;
                 break;
-            case PropertyBlockData.LineType.Bond:
-                lineMaterial = MaterialDatabase.material_bond_line;
+            case PropertyBlockData.LineType.BondHexagonal:
+                lineMaterial = MaterialDatabase.material_bond_lineHexagonal;
+                break;
+            case PropertyBlockData.LineType.BondCircular:
+                lineMaterial = MaterialDatabase.material_bond_lineCircular;
                 break;
             default:
                 break;
         }
 
         // Circle PropertyBlocks
-        if(properties.lineType != PropertyBlockData.LineType.Bond) propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Bond Color stays
+        if(properties.lineType != PropertyBlockData.LineType.BondHexagonal && properties.lineType != PropertyBlockData.LineType.BondCircular)
+        {
+            propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Bond Color stays
+        }
         if(properties.beeping)
         {
             propertyBlock_circuitMatrices_Lines.ApplyTexture(lineMaterial.GetTexture("_Texture2D"));
@@ -98,8 +105,11 @@ public class RendererCircuits_RenderBatch
             case PropertyBlockData.LineType.ExternalLine:
                 lineWidth = RenderSystem.const_circuitConnectorLineWidth;
                 break;
-            case PropertyBlockData.LineType.Bond:
-                lineWidth = RenderSystem.const_bondsLineWidth;
+            case PropertyBlockData.LineType.BondHexagonal:
+                lineWidth = RenderSystem.const_bondsLineWidthHex;
+                break;
+            case PropertyBlockData.LineType.BondCircular:
+                lineWidth = RenderSystem.const_bondsLineWidthCirc;
                 break;
             default:
                 break;
@@ -145,7 +155,7 @@ public class RendererCircuits_RenderBatch
         Vector2 vec = posEnd - posInitial;
         float length = vec.magnitude;
         float z;
-        if(properties.lineType == PropertyBlockData.LineType.Bond) z = RenderSystem.ZLayer_bonds;
+        if(properties.lineType == PropertyBlockData.LineType.BondHexagonal || properties.lineType == PropertyBlockData.LineType.BondCircular) z = RenderSystem.ZLayer_bonds;
         else z = RenderSystem.zLayer_circuits + zOffset;
         Quaternion q;
         q = Quaternion.FromToRotation(Vector2.right, vec);
@@ -212,19 +222,31 @@ public class RendererCircuits_RenderBatch
         }
     }
 
-    public void Render(bool firstRenderFrame)
+    public void Render(ViewType type, bool firstRenderFrame)
     {
         // Visibility Check
-        if(properties.lineType == PropertyBlockData.LineType.InternalLine || properties.lineType == PropertyBlockData.LineType.ExternalLine)
+        switch (type)
         {
-            // Circuits
-            if (RenderSystem.flag_showCircuitView == false) return;
+            case ViewType.Hexagonal:
+                if (properties.lineType == PropertyBlockData.LineType.BondCircular) return;
+                if (properties.lineType == PropertyBlockData.LineType.InternalLine || properties.lineType == PropertyBlockData.LineType.ExternalLine)
+                {
+                    // Circuits
+                    if (RenderSystem.flag_showCircuitView == false) return;
+                }
+                else
+                {
+                    // Bonds
+                    if (RenderSystem.flag_showBonds == false) return;
+                }
+                break;
+            case ViewType.Circular:
+                if (properties.lineType != PropertyBlockData.LineType.BondCircular) return;
+                break;
+            default:
+                break;
         }
-        else
-        {
-            // Bonds
-            if (RenderSystem.flag_showBonds == false) return;
-        }
+        
 
         // Timestamp
         if (firstRenderFrame)

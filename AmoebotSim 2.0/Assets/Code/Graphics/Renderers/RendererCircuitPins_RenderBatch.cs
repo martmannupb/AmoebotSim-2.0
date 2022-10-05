@@ -139,8 +139,9 @@ public class RendererCircuitPins_RenderBatch
         }
     }
 
-    public void Render(bool firstRenderFrame)
+    public void Render(ViewType type, bool firstRenderFrame)
     {
+        if (type == ViewType.Circular) return;
         if (RenderSystem.flag_showCircuitView == false) return;
 
         // Timestamp

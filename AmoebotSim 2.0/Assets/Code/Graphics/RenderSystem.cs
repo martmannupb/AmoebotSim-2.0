@@ -29,7 +29,8 @@ public class RenderSystem
     public const float const_circuitSingletonPinSize = 0.085f;
     public const float const_circuitPinConnectorSize = 0.02f;
     public const float const_circuitPinBeepSizePercentage = 0.5f;
-    public const float const_bondsLineWidth = 0.4f;
+    public const float const_bondsLineWidthHex = 0.4f;
+    public const float const_bondsLineWidthCirc = 0.15f;
     // Layers
     public const float zLayer_background = 10f;
     public const float ZLayer_bonds = 9f;

@@ -43,9 +43,9 @@ public class RendererCircuitsAndBonds
         updateInstance = (updateInstance + 1) % renderInstances.Length;
     }
 
-    public void Render()
+    public void Render(ViewType type)
     {
-        renderInstances[drawnInstance].Render();
+        renderInstances[drawnInstance].Render(type);
     }
 
 }
