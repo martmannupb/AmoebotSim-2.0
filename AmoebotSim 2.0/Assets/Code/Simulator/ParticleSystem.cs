@@ -852,6 +852,9 @@ public class ParticleSystem : IReplayHistory
         // TODO: No connectivity check is performed then! Should this always be executed?
         if (particlesMove)
             SimulateJointMovements();
+        else
+            // Compute bond information anyway
+            ComputeBondsStatic();
         FinishMovementInfo();
 
         // Second: Beep cycle
@@ -1110,54 +1113,7 @@ public class ParticleSystem : IReplayHistory
                     handoverLabelToCheck = ParticleSystem_Utils.GetLabelInDir(dir, globalHeadDir, true);
             }
 
-            for (int label = 0; label < numNbrs; label++)
-            {
-                Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
-                bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
-                Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
-                if (particleMap.TryGetValue(nbrPos, out Particle nbr))
-                {
-                    // We have a neighbor at this location
-
-                    // Collect information and check if we have a bond to this neighbor
-                    bool isNbrHead = nbr.Head() == nbrPos;
-                    int nbrLabel = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
-
-                    // Have connection if both of the bonds are active
-                    bool myBondActive = p.activeBondsGlobal[label];
-                    bool nbrBondActive = nbr.activeBondsGlobal[nbrLabel];
-
-                    bool bondsActive = myBondActive && nbrBondActive;
-                    bool bondsDisagree = myBondActive ^ nbrBondActive;
-                    // TODO: Maybe remove this warning?
-                    if (bondsDisagree && !p.markedForAutomaticBonds && !nbr.markedForAutomaticBonds)
-                    {
-                        Debug.LogWarning("Bonds disagree between particles at " + p.Head() + ", " + p.Tail() + " and " + nbrPos);
-                    }
-
-                    // Add the neighbor to the list if there is a bond and the neighbor has not been processed yet
-                    if (bondsActive)
-                    {
-                        // This info is useful for bond computation as well
-                        bondNbrs[label] = true;
-                        nbrHead[label] = isNbrHead;
-                        nbrLabels[label] = nbrLabel;
-                        // This is only set if we want to process the neighbor
-                        if (!nbr.processedJointMovement)
-                        {
-                            nbrParts[label] = nbr;
-                        }
-                    }
-                }
-
-                // Error if there is no neighbor here although a handover is scheduled
-                if (label == handoverLabelToCheck && !bondNbrs[label])
-                {
-                    Debug.LogError("Error: Particle at position " + p.Head() + ", " + p.Tail() + " has scheduled handover at label " + handoverLabelToCheck
-                        + " but has no neighbor at that label");
-                    throw new System.InvalidOperationException("Error computing movements");
-                }
-            }
+            CollectBondInfo(p, numNbrs, globalHeadDir, nbrParts, bondNbrs, nbrHead, nbrLabels, handoverLabelToCheck);
 
             // Neighbors have been found
             // Now check if the particle's movement agrees with its neighbors
@@ -1631,6 +1587,80 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
+    /// Helper method for finding the bonded neighbors of a particle.
+    /// </summary>
+    /// <param name="p">The particle whose neighbors shall be found.</param>
+    /// <param name="numNbrs">The number of labels to be checked. Should be
+    /// <c>6</c> or <c>10</c>, depending on the expansion state of the
+    /// particle. All provided array parameters must have at least this length.</param>
+    /// <param name="globalHeadDir">The global head direction of the particle.</param>
+    /// <param name="nbrParts">A particle array that should hold references to the
+    /// bonded neighbor particles that still have to be processed.</param>
+    /// <param name="bondNbrs">A bool array that should have <c>true</c> entries for
+    /// all labels at which there is a bonded neighbor.</param>
+    /// <param name="nbrHead">A bool array that should have <c>true</c> entries for
+    /// all labels that are adjacent to the head of a bonded neighbor.</param>
+    /// <param name="nbrLabels">An int array that should hold the bonded neighbor's
+    /// label corresponding to each of the current particle's labels.</param>
+    /// <param name="handoverLabelToCheck">One label that must have a bonded neighbor
+    /// because the current particle intends to perform a handover in that direction.
+    /// If no such neighbor is found, a <see cref="System.InvalidOperationException"/>
+    /// is thrown. Use <c>-1</c> to indicate that no label must be checked.</param>
+    private void CollectBondInfo(Particle p, int numNbrs, Direction globalHeadDir,
+        Particle[] nbrParts, bool[] bondNbrs, bool[] nbrHead, int[] nbrLabels,
+        int handoverLabelToCheck = -1)
+    {
+        for (int label = 0; label < numNbrs; label++)
+        {
+            Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+            bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
+            Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
+            if (particleMap.TryGetValue(nbrPos, out Particle nbr))
+            {
+                // We have a neighbor at this location
+
+                // Collect information and check if we have a bond to this neighbor
+                bool isNbrHead = nbr.Head() == nbrPos;
+                int nbrLabel = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
+
+                // Have connection if both of the bonds are active
+                bool myBondActive = p.activeBondsGlobal[label];
+                bool nbrBondActive = nbr.activeBondsGlobal[nbrLabel];
+
+                bool bondsActive = myBondActive && nbrBondActive;
+                bool bondsDisagree = myBondActive ^ nbrBondActive;
+                // TODO: Maybe remove this warning?
+                if (bondsDisagree && !p.markedForAutomaticBonds && !nbr.markedForAutomaticBonds)
+                {
+                    Debug.LogWarning("Bonds disagree between particles at " + p.Head() + ", " + p.Tail() + " and " + nbrPos);
+                }
+
+                // Add the neighbor to the list if there is a bond and the neighbor has not been processed yet
+                if (bondsActive)
+                {
+                    // This info is useful for bond computation as well
+                    bondNbrs[label] = true;
+                    nbrHead[label] = isNbrHead;
+                    nbrLabels[label] = nbrLabel;
+                    // This is only set if we want to process the neighbor
+                    if (!nbr.processedJointMovement)
+                    {
+                        nbrParts[label] = nbr;
+                    }
+                }
+            }
+
+            // Error if there is no neighbor here although a handover is scheduled
+            if (label == handoverLabelToCheck && !bondNbrs[label])
+            {
+                Debug.LogError("Error: Particle at position " + p.Head() + ", " + p.Tail() + " has scheduled handover at label " + handoverLabelToCheck
+                    + " but has no neighbor at that label");
+                throw new System.InvalidOperationException("Error computing movements");
+            }
+        }
+    }
+
+    /// <summary>
     /// Helper method for handling the joint movement of a contracted particle that is bonded
     /// to an expanded particle.
     /// </summary>
@@ -1928,6 +1958,100 @@ public class ParticleSystem : IReplayHistory
         }
 
         return edgeOffset;
+    }
+
+    private void ComputeBondsStatic()
+    {
+        // Use BFS, just like for movement simulation
+        Queue<Particle> queue = new Queue<Particle>();
+
+        // Start with the anchor particle
+        Particle anchor = particles[0];
+        anchor.jmOffset = Vector2Int.zero;
+
+        queue.Enqueue(anchor);
+        anchor.queuedForJMProcessing = true;
+
+        while (queue.Count > 0)
+        {
+            Particle p = queue.Dequeue();
+
+            p.jmOffset = Vector2Int.zero;
+
+            // Find the bonded neighbors of the particle
+            Direction globalHeadDir = p.GlobalHeadDirection();
+            int numNbrs = p.IsExpanded() ? 10 : 6;
+            Particle[] nbrParts = new Particle[numNbrs];
+            bool[] nbrHead = new bool[numNbrs];     // True if the neighbor's head is at this position
+            int[] nbrLabels = new int[numNbrs];     // Stores global neighbor label opposite of our label
+            bool[] bondNbrs = new bool[numNbrs];    // True wherever we have a bonded neighbor
+
+            CollectBondInfo(p, numNbrs, globalHeadDir, nbrParts, bondNbrs, nbrHead, nbrLabels);
+
+            // Go through the labels and process the bonds to each neighbor
+            for (int label = 0; label < numNbrs; label++)
+            {
+                Particle nbr = nbrParts[label];
+                if (nbr == null)
+                    continue;
+
+                // Find out how many bonds we have to that neighbor
+                int numBonds = 0;
+                int[] bondLabels = new int[3] { -1, -1, -1 };
+                int[] nbrBondLabels = new int[3] { -1, -1, -1 };
+                bool[] bondNbrHead = new bool[] { false, false, false };
+                bool[] bondOwnHead = new bool[] { false, false, false };
+
+                int[] offsets;
+
+                if (p.IsContracted() || nbr.IsContracted())
+                {
+                    // We can have a maximum of 2 bonds, look 1 position in each direction
+                    offsets = new int[] { 0, 1, numNbrs - 1 };
+                }
+                else
+                {
+                    // We can have a maximum of 3 bonds, must look 2 positions in each direction (middle is the current bond)
+                    offsets = new int[] { 8, 9, 0, 1, 2 };
+                    // Also, remove the other occurrences from the list of neighbors
+                }
+                // Collect information about the bonds and remove the neighbor's other occurrences
+                // so that it is not processed multiple times
+                foreach (int offset in offsets)
+                {
+                    int lb = (label + offset) % numNbrs;
+                    if (nbrParts[lb] == nbr)
+                    {
+                        bondLabels[numBonds] = lb;
+                        nbrBondLabels[numBonds] = nbrLabels[lb];
+                        bondNbrHead[numBonds] = nbrHead[lb];
+                        bondOwnHead[numBonds] = ParticleSystem_Utils.IsHeadLabel(lb, globalHeadDir);
+                        if (offset != 0)
+                        {
+                            nbrParts[lb] = null;
+                        }
+                        numBonds++;
+                    }
+                }
+
+                // Add bond graphics info for each bond
+                for (int i = 0; i < numBonds; i++)
+                {
+                    Vector2Int start = bondOwnHead[i] ? p.Head() : p.Tail();
+                    Vector2Int end = bondNbrHead[i] ? nbr.Head() : nbr.Tail();
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(start, end, start, end));
+                }
+
+                // Enqueue the neighbor if necessary
+                if (!nbr.queuedForJMProcessing)
+                {
+                    queue.Enqueue(nbr);
+                    nbr.queuedForJMProcessing = true;
+                }
+            }
+
+            p.processedJointMovement = true;
+        }
     }
 
     // TODO: Circuit computation and beep/message handling should probably be done separately
