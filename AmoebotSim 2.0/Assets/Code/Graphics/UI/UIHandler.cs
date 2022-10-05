@@ -462,8 +462,7 @@ public class UIHandler : MonoBehaviour
     {
         Vector2 pos;
         if (sim.system.particles.Count <= 1000) pos = sim.system.BBoxCenterPosition();
-        else pos = sim.system.SeedPosition();
-        pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2((int)pos.x, (int)pos.y);
+        else pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(sim.system.SeedPosition());
         Camera.main.transform.position = new Vector3(pos.x, pos.y, Camera.main.transform.position.z);
     }
 
@@ -493,6 +492,8 @@ public class UIHandler : MonoBehaviour
     {
         if (sim.running) sim.TogglePlayPause();
 
+        particleUI.Close();
+        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.HideAll();
         sim.system.Reset();
         switch (algoID)
         {
@@ -518,6 +519,7 @@ public class UIHandler : MonoBehaviour
                 break;
         }
         UpdateUI(sim.running, true);
+        sim.RoundChanged();
     }
 
 

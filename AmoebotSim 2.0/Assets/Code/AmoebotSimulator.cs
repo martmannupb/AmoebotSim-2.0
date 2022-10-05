@@ -76,6 +76,7 @@ public class AmoebotSimulator : MonoBehaviour
     public void RoundChanged()
     {
         uiHandler.particleUI.SimState_RoundChanged();
+        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
     }
 
     public void SetSimSpeed(float roundTime)

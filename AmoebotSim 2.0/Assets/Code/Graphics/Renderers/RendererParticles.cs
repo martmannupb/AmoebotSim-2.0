@@ -105,7 +105,7 @@ public class RendererParticles
             item.Render(viewType);
         }
         // Circuits
-        if(viewType != ViewType.Circular) circuitAndBondRenderer.Render();
+        circuitAndBondRenderer.Render(viewType);
     }
 
 }

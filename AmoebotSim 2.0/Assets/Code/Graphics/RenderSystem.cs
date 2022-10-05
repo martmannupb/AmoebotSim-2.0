@@ -29,14 +29,15 @@ public class RenderSystem
     public const float const_circuitSingletonPinSize = 0.085f;
     public const float const_circuitPinConnectorSize = 0.02f;
     public const float const_circuitPinBeepSizePercentage = 0.5f;
-    public const float const_bondsLineWidth = 0.4f;
+    public const float const_bondsLineWidthHex = 0.4f;
+    public const float const_bondsLineWidthCirc = 0.15f;
     // Layers
-    public const float zLayer_background = 1f;
-    public const float ZLayer_bonds = 0.5f;
-    public const float ZLayer_particlesBG = 0.1f;
-    public const float zLayer_particles = 0f;
-    public const float zLayer_circuits = -0.5f;
-    public const float zLayer_pins = -1f;
+    public const float zLayer_background = 10f;
+    public const float ZLayer_bonds = 9f;
+    public const float ZLayer_particlesBG = 5.1f;
+    public const float zLayer_particles = 5f;
+    public const float zLayer_circuits = 4f;
+    public const float zLayer_pins = 3f;
     public const float zLayer_ui = -5f;
     // Global Data
     public static float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");

@@ -16,7 +16,7 @@ public class RendererCircuits_Instance
 
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
-        bool delayed = snap.jointMovementState.isJointMovement || RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
+        bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
         int amountPartitionSets = state.partitionSets.Count;
 
         if(state.isExpanded == false)
@@ -278,8 +278,12 @@ public class RendererCircuits_Instance
         Vector2 prevBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos2);
         Vector2 curBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos1);
         Vector2 curBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos2);
-        // Normal Circuit
-        RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.Bond, false, false, bondState.IsAnimated());
+        // Hexagonal
+        RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondHexagonal, false, false, bondState.IsAnimated());
+        if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
+        else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
+        // Circular
+        batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondCircular, false, false, bondState.IsAnimated());
         if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
         else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
     }
@@ -301,16 +305,16 @@ public class RendererCircuits_Instance
         }
     }
 
-    public void Render()
+    public void Render(ViewType type)
     {
         bool firstRenderFrame = isRenderingActive == false;
         foreach (var batch in propertiesToRenderBatchMap.Values)
         {
-            batch.Render(firstRenderFrame);
+            batch.Render(type, firstRenderFrame);
         }
         foreach (var batch in propertiesToPinRenderBatchMap.Values)
         {
-            batch.Render(firstRenderFrame);
+            batch.Render(type, firstRenderFrame);
         }
         isRenderingActive = true;
     }
