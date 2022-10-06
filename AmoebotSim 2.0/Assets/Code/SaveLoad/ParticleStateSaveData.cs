@@ -50,4 +50,6 @@ public class ParticleStateSaveData
     public ValueHistorySaveData<bool> mainColorSetHistory;
     public ValueHistorySaveData<Color>[] partitionSetColorHistory;
     public ValueHistorySaveData<bool>[] partitionSetColorOverrideHistory;
+    public ValueHistorySaveData<JointMovementInfo> jointMovementHistory;
+    public ValueHistorySaveData<BondMovementInfoList> bondMovementHistory;
 }

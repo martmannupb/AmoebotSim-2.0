@@ -2106,21 +2106,24 @@ public class ParticleSystem : IReplayHistory
     {
         foreach (Particle p in particles)
         {
-            JointMovementInfo info = p.GetCurrentBondGrahpicsInfo();
-            foreach (BondMovementInfo bmi in info.bondMovements)
+            BondMovementInfoList bondInfo = p.GetCurrentBondGraphicsInfo();
+            JointMovementInfo movementInfo = p.GetCurrentMovementGraphicsInfo();
+            Vector2Int beforeOffset = p.Tail() - movementInfo.jmOffset;
+            Vector2Int afterOffset = p.Tail();
+            foreach (BondMovementInfo bmi in bondInfo.bondMovements)
             {
                 if (withAnimation)
-                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2, bmi.end2, bmi.start1, bmi.end1));
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start1 + beforeOffset, bmi.end1 + beforeOffset));
                 else
-                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2, bmi.end2, bmi.start2, bmi.end2));
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start2 + afterOffset, bmi.end2 + afterOffset));
             }
             // Also load joint movement info if required
             if (withAnimation)
             {
-                p.jmOffset = info.jmOffset;
-                p.movementOffset = info.movementOffset;
-                if (info.movementAction != ActionType.NULL)
-                    p.ScheduledMovement = new ParticleAction(p, info.movementAction);
+                p.jmOffset = movementInfo.jmOffset;
+                p.movementOffset = movementInfo.movementOffset;
+                if (movementInfo.movementAction != ActionType.NULL)
+                    p.ScheduledMovement = new ParticleAction(p, movementInfo.movementAction);
             }
         }
     }
@@ -2887,10 +2890,13 @@ public class ParticleSystem : IReplayHistory
     /// Will be <c>(0, 0)</c> if there are no particles.</returns>
     public Vector2 BBoxCenterPosition()
     {
-        float xMin = 0f;
-        float xMax = 0f;
-        float yMin = 0f;
-        float yMax = 0f;
+        if (particleMap.Count == 0)
+            return Vector2.zero;
+
+        float xMin = float.PositiveInfinity;
+        float xMax = float.NegativeInfinity;
+        float yMin = float.PositiveInfinity;
+        float yMax = float.NegativeInfinity;
 
         foreach (Vector2Int pos in particleMap.Keys)
         {
@@ -3144,9 +3150,10 @@ public class ParticleSystem : IReplayHistory
             }
         }
 
+        LoadMovementGraphicsInfo(false);
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
 

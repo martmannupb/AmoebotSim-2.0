@@ -46,6 +46,13 @@ public class JMTestParticle : ParticleAlgorithm
         terminated = CreateAttributeBool("Terminated", false);
     }
 
+    public JMTestParticle(Particle p) : base(p)
+    {
+        this.mode = CreateAttributeInt("Mode", -1);
+        this.role = CreateAttributeInt("Role", -1);
+        terminated = CreateAttributeBool("Terminated", false);
+    }
+
     public override void ActivateBeep()
     {
     }
