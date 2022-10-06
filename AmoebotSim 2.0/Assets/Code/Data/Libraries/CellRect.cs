@@ -152,6 +152,13 @@ public struct CellRect {
         return list;
     }
 
+    public static bool operator ==(CellRect left, CellRect right)
+    {
+        return left.minX == right.minX && left.minY == right.minY && left.maxX == right.maxX && left.maxY == right.maxY;
+    }
+
+    public static bool operator !=(CellRect lhs, CellRect rhs) => !(lhs == rhs);
+
 
 
 

@@ -46,6 +46,24 @@ public static class CameraUtils {
         return worldCoordinates;
     }
 
+    public static Vector2 GetLowestXYCameraWorldPositions()
+    {
+        Vector2 camPosBL = MainCamera_WorldPosition_BottomLeft();
+        Vector2 camPosBR = MainCamera_WorldPosition_BottomRight();
+        Vector2 camPosTL = MainCamera_WorldPosition_TopLeft();
+        Vector2 camPosTR = MainCamera_WorldPosition_TopRight();
+        return new Vector2(Mathf.Min(camPosBL.x, camPosBR.x, camPosTL.x, camPosTR.x), Mathf.Min(camPosBL.y, camPosBR.y, camPosTL.y, camPosTR.y));
+    }
+
+    public static Vector2 GetHightestXYCameraWorldPositions()
+    {
+        Vector2 camPosBL = MainCamera_WorldPosition_BottomLeft();
+        Vector2 camPosBR = MainCamera_WorldPosition_BottomRight();
+        Vector2 camPosTL = MainCamera_WorldPosition_TopLeft();
+        Vector2 camPosTR = MainCamera_WorldPosition_TopRight();
+        return new Vector2(Mathf.Max(camPosBL.x, camPosBR.x, camPosTL.x, camPosTR.x), Mathf.Max(camPosBL.y, camPosBR.y, camPosTL.y, camPosTR.y));
+    }
+
     // Mouse Position -----
 
     /// <summary>
