@@ -142,6 +142,9 @@ public class Particle : IParticleState, IReplayHistory
         get { return partitionSetColorsOverride; }
     }
 
+    // Bond and movement info
+    private ValueHistoryJointMovement movementAndBondHistory;
+
 
     /**
      * Data used by simulator to coordinate particle actions
@@ -301,6 +304,9 @@ public class Particle : IParticleState, IReplayHistory
         // Initialize color
         mainColorHistory = new ValueHistory<Color>(mainColor, currentRound);
         mainColorSetHistory = new ValueHistory<bool>(mainColorSet, currentRound);
+
+        // Initial value is empty, can be replaced by actual bonds when the whole system is initialized
+        movementAndBondHistory = new ValueHistoryJointMovement(JointMovementInfo.Empty, currentRound);
 
         // Add particle to the system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
@@ -1060,6 +1066,28 @@ public class Particle : IParticleState, IReplayHistory
         markedBondHistory.RecordValueInRound(markedBonds.Data, system.CurrentRound);
         activeBonds = new BitVector32(1023);    // All flags set to true
         markedBonds = new BitVector32(0);       // All flags set to false
+
+        // Also record finished joint movement visualization info
+        BondMovementInfo[] bondMovements = new BondMovementInfo[bondGraphicInfo.Count];
+        for (int i = 0; i < bondGraphicInfo.Count; i++)
+        {
+            ParticleBondGraphicState s = bondGraphicInfo[i];
+            bondMovements[i] = new BondMovementInfo(s.prevBondPos1, s.prevBondPos2, s.curBondPos1, s.curBondPos2);
+        }
+        JointMovementInfo movementInfo = new JointMovementInfo(bondMovements, jmOffset, movementOffset, scheduledMovement != null ? scheduledMovement.type : ActionType.NULL);
+        movementAndBondHistory.RecordValueInRound(movementInfo, system.CurrentRound);
+    }
+
+    /// <summary>
+    /// Returns the currently loaded graphics information for
+    /// bonds and joint movements.
+    /// </summary>
+    /// <returns>A <see cref="JointMovementInfo"/> that holds the
+    /// joint movement and bond information for the currently
+    /// loaded state.</returns>
+    public JointMovementInfo GetCurrentBondGrahpicsInfo()
+    {
+        return movementAndBondHistory.GetMarkedValue();
     }
 
     /// <summary>
@@ -1366,6 +1394,8 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.SetMarkerToRound(round);
         mainColorSetHistory.SetMarkerToRound(round);
 
+        movementAndBondHistory.SetMarkerToRound(round);
+
         // Need to update private fields accordingly
         UpdateInternalState();
 
@@ -1402,6 +1432,8 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.StepBack();
         mainColorSetHistory.StepBack();
 
+        movementAndBondHistory.StepBack();
+
         UpdateInternalState();
 
         foreach (IParticleAttribute attr in attributes)
@@ -1431,6 +1463,8 @@ public class Particle : IParticleState, IReplayHistory
 
         mainColorHistory.StepForward();
         mainColorSetHistory.StepForward();
+
+        movementAndBondHistory.StepForward();
 
         UpdateInternalState();
 
@@ -1477,6 +1511,8 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.ContinueTracking();
         mainColorSetHistory.ContinueTracking();
 
+        movementAndBondHistory.ContinueTracking();
+
         UpdateInternalState();
 
         foreach (IParticleAttribute attr in attributes)
@@ -1515,6 +1551,8 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.CutOffAtMarker();
         mainColorSetHistory.CutOffAtMarker();
 
+        movementAndBondHistory.CutOffAtMarker();
+
         // No need to update internal state because this does not change
         // the current value of a history
 
@@ -1545,6 +1583,8 @@ public class Particle : IParticleState, IReplayHistory
 
         mainColorHistory.ShiftTimescale(amount);
         mainColorSetHistory.ShiftTimescale(amount);
+
+        movementAndBondHistory.ShiftTimescale(amount);
 
         // No need to update internal state because this does not change
         // the current value of a history

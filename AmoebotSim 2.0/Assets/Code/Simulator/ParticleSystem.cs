@@ -126,9 +126,12 @@ public class ParticleSystem : IReplayHistory
             particleMap.Add(p.Head(), p);
         }
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     /// <summary>
@@ -192,9 +195,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeLeaderElection(int numParticles, float holeProb)
@@ -245,9 +251,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeChiralityCompass(int numParticles, float holeProb)
@@ -298,9 +307,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeBoundaryTest(int numParticles, float holeProb)
@@ -351,9 +363,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeJMTest(int mode)
@@ -767,10 +782,12 @@ public class ParticleSystem : IReplayHistory
 
 
 
-
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     #endregion
@@ -1960,6 +1977,13 @@ public class ParticleSystem : IReplayHistory
         return edgeOffset;
     }
 
+    /// <summary>
+    /// Computes bond information in the case that no movements have occurred.
+    /// This method works similar to the joint movement simulation but it does
+    /// not process any movements. It also does not check whether the particle
+    /// bond structure is connected or not. Bonds will only be computed for the
+    /// connected component that contains the anchor particle.
+    /// </summary>
     private void ComputeBondsStatic()
     {
         // Use BFS, just like for movement simulation
@@ -2051,6 +2075,53 @@ public class ParticleSystem : IReplayHistory
             }
 
             p.processedJointMovement = true;
+        }
+    }
+
+    /// <summary>
+    /// Sets all global bonds of all particles so that
+    /// their initial bonds can be computed easily.
+    /// </summary>
+    public void SetInitialParticleBonds()
+    {
+        foreach (Particle p in particles)
+        {
+            for (int i = 0; i < 10; i++)
+                p.activeBondsGlobal[i] = true;
+        }
+    }
+
+    /// <summary>
+    /// Sets the bond graphics info of all particles to the
+    /// currently loaded state so that it can be displayed.
+    /// If animations are required, the joint movement info is
+    /// also loaded and set up to produce the correct animations.
+    /// This should be called when stepping or jumping through
+    /// the history.
+    /// </summary>
+    /// <param name="withAnimation">Flag indicating whether the
+    /// loaded movement information should include an animation
+    /// or not.</param>
+    private void LoadMovementGraphicsInfo(bool withAnimation)
+    {
+        foreach (Particle p in particles)
+        {
+            JointMovementInfo info = p.GetCurrentBondGrahpicsInfo();
+            foreach (BondMovementInfo bmi in info.bondMovements)
+            {
+                if (withAnimation)
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2, bmi.end2, bmi.start1, bmi.end1));
+                else
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2, bmi.end2, bmi.start2, bmi.end2));
+            }
+            // Also load joint movement info if required
+            if (withAnimation)
+            {
+                p.jmOffset = info.jmOffset;
+                p.movementOffset = info.movementOffset;
+                if (info.movementAction != ActionType.NULL)
+                    p.ScheduledMovement = new ParticleAction(p, info.movementAction);
+            }
         }
     }
 
@@ -2897,10 +2968,11 @@ public class ParticleSystem : IReplayHistory
             isTracking = false;
             // TODO: This should be structured better
             DiscoverCircuits(false);
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
         }
     }
 
@@ -2933,10 +3005,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = false;
             DiscoverCircuits(false);
-            CleanupAfterRound();
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
+            CleanupAfterRound();
         }
     }
 
@@ -2969,10 +3042,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = false;
             DiscoverCircuits(false);
+            LoadMovementGraphicsInfo(true);
+            UpdateAllParticleVisuals(false);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(false);
         }
     }
 
@@ -2999,10 +3073,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = true;
             DiscoverCircuits();
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
         }
     }
 
