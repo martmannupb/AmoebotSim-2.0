@@ -1817,10 +1817,11 @@ public class ParticleSystem : IReplayHistory
                 Debug.LogError("Error: Disagreement on handover with two bonds");
                 throw new System.InvalidOperationException("Conflict during movements");
             }
-            
+
             // Prepare info for second bond
+            Vector2Int eBond1_2 = eHead2 ? e.Head() : e.Tail();
             Vector2Int cBond2_2 = cBond1;
-            Vector2Int eBond2_2 = eBond1;
+            Vector2Int eBond2_2 = eBond1_2;
 
             bool handoverFirst = weWantHandoverFirst && nbrWantsHandoverFirst;
             bool handoverSecond = weWantHandoverSecond && nbrWantsHandoverSecond;
@@ -1896,12 +1897,12 @@ public class ParticleSystem : IReplayHistory
             if (bondForContracted)
             {
                 c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
-                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1_2));
             }
             else
             {
                 e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
-                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1, cBond1));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1_2, cBond1));
             }
         }
         return eOffset;
