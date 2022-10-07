@@ -78,7 +78,7 @@ public class InitializationMethodManager
             MethodInfo generateMethod = null;
             foreach (MethodInfo mi in methods)
             {
-                if (mi.Name == GenerationMethodName)
+                if (mi.Name.Equals(GenerationMethodName))
                 {
                     ParameterInfo[] parameters = mi.GetParameters();
                     string s = "Params:\n";

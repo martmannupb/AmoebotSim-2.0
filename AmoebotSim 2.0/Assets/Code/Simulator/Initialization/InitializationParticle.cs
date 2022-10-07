@@ -55,7 +55,7 @@ public class InitializationParticle : IParticleState
     }
 
 
-    public int[] genericParams = new int[Initialization.NumGenericParams];
+    public List<int> genericParams;
     public ParticleGraphicsAdapterImpl graphics;
     private ParticleSystem system;
 
@@ -70,6 +70,10 @@ public class InitializationParticle : IParticleState
         else
             headPos = ParticleSystem_Utils.GetNbrInDir(tailPos, expansionDir);
         this.system = system;
+
+        genericParams = new List<int>(system.NumGenericParameters);
+        for (int i = 0; i < system.NumGenericParameters; i++)
+            genericParams.Add(0);
         
         // Add particle to the render system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
@@ -108,5 +112,35 @@ public class InitializationParticle : IParticleState
     public Vector2Int Tail()
     {
         return tailPos;
+    }
+
+    /// <summary>
+    /// Appends a new generic parameter with the given initial value.
+    /// <para>
+    /// This method should not be called on individual particles.
+    /// Instead, add a new parameter to all current particles at
+    /// once using the corresponding interface method.
+    /// </para>
+    /// </summary>
+    /// <param name="initialVal">The initial value of the new
+    /// generic parameter.</param>
+    public void AddGenericParam(int initialVal = 0)
+    {
+        genericParams.Add(initialVal);
+    }
+
+    /// <summary>
+    /// Removes the generic parameter with the given index.
+    /// <para>
+    /// This method should not be called on individual particles.
+    /// Instead, remove the parameter from all current particles
+    /// at once using the corresponding interface method.
+    /// </para>
+    /// </summary>
+    /// <param name="index">The index of the generic parameter
+    /// to be removed.</param>
+    public void RemoveGenericParam(int index)
+    {
+        genericParams.RemoveAt(index);
     }
 }

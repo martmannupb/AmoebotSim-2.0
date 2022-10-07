@@ -42,7 +42,7 @@ public class ParticleFactory
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        new ExpandedCircuitTestParticle(p, new int[Initialization.NumGenericParams]);
+        new ExpandedCircuitTestParticle(p, new int[0]);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
@@ -56,7 +56,7 @@ public class ParticleFactory
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        new LineFormationParticleSync(p, new int[Initialization.NumGenericParams]);
+        new LineFormationParticleSync(p, new int[0]);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
@@ -70,7 +70,7 @@ public class ParticleFactory
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        new LeaderElectionParticle(p, new int[Initialization.NumGenericParams]);
+        new LeaderElectionParticle(p, new int[0]);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
@@ -82,7 +82,7 @@ public class ParticleFactory
     {
         Particle p = new Particle(system, position, DirectionHelpers.Cardinal(Random.Range(0, 6)), Random.Range(0f, 1f) <= 0.5f);
         p.isActive = true;
-        ChiralityAndCompassParticle alg = new ChiralityAndCompassParticle(p, new int[Initialization.NumGenericParams]);
+        ChiralityAndCompassParticle alg = new ChiralityAndCompassParticle(p, new int[0]);
         alg.realChirality.SetValue(p.chirality);
         alg.realCompassDir.SetValue(p.comDir);
         p.InitWithAlgorithm();
@@ -98,7 +98,7 @@ public class ParticleFactory
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        new BoundaryTestAlgo.BoundaryTestParticle(p, new int[Initialization.NumGenericParams]);
+        new BoundaryTestAlgo.BoundaryTestParticle(p, new int[0]);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();

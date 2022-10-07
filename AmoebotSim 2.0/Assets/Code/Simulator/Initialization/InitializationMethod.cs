@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 // TODO: Documentation
@@ -46,6 +44,37 @@ public abstract class InitializationMethod
     public bool TryGetParticleAt(Vector2Int position, out InitializationParticle particle)
     {
         return system.TryGetInitParticleAt(position, out particle);
+    }
+
+    /// <summary>
+    /// Returns the current number of generic parameters.
+    /// </summary>
+    /// <returns>The number of generic parameters that each
+    /// particle currently has.</returns>
+    public int NumGenericParameters()
+    {
+        return system.NumGenericParameters;
+    }
+
+    /// <summary>
+    /// Adds a new generic parameter to all particles.
+    /// </summary>
+    /// <param name="initialValue">The initial value
+    /// of the new parameter.</param>
+    public void AddGenericParameter(int initialValue = 0)
+    {
+        system.AddGenericParameter(initialValue);
+    }
+
+    /// <summary>
+    /// Removes the specified generic parameter from
+    /// all particles.
+    /// </summary>
+    /// <param name="index">The index of the generic
+    /// parameter to be removed.</param>
+    public void RemoveGenericParameter(int index)
+    {
+        system.RemoveGenericParameter(index);
     }
 
     /// <summary>
