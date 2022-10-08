@@ -2949,13 +2949,15 @@ public class ParticleSystem : IReplayHistory
     {
         Vector2 avg = Vector2.zero;
 
-        foreach (Vector2Int pos in particleMap.Keys)
+        ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+
+        foreach (Vector2Int pos in positions)
         {
             avg += pos;
         }
 
-        if (particleMap.Count > 0)
-            avg /= particleMap.Count;
+        if (positions.Count > 0)
+            avg /= positions.Count;
 
         return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(avg.x, avg.y);
     }
@@ -2967,7 +2969,9 @@ public class ParticleSystem : IReplayHistory
     /// Will be <c>(0, 0)</c> if there are no particles.</returns>
     public Vector2 BBoxCenterPosition()
     {
-        if (particleMap.Count == 0)
+        ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+
+        if (positions.Count == 0)
             return Vector2.zero;
 
         float xMin = float.PositiveInfinity;
@@ -2975,7 +2979,7 @@ public class ParticleSystem : IReplayHistory
         float yMin = float.PositiveInfinity;
         float yMax = float.NegativeInfinity;
 
-        foreach (Vector2Int pos in particleMap.Keys)
+        foreach (Vector2Int pos in positions)
         {
             Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
             if (abs.x < xMin)
@@ -3000,8 +3004,23 @@ public class ParticleSystem : IReplayHistory
     public Vector2 SeedPosition()
     {
         Vector2 result;
-        if (particles.Count > 0)
-            result = 0.5f * (Vector2)(particles[0].Head() + particles[0].Tail());
+        IParticleState seed = null;
+        int n;
+        if (inInitializationState)
+        {
+            n = particlesInit.Count;
+            if (n > 0)
+                seed = particlesInit[0];
+        }
+        else
+        {
+            n = particles.Count;
+            if (n > 0)
+                seed = particles[0];
+        }
+
+        if (n > 0)
+            result = 0.5f * (Vector2)(seed.Head() + seed.Tail());
         else
             result = Vector2.zero;
 
@@ -3307,7 +3326,7 @@ public class ParticleSystem : IReplayHistory
                 particleMapInit[p.Tail()] = ip;
                 if (p.IsExpanded())
                     particleMapInit[p.Head()] = ip;
-                ip.graphics.AddParticle();
+                ip.graphics.AddParticle(new ParticleMovementState(ip.Head(), ip.Tail(), ip.IsExpanded(), ip.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
                 ip.graphics.UpdateReset();
             }
         }
@@ -3456,7 +3475,7 @@ public class ParticleSystem : IReplayHistory
         particleMapInit[tailPos] = ip;
         if (headDirection != Direction.NONE)
             particleMapInit[ip.Head()] = ip;
-        ip.graphics.AddParticle();
+        ip.graphics.AddParticle(new ParticleMovementState(ip.Head(), ip.Tail(), ip.IsExpanded(), ip.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         ip.graphics.UpdateReset();
         return ip;
     }

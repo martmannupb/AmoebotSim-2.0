@@ -27,7 +27,7 @@ public class ParticleFactory
         AlgorithmManager.Instance.Instantiate(algorithmId, p, genericParams.ToArray());
         p.isActive = false;
         p.InitWithAlgorithm();
-        p.graphics.AddParticle();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         p.graphics.UpdateReset();
 
         return p;
