@@ -3296,7 +3296,9 @@ public class ParticleSystem : IReplayHistory
         // FOR TESTING
 
         //man.GenerateSystem(this, "Random With Holes", new object[] { particleAmount, 0.25f, Initialization.Chirality.Random, Initialization.Compass.Random });
-        man.GenerateSystem(this, "Smart Material", new object[] { });
+        man.GenerateSystem(this, "Smart Material", new object[] { particleAmount });
+
+        Log.Debug("Generated system has " + particlesInit.Count + " particles");
     }
 
     /// <summary>
