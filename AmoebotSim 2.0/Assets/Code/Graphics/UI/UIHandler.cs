@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine;
+using SFB;
 
 public class UIHandler : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class UIHandler : MonoBehaviour
     public InitializationUIHandler initializationUI;
 
     // UI Objects =====
+    public GameObject ui;
     // Play/Pause
     public Image image_playPauseButton;
     public Sprite sprite_play;
@@ -37,12 +39,17 @@ public class UIHandler : MonoBehaviour
     public Button button_toolMove;
     private Color toolColor_active;
     private Color toolColor_inactive;
-    // AntiAliasing
-    public Image image_AAButton;
-    public Sprite sprite_aa0;
-    public Sprite sprite_aa2;
-    public Sprite sprite_aa4;
-    public Sprite sprite_aa8;
+    // Overlay Panel
+    public Button button_viewType;
+    public Image image_viewType;
+    public Sprite sprite_viewTypeCircular;
+    public Sprite sprite_viewTypeHexagonal;
+    public Button button_circuitViewType;
+    public Image image_circuitViewType;
+    public Sprite sprite_circuitViewTypeCircuitsEnabled;
+    public Sprite sprite_circuitViewTypeCircuitsDisabled;
+    private Color overlayColor_active;
+    private Color overlayColor_inactive;
     // Settings/Exit
     public Button button_settings;
     public Button button_exit;
@@ -69,8 +76,6 @@ public class UIHandler : MonoBehaviour
 
     public void InitUI()
     {
-        // Init Visuals
-        UpdateAAButton();
         // Init Sim Speed Slider
         slider_speed.wholeNumbers = true;
         slider_speed.minValue = 0f;
@@ -83,7 +88,10 @@ public class UIHandler : MonoBehaviour
         // Init Colors
         if (button_toolStandard != null) toolColor_active = button_toolStandard.gameObject.GetComponent<Image>().color;
         if (button_toolAdd != null) toolColor_inactive = button_toolAdd.gameObject.GetComponent<Image>().color;
+        if (button_viewType != null) overlayColor_active = button_circuitViewType.gameObject.GetComponent<Image>().color;
+        overlayColor_inactive = toolColor_inactive;
     }
+        
 
     public void Update()
     {
@@ -91,6 +99,53 @@ public class UIHandler : MonoBehaviour
 
         UpdateUI(sim.running);
         particleUI.UpdateUI();
+
+        ProcessInputs();
+    }
+
+    private float timestamp_hidden;
+
+    private void ProcessInputs()
+    {
+        // Process Inputs
+        if(Input.GetKey(KeyCode.LeftControl))
+        {
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                // Hide UI
+                HideUI();
+            }
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                // Center Camera
+                Button_CameraCenterPressed();
+            }
+            if(Input.GetKeyDown(KeyCode.P))
+            {
+                // Screenshot
+                Button_ScreenshotPressed();
+            }
+            if(Input.GetKeyDown(KeyCode.S))
+            {
+                // Save
+                Button_SavePressed();
+            }
+            if(Input.GetKeyDown(KeyCode.O))
+            {
+                // Open
+                Button_OpenPressed();
+            }
+            if(Input.GetKeyDown(KeyCode.Q))
+            {
+                // Quit
+                Botton_ExitPressed();
+            }
+        }
+        else if (Input.GetKeyDown(KeyCode.H))
+        {
+            // Show UI
+            ShowUI();
+        }
     }
 
     private void UpdateUI(bool running)
@@ -135,6 +190,22 @@ public class UIHandler : MonoBehaviour
         }
         // JumpCut Button
         button_jumpCut.interactable = uiRound < maxRound && running == false;
+        // View Button Images
+        // View Type
+        switch (sim.renderSystem.GetCurrentViewType())
+        {
+            case ViewType.Hexagonal:
+                if (image_viewType.sprite != sprite_viewTypeHexagonal) image_viewType.sprite = sprite_viewTypeHexagonal;
+                break;
+            case ViewType.Circular:
+                if (image_viewType.sprite != sprite_viewTypeCircular) image_viewType.sprite = sprite_viewTypeCircular;
+                break;
+            default:
+                break;
+        }
+        // Circuit View Type
+        if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
+        else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
     }
 
     public void NotifyPlayPause(bool running)
@@ -142,6 +213,17 @@ public class UIHandler : MonoBehaviour
         image_playPauseButton.sprite = running ? sprite_pause : sprite_play;
         UpdateUI(running, true);
     }
+
+    public void ShowUI()
+    {
+        ui.SetActive(true);
+    }
+    
+    public void HideUI()
+    {
+        ui.SetActive(false);
+    }
+
 
 
 
@@ -247,6 +329,69 @@ public class UIHandler : MonoBehaviour
         }
     }
 
+    public void Button_OpenPressed()
+    {
+        if(initializationUI.IsOpen() == false)
+        {
+            bool isSimRunning = sim.running;
+            sim.PauseSim();
+            string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Algorithm State", "", "amalgo", false);
+            if (paths.Length != 0)
+            {
+                if (!sim.running)
+                {
+                    SimulationStateSaveData data = SaveStateUtility.Load(paths[0]);
+                    if (data != null)
+                    {
+                        sim.system.Reset();
+                        sim.system.InitializeFromSaveState(data);
+                        UpdateUI(sim.running, true);
+                    }
+                }
+                else
+                {
+                    Log.Error("Please pause the sim before loading an algorithm state!");
+                }
+            }
+            else
+            {
+                if (isSimRunning) sim.PlaySim();
+            }
+        }
+    }
+
+    public void Button_SavePressed()
+    {
+        if(initializationUI.IsOpen() == false)
+        {
+            // Initialization Handler closed
+            // Save File
+            string path = StandaloneFileBrowser.SaveFilePanel("Save Algorithm State", "", "algorithm", "amalgo");
+            if (path.Equals("") == false)
+            {
+                if (!sim.running)
+                {
+                    SimulationStateSaveData data = sim.system.GenerateSaveData();
+                    SaveStateUtility.Save(data, path);
+                    Log.Entry("Algorithm state has been saved successfully!");
+                }
+                else
+                {
+                    Log.Error("Please pause the sim before saving the algorithm state!");
+                }
+            }
+        }
+    }
+
+    public void Button_ScreenshotPressed()
+    {
+        string path = StandaloneFileBrowser.SaveFilePanel("Save Screenshot", "", "AmoebotScreenshot", "png");
+        if(path.Equals("") == false)
+        {
+            ScreenCapture.CaptureScreenshot(path);
+        }
+    }
+
     public void Button_ToolStandardPressed()
     {
         activeTool = UITool.Standard;
@@ -269,6 +414,16 @@ public class UIHandler : MonoBehaviour
     {
         activeTool = UITool.Move;
         UpdateTools();
+    }
+
+    public void Button_ToggleViewPressed()
+    {
+        sim.renderSystem.ToggleViewType();
+    }
+
+    public void Button_ToggleCircuitViewPressed()
+    {
+        sim.renderSystem.ToggleCircuits();
     }
 
     private void UpdateTools()
@@ -303,38 +458,12 @@ public class UIHandler : MonoBehaviour
         button.gameObject.GetComponent<Image>().color = color;
     }
 
-    private void UpdateAAButton()
+    public void Button_CameraCenterPressed()
     {
-        int currentAA = sim.renderSystem.GetAntiAliasing();
-        switch (currentAA)
-        {
-            case 0:
-                image_AAButton.sprite = sprite_aa0;
-                break;
-            case 2:
-                image_AAButton.sprite = sprite_aa2;
-                break;
-            case 4:
-                image_AAButton.sprite = sprite_aa4;
-                break;
-            case 8:
-                image_AAButton.sprite = sprite_aa8;
-                break;
-            default:
-                break;
-        }
-    }
-
-    public void ToggleAA()
-    {
-        sim.renderSystem.ToggleAntiAliasing();
-        UpdateAAButton();
-    }
-
-    public void SetAA(int value)
-    {
-        sim.renderSystem.SetAntiAliasing(value);
-        UpdateAAButton();
+        Vector2 pos;
+        if (sim.system.particles.Count <= 1000) pos = sim.system.BBoxCenterPosition();
+        else pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(sim.system.SeedPosition());
+        Camera.main.transform.position = new Vector3(pos.x, pos.y, Camera.main.transform.position.z);
     }
 
     public void Botton_ExitPressed()
@@ -358,10 +487,13 @@ public class UIHandler : MonoBehaviour
         button_exit.gameObject.SetActive(true);
     }
 
+    public TMP_InputField temporaryBox;
     public void TemporaryButton_ResetAlgorithm(int algoID)
     {
         if (sim.running) sim.TogglePlayPause();
 
+        particleUI.Close();
+        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.HideAll();
         sim.system.Reset();
         switch (algoID)
         {
@@ -380,10 +512,14 @@ public class UIHandler : MonoBehaviour
             case 4:
                 sim.system.InitializeExpandedTest(10);
                 break;
+            case 5:
+                sim.system.InitializeJMTest(int.Parse(temporaryBox.text));
+                break;
             default:
                 break;
         }
         UpdateUI(sim.running, true);
+        sim.RoundChanged();
     }
 
 

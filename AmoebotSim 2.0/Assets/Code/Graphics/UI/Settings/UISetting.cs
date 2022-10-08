@@ -2,22 +2,129 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using UnityEngine;
+
+public class ButtonHoldTrigger : EventTrigger
+{
+    private float timestampPointerDown = 0f;
+    private bool pressed = false;
+
+    public Action<float> mouseClickEvent;
+
+    public override void OnPointerDown(PointerEventData eventData)
+    {
+        base.OnPointerDown(eventData);
+        timestampPointerDown = Time.timeSinceLevelLoad;
+        pressed = true;
+    }
+
+    public override void OnPointerUp(PointerEventData eventData)
+    {
+        base.OnPointerUp(eventData);
+        if(pressed)
+        {
+            if(mouseClickEvent != null) mouseClickEvent(Time.timeSinceLevelLoad - timestampPointerDown);
+            pressed = false;
+        }
+    }
+
+    /// <summary>
+    /// Button press duration.
+    /// </summary>
+    /// <returns>Returns the time the button is being held down. -1 if not pressed.</returns>
+    public float GetPressedTime()
+    {
+        if (pressed) return Time.timeSinceLevelLoad - timestampPointerDown;
+        else return -1;
+    }
+}
 
 public abstract class UISetting
 {
     // Data
     protected GameObject go;
     protected string name;
+    // Background Button + Components
+    protected Button button;
+    protected ButtonHoldTrigger buttonTrigger;
+    protected Image buttonBackgroundImage;
+
+    // State
+    protected bool locked = false;
+
+    protected void InitBackgroundButton()
+    {
+        button = go.GetComponent<Button>();
+        if(button != null)
+        {
+            button.onClick.AddListener(delegate { OnButtonPressed(); });
+            buttonTrigger = go.AddComponent<ButtonHoldTrigger>();
+            buttonTrigger.mouseClickEvent += OnButtonPressedLong;
+            buttonBackgroundImage = go.GetComponent<Image>();
+        }
+    }
 
     public GameObject GetGameObject()
     {
         return go;
     }
 
-    public abstract void Lock();
-    public abstract void Unlock();
+    public Button GetBackgroundButton()
+    {
+        return button;
+    }
+
+    /// <summary>
+    /// Call this each frame if you want support for the interactive bar.
+    /// </summary>
+    public void InteractiveBarUpdate()
+    {
+        if(button != null)
+        {
+            float pressedTime = buttonTrigger.GetPressedTime();
+            if(pressedTime == -1 || pressedTime <= 0.2f || locked)
+            {
+                buttonBackgroundImage.fillAmount = 1f;
+            }
+            else
+            {
+                buttonBackgroundImage.fillAmount = Mathf.Clamp(pressedTime / 2f, 0f, 1f);
+            }
+        }
+    }
+
+    // Callbacks
+
+    public Action<string> backgroundButton_onButtonPressedEvent;
+    private void OnButtonPressed()
+    {
+        if(backgroundButton_onButtonPressedEvent != null) backgroundButton_onButtonPressedEvent(name);
+    }
+
+    public Action<string, float> backgroundButton_onButtonPressedLongEvent;
+    private void OnButtonPressedLong(float duration)
+    {
+        if (backgroundButton_onButtonPressedLongEvent != null) backgroundButton_onButtonPressedLongEvent(name, duration);
+    }
+
+    public void Lock()
+    {
+        LockSetting();
+        button.enabled = false;
+        locked = true;
+    }
+
+    public void Unlock()
+    {
+        UnlockSetting();
+        button.enabled = true;
+        locked = false;
+    }
+
+    protected abstract void LockSetting();
+    protected abstract void UnlockSetting();
     public abstract void Clear();
 }
 
@@ -28,18 +135,19 @@ public class UISetting_Header : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_header, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
         tmpro.text = name;
     }
 
-    public override void Lock()
+    protected override void LockSetting()
     {
         // empty
     }
 
-    public override void Unlock()
+    protected override void UnlockSetting()
     {
         // empty
     }
@@ -58,16 +166,17 @@ public class UISetting_Spacing : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_spacing, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name + " (" + id++ + ")";
     }
 
-    public override void Lock()
+    protected override void LockSetting()
     {
         // empty
     }
 
-    public override void Unlock()
+    protected override void UnlockSetting()
     {
         // empty
     }
@@ -87,6 +196,7 @@ public class UISetting_Slider : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -103,12 +213,12 @@ public class UISetting_Slider : UISetting
 
     }
 
-    public override void Lock()
+    protected override void LockSetting()
     {
         slider.enabled = false;
     }
 
-    public override void Unlock()
+    protected override void UnlockSetting()
     {
         slider.enabled = true;
     }
@@ -152,6 +262,7 @@ public class UISetting_Text : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_text, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -188,12 +299,12 @@ public class UISetting_Text : UISetting
         }
     }
 
-    public override void Lock()
+    protected override void LockSetting()
     {
         input.enabled = false;
     }
 
-    public override void Unlock()
+    protected override void UnlockSetting()
     {
         input.enabled = true;
     }
@@ -235,6 +346,7 @@ public class UISetting_Dropdown : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_dropdown, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -273,12 +385,12 @@ public class UISetting_Dropdown : UISetting
         dropdown.value = options.IndexOf(initialChoice);
     }
 
-    public override void Lock()
+    protected override void LockSetting()
     {
         dropdown.enabled = false;
     }
 
-    public override void Unlock()
+    protected override void UnlockSetting()
     {
         dropdown.enabled = true;
     }
@@ -320,6 +432,7 @@ public class UISetting_Toggle : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_toggle, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -332,12 +445,12 @@ public class UISetting_Toggle : UISetting
         toggle.onValueChanged.AddListener(delegate { OnValueChanged(); });
     }
 
-    public override void Lock()
+    protected override void LockSetting()
     {
         toggle.enabled = false;
     }
 
-    public override void Unlock()
+    protected override void UnlockSetting()
     {
         toggle.enabled = true;
     }
@@ -375,6 +488,7 @@ public class UISetting_ValueSlider : UISetting
     {
         // Add GameObject
         go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
+        InitBackgroundButton();
         // Set Name
         this.name = name;
         TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
@@ -434,12 +548,12 @@ public class UISetting_ValueSlider : UISetting
         }
     }
 
-    public override void Lock()
+    protected override void LockSetting()
     {
         slider.enabled = false;
     }
 
-    public override void Unlock()
+    protected override void UnlockSetting()
     {
         slider.enabled = true;
     }

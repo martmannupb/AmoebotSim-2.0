@@ -31,6 +31,10 @@ public class Particle : IParticleState, IReplayHistory
     // Graphics _____
     public IParticleGraphicsAdapter graphics;
 
+    // ID _____
+    public int id = curID++;
+    protected static int curID = 1;
+
     // Data _____
     // General
     /// <summary>
@@ -137,6 +141,10 @@ public class Particle : IParticleState, IReplayHistory
     {
         get { return partitionSetColorsOverride; }
     }
+
+    // Bond and movement info
+    private ValueHistoryJointMovement jointMovementHistory;
+    private ValueHistoryBondInfo bondMovementHistory;
 
 
     /**
@@ -266,6 +274,9 @@ public class Particle : IParticleState, IReplayHistory
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
 
+    // Stores visualization info about some of the bonds incident to this particle
+    public List<ParticleBondGraphicState> bondGraphicInfo = new List<ParticleBondGraphicState>();
+
     public Particle(ParticleSystem system, Vector2Int pos, Direction compassDir = Direction.NONE, bool chirality = true, Direction initialHeadDir = Direction.NONE)
     {
         this.system = system;
@@ -294,6 +305,10 @@ public class Particle : IParticleState, IReplayHistory
         // Initialize color
         mainColorHistory = new ValueHistory<Color>(mainColor, currentRound);
         mainColorSetHistory = new ValueHistory<bool>(mainColorSet, currentRound);
+
+        // Initial value is empty, can be replaced by actual bonds when the whole system is initialized
+        jointMovementHistory = new ValueHistoryJointMovement(JointMovementInfo.Empty, currentRound);
+        bondMovementHistory = new ValueHistoryBondInfo(BondMovementInfoList.Empty, currentRound);
 
         // Add particle to the system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
@@ -1053,6 +1068,43 @@ public class Particle : IParticleState, IReplayHistory
         markedBondHistory.RecordValueInRound(markedBonds.Data, system.CurrentRound);
         activeBonds = new BitVector32(1023);    // All flags set to true
         markedBonds = new BitVector32(0);       // All flags set to false
+
+        // Also record finished joint movement visualization info
+        BondMovementInfo[] bondMovements = new BondMovementInfo[bondGraphicInfo.Count];
+        // Offset the vectors to avoid unnecessary memory consumption
+        Vector2Int beforeOffset = Tail() - jmOffset;
+        Vector2Int afterOffset = Tail();
+        for (int i = 0; i < bondGraphicInfo.Count; i++)
+        {
+            ParticleBondGraphicState s = bondGraphicInfo[i];
+            bondMovements[i] = new BondMovementInfo(s.prevBondPos1 - beforeOffset, s.prevBondPos2 - beforeOffset, s.curBondPos1 - afterOffset, s.curBondPos2 - afterOffset);
+        }
+        JointMovementInfo movementInfo = new JointMovementInfo(jmOffset, movementOffset, scheduledMovement != null ? scheduledMovement.type : ActionType.NULL);
+        BondMovementInfoList bondInfoList = new BondMovementInfoList(bondMovements);
+        jointMovementHistory.RecordValueInRound(movementInfo, system.CurrentRound);
+        bondMovementHistory.RecordValueInRound(bondInfoList, system.CurrentRound);
+    }
+
+    /// <summary>
+    /// Returns the currently loaded graphics information for
+    /// joint movements.
+    /// </summary>
+    /// <returns>A <see cref="JointMovementInfo"/> that holds the
+    /// joint movement information for the currently
+    /// loaded state.</returns>
+    public JointMovementInfo GetCurrentMovementGraphicsInfo()
+    {
+        return jointMovementHistory.GetMarkedValue();
+    }
+
+    /// <summary>
+    /// Returns the currently loaded graphics information for bonds.
+    /// </summary>
+    /// <returns>A <see cref="BondMovementInfoList"/> that holds the
+    /// bond movement information for the currently loaded state.</returns>
+    public BondMovementInfoList GetCurrentBondGraphicsInfo()
+    {
+        return bondMovementHistory.GetMarkedValue();
     }
 
     /// <summary>
@@ -1262,6 +1314,26 @@ public class Particle : IParticleState, IReplayHistory
             attr.ResetIntermediateValue();
     }
 
+    public IParticleAttribute TryGetAttributeByName(string attrName)
+    {
+        foreach (IParticleAttribute attr in attributes)
+        {
+            if (attr.ToString_AttributeName().Equals(attrName))
+                return attr;
+        }
+        return null;
+    }
+
+    public bool Chirality()
+    {
+        return chirality;
+    }
+
+    public Direction CompassDir()
+    {
+        return comDir;
+    }
+
     public void Print()
     {
         Debug.Log("Position history:");
@@ -1339,6 +1411,9 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.SetMarkerToRound(round);
         mainColorSetHistory.SetMarkerToRound(round);
 
+        jointMovementHistory.SetMarkerToRound(round);
+        bondMovementHistory.SetMarkerToRound(round);
+
         // Need to update private fields accordingly
         UpdateInternalState();
 
@@ -1375,6 +1450,9 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.StepBack();
         mainColorSetHistory.StepBack();
 
+        jointMovementHistory.StepBack();
+        bondMovementHistory.StepBack();
+
         UpdateInternalState();
 
         foreach (IParticleAttribute attr in attributes)
@@ -1404,6 +1482,9 @@ public class Particle : IParticleState, IReplayHistory
 
         mainColorHistory.StepForward();
         mainColorSetHistory.StepForward();
+
+        jointMovementHistory.StepForward();
+        bondMovementHistory.StepForward();
 
         UpdateInternalState();
 
@@ -1450,6 +1531,9 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.ContinueTracking();
         mainColorSetHistory.ContinueTracking();
 
+        jointMovementHistory.ContinueTracking();
+        bondMovementHistory.ContinueTracking();
+
         UpdateInternalState();
 
         foreach (IParticleAttribute attr in attributes)
@@ -1488,6 +1572,9 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.CutOffAtMarker();
         mainColorSetHistory.CutOffAtMarker();
 
+        jointMovementHistory.CutOffAtMarker();
+        bondMovementHistory.CutOffAtMarker();
+
         // No need to update internal state because this does not change
         // the current value of a history
 
@@ -1518,6 +1605,9 @@ public class Particle : IParticleState, IReplayHistory
 
         mainColorHistory.ShiftTimescale(amount);
         mainColorSetHistory.ShiftTimescale(amount);
+
+        jointMovementHistory.ShiftTimescale(amount);
+        bondMovementHistory.ShiftTimescale(amount);
 
         // No need to update internal state because this does not change
         // the current value of a history
@@ -1656,6 +1746,8 @@ public class Particle : IParticleState, IReplayHistory
             data.partitionSetColorHistory[i] = partitionSetColorHistory[i].GenerateSaveData();
             data.partitionSetColorOverrideHistory[i] = partitionSetColorOverrideHistory[i].GenerateSaveData();
         }
+        data.jointMovementHistory = jointMovementHistory.GenerateSaveData();
+        data.bondMovementHistory = bondMovementHistory.GenerateSaveData();
 
         return data;
     }
@@ -1674,8 +1766,8 @@ public class Particle : IParticleState, IReplayHistory
         p.InitWithAlgorithm(data);
 
         // Finally set up the graphics info
-        p.graphics.AddParticle();
-        p.graphics.Update();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
+        p.graphics.UpdateReset();
         return p;
     }
 
@@ -1699,10 +1791,16 @@ public class Particle : IParticleState, IReplayHistory
         activeBonds = new BitVector32(1023);    // All flags set to true
         markedBonds = new BitVector32(0);       // All flags are set to false
 
+        activeBonds = new BitVector32(1023);    // All flags set to true
+        markedBonds = new BitVector32(0);       // All flags set to false
+
         mainColorHistory = new ValueHistory<Color>(data.mainColorHistory);
         mainColorSetHistory = new ValueHistory<bool>(data.mainColorSetHistory);
         mainColor = mainColorHistory.GetMarkedValue();
         mainColorSet = mainColorSetHistory.GetMarkedValue();
+
+        jointMovementHistory = new ValueHistoryJointMovement(data.jointMovementHistory);
+        bondMovementHistory = new ValueHistoryBondInfo(data.bondMovementHistory);
 
         // Add particle to the system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);

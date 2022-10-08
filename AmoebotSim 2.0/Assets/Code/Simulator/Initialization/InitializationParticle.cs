@@ -114,6 +114,21 @@ public class InitializationParticle : IParticleState
         return tailPos;
     }
 
+    bool IParticleState.Chirality()
+    {
+        return chirality;
+    }
+
+    Direction IParticleState.CompassDir()
+    {
+        return compassDir;
+    }
+
+    public IParticleAttribute TryGetAttributeByName(string attrName)
+    {
+        return null;
+    }
+
     /// <summary>
     /// Appends a new generic parameter with the given initial value.
     /// <para>

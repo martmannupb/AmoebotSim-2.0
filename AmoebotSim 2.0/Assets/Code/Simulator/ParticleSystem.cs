@@ -168,9 +168,12 @@ public class ParticleSystem : IReplayHistory
             particleMap.Add(p.Head(), p);
         }
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     /// <summary>
@@ -236,9 +239,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeLeaderElection(int numParticles, float holeProb)
@@ -289,9 +295,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeChiralityCompass(int numParticles, float holeProb)
@@ -342,9 +351,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeBoundaryTest(int numParticles, float holeProb)
@@ -395,9 +407,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeJMTest(int mode)
@@ -811,10 +826,12 @@ public class ParticleSystem : IReplayHistory
 
 
 
-
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     #endregion
@@ -900,6 +917,8 @@ public class ParticleSystem : IReplayHistory
      * Simulation functions
      */
 
+    #region Simulation
+
     /// <summary>
     /// Simulates a round in which each particle is activated
     /// twice. First, all particles execute their movement activations
@@ -926,6 +945,9 @@ public class ParticleSystem : IReplayHistory
         // TODO: No connectivity check is performed then! Should this always be executed?
         if (particlesMove)
             SimulateJointMovements();
+        else
+            // Compute bond information anyway
+            ComputeBondsStatic();
         FinishMovementInfo();
 
         // Second: Beep cycle
@@ -937,9 +959,9 @@ public class ParticleSystem : IReplayHistory
         ApplyNewPinConfigurations();
         DiscoverCircuits();
         FinishBeepAndMessageInfo();
-        CleanupAfterRound();
         _previousRound++;
         UpdateAllParticleVisuals(false);
+        CleanupAfterRound();
     }
 
     /// <summary>
@@ -1168,6 +1190,7 @@ public class ParticleSystem : IReplayHistory
             Particle[] nbrParts = new Particle[numNbrs];
             bool[] nbrHead = new bool[numNbrs]; // True if the neighbor's head is at this position
             int[] nbrLabels = new int[numNbrs]; // Stores global neighbor label opposite of our label
+            bool[] bondNbrs = new bool[numNbrs];    // True wherever we have a bonded neighbor
 
             // If a handover is scheduled, also ensure that there is a bond to the
             // partner in the handover
@@ -1183,56 +1206,12 @@ public class ParticleSystem : IReplayHistory
                     handoverLabelToCheck = ParticleSystem_Utils.GetLabelInDir(dir, globalHeadDir, true);
             }
 
-            for (int label = 0; label < numNbrs; label++)
-            {
-                Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
-                bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
-                Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
-                bool haveBondedNeighbor = false;
-                if (particleMap.TryGetValue(nbrPos, out Particle nbr))
-                {
-                    // We have a neighbor at this location
-
-                    // Collect information and check if we have a bond to this neighbor
-                    bool isNbrHead = nbr.Head() == nbrPos;
-                    int nbrLabel = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
-
-                    // Have connection if both of the bonds are active
-                    bool myBondActive = p.activeBondsGlobal[label];
-                    bool nbrBondActive = nbr.activeBondsGlobal[nbrLabel];
-
-                    bool bondsActive = myBondActive && nbrBondActive;
-                    bool bondsDisagree = myBondActive ^ nbrBondActive;
-                    // TODO: Maybe remove this warning?
-                    if (bondsDisagree && !p.markedForAutomaticBonds && !nbr.markedForAutomaticBonds)
-                    {
-                        Debug.LogWarning("Bonds disagree between particles at " + p.Head() + ", " + p.Tail() + " and " + nbrPos);
-                    }
-
-                    // Add the neighbor to the list if there is a bond and the neighbor has not been processed yet
-                    if (bondsActive)
-                    {
-                        haveBondedNeighbor = true;
-                        if (!nbr.processedJointMovement)
-                        {
-                            nbrParts[label] = nbr;
-                            nbrHead[label] = isNbrHead;
-                            nbrLabels[label] = nbrLabel;
-                        }
-                    }
-                }
-
-                // Error if there is no neighbor here although a handover is scheduled
-                if (label == handoverLabelToCheck && !haveBondedNeighbor)
-                {
-                    Debug.LogError("Error: Particle at position " + p.Head() + ", " + p.Tail() + " has scheduled handover at label " + handoverLabelToCheck
-                        + " but has no neighbor at that label");
-                    throw new System.InvalidOperationException("Error computing movements");
-                }
-            }
+            CollectBondInfo(p, numNbrs, globalHeadDir, nbrParts, bondNbrs, nbrHead, nbrLabels, handoverLabelToCheck);
 
             // Neighbors have been found
             // Now check if the particle's movement agrees with its neighbors
+            // While doing this, we compute the movement of all bonds that have not been considered yet,
+            // i.e., all bonds to neighbors that have not been processed
             for (int label = 0; label < numNbrs; label++)
             {
                 Particle nbr = nbrParts[label];
@@ -1251,13 +1230,26 @@ public class ParticleSystem : IReplayHistory
                     bool weMarked = p.markedBondsGlobal[label];
                     bool nbrMarked = nbr.markedBondsGlobal[nbrLabels[label]];
 
+                    // Initialize bond info
+                    Vector2Int bondStart1 = p.Tail();
+                    Vector2Int bondEnd1 = nbr.Tail();
+                    Vector2Int bondStart2 = p.Tail() + p.jmOffset;
+                    Vector2Int bondEnd2 = nbr.Tail() + p.jmOffset;
+
                     // If we have marked the bond and want to move, we will definitely apply our own movement offset
                     if (weMove && weMarked)
+                    {
                         nbrOffset = p.movementOffset;
+                        // Bond moves as well
+                        bondStart2 += p.movementOffset;
+                        bondEnd2 += p.movementOffset;
+                    }
 
                     // If the neighbor has marked the bond and wants to move, its offset has to be applied in reverse direction
                     if (nbrMove && nbrMarked)
                         nbrOffset -= nbr.movementOffset;
+
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1));
                 }
                 // We are contracted and the neighbor is expanded
                 else if (p.IsContracted() && nbr.IsExpanded())
@@ -1315,7 +1307,9 @@ public class ParticleSystem : IReplayHistory
                         nbrLabels[label], secondLabel != -1 ? nbrLabels[secondLabel] : -1,
                         label, secondLabel,
                         ParticleSystem_Utils.IsHeadLabel(label, p.GlobalHeadDirection()),
-                        secondLabel != -1 && ParticleSystem_Utils.IsHeadLabel(secondLabel, p.GlobalHeadDirection()));
+                        secondLabel != -1 && ParticleSystem_Utils.IsHeadLabel(secondLabel, p.GlobalHeadDirection()),
+                        // Associate bond with us, not with the neighbor
+                        false);
                 }
                 // We and the neighbor are both expanded
                 else if (p.IsExpanded() && nbr.IsExpanded())
@@ -1345,6 +1339,12 @@ public class ParticleSystem : IReplayHistory
                             numBonds++;
                         }
                     }
+
+                    // Prepare bond info
+                    Vector2Int ourBond1_1 = bondOwnHead[0] ? p.Head() : p.Tail();
+                    Vector2Int nbrBond1_1 = bondNbrHead[0] ? nbr.Head() : nbr.Tail();
+                    Vector2Int ourBond1_2 = ourBond1_1 + p.jmOffset;
+                    Vector2Int nbrBond1_2 = nbrBond1_1 + p.jmOffset;
 
                     // Exactly one bond:
                     //      Apply our movement and the inverted neighbor movement
@@ -1378,6 +1378,9 @@ public class ParticleSystem : IReplayHistory
                             movementAction.type == ActionType.CONTRACT_HEAD || movementAction.type == ActionType.CONTRACT_TAIL))
                         {
                             nbrOffset += p.movementOffset;
+                            // Also apply offset to bond
+                            ourBond1_2 += p.movementOffset;
+                            nbrBond1_2 += p.movementOffset;
                         }
 
                         // Apply inverted neighbor movement offset
@@ -1388,9 +1391,18 @@ public class ParticleSystem : IReplayHistory
                         {
                             nbrOffset -= nbr.movementOffset;
                         }
+
+                        // Store the bond info
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
                     }
                     else if (numBonds == 2)
                     {
+                        // Prepare bond info for second bond
+                        Vector2Int ourBond2_1 = bondOwnHead[1] ? p.Head() : p.Tail();
+                        Vector2Int nbrBond2_1 = bondNbrHead[1] ? nbr.Head() : nbr.Tail();
+                        Vector2Int ourBond2_2 = ourBond2_1 + p.jmOffset;
+                        Vector2Int nbrBond2_2 = nbrBond2_1 + p.jmOffset;
+
                         // Case distinction: Either the two bonds share one end or they do not
                         // They share an end iff the two bond labels are consecutive
                         if (bondLabels[1] == (bondLabels[0] + 1) % 10)
@@ -1405,6 +1417,15 @@ public class ParticleSystem : IReplayHistory
                                 nbrOffset += JointMovementExpandedTwoBonds(p, nbr, bondOwnHead[0],
                                     p.markedBondsGlobal[bondLabels[0]], p.markedBondsGlobal[bondLabels[1]],
                                     nbr.markedBondsGlobal[nbrHeadLabel], nbr.markedBondsGlobal[nbrTailLabel]);
+
+                                // We have to move both bonds if we move and the bonds are not at our origin
+                                if (movementAction != null && (bondOwnHead[0] ^ p.isHeadOrigin))
+                                {
+                                    ourBond1_2 += p.movementOffset;
+                                    nbrBond1_2 += p.movementOffset;
+                                    ourBond2_2 += p.movementOffset;
+                                    nbrBond2_2 += p.movementOffset;
+                                }
                             }
                             else
                             {
@@ -1460,7 +1481,44 @@ public class ParticleSystem : IReplayHistory
                             {
                                 nbrOffset += p.movementOffset;
                             }
+
+                            // The moving bond needs an offset
+                            if (weMove)
+                            {
+                                if (movementAction.type == ActionType.CONTRACT_HEAD || movementAction.type == ActionType.PULL_HEAD)
+                                {
+                                    // Tail moves
+                                    if (bondOwnHead[0])
+                                    {
+                                        ourBond2_2 += p.movementOffset;
+                                        nbrBond2_2 += p.movementOffset;
+                                    }
+                                    else
+                                    {
+                                        ourBond1_2 += p.movementOffset;
+                                        nbrBond1_2 += p.movementOffset;
+                                    }
+                                }
+                                else
+                                {
+                                    // Head moves
+                                    if (bondOwnHead[0])
+                                    {
+                                        ourBond1_2 += p.movementOffset;
+                                        nbrBond1_2 += p.movementOffset;
+                                    }
+                                    else
+                                    {
+                                        ourBond2_2 += p.movementOffset;
+                                        nbrBond2_2 += p.movementOffset;
+                                    }
+                                }
+                            }
                         }
+
+                        // Store the bond info
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
                     }
                     else
                     {
@@ -1507,6 +1565,20 @@ public class ParticleSystem : IReplayHistory
                                 }
                             }
                         }
+
+                        // We still need to draw the bonds
+                        Vector2Int ourBond2_1 = bondOwnHead[1] ? p.Head() : p.Tail();
+                        Vector2Int nbrBond2_1 = bondNbrHead[1] ? nbr.Head() : nbr.Tail();
+                        Vector2Int ourBond2_2 = ourBond2_1 + p.jmOffset;
+                        Vector2Int nbrBond2_2 = nbrBond2_1 + p.jmOffset;
+                        Vector2Int ourBond3_1 = bondOwnHead[2] ? p.Head() : p.Tail();
+                        Vector2Int nbrBond3_1 = bondNbrHead[2] ? nbr.Head() : nbr.Tail();
+                        Vector2Int ourBond3_2 = ourBond3_1 + p.jmOffset;
+                        Vector2Int nbrBond3_2 = nbrBond3_1 + p.jmOffset;
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1));
+
                     }
                 }
 
@@ -1531,7 +1603,6 @@ public class ParticleSystem : IReplayHistory
                     nbr.queuedForJMProcessing = true;
                 }
             }
-
 
             // Neighbors have been handled, now compute our location in the new particle system
             // and place it if the location is not already occupied
@@ -1609,6 +1680,80 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
+    /// Helper method for finding the bonded neighbors of a particle.
+    /// </summary>
+    /// <param name="p">The particle whose neighbors shall be found.</param>
+    /// <param name="numNbrs">The number of labels to be checked. Should be
+    /// <c>6</c> or <c>10</c>, depending on the expansion state of the
+    /// particle. All provided array parameters must have at least this length.</param>
+    /// <param name="globalHeadDir">The global head direction of the particle.</param>
+    /// <param name="nbrParts">A particle array that should hold references to the
+    /// bonded neighbor particles that still have to be processed.</param>
+    /// <param name="bondNbrs">A bool array that should have <c>true</c> entries for
+    /// all labels at which there is a bonded neighbor.</param>
+    /// <param name="nbrHead">A bool array that should have <c>true</c> entries for
+    /// all labels that are adjacent to the head of a bonded neighbor.</param>
+    /// <param name="nbrLabels">An int array that should hold the bonded neighbor's
+    /// label corresponding to each of the current particle's labels.</param>
+    /// <param name="handoverLabelToCheck">One label that must have a bonded neighbor
+    /// because the current particle intends to perform a handover in that direction.
+    /// If no such neighbor is found, a <see cref="System.InvalidOperationException"/>
+    /// is thrown. Use <c>-1</c> to indicate that no label must be checked.</param>
+    private void CollectBondInfo(Particle p, int numNbrs, Direction globalHeadDir,
+        Particle[] nbrParts, bool[] bondNbrs, bool[] nbrHead, int[] nbrLabels,
+        int handoverLabelToCheck = -1)
+    {
+        for (int label = 0; label < numNbrs; label++)
+        {
+            Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+            bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
+            Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
+            if (particleMap.TryGetValue(nbrPos, out Particle nbr))
+            {
+                // We have a neighbor at this location
+
+                // Collect information and check if we have a bond to this neighbor
+                bool isNbrHead = nbr.Head() == nbrPos;
+                int nbrLabel = ParticleSystem_Utils.GetLabelInDir(dir.Opposite(), nbr.GlobalHeadDirection(), isNbrHead);
+
+                // Have connection if both of the bonds are active
+                bool myBondActive = p.activeBondsGlobal[label];
+                bool nbrBondActive = nbr.activeBondsGlobal[nbrLabel];
+
+                bool bondsActive = myBondActive && nbrBondActive;
+                bool bondsDisagree = myBondActive ^ nbrBondActive;
+                // TODO: Maybe remove this warning?
+                if (bondsDisagree && !p.markedForAutomaticBonds && !nbr.markedForAutomaticBonds)
+                {
+                    Debug.LogWarning("Bonds disagree between particles at " + p.Head() + ", " + p.Tail() + " and " + nbrPos);
+                }
+
+                // Add the neighbor to the list if there is a bond and the neighbor has not been processed yet
+                if (bondsActive)
+                {
+                    // This info is useful for bond computation as well
+                    bondNbrs[label] = true;
+                    nbrHead[label] = isNbrHead;
+                    nbrLabels[label] = nbrLabel;
+                    // This is only set if we want to process the neighbor
+                    if (!nbr.processedJointMovement)
+                    {
+                        nbrParts[label] = nbr;
+                    }
+                }
+            }
+
+            // Error if there is no neighbor here although a handover is scheduled
+            if (label == handoverLabelToCheck && !bondNbrs[label])
+            {
+                Debug.LogError("Error: Particle at position " + p.Head() + ", " + p.Tail() + " has scheduled handover at label " + handoverLabelToCheck
+                    + " but has no neighbor at that label");
+                throw new System.InvalidOperationException("Error computing movements");
+            }
+        }
+    }
+
+    /// <summary>
     /// Helper method for handling the joint movement of a contracted particle that is bonded
     /// to an expanded particle.
     /// </summary>
@@ -1630,14 +1775,23 @@ public class ParticleSystem : IReplayHistory
     /// expanded particle.</param>
     /// <param name="eHead2">Flag indicating whether the second bond is incident to the head of the
     /// expanded particle. Must be <c>false</c> if there is no second bond.</param>
+    /// <param name="bondForContracted">Flag indicating whether the bond info should be
+    /// associated with the contracted particle.</param>
     /// <returns>The global offset vector of the expanded particle's origin relative to the
     /// contracted particle's origin.</returns>
     private Vector2Int JointMovementContractedExpanded(Particle c, Particle e, Direction bondDir, Direction secondBondDir,
-        int cLabel1, int cLabel2, int eLabel1, int eLabel2, bool eHead1, bool eHead2)
+        int cLabel1, int cLabel2, int eLabel1, int eLabel2, bool eHead1, bool eHead2,
+        bool bondForContracted = true)
     {
         Vector2Int eOffset = Vector2Int.zero;
         ParticleAction cAction = c.ScheduledMovement;
         ParticleAction eAction = e.ScheduledMovement;
+
+        // Setup bond info (for first bond only)
+        Vector2Int cBond1 = c.Tail();
+        Vector2Int eBond1 = eHead1 ? e.Head() : e.Tail();
+        Vector2Int cBond2 = cBond1;
+        Vector2Int eBond2 = eBond1;
 
         if (secondBondDir == Direction.NONE)
         {
@@ -1660,6 +1814,9 @@ public class ParticleSystem : IReplayHistory
             if (weWantHandover)
             {
                 // Easy: No offset is applied at all
+                // Bond rotates, both ends are moved with the particles
+                cBond2 += c.movementOffset;
+                eBond2 += e.movementOffset;
             }
             else
             {
@@ -1668,6 +1825,12 @@ public class ParticleSystem : IReplayHistory
                 if (cAction != null && c.markedBondsGlobal[cLabel1])
                 {
                     eOffset += c.movementOffset;
+                    // This only affects the bond if it is associated with the contracted particle
+                    if (bondForContracted)
+                    {
+                        cBond2 += c.movementOffset;
+                        eBond2 += c.movementOffset;
+                    }
                 }
                 // Neighbor offset only applies if we are not bonded to its origin
                 if (eAction != null &&
@@ -1684,8 +1847,25 @@ public class ParticleSystem : IReplayHistory
                     {
                         // Bond is not marked for handover transferral, movement creates offset
                         eOffset -= e.movementOffset;
+
+                        // Have to move the bond if it belongs to the expanded particle
+                        if (!bondForContracted)
+                        {
+                            cBond2 += e.movementOffset;
+                            eBond2 += e.movementOffset;
+                        }
                     }
                 }
+            }
+
+            // Store the bond info
+            if (bondForContracted)
+            {
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
+            }
+            else
+            {
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
             }
         }
         else
@@ -1714,6 +1894,11 @@ public class ParticleSystem : IReplayHistory
                 throw new System.InvalidOperationException("Conflict during movements");
             }
 
+            // Prepare info for second bond
+            Vector2Int eBond1_2 = eHead2 ? e.Head() : e.Tail();
+            Vector2Int cBond2_2 = cBond1;
+            Vector2Int eBond2_2 = eBond1_2;
+
             bool handoverFirst = weWantHandoverFirst && nbrWantsHandoverFirst;
             bool handoverSecond = weWantHandoverSecond && nbrWantsHandoverSecond;
 
@@ -1721,11 +1906,23 @@ public class ParticleSystem : IReplayHistory
             {
                 // We want a handover on one of the two bonds
                 // Easy: No offset must be applied
-                // But we have to check that the other bond is not marked
+                // But we have to check that the other bond is not marked by the contracted particle
                 if (handoverFirst && c.markedBondsGlobal[cLabel2] || handoverSecond && c.markedBondsGlobal[cLabel1])
                 {
                     Debug.LogError("Error: Handover with two bonds and one bond is marked");
                     throw new System.InvalidOperationException("Conflict during movements");
+                }
+
+                // We also have to rotate the corresponding bond
+                if (handoverFirst)
+                {
+                    cBond2 += c.movementOffset;
+                    eBond2 += e.movementOffset;
+                }
+                else
+                {
+                    cBond2_2 += c.movementOffset;
+                    eBond2_2 += e.movementOffset;
                 }
             }
             else
@@ -1758,8 +1955,30 @@ public class ParticleSystem : IReplayHistory
 
                     // If the bonds are marked, we apply our offset
                     if (c.markedBondsGlobal[cLabel1])
+                    {
                         eOffset += c.movementOffset;
+                        // Also apply the offset to the bonds if they are associated to the contracted particle
+                        if (bondForContracted)
+                        {
+                            cBond2 += c.movementOffset;
+                            eBond2 += c.movementOffset;
+                            cBond2_2 += c.movementOffset;
+                            eBond2_2 += c.movementOffset;
+                        }
+                    }
                 }
+            }
+
+            // Store the bond info
+            if (bondForContracted)
+            {
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1_2));
+            }
+            else
+            {
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1_2, cBond1));
             }
         }
         return eOffset;
@@ -1833,6 +2052,157 @@ public class ParticleSystem : IReplayHistory
         }
 
         return edgeOffset;
+    }
+
+    /// <summary>
+    /// Computes bond information in the case that no movements have occurred.
+    /// This method works similar to the joint movement simulation but it does
+    /// not process any movements. It also does not check whether the particle
+    /// bond structure is connected or not. Bonds will only be computed for the
+    /// connected component that contains the anchor particle.
+    /// </summary>
+    private void ComputeBondsStatic()
+    {
+        // Use BFS, just like for movement simulation
+        Queue<Particle> queue = new Queue<Particle>();
+
+        // Start with the anchor particle
+        Particle anchor = particles[0];
+        anchor.jmOffset = Vector2Int.zero;
+
+        queue.Enqueue(anchor);
+        anchor.queuedForJMProcessing = true;
+
+        while (queue.Count > 0)
+        {
+            Particle p = queue.Dequeue();
+
+            p.jmOffset = Vector2Int.zero;
+
+            // Find the bonded neighbors of the particle
+            Direction globalHeadDir = p.GlobalHeadDirection();
+            int numNbrs = p.IsExpanded() ? 10 : 6;
+            Particle[] nbrParts = new Particle[numNbrs];
+            bool[] nbrHead = new bool[numNbrs];     // True if the neighbor's head is at this position
+            int[] nbrLabels = new int[numNbrs];     // Stores global neighbor label opposite of our label
+            bool[] bondNbrs = new bool[numNbrs];    // True wherever we have a bonded neighbor
+
+            CollectBondInfo(p, numNbrs, globalHeadDir, nbrParts, bondNbrs, nbrHead, nbrLabels);
+
+            // Go through the labels and process the bonds to each neighbor
+            for (int label = 0; label < numNbrs; label++)
+            {
+                Particle nbr = nbrParts[label];
+                if (nbr == null)
+                    continue;
+
+                // Find out how many bonds we have to that neighbor
+                int numBonds = 0;
+                int[] bondLabels = new int[3] { -1, -1, -1 };
+                int[] nbrBondLabels = new int[3] { -1, -1, -1 };
+                bool[] bondNbrHead = new bool[] { false, false, false };
+                bool[] bondOwnHead = new bool[] { false, false, false };
+
+                int[] offsets;
+
+                if (p.IsContracted() || nbr.IsContracted())
+                {
+                    // We can have a maximum of 2 bonds, look 1 position in each direction
+                    offsets = new int[] { 0, 1, numNbrs - 1 };
+                }
+                else
+                {
+                    // We can have a maximum of 3 bonds, must look 2 positions in each direction (middle is the current bond)
+                    offsets = new int[] { 8, 9, 0, 1, 2 };
+                    // Also, remove the other occurrences from the list of neighbors
+                }
+                // Collect information about the bonds and remove the neighbor's other occurrences
+                // so that it is not processed multiple times
+                foreach (int offset in offsets)
+                {
+                    int lb = (label + offset) % numNbrs;
+                    if (nbrParts[lb] == nbr)
+                    {
+                        bondLabels[numBonds] = lb;
+                        nbrBondLabels[numBonds] = nbrLabels[lb];
+                        bondNbrHead[numBonds] = nbrHead[lb];
+                        bondOwnHead[numBonds] = ParticleSystem_Utils.IsHeadLabel(lb, globalHeadDir);
+                        if (offset != 0)
+                        {
+                            nbrParts[lb] = null;
+                        }
+                        numBonds++;
+                    }
+                }
+
+                // Add bond graphics info for each bond
+                for (int i = 0; i < numBonds; i++)
+                {
+                    Vector2Int start = bondOwnHead[i] ? p.Head() : p.Tail();
+                    Vector2Int end = bondNbrHead[i] ? nbr.Head() : nbr.Tail();
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(start, end, start, end));
+                }
+
+                // Enqueue the neighbor if necessary
+                if (!nbr.queuedForJMProcessing)
+                {
+                    queue.Enqueue(nbr);
+                    nbr.queuedForJMProcessing = true;
+                }
+            }
+
+            p.processedJointMovement = true;
+        }
+    }
+
+    /// <summary>
+    /// Sets all global bonds of all particles so that
+    /// their initial bonds can be computed easily.
+    /// </summary>
+    public void SetInitialParticleBonds()
+    {
+        foreach (Particle p in particles)
+        {
+            for (int i = 0; i < 10; i++)
+                p.activeBondsGlobal[i] = true;
+        }
+    }
+
+    /// <summary>
+    /// Sets the bond graphics info of all particles to the
+    /// currently loaded state so that it can be displayed.
+    /// If animations are required, the joint movement info is
+    /// also loaded and set up to produce the correct animations.
+    /// This should be called when stepping or jumping through
+    /// the history.
+    /// </summary>
+    /// <param name="withAnimation">Flag indicating whether the
+    /// loaded movement information should include an animation
+    /// or not.</param>
+    private void LoadMovementGraphicsInfo(bool withAnimation)
+    {
+        foreach (Particle p in particles)
+        {
+            BondMovementInfoList bondInfo = p.GetCurrentBondGraphicsInfo();
+            JointMovementInfo movementInfo = p.GetCurrentMovementGraphicsInfo();
+            Vector2Int beforeOffset = p.Tail() - movementInfo.jmOffset;
+            Vector2Int afterOffset = p.Tail();
+            foreach (BondMovementInfo bmi in bondInfo.bondMovements)
+            {
+                if (withAnimation)
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start1 + beforeOffset, bmi.end1 + beforeOffset));
+                else
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start2 + afterOffset, bmi.end2 + afterOffset));
+            }
+            // Also load joint movement info if required
+            if (withAnimation)
+            {
+                p.jmOffset = movementInfo.jmOffset;
+                p.movementOffset = movementInfo.movementOffset;
+                if (movementInfo.movementAction != ActionType.NULL)
+                    p.ScheduledMovement = new ParticleAction(p, movementInfo.movementAction);
+            }
+        }
     }
 
     // TODO: Circuit computation and beep/message handling should probably be done separately
@@ -2100,6 +2470,8 @@ public class ParticleSystem : IReplayHistory
             p.markedForAutomaticBonds = false;
             // Also reset attribute intermediate values
             p.ResetAttributeIntermediateValues();
+
+            p.bondGraphicInfo.Clear();
         }
     }
 
@@ -2142,7 +2514,30 @@ public class ParticleSystem : IReplayHistory
         {
             p.graphics.SetParticleColor(p.GetParticleColor());
             if (resetVisuals) p.graphics.UpdateReset();
-            else p.graphics.Update(p.jmOffset != Vector2Int.zero);
+            else
+            {
+                // Direction is expansion direction for expansions and the opposite
+                // movement direction for contractions
+                int contractionDir = -1;
+                if (p.ScheduledMovement != null)
+                {
+                    if (p.ScheduledMovement.type == ActionType.EXPAND || p.ScheduledMovement.type == ActionType.PUSH)
+                        contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).ToInt();
+                    else
+                        contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).Opposite().ToInt();
+                }
+                else if (p.IsExpanded())
+                    contractionDir = p.GlobalHeadDirectionInt();
+
+                ParticleJointMovementState pjms = p.jmOffset != Vector2Int.zero ? new ParticleJointMovementState(true, p.jmOffset) : ParticleJointMovementState.None;
+                ParticleMovementState pms = new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), contractionDir, pjms);
+                p.graphics.Update(pms);
+            }
+        }
+        foreach (Particle p in particles)
+        {
+            foreach (ParticleBondGraphicState pbgs in p.bondGraphicInfo)
+                p.graphics.BondUpdate(pbgs);
         }
         foreach (Particle p in particles)
         {
@@ -2151,6 +2546,8 @@ public class ParticleSystem : IReplayHistory
         renderSystem.ParticleMovementOver();
         renderSystem.CircuitCalculationOver();
     }
+
+    #endregion
 
     /**
      * Particle functions (called by particles to get information or trigger actions)
@@ -2539,6 +2936,97 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    /**
+     * Other system info and control
+     */
+
+    /// <summary>
+    /// Calculates the average world position of all particles in the system.
+    /// </summary>
+    /// <returns>The average world of all particles. Will be
+    /// <c>(0, 0)</c> if there are no particles.</returns>
+    public Vector2 CenterPosition()
+    {
+        Vector2 avg = Vector2.zero;
+
+        ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+
+        foreach (Vector2Int pos in positions)
+        {
+            avg += pos;
+        }
+
+        if (positions.Count > 0)
+            avg /= positions.Count;
+
+        return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(avg.x, avg.y);
+    }
+
+    /// <summary>
+    /// Calculates the center position of the bounding box that encloses
+    /// the particle system.
+    /// <returns>The center of the bounding box of the system in world coordinates.
+    /// Will be <c>(0, 0)</c> if there are no particles.</returns>
+    public Vector2 BBoxCenterPosition()
+    {
+        ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+
+        if (positions.Count == 0)
+            return Vector2.zero;
+
+        float xMin = float.PositiveInfinity;
+        float xMax = float.NegativeInfinity;
+        float yMin = float.PositiveInfinity;
+        float yMax = float.NegativeInfinity;
+
+        foreach (Vector2Int pos in positions)
+        {
+            Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
+            if (abs.x < xMin)
+                xMin = abs.x;
+            else if (abs.x > xMax)
+                xMax = abs.x;
+
+            if (abs.y < yMin)
+                yMin = abs.y;
+            else if (abs.y > yMax)
+                yMax = abs.y;
+        }
+
+        return new Vector2((xMin + xMax) / 2.0f, (yMin + yMax) / 2.0f);
+    }
+
+    /// <summary>
+    /// Returns the world coordinates of the system's current seed particle.
+    /// </summary>
+    /// <returns>The world coordinates of the system's seed particle, if it
+    /// exists, otherwise <c>(0, 0)</c>.</returns>
+    public Vector2 SeedPosition()
+    {
+        Vector2 result;
+        IParticleState seed = null;
+        int n;
+        if (inInitializationState)
+        {
+            n = particlesInit.Count;
+            if (n > 0)
+                seed = particlesInit[0];
+        }
+        else
+        {
+            n = particles.Count;
+            if (n > 0)
+                seed = particles[0];
+        }
+
+        if (n > 0)
+            result = 0.5f * (Vector2)(seed.Head() + seed.Tail());
+        else
+            result = Vector2.zero;
+
+        return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(result.x, result.y);
+    }
+
 
     /**
      * IReplayHistory implementation
@@ -2587,10 +3075,11 @@ public class ParticleSystem : IReplayHistory
             isTracking = false;
             // TODO: This should be structured better
             DiscoverCircuits(false);
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
         }
     }
 
@@ -2623,10 +3112,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = false;
             DiscoverCircuits(false);
-            CleanupAfterRound();
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
+            CleanupAfterRound();
         }
     }
 
@@ -2657,10 +3147,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = false;
             DiscoverCircuits(false);
+            LoadMovementGraphicsInfo(true);
+            UpdateAllParticleVisuals(false);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(false);
         }
     }
 
@@ -2687,10 +3178,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = true;
             DiscoverCircuits();
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
         }
     }
 
@@ -2838,7 +3330,7 @@ public class ParticleSystem : IReplayHistory
                 particleMapInit[p.Tail()] = ip;
                 if (p.IsExpanded())
                     particleMapInit[p.Head()] = ip;
-                ip.graphics.AddParticle();
+                ip.graphics.AddParticle(new ParticleMovementState(ip.Head(), ip.Tail(), ip.IsExpanded(), ip.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
                 ip.graphics.UpdateReset();
             }
         }
@@ -2987,9 +3479,59 @@ public class ParticleSystem : IReplayHistory
         particleMapInit[tailPos] = ip;
         if (headDirection != Direction.NONE)
             particleMapInit[ip.Head()] = ip;
-        ip.graphics.AddParticle();
+        ip.graphics.AddParticle(new ParticleMovementState(ip.Head(), ip.Tail(), ip.IsExpanded(), ip.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         ip.graphics.UpdateReset();
         return ip;
+    }
+
+    /// <summary>
+    /// Resets the chirality of all particles to the given value
+    /// when in initialization mode.
+    /// </summary>
+    /// <param name="chirality">The chirality to assign to each
+    /// particle. If the value is <see cref="Initialization.Chirality.Random"/>,
+    /// the particles get a clockwise chirality with a probability of 50%.</param>
+    public void SetSystemChirality(Initialization.Chirality chirality)
+    {
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot set system chirality outside of initialization mode.");
+            return;
+        }
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            bool chiralityPart = true;
+            if (chirality == Initialization.Chirality.Clockwise ||
+                chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
+                chiralityPart = false;
+            ip.Chirality = chiralityPart;
+        }
+    }
+
+    /// <summary>
+    /// Resets the compass direction of all particles to the given value
+    /// when in initialization mode.
+    /// </summary>
+    /// <param name="compassDir">The compass direction to assign to each
+    /// particle. If the value is <see cref="Initialization.Compass.Random"/>,
+    /// each particle gets one of the cardinal directions chosen uniformly
+    /// and independently.</param>
+    public void SetSystemCompassDir(Initialization.Compass compassDir)
+    {
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot set system compass direction outside of initialization mode.");
+            return;
+        }
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            Direction compass = DirectionHelpers.Cardinal(
+                compassDir == Initialization.Compass.Random ? Random.Range(0, 6) : (int)compassDir
+                );
+            ip.CompassDir = compass;
+        }
     }
 
     /// <summary>
@@ -3182,6 +3724,12 @@ public class ParticleSystem : IReplayHistory
     public void RemoveParticle(Particle p)
     {
         Log.Debug("ParticleSystem: Remove Particle called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void RemoveParticle(IParticleState p)
+    {
+        Log.Error("Not implemented");
     }
 
     /// <summary>
@@ -3212,6 +3760,13 @@ public class ParticleSystem : IReplayHistory
     public void MoveParticleToNewContractedPosition(Particle p, Vector2Int gridPos)
     {
         Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void MoveParticleToNewContractedPosition(IParticleState p, Vector2Int gridPos)
+    {
+        Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
+        Log.Error("Not implemented");
     }
 
     /// <summary>
@@ -3223,5 +3778,12 @@ public class ParticleSystem : IReplayHistory
     public void MoveParticleToNewExpandedPosition(Particle p, Vector2Int gridPosHead, Vector2Int gridPosTail)
     {
         Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void MoveParticleToNewExpandedPosition(IParticleState p, Vector2Int gridPosHead, Vector2Int gridPosTail)
+    {
+        Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
+        Log.Error("Not implemented");
     }
 }
