@@ -2989,6 +2989,56 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
+    /// Resets the chirality of all particles to the given value
+    /// when in initialization mode.
+    /// </summary>
+    /// <param name="chirality">The chirality to assign to each
+    /// particle. If the value is <see cref="Initialization.Chirality.Random"/>,
+    /// the particles get a clockwise chirality with a probability of 50%.</param>
+    public void SetSystemChirality(Initialization.Chirality chirality)
+    {
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot set system chirality outside of initialization mode.");
+            return;
+        }
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            bool chiralityPart = true;
+            if (chirality == Initialization.Chirality.Clockwise ||
+                chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
+                chiralityPart = false;
+            ip.Chirality = chiralityPart;
+        }
+    }
+
+    /// <summary>
+    /// Resets the compass direction of all particles to the given value
+    /// when in initialization mode.
+    /// </summary>
+    /// <param name="compassDir">The compass direction to assign to each
+    /// particle. If the value is <see cref="Initialization.Compass.Random"/>,
+    /// each particle gets one of the cardinal directions chosen uniformly
+    /// and independently.</param>
+    public void SetSystemCompassDir(Initialization.Compass compassDir)
+    {
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot set system compass direction outside of initialization mode.");
+            return;
+        }
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            Direction compass = DirectionHelpers.Cardinal(
+                compassDir == Initialization.Compass.Random ? Random.Range(0, 6) : (int)compassDir
+                );
+            ip.CompassDir = compass;
+        }
+    }
+
+    /// <summary>
     /// Tries to change a particle's expansion state when in initialization mode.
     /// This method should only be called from within the particle itself so that
     /// it can update its own state after this check is complete.
@@ -3178,6 +3228,12 @@ public class ParticleSystem : IReplayHistory
     public void RemoveParticle(Particle p)
     {
         Log.Debug("ParticleSystem: Remove Particle called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void RemoveParticle(IParticleState p)
+    {
+        Log.Error("Not implemented");
     }
 
     /// <summary>
@@ -3208,6 +3264,13 @@ public class ParticleSystem : IReplayHistory
     public void MoveParticleToNewContractedPosition(Particle p, Vector2Int gridPos)
     {
         Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void MoveParticleToNewContractedPosition(IParticleState p, Vector2Int gridPos)
+    {
+        Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
+        Log.Error("Not implemented");
     }
 
     /// <summary>
@@ -3219,5 +3282,12 @@ public class ParticleSystem : IReplayHistory
     public void MoveParticleToNewExpandedPosition(Particle p, Vector2Int gridPosHead, Vector2Int gridPosTail)
     {
         Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void MoveParticleToNewExpandedPosition(IParticleState p, Vector2Int gridPosHead, Vector2Int gridPosTail)
+    {
+        Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
+        Log.Error("Not implemented");
     }
 }
