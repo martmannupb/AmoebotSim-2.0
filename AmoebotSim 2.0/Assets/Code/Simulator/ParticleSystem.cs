@@ -2800,7 +2800,11 @@ public class ParticleSystem : IReplayHistory
         ResetInit();
 
         InitializationMethodManager man = InitializationMethodManager.Instance;
-        man.GenerateSystem(this, "Random With Holes", new object[] { particleAmount, 0.25f, Initialization.Chirality.Random, Initialization.Compass.Random });
+
+        // FOR TESTING
+
+        //man.GenerateSystem(this, "Random With Holes", new object[] { particleAmount, 0.25f, Initialization.Chirality.Random, Initialization.Compass.Random });
+        man.GenerateSystem(this, "Smart Material", new object[] { });
     }
 
     /// <summary>
