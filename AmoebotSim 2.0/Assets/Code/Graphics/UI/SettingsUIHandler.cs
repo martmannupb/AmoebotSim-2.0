@@ -34,27 +34,27 @@ public class SettingsUIHandler : MonoBehaviour
         uiHandler.sim.renderSystem.SetAntiAliasing(8);
         // Settings _________________________
         // Header
-        UISetting_Header setting_header_animationsBeeps = new UISetting_Header(settingsParent, "Animations and Circuits");
+        UISetting_Header setting_header_animationsBeeps = new UISetting_Header(null, settingsParent.transform, "Animations and Circuits");
         // Animations On/Off
-        UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(settingsParent, "Animations On/Off", RenderSystem.animationsOn);
+        UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(null, settingsParent.transform, "Animations On/Off", RenderSystem.animationsOn);
         setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
         // Circuit Beep Repeating
-        UISetting_Toggle setting_beepRepeat = new UISetting_Toggle(settingsParent, "Beep Repeat On/Off", RenderSystem.data_circuitBeepRepeatOn);
+        UISetting_Toggle setting_beepRepeat = new UISetting_Toggle(null, settingsParent.transform, "Beep Repeat On/Off", RenderSystem.data_circuitBeepRepeatOn);
         setting_beepRepeat.onValueChangedEvent += SettingChanged_Toggle;
         // Circuit Beep Repeating Time
-        UISetting_ValueSlider setting_beepRepeatTime = new UISetting_ValueSlider(settingsParent, "Beep Repeat Time (s)", new string[] { "1", "2", "4", "8", "16" }, 2);
+        UISetting_ValueSlider setting_beepRepeatTime = new UISetting_ValueSlider(null, settingsParent.transform, "Beep Repeat Time (s)", new string[] { "1", "2", "4", "8", "16" }, 2);
         setting_beepRepeatTime.onValueChangedEventString += SettingChanged_Text;
         // Header
-        UISetting_Spacing setting_spacing = new UISetting_Spacing(settingsParent, "Spacing");
-        UISetting_Header setting_header_graphics = new UISetting_Header(settingsParent, "Graphics");
+        UISetting_Spacing setting_spacing = new UISetting_Spacing(null, settingsParent.transform, "Spacing");
+        UISetting_Header setting_header_graphics = new UISetting_Header(null, settingsParent.transform, "Graphics");
         // Camera Angle
-        UISetting_Slider setting_cameraAngle = new UISetting_Slider(settingsParent, "Camera Angle", 0f, 11f, 0f, true);
+        UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, "Camera Angle", 0f, 11f, 0f, true);
         setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
         // Circuit Connections Look
-        UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(settingsParent, "Circuit Border", SettingsGlobal.circuitBorderActive);
+        UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, "Circuit Border", SettingsGlobal.circuitBorderActive);
         setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
         // Anti Aliasing
-        UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(settingsParent, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
+        UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(null, settingsParent.transform, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
         setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
     }
 

@@ -190,7 +190,7 @@ public class ParticleUIHandler : MonoBehaviour
         System.Type type = particleAttribute.GetAttributeType();
         if(type == typeof(bool))
         {
-            UISetting_Toggle setting = new UISetting_Toggle(go_attributeParent, particleAttribute.ToString_AttributeName(), ((ParticleAttribute_Bool)particleAttribute).GetValue());
+            UISetting_Toggle setting = new UISetting_Toggle(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), ((ParticleAttribute_Bool)particleAttribute).GetValue());
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Toggle;
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
@@ -199,7 +199,7 @@ public class ParticleUIHandler : MonoBehaviour
         }
         else if(type == typeof(int))
         {
-            UISetting_Text setting = new UISetting_Text(go_attributeParent, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Int);
+            UISetting_Text setting = new UISetting_Text(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Int);
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Text;
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
@@ -209,7 +209,7 @@ public class ParticleUIHandler : MonoBehaviour
         else if(type == typeof(Direction))
         {
             string[] choices = System.Enum.GetNames(typeof(Direction));
-            UISetting_Dropdown setting = new UISetting_Dropdown(go_attributeParent, particleAttribute.ToString_AttributeName(), choices, particleAttribute.ToString_AttributeValue());
+            UISetting_Dropdown setting = new UISetting_Dropdown(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), choices, particleAttribute.ToString_AttributeValue());
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Dropdown;
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
@@ -219,7 +219,7 @@ public class ParticleUIHandler : MonoBehaviour
         else if(type.IsEnum) // Enum (other than Direction)
         {
             string[] choices = System.Enum.GetNames(type);
-            UISetting_Dropdown setting = new UISetting_Dropdown(go_attributeParent, particleAttribute.ToString_AttributeName(), choices, particleAttribute.ToString_AttributeValue());
+            UISetting_Dropdown setting = new UISetting_Dropdown(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), choices, particleAttribute.ToString_AttributeValue());
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Dropdown;
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
