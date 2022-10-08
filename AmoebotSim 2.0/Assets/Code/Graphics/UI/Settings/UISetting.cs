@@ -104,8 +104,14 @@ public abstract class UISetting
     public Action<string, float> backgroundButton_onButtonPressedLongEvent;
     private void OnButtonPressedLong(float duration)
     {
-        if (backgroundButton_onButtonPressedLongEvent != null) backgroundButton_onButtonPressedLongEvent(name, duration);
+        if (backgroundButton_onButtonPressedLongEvent != null && duration >= 2) backgroundButton_onButtonPressedLongEvent(name, duration);
     }
+
+    /// <summary>
+    /// Access to the current value.
+    /// </summary>
+    /// <returns>The current value of the setting as a string.</returns>
+    public abstract string GetValueString();
 
     public void Lock()
     {
@@ -123,7 +129,13 @@ public abstract class UISetting
 
     protected abstract void LockSetting();
     protected abstract void UnlockSetting();
-    public abstract void Clear();
+    public void Clear()
+    {
+        backgroundButton_onButtonPressedEvent = null;
+        backgroundButton_onButtonPressedLongEvent = null;
+        ClearRefs();
+    }
+    protected abstract void ClearRefs();
 }
 
 public class UISetting_Header : UISetting
@@ -146,6 +158,11 @@ public class UISetting_Header : UISetting
         tmpro.text = name;
     }
 
+    public override string GetValueString()
+    {
+        return name;
+    }
+
     protected override void LockSetting()
     {
         // empty
@@ -156,7 +173,7 @@ public class UISetting_Header : UISetting
         // empty
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         // empty
     }
@@ -176,6 +193,11 @@ public class UISetting_Spacing : UISetting
         this.name = name + " (" + id++ + ")";
     }
 
+    public override string GetValueString()
+    {
+        return "";
+    }
+
     protected override void LockSetting()
     {
         // empty
@@ -186,7 +208,7 @@ public class UISetting_Spacing : UISetting
         // empty
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         // empty
     }
@@ -219,6 +241,11 @@ public class UISetting_Slider : UISetting
 
     }
 
+    public override string GetValueString()
+    {
+        return slider.value.ToString();
+    }
+
     protected override void LockSetting()
     {
         slider.enabled = false;
@@ -229,7 +256,7 @@ public class UISetting_Slider : UISetting
         slider.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
     }
@@ -306,6 +333,11 @@ public class UISetting_Text : UISetting
         }
     }
 
+    public override string GetValueString()
+    {
+        return input.text;
+    }
+
     protected override void LockSetting()
     {
         input.enabled = false;
@@ -316,7 +348,7 @@ public class UISetting_Text : UISetting
         input.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
     }
@@ -394,6 +426,11 @@ public class UISetting_Dropdown : UISetting
         dropdown.value = options.IndexOf(initialChoice);
     }
 
+    public override string GetValueString()
+    {
+        return dropdown.options[dropdown.value].text;
+    }
+
     protected override void LockSetting()
     {
         dropdown.enabled = false;
@@ -404,7 +441,7 @@ public class UISetting_Dropdown : UISetting
         dropdown.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
     }
@@ -455,6 +492,11 @@ public class UISetting_Toggle : UISetting
         toggle.onValueChanged.AddListener(delegate { OnValueChanged(); });
     }
 
+    public override string GetValueString()
+    {
+        return toggle.isOn ? "True" : "False";
+    }
+
     protected override void LockSetting()
     {
         toggle.enabled = false;
@@ -465,7 +507,7 @@ public class UISetting_Toggle : UISetting
         toggle.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
     }
@@ -560,6 +602,12 @@ public class UISetting_ValueSlider : UISetting
         }
     }
 
+    public override string GetValueString()
+    {
+        if (mappingActive) return mapping[(int)slider.value];
+        else return "" + slider.value;
+    }
+
     protected override void LockSetting()
     {
         slider.enabled = false;
@@ -570,7 +618,7 @@ public class UISetting_ValueSlider : UISetting
         slider.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
         onValueChangedEventString = null;

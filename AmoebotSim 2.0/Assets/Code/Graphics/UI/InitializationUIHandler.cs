@@ -19,6 +19,7 @@ public class InitializationUIHandler : MonoBehaviour
     // Particle Generation Menu UI
     public GameObject genAlg_go_genAlg;
     public GameObject genAlg_go_amoebotAmount;
+    public GameObject genAlg_go_paramParent;
     public Button button_particle_load;
     public Button button_particle_save;
     public Button button_particle_generate;
@@ -26,7 +27,8 @@ public class InitializationUIHandler : MonoBehaviour
     public GameObject addPar_go_chirality;
     public GameObject addPar_go_compassDir;
     // Algorithm Generation Menu UI
-    public GameObject algGen_go_algo;
+    public GameObject alg_go_algo;
+    public GameObject alg_go_paramAmount;
     public Button button_algorithm_start;
     public Button button_algorithm_abort;
 
@@ -34,26 +36,16 @@ public class InitializationUIHandler : MonoBehaviour
     // Particle Generation Menu UI
     private UISetting_Dropdown genAlg_setting_genAlg;
     private UISetting_Text genAlg_setting_amoebotAmount;
-    private List<UISetting> genAlg_settings;
+    private List<UISetting> genAlg_settings = new List<UISetting>();
     // Additional Parameter UI
-    private UISetting addPar_setting_chirality;
-    private UISetting addPar_setting_compassDir;
+    private UISetting_Dropdown addPar_setting_chirality;
+    private UISetting_Dropdown addPar_setting_compassDir;
     // Algorithm Generation Menu UI
-    public UISetting_Dropdown algGen_setting_algo;
+    private UISetting_Dropdown alg_setting_algo;
+    private UISetting_ValueSlider alg_setting_paramAmount;
 
-    private void InitAll()
-    {
-        // Algorithm Generation
-        Type[] algorithmClasses = typeof(ParticleAlgorithm).Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(ParticleAlgorithm))).ToArray();
-        List<string> algoStrings = new List<string>();
-        for (int i = 0; i < algorithmClasses.Length; i++)
-        {
-            algoStrings.Add(algorithmClasses[i].ToString());
-        }
-        genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Generation Algorithm", algoStrings.ToArray(), algoStrings.Count > 0 ? algoStrings[0] : "");
-        //throw new System.NotImplementedException(); // here we should init the params for the first algorithm
-        genAlg_setting_amoebotAmount = new UISetting_Text(genAlg_go_amoebotAmount, null, "Amount Amoebots", "50", UISetting_Text.InputType.Int);
-    }
+    // Updated
+    private List<UISetting> updatedSettings = new List<UISetting>();
 
     // Camera Colors
     private Color camColorBG;
@@ -80,18 +72,116 @@ public class InitializationUIHandler : MonoBehaviour
         ResetUI();
     }
 
-    public void ResetUI()
+    private void Update()
     {
+        // Update Settings
+        foreach (var setting in updatedSettings)
+        {
+            setting.InteractiveBarUpdate();
+        }
+    }
+
+    private void ResetUI() // todo: reset would not work correctly
+    {
+        // Null check
+        if (InitializationMethodManager.Instance == null)
+        {
+            Log.Error("InitializationUIHandler: InitializationMethodManager.Instance is null!");
+            throw new System.NullReferenceException();
+        }
+
         // Particle Generation
-        //genAlg_field_amount.text = "50";
-        //dropdown_particle_chirality.ClearOptions();
-        //dropdown_particle_chirality.AddOptions(new List<string>(System.Enum.GetNames(typeof(SettingChirality))));
-        //List<string> directionList = new List<string>(System.Enum.GetNames(typeof(Direction)));
-        //directionList.Insert(0, "Random");
-        //dropdown_particle_compassDir.value = 0;
-        //dropdown_particle_compassDir.ClearOptions();
-        //dropdown_particle_compassDir.AddOptions(directionList);
-        
+        List<string> genAlgStrings = InitializationMethodManager.Instance.GetAlgorithmNames();
+        genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings.Count > 0 ? genAlgStrings[0] : "");
+        SetUpAlgorithmUI(genAlgStrings[0]);
+        genAlg_setting_amoebotAmount = new UISetting_Text(genAlg_go_amoebotAmount, null, "Amount", "50", UISetting_Text.InputType.Int);
+        // Additional Parameters
+        List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(SettingChirality)));
+        chiralityList.Insert(0, "Random");
+        addPar_setting_chirality = new UISetting_Dropdown(addPar_go_chirality, null, "Chirality", chiralityList.ToArray(), chiralityList[0]);
+        addPar_setting_chirality.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
+        updatedSettings.Add(addPar_setting_chirality);
+        List<string> compassDirList = new List<string>(System.Enum.GetNames(typeof(Direction)));
+        compassDirList.Insert(0, "Random");
+        addPar_setting_compassDir = new UISetting_Dropdown(addPar_go_compassDir, null, "Compass Dir", compassDirList.ToArray(), compassDirList[0]);
+        addPar_setting_compassDir.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
+        updatedSettings.Add(addPar_setting_compassDir);
+        // Algorithm Generation
+        Type[] algorithmClasses = typeof(ParticleAlgorithm).Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(ParticleAlgorithm))).ToArray();
+        List<string> algoStrings = new List<string>();
+        for (int i = 0; i < algorithmClasses.Length; i++)
+        {
+            algoStrings.Add(algorithmClasses[i].ToString());
+        }
+        alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algoStrings.ToArray(), algoStrings[0]);
+        alg_setting_paramAmount = new UISetting_ValueSlider(alg_go_paramAmount, null, "Param Amount", 0, 10, 0, true);
+        SetUpDynamicParams();
+    }
+
+    private void SetUpAlgorithmUI(string algorithm)
+    {
+        // Clear old UI
+        foreach (var setting in genAlg_settings)
+        {
+            setting.Clear();
+            Destroy(setting.GetGameObject());
+        }
+        genAlg_settings.Clear();
+        // Instantiate new UI
+        InitializationMethodManager.AlgorithmInfo algoInfo = InitializationMethodManager.Instance.FindAlgorithm(algorithm);
+        System.Reflection.MethodInfo methodInfo = algoInfo.generateMethod;
+        System.Reflection.ParameterInfo[] paramInfo = methodInfo.GetParameters();
+        for (int i = 0; i < paramInfo.Length; i++)
+        {
+            System.Reflection.ParameterInfo param = paramInfo[i];
+            //Log.Debug(param.ParameterType.ToString());
+            Type type = param.ParameterType;
+            if (type == typeof(bool))
+            {
+                bool defValue = false;
+                if (param.HasDefaultValue) defValue = (bool)param.DefaultValue;
+                UISetting_Toggle setting = new UISetting_Toggle(null, genAlg_go_paramParent.transform, param.Name, defValue);
+                genAlg_settings.Add((UISetting)setting);
+            }
+            else if(type == typeof(int))
+            {
+                string defValue = "0";
+                if (param.HasDefaultValue) defValue = "" + (int)param.DefaultValue;
+                UISetting_Text setting = new UISetting_Text(null, genAlg_go_paramParent.transform, param.Name, defValue, UISetting_Text.InputType.Int);
+                genAlg_settings.Add((UISetting)setting);
+            }
+            else if (type == typeof(float))
+            {
+                string defValue = "0";
+                if (param.HasDefaultValue) defValue = "" + (float)param.DefaultValue;
+                UISetting_Text setting = new UISetting_Text(null, genAlg_go_paramParent.transform, param.Name, defValue, UISetting_Text.InputType.Float);
+                genAlg_settings.Add((UISetting)setting);
+            }
+            else if (type == typeof(string))
+            {
+                string defValue = "";
+                if (param.HasDefaultValue) defValue = (string)param.DefaultValue;
+                UISetting_Text setting = new UISetting_Text(null, genAlg_go_paramParent.transform, param.Name, defValue, UISetting_Text.InputType.Text);
+                genAlg_settings.Add((UISetting)setting);
+            }
+            else if (type.IsSubclassOf(typeof(Enum)))
+            {
+                string defValue = Enum.GetNames(type)[0].ToString();
+                if (param.HasDefaultValue) defValue = ((Enum)param.DefaultValue).ToString();
+                UISetting_Dropdown setting = new UISetting_Dropdown(null, genAlg_go_paramParent.transform, param.Name, Enum.GetNames(type), defValue);
+                genAlg_settings.Add((UISetting)setting);
+            }
+        }
+        Log.Debug("Continue to code here.");
+
+        // ..
+
+    }
+
+    private void SetUpDynamicParams()
+    {
+        // (implement dynamic params here ...)
+        Log.Debug("Dynamic Params not implemented yet.");
     }
 
     public void Open()
@@ -155,21 +245,36 @@ public class InitializationUIHandler : MonoBehaviour
     public void ButtonPressed_Generate()
     {
         // Collect Input Data
-        //int amountParticles;
-        //if(int.TryParse(genAlg_field_amount.text, out amountParticles) == false)
-        //{
-        //    Log.Error("Initialization: Generate: Could not parse particle amount!");
-        //    return;
-        //}
+        string algorithm = genAlg_setting_genAlg.GetValueString();
+        int amountParticles;
+        string[] parameters = new string[genAlg_settings.Count];
+        if (int.TryParse(genAlg_setting_amoebotAmount.GetValueString(), out amountParticles) == false)
+        {
+            Log.Error("Initialization: Generate: Could not parse particle amount!");
+            return;
+        }
+        if(amountParticles <= 0)
+        {
+            Log.Error("Initialization: Generate: Please initialize the system with a positive number of particles!");
+            return;
+        }
+        for (int i = 0; i < genAlg_settings.Count; i++)
+        {
+            UISetting setting = genAlg_settings[i];
+            parameters[i] = setting.GetValueString();
+        }
+
+
+
         //SettingChirality chirality;
-        //if(SettingChirality.TryParse(dropdown_particle_chirality.options[dropdown_particle_chirality.value].text, out chirality) == false)
+        //if (SettingChirality.TryParse(dropdown_particle_chirality.options[dropdown_particle_chirality.value].text, out chirality) == false)
         //{
         //    Log.Error("Initialization: Generate: Could not parse chirality!");
         //    return;
         //}
         //bool randomCompassDir = dropdown_particle_compassDir.value == 0;
         //Direction compassDir = Direction.N;
-        //if(randomCompassDir == false)
+        //if (randomCompassDir == false)
         //{
         //    object output;
         //    if (Direction.TryParse(typeof(Direction), dropdown_particle_compassDir.options[dropdown_particle_compassDir.value].text, out output) == false)
@@ -179,11 +284,29 @@ public class InitializationUIHandler : MonoBehaviour
         //    }
         //    compassDir = (Direction)output;
         //}
-        
 
-        //// Call Generation Method
-        //uiHandler.sim.system.Reset();
+
+        // Call Generation Method
+        uiHandler.sim.system.Reset();
+        InitializationMethodManager.Instance.GenerateSystem(uiHandler.sim.system, algorithm, parameters);
         //uiHandler.sim.system.GenerateParticles(amountParticles, chirality, randomCompassDir, compassDir);
+    }
+
+    public void SettingBarPressedLong(string name, float duration)
+    {
+        switch (name)
+        {
+            case "Chirality":
+                // Apply chirality setting to all particles
+                Log.Debug("Here we apply the chirality to all particles. (not implemented yet)");
+                break;
+            case "Compass Dir":
+                // Apply compass dir setting to all particles
+                Log.Debug("Here we apply the compass dir to all particles. (not implemented yet)");
+                break;
+            default:
+                break;
+        }
     }
 
     public void ButtonPressed_StartAlgorithm()

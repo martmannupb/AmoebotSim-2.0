@@ -218,16 +218,20 @@ public class ParticleUIHandler : MonoBehaviour
         }
         else if (type == typeof(float))
         {
-            UISetting_Text setting = new UISetting_Text(go_attributeParent, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Float);
+            UISetting_Text setting = new UISetting_Text(go_attributeParent, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Float);
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Text;
+            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else if (type == typeof(string))
         {
-            UISetting_Text setting = new UISetting_Text(go_attributeParent, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Text);
+            UISetting_Text setting = new UISetting_Text(go_attributeParent, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Text);
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Text;
+            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else if(type == typeof(Direction))

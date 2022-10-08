@@ -20,7 +20,7 @@ public class InitializationMethodManager
         get { return instance; }
     }
 
-    private class AlgorithmInfo
+    public class AlgorithmInfo
     {
         public string name;
         public Type type;
@@ -110,7 +110,7 @@ public class InitializationMethodManager
         }
     }
 
-    private AlgorithmInfo FindAlgorithm(string name)
+    public AlgorithmInfo FindAlgorithm(string name)
     {
         if (algorithms.TryGetValue(name, out AlgorithmInfo info))
         {
