@@ -192,7 +192,7 @@ public class ParticleSystem : IReplayHistory
         Vector2Int node = new Vector2Int(0, 0);
         //Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
         //Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
-        Particle p = ParticleFactory.CreateParticle(this, "Line Formation", new int[0], node);
+        Particle p = ParticleFactory.CreateParticle(this, "Line Formation", null, node);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -220,7 +220,7 @@ public class ParticleSystem : IReplayHistory
 
                 //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
                 //p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
-                p = ParticleFactory.CreateParticle(this, "Line Formation", new int[0], newPos);
+                p = ParticleFactory.CreateParticle(this, "Line Formation", null, newPos);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 

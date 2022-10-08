@@ -16,13 +16,15 @@ using UnityEngine;
 /// </summary>
 public class ParticleFactory
 {
-    public static Particle CreateParticle(ParticleSystem system, string algorithmId, int[] genericParams, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
+    public static Particle CreateParticle(ParticleSystem system, string algorithmId, List<int> genericParams, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
     {
         if (compassDir == Direction.NONE)
             compassDir = DirectionHelpers.Cardinal(0);
+        if (genericParams == null)
+            genericParams = new List<int>();
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        AlgorithmManager.Instance.Instantiate(algorithmId, p, genericParams);
+        AlgorithmManager.Instance.Instantiate(algorithmId, p, genericParams.ToArray());
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle();
