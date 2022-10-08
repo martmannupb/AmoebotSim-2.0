@@ -6,7 +6,12 @@ using UnityEngine;
 
 /// <summary>
 /// Main container for a system of particles in the grid together with
-/// the execution logic for simulating particle activations and entire rounds.
+/// the execution logic for simulating rounds.
+/// <para>
+/// Unlike other <see cref="IReplayHistory"/> implementations, the system will
+/// automatically reactivate the tracking state as soon as the marker is set to
+/// the latest round.
+/// </para>
 /// </summary>
 public class ParticleSystem : IReplayHistory
 {
@@ -74,6 +79,38 @@ public class ParticleSystem : IReplayHistory
 
     private bool isTracking = true;     // For IReplayHistory
 
+    // State information
+
+    /// <summary>
+    /// Indicates whether the system is currently in the initialization state.
+    /// In this state, particles can be added, removed, moved and modified
+    /// freely and new configurations can be generated.
+    /// <para>
+    /// In this state, no methods controlling the simulation or the history
+    /// replay should be called.
+    /// </para>
+    /// </summary>
+    public bool InInitializationState
+    {
+        get { return inInitializationState; }
+    }
+    private bool inInitializationState = false;
+
+    // Is true when we entered initialization mode and saved the previous simulation state
+    private bool storedSimulationState = false;
+    // The round we were in when we stored the simulation state
+    private int storedSimulationRound = -1;
+    // The number of generic parameters stored in the initialization particles
+    private int numGenericParameters = 0;
+    /// <summary>
+    /// The number of generic parameters used by the particle templates in
+    /// initialization mode.
+    /// </summary>
+    public int NumGenericParameters
+    {
+        get { return numGenericParameters; }
+    }
+
     // Simulation phase flags
     // Used to indicate which of the two cycles is currently being executed
     // so that all parts of the simulator have the corresponding behavior
@@ -100,8 +137,13 @@ public class ParticleSystem : IReplayHistory
     public AmoebotSimulator sim;
     public RenderSystem renderSystem;
 
+    // Main data structures
     public List<Particle> particles = new List<Particle>();
     private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
+
+    // Initialization mode data structures
+    private List<InitializationParticle> particlesInit = new List<InitializationParticle>();
+    private Dictionary<Vector2Int, InitializationParticle> particleMapInit = new Dictionary<Vector2Int, InitializationParticle>();
 
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
@@ -126,9 +168,12 @@ public class ParticleSystem : IReplayHistory
             particleMap.Add(p.Head(), p);
         }
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     /// <summary>
@@ -149,7 +194,8 @@ public class ParticleSystem : IReplayHistory
         List<Vector2Int> candidates = new List<Vector2Int>();
         Vector2Int node = new Vector2Int(0, 0);
         //Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
-        Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
+        //Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
+        Particle p = ParticleFactory.CreateParticle(this, "Line Formation", null, node);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -176,7 +222,8 @@ public class ParticleSystem : IReplayHistory
                 }
 
                 //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
-                p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
+                //p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
+                p = ParticleFactory.CreateParticle(this, "Line Formation", null, newPos);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -192,9 +239,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeLeaderElection(int numParticles, float holeProb)
@@ -245,9 +295,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeChiralityCompass(int numParticles, float holeProb)
@@ -298,9 +351,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeBoundaryTest(int numParticles, float holeProb)
@@ -351,9 +407,12 @@ public class ParticleSystem : IReplayHistory
         }
         Debug.Log(s);
 
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     public void InitializeJMTest(int mode)
@@ -767,10 +826,12 @@ public class ParticleSystem : IReplayHistory
 
 
 
-
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
         DiscoverCircuits(false);
-        CleanupAfterRound();
         UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     #endregion
@@ -800,6 +861,20 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
+    /// Resets the current particle configuration while in
+    /// initialization mode.
+    /// </summary>
+    public void ResetInit()
+    {
+        foreach (InitializationParticle p in particlesInit)
+        {
+            p.graphics.RemoveParticle();
+        }
+        particlesInit.Clear();
+        particleMapInit.Clear();
+    }
+
+    /// <summary>
     /// Tries to get the <see cref="Particle"/> at the given position.
     /// </summary>
     /// <param name="position">The grid position at which to look for the particle.</param>
@@ -812,6 +887,24 @@ public class ParticleSystem : IReplayHistory
         {
             return true;
         }
+        else
+        {
+            particle = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Tries to get the <see cref="IParticleState"/> at the given position.
+    /// </summary>
+    /// <param name="position">The grid position at which to look for the particle.</param>
+    /// <param name="particle">The particle at the given position, if it exists,
+    /// otherwise <c>null</c>.</param>
+    /// <returns><c>true</c> if and only if a particle was found at the given position.</returns>
+    public bool TryGetParticleAt(Vector2Int position, out IParticleState particle)
+    {
+        if (TryGetParticleAt(position, out particle))
+            return true;
         else
         {
             particle = null;
@@ -1800,10 +1893,11 @@ public class ParticleSystem : IReplayHistory
                 Debug.LogError("Error: Disagreement on handover with two bonds");
                 throw new System.InvalidOperationException("Conflict during movements");
             }
-            
+
             // Prepare info for second bond
+            Vector2Int eBond1_2 = eHead2 ? e.Head() : e.Tail();
             Vector2Int cBond2_2 = cBond1;
-            Vector2Int eBond2_2 = eBond1;
+            Vector2Int eBond2_2 = eBond1_2;
 
             bool handoverFirst = weWantHandoverFirst && nbrWantsHandoverFirst;
             bool handoverSecond = weWantHandoverSecond && nbrWantsHandoverSecond;
@@ -1879,12 +1973,12 @@ public class ParticleSystem : IReplayHistory
             if (bondForContracted)
             {
                 c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
-                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1));
+                c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1_2));
             }
             else
             {
                 e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
-                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1, cBond1));
+                e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1_2, cBond1));
             }
         }
         return eOffset;
@@ -1960,6 +2054,13 @@ public class ParticleSystem : IReplayHistory
         return edgeOffset;
     }
 
+    /// <summary>
+    /// Computes bond information in the case that no movements have occurred.
+    /// This method works similar to the joint movement simulation but it does
+    /// not process any movements. It also does not check whether the particle
+    /// bond structure is connected or not. Bonds will only be computed for the
+    /// connected component that contains the anchor particle.
+    /// </summary>
     private void ComputeBondsStatic()
     {
         // Use BFS, just like for movement simulation
@@ -2051,6 +2152,56 @@ public class ParticleSystem : IReplayHistory
             }
 
             p.processedJointMovement = true;
+        }
+    }
+
+    /// <summary>
+    /// Sets all global bonds of all particles so that
+    /// their initial bonds can be computed easily.
+    /// </summary>
+    public void SetInitialParticleBonds()
+    {
+        foreach (Particle p in particles)
+        {
+            for (int i = 0; i < 10; i++)
+                p.activeBondsGlobal[i] = true;
+        }
+    }
+
+    /// <summary>
+    /// Sets the bond graphics info of all particles to the
+    /// currently loaded state so that it can be displayed.
+    /// If animations are required, the joint movement info is
+    /// also loaded and set up to produce the correct animations.
+    /// This should be called when stepping or jumping through
+    /// the history.
+    /// </summary>
+    /// <param name="withAnimation">Flag indicating whether the
+    /// loaded movement information should include an animation
+    /// or not.</param>
+    private void LoadMovementGraphicsInfo(bool withAnimation)
+    {
+        foreach (Particle p in particles)
+        {
+            BondMovementInfoList bondInfo = p.GetCurrentBondGraphicsInfo();
+            JointMovementInfo movementInfo = p.GetCurrentMovementGraphicsInfo();
+            Vector2Int beforeOffset = p.Tail() - movementInfo.jmOffset;
+            Vector2Int afterOffset = p.Tail();
+            foreach (BondMovementInfo bmi in bondInfo.bondMovements)
+            {
+                if (withAnimation)
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start1 + beforeOffset, bmi.end1 + beforeOffset));
+                else
+                    p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start2 + afterOffset, bmi.end2 + afterOffset));
+            }
+            // Also load joint movement info if required
+            if (withAnimation)
+            {
+                p.jmOffset = movementInfo.jmOffset;
+                p.movementOffset = movementInfo.movementOffset;
+                if (movementInfo.movementAction != ActionType.NULL)
+                    p.ScheduledMovement = new ParticleAction(p, movementInfo.movementAction);
+            }
         }
     }
 
@@ -2798,13 +2949,15 @@ public class ParticleSystem : IReplayHistory
     {
         Vector2 avg = Vector2.zero;
 
-        foreach (Vector2Int pos in particleMap.Keys)
+        ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+
+        foreach (Vector2Int pos in positions)
         {
             avg += pos;
         }
 
-        if (particleMap.Count > 0)
-            avg /= particleMap.Count;
+        if (positions.Count > 0)
+            avg /= positions.Count;
 
         return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(avg.x, avg.y);
     }
@@ -2816,12 +2969,17 @@ public class ParticleSystem : IReplayHistory
     /// Will be <c>(0, 0)</c> if there are no particles.</returns>
     public Vector2 BBoxCenterPosition()
     {
-        float xMin = 0f;
-        float xMax = 0f;
-        float yMin = 0f;
-        float yMax = 0f;
+        ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
 
-        foreach (Vector2Int pos in particleMap.Keys)
+        if (positions.Count == 0)
+            return Vector2.zero;
+
+        float xMin = float.PositiveInfinity;
+        float xMax = float.NegativeInfinity;
+        float yMin = float.PositiveInfinity;
+        float yMax = float.NegativeInfinity;
+
+        foreach (Vector2Int pos in positions)
         {
             Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
             if (abs.x < xMin)
@@ -2846,8 +3004,23 @@ public class ParticleSystem : IReplayHistory
     public Vector2 SeedPosition()
     {
         Vector2 result;
-        if (particles.Count > 0)
-            result = 0.5f * (Vector2)(particles[0].Head() + particles[0].Tail());
+        IParticleState seed = null;
+        int n;
+        if (inInitializationState)
+        {
+            n = particlesInit.Count;
+            if (n > 0)
+                seed = particlesInit[0];
+        }
+        else
+        {
+            n = particles.Count;
+            if (n > 0)
+                seed = particles[0];
+        }
+
+        if (n > 0)
+            result = 0.5f * (Vector2)(seed.Head() + seed.Tail());
         else
             result = Vector2.zero;
 
@@ -2878,8 +3051,13 @@ public class ParticleSystem : IReplayHistory
         {
             throw new System.ArgumentOutOfRangeException("Cannot set system to round " + round + "; must be between " + _earliestRound + " and " + _latestRound);
         }
-        if (isTracking || round != _currentRound)
+        if (round != _currentRound)
         {
+            if (round == _latestRound)
+            {
+                ContinueTracking();
+                return;
+            }
             _currentRound = round;
             _previousRound = round;
             // Set all particles to track the given round
@@ -2897,10 +3075,11 @@ public class ParticleSystem : IReplayHistory
             isTracking = false;
             // TODO: This should be structured better
             DiscoverCircuits(false);
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
         }
     }
 
@@ -2933,10 +3112,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = false;
             DiscoverCircuits(false);
-            CleanupAfterRound();
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
+            CleanupAfterRound();
         }
     }
 
@@ -2946,12 +3126,10 @@ public class ParticleSystem : IReplayHistory
         {
             throw new System.InvalidOperationException("Cannot step forward because the system is in the latest round " + _latestRound);
         }
-        // Have to synchronize to given round if we are still tracking
-        if (isTracking)
+        if (_currentRound == _latestRound - 1)
         {
-            SetMarkerToRound(_currentRound + 1);
+            ContinueTracking();
         }
-        // Otherwise particles are already synchronized
         else
         {
             _currentRound++;
@@ -2969,10 +3147,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = false;
             DiscoverCircuits(false);
+            LoadMovementGraphicsInfo(true);
+            UpdateAllParticleVisuals(false);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(false);
         }
     }
 
@@ -2999,10 +3178,11 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = true;
             DiscoverCircuits();
+            LoadMovementGraphicsInfo(false);
+            UpdateAllParticleVisuals(true);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
-            UpdateAllParticleVisuals(true);
         }
     }
 
@@ -3014,7 +3194,9 @@ public class ParticleSystem : IReplayHistory
             foreach (Particle p in particles)
             {
                 p.CutOffAtMarker();
+                p.ContinueTracking();
             }
+            isTracking = true;
         }
     }
 
@@ -3035,6 +3217,12 @@ public class ParticleSystem : IReplayHistory
      * Saving and loading functionality.
      */
 
+    /// <summary>
+    /// Writes the current simulation state including its
+    /// entire history into a serializable object.
+    /// </summary>
+    /// <returns>A serializable object containing the current
+    /// simulation state.</returns>
     public SimulationStateSaveData GenerateSaveData()
     {
         SimulationStateSaveData data = new SimulationStateSaveData();
@@ -3051,7 +3239,20 @@ public class ParticleSystem : IReplayHistory
         return data;
     }
 
-    public void InitializeFromSaveState(SimulationStateSaveData data)
+    /// <summary>
+    /// Initializes the system to the state that is stored in
+    /// the given save data object.
+    /// <para>
+    /// This only works correctly if the system was reset using
+    /// the <see cref="Reset"/> method before.
+    /// </para>
+    /// </summary>
+    /// <param name="data">The object containing the saved
+    /// simulation state.</param>
+    /// <param name="updateVisuals">If <c>true</c>, the render system
+    /// is notified about the updated system immediately after
+    /// loading the simulation state.</param>
+    public void InitializeFromSaveState(SimulationStateSaveData data, bool updateVisuals = true)
     {
         _earliestRound = data.earliestRound;
         _latestRound = data.latestRound;
@@ -3069,34 +3270,104 @@ public class ParticleSystem : IReplayHistory
             }
         }
 
-        DiscoverCircuits(false);
-        CleanupAfterRound();
-        UpdateAllParticleVisuals(true);
+        if (updateVisuals)
+        {
+            DiscoverCircuits(false);
+            CleanupAfterRound();
+            UpdateAllParticleVisuals(true);
+        }
     }
 
 
+    /**
+     * Initialization mode functionality.
+     */
 
-
-    
-
+    // TODO: Implement different system for initializing the particles
     public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality, bool randomCompassDir, Direction compassDir)
     {
         // If randomCompassDir is true the value of direction can be ignored
         // The system has been already Reset by the UI at this point
-        Log.Debug("GenerateParticles: Not implemented yet (I dont wanna throw an error here).");
+
+        ResetInit();
+
+        InitializationMethodManager man = InitializationMethodManager.Instance;
+        man.GenerateSystem(this, "Random With Holes", new object[] { particleAmount, 0.25f, Initialization.Chirality.Random, Initialization.Compass.Random });
     }
 
+    /// <summary>
+    /// Switches the system state to initialization mode.
+    /// </summary>
     public void InitializationModeStarted()
     {
+        if (inInitializationState)
+            return;
+
         // Note: The initialization window has just been opened. So it might be possible to save the state of a running algorithm and convert its particles to the initialization particles
         // in order to be able to use the given state for new algorithms / save the particle configuration.
-        Log.Debug("InitializationModeStarted: Not implemented yet (I dont wanna throw an error here).");
+
+        particlesInit.Clear();
+        particleMapInit.Clear();
+
+        // Use the current system if we have one
+        if (particles.Count > 0)
+        {
+            // Store the simulation state
+            SimulationStateSaveData saveData = GenerateSaveData();
+            SaveStateUtility.Save(saveData, SaveStateUtility.tmpSaveFile);
+            storedSimulationState = true;
+            storedSimulationRound = _currentRound;
+
+            // Use the current system state as starting point for initialization system
+            foreach (Particle p in particles)
+            {
+                InitializationParticle ip = new InitializationParticle(this, p.Tail(), p.chirality, p.comDir, p.GlobalHeadDirection());
+                particlesInit.Add(ip);
+                particleMapInit[p.Tail()] = ip;
+                if (p.IsExpanded())
+                    particleMapInit[p.Head()] = ip;
+                ip.graphics.AddParticle(new ParticleMovementState(ip.Head(), ip.Tail(), ip.IsExpanded(), ip.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
+                ip.graphics.UpdateReset();
+            }
+        }
+        // Hide the circuits
+        renderSystem.CircuitCalculationOver();
+
+        Reset();
+        inInitializationState = true;
     }
 
+    /// <summary>
+    /// Aborts the initialization mode and reloads the
+    /// previous simulation state if possible.
+    /// </summary>
     public void InitializationModeAborted()
     {
+        if (!inInitializationState)
+            return;
+
         // Note: The initialization mode has just been aborted and the window is closed. Here the previously saved state could be loaded again to continue with the old algorithm.
-        Log.Debug("InitializationModeAborted: Not implemented yet (I dont wanna throw an error here).");
+
+        // Unload the temporary initialization system
+        ResetInit();
+
+        // Load previous system state if we have one
+        if (storedSimulationState)
+        {
+            storedSimulationState = false;
+            SimulationStateSaveData saveData = SaveStateUtility.Load(SaveStateUtility.tmpSaveFile);
+            if (saveData == null)
+            {
+                Debug.LogWarning("Unable to load previous simulation state.");
+                return;
+            }
+            InitializeFromSaveState(saveData, false);
+            SetMarkerToRound(storedSimulationRound);
+            DiscoverCircuits(false);
+            CleanupAfterRound();
+            UpdateAllParticleVisuals(true);
+        }
+        inInitializationState = false;
     }
 
     public bool IsInLatestRound()
@@ -3104,19 +3375,377 @@ public class ParticleSystem : IReplayHistory
         return CurrentRound == LatestRound;
     }
 
-    public void AddParticleContracted(Vector2Int gridPos)
+    /// <summary>
+    /// Adds a contracted particle at the given position when in
+    /// initialization mode.
+    /// </summary>
+    /// <param name="gridPos">The grid position where the particle should be placed.</param>
+    /// <param name="chirality">The current chirality setting.</param>
+    /// <param name="compassDir">The current compass direction setting.</param>
+    public void AddParticleContracted(Vector2Int gridPos,
+        Initialization.Chirality chirality = Initialization.Chirality.Clockwise, Initialization.Compass compassDir = Initialization.Compass.E)
     {
-        Log.Debug("ParticleSystem: AddParticleContracted called.");
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot add particles in simulation mode.");
+            return;
+        }
+
+        bool chiralityPart = true;
+        if (chirality == Initialization.Chirality.CounterClockwise ||
+            chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
+            chiralityPart = false;
+
+        Direction compassDirPart = DirectionHelpers.Cardinal(
+            compassDir == Initialization.Compass.Random ? Random.Range(0, 6) :
+            (int)compassDir
+            );
+
+        AddInitParticle(gridPos, chiralityPart, compassDirPart, Direction.NONE);
     }
 
-    public void AddParticleExpanded(Vector2Int gridPosHead, Vector2Int gridPosTail)
+    /// <summary>
+    /// Adds an expanded particle at the given position when in
+    /// initialization mode.
+    /// </summary>
+    /// <param name="gridPosHead">The grid position of the particle's head.</param>
+    /// <param name="gridPosTail">The grid position of the particle's tail.</param>
+    /// <param name="chirality">The current chirality setting.</param>
+    /// <param name="compassDir">The current compass direction setting.</param>
+    public void AddParticleExpanded(Vector2Int gridPosHead, Vector2Int gridPosTail,
+        Initialization.Chirality chirality = Initialization.Chirality.Clockwise, Initialization.Compass compassDir = Initialization.Compass.E)
     {
-        Log.Debug("ParticleSystem: AddParticleExpanded called.");
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot add particles in simulation mode.");
+            return;
+        }
+
+        bool chiralityPart = true;
+        if (chirality == Initialization.Chirality.CounterClockwise ||
+            chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
+            chiralityPart = false;
+
+        Direction compassDirPart = DirectionHelpers.Cardinal(
+            compassDir == Initialization.Compass.Random ? Random.Range(0, 6) :
+            (int)compassDir
+            );
+
+        Direction headDirection = ParticleSystem_Utils.VectorToDirection(gridPosHead - gridPosTail);
+        if (headDirection == Direction.NONE)
+        {
+            Log.Error("Invalid positions for expanded particle: " + gridPosHead + ", " + gridPosTail);
+            return;
+        }
+
+        AddInitParticle(gridPosTail, chiralityPart, compassDirPart, headDirection);
     }
+
+    /// <summary>
+    /// General method for adding particles to the system in initialization mode.
+    /// </summary>
+    /// <param name="tailPos">The grid position of the particle's tail.</param>
+    /// <param name="chirality">The chirality of the particle. <c>true</c> means
+    /// counter-clockwise and <c>false</c> means clockwise.</param>
+    /// <param name="compassDir">The compass direction of the particle. This is
+    /// the global direction that corresponds to the particle's local
+    /// <see cref="Direction.E"/> direction.</param>
+    /// <param name="headDirection">The global direction pointing from the particle's
+    /// tail towards its head. Set to <see cref="Direction.NONE"/> to make the
+    /// particle contracted.</param>
+    /// <returns>The newly added particle or <c>null</c> if the particle could
+    /// not be added.</returns>
+    public InitializationParticle AddInitParticle(Vector2Int tailPos, bool chirality, Direction compassDir, Direction headDirection = Direction.NONE)
+    {
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot add particles in simulation mode.");
+            return null;
+        }
+
+        InitializationParticle ip = new InitializationParticle(this, tailPos, chirality, compassDir, headDirection);
+
+        if (particleMapInit.ContainsKey(ip.Tail()) || ip.IsExpanded() && particleMapInit.ContainsKey(ip.Head()))
+        {
+            Log.Error("Cannot add particle at " + ip.Tail() + ", " + ip.Head() + ", position is already occupied.");
+            return null;
+        }
+
+        particlesInit.Add(ip);
+        particleMapInit[tailPos] = ip;
+        if (headDirection != Direction.NONE)
+            particleMapInit[ip.Head()] = ip;
+        ip.graphics.AddParticle(new ParticleMovementState(ip.Head(), ip.Tail(), ip.IsExpanded(), ip.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
+        ip.graphics.UpdateReset();
+        return ip;
+    }
+
+    /// <summary>
+    /// Resets the chirality of all particles to the given value
+    /// when in initialization mode.
+    /// </summary>
+    /// <param name="chirality">The chirality to assign to each
+    /// particle. If the value is <see cref="Initialization.Chirality.Random"/>,
+    /// the particles get a clockwise chirality with a probability of 50%.</param>
+    public void SetSystemChirality(Initialization.Chirality chirality)
+    {
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot set system chirality outside of initialization mode.");
+            return;
+        }
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            bool chiralityPart = true;
+            if (chirality == Initialization.Chirality.Clockwise ||
+                chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
+                chiralityPart = false;
+            ip.Chirality = chiralityPart;
+        }
+    }
+
+    /// <summary>
+    /// Resets the compass direction of all particles to the given value
+    /// when in initialization mode.
+    /// </summary>
+    /// <param name="compassDir">The compass direction to assign to each
+    /// particle. If the value is <see cref="Initialization.Compass.Random"/>,
+    /// each particle gets one of the cardinal directions chosen uniformly
+    /// and independently.</param>
+    public void SetSystemCompassDir(Initialization.Compass compassDir)
+    {
+        if (!inInitializationState)
+        {
+            Log.Error("Cannot set system compass direction outside of initialization mode.");
+            return;
+        }
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            Direction compass = DirectionHelpers.Cardinal(
+                compassDir == Initialization.Compass.Random ? Random.Range(0, 6) : (int)compassDir
+                );
+            ip.CompassDir = compass;
+        }
+    }
+
+    /// <summary>
+    /// Tries to change a particle's expansion state when in initialization mode.
+    /// This method should only be called from within the particle itself so that
+    /// it can update its own state after this check is complete.
+    /// </summary>
+    /// <param name="ip">The initialization particle trying to change its
+    /// expansion state.</param>
+    /// <param name="newHeadDir">The desired new head direction.</param>
+    /// <returns><c>true</c> if and only if changing the particle's expansion
+    /// state was successful.</returns>
+    public bool TryChangeInitParticleExpansion(InitializationParticle ip, Direction newHeadDir)
+    {
+        if (newHeadDir == Direction.NONE)
+        {
+            if (ip.IsExpanded())
+                particleMapInit.Remove(ip.Head());
+        }
+        else if (!newHeadDir.IsCardinal())
+        {
+            return false;
+        }
+        else
+        {
+            if (!ip.IsExpanded() || newHeadDir != ip.ExpansionDir)
+            {
+                Vector2Int newHeadPos = ParticleSystem_Utils.GetNbrInDir(ip.Tail(), newHeadDir);
+                if (TryGetInitParticleAt(newHeadPos, out _))
+                {
+                    Log.Warning("Cannot expand particle at " + ip.Tail() + " in direction " + newHeadDir + ", position is already occupied.");
+                    return false;
+                }
+                if (ip.IsExpanded())
+                    particleMapInit.Remove(ip.Head());
+                particleMapInit[newHeadPos] = ip;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Adds a new generic parameter with the given initial value
+    /// to all particles in initialization mode.
+    /// </summary>
+    /// <param name="initialValue">The initial value given to
+    /// the new parameter.</param>
+    public void AddGenericParameter(int initialValue = 0)
+    {
+        foreach (InitializationParticle ip in particlesInit)
+            ip.AddGenericParam(initialValue);
+        numGenericParameters++;
+    }
+
+    /// <summary>
+    /// Removes the generic parameter with the given index from
+    /// all particles in initialization mode.
+    /// </summary>
+    /// <param name="index">The index of the parameter to
+    /// be removed.</param>
+    public void RemoveGenericParameter(int index)
+    {
+        if (index < 0 || index >= numGenericParameters)
+        {
+            Log.Error("Cannot remove generic parameter with index " + index + ", have " + numGenericParameters + " parameters.");
+            return;
+        }
+        foreach (InitializationParticle ip in particlesInit)
+            ip.RemoveGenericParam(index);
+        numGenericParameters--;
+    }
+
+    /// <summary>
+    /// Assigns values to the generic parameters of a fixed number of particles.
+    /// The values of the other particles can be reset to 0 if desired. Each
+    /// chosen particle's value is set to a random value between
+    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
+    /// </summary>
+    /// <param name="paramIdx">The index of the generic parameter to set.</param>
+    /// <param name="minVal">The minimum value to be set.</param>
+    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
+    /// the same value as <paramref name="minVal"/> to fix the value.</param>
+    /// <param name="numParticles">The number of particles to get assigned
+    /// a new value.</param>
+    /// <param name="reset">Flag indicating whether the parameter values should
+    /// be reset to 0 before assigning the new values.</param>
+    public void SetGenericParameterFixed(int paramIdx, int minVal, int maxVal, int numParticles, bool reset = true)
+    {
+        if (paramIdx < 0 || paramIdx >= numGenericParameters)
+        {
+            Log.Error("Invalid generic parameter index: " + paramIdx + "; have " + numGenericParameters + " parameters.");
+            return;
+        }
+
+        numParticles = Mathf.Min(numParticles, particlesInit.Count);
+        if (numParticles <= 0 && !reset)
+            return;
+
+        // Use the selection sampling algorithm to get the right number of particles
+        // For choosing k out of n elements randomly, select the first with probability
+        // k/n. If it is selected, repeat the algorithm to choose k-1 from the remaining n-1
+        // elements. Otherwise, repeat the algorithm to choose k from the n-1 elements.
+        int n = particlesInit.Count;
+        int k = numParticles;
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            if (reset)
+                ip.genericParams[paramIdx] = 0;
+
+            if (k > 0 && Random.Range(0.0f, 1.0f) <= ((float)k) / n)
+            {
+                ip.genericParams[paramIdx] = Random.Range(minVal, maxVal + 1);
+                k--;
+            }
+            n--;
+        }
+
+        // This should not happen, but keep the warning in case it needs to be debugged
+        if (k != 0)
+        {
+            Log.Warning("Selected " + (numParticles - k) + " particles (wanted " + numParticles + ")");
+        }
+    }
+
+    /// <summary>
+    /// Assigns values to the generic parameters of a fixed fraction of particles.
+    /// The values of the other particles can be reset to 0 if desired. Each
+    /// chosen particle's value is set to a random value between
+    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
+    /// </summary>
+    /// <param name="paramIdx">The index of the generic parameter to set.</param>
+    /// <param name="minVal">The minimum value to be set.</param>
+    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
+    /// the same value as <paramref name="minVal"/> to fix the value.</param>
+    /// <param name="fraction">The fraction of particles to receive a new value.</param>
+    /// <param name="reset">Flag indicating whether the parameter values should
+    /// be reset to 0 before assigning the new values.</param>
+    public void SetGenericParameterFraction(int paramIdx, int minVal, int maxVal, float fraction, bool reset = true)
+    {
+        int numParticles = Mathf.RoundToInt(fraction * particlesInit.Count);
+        SetGenericParameterFixed(paramIdx, minVal, maxVal, numParticles, reset);
+    }
+
+    /// <summary>
+    /// Assigns values to the generic parameters of randomly chosen particles.
+    /// The values of the other particles can be reset to 0 if desired. Each
+    /// chosen particle's value is set to a random value between
+    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
+    /// </summary>
+    /// <param name="paramIdx">The index of the generic parameter to set.</param>
+    /// <param name="minVal">The minimum value to be set.</param>
+    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
+    /// the same value as <paramref name="minVal"/> to fix the value.</param>
+    /// <param name="prob">The probability with which each particle is chosen to
+    /// get a new value.</param>
+    /// <param name="reset">Flag indicating whether the parameter values should
+    /// be reset to 0 before assigning the new values.</param>
+    public void SetGenericParameterProb(int paramIdx, int minVal, int maxVal, float prob, bool reset = true)
+    {
+        if (paramIdx < 0 || paramIdx >= numGenericParameters)
+        {
+            Log.Error("Invalid generic parameter index: " + paramIdx + "; have " + numGenericParameters + " parameters.");
+            return;
+        }
+
+        if (prob <= 0.0f && !reset)
+            return;
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            if (reset)
+                ip.genericParams[paramIdx] = 0;
+
+            if (prob > 0.0f && Random.Range(0.0f, 1.0f) <= prob)
+            {
+                ip.genericParams[paramIdx] = Random.Range(minVal, maxVal + 1);
+            }
+        }
+    }
+
+
+
+
+
+
+
+    // TODO
 
     public void RemoveParticle(Particle p)
     {
         Log.Debug("ParticleSystem: Remove Particle called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void RemoveParticle(IParticleState p)
+    {
+        Log.Error("Not implemented");
+    }
+
+    /// <summary>
+    /// Tries to get the <see cref="InitializationParticle"/> at the given position.
+    /// </summary>
+    /// <param name="position">The grid position at which to look for the particle.</param>
+    /// <param name="particle">The particle at the given position, if it exists,
+    /// otherwise <c>null</c>.</param>
+    /// <returns><c>true</c> if and only if a particle was found at the given position.</returns>
+    public bool TryGetInitParticleAt(Vector2Int position, out InitializationParticle particle)
+    {
+        if (particleMapInit.TryGetValue(position, out particle))
+        {
+            return true;
+        }
+        else
+        {
+            particle = null;
+            return false;
+        }
     }
 
     /// <summary>
@@ -3127,6 +3756,13 @@ public class ParticleSystem : IReplayHistory
     public void MoveParticleToNewContractedPosition(Particle p, Vector2Int gridPos)
     {
         Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void MoveParticleToNewContractedPosition(IParticleState p, Vector2Int gridPos)
+    {
+        Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
+        Log.Error("Not implemented");
     }
 
     /// <summary>
@@ -3138,5 +3774,12 @@ public class ParticleSystem : IReplayHistory
     public void MoveParticleToNewExpandedPosition(Particle p, Vector2Int gridPosHead, Vector2Int gridPosTail)
     {
         Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
+        Log.Error("Do not call this, use IParticleState instead");
+    }
+
+    public void MoveParticleToNewExpandedPosition(IParticleState p, Vector2Int gridPosHead, Vector2Int gridPosTail)
+    {
+        Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
+        Log.Error("Not implemented");
     }
 }

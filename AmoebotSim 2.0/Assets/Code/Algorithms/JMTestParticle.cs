@@ -8,6 +8,13 @@ public class JMTestParticle : ParticleAlgorithm
     private ParticleAttribute<int> role;
     private ParticleAttribute<bool> terminated;
 
+    public JMTestParticle(Particle p, int[] genericParams) : base(p)
+    {
+        mode = CreateAttributeInt("Mode", -1);
+        role = CreateAttributeInt("Role", -1);
+        terminated = CreateAttributeBool("Terminated", false);
+    }
+
     public JMTestParticle(Particle p, int mode_, int role_) : base(p)
     {
         if (mode_ == 6)
@@ -43,6 +50,13 @@ public class JMTestParticle : ParticleAlgorithm
 
         this.mode = CreateAttributeInt("Mode", mode_);
         this.role = CreateAttributeInt("Role", role_);
+        terminated = CreateAttributeBool("Terminated", false);
+    }
+
+    public JMTestParticle(Particle p) : base(p)
+    {
+        this.mode = CreateAttributeInt("Mode", -1);
+        this.role = CreateAttributeInt("Role", -1);
         terminated = CreateAttributeBool("Terminated", false);
     }
 

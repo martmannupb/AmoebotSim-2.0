@@ -3,17 +3,18 @@ using System.IO;
 using UnityEngine;
 
 /// <summary>
-/// Utility for saving and loading simulation states.
+/// Utility for saving and loading simulation states as well as
+/// particle configuration templates.
 /// <para>
 /// A simulation state comprises the entire history of all particles in
 /// the system. It is stored in a <see cref="SimulationStateSaveData"/>
 /// object, which can be serialized by Unity's <see cref="JsonUtility"/>.
-/// 
 /// </para>
 /// </summary>
 public static class SaveStateUtility
 {
     public static string defaultSaveFile = Application.persistentDataPath + "/Amoebotsim_2_0_default_savedata.json";
+    public static string tmpSaveFile = Application.persistentDataPath + "/Amoebotsim_2_0_tmp_savedata.json";
 
     /// <summary>
     /// Converts the given simulation state to JSON format and writes it to

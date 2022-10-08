@@ -56,15 +56,17 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<Directio
         return history.GetMarkedValue().ToString();
     }
 
-    public void UpdateAttributeValue(string value)
+    public bool UpdateAttributeValue(string value)
     {
         if (Enum.TryParse(typeof(Direction), value, out object parsedVal))
         {
-            SetValue((Direction)parsedVal);
+            history.RecordValueInRound((Direction)parsedVal, particle.system.CurrentRound);
+            return true;
         }
         else
         {
-            throw new System.ArgumentException("Cannot convert " + value + " to direction attribute.");
+            Debug.LogWarning("Cannot convert " + value + " to direction attribute.");
+            return false;
         }
     }
 }

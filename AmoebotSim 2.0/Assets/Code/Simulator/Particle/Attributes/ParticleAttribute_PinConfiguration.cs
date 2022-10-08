@@ -80,7 +80,7 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
         return pcHistory.GetMarkedValue(particle).ToString();
     }
 
-    public void UpdateAttributeValue(string value)
+    public bool UpdateAttributeValue(string value)
     {
         throw new System.NotImplementedException();
     }

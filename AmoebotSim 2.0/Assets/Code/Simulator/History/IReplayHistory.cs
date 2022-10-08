@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// Interface defining methods for objects that store a history
@@ -14,7 +11,7 @@ using UnityEngine;
 /// By default, the object's state evolves with the rounds that
 /// are simulated. If the tracking marker is reset to a particular
 /// round, the object reverts to its previous state recorded for
-/// that round. In the tracking state, the object cannot be part
+/// that round. In this state, the object cannot be part
 /// of the simulation anymore, but the marker can be used to step
 /// through the recorded rounds or jump to any valid round. As
 /// soon as the state tracking is reactivated, the marker will

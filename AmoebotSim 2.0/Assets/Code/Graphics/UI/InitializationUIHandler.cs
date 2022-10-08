@@ -134,7 +134,7 @@ public class InitializationUIHandler : MonoBehaviour
     /// </summary>
     public void ButtonPressed_Load()
     {
-        string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "amsetup", false);
+        string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "json", false);
         if (paths.Length != 0) Log.Debug("Here we should load the file " + paths[0] + ".");
         else Log.Debug("No file chosen.");
     }
@@ -144,7 +144,7 @@ public class InitializationUIHandler : MonoBehaviour
     /// </summary>
     public void ButtonPressed_Save()
     {
-        string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "state", "amsetup");
+        string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "state", "json");
         if (path.Equals("") == false) Log.Debug("Here we should save the file " + path + ".");
         else Log.Debug("No file chosen.");
     }

@@ -31,10 +31,13 @@ public struct Neighbor<T> where T : ParticleAlgorithm
 /// <see cref="ActivateMove"/> and <see cref="ActivateBeep"/> methods.
 /// </para>
 /// <para>
-/// The subclass constructor must call the base class constructor as follows:
+/// The subclass constructor must have the following signature and call the
+/// base class constructor:
 /// <code>
-/// public MyClass(Particle p) : base(p) { ... }
+/// public MyClass(Particle p, int[] genericParams) : base(p) { ... }
 /// </code>
+/// The <c>genericParams</c> array contains the generic initialization
+/// parameters, which can be freely interpreted by the algorithm.
 /// </para>
 /// <para>
 /// The number of pins used by the algorithm must be specified by overriding
@@ -79,6 +82,12 @@ public abstract class ParticleAlgorithm
     /// </para>
     /// </summary>
     public abstract int PinsPerEdge { get;}
+
+    public static string Name { get { return ""; } }
+
+    public static InitializationUIHandler.SettingChirality Chirality { get { return InitializationUIHandler.SettingChirality.Clockwise; } }
+
+    public static Direction Compass { get { return Direction.E; } }
 
     /// <summary>
     /// This is one part of the main activation logic of the particle.
@@ -196,6 +205,32 @@ public abstract class ParticleAlgorithm
     {
         CheckActive("Particles can only create attributes for themselves, not for other particles");
         return ParticleAttributeFactory.CreateParticleAttributeInt(particle, name, initialValue);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing a float value.
+    /// </summary>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<float> CreateAttributeFloat(string name, float initialValue = 0f)
+    {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        return ParticleAttributeFactory.CreateParticleAttributeFloat(particle, name, initialValue);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute{T}"/> representing a string value.
+    /// </summary>
+    /// <param name="name">The name of the attribute to be displayed in the UI.
+    /// Must be unique for saving and loading of simulation states to work correctly.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
+    public ParticleAttribute<string> CreateAttributeString(string name, string initialValue = "")
+    {
+        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        return ParticleAttributeFactory.CreateParticleAttributeString(particle, name, initialValue);
     }
 
     /// <summary>

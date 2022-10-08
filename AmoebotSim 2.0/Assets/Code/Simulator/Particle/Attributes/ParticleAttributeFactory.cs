@@ -20,6 +20,36 @@ public static class ParticleAttributeFactory
     }
 
     /// <summary>
+    /// Creates a new <see cref="ParticleAttribute_Float"/> and adds it to the given
+    /// <see cref="Particle"/>'s list of attributes.
+    /// </summary>
+    /// <param name="p">The <see cref="Particle"/> to which the attribute should belong.</param>
+    /// <param name="name">The display name of the attribute.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>A newly initialized <see cref="ParticleAttribute_Float"/>.</returns>
+    public static ParticleAttribute_Float CreateParticleAttributeFloat(Particle p, string name, float initialValue)
+    {
+        ParticleAttribute_Float attr = new ParticleAttribute_Float(p, name, initialValue);
+        p.AddAttribute(attr);
+        return attr;
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="ParticleAttribute_String"/> and adds it to the given
+    /// <see cref="Particle"/>'s list of attributes.
+    /// </summary>
+    /// <param name="p">The <see cref="Particle"/> to which the attribute should belong.</param>
+    /// <param name="name">The display name of the attribute.</param>
+    /// <param name="initialValue">The initial attribute value.</param>
+    /// <returns>A newly initialized <see cref="ParticleAttribute_String"/>.</returns>
+    public static ParticleAttribute_String CreateParticleAttributeString(Particle p, string name, string initialValue)
+    {
+        ParticleAttribute_String attr = new ParticleAttribute_String(p, name, initialValue);
+        p.AddAttribute(attr);
+        return attr;
+    }
+
+    /// <summary>
     /// Creates a new <see cref="ParticleAttribute_Bool"/> and adds it to the given
     /// <see cref="Particle"/>'s list of attributes.
     /// </summary>

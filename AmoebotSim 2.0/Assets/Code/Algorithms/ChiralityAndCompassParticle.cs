@@ -167,7 +167,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     // The offset that is used to decide how to merge in the compass alignment phase
     private ParticleAttribute<int> mergeOffset;
 
-    public ChiralityAndCompassParticle(Particle p) : base(p)
+    public ChiralityAndCompassParticle(Particle p, int[] genericParams) : base(p)
     {
         SetMainColor(ColorData.Particle_Green);
 
@@ -200,6 +200,10 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
     }
 
     public override int PinsPerEdge => 2;
+
+    public static new InitializationUIHandler.SettingChirality Chirality => InitializationUIHandler.SettingChirality.Random;
+
+    public static new Direction Compass => Direction.NONE;
 
     public override void ActivateMove()
     {

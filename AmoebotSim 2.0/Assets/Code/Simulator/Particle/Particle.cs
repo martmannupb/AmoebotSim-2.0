@@ -142,6 +142,10 @@ public class Particle : IParticleState, IReplayHistory
         get { return partitionSetColorsOverride; }
     }
 
+    // Bond and movement info
+    private ValueHistoryJointMovement jointMovementHistory;
+    private ValueHistoryBondInfo bondMovementHistory;
+
 
     /**
      * Data used by simulator to coordinate particle actions
@@ -301,6 +305,10 @@ public class Particle : IParticleState, IReplayHistory
         // Initialize color
         mainColorHistory = new ValueHistory<Color>(mainColor, currentRound);
         mainColorSetHistory = new ValueHistory<bool>(mainColorSet, currentRound);
+
+        // Initial value is empty, can be replaced by actual bonds when the whole system is initialized
+        jointMovementHistory = new ValueHistoryJointMovement(JointMovementInfo.Empty, currentRound);
+        bondMovementHistory = new ValueHistoryBondInfo(BondMovementInfoList.Empty, currentRound);
 
         // Add particle to the system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
@@ -1060,6 +1068,43 @@ public class Particle : IParticleState, IReplayHistory
         markedBondHistory.RecordValueInRound(markedBonds.Data, system.CurrentRound);
         activeBonds = new BitVector32(1023);    // All flags set to true
         markedBonds = new BitVector32(0);       // All flags set to false
+
+        // Also record finished joint movement visualization info
+        BondMovementInfo[] bondMovements = new BondMovementInfo[bondGraphicInfo.Count];
+        // Offset the vectors to avoid unnecessary memory consumption
+        Vector2Int beforeOffset = Tail() - jmOffset;
+        Vector2Int afterOffset = Tail();
+        for (int i = 0; i < bondGraphicInfo.Count; i++)
+        {
+            ParticleBondGraphicState s = bondGraphicInfo[i];
+            bondMovements[i] = new BondMovementInfo(s.prevBondPos1 - beforeOffset, s.prevBondPos2 - beforeOffset, s.curBondPos1 - afterOffset, s.curBondPos2 - afterOffset);
+        }
+        JointMovementInfo movementInfo = new JointMovementInfo(jmOffset, movementOffset, scheduledMovement != null ? scheduledMovement.type : ActionType.NULL);
+        BondMovementInfoList bondInfoList = new BondMovementInfoList(bondMovements);
+        jointMovementHistory.RecordValueInRound(movementInfo, system.CurrentRound);
+        bondMovementHistory.RecordValueInRound(bondInfoList, system.CurrentRound);
+    }
+
+    /// <summary>
+    /// Returns the currently loaded graphics information for
+    /// joint movements.
+    /// </summary>
+    /// <returns>A <see cref="JointMovementInfo"/> that holds the
+    /// joint movement information for the currently
+    /// loaded state.</returns>
+    public JointMovementInfo GetCurrentMovementGraphicsInfo()
+    {
+        return jointMovementHistory.GetMarkedValue();
+    }
+
+    /// <summary>
+    /// Returns the currently loaded graphics information for bonds.
+    /// </summary>
+    /// <returns>A <see cref="BondMovementInfoList"/> that holds the
+    /// bond movement information for the currently loaded state.</returns>
+    public BondMovementInfoList GetCurrentBondGraphicsInfo()
+    {
+        return bondMovementHistory.GetMarkedValue();
     }
 
     /// <summary>
@@ -1366,6 +1411,9 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.SetMarkerToRound(round);
         mainColorSetHistory.SetMarkerToRound(round);
 
+        jointMovementHistory.SetMarkerToRound(round);
+        bondMovementHistory.SetMarkerToRound(round);
+
         // Need to update private fields accordingly
         UpdateInternalState();
 
@@ -1402,6 +1450,9 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.StepBack();
         mainColorSetHistory.StepBack();
 
+        jointMovementHistory.StepBack();
+        bondMovementHistory.StepBack();
+
         UpdateInternalState();
 
         foreach (IParticleAttribute attr in attributes)
@@ -1431,6 +1482,9 @@ public class Particle : IParticleState, IReplayHistory
 
         mainColorHistory.StepForward();
         mainColorSetHistory.StepForward();
+
+        jointMovementHistory.StepForward();
+        bondMovementHistory.StepForward();
 
         UpdateInternalState();
 
@@ -1477,6 +1531,9 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.ContinueTracking();
         mainColorSetHistory.ContinueTracking();
 
+        jointMovementHistory.ContinueTracking();
+        bondMovementHistory.ContinueTracking();
+
         UpdateInternalState();
 
         foreach (IParticleAttribute attr in attributes)
@@ -1515,6 +1572,9 @@ public class Particle : IParticleState, IReplayHistory
         mainColorHistory.CutOffAtMarker();
         mainColorSetHistory.CutOffAtMarker();
 
+        jointMovementHistory.CutOffAtMarker();
+        bondMovementHistory.CutOffAtMarker();
+
         // No need to update internal state because this does not change
         // the current value of a history
 
@@ -1545,6 +1605,9 @@ public class Particle : IParticleState, IReplayHistory
 
         mainColorHistory.ShiftTimescale(amount);
         mainColorSetHistory.ShiftTimescale(amount);
+
+        jointMovementHistory.ShiftTimescale(amount);
+        bondMovementHistory.ShiftTimescale(amount);
 
         // No need to update internal state because this does not change
         // the current value of a history
@@ -1611,9 +1674,12 @@ public class Particle : IParticleState, IReplayHistory
 
         data.boolAttributes = new List<ParticleAttributeSaveData<bool>>();
         data.dirAttributes = new List<ParticleAttributeSaveData<Direction>>();
+        data.floatAttributes = new List<ParticleAttributeSaveData<float>>();
         data.intAttributes = new List<ParticleAttributeSaveData<int>>();
         data.enumAttributes = new List<ParticleAttributeEnumSaveData>();
         data.pcAttributes = new List<ParticleAttributePCSaveData>();
+        data.stringAttributes = new List<ParticleAttributeSaveData<string>>();
+
         // Fill in the particle attributes ordered by type
         // Must use reflection here
         for (int i = 0; i < attributes.Count; i++)
@@ -1633,6 +1699,16 @@ public class Particle : IParticleState, IReplayHistory
             {
                 ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
                 data.dirAttributes.Add(aData as ParticleAttributeSaveData<Direction>);
+            }
+            else if (t == typeof(float))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.floatAttributes.Add(aData as ParticleAttributeSaveData<float>);
+            }
+            else if (t == typeof(string))
+            {
+                ParticleAttributeSaveDataBase aData = attributes[i].GenerateSaveData();
+                data.stringAttributes.Add(aData as ParticleAttributeSaveData<string>);
             }
             else if (t == typeof(PinConfiguration))
             {
@@ -1670,6 +1746,8 @@ public class Particle : IParticleState, IReplayHistory
             data.partitionSetColorHistory[i] = partitionSetColorHistory[i].GenerateSaveData();
             data.partitionSetColorOverrideHistory[i] = partitionSetColorOverrideHistory[i].GenerateSaveData();
         }
+        data.jointMovementHistory = jointMovementHistory.GenerateSaveData();
+        data.bondMovementHistory = bondMovementHistory.GenerateSaveData();
 
         return data;
     }
@@ -1682,7 +1760,7 @@ public class Particle : IParticleState, IReplayHistory
         p.inReinitialize = true;
         // Then create algorithm
         Type algoType = Type.GetType(data.algorithmType);
-        algoType.GetConstructor(new Type[] { typeof(Particle) }).Invoke(new object[] { p });
+        algoType.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) }).Invoke(new object[] { p, new int[0] });
         p.inReinitialize = false;
         p.isActive = false;
         p.InitWithAlgorithm(data);
@@ -1710,11 +1788,19 @@ public class Particle : IParticleState, IReplayHistory
 
         activeBondHistory = new ValueHistory<int>(data.activeBondHistory);
         markedBondHistory = new ValueHistory<int>(data.markedBondHistory);
+        activeBonds = new BitVector32(1023);    // All flags set to true
+        markedBonds = new BitVector32(0);       // All flags are set to false
+
+        activeBonds = new BitVector32(1023);    // All flags set to true
+        markedBonds = new BitVector32(0);       // All flags set to false
 
         mainColorHistory = new ValueHistory<Color>(data.mainColorHistory);
         mainColorSetHistory = new ValueHistory<bool>(data.mainColorSetHistory);
         mainColor = mainColorHistory.GetMarkedValue();
         mainColorSet = mainColorSetHistory.GetMarkedValue();
+
+        jointMovementHistory = new ValueHistoryJointMovement(data.jointMovementHistory);
+        bondMovementHistory = new ValueHistoryBondInfo(data.bondMovementHistory);
 
         // Add particle to the system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
@@ -1762,7 +1848,8 @@ public class Particle : IParticleState, IReplayHistory
         // The attributes have already been set up by the algorithm, we now just need to fill them with different values
         // We store the attributes provided by the save state in a dictionary for easy access
         Dictionary<string, ParticleAttributeSaveDataBase> savedAttrs = new Dictionary<string, ParticleAttributeSaveDataBase>();
-        foreach (var list in new IEnumerable[] { data.boolAttributes, data.dirAttributes, data.intAttributes, data.enumAttributes, data.pcAttributes })
+        foreach (var list in new IEnumerable[] { data.boolAttributes, data.dirAttributes, data.floatAttributes, data.intAttributes,
+            data.enumAttributes, data.pcAttributes, data.stringAttributes })
         {
             foreach (ParticleAttributeSaveDataBase a in list)
             {

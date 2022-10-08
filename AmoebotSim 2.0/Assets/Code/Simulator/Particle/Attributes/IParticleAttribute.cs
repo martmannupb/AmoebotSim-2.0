@@ -30,7 +30,9 @@ public interface IParticleAttribute : IReplayHistory
     /// Updates the attribute's value to the one represented by the given string.
     /// </summary>
     /// <param name="value">String representation of the new value.</param>
-    void UpdateAttributeValue(string value);
+    /// <returns><c>true</c> if and only if the given string was parsed
+    /// successfully.</returns>
+    bool UpdateAttributeValue(string value);
 
     /// <summary>
     /// Returns the type of the attribute's value.
