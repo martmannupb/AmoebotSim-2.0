@@ -30,6 +30,29 @@ public interface IParticleState
     /// <returns></returns>
     Vector2Int Tail();
 
+    /// <summary>
+    /// Returns the chirality of the particle. <c>true</c> means
+    /// counter-clockwise and <c>false</c> means clockwise.
+    /// </summary>
+    /// <returns>The chirality of the particle.</returns>
+    bool Chirality();
+
+    /// <summary>
+    /// Returns the global compass orientation of the particle. This is
+    /// the global direction that the particle identifies as
+    /// <see cref="Direction.E"/> in its local view.
+    /// </summary>
+    /// <returns>The global compass orientation of the particle.</returns>
+    Direction CompassDir();
+
+    /// <summary>
+    /// Provides access to <see cref="ParticleAttribute{T}"/>s by their display names.
+    /// </summary>
+    /// <param name="attrName">The display of the attribute to return.</param>
+    /// <returns>The particle's attribute with the given name <paramref name="attrName"/>
+    /// if it exists, otherwise <c>null</c>.</returns>
+    IParticleAttribute TryGetAttributeByName(string attrName);
+
     // Circuits and Partition Sets _________________________
 
     /**

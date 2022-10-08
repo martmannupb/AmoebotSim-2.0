@@ -47,7 +47,7 @@ public class ParticleFactory
         new ExpandedCircuitTestParticle(p, new int[0]);
         p.isActive = false;
         p.InitWithAlgorithm();
-        p.graphics.AddParticle();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         p.graphics.UpdateReset();
         return p;
     }
@@ -61,7 +61,7 @@ public class ParticleFactory
         new LineFormationParticleSync(p, new int[0]);
         p.isActive = false;
         p.InitWithAlgorithm();
-        p.graphics.AddParticle();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         p.graphics.UpdateReset();
         return p;
     }
@@ -75,7 +75,7 @@ public class ParticleFactory
         new LeaderElectionParticle(p, new int[0]);
         p.isActive = false;
         p.InitWithAlgorithm();
-        p.graphics.AddParticle();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         p.graphics.UpdateReset();
         return p;
     }
@@ -89,7 +89,7 @@ public class ParticleFactory
         alg.realCompassDir.SetValue(p.comDir);
         p.InitWithAlgorithm();
         p.isActive = false;
-        p.graphics.AddParticle();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         p.graphics.UpdateReset();
         return p;
     }
@@ -103,7 +103,7 @@ public class ParticleFactory
         new BoundaryTestAlgo.BoundaryTestParticle(p, new int[0]);
         p.isActive = false;
         p.InitWithAlgorithm();
-        p.graphics.AddParticle();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         p.graphics.UpdateReset();
         return p;
     }
@@ -117,7 +117,7 @@ public class ParticleFactory
         new JMTestParticle(p, mode, role);
         p.isActive = false;
         p.InitWithAlgorithm();
-        p.graphics.AddParticle();
+        p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
         p.graphics.UpdateReset();
         return p;
     }

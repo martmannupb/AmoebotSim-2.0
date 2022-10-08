@@ -5,8 +5,10 @@ using UnityEngine;
 public class RendererParticles
 {
 
-    // Circuits ===============
-    public RendererCircuits circuitRenderer = new RendererCircuits();
+    public static RendererParticles instance;
+
+    // Circuits + Bonds ===============
+    public RendererCircuitsAndBonds circuitAndBondRenderer = new RendererCircuitsAndBonds();
 
     // Particles ===============
     // Render Batch
@@ -15,6 +17,18 @@ public class RendererParticles
     // Data _____
     // Particles
     private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
+    private Dictionary<IParticleState, GameObject> particleToParticleTextUIMap = new Dictionary<IParticleState, GameObject>();
+
+    public RendererParticles()
+    {
+        instance = this;
+    }
+
+    public ParticleGraphicsAdapterImpl GetGraphicsAdapterImpl(Particle particle)
+    {
+        if (particleToParticleGraphicalDataMap.ContainsKey((IParticleState)particle)) return particleToParticleGraphicalDataMap[(IParticleState)particle];
+        return null;
+    }
 
     /// <summary>
     /// Adds the particle to a new RenderBatch with the same properties (like color).
@@ -38,6 +52,10 @@ public class RendererParticles
             RendererParticles_RenderBatch renderBatch = new RendererParticles_RenderBatch(block);
             propertiesToRenderBatchMap.Add(block, renderBatch);
             renderBatch.Particle_Add(graphicalData);
+        }
+        if(particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle) == false)
+        {
+            particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
         }
         return true;
     }
@@ -87,7 +105,7 @@ public class RendererParticles
             item.Render(viewType);
         }
         // Circuits
-        if(RenderSystem.flag_showCircuitView && viewType != ViewType.Circular) circuitRenderer.Render();
+        circuitAndBondRenderer.Render(viewType);
     }
 
 }

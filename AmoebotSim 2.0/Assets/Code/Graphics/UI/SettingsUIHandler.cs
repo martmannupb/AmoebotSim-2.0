@@ -30,6 +30,8 @@ public class SettingsUIHandler : MonoBehaviour
 
     private void InitSettings()
     {
+        // Defaults _________________________
+        uiHandler.sim.renderSystem.SetAntiAliasing(8);
         // Settings _________________________
         // Header
         UISetting_Header setting_header_animationsBeeps = new UISetting_Header(settingsParent, "Animations and Circuits");
@@ -54,7 +56,6 @@ public class SettingsUIHandler : MonoBehaviour
         // Anti Aliasing
         UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(settingsParent, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
         setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
-        uiHandler.SetAA(8);
     }
 
     private void SettingChanged_Value(string name, float value)
@@ -85,7 +86,7 @@ public class SettingsUIHandler : MonoBehaviour
                 if(text.Equals("0") || text.Equals("2") || text.Equals("4") || text.Equals("8"))
                 {
                     int aa = int.Parse(text);
-                    uiHandler.SetAA(aa);
+                    uiHandler.sim.renderSystem.SetAntiAliasing(aa);
                 }
                 else
                 {
@@ -109,7 +110,7 @@ public class SettingsUIHandler : MonoBehaviour
                     .sim
                     .renderSystem
                     .rendererP
-                    .circuitRenderer
+                    .circuitAndBondRenderer
                     .ReinitBatches();
                 break;
             case "Animations On/Off":

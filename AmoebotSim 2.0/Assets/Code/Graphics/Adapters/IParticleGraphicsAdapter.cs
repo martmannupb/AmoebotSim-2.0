@@ -11,25 +11,35 @@ public interface IParticleGraphicsAdapter
     /// Adds and initializes the graphics of the particle. Call this each time a new particle has been added to the RenderSystem.
     /// Afterwards use Update() repeatedly to update the particle visuals.
     /// </summary>
-    void AddParticle();
+    /// <param name="movementState"></param>
+    void AddParticle(ParticleMovementState movementState);
 
     /// <summary>
     /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
     /// Example: A particle has expanded. Call Update() to update the visuals.
+    /// (replaces the old Update() and Update(ParticleJointMovementState jointMovementState) methods)
     /// </summary>
-    void Update();
+    /// <param name="movementState"></param>
+    void Update(ParticleMovementState movementState);
 
     /// <summary>
-    /// Updates the particle graphics. This is applied and shown directly in the next render cycle. Call it once per round, even if the particle has not moved.
-    /// Example: A particle has expanded. Call Update() to update the visuals.
+    /// Like Update(), but forces the update to be applied visually without an animation, even if the particle positions are the same as in the previous frame.
+    /// DEPRECATED! (use UpdateReset(ParticleMovementState movementState) instead)
     /// </summary>
-    /// <param name="isJointExpansion">Defines if a joint expansion has taken place. The animation looks and works different in that case.</param>
-    void Update(bool isJointExpansion);
+    void UpdateReset();
 
     /// <summary>
     /// Like Update(), but forces the update to be applied visually without an animation, even if the particle positions are the same as in the previous frame.
     /// </summary>
-    void UpdateReset();
+    /// <param name="movementState"></param>
+    void UpdateReset(ParticleMovementState movementState);
+
+    /// <summary>
+    /// Renders a particle bond for this round. Only call this on one of the two connected particles.
+    /// Call Order: Update() methods of all particles, then all UpdateBond() methods so that all bonds are rendered.
+    /// </summary>
+    /// <param name="bondState">Data about the current state of the bond.</param>
+    void BondUpdate(ParticleBondGraphicState bondState);
 
     /// <summary>
     /// Pushes an Update for the internal circuits of the particle and the immediate connections to neighboring particles.

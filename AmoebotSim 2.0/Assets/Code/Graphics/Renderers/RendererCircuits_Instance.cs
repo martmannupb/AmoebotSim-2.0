@@ -16,7 +16,7 @@ public class RendererCircuits_Instance
 
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
-        bool moving = RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
+        bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
         int amountPartitionSets = state.partitionSets.Count;
 
         if(state.isExpanded == false)
@@ -27,15 +27,15 @@ public class RendererCircuits_Instance
                 ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
                 Vector2 posPartitionSet = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, 0f, false);
                 // 1. Add Pin
-                AddPin(posPartitionSet, pSet.color, moving, pSet.beepOrigin);
+                AddPin(posPartitionSet, pSet.color, delayed, pSet.beepOrigin);
                 // 2. Add Lines
-                AddLines_PartitionSetContracted(state, snap, pSet, posPartitionSet, moving);
+                AddLines_PartitionSetContracted(state, snap, pSet, posPartitionSet, delayed);
             }
             for (int i = 0; i < state.singletonSets.Count; i++)
             {
                 ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
                 // 1. Add Lines
-                AddLines_SingletonSetContracted(state, snap, pSet, moving);
+                AddLines_SingletonSetContracted(state, snap, pSet, delayed);
             }
             // Add Connection Pins
             for (int i = 0; i < 6; i++)
@@ -47,7 +47,7 @@ public class RendererCircuits_Instance
                         ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                         Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, moving, false);
+                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayed, false);
                     }
                 }
             }
@@ -66,23 +66,23 @@ public class RendererCircuits_Instance
                 Vector2 posPartitionSetConnectorPin1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, rot1, false);
                 Vector2 posPartitionSetConnectorPin2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, rot2, true);
                 // 1. Add Pins + Connectors + Internal Lines
-                AddPin(posPartitionSet1, pSet.color, moving, pSet.beepOrigin);
-                AddPin(posPartitionSet2, pSet.color, moving, pSet.beepOrigin);
-                AddConnectorPin(posPartitionSetConnectorPin1, pSet.color, moving);
-                AddConnectorPin(posPartitionSetConnectorPin2, pSet.color, moving);
-                AddLine(posPartitionSet1, posPartitionSetConnectorPin1, pSet.color, false, moving, pSet.beepsThisRound);
-                AddLine(posPartitionSet2, posPartitionSetConnectorPin2, pSet.color, false, moving, pSet.beepsThisRound);
-                AddLine(posPartitionSetConnectorPin1, posPartitionSetConnectorPin2, pSet.color, false, moving, pSet.beepsThisRound);
+                AddPin(posPartitionSet1, pSet.color, delayed, pSet.beepOrigin);
+                AddPin(posPartitionSet2, pSet.color, delayed, pSet.beepOrigin);
+                AddConnectorPin(posPartitionSetConnectorPin1, pSet.color, delayed);
+                AddConnectorPin(posPartitionSetConnectorPin2, pSet.color, delayed);
+                AddLine(posPartitionSet1, posPartitionSetConnectorPin1, pSet.color, false, delayed, pSet.beepsThisRound);
+                AddLine(posPartitionSet2, posPartitionSetConnectorPin2, pSet.color, false, delayed, pSet.beepsThisRound);
+                AddLine(posPartitionSetConnectorPin1, posPartitionSetConnectorPin2, pSet.color, false, delayed, pSet.beepsThisRound);
                 // 2. Add Lines + Connector Lines
-                AddLines_PartitionSetExpanded(state, snap, pSet, posPartitionSet1, posPartitionSet2, moving);
+                AddLines_PartitionSetExpanded(state, snap, pSet, posPartitionSet1, posPartitionSet2, delayed);
                 
             }
             for (int i = 0; i < state.singletonSets.Count; i++)
             {
                 ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
-                AddLines_SingletonSetExpanded(state, snap, pSet, moving);
+                AddLines_SingletonSetExpanded(state, snap, pSet, delayed);
             }
-            AddLines_ExternalWithoutPartitionSet(state, snap, moving);
+            AddLines_ExternalWithoutPartitionSet(state, snap, delayed);
             // Reset Temporary Data
             for (int j = 0; j < 6; j++)
             {
@@ -92,24 +92,24 @@ public class RendererCircuits_Instance
         }
     }
 
-    private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool moving)
+    private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool delayed)
     {
         foreach (var pin in pSet.pins)
         {
             // Inner Line
             Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-            AddLine(posPartitionSet, posPin, pSet.color, false, moving, pSet.beepsThisRound);
+            AddLine(posPartitionSet, posPin, pSet.color, false, delayed, pSet.beepsThisRound);
             // Outter Line
             if (state.hasNeighbor1[pin.globalDir])
             {
                 Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
+                AddLine(posPin, posOutterLineCenter, pSet.color, true, delayed, pSet.beepsThisRound);
                 globalDirLineSet1[pin.globalDir] = true;
             }
         }
     }
 
-    private void AddLines_SingletonSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool moving)
+    private void AddLines_SingletonSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool delayed)
     {
         foreach (var pin in pSet.pins)
         {
@@ -118,36 +118,36 @@ public class RendererCircuits_Instance
             if (state.hasNeighbor1[pin.globalDir])
             {
                 Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
+                AddLine(posPin, posOutterLineCenter, pSet.color, true, delayed, pSet.beepsThisRound);
                 globalDirLineSet1[pin.globalDir] = true;
             }
             // Beep Origin
             if (pSet.beepOrigin)
             {
-                AddSingletonBeep(posPin, pSet.color, moving);
+                AddSingletonBeep(posPin, pSet.color, delayed);
             }
         }
     }
 
-    private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool moving)
+    private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool delayed)
     {
         foreach (var pin in pSet.pins)
         {
             // Inner Line
             Vector2 posPin = CalculateGlobalPinPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
-            AddLine(pin.isHead ? posPartitionSet1 : posPartitionSet2, posPin, pSet.color, false, moving, pSet.beepsThisRound);
+            AddLine(pin.isHead ? posPartitionSet1 : posPartitionSet2, posPin, pSet.color, false, delayed, pSet.beepsThisRound);
             // Outter Line
             if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
             {
                 Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
-                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
+                AddLine(posPin, posOutterLineCenter, pSet.color, true, delayed, pSet.beepsThisRound);
                 if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                 else globalDirLineSet2[pin.globalDir] = true;
             }
         }
     }
 
-    private void AddLines_SingletonSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool moving)
+    private void AddLines_SingletonSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool delayed)
     {
         foreach (var pin in pSet.pins)
         {
@@ -156,19 +156,19 @@ public class RendererCircuits_Instance
             if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
             {
                 Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
-                AddLine(posPin, posOutterLineCenter, pSet.color, true, moving, pSet.beepsThisRound);
+                AddLine(posPin, posOutterLineCenter, pSet.color, true, delayed, pSet.beepsThisRound);
                 if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                 else globalDirLineSet2[pin.globalDir] = true;
             }
             // Beep Origin
             if (pSet.beepOrigin)
             {
-                AddSingletonBeep(posPin, pSet.color, moving);
+                AddSingletonBeep(posPin, pSet.color, delayed);
             }
         }
     }
 
-    private void AddLines_ExternalWithoutPartitionSet(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, bool moving)
+    private void AddLines_ExternalWithoutPartitionSet(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, bool delayed)
     {
         for (int k = 0; k < 6; k++)
         {
@@ -179,7 +179,7 @@ public class RendererCircuits_Instance
                     ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, true);
                     Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                    AddLine(posPin, posOutterLineCenter, Color.black, true, moving, false);
+                    AddLine(posPin, posOutterLineCenter, Color.black, true, delayed, false);
                 }
             }
             if (state.hasNeighbor2[k] && globalDirLineSet2[k] == false && ((state.neighbor1ToNeighbor2Direction + 3) % 6) != k)
@@ -189,7 +189,7 @@ public class RendererCircuits_Instance
                     ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, false);
                     Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
-                    AddLine(posPin, posOutterLineCenter, Color.black, true, moving, false);
+                    AddLine(posPin, posOutterLineCenter, Color.black, true, delayed, false);
                 }
             }
         }
@@ -197,47 +197,47 @@ public class RendererCircuits_Instance
 
     
 
-    public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool moving, bool beeping)
+    public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping)
     {
         // Normal Circuit
-        RendererCircuits_RenderBatch batch = GetBatch_Line(color, isConnectorLine, moving, false);
+        RendererCircuits_RenderBatch batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, false, false);
         batch.AddLine(globalLineStartPos, globalLineEndPos);
         // Beep
         if(beeping)
         {
-            batch = GetBatch_Line(Color.white, isConnectorLine, moving, true);
+            batch = GetBatch_Line(Color.white, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false);
             batch.AddLine(globalLineStartPos, globalLineEndPos);
         }
     }
 
-    public void AddPin(Vector2 pinPos, Color color, bool moving, bool beeping)
+    public void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping)
     {
-        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, moving, false);
+        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false);
         batch.AddPin(pinPos, false);
         // Beep
         if (beeping)
         {
-            batch = GetBatch_Pin(color, moving, true);
+            batch = GetBatch_Pin(color, delayed, true);
             batch.AddPin(pinPos, false);
         }
     }
 
-    public void AddSingletonBeep(Vector2 pinPos, Color color, bool moving)
+    public void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed)
     {
         // Beep
-        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, moving, true);
+        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true);
         batch.AddPin(pinPos, true);
     }
 
-    public void AddConnectorPin(Vector2 pinPos, Color color, bool moving)
+    public void AddConnectorPin(Vector2 pinPos, Color color, bool delayed)
     {
-        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, moving, false);
+        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false);
         batch.AddConnectorPin(pinPos);
     }
 
-    public RendererCircuits_RenderBatch GetBatch_Line(Color color, bool isConnectorLine, bool moving, bool beeping)
+    public RendererCircuits_RenderBatch GetBatch_Line(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated)
     {
-        RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, isConnectorLine, moving, beeping);
+        RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, lineType, delayed, beeping, animated);
         RendererCircuits_RenderBatch batch;
         if (propertiesToRenderBatchMap.ContainsKey(propertyBlockData) == false)
         {
@@ -253,9 +253,9 @@ public class RendererCircuits_Instance
         return batch;
     }
 
-    public RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool moving, bool beeping)
+    public RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping)
     {
-        RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuitPins_RenderBatch.PropertyBlockData(color, moving, beeping);
+        RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping);
         RendererCircuitPins_RenderBatch batch;
         if (propertiesToPinRenderBatchMap.ContainsKey(propertyBlockData) == false)
         {
@@ -269,6 +269,23 @@ public class RendererCircuits_Instance
             propertiesToPinRenderBatchMap.TryGetValue(propertyBlockData, out batch);
         }
         return batch;
+    }
+
+    public void AddBond(ParticleBondGraphicState bondState)
+    {
+        // Convert Grid to World Space
+        Vector2 prevBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos1);
+        Vector2 prevBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos2);
+        Vector2 curBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos1);
+        Vector2 curBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos2);
+        // Hexagonal
+        RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondHexagonal, false, false, bondState.IsAnimated());
+        if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
+        else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
+        // Circular
+        batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondCircular, false, false, bondState.IsAnimated());
+        if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
+        else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
     }
 
 
@@ -288,16 +305,16 @@ public class RendererCircuits_Instance
         }
     }
 
-    public void Render()
+    public void Render(ViewType type)
     {
         bool firstRenderFrame = isRenderingActive == false;
         foreach (var batch in propertiesToRenderBatchMap.Values)
         {
-            batch.Render(firstRenderFrame);
+            batch.Render(type, firstRenderFrame);
         }
         foreach (var batch in propertiesToPinRenderBatchMap.Values)
         {
-            batch.Render(firstRenderFrame);
+            batch.Render(type, firstRenderFrame);
         }
         isRenderingActive = true;
     }

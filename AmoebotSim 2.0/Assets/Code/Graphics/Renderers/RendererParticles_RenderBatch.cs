@@ -24,7 +24,7 @@ public class RendererParticles_RenderBatch
     private List<Matrix4x4[]> particleMatricesCircle_ConnectionMatrices_Expanding = new List<Matrix4x4[]>();
     private List<Matrix4x4[]> particleMatricesCircle_ConnectionMatrices_Contracting = new List<Matrix4x4[]>();
     // Joint Movements
-    private List<Vector3[]> particlePositionOffsets_jointMovements = new List<Vector3[]>();
+    private List<Vector3[]> particlePositionOffsets_jointMovementsInv = new List<Vector3[]>();
     private List<ParticleGraphicsAdapterImpl[]> particleReferences = new List<ParticleGraphicsAdapterImpl[]>();
     // PropertyBlocks
     private MaterialPropertyBlockData_CircParticles propertyBlock_circle_contracted = new MaterialPropertyBlockData_CircParticles();
@@ -66,7 +66,6 @@ public class RendererParticles_RenderBatch
     const int maxArraySize = 1023;
 
     // Dynamic Data _____
-    private float curAnimationTriggerTime = 0f;
     private float curAnimationLength = 0f;
     private float jmInterpolation = 0f;
 
@@ -135,9 +134,8 @@ public class RendererParticles_RenderBatch
             particleMatricesCircle_ConnectionMatrices_Expanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_ConnectionMatrices_Expanding.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
             particleMatricesCircle_ConnectionMatrices_Contracting.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-            particlePositionOffsets_jointMovements.Add(new Vector3[maxArraySize]);
+            particlePositionOffsets_jointMovementsInv.Add(new Vector3[maxArraySize]);
             particleReferences.Add(new ParticleGraphicsAdapterImpl[maxArraySize]);
-
         }
 
         // References
@@ -197,7 +195,7 @@ public class RendererParticles_RenderBatch
             particleMatricesCircle_ConnectionMatrices_Expanded.RemoveAt(indexOfLastList);
             particleMatricesCircle_ConnectionMatrices_Expanding.RemoveAt(indexOfLastList);
             particleMatricesCircle_ConnectionMatrices_Contracting.RemoveAt(indexOfLastList);
-            particlePositionOffsets_jointMovements.RemoveAt(indexOfLastList);
+            particlePositionOffsets_jointMovementsInv.RemoveAt(indexOfLastList);
             particleReferences.RemoveAt(indexOfLastList);
 
             // ..
@@ -221,7 +219,7 @@ public class RendererParticles_RenderBatch
         particleMatricesCircle_ConnectionMatrices_Expanded[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Expanded[orig_ListNumber][orig_ListID];
         particleMatricesCircle_ConnectionMatrices_Expanding[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Expanding[orig_ListNumber][orig_ListID];
         particleMatricesCircle_ConnectionMatrices_Contracting[moved_ListNumber][moved_ListID] = particleMatricesCircle_ConnectionMatrices_Contracting[orig_ListNumber][orig_ListID];
-        particlePositionOffsets_jointMovements[moved_ListNumber][moved_ListID] = particlePositionOffsets_jointMovements[orig_ListNumber][orig_ListID];
+        particlePositionOffsets_jointMovementsInv[moved_ListNumber][moved_ListID] = particlePositionOffsets_jointMovementsInv[orig_ListNumber][orig_ListID];
         particleReferences[moved_ListNumber][moved_ListID] = particleReferences[orig_ListNumber][orig_ListID];
 
         // 2. Reset Matrices
@@ -242,7 +240,7 @@ public class RendererParticles_RenderBatch
         particleMatricesCircle_ConnectionMatrices_Expanded[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_ConnectionMatrices_Expanding[listNumber][listID] = matrixTRS_zero;
         particleMatricesCircle_ConnectionMatrices_Contracting[listNumber][listID] = matrixTRS_zero;
-        particlePositionOffsets_jointMovements[listNumber][listID] = Vector3.zero;
+        particlePositionOffsets_jointMovementsInv[listNumber][listID] = Vector3.zero;
         particleReferences[listNumber][listID] = null;
     }
     
@@ -257,8 +255,8 @@ public class RendererParticles_RenderBatch
         {
             // Interpolate
             Vector3 interpolatedOffset;
-            if (RenderSystem.animationsOn) interpolatedOffset = jmInterpolation * particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID];
-            else interpolatedOffset = particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID];
+            if (RenderSystem.animationsOn) interpolatedOffset = (1f - jmInterpolation) * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
+            else interpolatedOffset = 0f * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
             particle_position1world = particle_position1world + interpolatedOffset;
             particle_position2world = particle_position2world + interpolatedOffset;
             pin_position1world = new Vector3(particle_position1world.x, particle_position1world.y, RenderSystem.zLayer_pins);
@@ -271,17 +269,18 @@ public class RendererParticles_RenderBatch
             particleReferences[gd.graphics_listNumber][gd.graphics_listID] = gd;
 
             // Joint Movements
-            if (gd.state_cur.isJointMovement)
+            if (gd.state_cur.jointMovementState.isJointMovement)
             {
                 // Calc Joint Movement Position Offset
-                Vector2Int jointMovementPositionOffset = gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding ? gd.state_cur.position2 - gd.state_prev.position2 : gd.state_cur.position1 - gd.state_prev.position1;
+                //Vector2Int jointMovementPositionOffsetInv = gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding ? gd.state_prev.position2 - gd.state_cur.position2 : gd.state_prev.position1 - gd.state_cur.position1;
+                Vector2Int jointMovementPositionOffsetInv = new Vector2Int(-gd.state_cur.jointMovementState.jointExpansionOffset.x, -gd.state_cur.jointMovementState.jointExpansionOffset.y);
                 // Set World Offset
-                Vector3 absPositionOffset = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(jointMovementPositionOffset);
-                particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID] = absPositionOffset;
+                Vector3 absPositionOffsetInv = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(jointMovementPositionOffsetInv);
+                particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID] = absPositionOffsetInv;
             }
             else
             {
-                particlePositionOffsets_jointMovements[gd.graphics_listNumber][gd.graphics_listID] = Vector3.zero;
+                particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID] = Vector3.zero;
             }
         }
         
@@ -289,11 +288,39 @@ public class RendererParticles_RenderBatch
         Quaternion rotation = Quaternion.identity;
         if (gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanded || gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding)
         {
-            rotation = Quaternion.Euler(0f, 0f, 60f * gd.state_cur.globalExpansionDir) * Quaternion.identity;
+            rotation = Quaternion.Euler(0f, 0f, 60f * gd.state_cur.globalExpansionOrContractionDir) * Quaternion.identity;
         }
         else if (gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting)
         {
-            rotation = Quaternion.Euler(0f, 0f, (60f * gd.state_prev.globalExpansionDir + 180f) % 360f) * Quaternion.identity;
+            // Find Rotation Dir
+            //Vector2Int curPosWithoutJointMovements1 = gd.state_cur.jointMovementState.isJointMovement ? gd.state_cur.position1 - gd.state_cur.jointMovementState.jointExpansionOffset : gd.state_cur.position1;
+            //Vector2Int posOffset1 = curPosWithoutJointMovements1 - gd.state_prev.position1;
+            //Vector2Int posOffset2 = curPosWithoutJointMovements1 - gd.state_prev.position2;
+            //Vector2Int offsetVector = Vector2Int.zero;
+            //bool contractsIntoPos1 = false;
+            //if (posOffset1 != Vector2Int.zero && posOffset2 != Vector2Int.zero) Log.Error("Particle Render Batch: UpdateMatrix: PosOffsets are both not zero!");
+            //else if (posOffset1 != Vector2Int.zero)
+            //{
+            //    offsetVector = posOffset1;
+            //    contractsIntoPos1 = true;
+            //}
+            //else if (posOffset2 != Vector2Int.zero)
+            //{
+            //    offsetVector = posOffset2;
+            //    contractsIntoPos1 = false;
+            //}
+            //else Log.Error("Particle Render Batch: UpdateMatrix: Both PosOffsets are zero!");
+            //int expansionDir = 0;
+            //if (offsetVector == new Vector2Int(1, 0)) expansionDir = 0;
+            //else if (offsetVector == new Vector2Int(0, 1)) expansionDir = 1;
+            //else if (offsetVector == new Vector2Int(-1, 1)) expansionDir = 2;
+            //else if (offsetVector == new Vector2Int(-1, 0)) expansionDir = 3;
+            //else if (offsetVector == new Vector2Int(0, -1)) expansionDir = 4;
+            //else if (offsetVector == new Vector2Int(1, -1)) expansionDir = 5;
+            //else Log.Error("Particle Render Batch: UpdateMatrix: offset vector (" + offsetVector.x + "," + offsetVector.y + ") is too big!");
+            //if (contractsIntoPos1) expansionDir = (expansionDir + 3) % 6;
+            // Apply Rotation
+            rotation = Quaternion.Euler(0f, 0f, (60f * gd.state_cur.globalExpansionOrContractionDir) % 360f) * Quaternion.identity;
         }
         // Update Matrices
         ParticleGraphicsAdapterImpl.ParticleMovement movement = gd.state_cur.movement;
@@ -307,21 +334,25 @@ public class RendererParticles_RenderBatch
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracted:
                 particleMatricesCircle_Contracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position1world, rotation, Vector3.one);
                 particleMatricesPins_Contracted[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(pin_position1world, rotation, Vector3.one);
+                WorldSpaceUIHandler.instance.ParticleUpdate(gd.particle, particle_position1world);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Expanded:
                 particleMatricesCircle_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position2world, rotation, Vector3.one);
                 particleMatricesPins_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(pin_position2world, rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Expanded[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position2world + new Vector3(0f, 0f, 0.1f), rotation, Vector3.one);
+                WorldSpaceUIHandler.instance.ParticleUpdate(gd.particle, particle_position2world);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Expanding:
                 particleMatricesCircle_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position2world, rotation, Vector3.one);
                 particleMatricesPins_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(pin_position2world, rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Expanding[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position2world + new Vector3(0f, 0f, 0.1f), rotation, Vector3.one);
+                WorldSpaceUIHandler.instance.ParticleUpdate(gd.particle, particle_position2world);
                 break;
             case ParticleGraphicsAdapterImpl.ParticleMovement.Contracting:
                 particleMatricesCircle_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position1world, rotation, Vector3.one);
                 particleMatricesPins_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(pin_position1world, rotation, Vector3.one);
                 particleMatricesCircle_ConnectionMatrices_Contracting[gd.graphics_listNumber][gd.graphics_listID] = Matrix4x4.TRS(particle_position1world + new Vector3(0f, 0f, 0.1f), rotation, Vector3.one);
+                WorldSpaceUIHandler.instance.ParticleUpdate(gd.particle, particle_position1world);
                 break;
             default:
                 break;
@@ -329,37 +360,33 @@ public class RendererParticles_RenderBatch
 
         
     }
-    
+
     public void Render(ViewType viewType)
     {
         // 1. Update Properties
-        curAnimationTriggerTime = Time.timeSinceLevelLoad;
         curAnimationLength = Mathf.Clamp(RenderSystem.data_hexagonalAnimationDuration, 0f, Time.fixedDeltaTime);
         if (RenderSystem.flag_particleRoundOver)
         {
+            RenderSystem.animation_animationTriggerTimestamp = Time.timeSinceLevelLoad;
             // Update PropertyBlocks Timestamps (for Animations)
-            propertyBlock_circle_contracted.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_expanded.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_expanding.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_contracting.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_connector_contracted.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_connector_expanded.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_connector_expanding.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            propertyBlock_circle_connector_contracting.ApplyAnimationTimestamp(curAnimationTriggerTime, curAnimationLength);
-            RenderSystem.data_particleMovementFinishedTimestamp = curAnimationTriggerTime + curAnimationLength;
+            propertyBlock_circle_contracted.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_expanded.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_expanding.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_contracting.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_connector_contracted.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_connector_expanded.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_connector_expanding.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            propertyBlock_circle_connector_contracting.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
+            RenderSystem.data_particleMovementFinishedTimestamp = RenderSystem.animation_animationTriggerTimestamp + curAnimationLength;
         }
 
         // 2. Update Joint Movement Positions
-        // Update Interpolation Values
-        float animationStartTime = curAnimationTriggerTime;
-        float animationEndTime = curAnimationTriggerTime + curAnimationLength;
-        float nextFramePredictedTimetamp = Time.timeSinceLevelLoad;// + Time.deltaTime;
-        float curAnimationPercentage = Mathf.Clamp(nextFramePredictedTimetamp - animationStartTime, 0f, curAnimationLength) / curAnimationLength;
-        jmInterpolation = Engine.Library.InterpolationConstants.SmoothLerp(curAnimationPercentage);
+        // Update Interpolation Value
+        jmInterpolation = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
         // Update all JM Positions
-        for (int i = 0; i < particlePositionOffsets_jointMovements.Count; i++)
+        for (int i = 0; i < particlePositionOffsets_jointMovementsInv.Count; i++)
         {
-            Vector3[] offsets = particlePositionOffsets_jointMovements[i];
+            Vector3[] offsets = particlePositionOffsets_jointMovementsInv[i];
             for (int j = 0; j < offsets.Length; j++)
             {
                 Vector3 offset = offsets[j];

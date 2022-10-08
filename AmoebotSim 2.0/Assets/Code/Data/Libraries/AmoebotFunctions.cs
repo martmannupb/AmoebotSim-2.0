@@ -4,7 +4,8 @@ using UnityEngine;
 
 public static class AmoebotFunctions
 {
-    public static Vector2 CalculateAmoebotCenterPositionVector2(int gridPosX, int gridPosY)
+    // TODO: Put constant values into constants
+    public static Vector2 CalculateAmoebotCenterPositionVector2(float gridPosX, float gridPosY)
     {
         //height difference: sin(60 / 180 * pi)
         //width difference: 0.5
@@ -12,29 +13,29 @@ public static class AmoebotFunctions
         return new Vector2(gridPosX + 0.5f * gridPosY, gridPosY * heightDiff);
     }
 
-    public static Vector2 CalculateAmoebotCenterPositionVector2(Vector2Int gridPos)
+    public static Vector2 CalculateAmoebotCenterPositionVector2(Vector2 gridPos)
     {
         return CalculateAmoebotCenterPositionVector2(gridPos.x, gridPos.y);
     }
 
-    public static Vector3 CalculateAmoebotCenterPositionVector3(int gridPosX, int gridPosY)
+    public static Vector3 CalculateAmoebotCenterPositionVector3(float gridPosX, float gridPosY)
     {
         Vector2 centerPos = CalculateAmoebotCenterPositionVector2(gridPosX, gridPosY);
         return new Vector3(centerPos.x, centerPos.y, 0f);
     }
 
-    public static Vector3 CalculateAmoebotCenterPositionVector3(int gridPosX, int gridPosY, float z)
+    public static Vector3 CalculateAmoebotCenterPositionVector3(float gridPosX, float gridPosY, float z)
     {
         Vector2 centerPos = CalculateAmoebotCenterPositionVector2(gridPosX, gridPosY);
         return new Vector3(centerPos.x, centerPos.y, z);
     }
 
-    public static Vector3 CalculateAmoebotCenterPositionVector3(Vector2Int gridPos)
+    public static Vector3 CalculateAmoebotCenterPositionVector3(Vector2 gridPos)
     {
         return CalculateAmoebotCenterPositionVector2(gridPos.x, gridPos.y);
     }
 
-    public static Vector3 CalculateAmoebotCenterPositionVector3(Vector2Int gridPos, float z)
+    public static Vector3 CalculateAmoebotCenterPositionVector3(Vector2 gridPos, float z)
     {
         return CalculateAmoebotCenterPositionVector3(gridPos.x, gridPos.y, z);
     }

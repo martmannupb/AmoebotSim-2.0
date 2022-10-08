@@ -85,6 +85,10 @@ public class ParticleUIHandler : MonoBehaviour
             {
                 // In Latest round
                 UnlockAttributes();
+                foreach (var setting in settings.Values)
+                {
+                    setting.InteractiveBarUpdate();
+                }
             }
             else
             {
@@ -131,7 +135,11 @@ public class ParticleUIHandler : MonoBehaviour
     /// </summary>
     private void RefreshHeader()
     {
-        if (particle != null) headerText.text = "Position: (" + (particle.IsExpanded() ? (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y) : (particle.Head().x + "," + particle.Head().y)) + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted") + "\nChirality: " + (particle.chirality ? "CC" : "C") + "\nCompass Dir: " + particle.comDir.ToString();
+        if (particle != null) headerText.text = "ID: " + particle.id + "\n" + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.Description() +
+                "\nExp or Contr Dir: "+ RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.globalExpansionOrContractionDir +
+                "\nPos Cur (no jms): " + (RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.isJointMovement ? RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.position1 - RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.jointExpansionOffset : RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.position1) +
+                "\nPos Cur: " + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.ToString() + "\nPos Prev: " + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_prev.ToString() +
+                "\nPosition: (" + (particle.IsExpanded() ? (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y) : (particle.Head().x + "," + particle.Head().y)) + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted") + "\nChirality: " + (particle.chirality ? "CC" : "C") + "\nCompass Dir: " + particle.comDir.ToString();
     }
 
     /// <summary>
@@ -195,6 +203,8 @@ public class ParticleUIHandler : MonoBehaviour
             UISetting_Toggle setting = new UISetting_Toggle(go_attributeParent, particleAttribute.ToString_AttributeName(), ((ParticleAttribute_Bool)particleAttribute).GetValue());
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Toggle;
+            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else if(type == typeof(int))
@@ -202,6 +212,8 @@ public class ParticleUIHandler : MonoBehaviour
             UISetting_Text setting = new UISetting_Text(go_attributeParent, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Int);
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Text;
+            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else if (type == typeof(float))
@@ -224,6 +236,8 @@ public class ParticleUIHandler : MonoBehaviour
             UISetting_Dropdown setting = new UISetting_Dropdown(go_attributeParent, particleAttribute.ToString_AttributeName(), choices, particleAttribute.ToString_AttributeValue());
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Dropdown;
+            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else if(type.IsEnum) // Enum (other than Direction)
@@ -232,12 +246,35 @@ public class ParticleUIHandler : MonoBehaviour
             UISetting_Dropdown setting = new UISetting_Dropdown(go_attributeParent, particleAttribute.ToString_AttributeName(), choices, particleAttribute.ToString_AttributeValue());
             setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
             setting.onValueChangedEvent += SettingChanged_Dropdown;
+            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
         else
         {
             // Remove Attribute (since we dont display it)
             attributeNameToIParticleAttribute.Remove(particleAttribute.ToString_AttributeName());
+        }
+    }
+
+    public void AttributeClicked(string name)
+    {
+        if(IsOpen())
+        {
+            IParticleAttribute attribute;
+            attributeNameToIParticleAttribute.TryGetValue(name, out attribute);
+            if(attribute != null)
+            {
+                // An attribute has been clicked in the open particle panel
+                // Null Check
+                if(WorldSpaceUIHandler.instance == null) 
+                {
+                    Log.Error("ParticleUIHandler: AttributeClicked: WorldSpaceUIHandler.instance is null!");
+                    return;
+                }
+
+                WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Attribute, name);
+            }
         }
     }
 
@@ -322,6 +359,17 @@ public class ParticleUIHandler : MonoBehaviour
 
     // Callbacks
 
+    private void SettingHeldDown(string name, float duration)
+    {
+        if(IsOpen() && duration >= 2f)
+        {
+            // Setting held down long enough to apply attribute value to all particles (of same type)
+            Log.Debug("Setting " + name + " with value "+particle.TryGetAttributeByName(name).ToString_AttributeValue()+" is applied to all particles of the same type. However, this feature is not implemented yet.");
+            //sim.system.
+            if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
+        }
+    }
+
     private void SettingChanged_Value(string name, float value)
     {
         if (AttributeChangeValid() == false) return;
@@ -331,6 +379,7 @@ public class ParticleUIHandler : MonoBehaviour
             if (attribute.ToString_AttributeName().Equals(name))
             {
                 attribute.UpdateAttributeValue(value.ToString());
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
         }
@@ -345,6 +394,7 @@ public class ParticleUIHandler : MonoBehaviour
             if(attribute.ToString_AttributeName().Equals(name))
             {
                 attribute.UpdateAttributeValue(text);
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
         }
@@ -359,6 +409,7 @@ public class ParticleUIHandler : MonoBehaviour
             if (attribute.ToString_AttributeName().Equals(name))
             {
                 attribute.UpdateAttributeValue(isOn ? "True" : "False");
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
         }
@@ -373,6 +424,7 @@ public class ParticleUIHandler : MonoBehaviour
             if (attribute.ToString_AttributeName().Equals(name))
             {
                 attribute.UpdateAttributeValue(value);
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
         }
