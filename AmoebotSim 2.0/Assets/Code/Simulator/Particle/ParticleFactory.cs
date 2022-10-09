@@ -16,13 +16,13 @@ using UnityEngine;
 /// </summary>
 public class ParticleFactory
 {
-    public static Particle CreateParticle(ParticleSystem system, string algorithmId, List<int> genericParams, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
+    public static Particle CreateParticle(ParticleSystem system, string algorithmId, List<int> genericParams, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true, Direction headDirection = Direction.NONE)
     {
         if (compassDir == Direction.NONE)
             compassDir = DirectionHelpers.Cardinal(0);
         if (genericParams == null)
             genericParams = new List<int>();
-        Particle p = new Particle(system, position, compassDir, chirality);
+        Particle p = new Particle(system, position, compassDir, chirality, headDirection);
         p.isActive = true;
         AlgorithmManager.Instance.Instantiate(algorithmId, p, genericParams.ToArray());
         p.isActive = false;
@@ -35,7 +35,8 @@ public class ParticleFactory
 
     public static Particle CreateParticle(ParticleSystem system, string algorithmId, InitializationParticle ip)
     {
-        return CreateParticle(system, algorithmId, ip.genericParams, ip.Tail(), ip.CompassDir, ip.Chirality);
+        return CreateParticle(system, algorithmId, ip.genericParams, ip.Tail(), ip.CompassDir, ip.Chirality,
+            ParticleSystem_Utils.GlobalToLocalDir(ip.ExpansionDir, ip.CompassDir, ip.Chirality));
     }
 
     public static Particle CreateExpandedTestParticle(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)

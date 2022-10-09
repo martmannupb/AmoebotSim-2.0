@@ -3164,6 +3164,7 @@ public class ParticleSystem : IReplayHistory
     {
         if (!isTracking)
         {
+            bool stepFromSecondLastRound = (_currentRound == _latestRound - 1);
             _currentRound = _latestRound;
             _previousRound = _currentRound;
             particleMap.Clear();
@@ -3178,8 +3179,8 @@ public class ParticleSystem : IReplayHistory
             }
             isTracking = true;
             DiscoverCircuits();
-            LoadMovementGraphicsInfo(false);
-            UpdateAllParticleVisuals(true);
+            LoadMovementGraphicsInfo(stepFromSecondLastRound);
+            UpdateAllParticleVisuals(!stepFromSecondLastRound);
             CleanupAfterRound();
             foreach (Particle p in particles)
                 p.ResetPlannedBeepsAndMessages();
@@ -3351,6 +3352,37 @@ public class ParticleSystem : IReplayHistory
     {
         if (!inInitializationState)
             return;
+
+
+        // TEMPORARY: Initialize the system with the smart material algorithm
+
+        storedSimulationState = false;
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            Particle p = ParticleFactory.CreateParticle(this, "Smart Material", ip);
+            particles.Add(p);
+            particleMap[p.Tail()] = p;
+            if (p.IsExpanded())
+                particleMap[p.Head()] = p;
+        }
+
+        ResetInit();
+        inInitializationState = false;
+
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
+        DiscoverCircuits(false);
+        UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
+
+
+
+        return;
+
+
+
 
         // Note: The initialization mode has just been aborted and the window is closed. Here the previously saved state could be loaded again to continue with the old algorithm.
 
