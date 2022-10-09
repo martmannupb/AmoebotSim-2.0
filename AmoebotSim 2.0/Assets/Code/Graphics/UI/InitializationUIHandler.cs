@@ -327,7 +327,7 @@ public class InitializationUIHandler : MonoBehaviour
 
     public void ButtonPressed_StartAlgorithm()
     {
-        
+        uiHandler.sim.system.InitializationModeFinished(alg_setting_algo.GetValueString());
     }
 
     public void ButtonPressed_Abort()

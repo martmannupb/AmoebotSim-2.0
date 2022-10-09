@@ -271,7 +271,7 @@ public class UISetting_Slider : UISetting
     public Action<string, float> onValueChangedEvent;
     private void OnValueChanged()
     {
-        onValueChangedEvent(this.name, slider.value);
+        if(onValueChangedEvent != null) onValueChangedEvent(this.name, slider.value);
     }
 
     public Slider GetSlider()
@@ -372,7 +372,7 @@ public class UISetting_Text : UISetting
         else
         {
             // Input valid, continue
-            onValueChangedEvent(this.name, input.text);
+            if (onValueChangedEvent != null) onValueChangedEvent(this.name, input.text);
         }
     }
 }
@@ -466,7 +466,7 @@ public class UISetting_Dropdown : UISetting
     public Action<string, string> onValueChangedEvent;
     private void OnValueChanged()
     {
-        onValueChangedEvent(this.name, dropdown.options[dropdown.value].text);
+        if(onValueChangedEvent != null) onValueChangedEvent(this.name, dropdown.options[dropdown.value].text);
     }
 }
 
@@ -522,7 +522,7 @@ public class UISetting_Toggle : UISetting
     public Action<string, bool> onValueChangedEvent;
     private void OnValueChanged()
     {
-        onValueChangedEvent(this.name, toggle.isOn);
+        if(onValueChangedEvent != null) onValueChangedEvent(this.name, toggle.isOn);
     }
 }
 
