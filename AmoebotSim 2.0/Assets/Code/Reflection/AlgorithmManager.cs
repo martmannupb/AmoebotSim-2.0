@@ -24,10 +24,10 @@ public class AlgorithmManager
         public string name;
         public Type type;
         public ConstructorInfo ctor;
-        public InitializationUIHandler.SettingChirality chirality;
-        public Direction compassDir;
+        public Initialization.Chirality chirality;
+        public Initialization.Compass compassDir;
 
-        public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, InitializationUIHandler.SettingChirality chirality, Direction compassDir)
+        public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, Initialization.Chirality chirality, Initialization.Compass compassDir)
         {
             this.name = name;
             this.type = type;
@@ -46,8 +46,8 @@ public class AlgorithmManager
         Assembly baseAlgoAssembly = baseAlgoType.Assembly;
         IEnumerable<Type> subclasses = baseAlgoAssembly.GetTypes().Where(t => t.IsSubclassOf(baseAlgoType));
 
-        InitializationUIHandler.SettingChirality defaultChirality = (InitializationUIHandler.SettingChirality)baseAlgoType.GetProperty(Chirality_Property).GetValue(null);
-        Direction defaultCompass = (Direction)baseAlgoType.GetProperty(Compass_Property).GetValue(null);
+        Initialization.Chirality defaultChirality = (Initialization.Chirality)baseAlgoType.GetProperty(Chirality_Property).GetValue(null);
+        Initialization.Compass defaultCompass = (Initialization.Compass)baseAlgoType.GetProperty(Compass_Property).GetValue(null);
 
         algorithms = new Dictionary<string, AlgorithmInfo>();
 
@@ -67,14 +67,14 @@ public class AlgorithmManager
                 name = (string)nameProp.GetValue(null);
             }
 
-            InitializationUIHandler.SettingChirality chirality = defaultChirality;
-            Direction compass = defaultCompass;
+            Initialization.Chirality chirality = defaultChirality;
+            Initialization.Compass compass = defaultCompass;
 
             if (chiralityProp != null)
-                chirality = (InitializationUIHandler.SettingChirality)chiralityProp.GetValue(null);
+                chirality = (Initialization.Chirality)chiralityProp.GetValue(null);
 
             if (compassProp != null)
-                compass = (Direction)compassProp.GetValue(null);
+                compass = (Initialization.Compass)compassProp.GetValue(null);
 
             ConstructorInfo ctor = algoType.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) });
             if (ctor == null)
@@ -113,7 +113,7 @@ public class AlgorithmManager
         }
     }
 
-    public InitializationUIHandler.SettingChirality GetAlgorithmChirality(string name)
+    public Initialization.Chirality GetAlgorithmChirality(string name)
     {
         AlgorithmInfo info = FindAlgorithm(name);
         if (info != null)
@@ -122,7 +122,7 @@ public class AlgorithmManager
             throw new System.ArgumentException("Could not find algorithm");
     }
 
-    public Direction GetAlgorithmCompass(string name)
+    public Initialization.Compass GetAlgorithmCompass(string name)
     {
         AlgorithmInfo info = FindAlgorithm(name);
         if (info != null)
