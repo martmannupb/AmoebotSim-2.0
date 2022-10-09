@@ -29,6 +29,7 @@ public class InitializationUIHandler : MonoBehaviour
     // Algorithm Generation Menu UI
     public GameObject alg_go_algo;
     public GameObject alg_go_paramAmount;
+    public GameObject alg_go_genericParamParent;
     public Button button_algorithm_start;
     public Button button_algorithm_abort;
 
@@ -69,6 +70,7 @@ public class InitializationUIHandler : MonoBehaviour
         // Collect Data
         camColorBG = Camera.main.backgroundColor;
         // Init
+        InitUI();
         ResetUI();
     }
 
@@ -78,6 +80,15 @@ public class InitializationUIHandler : MonoBehaviour
         foreach (var setting in updatedSettings)
         {
             setting.InteractiveBarUpdate();
+        }
+    }
+
+    private void InitUI()
+    {
+        // Destroy generic param dummies
+        for (int i = alg_go_genericParamParent.transform.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(alg_go_genericParamParent.transform.GetChild(i).gameObject);
         }
     }
 
@@ -96,12 +107,14 @@ public class InitializationUIHandler : MonoBehaviour
         SetUpAlgorithmUI(genAlgStrings[0]);
         genAlg_setting_amoebotAmount = new UISetting_Text(genAlg_go_amoebotAmount, null, "Amount", "50", UISetting_Text.InputType.Int);
         // Additional Parameters
-        List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(SettingChirality)));
+        List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(Initialization.Chirality)));
+        chiralityList.Remove(Initialization.Chirality.Random.ToString());
         chiralityList.Insert(0, "Random");
         addPar_setting_chirality = new UISetting_Dropdown(addPar_go_chirality, null, "Chirality", chiralityList.ToArray(), chiralityList[0]);
         addPar_setting_chirality.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
         updatedSettings.Add(addPar_setting_chirality);
-        List<string> compassDirList = new List<string>(System.Enum.GetNames(typeof(Direction)));
+        List<string> compassDirList = new List<string>(System.Enum.GetNames(typeof(Initialization.Compass)));
+        chiralityList.Remove(Initialization.Compass.Random.ToString());
         compassDirList.Insert(0, "Random");
         addPar_setting_compassDir = new UISetting_Dropdown(addPar_go_compassDir, null, "Compass Dir", compassDirList.ToArray(), compassDirList[0]);
         addPar_setting_compassDir.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
@@ -182,6 +195,7 @@ public class InitializationUIHandler : MonoBehaviour
     {
         // (implement dynamic params here ...)
         Log.Debug("Dynamic Params not implemented yet.");
+        
     }
 
     public void Open()
@@ -298,11 +312,13 @@ public class InitializationUIHandler : MonoBehaviour
         {
             case "Chirality":
                 // Apply chirality setting to all particles
-                Log.Debug("Here we apply the chirality to all particles. (not implemented yet)");
+                uiHandler.sim.system.SetSystemChirality((Initialization.Chirality)Enum.Parse(typeof(Initialization.Chirality), addPar_setting_chirality.GetValueString()));
+                Log.Entry("Chirality" + addPar_setting_chirality.GetValueString() + "applied to all particles.");
                 break;
             case "Compass Dir":
                 // Apply compass dir setting to all particles
-                Log.Debug("Here we apply the compass dir to all particles. (not implemented yet)");
+                uiHandler.sim.system.SetSystemCompassDir((Initialization.Compass)Enum.Parse(typeof(Initialization.Compass), addPar_setting_compassDir.GetValueString()));
+                Log.Entry("Compass dir" + addPar_setting_compassDir.GetValueString() + " applied to all particles.");
                 break;
             default:
                 break;
