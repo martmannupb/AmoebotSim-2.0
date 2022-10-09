@@ -3295,6 +3295,24 @@ public class ParticleSystem : IReplayHistory
         man.GenerateSystem(this, "Random With Holes", new object[] { particleAmount, 0.25f, Initialization.Chirality.Random, Initialization.Compass.Random });
     }
 
+    // TODO: Use object[] for parameters instead?
+    /// <summary>
+    /// Invokes the specified system generation method to fill the system
+    /// with particles in initialization mode.
+    /// </summary>
+    /// <param name="methodName">The name of the generation method.</param>
+    /// <param name="parameters">The parameters for the generation method.</param>
+    public void GenerateParticles(string methodName, string[] parameters)
+    {
+        if (!inInitializationState)
+            return;
+
+        ResetInit();
+
+        InitializationMethodManager man = InitializationMethodManager.Instance;
+        man.GenerateSystem(this, methodName, parameters);
+    }
+
     /// <summary>
     /// Switches the system state to initialization mode.
     /// </summary>
@@ -3335,6 +3353,37 @@ public class ParticleSystem : IReplayHistory
 
         Reset();
         inInitializationState = true;
+    }
+
+    /// <summary>
+    /// Exits the initialization mode and initializes the particle
+    /// system based on the current configuration.
+    /// </summary>
+    /// <param name="algorithmName">The name of the selected algorithm.</param>
+    public void InitializationModeFinished(string algorithmName)
+    {
+        if (!inInitializationState)
+            return;
+
+        foreach (InitializationParticle ip in particlesInit)
+        {
+            Particle p = ParticleFactory.CreateParticle(this, algorithmName, ip);
+            particles.Add(p);
+            particleMap[p.Tail()] = p;
+            if (p.IsExpanded())
+                particleMap[p.Head()] = p;
+        }
+
+        ResetInit();
+        storedSimulationState = false;
+        inInitializationState = false;
+
+        SetInitialParticleBonds();
+        ComputeBondsStatic();
+        FinishMovementInfo();
+        DiscoverCircuits(false);
+        UpdateAllParticleVisuals(true);
+        CleanupAfterRound();
     }
 
     /// <summary>

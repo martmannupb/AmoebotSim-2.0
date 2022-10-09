@@ -85,9 +85,9 @@ public abstract class ParticleAlgorithm
 
     public static string Name { get { return ""; } }
 
-    public static InitializationUIHandler.SettingChirality Chirality { get { return InitializationUIHandler.SettingChirality.Clockwise; } }
+    public static Initialization.Chirality Chirality { get { return Initialization.Chirality.Clockwise; } }
 
-    public static Direction Compass { get { return Direction.E; } }
+    public static Initialization.Compass Compass { get { return Initialization.Compass.E; } }
 
     /// <summary>
     /// This is one part of the main activation logic of the particle.
