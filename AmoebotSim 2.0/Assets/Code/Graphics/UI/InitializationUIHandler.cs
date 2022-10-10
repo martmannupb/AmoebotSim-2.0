@@ -48,6 +48,9 @@ public class InitializationUIHandler : MonoBehaviour
     // Updated
     private List<UISetting> updatedSettings = new List<UISetting>();
 
+    // Data
+    System.Reflection.ParameterInfo[] genAlg_paramInfo;
+
     // Camera Colors
     private Color camColorBG;
     public Color camColorInitModeBG;
@@ -120,13 +123,8 @@ public class InitializationUIHandler : MonoBehaviour
         addPar_setting_compassDir.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
         updatedSettings.Add(addPar_setting_compassDir);
         // Algorithm Generation
-        Type[] algorithmClasses = typeof(ParticleAlgorithm).Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(ParticleAlgorithm))).ToArray();
-        List<string> algoStrings = new List<string>();
-        for (int i = 0; i < algorithmClasses.Length; i++)
-        {
-            algoStrings.Add(algorithmClasses[i].ToString());
-        }
-        alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algoStrings.ToArray(), algoStrings[0]);
+        List<string> algStrings = AlgorithmManager.Instance.GetAlgorithmNames();
+        alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algStrings.ToArray(), algStrings[0]);
         alg_setting_paramAmount = new UISetting_ValueSlider(alg_go_paramAmount, null, "Param Amount", 0, 10, 0, true);
         SetUpDynamicParams();
     }
@@ -141,12 +139,10 @@ public class InitializationUIHandler : MonoBehaviour
         }
         genAlg_settings.Clear();
         // Instantiate new UI
-        InitializationMethodManager.AlgorithmInfo algoInfo = InitializationMethodManager.Instance.FindAlgorithm(algorithm);
-        System.Reflection.MethodInfo methodInfo = algoInfo.generateMethod;
-        System.Reflection.ParameterInfo[] paramInfo = methodInfo.GetParameters();
-        for (int i = 0; i < paramInfo.Length; i++)
+        genAlg_paramInfo = InitializationMethodManager.Instance.GetAlgorithmParameters(algorithm);
+        for (int i = 0; i < genAlg_paramInfo.Length; i++)
         {
-            System.Reflection.ParameterInfo param = paramInfo[i];
+            System.Reflection.ParameterInfo param = genAlg_paramInfo[i];
             //Log.Debug(param.ParameterType.ToString());
             Type type = param.ParameterType;
             if (type == typeof(bool))
@@ -277,33 +273,18 @@ public class InitializationUIHandler : MonoBehaviour
             UISetting setting = genAlg_settings[i];
             parameters[i] = setting.GetValueString();
         }
-
-
-
-        //SettingChirality chirality;
-        //if (SettingChirality.TryParse(dropdown_particle_chirality.options[dropdown_particle_chirality.value].text, out chirality) == false)
-        //{
-        //    Log.Error("Initialization: Generate: Could not parse chirality!");
-        //    return;
-        //}
-        //bool randomCompassDir = dropdown_particle_compassDir.value == 0;
-        //Direction compassDir = Direction.N;
-        //if (randomCompassDir == false)
-        //{
-        //    object output;
-        //    if (Direction.TryParse(typeof(Direction), dropdown_particle_compassDir.options[dropdown_particle_compassDir.value].text, out output) == false)
-        //    {
-        //        Log.Error("Initialization: Generate: Could not parse direction!");
-        //        return;
-        //    }
-        //    compassDir = (Direction)output;
-        //}
-
+        object[] parameterObjects = new object[parameters.Length];
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            parameterObjects[i] = TypeConverter.ConvertStringToObjectOfType(genAlg_paramInfo[i].ParameterType, parameters[i]);
+        }
 
         // Call Generation Method
         uiHandler.sim.system.Reset();
-        InitializationMethodManager.Instance.GenerateSystem(uiHandler.sim.system, algorithm, parameters);
-        //uiHandler.sim.system.GenerateParticles(amountParticles, chirality, randomCompassDir, compassDir);
+        uiHandler.sim.system.GenerateParticles(algorithm, parameterObjects);
+
+        // Center Camera
+        uiHandler.Button_CameraCenterPressed();
     }
 
     public void SettingBarPressedLong(string name, float duration)
@@ -328,6 +309,7 @@ public class InitializationUIHandler : MonoBehaviour
     public void ButtonPressed_StartAlgorithm()
     {
         uiHandler.sim.system.InitializationModeFinished(alg_setting_algo.GetValueString());
+        Close(false);
     }
 
     public void ButtonPressed_Abort()

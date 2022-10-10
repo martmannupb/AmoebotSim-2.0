@@ -3302,7 +3302,7 @@ public class ParticleSystem : IReplayHistory
     /// </summary>
     /// <param name="methodName">The name of the generation method.</param>
     /// <param name="parameters">The parameters for the generation method.</param>
-    public void GenerateParticles(string methodName, string[] parameters)
+    public void GenerateParticles(string methodName, object[] parameters)
     {
         if (!inInitializationState)
             return;
