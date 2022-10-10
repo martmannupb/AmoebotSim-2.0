@@ -3283,19 +3283,6 @@ public class ParticleSystem : IReplayHistory
      * Initialization mode functionality.
      */
 
-    // TODO: Implement different system for initializing the particles
-    public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality, bool randomCompassDir, Direction compassDir)
-    {
-        // If randomCompassDir is true the value of direction can be ignored
-        // The system has been already Reset by the UI at this point
-
-        ResetInit();
-
-        InitializationMethodManager man = InitializationMethodManager.Instance;
-        man.GenerateSystem(this, "Random With Holes", new object[] { particleAmount, 0.25f, Initialization.Chirality.Random, Initialization.Compass.Random });
-    }
-
-    // TODO: Use object[] for parameters instead?
     /// <summary>
     /// Invokes the specified system generation method to fill the system
     /// with particles in initialization mode.
