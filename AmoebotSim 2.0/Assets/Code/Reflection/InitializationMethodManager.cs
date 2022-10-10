@@ -128,6 +128,15 @@ public class InitializationMethodManager
         return algorithms.Keys.ToList();
     }
 
+    public ParameterInfo[] GetAlgorithmParameters(string algorithmName)
+    {
+        AlgorithmInfo info = FindAlgorithm(algorithmName);
+        if (info == null)
+            return null;
+
+        return info.generateMethod.GetParameters();
+    }
+
     public bool GenerateSystem(ParticleSystem system, string algorithmName, object[] parameters)
     {
         AlgorithmInfo info = FindAlgorithm(algorithmName);

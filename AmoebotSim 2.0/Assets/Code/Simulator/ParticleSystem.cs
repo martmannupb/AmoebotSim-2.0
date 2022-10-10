@@ -3309,8 +3309,7 @@ public class ParticleSystem : IReplayHistory
 
         ResetInit();
 
-        InitializationMethodManager man = InitializationMethodManager.Instance;
-        man.GenerateSystem(this, methodName, parameters);
+        InitializationMethodManager.Instance.GenerateSystem(this, methodName, parameters);
     }
 
     /// <summary>
