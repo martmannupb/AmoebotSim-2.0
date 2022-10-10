@@ -160,17 +160,68 @@ public class SmartMaterialGenerator : InitializationMethod
 
     public static new string Name => "Smart Material";
 
-    public void Generate(int scale)
+    public void Generate(int scale, int rows, int cols, bool hexagonShape = false)
     {
         if (NumGenericParameters() < 1)
             AddGenericParameter();
 
-        PlaceHexagon(Vector2Int.zero, scale);
-        PlaceHexagon(new Vector2Int(-2 * scale, -2 * scale), scale, true);
-        PlaceHexagon(new Vector2Int(0, -6 * scale), scale);
-        PlaceHexagon(new Vector2Int(4 * scale, -8 * scale), scale, true);
-        PlaceHexagon(new Vector2Int(6 * scale, -6 * scale), scale);
-        PlaceHexagon(new Vector2Int(4 * scale, -2 * scale), scale, true);
+        if (scale < 1)
+        {
+            Log.Warning("Scale must be at least 1");
+            scale = 1;
+        }
+
+        if (rows < 1)
+        {
+            Log.Warning("Must have at least 1 row");
+            rows = 1;
+        }
+
+        if (cols < 1)
+        {
+            Log.Warning("Must have at least 1 column");
+            cols = 1;
+        }
+
+        if (hexagonShape)
+            PlaceHexagonShape(scale, rows);
+        else
+            PlaceParallelogram(scale, rows, cols);
+    }
+
+    private Vector2Int GetNeighborHexPos(Vector2Int pos, Direction direction, int scale, int distance = 1)
+    {
+        Vector2Int nbr = pos;
+
+        switch (direction)
+        {
+            case Direction.N:
+                nbr.x -= distance * 2 * scale;
+                nbr.y += distance * 4 * scale;
+                break;
+            case Direction.WNW:
+                nbr.x -= distance * 4 * scale;
+                nbr.y += distance * 2 * scale;
+                break;
+            case Direction.WSW:
+                nbr.x -= distance * 2 * scale;
+                nbr.y -= distance * 2 * scale;
+                break;
+            case Direction.S:
+                nbr.x += distance * 2 * scale;
+                nbr.y -= distance * 4 * scale;
+                break;
+            case Direction.ESE:
+                nbr.x += distance * 4 * scale;
+                nbr.y -= distance * 2 * scale;
+                break;
+            case Direction.ENE:
+                nbr.x += distance * 2 * scale;
+                nbr.y += distance * 2 * scale;
+                break;
+        }
+
+        return nbr;
     }
 
     private void PlaceHexagon(Vector2Int position, int scale, bool type2 = false)
@@ -213,6 +264,83 @@ public class SmartMaterialGenerator : InitializationMethod
                 }
                 startPos = ParticleSystem_Utils.GetNbrInDir(startPos, expansionDir, 2);
             }
+        }
+    }
+
+    private void PlaceParallelogram(int scale, int rows, int cols)
+    {
+        Vector2Int startPos = Vector2Int.zero;
+        for (int row = 0; row < rows; row++)
+        {
+            Vector2Int colPos = startPos;
+            Direction nbrDir = (row % 2 == 0) ? Direction.ESE : Direction.WSW;
+            for (int col = 0; col < cols; col++)
+            {
+                PlaceHexagon(colPos, scale);
+                PlaceHexagon(GetNeighborHexPos(colPos, nbrDir, scale), scale, true);
+                colPos = GetNeighborHexPos(colPos, Direction.ESE, scale);
+                colPos = GetNeighborHexPos(colPos, Direction.ENE, scale);
+            }
+            startPos = GetNeighborHexPos(startPos, Direction.S, scale);
+            startPos = GetNeighborHexPos(startPos, nbrDir, scale);
+        }
+    }
+
+    private void PlaceHexagonShape(int scale, int size)
+    {
+        Vector2Int startPos = Vector2Int.zero;
+
+        // Place the first hexagon to have a central anchor position
+        PlaceHexagon(startPos, scale);
+
+        // Move the start position far enough up
+        for (int i = 0; i < size - 1; i++)
+        {
+            startPos = GetNeighborHexPos(startPos, Direction.N, scale);
+            startPos = GetNeighborHexPos(startPos, Direction.WNW, scale);
+        }
+
+        // Place the start and end row
+        Vector2Int pos = startPos;
+        for (int i = 0; i < size; i++)
+        {
+            if (pos != Vector2Int.zero)
+                PlaceHexagon(pos, scale);
+            Vector2Int pos2 = GetNeighborHexPos(pos, Direction.S, scale, 3 * size - 1);
+            PlaceHexagon(pos2, scale, true);
+            pos = GetNeighborHexPos(pos, Direction.ESE, scale);
+            pos = GetNeighborHexPos(pos, Direction.ENE, scale);
+        }
+
+        // Place the rows inbetween
+        pos = GetNeighborHexPos(startPos, Direction.WSW, scale);
+        for (int i = 0; i < size; i++)
+        {
+            // Place a row of type 2 hexagons with neighboring type 1 hexagons to the South
+            // If this is not the last row, we mirror the same structure downwards as well
+            int num = size + 1 + i;
+            Vector2Int[] startPositions;
+            if (i < size - 1)
+                startPositions = new Vector2Int[] { pos, GetNeighborHexPos(pos, Direction.S, scale, 3 * ((size - 1) - i)) };
+            else
+                startPositions = new Vector2Int[] { pos };
+            foreach (Vector2Int sp in startPositions)
+            {
+                Vector2Int p = sp;
+                for (int j = 0; j < num; j++)
+                {
+                    PlaceHexagon(p, scale, true);
+                    Vector2Int p2 = GetNeighborHexPos(p, Direction.S, scale);
+                    if (p2 != Vector2Int.zero)
+                        PlaceHexagon(p2, scale);
+
+                    p = GetNeighborHexPos(p, Direction.ESE, scale);
+                    p = GetNeighborHexPos(p, Direction.ENE, scale);
+                }
+            }
+
+            pos = GetNeighborHexPos(pos, Direction.S, scale);
+            pos = GetNeighborHexPos(pos, Direction.WSW, scale);
         }
     }
 }
