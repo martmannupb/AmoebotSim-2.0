@@ -18,7 +18,6 @@ public class InitializationUIHandler : MonoBehaviour
     public GameObject initModePanel;
     // Particle Generation Menu UI
     public GameObject genAlg_go_genAlg;
-    public GameObject genAlg_go_amoebotAmount;
     public GameObject genAlg_go_paramParent;
     public Button button_particle_load;
     public Button button_particle_save;
@@ -36,7 +35,6 @@ public class InitializationUIHandler : MonoBehaviour
     // Data
     // Particle Generation Menu UI
     private UISetting_Dropdown genAlg_setting_genAlg;
-    private UISetting_Text genAlg_setting_amoebotAmount;
     private List<UISetting> genAlg_settings = new List<UISetting>();
     // Additional Parameter UI
     private UISetting_Dropdown addPar_setting_chirality;
@@ -54,13 +52,6 @@ public class InitializationUIHandler : MonoBehaviour
     // Camera Colors
     private Color camColorBG;
     public Color camColorInitModeBG;
-
-    public enum SettingChirality
-    {
-        Random,
-        Clockwise,
-        Counterclockwise
-    }
 
     private void Start()
     {
@@ -93,10 +84,7 @@ public class InitializationUIHandler : MonoBehaviour
         {
             DestroyImmediate(alg_go_genericParamParent.transform.GetChild(i).gameObject);
         }
-    }
 
-    private void ResetUI() // todo: reset would not work correctly
-    {
         // Null check
         if (InitializationMethodManager.Instance == null)
         {
@@ -104,11 +92,12 @@ public class InitializationUIHandler : MonoBehaviour
             throw new System.NullReferenceException();
         }
 
+        // Init UI
         // Particle Generation
         List<string> genAlgStrings = InitializationMethodManager.Instance.GetAlgorithmNames();
         genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings.Count > 0 ? genAlgStrings[0] : "");
+        genAlg_setting_genAlg.onValueChangedEvent += ValueChanged_Text;
         SetUpAlgorithmUI(genAlgStrings[0]);
-        genAlg_setting_amoebotAmount = new UISetting_Text(genAlg_go_amoebotAmount, null, "Amount", "50", UISetting_Text.InputType.Int);
         // Additional Parameters
         List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(Initialization.Chirality)));
         chiralityList.Remove(Initialization.Chirality.Random.ToString());
@@ -117,7 +106,7 @@ public class InitializationUIHandler : MonoBehaviour
         addPar_setting_chirality.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
         updatedSettings.Add(addPar_setting_chirality);
         List<string> compassDirList = new List<string>(System.Enum.GetNames(typeof(Initialization.Compass)));
-        chiralityList.Remove(Initialization.Compass.Random.ToString());
+        compassDirList.Remove(Initialization.Compass.Random.ToString());
         compassDirList.Insert(0, "Random");
         addPar_setting_compassDir = new UISetting_Dropdown(addPar_go_compassDir, null, "Compass Dir", compassDirList.ToArray(), compassDirList[0]);
         addPar_setting_compassDir.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
@@ -125,8 +114,16 @@ public class InitializationUIHandler : MonoBehaviour
         // Algorithm Generation
         List<string> algStrings = AlgorithmManager.Instance.GetAlgorithmNames();
         alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algStrings.ToArray(), algStrings[0]);
+        alg_setting_algo.onValueChangedEvent += ValueChanged_Text;
         alg_setting_paramAmount = new UISetting_ValueSlider(alg_go_paramAmount, null, "Param Amount", 0, 10, 0, true);
-        SetUpDynamicParams();
+        alg_setting_paramAmount.onValueChangedEvent += ValueChanged_Float;
+        SetUpDynamicParams(0);
+    }
+
+    private void ResetUI()
+    {
+        SetUpAlgorithmUI(genAlg_setting_genAlg.GetValueString());
+
     }
 
     private void SetUpAlgorithmUI(string algorithm)
@@ -187,11 +184,38 @@ public class InitializationUIHandler : MonoBehaviour
 
     }
 
-    private void SetUpDynamicParams()
+    private void SetUpDynamicParams(int amount)
     {
         // (implement dynamic params here ...)
         Log.Debug("Dynamic Params not implemented yet.");
         
+    }
+
+    public void ValueChanged_Text(string name, string text)
+    {
+        switch (name)
+        {
+            case "Gen. Alg.":
+                SetUpAlgorithmUI(text);
+                break;
+            case "Algorithm":
+                // noting here yet
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void ValueChanged_Float(string name, float number)
+    {
+        switch (name)
+        {
+            case "Param Amount":
+                SetUpDynamicParams((int)number);
+                break;
+            default:
+                break;
+        }
     }
 
     public void Open()
@@ -256,18 +280,7 @@ public class InitializationUIHandler : MonoBehaviour
     {
         // Collect Input Data
         string algorithm = genAlg_setting_genAlg.GetValueString();
-        int amountParticles;
         string[] parameters = new string[genAlg_settings.Count];
-        if (int.TryParse(genAlg_setting_amoebotAmount.GetValueString(), out amountParticles) == false)
-        {
-            Log.Error("Initialization: Generate: Could not parse particle amount!");
-            return;
-        }
-        if(amountParticles <= 0)
-        {
-            Log.Error("Initialization: Generate: Please initialize the system with a positive number of particles!");
-            return;
-        }
         for (int i = 0; i < genAlg_settings.Count; i++)
         {
             UISetting setting = genAlg_settings[i];

@@ -69,6 +69,11 @@ public abstract class UISetting
         return go;
     }
 
+    public string GetName()
+    {
+        return name;
+    }
+
     public Button GetBackgroundButton()
     {
         return button;
@@ -325,8 +330,7 @@ public class UISetting_Text : UISetting
                 if (int.TryParse(input, out i)) return true;
                 else return false;
             case InputType.Float:
-                float f;
-                if (float.TryParse(input, out f)) return true;
+                if (TypeConverter.ConvertStringToFloat(input).conversionSuccessful) return true;
                 else return false;
             default:
                 return false;
@@ -335,7 +339,9 @@ public class UISetting_Text : UISetting
 
     public override string GetValueString()
     {
-        return input.text;
+        string text = input.text;
+        if (inputType == InputType.Float) text = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text);
+        return text;
     }
 
     protected override void LockSetting()
@@ -363,8 +369,8 @@ public class UISetting_Text : UISetting
     public Action<string, string> onValueChangedEvent;
     private void OnValueChanged()
     {
-        string newInput = input.text;
-        if(IsInputValid(newInput) == false)
+        string text = input.text;
+        if(IsInputValid(text) == false)
         {
             // Input not valid, reset to old value
             input.text = prevText;
@@ -372,7 +378,8 @@ public class UISetting_Text : UISetting
         else
         {
             // Input valid, continue
-            if (onValueChangedEvent != null) onValueChangedEvent(this.name, input.text);
+            if (inputType == InputType.Float) text = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text);
+            if (onValueChangedEvent != null) onValueChangedEvent(this.name, text);
         }
     }
 }
