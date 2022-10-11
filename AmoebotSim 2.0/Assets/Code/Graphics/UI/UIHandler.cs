@@ -120,7 +120,7 @@ public class UIHandler : MonoBehaviour
                 // Center Camera
                 Button_CameraCenterPressed();
             }
-            if(Input.GetKeyDown(KeyCode.P))
+            if(Input.GetKeyDown(KeyCode.V))
             {
                 // Screenshot
                 Button_ScreenshotPressed();
@@ -477,14 +477,14 @@ public class UIHandler : MonoBehaviour
 
     public void HideTopRightButtons()
     {
-        button_settings.gameObject.SetActive(false);
-        button_exit.gameObject.SetActive(false);
+        button_settings.interactable = false;
+        button_exit.interactable = false;
     }
 
     public void ShowTopRightButtons()
     {
-        button_settings.gameObject.SetActive(true);
-        button_exit.gameObject.SetActive(true);
+        button_settings.interactable = true;
+        button_exit.interactable = true;
     }
 
     public TMP_InputField temporaryBox;
