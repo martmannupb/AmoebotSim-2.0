@@ -4,6 +4,7 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
 {
     public override int PinsPerEdge => 2;
 
+    public static new string Name => "Expanded Circuit TEST";
 
     public ExpandedCircuitTestParticle(Particle p, int[] genericParams) : base(p)
     {
@@ -59,5 +60,19 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
                 ps.SendBeep();
             }
         }
+    }
+}
+
+
+// Initialization method
+public class ExpandedCircuitTestGenerator : InitializationMethod
+{
+    public ExpandedCircuitTestGenerator(ParticleSystem system) : base(system) { }
+
+    public static new string Name => "Expanded Circuit Test";
+
+    public void Generate(int numParticles = 10)
+    {
+        PlaceParallelogram(Vector2Int.zero, Direction.NNE, numParticles);
     }
 }

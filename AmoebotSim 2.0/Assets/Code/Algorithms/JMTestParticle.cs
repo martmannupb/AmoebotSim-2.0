@@ -4,26 +4,29 @@ public class JMTestParticle : ParticleAlgorithm
 {
     public override int PinsPerEdge => 1;
 
+    public static new string Name => "Joint Movement Test";
+
     private ParticleAttribute<int> mode;
     private ParticleAttribute<int> role;
     private ParticleAttribute<bool> terminated;
 
     public JMTestParticle(Particle p, int[] genericParams) : base(p)
     {
-        mode = CreateAttributeInt("Mode", -1);
-        role = CreateAttributeInt("Role", -1);
-        terminated = CreateAttributeBool("Terminated", false);
-    }
-
-    public JMTestParticle(Particle p, int mode_, int role_) : base(p)
-    {
-        if (mode_ == 6)
+        if (genericParams.Length < 2)
         {
-            if (role_ == 0)
+            Log.Error("JM Test particles requires 2 generic parameters.");
+            return;
+        }
+        int m = genericParams[0];
+        int r = genericParams[1];
+
+        if (m == 6)
+        {
+            if (r == 0)
             {
                 SetMainColor(ColorData.Particle_Blue);
             }
-            else if (role_ == 1)
+            else if (r == 1)
             {
                 SetMainColor(ColorData.Particle_Green);
             }
@@ -32,9 +35,9 @@ public class JMTestParticle : ParticleAlgorithm
                 SetMainColor(ColorData.Particle_Orange);
             }
         }
-        else if (mode_ == 15)
+        else if (m == 15)
         {
-            if (role_ == 1)
+            if (r == 1)
             {
                 SetMainColor(ColorData.Particle_Green);
             }
@@ -48,8 +51,8 @@ public class JMTestParticle : ParticleAlgorithm
             SetMainColor(ColorData.Particle_Black);
         }
 
-        this.mode = CreateAttributeInt("Mode", mode_);
-        this.role = CreateAttributeInt("Role", role_);
+        mode = CreateAttributeInt("Mode", m);
+        role = CreateAttributeInt("Role", r);
         terminated = CreateAttributeBool("Terminated", false);
     }
 
@@ -810,6 +813,414 @@ public class JMTestParticle : ParticleAlgorithm
                 else
                 {
                     ContractTail();
+                }
+            }
+        }
+    }
+}
+
+
+// Initialization method
+public class JMTestGenerator : InitializationMethod
+{
+    public JMTestGenerator(ParticleSystem system) : base(system) { }
+
+    public static new string Name => "JM Test";
+
+    public void Generate(int mode)
+    {
+        while (NumGenericParameters() < 2)
+            AddGenericParameter();
+
+        InitializationParticle p;
+        if (mode == 0)
+        {
+            // A block of particles that expands East while being sheared
+            for (int x = 0; x < 5; x++)
+            {
+                for (int y = 0; y < 10; y++)
+                {
+                    p = AddParticle(new Vector2Int(x, y));
+                    p.genericParams[0] = mode;
+                    p.genericParams[1] = 0;
+                }
+            }
+        }
+        else if (mode == 1)
+        {
+            // A block of particles that expands East without being sheared
+            for (int x = 0; x < 5; x++)
+            {
+                for (int y = 0; y < 10; y++)
+                {
+                    p = AddParticle(new Vector2Int(x, y));
+                    p.genericParams[0] = mode;
+                    p.genericParams[1] = 0;
+                }
+            }
+        }
+        else if (mode == 2)
+        {
+            // A contracted and an expanded particle (will have two bonds)
+            // Can also swap the order of the two to make the expanded particle the seed
+
+            // Contracted
+            p = AddParticle(new Vector2Int(0, 0));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Expanded
+            p = AddParticle(new Vector2Int(-1, 1), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+        }
+        else if (mode == 3)
+        {
+            // A contracted and an expanded particle (will have only one bond)
+            // Can also swap the order of the two to make the expanded particle the seed
+
+            // Contracted
+            p = AddParticle(new Vector2Int(0, 0));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Expanded
+            p = AddParticle(new Vector2Int(-1, 1), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+        }
+        else if (mode == 4)
+        {
+            // A contracted and an expanded particle (will have only one bond and perform handover)
+            // Can also swap the order of the two to make the expanded particle the seed
+
+            // Contracted
+            p = AddParticle(new Vector2Int(0, 0));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Expanded
+            p = AddParticle(new Vector2Int(-1, 1), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+        }
+        else if (mode == 5)
+        {
+            // A contracted and an expanded particle (will have two bonds and perform handover)
+            // Can also swap the order of the two to make the expanded particle the seed
+
+            // Contracted
+            p = AddParticle(new Vector2Int(0, 0));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Expanded
+            p = AddParticle(new Vector2Int(-1, 1), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+        }
+        else if (mode == 6)
+        {
+            // A contracted and an expanded particle performing a handover with additional particles
+            // being pulled or transferred
+
+            // Contracted particle pushing
+            p = AddParticle(new Vector2Int(0, 0));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Expanded particle pulling
+            p = AddParticle(new Vector2Int(-1, 1), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+
+            // Four particles that are passive and will be moved around by the other particles
+            int role = 2;
+            foreach (Vector2Int pos in new Vector2Int[] { new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(-2, 2), new Vector2Int(-1, 2) })
+            {
+                p = AddParticle(pos);
+                p.genericParams[0] = mode;
+                p.genericParams[1] = role;
+                role++;
+            }
+        }
+        else if (mode == 7)
+        {
+            // Two expanded particles with one bond, randomly moving or not
+
+            // Bottom particle
+            p = AddParticle(new Vector2Int(0, 0), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Top particle
+            p = AddParticle(new Vector2Int(0, 1), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+        }
+        else if (mode == 8)
+        {
+            // Two expanded particles with one bond and contracted neighbors, randomly decide to mark bond or not
+
+            // Bottom particle
+            p = AddParticle(new Vector2Int(0, 0), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Top particle
+            p = AddParticle(new Vector2Int(0, 1), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+
+            // Contracted neighbors
+            p = AddParticle(new Vector2Int(0, -1));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 2;
+
+            p = AddParticle(new Vector2Int(-1, 2), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 3;
+        }
+        else if (mode == 9)
+        {
+            // Two expanded particles with two bonds sharing one end
+            // Swap the particles to change the anchor
+
+            // Left particle
+            p = AddParticle(new Vector2Int(0, 0), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Right particle
+            p = AddParticle(new Vector2Int(2, 0), Direction.NNW);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+        }
+        else if (mode == 10)
+        {
+            // Same as mode 9 but with a contracted particle for handover
+            // Swap the particles to change the anchor
+
+            // Left particle
+            p = AddParticle(new Vector2Int(0, 0), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Right particle
+            p = AddParticle(new Vector2Int(2, 0), Direction.NNW);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+
+            // Contracted particle
+            p = AddParticle(new Vector2Int(1, 2));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 2;
+        }
+        else if (mode == 11)
+        {
+            // Stack of parallel expanded particles with two parallel bonds
+            // All of them contract but the direction is random
+
+            for (int i = 0; i < 10; i++)
+            {
+                p = AddParticle(new Vector2Int(0, i), Direction.E);
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 0;
+            }
+        }
+        else if (mode == 12)
+        {
+            // Stack of parallel expanded particles with two parallel bonds
+            // Some of them have a contracted neighbor for handover
+            // The system either contracts or stays expanded
+
+            bool contract = Random.Range(0, 2) == 0;
+
+            for (int i = 0; i < 15; i++)
+            {
+                // Randomly either place just the expanded particle or an additional contracted particle on one side
+                // 0 = none, 1 = left, 2 = right
+                int neighbor = Random.Range(0, 3);
+
+                // 0 = do nothing (no neighbor), 1 = contract in random direction (no neighbor),
+                // 2 = handover head with marked bond, 3 = handover tail with marked bond,
+                // 4 = handover head with unmarked bond, 5 = handover tail with unmarked bond
+                int role = neighbor == 0 ? (contract ? 1 : 0) :
+                    neighbor == 1 ? (contract ? 4 : 2) :
+                    (contract ? 5 : 3);
+
+                // Expanded particle
+                p = AddParticle(new Vector2Int(0, i), Direction.E);
+                p.genericParams[0] = mode;
+                p.genericParams[1] = role;
+
+                // Place the neighbor
+                if (neighbor == 1)
+                {
+                    p = AddParticle(new Vector2Int(-1, i));
+                    p.genericParams[0] = mode;
+                    p.genericParams[1] = 6;
+                }
+                else if (neighbor == 2)
+                {
+                    p = AddParticle(new Vector2Int(2, i));
+                    p.genericParams[0] = mode;
+                    p.genericParams[1] = 7;
+                }
+            }
+        }
+        else if (mode == 13)
+        {
+            // Three lines of particles forming a parallelogram with one missing side
+            // All of the particles expand and contract alternatingly
+            int widthLower = 10;
+            int widthUpper = 12;
+            int height = 8;
+
+            // Lower row
+            for (int i = 0; i < widthLower; i++)
+            {
+                p = AddParticle(new Vector2Int(i, 0));
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 0;
+            }
+
+            // Vertical column
+            for (int i = 0; i < height; i++)
+            {
+                p = AddParticle(new Vector2Int(0, i + 1));
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 1;
+            }
+
+            // Upper row
+            for (int i = 0; i < widthUpper; i++)
+            {
+                p = AddParticle(new Vector2Int(i, height + 1));
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 2;
+            }
+        }
+        else if (mode == 14)
+        {
+            // Contracted and expanded particle with 2 bonds
+            // Expanded particle performs handover with another contracted neighbor
+
+            // Contracted
+            p = AddParticle(new Vector2Int(0, 0));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 0;
+
+            // Expanded
+            p = AddParticle(new Vector2Int(-1, 1), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+
+            // Contracted neighbor for handover
+            p = AddParticle(new Vector2Int(-2, 2), Direction.E);
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 2;
+        }
+        else if (mode == 15)
+        {
+            // Block of particles with a stripe in the middle that expands and contracts
+            // to move the entire block
+
+            int width = 20;
+            int height = 10;
+            // Idle particles have role 0, stripe particles have role 1
+            // The lowest stripe particle is the anchor
+            p = AddParticle(new Vector2Int(width / 2, 0));
+            p.genericParams[0] = mode;
+            p.genericParams[1] = 1;
+
+            for (int x = 0; x < width; x++)
+            {
+                int role = x == width / 2 ? 1 : 0;
+                for (int y = (role == 0 ? 0 : 1); y < height; y++)
+                {
+                    p = AddParticle(new Vector2Int(x, y));
+                    p.genericParams[0] = mode;
+                    p.genericParams[1] = role;
+                }
+            }
+        }
+        else if (mode == 16)
+        {
+            // A "floor" made out of contracted particles and a "worm" of particles that moves
+            // across it by expanding and contracting
+            int floorSize = 250;
+            int wormSize = 7;
+
+            // Role 0 is floor, role 1 is worm
+            // Anchor is part of the floor
+            for (int i = 0; i < floorSize; i++)
+            {
+                p = AddParticle(new Vector2Int(i, 0));
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 0;
+            }
+
+            for (int i = 0; i < wormSize; i++)
+            {
+                p = AddParticle(new Vector2Int(i, 1));
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 1;
+            }
+        }
+        else if (mode == 17)
+        {
+            // A parallelogram of particles where the bottom line consists of expanded and contracted
+            // particles which alternatingly expand and contract
+
+            int numSegments = 5;
+            int height = 4;     // Must not be less than 3
+
+            // Role 0 means static, role 1 means moving
+            // Left and right sides
+            for (int i = 0; i < height; i++)
+            {
+                p = AddParticle(new Vector2Int(0, i));
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 0;
+
+                p = AddParticle(new Vector2Int(3 * numSegments + 1, i));
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 0;
+            }
+            // Top line
+            for (int i = 1; i < numSegments * 3 + 1; i++)
+            {
+                p = AddParticle(new Vector2Int(i, height - 1));
+                p.genericParams[0] = mode;
+                p.genericParams[1] = 0;
+            }
+
+            // Bottom line
+            int numExpanded = 0;
+            int numContracted = 0;
+            int x = 1;
+            for (int i = 0; i < numSegments * 2; i++)
+            {
+                bool random = Random.Range(0, 2) == 0;
+                bool expanded = numContracted == numSegments || (numExpanded < numSegments && random);
+                if (expanded)
+                {
+                    p = AddParticle(new Vector2Int(x, 0), Direction.E);
+                    p.genericParams[0] = mode;
+                    p.genericParams[1] = 1;
+
+                    numExpanded++;
+                    x += 2;
+                }
+                else
+                {
+                    p = AddParticle(new Vector2Int(x, 0));
+                    p.genericParams[0] = mode;
+                    p.genericParams[1] = 1;
+
+                    numContracted++;
+                    x++;
                 }
             }
         }

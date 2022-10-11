@@ -85,7 +85,7 @@ public abstract class ParticleAlgorithm
 
     public static string Name { get { return ""; } }
 
-    public static Initialization.Chirality Chirality { get { return Initialization.Chirality.Clockwise; } }
+    public static Initialization.Chirality Chirality { get { return Initialization.Chirality.CounterClockwise; } }
 
     public static Initialization.Compass Compass { get { return Initialization.Compass.E; } }
 

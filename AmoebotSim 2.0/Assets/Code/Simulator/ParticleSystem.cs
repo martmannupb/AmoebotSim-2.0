@@ -185,9 +185,8 @@ public class ParticleSystem : IReplayHistory
     /// a particle and being left empty instead.</param>
     public void InitializeLineFormation(int numParticles, float holeProb)
     {
-        // Ensure that a new leader will be chosen
-        // (This is bad practice and should be handled differently later!)
-        LineFormationParticleSync.leaderCreated = false;
+        // Determine which particle will be the leader
+        int leaderIdx = Random.Range(0, Mathf.Max(1, numParticles));
 
         int n = 1;
         // Always start by adding a particle at position (0, 0)
@@ -195,7 +194,7 @@ public class ParticleSystem : IReplayHistory
         Vector2Int node = new Vector2Int(0, 0);
         //Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
         //Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
-        Particle p = ParticleFactory.CreateParticle(this, "Line Formation", null, node);
+        Particle p = ParticleFactory.CreateParticle(this, "Line Formation", new List<int>() { leaderIdx == 0 ? 1 : 0 }, node);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -223,7 +222,7 @@ public class ParticleSystem : IReplayHistory
 
                 //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
                 //p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
-                p = ParticleFactory.CreateParticle(this, "Line Formation", null, newPos);
+                p = ParticleFactory.CreateParticle(this, "Line Formation", new List<int>() { leaderIdx == n ? 1 : 0 }, newPos);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -3744,6 +3743,15 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    /// <summary>
+    /// Returns an array storing all current particles in
+    /// initialization mode.
+    /// </summary>
+    /// <returns>An array containing all initialization particles.</returns>
+    public InitializationParticle[] GetInitParticles()
+    {
+        return particlesInit.ToArray();
+    }
 
 
 
