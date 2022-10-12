@@ -49,6 +49,11 @@ public class LeaderElectionParticle : ParticleAlgorithm
     // Algorithm only requires one pin
     public override int PinsPerEdge => 1;
 
+    public static new string Name => "Leader Election";
+
+    public static new Initialization.Chirality Chirality => Initialization.Chirality.Random;
+    public static new Initialization.Compass Compass => Initialization.Compass.Random;
+
     public override void ActivateMove()
     {
 

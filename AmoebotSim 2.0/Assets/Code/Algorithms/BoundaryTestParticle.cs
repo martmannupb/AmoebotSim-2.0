@@ -174,6 +174,8 @@ namespace BoundaryTestAlgo
 
         public override int PinsPerEdge => 4;
 
+        public static new string Name => "Boundary Test";
+
         public override void ActivateMove()
         {
 

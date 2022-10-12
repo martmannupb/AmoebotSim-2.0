@@ -57,10 +57,8 @@ public class ParticleAttribute_Float : ParticleAttributeWithHistory<float>, IPar
 
     public bool UpdateAttributeValue(string value)
     {
-        Debug.Log("Parsing string '" + value + "'");
         if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float parsedVal))
         {
-            Debug.Log("Success: " + parsedVal);
             history.RecordValueInRound(parsedVal, particle.system.CurrentRound);
             return true;
         }

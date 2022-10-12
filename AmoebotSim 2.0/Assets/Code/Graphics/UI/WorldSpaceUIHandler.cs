@@ -49,6 +49,11 @@ public class WorldSpaceUIHandler : MonoBehaviour
     // Pooling
     private Stack<GameObject> pool_particleTextUI = new Stack<GameObject>();
 
+    public enum TextType
+    {
+        Attribute, Chirality, CompassDir, Text
+    }
+
     public WorldSpaceUIHandler()
     {
         // Singleton
@@ -63,11 +68,6 @@ public class WorldSpaceUIHandler : MonoBehaviour
         // Test
         DisplayText(TextType.Text, "Contract");
         HideAll();
-    }
-
-    public enum TextType
-    {
-        Attribute, Chirality, CompassDir, Text
     }
 
     /// <summary>

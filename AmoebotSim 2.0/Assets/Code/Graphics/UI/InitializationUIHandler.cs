@@ -13,30 +13,45 @@ public class InitializationUIHandler : MonoBehaviour
     // References
     private UIHandler uiHandler;
 
+    // UI References
     // UI
-    public GameObject panel;
+    public GameObject initModePanel;
     // Particle Generation Menu UI
-    public TMP_InputField field_particle_amountParticles;
-    public TMP_Dropdown dropdown_particle_chirality;
-    public TMP_Dropdown dropdown_particle_compassDir;
+    public GameObject genAlg_go_genAlg;
+    public GameObject genAlg_go_paramParent;
     public Button button_particle_load;
     public Button button_particle_save;
     public Button button_particle_generate;
+    // Additional Parameter UI
+    public GameObject addPar_go_chirality;
+    public GameObject addPar_go_compassDir;
     // Algorithm Generation Menu UI
-    public TMP_Dropdown dropdown_algorithm_algo;
+    public GameObject alg_go_algo;
+    public GameObject alg_go_paramAmount;
+    public GameObject alg_go_genericParamParent;
     public Button button_algorithm_start;
     public Button button_algorithm_abort;
+
+    // Data
+    // Particle Generation Menu UI
+    private UISetting_Dropdown genAlg_setting_genAlg;
+    private List<UISetting> genAlg_settings = new List<UISetting>();
+    // Additional Parameter UI
+    private UISetting_Dropdown addPar_setting_chirality;
+    private UISetting_Dropdown addPar_setting_compassDir;
+    // Algorithm Generation Menu UI
+    private UISetting_Dropdown alg_setting_algo;
+    private UISetting_ValueSlider alg_setting_paramAmount;
+
+    // Updated
+    private List<UISetting> updatedSettings = new List<UISetting>();
+
+    // Data
+    System.Reflection.ParameterInfo[] genAlg_paramInfo;
 
     // Camera Colors
     private Color camColorBG;
     public Color camColorInitModeBG;
-
-    public enum SettingChirality
-    {
-        Random,
-        Clockwise,
-        Counterclockwise
-    }
 
     private void Start()
     {
@@ -45,34 +60,162 @@ public class InitializationUIHandler : MonoBehaviour
         if (uiHandler == null) Log.Error("Could not find UIHandler.");
 
         // Hide Panel
-        panel.SetActive(false);
+        initModePanel.SetActive(false);
         // Collect Data
         camColorBG = Camera.main.backgroundColor;
         // Init
+        InitUI();
         ResetUI();
     }
 
-    public void ResetUI()
+    private void Update()
     {
-        // Particle Generation
-        field_particle_amountParticles.text = "50";
-        dropdown_particle_chirality.ClearOptions();
-        dropdown_particle_chirality.AddOptions(new List<string>(System.Enum.GetNames(typeof(SettingChirality))));
-        List<string> directionList = new List<string>(System.Enum.GetNames(typeof(Direction)));
-        directionList.Insert(0, "Random");
-        dropdown_particle_compassDir.value = 0;
-        dropdown_particle_compassDir.ClearOptions();
-        dropdown_particle_compassDir.AddOptions(directionList);
-        // Algorithm Generation
-        Type[] algorithmClasses = typeof(ParticleAlgorithm).Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(ParticleAlgorithm))).ToArray();
-        List<string> algoStrings = new List<string>();
-        for (int i = 0; i < algorithmClasses.Length; i++)
+        // Update Settings
+        foreach (var setting in updatedSettings)
         {
-            algoStrings.Add(algorithmClasses[i].ToString());
+            setting.InteractiveBarUpdate();
         }
-        dropdown_algorithm_algo.value = 0;
-        dropdown_algorithm_algo.ClearOptions();
-        dropdown_algorithm_algo.AddOptions(algoStrings);
+    }
+
+    private void InitUI()
+    {
+        // Destroy generic param dummies
+        for (int i = alg_go_genericParamParent.transform.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(alg_go_genericParamParent.transform.GetChild(i).gameObject);
+        }
+
+        // Null check
+        if (InitializationMethodManager.Instance == null)
+        {
+            Log.Error("InitializationUIHandler: InitializationMethodManager.Instance is null!");
+            throw new System.NullReferenceException();
+        }
+
+        // Init UI
+        // Particle Generation
+        List<string> genAlgStrings = InitializationMethodManager.Instance.GetAlgorithmNames();
+        genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings.Count > 0 ? genAlgStrings[0] : "");
+        genAlg_setting_genAlg.onValueChangedEvent += ValueChanged_Text;
+        SetUpAlgorithmUI(genAlgStrings[0]);
+        // Additional Parameters
+        List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(Initialization.Chirality)));
+        chiralityList.Remove(Initialization.Chirality.Random.ToString());
+        chiralityList.Insert(0, "Random");
+        addPar_setting_chirality = new UISetting_Dropdown(addPar_go_chirality, null, "Chirality", chiralityList.ToArray(), chiralityList[0]);
+        addPar_setting_chirality.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
+        updatedSettings.Add(addPar_setting_chirality);
+        List<string> compassDirList = new List<string>(System.Enum.GetNames(typeof(Initialization.Compass)));
+        compassDirList.Remove(Initialization.Compass.Random.ToString());
+        compassDirList.Insert(0, "Random");
+        addPar_setting_compassDir = new UISetting_Dropdown(addPar_go_compassDir, null, "Compass Dir", compassDirList.ToArray(), compassDirList[0]);
+        addPar_setting_compassDir.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
+        updatedSettings.Add(addPar_setting_compassDir);
+        // Algorithm Generation
+        List<string> algStrings = AlgorithmManager.Instance.GetAlgorithmNames();
+        alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algStrings.ToArray(), algStrings[0]);
+        alg_setting_algo.onValueChangedEvent += ValueChanged_Text;
+        alg_setting_paramAmount = new UISetting_ValueSlider(alg_go_paramAmount, null, "Param Amount", 0, 10, 0, true);
+        alg_setting_paramAmount.onValueChangedEvent += ValueChanged_Float;
+        SetUpDynamicParams(0);
+    }
+
+    private void ResetUI()
+    {
+        SetUpAlgorithmUI(genAlg_setting_genAlg.GetValueString());
+
+    }
+
+    private void SetUpAlgorithmUI(string algorithm)
+    {
+        // Clear old UI
+        foreach (var setting in genAlg_settings)
+        {
+            setting.Clear();
+            Destroy(setting.GetGameObject());
+        }
+        genAlg_settings.Clear();
+        // Instantiate new UI
+        genAlg_paramInfo = InitializationMethodManager.Instance.GetAlgorithmParameters(algorithm);
+        for (int i = 0; i < genAlg_paramInfo.Length; i++)
+        {
+            System.Reflection.ParameterInfo param = genAlg_paramInfo[i];
+            //Log.Debug(param.ParameterType.ToString());
+            Type type = param.ParameterType;
+            if (type == typeof(bool))
+            {
+                bool defValue = false;
+                if (param.HasDefaultValue) defValue = (bool)param.DefaultValue;
+                UISetting_Toggle setting = new UISetting_Toggle(null, genAlg_go_paramParent.transform, param.Name, defValue);
+                genAlg_settings.Add((UISetting)setting);
+            }
+            else if(type == typeof(int))
+            {
+                string defValue = "0";
+                if (param.HasDefaultValue) defValue = "" + (int)param.DefaultValue;
+                UISetting_Text setting = new UISetting_Text(null, genAlg_go_paramParent.transform, param.Name, defValue, UISetting_Text.InputType.Int);
+                genAlg_settings.Add((UISetting)setting);
+            }
+            else if (type == typeof(float))
+            {
+                string defValue = "0";
+                if (param.HasDefaultValue) defValue = "" + (float)param.DefaultValue;
+                UISetting_Text setting = new UISetting_Text(null, genAlg_go_paramParent.transform, param.Name, defValue, UISetting_Text.InputType.Float);
+                genAlg_settings.Add((UISetting)setting);
+            }
+            else if (type == typeof(string))
+            {
+                string defValue = "";
+                if (param.HasDefaultValue) defValue = (string)param.DefaultValue;
+                UISetting_Text setting = new UISetting_Text(null, genAlg_go_paramParent.transform, param.Name, defValue, UISetting_Text.InputType.Text);
+                genAlg_settings.Add((UISetting)setting);
+            }
+            else if (type.IsSubclassOf(typeof(Enum)))
+            {
+                string defValue = Enum.GetNames(type)[0].ToString();
+                if (param.HasDefaultValue) defValue = ((Enum)param.DefaultValue).ToString();
+                UISetting_Dropdown setting = new UISetting_Dropdown(null, genAlg_go_paramParent.transform, param.Name, Enum.GetNames(type), defValue);
+                genAlg_settings.Add((UISetting)setting);
+            }
+        }
+        Log.Debug("Continue to code here.");
+
+        // ..
+
+    }
+
+    private void SetUpDynamicParams(int amount)
+    {
+        // (implement dynamic params here ...)
+        Log.Debug("Dynamic Params not implemented yet.");
+        
+    }
+
+    public void ValueChanged_Text(string name, string text)
+    {
+        switch (name)
+        {
+            case "Gen. Alg.":
+                SetUpAlgorithmUI(text);
+                break;
+            case "Algorithm":
+                // noting here yet
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void ValueChanged_Float(string name, float number)
+    {
+        switch (name)
+        {
+            case "Param Amount":
+                SetUpDynamicParams((int)number);
+                break;
+            default:
+                break;
+        }
     }
 
     public void Open()
@@ -81,7 +224,7 @@ public class InitializationUIHandler : MonoBehaviour
         uiHandler.HideTopRightButtons();
         uiHandler.settingsUI.Close();
         uiHandler.particleUI.Close();
-        panel.SetActive(true);
+        initModePanel.SetActive(true);
         // Update Cam Color
         Camera.main.backgroundColor = camColorInitModeBG;
         // Notify System
@@ -96,7 +239,7 @@ public class InitializationUIHandler : MonoBehaviour
         // Update UI
         uiHandler.ShowTopRightButtons();
         uiHandler.particleUI.Close();
-        panel.SetActive(false);
+        initModePanel.SetActive(false);
         // Update Cam Color
         Camera.main.backgroundColor = camColorBG;
         // Notify System
@@ -107,7 +250,7 @@ public class InitializationUIHandler : MonoBehaviour
 
     public bool IsOpen()
     {
-        return panel.activeSelf;
+        return initModePanel.activeSelf;
     }
 
     /// <summary>
@@ -136,40 +279,50 @@ public class InitializationUIHandler : MonoBehaviour
     public void ButtonPressed_Generate()
     {
         // Collect Input Data
-        int amountParticles;
-        if(int.TryParse(field_particle_amountParticles.text, out amountParticles) == false)
+        string algorithm = genAlg_setting_genAlg.GetValueString();
+        string[] parameters = new string[genAlg_settings.Count];
+        for (int i = 0; i < genAlg_settings.Count; i++)
         {
-            Log.Error("Initialization: Generate: Could not parse particle amount!");
-            return;
+            UISetting setting = genAlg_settings[i];
+            parameters[i] = setting.GetValueString();
         }
-        SettingChirality chirality;
-        if(SettingChirality.TryParse(dropdown_particle_chirality.options[dropdown_particle_chirality.value].text, out chirality) == false)
+        object[] parameterObjects = new object[parameters.Length];
+        for (int i = 0; i < parameters.Length; i++)
         {
-            Log.Error("Initialization: Generate: Could not parse chirality!");
-            return;
+            parameterObjects[i] = TypeConverter.ConvertStringToObjectOfType(genAlg_paramInfo[i].ParameterType, parameters[i]);
         }
-        bool randomCompassDir = dropdown_particle_compassDir.value == 0;
-        Direction compassDir = Direction.N;
-        if(randomCompassDir == false)
-        {
-            object output;
-            if (Direction.TryParse(typeof(Direction), dropdown_particle_compassDir.options[dropdown_particle_compassDir.value].text, out output) == false)
-            {
-                Log.Error("Initialization: Generate: Could not parse direction!");
-                return;
-            }
-            compassDir = (Direction)output;
-        }
-        
 
         // Call Generation Method
         uiHandler.sim.system.Reset();
-        uiHandler.sim.system.GenerateParticles(amountParticles, chirality, randomCompassDir, compassDir);
+        uiHandler.sim.system.GenerateParticles(algorithm, parameterObjects);
+
+        // Center Camera
+        uiHandler.Button_CameraCenterPressed();
+    }
+
+    public void SettingBarPressedLong(string name, float duration)
+    {
+        switch (name)
+        {
+            case "Chirality":
+                // Apply chirality setting to all particles
+                uiHandler.sim.system.SetSystemChirality((Initialization.Chirality)Enum.Parse(typeof(Initialization.Chirality), addPar_setting_chirality.GetValueString()));
+                Log.Entry("Chirality" + addPar_setting_chirality.GetValueString() + "applied to all particles.");
+                break;
+            case "Compass Dir":
+                // Apply compass dir setting to all particles
+                uiHandler.sim.system.SetSystemCompassDir((Initialization.Compass)Enum.Parse(typeof(Initialization.Compass), addPar_setting_compassDir.GetValueString()));
+                Log.Entry("Compass dir" + addPar_setting_compassDir.GetValueString() + " applied to all particles.");
+                break;
+            default:
+                break;
+        }
     }
 
     public void ButtonPressed_StartAlgorithm()
     {
-        
+        uiHandler.sim.system.InitializationModeFinished(alg_setting_algo.GetValueString());
+        Close(false);
     }
 
     public void ButtonPressed_Abort()

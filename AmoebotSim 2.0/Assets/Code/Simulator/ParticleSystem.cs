@@ -185,9 +185,8 @@ public class ParticleSystem : IReplayHistory
     /// a particle and being left empty instead.</param>
     public void InitializeLineFormation(int numParticles, float holeProb)
     {
-        // Ensure that a new leader will be chosen
-        // (This is bad practice and should be handled differently later!)
-        LineFormationParticleSync.leaderCreated = false;
+        // Determine which particle will be the leader
+        int leaderIdx = Random.Range(0, Mathf.Max(1, numParticles));
 
         int n = 1;
         // Always start by adding a particle at position (0, 0)
@@ -195,7 +194,7 @@ public class ParticleSystem : IReplayHistory
         Vector2Int node = new Vector2Int(0, 0);
         //Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
         //Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
-        Particle p = ParticleFactory.CreateParticle(this, "Line Formation", null, node);
+        Particle p = ParticleFactory.CreateParticle(this, "Line Formation", new List<int>() { leaderIdx == 0 ? 1 : 0 }, node);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -223,7 +222,7 @@ public class ParticleSystem : IReplayHistory
 
                 //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
                 //p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
-                p = ParticleFactory.CreateParticle(this, "Line Formation", null, newPos);
+                p = ParticleFactory.CreateParticle(this, "Line Formation", new List<int>() { leaderIdx == n ? 1 : 0 }, newPos);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -3284,23 +3283,20 @@ public class ParticleSystem : IReplayHistory
      * Initialization mode functionality.
      */
 
-    // TODO: Implement different system for initializing the particles
-    public void GenerateParticles(int particleAmount, InitializationUIHandler.SettingChirality chirality, bool randomCompassDir, Direction compassDir)
+    /// <summary>
+    /// Invokes the specified system generation method to fill the system
+    /// with particles in initialization mode.
+    /// </summary>
+    /// <param name="methodName">The name of the generation method.</param>
+    /// <param name="parameters">The parameters for the generation method.</param>
+    public void GenerateParticles(string methodName, object[] parameters)
     {
-        // If randomCompassDir is true the value of direction can be ignored
-        // The system has been already Reset by the UI at this point
+        if (!inInitializationState)
+            return;
 
         ResetInit();
 
-        InitializationMethodManager man = InitializationMethodManager.Instance;
-
-        // FOR TESTING
-
-        //man.GenerateSystem(this, "Random With Holes", new object[] { particleAmount, 0.25f, Initialization.Chirality.Random, Initialization.Compass.Random });
-        //man.GenerateSystem(this, "Smart Material", new object[] { particleAmount });
-        man.GenerateSystem(this, "Smart Material", new object[] { 2, particleAmount, particleAmount, randomCompassDir });
-
-        Log.Debug("Generated system has " + particlesInit.Count + " particles");
+        InitializationMethodManager.Instance.GenerateSystem(this, methodName, parameters);
     }
 
     /// <summary>
@@ -3346,22 +3342,18 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// Aborts the initialization mode and reloads the
-    /// previous simulation state if possible.
+    /// Exits the initialization mode and initializes the particle
+    /// system based on the current configuration.
     /// </summary>
-    public void InitializationModeAborted()
+    /// <param name="algorithmName">The name of the selected algorithm.</param>
+    public void InitializationModeFinished(string algorithmName)
     {
         if (!inInitializationState)
             return;
 
-
-        // TEMPORARY: Initialize the system with the smart material algorithm
-
-        storedSimulationState = false;
-
         foreach (InitializationParticle ip in particlesInit)
         {
-            Particle p = ParticleFactory.CreateParticle(this, "Smart Material", ip);
+            Particle p = ParticleFactory.CreateParticle(this, algorithmName, ip);
             particles.Add(p);
             particleMap[p.Tail()] = p;
             if (p.IsExpanded())
@@ -3369,6 +3361,7 @@ public class ParticleSystem : IReplayHistory
         }
 
         ResetInit();
+        storedSimulationState = false;
         inInitializationState = false;
 
         SetInitialParticleBonds();
@@ -3377,13 +3370,16 @@ public class ParticleSystem : IReplayHistory
         DiscoverCircuits(false);
         UpdateAllParticleVisuals(true);
         CleanupAfterRound();
+    }
 
-
-
-        return;
-
-
-
+    /// <summary>
+    /// Aborts the initialization mode and reloads the
+    /// previous simulation state if possible.
+    /// </summary>
+    public void InitializationModeAborted()
+    {
+        if (!inInitializationState)
+            return;
 
         // Note: The initialization mode has just been aborted and the window is closed. Here the previously saved state could be loaded again to continue with the old algorithm.
 
@@ -3422,7 +3418,7 @@ public class ParticleSystem : IReplayHistory
     /// <param name="chirality">The current chirality setting.</param>
     /// <param name="compassDir">The current compass direction setting.</param>
     public void AddParticleContracted(Vector2Int gridPos,
-        Initialization.Chirality chirality = Initialization.Chirality.Clockwise, Initialization.Compass compassDir = Initialization.Compass.E)
+        Initialization.Chirality chirality = Initialization.Chirality.CounterClockwise, Initialization.Compass compassDir = Initialization.Compass.E)
     {
         if (!inInitializationState)
         {
@@ -3431,7 +3427,7 @@ public class ParticleSystem : IReplayHistory
         }
 
         bool chiralityPart = true;
-        if (chirality == Initialization.Chirality.CounterClockwise ||
+        if (chirality == Initialization.Chirality.Clockwise ||
             chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
             chiralityPart = false;
 
@@ -3452,7 +3448,7 @@ public class ParticleSystem : IReplayHistory
     /// <param name="chirality">The current chirality setting.</param>
     /// <param name="compassDir">The current compass direction setting.</param>
     public void AddParticleExpanded(Vector2Int gridPosHead, Vector2Int gridPosTail,
-        Initialization.Chirality chirality = Initialization.Chirality.Clockwise, Initialization.Compass compassDir = Initialization.Compass.E)
+        Initialization.Chirality chirality = Initialization.Chirality.CounterClockwise, Initialization.Compass compassDir = Initialization.Compass.E)
     {
         if (!inInitializationState)
         {
@@ -3461,7 +3457,7 @@ public class ParticleSystem : IReplayHistory
         }
 
         bool chiralityPart = true;
-        if (chirality == Initialization.Chirality.CounterClockwise ||
+        if (chirality == Initialization.Chirality.Clockwise ||
             chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
             chiralityPart = false;
 
@@ -3748,6 +3744,15 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    /// <summary>
+    /// Returns an array storing all current particles in
+    /// initialization mode.
+    /// </summary>
+    /// <returns>An array containing all initialization particles.</returns>
+    public InitializationParticle[] GetInitParticles()
+    {
+        return particlesInit.ToArray();
+    }
 
 
 

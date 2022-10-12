@@ -39,8 +39,8 @@ public class RendererBackground
         // Camera
         Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
         Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
-        Vector2 camLowest = GetLowestXYCameraWorldPositions();
-        Vector2 camHighest = GetHightestXYCameraWorldPositions();
+        Vector2 camLowest = CameraUtils.GetLowestXYCameraWorldPositions();
+        Vector2 camHighest = CameraUtils.GetHightestXYCameraWorldPositions();
         Vector2 screenSize = camHighest - camLowest;
 
         // 1. Background
@@ -83,8 +83,8 @@ public class RendererBackground
         // Camera
         Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
         Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
-        Vector2 camLowest = GetLowestXYCameraWorldPositions();
-        Vector2 camHighest = GetHightestXYCameraWorldPositions();
+        Vector2 camLowest = CameraUtils.GetLowestXYCameraWorldPositions();
+        Vector2 camHighest = CameraUtils.GetHightestXYCameraWorldPositions();
         Vector2 screenSize = camHighest - camLowest;
         float widthHeightRatio = screenSize.y / screenSize.x;
 
@@ -123,23 +123,5 @@ public class RendererBackground
             Graphics.DrawMesh(mesh_circ_bgDiaBLTR[i], matrix_circ_bgDia[i], MaterialDatabase.material_circular_bgLines, 0);
             Graphics.DrawMesh(mesh_circ_bgDiaBRTL[i], matrix_circ_bgDia[i], MaterialDatabase.material_circular_bgLines, 0);
         }
-    }
-
-    private Vector2 GetLowestXYCameraWorldPositions()
-    {
-        Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
-        Vector2 camPosBR = CameraUtils.MainCamera_WorldPosition_BottomRight();
-        Vector2 camPosTL = CameraUtils.MainCamera_WorldPosition_TopLeft();
-        Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
-        return new Vector2(Mathf.Min(camPosBL.x, camPosBR.x, camPosTL.x, camPosTR.x), Mathf.Min(camPosBL.y, camPosBR.y, camPosTL.y, camPosTR.y));
-    }
-
-    private Vector2 GetHightestXYCameraWorldPositions()
-    {
-        Vector2 camPosBL = CameraUtils.MainCamera_WorldPosition_BottomLeft();
-        Vector2 camPosBR = CameraUtils.MainCamera_WorldPosition_BottomRight();
-        Vector2 camPosTL = CameraUtils.MainCamera_WorldPosition_TopLeft();
-        Vector2 camPosTR = CameraUtils.MainCamera_WorldPosition_TopRight();
-        return new Vector2(Mathf.Max(camPosBL.x, camPosBR.x, camPosTL.x, camPosTR.x), Mathf.Max(camPosBL.y, camPosBR.y, camPosTL.y, camPosTR.y));
     }
 }

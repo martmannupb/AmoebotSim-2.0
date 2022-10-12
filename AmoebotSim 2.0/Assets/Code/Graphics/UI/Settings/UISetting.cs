@@ -6,23 +6,21 @@ using UnityEngine.EventSystems;
 using TMPro;
 using UnityEngine;
 
-public class ButtonHoldTrigger : EventTrigger
+public class ButtonHoldTrigger : MonoBehaviour, IPointerDownHandler, IPointerUpHandler // Note: MonoBehavious + Interfaces replace EventTrigger (which prevented scrolling)
 {
     private float timestampPointerDown = 0f;
     private bool pressed = false;
 
     public Action<float> mouseClickEvent;
 
-    public override void OnPointerDown(PointerEventData eventData)
+    public void OnPointerDown(PointerEventData eventData)
     {
-        base.OnPointerDown(eventData);
         timestampPointerDown = Time.timeSinceLevelLoad;
         pressed = true;
     }
 
-    public override void OnPointerUp(PointerEventData eventData)
+    public void OnPointerUp(PointerEventData eventData)
     {
-        base.OnPointerUp(eventData);
         if(pressed)
         {
             if(mouseClickEvent != null) mouseClickEvent(Time.timeSinceLevelLoad - timestampPointerDown);
@@ -71,6 +69,11 @@ public abstract class UISetting
         return go;
     }
 
+    public string GetName()
+    {
+        return name;
+    }
+
     public Button GetBackgroundButton()
     {
         return button;
@@ -106,8 +109,14 @@ public abstract class UISetting
     public Action<string, float> backgroundButton_onButtonPressedLongEvent;
     private void OnButtonPressedLong(float duration)
     {
-        if (backgroundButton_onButtonPressedLongEvent != null) backgroundButton_onButtonPressedLongEvent(name, duration);
+        if (backgroundButton_onButtonPressedLongEvent != null && duration >= 2) backgroundButton_onButtonPressedLongEvent(name, duration);
     }
+
+    /// <summary>
+    /// Access to the current value.
+    /// </summary>
+    /// <returns>The current value of the setting as a string.</returns>
+    public abstract string GetValueString();
 
     public void Lock()
     {
@@ -125,21 +134,38 @@ public abstract class UISetting
 
     protected abstract void LockSetting();
     protected abstract void UnlockSetting();
-    public abstract void Clear();
+    public void Clear()
+    {
+        backgroundButton_onButtonPressedEvent = null;
+        backgroundButton_onButtonPressedLongEvent = null;
+        ClearRefs();
+    }
+    protected abstract void ClearRefs();
 }
 
 public class UISetting_Header : UISetting
 {
-
-    public UISetting_Header(GameObject parent, string name)
+    /// <summary>
+    /// Sets up the logic for the setting.
+    /// </summary>
+    /// <param name="go">If null, a GameObject is instantiated, otherwise the given object is used.</param>
+    /// <param name="parentTransform">If go == null, this is the parent of the newly instantiated GameObject.</param>
+    /// <param name="name">The name of the setting.</param>
+    public UISetting_Header(GameObject go, Transform parentTransform, string name)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_header, Vector3.zero, Quaternion.identity, parent.transform);
+        if (go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_header, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         InitBackgroundButton();
         // Set Name
         this.name = name;
-        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
         tmpro.text = name;
+    }
+
+    public override string GetValueString()
+    {
+        return name;
     }
 
     protected override void LockSetting()
@@ -152,7 +178,7 @@ public class UISetting_Header : UISetting
         // empty
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         // empty
     }
@@ -162,13 +188,19 @@ public class UISetting_Spacing : UISetting
 {
     protected static int id = 0;
 
-    public UISetting_Spacing(GameObject parent, string name)
+    public UISetting_Spacing(GameObject go, Transform parentTransform, string name)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_spacing, Vector3.zero, Quaternion.identity, parent.transform);
+        if(go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_spacing, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         InitBackgroundButton();
         // Set Name
         this.name = name + " (" + id++ + ")";
+    }
+
+    public override string GetValueString()
+    {
+        return "";
     }
 
     protected override void LockSetting()
@@ -181,7 +213,7 @@ public class UISetting_Spacing : UISetting
         // empty
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         // empty
     }
@@ -192,17 +224,18 @@ public class UISetting_Slider : UISetting
 
     private Slider slider;
 
-    public UISetting_Slider(GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers)
+    public UISetting_Slider(GameObject go, Transform parentTransform, string name, float minValue, float maxValue, float value, bool wholeNumbers)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
+        if(go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         InitBackgroundButton();
         // Set Name
         this.name = name;
-        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
         tmpro.text = name;
         // Set Values
-        slider = go.GetComponentInChildren<Slider>();
+        slider = this.go.GetComponentInChildren<Slider>();
         slider.minValue = minValue;
         slider.maxValue = maxValue;
         slider.value = value;
@@ -211,6 +244,11 @@ public class UISetting_Slider : UISetting
         // Add Callbacks
         slider.onValueChanged.AddListener(delegate { OnValueChanged(); });
 
+    }
+
+    public override string GetValueString()
+    {
+        return slider.value.ToString();
     }
 
     protected override void LockSetting()
@@ -223,7 +261,7 @@ public class UISetting_Slider : UISetting
         slider.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
     }
@@ -238,7 +276,7 @@ public class UISetting_Slider : UISetting
     public Action<string, float> onValueChangedEvent;
     private void OnValueChanged()
     {
-        onValueChangedEvent(this.name, slider.value);
+        if(onValueChangedEvent != null) onValueChangedEvent(this.name, slider.value);
     }
 
     public Slider GetSlider()
@@ -258,17 +296,18 @@ public class UISetting_Text : UISetting
         Text, Int, Float
     }
 
-    public UISetting_Text(GameObject parent, string name, string text, InputType inputType)
+    public UISetting_Text(GameObject go, Transform parentTransform, string name, string text, InputType inputType)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_text, Vector3.zero, Quaternion.identity, parent.transform);
+        if(go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_text, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         InitBackgroundButton();
         // Set Name
         this.name = name;
-        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
         tmpro.text = name;
         // Set Values
-        input = go.GetComponentInChildren<TMP_InputField>();
+        input = this.go.GetComponentInChildren<TMP_InputField>();
         input.text = text;
         // Store Data
         this.inputType = inputType;
@@ -291,12 +330,18 @@ public class UISetting_Text : UISetting
                 if (int.TryParse(input, out i)) return true;
                 else return false;
             case InputType.Float:
-                float f;
-                if (float.TryParse(input, out f)) return true;
+                if (TypeConverter.ConvertStringToFloat(input).conversionSuccessful) return true;
                 else return false;
             default:
                 return false;
         }
+    }
+
+    public override string GetValueString()
+    {
+        string text = input.text;
+        if (inputType == InputType.Float) text = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text);
+        return text;
     }
 
     protected override void LockSetting()
@@ -309,7 +354,7 @@ public class UISetting_Text : UISetting
         input.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
     }
@@ -324,8 +369,8 @@ public class UISetting_Text : UISetting
     public Action<string, string> onValueChangedEvent;
     private void OnValueChanged()
     {
-        string newInput = input.text;
-        if(IsInputValid(newInput) == false)
+        string text = input.text;
+        if(IsInputValid(text) == false)
         {
             // Input not valid, reset to old value
             input.text = prevText;
@@ -333,7 +378,8 @@ public class UISetting_Text : UISetting
         else
         {
             // Input valid, continue
-            onValueChangedEvent(this.name, input.text);
+            if (inputType == InputType.Float) text = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text);
+            if (onValueChangedEvent != null) onValueChangedEvent(this.name, text);
         }
     }
 }
@@ -342,14 +388,15 @@ public class UISetting_Dropdown : UISetting
 {
     private TMP_Dropdown dropdown;
 
-    public UISetting_Dropdown(GameObject parent, string name, string[] choices, string initialChoice)
+    public UISetting_Dropdown(GameObject go, Transform parentTransform, string name, string[] choices, string initialChoice)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_dropdown, Vector3.zero, Quaternion.identity, parent.transform);
+        if(go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_dropdown, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         InitBackgroundButton();
         // Set Name
         this.name = name;
-        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
         tmpro.text = name;
         // Set Values
         InitDropdown(choices, initialChoice);
@@ -358,10 +405,11 @@ public class UISetting_Dropdown : UISetting
         dropdown.onValueChanged.AddListener(delegate { OnValueChanged(); });
     }
 
-    public UISetting_Dropdown(SettingsUIHandler settings, GameObject parent, string name, Enum[] choices, Enum initialChoice)
+    public UISetting_Dropdown(GameObject go, Transform parentTransform, string name, Enum[] choices, Enum initialChoice)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_dropdown, Vector3.zero, Quaternion.identity, parent.transform);
+        if(go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_dropdown, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         // Set Values
         string[] stringChoices = new string[choices.Length];
         for (int i = 0; i < choices.Length; i++)
@@ -385,6 +433,11 @@ public class UISetting_Dropdown : UISetting
         dropdown.value = options.IndexOf(initialChoice);
     }
 
+    public override string GetValueString()
+    {
+        return dropdown.options[dropdown.value].text;
+    }
+
     protected override void LockSetting()
     {
         dropdown.enabled = false;
@@ -395,7 +448,7 @@ public class UISetting_Dropdown : UISetting
         dropdown.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
     }
@@ -420,7 +473,7 @@ public class UISetting_Dropdown : UISetting
     public Action<string, string> onValueChangedEvent;
     private void OnValueChanged()
     {
-        onValueChangedEvent(this.name, dropdown.options[dropdown.value].text);
+        if(onValueChangedEvent != null) onValueChangedEvent(this.name, dropdown.options[dropdown.value].text);
     }
 }
 
@@ -428,21 +481,27 @@ public class UISetting_Toggle : UISetting
 {
     private Toggle toggle;
 
-    public UISetting_Toggle(GameObject parent, string name, bool isOn)
+    public UISetting_Toggle(GameObject go, Transform parentTransform, string name, bool isOn)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_toggle, Vector3.zero, Quaternion.identity, parent.transform);
+        if(go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_toggle, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         InitBackgroundButton();
         // Set Name
         this.name = name;
-        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
         tmpro.text = name;
         // Set Values
-        toggle = go.GetComponentInChildren<Toggle>();
+        toggle = this.go.GetComponentInChildren<Toggle>();
         toggle.isOn = isOn;
 
         // Add Callbacks
         toggle.onValueChanged.AddListener(delegate { OnValueChanged(); });
+    }
+
+    public override string GetValueString()
+    {
+        return toggle.isOn ? "True" : "False";
     }
 
     protected override void LockSetting()
@@ -455,7 +514,7 @@ public class UISetting_Toggle : UISetting
         toggle.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
     }
@@ -470,7 +529,7 @@ public class UISetting_Toggle : UISetting
     public Action<string, bool> onValueChangedEvent;
     private void OnValueChanged()
     {
-        onValueChangedEvent(this.name, toggle.isOn);
+        if(onValueChangedEvent != null) onValueChangedEvent(this.name, toggle.isOn);
     }
 }
 
@@ -484,23 +543,24 @@ public class UISetting_ValueSlider : UISetting
     private bool mappingActive = false;
     private string[] mapping;
 
-    public UISetting_ValueSlider(GameObject parent, string name, float minValue, float maxValue, float value, bool wholeNumbers)
+    public UISetting_ValueSlider(GameObject go, Transform parentTransform, string name, float minValue, float maxValue, float value, bool wholeNumbers)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parent.transform);
+        if(go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_slider, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         InitBackgroundButton();
         // Set Name
         this.name = name;
-        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
         tmpro.text = name;
         // Set Values
-        slider = go.GetComponentInChildren<Slider>();
+        slider = this.go.GetComponentInChildren<Slider>();
         mappingActive = false;
         slider.minValue = minValue;
         slider.maxValue = maxValue;
         slider.value = value;
         slider.wholeNumbers = wholeNumbers;
-        input = go.GetComponentInChildren<TMP_InputField>();
+        input = this.go.GetComponentInChildren<TMP_InputField>();
         input.enabled = false;
         input.text = wholeNumbers ? ((int)value).ToString() : value.ToString();
 
@@ -509,23 +569,24 @@ public class UISetting_ValueSlider : UISetting
 
     }
 
-    public UISetting_ValueSlider(GameObject parent, string name, string[] values, float initialIndex)
+    public UISetting_ValueSlider(GameObject go, Transform parentTransform, string name, string[] values, float initialIndex)
     {
         // Add GameObject
-        go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_valueSlider, Vector3.zero, Quaternion.identity, parent.transform);
+        if(go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_valueSlider, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
         // Set Name
         this.name = name;
-        TextMeshProUGUI tmpro = go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
         tmpro.text = name;
         // Set Values
-        slider = go.GetComponentInChildren<Slider>();
+        slider = this.go.GetComponentInChildren<Slider>();
         mappingActive = true;
         mapping = values;
         slider.minValue = 0;
         slider.maxValue = values.Length - 1;
         slider.value = initialIndex;
         slider.wholeNumbers = true;
-        input = go.GetComponentInChildren<TMP_InputField>();
+        input = this.go.GetComponentInChildren<TMP_InputField>();
         input.enabled = false;
         UpdateInputField();
 
@@ -548,6 +609,12 @@ public class UISetting_ValueSlider : UISetting
         }
     }
 
+    public override string GetValueString()
+    {
+        if (mappingActive) return mapping[(int)slider.value];
+        else return "" + slider.value;
+    }
+
     protected override void LockSetting()
     {
         slider.enabled = false;
@@ -558,7 +625,7 @@ public class UISetting_ValueSlider : UISetting
         slider.enabled = true;
     }
 
-    public override void Clear()
+    protected override void ClearRefs()
     {
         onValueChangedEvent = null;
         onValueChangedEventString = null;
