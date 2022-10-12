@@ -23,7 +23,7 @@ public abstract class InitializationMethod
         Initialization.Compass compassDir = Initialization.Compass.E)
     {
         bool chir = true;
-        if (chirality == Initialization.Chirality.CounterClockwise)
+        if (chirality == Initialization.Chirality.Clockwise)
             chir = false;
         else if (chirality == Initialization.Chirality.Random)
             chir = Random.Range(0, 2) == 0;
@@ -210,7 +210,8 @@ public abstract class InitializationMethod
     /// still have holes if this is set to <c>0</c>.</param>
     /// <param name="chirality">The chirality setting for all particles.</param>
     /// <param name="compassDir">The compass setting for all particles.</param>
-    public void GenerateRandomWithHoles(int numParticles = 50, float holeProb = 0.3f, Initialization.Chirality chirality = Initialization.Chirality.Random, Initialization.Compass compassDir = Initialization.Compass.Random)
+    public void GenerateRandomWithHoles(int numParticles = 50, float holeProb = 0.3f,
+        Initialization.Chirality chirality = Initialization.Chirality.CounterClockwise, Initialization.Compass compassDir = Initialization.Compass.E)
     {
         if (numParticles < 1)
             return;

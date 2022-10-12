@@ -977,7 +977,7 @@ public class JMTestGenerator : InitializationMethod
             p.genericParams[0] = mode;
             p.genericParams[1] = 2;
 
-            p = AddParticle(new Vector2Int(-1, 2), Direction.E);
+            p = AddParticle(new Vector2Int(-1, 2));
             p.genericParams[0] = mode;
             p.genericParams[1] = 3;
         }
@@ -1117,7 +1117,7 @@ public class JMTestGenerator : InitializationMethod
             p.genericParams[1] = 1;
 
             // Contracted neighbor for handover
-            p = AddParticle(new Vector2Int(-2, 2), Direction.E);
+            p = AddParticle(new Vector2Int(-2, 2));
             p.genericParams[0] = mode;
             p.genericParams[1] = 2;
         }

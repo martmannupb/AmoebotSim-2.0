@@ -3417,7 +3417,7 @@ public class ParticleSystem : IReplayHistory
     /// <param name="chirality">The current chirality setting.</param>
     /// <param name="compassDir">The current compass direction setting.</param>
     public void AddParticleContracted(Vector2Int gridPos,
-        Initialization.Chirality chirality = Initialization.Chirality.Clockwise, Initialization.Compass compassDir = Initialization.Compass.E)
+        Initialization.Chirality chirality = Initialization.Chirality.CounterClockwise, Initialization.Compass compassDir = Initialization.Compass.E)
     {
         if (!inInitializationState)
         {
@@ -3426,7 +3426,7 @@ public class ParticleSystem : IReplayHistory
         }
 
         bool chiralityPart = true;
-        if (chirality == Initialization.Chirality.CounterClockwise ||
+        if (chirality == Initialization.Chirality.Clockwise ||
             chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
             chiralityPart = false;
 
@@ -3447,7 +3447,7 @@ public class ParticleSystem : IReplayHistory
     /// <param name="chirality">The current chirality setting.</param>
     /// <param name="compassDir">The current compass direction setting.</param>
     public void AddParticleExpanded(Vector2Int gridPosHead, Vector2Int gridPosTail,
-        Initialization.Chirality chirality = Initialization.Chirality.Clockwise, Initialization.Compass compassDir = Initialization.Compass.E)
+        Initialization.Chirality chirality = Initialization.Chirality.CounterClockwise, Initialization.Compass compassDir = Initialization.Compass.E)
     {
         if (!inInitializationState)
         {
@@ -3456,7 +3456,7 @@ public class ParticleSystem : IReplayHistory
         }
 
         bool chiralityPart = true;
-        if (chirality == Initialization.Chirality.CounterClockwise ||
+        if (chirality == Initialization.Chirality.Clockwise ||
             chirality == Initialization.Chirality.Random && Random.Range(0, 2) == 0)
             chiralityPart = false;
 

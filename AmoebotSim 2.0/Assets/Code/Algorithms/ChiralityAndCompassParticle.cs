@@ -809,7 +809,7 @@ public class ChiralityAndCompassInitializer : InitializationMethod
         while (NumGenericParameters() < 2)
             AddGenericParameter();
 
-        GenerateRandomWithHoles(numParticles, holeProb);
+        GenerateRandomWithHoles(numParticles, holeProb, Initialization.Chirality.Random, Initialization.Compass.Random);
 
         // Tell the particles their real chirality and compass direction
         foreach (InitializationParticle ip in GetParticles())
