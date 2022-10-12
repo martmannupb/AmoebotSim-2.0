@@ -160,7 +160,7 @@ public class SmartMaterialGenerator : InitializationMethod
 
     public static new string Name => "Smart Material";
 
-    public void Generate(int scale, int rows, int cols, bool hexagonShape = false)
+    public void Generate(int scale = 2, int rows = 2, int cols = 2, bool hexagonShape = false)
     {
         if (NumGenericParameters() < 1)
             AddGenericParameter();
@@ -187,6 +187,8 @@ public class SmartMaterialGenerator : InitializationMethod
             PlaceHexagonShape(scale, rows);
         else
             PlaceParallelogram(scale, rows, cols);
+
+        Log.Debug("Created system has " + GetParticles().Length + " particles");
     }
 
     private Vector2Int GetNeighborHexPos(Vector2Int pos, Direction direction, int scale, int distance = 1)
