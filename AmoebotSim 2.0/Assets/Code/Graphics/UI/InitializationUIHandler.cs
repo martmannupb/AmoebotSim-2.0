@@ -93,11 +93,18 @@ public class InitializationUIHandler : MonoBehaviour
         }
 
         // Init UI
+        // Algorithm Generation
+        List<string> algStrings = AlgorithmManager.Instance.GetAlgorithmNames();
+        alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algStrings.ToArray(), algStrings[0]);
+        alg_setting_algo.onValueChangedEvent += ValueChanged_Text;
+        alg_setting_paramAmount = new UISetting_ValueSlider(alg_go_paramAmount, null, "Param Amount", 0, 10, 0, true);
+        alg_setting_paramAmount.onValueChangedEvent += ValueChanged_Float;
         // Particle Generation
         List<string> genAlgStrings = InitializationMethodManager.Instance.GetAlgorithmNames();
-        genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings.Count > 0 ? genAlgStrings[0] : "");
+        string defaultGenerationMethod = AlgorithmManager.Instance.GetAlgorithmGenerationMethod(alg_setting_algo.GetValueString());
+        genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), defaultGenerationMethod != null ? defaultGenerationMethod : genAlgStrings[0]);
         genAlg_setting_genAlg.onValueChangedEvent += ValueChanged_Text;
-        SetUpAlgorithmUI(genAlgStrings[0]);
+        SetUpGenAlgUI(genAlg_setting_genAlg.GetValueString());
         // Additional Parameters
         List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(Initialization.Chirality)));
         chiralityList.Remove(Initialization.Chirality.Random.ToString());
@@ -111,23 +118,39 @@ public class InitializationUIHandler : MonoBehaviour
         addPar_setting_compassDir = new UISetting_Dropdown(addPar_go_compassDir, null, "Compass Dir", compassDirList.ToArray(), compassDirList[0]);
         addPar_setting_compassDir.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
         updatedSettings.Add(addPar_setting_compassDir);
-        // Algorithm Generation
-        List<string> algStrings = AlgorithmManager.Instance.GetAlgorithmNames();
-        alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algStrings.ToArray(), algStrings[0]);
-        alg_setting_algo.onValueChangedEvent += ValueChanged_Text;
-        alg_setting_paramAmount = new UISetting_ValueSlider(alg_go_paramAmount, null, "Param Amount", 0, 10, 0, true);
-        alg_setting_paramAmount.onValueChangedEvent += ValueChanged_Float;
+
         SetUpDynamicParams(0);
     }
 
     private void ResetUI()
     {
-        SetUpAlgorithmUI(genAlg_setting_genAlg.GetValueString());
+        SetUpGenAlgUI(genAlg_setting_genAlg.GetValueString());
 
     }
 
-    private void SetUpAlgorithmUI(string algorithm)
+    private void SetUpAlgUI(string algorithm)
     {
+        // Null Check (should never trigger)
+        if(AlgorithmManager.Instance.IsAlgorithmKnown(algorithm) == false)
+        {
+            Log.Error("Could not find algorithm " + algorithm + "!");
+            throw new System.NullReferenceException();
+        }
+
+        // Show default generation algorithm
+        string defaultGenAlg = AlgorithmManager.Instance.GetAlgorithmGenerationMethod(algorithm);
+        if(defaultGenAlg != null)
+        {
+            SetUpGenAlgUI(defaultGenAlg);
+        }
+        // Show algorithm parameters
+        // ..
+    }
+
+    private void SetUpGenAlgUI(string algorithm)
+    {
+        // Set Value
+        genAlg_setting_genAlg.SetValue(algorithm);
         // Clear old UI
         foreach (var setting in genAlg_settings)
         {
@@ -195,11 +218,11 @@ public class InitializationUIHandler : MonoBehaviour
     {
         switch (name)
         {
-            case "Gen. Alg.":
-                SetUpAlgorithmUI(text);
-                break;
             case "Algorithm":
-                // noting here yet
+                SetUpAlgUI(text);
+                break;
+            case "Gen. Alg.":
+                SetUpGenAlgUI(text);
                 break;
             default:
                 break;

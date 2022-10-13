@@ -387,6 +387,7 @@ public class UISetting_Text : UISetting
 public class UISetting_Dropdown : UISetting
 {
     private TMP_Dropdown dropdown;
+    private List<string> options;
 
     public UISetting_Dropdown(GameObject go, Transform parentTransform, string name, string[] choices, string initialChoice)
     {
@@ -426,11 +427,26 @@ public class UISetting_Dropdown : UISetting
     {
         dropdown = go.GetComponentInChildren<TMP_Dropdown>();
         dropdown.ClearOptions();
-        List<string> options = new List<string>();
+        options = new List<string>();
         foreach (string c in choices) options.Add(c);
         dropdown.AddOptions(options);
         if (options.Contains(initialChoice) == false) Log.Error("Setting_Dropdown: Constructor: choice not contained in choices!");
         dropdown.value = options.IndexOf(initialChoice);
+    }
+
+    public void SetValue(Enum value)
+    {
+        SetValue(value.ToString());
+    }
+
+    public void SetValue(string value)
+    {
+        if (options.Contains(value) == false)
+        {
+            Log.Error("Setting_Dropdown: SetValue: choice not contained in choices!");
+            return;
+        }
+        dropdown.value = options.IndexOf(value);
     }
 
     public override string GetValueString()
