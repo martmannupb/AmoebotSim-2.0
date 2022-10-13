@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -157,5 +156,11 @@ public class InitializationMethodManager
         }
 
         return true;
+    }
+
+    public bool IsAlgorithmKnown(string name)
+    {
+        AlgorithmInfo info = FindAlgorithm(name);
+        return info != null;
     }
 }

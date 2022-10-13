@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SmartMaterialParticle : ParticleAlgorithm
@@ -41,6 +39,8 @@ public class SmartMaterialParticle : ParticleAlgorithm
     public override int PinsPerEdge => 0;
 
     public static new string Name => "Smart Material";
+
+    public static new string GenerationMethod => SmartMaterialInitializer.Name;
 
     public override void ActivateBeep()
     {
@@ -151,9 +151,9 @@ public class SmartMaterialParticle : ParticleAlgorithm
 }
 
 
-public class SmartMaterialGenerator : InitializationMethod
+public class SmartMaterialInitializer : InitializationMethod
 {
-    public SmartMaterialGenerator(ParticleSystem system) : base(system)
+    public SmartMaterialInitializer(ParticleSystem system) : base(system)
     {
 
     }

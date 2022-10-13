@@ -126,6 +126,8 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     public static new string Name => "Line Formation";
 
+    public static new string GenerationMethod => LineFormationInitializer.Name;
+
     public override void ActivateMove()
     {
         // Use old movement system - we don't have to worry about bonds
@@ -910,9 +912,9 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
 
 // Initialization method
-public class LineFormationGenerator : InitializationMethod
+public class LineFormationInitializer : InitializationMethod
 {
-    public LineFormationGenerator(ParticleSystem system) : base(system) { }
+    public LineFormationInitializer(ParticleSystem system) : base(system) { }
 
     public static new string Name => "Line Formation";
 

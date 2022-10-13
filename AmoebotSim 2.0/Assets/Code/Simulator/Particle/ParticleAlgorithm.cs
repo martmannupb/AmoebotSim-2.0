@@ -89,6 +89,8 @@ public abstract class ParticleAlgorithm
 
     public static Initialization.Compass Compass { get { return Initialization.Compass.E; } }
 
+    public static string GenerationMethod { get { return null; } }
+
     /// <summary>
     /// This is one part of the main activation logic of the particle.
     /// It is called exactly once in each round and should contain the

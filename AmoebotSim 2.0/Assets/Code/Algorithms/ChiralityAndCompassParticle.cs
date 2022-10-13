@@ -213,6 +213,8 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     public static new Initialization.Compass Compass => Initialization.Compass.Random;
 
+    public static new string GenerationMethod => ChiralityAndCompassInitializer.Name;
+
     public override void ActivateMove()
     {
 

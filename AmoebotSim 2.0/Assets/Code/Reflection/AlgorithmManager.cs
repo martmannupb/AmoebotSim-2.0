@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
@@ -11,6 +10,7 @@ public class AlgorithmManager
     private static readonly string Name_Property = "Name";
     private static readonly string Chirality_Property = "Chirality";
     private static readonly string Compass_Property = "Compass";
+    private static readonly string Generator_Property = "GenerationMethod";
     
     // Singleton
     private static AlgorithmManager instance = new AlgorithmManager();
@@ -26,14 +26,17 @@ public class AlgorithmManager
         public ConstructorInfo ctor;
         public Initialization.Chirality chirality;
         public Initialization.Compass compassDir;
+        public string generationMethod;
 
-        public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, Initialization.Chirality chirality, Initialization.Compass compassDir)
+        public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, Initialization.Chirality chirality, Initialization.Compass compassDir,
+            string generationMethod)
         {
             this.name = name;
             this.type = type;
             this.ctor = ctor;
             this.chirality = chirality;
             this.compassDir = compassDir;
+            this.generationMethod = generationMethod;
         }
     }
 
@@ -48,6 +51,7 @@ public class AlgorithmManager
 
         Initialization.Chirality defaultChirality = (Initialization.Chirality)baseAlgoType.GetProperty(Chirality_Property).GetValue(null);
         Initialization.Compass defaultCompass = (Initialization.Compass)baseAlgoType.GetProperty(Compass_Property).GetValue(null);
+        string defaultGenerator = (string)baseAlgoType.GetProperty(Generator_Property).GetValue(null);
 
         algorithms = new Dictionary<string, AlgorithmInfo>();
 
@@ -56,6 +60,7 @@ public class AlgorithmManager
             PropertyInfo nameProp = algoType.GetProperty(Name_Property);
             PropertyInfo chiralityProp = algoType.GetProperty(Chirality_Property);
             PropertyInfo compassProp = algoType.GetProperty(Compass_Property);
+            PropertyInfo generatorProp = algoType.GetProperty(Generator_Property);
 
             string name;
             if (nameProp == null)
@@ -69,12 +74,16 @@ public class AlgorithmManager
 
             Initialization.Chirality chirality = defaultChirality;
             Initialization.Compass compass = defaultCompass;
+            string generator = defaultGenerator;
 
             if (chiralityProp != null)
                 chirality = (Initialization.Chirality)chiralityProp.GetValue(null);
 
             if (compassProp != null)
                 compass = (Initialization.Compass)compassProp.GetValue(null);
+
+            if (generatorProp != null)
+                generator = (string)generatorProp.GetValue(null);
 
             ConstructorInfo ctor = algoType.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) });
             if (ctor == null)
@@ -89,14 +98,8 @@ public class AlgorithmManager
             }
             else
             {
-                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, chirality, compass);
+                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, chirality, compass, generator);
             }
-        }
-
-        Debug.Log("Algorithms:");
-        foreach (KeyValuePair<string, AlgorithmInfo> kv in algorithms)
-        {
-            Debug.Log("Name: " + kv.Key + "\nType: " + kv.Value.type + "\nChirality: " + kv.Value.chirality + "\nCompass: " + kv.Value.compassDir);
         }
     }
 
@@ -131,6 +134,15 @@ public class AlgorithmManager
             throw new System.ArgumentException("Could not find algorithm");
     }
 
+    public string GetAlgorithmGenerationMethod(string name)
+    {
+        AlgorithmInfo info = FindAlgorithm(name);
+        if (info != null)
+            return info.generationMethod;
+        else
+            throw new System.ArgumentException("Could not find algorithm");
+    }
+
     public ParticleAlgorithm Instantiate(string name, Particle particle, int[] genericParams)
     {
         AlgorithmInfo info = FindAlgorithm(name);
@@ -146,5 +158,11 @@ public class AlgorithmManager
     public List<string> GetAlgorithmNames()
     {
         return algorithms.Keys.ToList();
+    }
+
+    public bool IsAlgorithmKnown(string name)
+    {
+        AlgorithmInfo info = FindAlgorithm(name);
+        return info != null;
     }
 }
