@@ -631,8 +631,11 @@ public class ParticleSystem : IReplayHistory
             // Stack of parallel expanded particles with two parallel bonds
             // Some of them have a contracted neighbor for handover
             // The system either contracts or stays expanded
+            // IMPORTANT: CASE WITH UNMARKED HANDOVERS DOES NOT WORK DUE TO
+            // UPDATED MODEL, SYSTEM NEVER CONTRACTS
 
-            bool contract = Random.Range(0, 2) == 0;
+            //bool contract = Random.Range(0, 2) == 0;
+            bool contract = false;
 
             for (int i = 0; i < 15; i++)
             {
@@ -1063,37 +1066,31 @@ public class ParticleSystem : IReplayHistory
                 p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d)] = true;
                 p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d.Opposite())] = false;
             }
-            // For pushing particles in handover: Opposite bond is not marked
+            // For pushing particles in handover: No bond except the one in movement direction is marked
             else if (a.type == ActionType.PUSH)
             {
                 Direction d = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
-                p.markedBondsGlobal[ParticleSystem_Utils.GetLabelInDir(d.Opposite())] = false;
-            }
-            // For pulling particles in handover: Bonds at origin (non-moving part) cannot be marked
-            else if (a.type == ActionType.PULL_HEAD)
-            {
-                for (int l = 0; l < 10; l++)
+                int moveDirLabel = ParticleSystem_Utils.GetLabelInDir(d);
+
+                for (int l = 0; l < 6; l++)
                 {
-                    if (ParticleSystem_Utils.IsHeadLabel(l, p.GlobalHeadDirection()))
-                    {
-                        p.markedBondsGlobal[l] = false;
-                    }
+                    p.markedBondsGlobal[l] = l == moveDirLabel;
                 }
             }
-            else if (a.type == ActionType.PULL_TAIL)
+            // For pulling particles in handover: Bonds at origin (non-moving part) cannot be marked,
+            // other bonds must be marked
+            else if (a.IsHandoverContraction())
             {
+                Direction globalHeadDir = p.GlobalHeadDirection();
                 for (int l = 0; l < 10; l++)
                 {
-                    if (ParticleSystem_Utils.IsTailLabel(l, p.GlobalHeadDirection()))
-                    {
-                        p.markedBondsGlobal[l] = false;
-                    }
+                    p.markedBondsGlobal[l] = ParticleSystem_Utils.IsHeadLabel(l, globalHeadDir) ^ p.isHeadOrigin;
                 }
             }
 
             // Compute movement offset
             Direction offsetDir = Direction.NONE;
-            if (a.type == ActionType.EXPAND || a.type == ActionType.PUSH)
+            if (a.IsExpansion())
             {
                 offsetDir = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
             }
