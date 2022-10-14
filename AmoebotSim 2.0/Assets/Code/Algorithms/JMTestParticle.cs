@@ -524,9 +524,9 @@ public class JMTestParticle : ParticleAlgorithm
     // Multiple parallel expanded particles with parallel bonds and some with neighbors
     // All either contract/perform handover with unmarked bonds or do not contract/
     // perform handover with marked bonds
+    // IMPORTANT: CASE WITH CONTRACTIONS/UNMARKED BOND HANDOVERS DOES NOT OCCUR ANYMORE
     private void Activate12()
     {
-        Debug.Log("Role: " + role.GetValue());
         // Roles 0-5 are expanded
         if (role < 6)
         {
@@ -1035,8 +1035,11 @@ public class JMTestInitializer : InitializationMethod
             // Stack of parallel expanded particles with two parallel bonds
             // Some of them have a contracted neighbor for handover
             // The system either contracts or stays expanded
+            // IMPORTANT: CASE WITH UNMARKED HANDOVERS DOES NOT WORK DUE TO
+            // UPDATED MODEL, SYSTEM NEVER CONTRACTS
 
-            bool contract = Random.Range(0, 2) == 0;
+            //bool contract = Random.Range(0, 2) == 0;
+            bool contract = false;
 
             for (int i = 0; i < 15; i++)
             {
