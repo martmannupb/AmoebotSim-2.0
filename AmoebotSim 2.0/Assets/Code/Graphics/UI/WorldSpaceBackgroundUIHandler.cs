@@ -46,7 +46,7 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
             Vector2Int amoebotMinCoordinates = new Vector2Int(Mathf.Min(amoebotBL.x, amoebotBR.x, amoebotTL.x, amoebotTR.x), Mathf.Min(amoebotBL.y, amoebotBR.y, amoebotTL.y, amoebotTR.y));
             Vector2Int amoebotMaxCoordinates = new Vector2Int(Mathf.Max(amoebotBL.x, amoebotBR.x, amoebotTL.x, amoebotTR.x), Mathf.Max(amoebotBL.y, amoebotBR.y, amoebotTL.y, amoebotTR.y));
             CellRect curRect = new CellRect(amoebotMinCoordinates.x, amoebotMinCoordinates.y, amoebotMaxCoordinates.x - amoebotMinCoordinates.x, amoebotMaxCoordinates.y - amoebotMinCoordinates.y);
-            if (activeRect != curRect)
+            if (activeRect != curRect || uiElementsActive == false)
             {
                 // Different Rect
                 activeRect = curRect;
@@ -105,6 +105,14 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
 
     public void ToggleBackgroundGrid()
     {
+        if(isActive == false)
+        {
+            if(Input.GetKey(KeyCode.LeftControl) == false)
+            {
+                Log.Warning("Do you really want to freeze Unity? If yes, press Ctrl while clicking that button!");
+                return;
+            }
+        }
         isActive = !isActive;
     }
 

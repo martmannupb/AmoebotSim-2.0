@@ -26,6 +26,7 @@ public class LogUIHandler : MonoBehaviour
     public List<GameObject> logElementList = new List<GameObject>();
     private int maxLogEntries = 30;
     private int logEntryID = 1;
+    private int scrollToBottomInAmountOfFrames = 0;
 
     // Timestamp
     private float timestampLastInteraction = 0f;
@@ -84,6 +85,11 @@ public class LogUIHandler : MonoBehaviour
 
     public void Update()
     {
+        // Scroll to Bottom
+        if (scrollToBottomInAmountOfFrames == 0) ScrollToBottom();
+        else scrollToBottomInAmountOfFrames--;
+
+        // Hide Timer
         bool hide = timeVisibleInitial != 0f ? timestampLastInteraction + timeVisibleInitial < Time.timeSinceLevelLoad : timestampLastInteraction + timeVisible < Time.timeSinceLevelLoad;
         // Disable log after a number of seconds (use settings to adjust)
         if(hide)
@@ -157,7 +163,7 @@ public class LogUIHandler : MonoBehaviour
         }
 
         // Scroll Down
-        ScrollToBottom();
+        scrollToBottomInAmountOfFrames = 2;
 
     }
 
@@ -175,9 +181,8 @@ public class LogUIHandler : MonoBehaviour
 
     public void ScrollToBottom()
     {
-        Canvas.ForceUpdateCanvases();
         scrollRect.verticalNormalizedPosition = 0f;
-        Canvas.ForceUpdateCanvases();
+        scrollToBottomInAmountOfFrames = 0;
     }
 
     /// <summary>
