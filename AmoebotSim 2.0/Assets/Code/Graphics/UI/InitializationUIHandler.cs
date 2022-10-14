@@ -101,10 +101,8 @@ public class InitializationUIHandler : MonoBehaviour
         alg_setting_paramAmount.onValueChangedEvent += ValueChanged_Float;
         // Particle Generation
         List<string> genAlgStrings = InitializationMethodManager.Instance.GetAlgorithmNames();
-        string defaultGenerationMethod = AlgorithmManager.Instance.GetAlgorithmGenerationMethod(alg_setting_algo.GetValueString());
-        genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), defaultGenerationMethod != null ? defaultGenerationMethod : genAlgStrings[0]);
+        genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings[0]);
         genAlg_setting_genAlg.onValueChangedEvent += ValueChanged_Text;
-        SetUpGenAlgUI(genAlg_setting_genAlg.GetValueString());
         // Additional Parameters
         List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(Initialization.Chirality)));
         chiralityList.Remove(Initialization.Chirality.Random.ToString());
@@ -118,14 +116,16 @@ public class InitializationUIHandler : MonoBehaviour
         addPar_setting_compassDir = new UISetting_Dropdown(addPar_go_compassDir, null, "Compass Dir", compassDirList.ToArray(), compassDirList[0]);
         addPar_setting_compassDir.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
         updatedSettings.Add(addPar_setting_compassDir);
+        // Reset
+        ResetUI();
 
         SetUpDynamicParams(0);
     }
 
     private void ResetUI()
     {
-        SetUpGenAlgUI(genAlg_setting_genAlg.GetValueString());
-
+        SetUpGenAlgUI(genAlg_setting_genAlg.GetValueString()); // reinit this first so that the default for the algo can be set afterwards (if available)
+        SetUpAlgUI(alg_setting_algo.GetValueString());
     }
 
     private void SetUpAlgUI(string algorithm)
