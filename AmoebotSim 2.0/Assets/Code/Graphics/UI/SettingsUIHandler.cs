@@ -11,7 +11,9 @@ public class SettingsUIHandler : MonoBehaviour
     private UIHandler uiHandler;
 
     // Data
+    public GameObject settingsPanel;
     public GameObject settingsParent;
+    private Vector2Int nonFullScreenResolution = new Vector2Int(-1, -1);
 
     public enum SettingType
     {
@@ -24,7 +26,7 @@ public class SettingsUIHandler : MonoBehaviour
         uiHandler = FindObjectOfType<UIHandler>();
         if (uiHandler == null) Log.Error("Could not find UIHandler.");
         // Init
-        settingsParent.SetActive(false);
+        settingsPanel.SetActive(false);
         InitSettings();
     }
 
@@ -32,6 +34,8 @@ public class SettingsUIHandler : MonoBehaviour
     {
         // Defaults _________________________
         uiHandler.sim.renderSystem.SetAntiAliasing(8);
+        nonFullScreenResolution = new Vector2Int(Screen.width, Screen.height);
+        Screen.SetResolution(nonFullScreenResolution.x, nonFullScreenResolution.y, false);
         // Settings _________________________
         // Header
         UISetting_Header setting_header_animationsBeeps = new UISetting_Header(null, settingsParent.transform, "Animations and Circuits");
@@ -47,6 +51,9 @@ public class SettingsUIHandler : MonoBehaviour
         // Header
         UISetting_Spacing setting_spacing = new UISetting_Spacing(null, settingsParent.transform, "Spacing");
         UISetting_Header setting_header_graphics = new UISetting_Header(null, settingsParent.transform, "Graphics");
+        // Fullscreen
+        UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, "Fullscreen", false);
+        setting_fullscreen.onValueChangedEvent += SettingChanged_Toggle;
         // Camera Angle
         UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, "Camera Angle", 0f, 11f, 0f, true);
         setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
@@ -98,11 +105,29 @@ public class SettingsUIHandler : MonoBehaviour
         }
     }
 
-
     private void SettingChanged_Toggle(string name, bool isOn)
     {
         switch (name)
         {
+            case "Fullscreen":
+                if(isOn)
+                {
+                    // Enable Fullscreen
+                    if (Screen.fullScreen == false)
+                    {
+                        nonFullScreenResolution = new Vector2Int(Screen.width, Screen.height);
+                        Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, true);
+                    }
+                }
+                else
+                {
+                    // Disable Fullscreen
+                    if (Screen.fullScreen)
+                    {
+                        Screen.SetResolution(nonFullScreenResolution.x, nonFullScreenResolution.y, false);
+                    }
+                }
+                break;
             case "Circuit Border":
                 SettingsGlobal.circuitBorderActive = isOn;
                 // Reinit RenderBatches to apply changes
@@ -136,12 +161,12 @@ public class SettingsUIHandler : MonoBehaviour
 
     public void Button_SettingsPressed()
     {
-        settingsParent.SetActive(!settingsParent.activeInHierarchy);
+        settingsPanel.SetActive(!settingsPanel.activeInHierarchy);
     }
 
     public void Close()
     {
-        settingsParent.SetActive(false);
+        settingsPanel.SetActive(false);
     }
 
 

@@ -201,10 +201,6 @@ public class InitializationUIHandler : MonoBehaviour
                 genAlg_settings.Add((UISetting)setting);
             }
         }
-        Log.Debug("Continue to code here.");
-
-        // ..
-
     }
 
     private void SetUpDynamicParams(int amount)
