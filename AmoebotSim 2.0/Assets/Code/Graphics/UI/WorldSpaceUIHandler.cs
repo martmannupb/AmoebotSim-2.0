@@ -15,6 +15,9 @@ public class WorldSpaceUIHandler : MonoBehaviour
     public GameObject go_worldSpaceUI;
     // Buttons
     public Button button_hideOverlay;
+    // Fonts
+    public TMP_FontAsset font_basic;
+    public TMP_FontAsset font_arrows; // must include the special ASCII arrow chars
 
     public struct ParticleTextUIData
     {
@@ -45,6 +48,8 @@ public class WorldSpaceUIHandler : MonoBehaviour
     private Color color_particleTextBackgroundDefault = new Color(1f, 1f, 1f, 172f / 255f);
     private Color color_particleTextBackgroundTrue = new Color(90f / 255f, 255f / 255f, 99f / 255f, 172f / 255f);
     private Color color_particleTextBackgroundFalse = new Color(255f / 255f, 101f / 255f, 90f / 255f, 172f / 255f);
+    private Color color_particleTextBackgroundCounterClockwise = new Color(252f / 255f, 255f / 255f, 90f / 255f, 172f / 255f);
+    private Color color_particleTextBackgroundClockwise = new Color(90f / 255f, 251f / 255f, 255f / 255f, 172f / 255f);
 
     // Pooling
     private Stack<GameObject> pool_particleTextUI = new Stack<GameObject>();
@@ -66,7 +71,9 @@ public class WorldSpaceUIHandler : MonoBehaviour
         button_hideOverlay.interactable = false;
 
         // Test
-        DisplayText(TextType.Text, "Contract");
+        //DisplayText(TextType.Text, "Contract");
+
+        // Hide
         HideAll();
     }
 
@@ -147,8 +154,13 @@ public class WorldSpaceUIHandler : MonoBehaviour
                 }
                 break;
             case TextType.Chirality:
+                // Show Chirality (always available)
+                UpdateParticleText_Chirality(particle, particle.Chirality());
+                data.isVisible = true;
                 break;
             case TextType.CompassDir:
+                UpdateParticleText_CompassDir(particle, particle.CompassDir());
+                data.isVisible = true;
                 break;
             case TextType.Text:
                 UpdateParticleText(particle, display_identifier);
@@ -201,7 +213,9 @@ public class WorldSpaceUIHandler : MonoBehaviour
         Color color = color_particleTextBackgroundDefault;
         data.go.GetComponent<Image>().color = color;
         // Set Text
-        data.go.GetComponentInChildren<TextMeshProUGUI>().text = text;
+        TextMeshProUGUI tmp = data.go.GetComponentInChildren<TextMeshProUGUI>();
+        tmp.font = font_basic;
+        tmp.text = text;
     }
 
     private void UpdateParticleText(IParticleState particle, bool isTrue)
@@ -213,7 +227,35 @@ public class WorldSpaceUIHandler : MonoBehaviour
         else color = color_particleTextBackgroundFalse;
         data.go.GetComponent<Image>().color = color;
         // Set Text
-        data.go.GetComponentInChildren<TextMeshProUGUI>().text = isTrue ? "True" : "False";
+        TextMeshProUGUI tmp = data.go.GetComponentInChildren<TextMeshProUGUI>();
+        tmp.font = font_basic;
+        tmp.text = isTrue ? "True" : "False";
+    }
+
+    private void UpdateParticleText_Chirality(IParticleState particle, bool counterClockwise)
+    {
+        ParticleTextUIData data = particleTextUIData[particle];
+        // Set Color
+        Color color;
+        if (counterClockwise) color = color_particleTextBackgroundCounterClockwise;
+        else color = color_particleTextBackgroundClockwise;
+        data.go.GetComponent<Image>().color = color;
+        // Set Text
+        TextMeshProUGUI tmp = data.go.GetComponentInChildren<TextMeshProUGUI>();
+        tmp.font = font_arrows;
+        tmp.text = counterClockwise ? "\u2B6F" : "\u2B6E";
+    }
+
+    private void UpdateParticleText_CompassDir(IParticleState particle, Direction compassDir)
+    {
+        ParticleTextUIData data = particleTextUIData[particle];
+        // Set Color
+        Color color = color_particleTextBackgroundDefault;
+        data.go.GetComponent<Image>().color = color;
+        // Set Text
+        TextMeshProUGUI tmp = data.go.GetComponentInChildren<TextMeshProUGUI>();
+        tmp.font = font_basic;
+        tmp.text = compassDir.ToString();
     }
 
     private void UpdateParticleTextPosition(IParticleState particle, Vector2 particlePosition)

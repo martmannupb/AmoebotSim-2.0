@@ -2933,7 +2933,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 312.8847, y: 299.52}
+  m_SizeDelta: {x: 312.8847, y: 131.61}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &226934757
 MonoBehaviour:
@@ -2961,8 +2961,8 @@ MonoBehaviour:
 
     Chirality: Clockwise
 
-    Default Compass
-    Dir: 4'
+    Compass Dir:
+    4'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -9318,7 +9318,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.39001465, y: -0.30999756}
+  m_AnchoredPosition: {x: -0.39013672, y: -0.30999756}
   m_SizeDelta: {x: -0.78, y: -0.020004272}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &874331444
@@ -12579,6 +12579,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   go_worldSpaceUI: {fileID: 624619504}
   button_hideOverlay: {fileID: 272770167}
+  font_basic: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  font_arrows: {fileID: 11400000, guid: 274312589dc13044c8c2a04f0dd5e7e5, type: 2}
 --- !u!1 &1215037102
 GameObject:
   m_ObjectHideFlags: 0
@@ -19023,7 +19025,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.010620117, y: 14.75293}
+  m_AnchoredPosition: {x: 0.0107421875, y: 14.75293}
   m_SizeDelta: {x: -706.78, y: -129.51}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2049211245
@@ -23171,7 +23173,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -0.38000488, y: 14.163994}
+  m_AnchoredPosition: {x: -0.3798828, y: 14.163994}
   m_SizeDelta: {x: -0.80005, y: 28.338}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4315282579430259214

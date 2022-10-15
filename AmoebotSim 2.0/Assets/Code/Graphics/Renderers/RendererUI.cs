@@ -387,7 +387,7 @@ public class RendererUI
                     }
                     else if(sim.uiHandler.particleUI.IsOpen())
                     {
-                        Particle activeParticle = sim.uiHandler.particleUI.GetShownParticle();
+                        IParticleState activeParticle = sim.uiHandler.particleUI.GetShownParticle();
                         if(activeParticle != null)
                         {
                             Vector3 worldPos_head = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(activeParticle.Head());

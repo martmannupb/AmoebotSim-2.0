@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine;
+using System;
 
 public class ParticleUIHandler : MonoBehaviour
 {
@@ -19,7 +20,7 @@ public class ParticleUIHandler : MonoBehaviour
     public GameObject go_attributeParent;
 
     // Data
-    private Particle particle;
+    private IParticleState particle;
     private Dictionary<string, IParticleAttribute> attributeNameToIParticleAttribute = new Dictionary<string, IParticleAttribute>();
     private Dictionary<string, UISetting> settings = new Dictionary<string, UISetting>();
 
@@ -50,7 +51,7 @@ public class ParticleUIHandler : MonoBehaviour
         ClearPanel();
     }
 
-    public void Open(Particle p)
+    public void Open(IParticleState p)
     {
         bool inInitMode = sim.uiHandler.initializationUI.IsOpen();
         ReinitParticlePanel(p);
@@ -68,7 +69,7 @@ public class ParticleUIHandler : MonoBehaviour
         return go_particlePanel.activeSelf;
     }
 
-    public Particle GetShownParticle()
+    public IParticleState GetShownParticle()
     {
         return particle;
     }
@@ -98,7 +99,7 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
-    private void ReinitParticlePanel(Particle p)
+    private void ReinitParticlePanel(IParticleState p)
     {
         // Clear
         ClearPanel();
@@ -109,6 +110,7 @@ public class ParticleUIHandler : MonoBehaviour
         RefreshHeader();
 
         // Attributes
+        AddAttributes_ChiralityAndCompassDir(p);
         foreach (var attribute in p.GetAttributes())
         {
             AddAttribute(attribute);
@@ -123,6 +125,7 @@ public class ParticleUIHandler : MonoBehaviour
         if(particle != null)
         {
             RefreshHeader();
+            RefreshAttributes_ChiralityAndCompassDir();
             foreach (var attribute in particle.GetAttributes())
             {
                 RefreshAttribute(attribute);
@@ -135,11 +138,29 @@ public class ParticleUIHandler : MonoBehaviour
     /// </summary>
     private void RefreshHeader()
     {
-        if (particle != null) headerText.text = "ID: " + particle.id + "\n" + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.Description() +
-                "\nExp or Contr Dir: "+ RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.globalExpansionOrContractionDir +
-                "\nPos Cur (no jms): " + (RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.isJointMovement ? RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.position1 - RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.jointMovementState.jointExpansionOffset : RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.position1) +
-                "\nPos Cur: " + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_cur.ToString() + "\nPos Prev: " + RendererParticles.instance.GetGraphicsAdapterImpl(particle).state_prev.ToString() +
-                "\nPosition: (" + (particle.IsExpanded() ? (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y) : (particle.Head().x + "," + particle.Head().y)) + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted") + "\nChirality: " + (particle.chirality ? "CC" : "C") + "\nCompass Dir: " + particle.comDir.ToString();
+        if (particle != null) headerText.text = "Position: (" + (particle.IsExpanded() ? (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y) : (particle.Head().x + "," + particle.Head().y))
+                + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted")
+                + "\nChirality: " + (particle.Chirality() ? "CC" : "C") + "\nCompass Dir: " + particle.CompassDir().ToString();
+    }
+
+    /// <summary>
+    /// Updates chirality and compass dir.
+    /// </summary>
+    private void RefreshAttributes_ChiralityAndCompassDir()
+    {
+        if (IsOpen() == false) return;
+
+        UISetting settingDef;
+        if (settings.TryGetValue("Chirality", out settingDef))
+        {
+            UISetting_Dropdown setting = (UISetting_Dropdown)settingDef;
+            setting.UpdateValue(particle.Chirality() ? "CounterClockwise" : "Clockwise");
+        }
+        if (settings.TryGetValue("Compass Dir", out settingDef))
+        {
+            UISetting_Dropdown setting = (UISetting_Dropdown)settingDef;
+            setting.UpdateValue(particle.CompassDir().ToString());
+        }
     }
 
     /// <summary>
@@ -183,6 +204,28 @@ public class ParticleUIHandler : MonoBehaviour
                 setting.UpdateValue(particleAttribute.ToString_AttributeValue());
             }
         }
+    }
+
+    public void AddAttributes_ChiralityAndCompassDir(IParticleState p)
+    {
+        // Chirality
+        bool chirality = p.Chirality();
+        string[] choices = new string[] { "Clockwise", "CounterClockwise" };
+        UISetting_Dropdown setting = new UISetting_Dropdown(null, go_attributeParent.transform, "Chirality", choices, chirality ? "CounterClockwise" : "Clockwise");
+        setting.GetGameObject().name = "Chirality";
+        setting.onValueChangedEvent += SettingChanged_Dropdown;
+        setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+        setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
+        settings.Add("Chirality", setting);
+        // Compass Dir
+        Direction compassDir = p.CompassDir();
+        choices = System.Enum.GetNames(typeof(Direction));
+        setting = new UISetting_Dropdown(null, go_attributeParent.transform, "Compass Dir", choices, compassDir.ToString());
+        setting.GetGameObject().name = "Compass Dir";
+        setting.onValueChangedEvent += SettingChanged_Dropdown;
+        setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+        setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
+        settings.Add("Compass Dir", setting);
     }
 
     public void AddAttribute(IParticleAttribute particleAttribute)
@@ -263,21 +306,26 @@ public class ParticleUIHandler : MonoBehaviour
 
     public void AttributeClicked(string name)
     {
-        if(IsOpen())
+        // Null Check
+        if (WorldSpaceUIHandler.instance == null)
+        {
+            Log.Error("ParticleUIHandler: AttributeClicked: WorldSpaceUIHandler.instance is null!");
+            return;
+        }
+
+        if (IsOpen())
         {
             IParticleAttribute attribute;
             attributeNameToIParticleAttribute.TryGetValue(name, out attribute);
             if(attribute != null)
             {
                 // An attribute has been clicked in the open particle panel
-                // Null Check
-                if(WorldSpaceUIHandler.instance == null) 
-                {
-                    Log.Error("ParticleUIHandler: AttributeClicked: WorldSpaceUIHandler.instance is null!");
-                    return;
-                }
-
                 WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Attribute, name);
+            }
+            else
+            {
+                if (name.Equals("Chirality")) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Chirality, "Chirality");
+                else if (name.Equals("Compass Dir")) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.CompassDir, "Compass Dir");
             }
         }
     }
@@ -431,6 +479,18 @@ public class ParticleUIHandler : MonoBehaviour
                 if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 return;
             }
+        }
+        if (name.Equals("Chirality"))
+        {
+            particle.SetChirality(value.Equals("CounterClockwise") ? true : false);
+            if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
+            return;
+        }
+        if (name.Equals("Compass Dir"))
+        {
+            particle.SetCompassDir((Direction)Enum.Parse(typeof(Direction), value));
+            if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
+            return;
         }
     }
 
