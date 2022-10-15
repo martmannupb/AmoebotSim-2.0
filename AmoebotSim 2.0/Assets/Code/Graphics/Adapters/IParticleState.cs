@@ -46,6 +46,12 @@ public interface IParticleState
     Direction CompassDir();
 
     /// <summary>
+    /// Returns a list of all <see cref="ParticleAttribute{T}"/>s of the particle.
+    /// </summary>
+    /// <returns>A list containing all attributes of the particle.</returns>
+    List<IParticleAttribute> GetAttributes();
+
+    /// <summary>
     /// Provides access to <see cref="ParticleAttribute{T}"/>s by their display names.
     /// </summary>
     /// <param name="attrName">The display of the attribute to return.</param>

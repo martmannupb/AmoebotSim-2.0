@@ -124,6 +124,11 @@ public class InitializationParticle : IParticleState
         return compassDir;
     }
 
+    public List<IParticleAttribute> GetAttributes()
+    {
+        return new List<IParticleAttribute>();
+    }
+
     public IParticleAttribute TryGetAttributeByName(string attrName)
     {
         return null;
