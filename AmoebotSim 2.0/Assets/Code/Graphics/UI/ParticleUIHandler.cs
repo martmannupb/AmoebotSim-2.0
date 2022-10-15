@@ -139,8 +139,7 @@ public class ParticleUIHandler : MonoBehaviour
     private void RefreshHeader()
     {
         if (particle != null) headerText.text = "Position: (" + (particle.IsExpanded() ? (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y) : (particle.Head().x + "," + particle.Head().y))
-                + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted")
-                + "\nChirality: " + (particle.Chirality() ? "CC" : "C") + "\nCompass Dir: " + particle.CompassDir().ToString();
+                + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted");
     }
 
     /// <summary>
