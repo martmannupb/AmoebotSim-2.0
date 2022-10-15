@@ -1334,6 +1334,18 @@ public class Particle : IParticleState, IReplayHistory
         return comDir;
     }
 
+    public void SetChirality(bool chirality)
+    {
+        // Do nothing
+        Log.Warning("Chirality of particles cannot be changed during simulation.");
+    }
+
+    public void SetCompassDir(Direction compassDir)
+    {
+        // Do nothing
+        Log.Warning("Compass direction of particles cannot be changed during simulation.");
+    }
+
     public void Print()
     {
         Debug.Log("Position history:");

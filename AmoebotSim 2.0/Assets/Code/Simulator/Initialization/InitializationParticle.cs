@@ -124,6 +124,17 @@ public class InitializationParticle : IParticleState
         return compassDir;
     }
 
+    public void SetChirality(bool chirality)
+    {
+        this.chirality = chirality;
+    }
+
+    public void SetCompassDir(Direction compassDir)
+    {
+        if (compassDir.IsCardinal())
+            this.compassDir = compassDir;
+    }
+
     public List<IParticleAttribute> GetAttributes()
     {
         return new List<IParticleAttribute>();

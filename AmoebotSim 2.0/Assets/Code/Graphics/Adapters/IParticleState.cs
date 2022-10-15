@@ -46,6 +46,22 @@ public interface IParticleState
     Direction CompassDir();
 
     /// <summary>
+    /// Sets the particle's chirality to the given value. Only works if
+    /// the particle is in a state that allows the chirality to be set.
+    /// </summary>
+    /// <param name="chirality">The new chirality. <c>true</c> means
+    /// counter-clockwise, <c>false</c> means clockwise.</param>
+    void SetChirality(bool chirality);
+
+    /// <summary>
+    /// Sets the particle's compass direction to the given value. Only works
+    /// if the particle is in a state that allows the compass to be set.
+    /// </summary>
+    /// <param name="compassDir">The new compass direction, given as a
+    /// global cardinal direction.</param>
+    void SetCompassDir(Direction compassDir);
+
+    /// <summary>
     /// Returns a list of all <see cref="ParticleAttribute{T}"/>s of the particle.
     /// </summary>
     /// <returns>A list containing all attributes of the particle.</returns>
