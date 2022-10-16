@@ -37,6 +37,7 @@ public class RendererParticles_RenderBatch
     private MaterialPropertyBlockData_CircParticles propertyBlock_circle_connector_contracting = new MaterialPropertyBlockData_CircParticles();
     // Materials
     private Material circuitPinMaterial;
+    private Material hexagonWithPinsMaterial;
 
 
     // Precalculated Data _____
@@ -113,6 +114,7 @@ public class RendererParticles_RenderBatch
         // Circuit Pins
         // Generate Material
         circuitPinMaterial = TextureCreator.GetPinBorderMaterial(properties.pinsPerSide);
+        hexagonWithPinsMaterial = TextureCreator.GetHexagonWithPinsMaterial(properties.pinsPerSide);
     }
 
     public bool Particle_Add(ParticleGraphicsAdapterImpl graphicalData)
@@ -421,13 +423,13 @@ public class RendererParticles_RenderBatch
             if (i == particleMatricesCircle_Contracted.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
             else listLength = maxArraySize;
 
-            // Particles
-            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, MaterialDatabase.material_hexagonal_particleCombined, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+            // Particles (previous mat: MaterialDatabase.material_hexagonal_particleCombined)
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, hexagonWithPinsMaterial, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, hexagonWithPinsMaterial, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, hexagonWithPinsMaterial, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+            Graphics.DrawMeshInstanced(mesh_hex_particle, 0, hexagonWithPinsMaterial, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
             // Pins
-            if(RenderSystem.flag_showCircuitView)
+            if (RenderSystem.flag_showCircuitView)
             {
                 Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesPins_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
                 Graphics.DrawMeshInstanced(mesh_hex_particle, 0, circuitPinMaterial, particleMatricesPins_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
