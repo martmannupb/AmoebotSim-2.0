@@ -233,4 +233,63 @@ static class DirectionHelpers
     {
         return d < 0 ? Direction.NONE : (Direction)((d % 6) * 2 + 1);
     }
+
+    /// <summary>
+    /// Creates an array of consecutive cardinal or secondary directions.
+    /// </summary>
+    /// <param name="start">The first element of the array. If this is
+    /// a cardinal/secondary direction, all directions in the array will
+    /// be cardinal/secondary. If the value is <see cref="Direction.NONE"/>,
+    /// all directions will be <see cref="Direction.NONE"/>.</param>
+    /// <param name="number">The number of elements in the array.
+    /// The array will have length 0 for any value less than or
+    /// equal to 0. If the value is greater than 6, the directions
+    /// will start repeating.</param>
+    /// <param name="clockwise">If <c>true</c>, the directions
+    /// are listed in clockwise order.</param>
+    /// <returns>An array containing <paramref name="number"/>
+    /// directions, starting at <paramref name="start"/>.</returns>
+    public static Direction[] Iterate60(Direction start, int number, bool clockwise = false)
+    {
+        number = Mathf.Max(0, number);
+        Direction[] directions = new Direction[number];
+        int incr = clockwise ? -1 : 1;
+
+        for (int i = 0; i < number; i++)
+        {
+            directions[i] = start;
+            start = start.Rotate60(incr);
+        }
+
+        return directions;
+    }
+
+    /// <summary>
+    /// Creates an array of consecutive cardinal and secondary directions.
+    /// </summary>
+    /// <param name="start">The first element of the array. If the value is
+    /// <see cref="Direction.NONE"/>, all directions in the array will be
+    /// <see cref="Direction.NONE"/>.</param>
+    /// <param name="number">The number of elements in the array.
+    /// The array will have length 0 for any value less than or
+    /// equal to 0. If the value is greater than 12, the directions
+    /// will start repeating.</param>
+    /// <param name="clockwise">If <c>true</c>, the directions
+    /// are listed in clockwise order.</param>
+    /// <returns>An array containing <paramref name="number"/>
+    /// directions, starting at <paramref name="start"/>.</returns>
+    public static Direction[] Iterate30(Direction start, int number, bool clockwise = false)
+    {
+        number = Mathf.Max(0, number);
+        Direction[] directions = new Direction[number];
+        int incr = clockwise ? -1 : 1;
+
+        for (int i = 0; i < number; i++)
+        {
+            directions[i] = start;
+            start = start.Rotate30(incr);
+        }
+
+        return directions;
+    }
 }
