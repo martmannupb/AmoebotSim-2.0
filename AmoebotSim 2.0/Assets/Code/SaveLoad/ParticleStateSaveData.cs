@@ -42,7 +42,7 @@ public class ParticleStateSaveData
 
     // Circuit data
     public PinConfigurationHistorySaveData pinConfigurationHistory;
-    public ValueHistorySaveData<BitArraySaveData> receivedBeepsHistory;
+    public ValueHistorySaveData<bool>[] receivedBeepsHistory;
     public ValueHistorySaveData<MessageSaveData>[] receivedMessagesHistory;
     public ValueHistorySaveData<bool>[] plannedBeepsHistory;
     public ValueHistorySaveData<MessageSaveData>[] plannedMessagesHistory;

@@ -101,7 +101,7 @@ public class Particle : IParticleState, IReplayHistory
     /// Indices equal (local) partition set IDs.
     /// </summary>
     private BitArray receivedBeeps;
-    private ValueHistoryBitArray receivedBeepsHistory;
+    private ValueHistory<bool>[] receivedBeepsHistory;
 
     public Message[] receivedMessages;
     private ValueHistoryMessage[] receivedMessagesHistory;
@@ -328,7 +328,7 @@ public class Particle : IParticleState, IReplayHistory
         receivedMessages = new Message[maxNumPins];
         plannedBeeps = new BitArray(maxNumPins);
         plannedMessages = new Message[maxNumPins];
-        receivedBeepsHistory = new ValueHistoryBitArray((BitArray)receivedBeeps.Clone(), currentRound);
+        receivedBeepsHistory = new ValueHistory<bool>[maxNumPins];
         receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
         plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
         plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
@@ -338,6 +338,7 @@ public class Particle : IParticleState, IReplayHistory
         partitionSetColorsOverride = new bool[maxNumPins];
         for (int i = 0; i < maxNumPins; i++)
         {
+            receivedBeepsHistory[i] = new ValueHistory<bool>(false, currentRound);
             receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
             plannedBeepsHistory[i] = new ValueHistory<bool>(false, currentRound);
             plannedMessageHistory[i] = new ValueHistoryMessage(null, currentRound);
@@ -1267,9 +1268,9 @@ public class Particle : IParticleState, IReplayHistory
     /// </summary>
     public void StoreBeepsAndMessages()
     {
-        receivedBeepsHistory.RecordValueInRound((BitArray)receivedBeeps.Clone(), system.CurrentRound);
         for (int i = 0; i < receivedMessagesHistory.Length; i++)
         {
+            receivedBeepsHistory[i].RecordValueInRound(receivedBeeps[i], system.CurrentRound);
             receivedMessagesHistory[i].RecordValueInRound(receivedMessages[i], system.CurrentRound);
             plannedBeepsHistory[i].RecordValueInRound(plannedBeeps[i], system.CurrentRound);
             plannedMessageHistory[i].RecordValueInRound(plannedMessages[i], system.CurrentRound);
@@ -1409,9 +1410,9 @@ public class Particle : IParticleState, IReplayHistory
 
         // Reset pin configuration
         pinConfigurationHistory.SetMarkerToRound(round);
-        receivedBeepsHistory.SetMarkerToRound(round);
-        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        for (int i = 0; i < receivedBeepsHistory.Length; i++)
         {
+            receivedBeepsHistory[i].SetMarkerToRound(round);
             receivedMessagesHistory[i].SetMarkerToRound(round);
             plannedBeepsHistory[i].SetMarkerToRound(round);
             plannedMessageHistory[i].SetMarkerToRound(round);
@@ -1449,9 +1450,9 @@ public class Particle : IParticleState, IReplayHistory
         markedBondHistory.StepBack();
 
         pinConfigurationHistory.StepBack();
-        receivedBeepsHistory.StepBack();
-        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        for (int i = 0; i < receivedBeepsHistory.Length; i++)
         {
+            receivedBeepsHistory[i].StepBack();
             receivedMessagesHistory[i].StepBack();
             plannedBeepsHistory[i].StepBack();
             plannedMessageHistory[i].StepBack();
@@ -1482,9 +1483,9 @@ public class Particle : IParticleState, IReplayHistory
         markedBondHistory.StepForward();
 
         pinConfigurationHistory.StepForward();
-        receivedBeepsHistory.StepForward();
-        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        for (int i = 0; i < receivedBeepsHistory.Length; i++)
         {
+            receivedBeepsHistory[i].StepForward();
             receivedMessagesHistory[i].StepForward();
             plannedBeepsHistory[i].StepForward();
             plannedMessageHistory[i].StepForward();
@@ -1530,9 +1531,9 @@ public class Particle : IParticleState, IReplayHistory
         markedBondHistory.ContinueTracking();
 
         pinConfigurationHistory.ContinueTracking();
-        receivedBeepsHistory.ContinueTracking();
-        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        for (int i = 0; i < receivedBeepsHistory.Length; i++)
         {
+            receivedBeepsHistory[i].ContinueTracking();
             receivedMessagesHistory[i].ContinueTracking();
             plannedBeepsHistory[i].ContinueTracking();
             plannedMessageHistory[i].ContinueTracking();
@@ -1571,9 +1572,9 @@ public class Particle : IParticleState, IReplayHistory
         markedBondHistory.CutOffAtMarker();
 
         pinConfigurationHistory.CutOffAtMarker();
-        receivedBeepsHistory.CutOffAtMarker();
-        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        for (int i = 0; i < receivedBeepsHistory.Length; i++)
         {
+            receivedBeepsHistory[i].CutOffAtMarker();
             receivedMessagesHistory[i].CutOffAtMarker();
             plannedBeepsHistory[i].CutOffAtMarker();
             plannedMessageHistory[i].CutOffAtMarker();
@@ -1605,9 +1606,9 @@ public class Particle : IParticleState, IReplayHistory
         markedBondHistory.ShiftTimescale(amount);
 
         pinConfigurationHistory.ShiftTimescale(amount);
-        receivedBeepsHistory.ShiftTimescale(amount);
-        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        for (int i = 0; i < receivedBeepsHistory.Length; i++)
         {
+            receivedBeepsHistory[i].ShiftTimescale(amount);
             receivedMessagesHistory[i].ShiftTimescale(amount);
             plannedBeepsHistory[i].ShiftTimescale(amount);
             plannedMessageHistory[i].ShiftTimescale(amount);
@@ -1653,9 +1654,9 @@ public class Particle : IParticleState, IReplayHistory
         }
 
         pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
-        receivedBeeps = (BitArray)receivedBeepsHistory.GetMarkedValue().Clone();
-        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        for (int i = 0; i < receivedBeepsHistory.Length; i++)
         {
+            receivedBeeps[i] = receivedBeepsHistory[i].GetMarkedValue();
             receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
             plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
             plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
@@ -1738,12 +1739,13 @@ public class Particle : IParticleState, IReplayHistory
         data.markedBondHistory = markedBondHistory.GenerateSaveData();
 
         data.pinConfigurationHistory = pinConfigurationHistory.GeneratePCSaveData();
-        data.receivedBeepsHistory = receivedBeepsHistory.GenerateSaveData();
+        data.receivedBeepsHistory = new ValueHistorySaveData<bool>[receivedBeepsHistory.Length];
         data.receivedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[receivedMessagesHistory.Length];
         data.plannedBeepsHistory = new ValueHistorySaveData<bool>[plannedBeepsHistory.Length];
         data.plannedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[plannedMessageHistory.Length];
-        for (int i = 0; i < receivedMessagesHistory.Length; i++)
+        for (int i = 0; i < receivedBeepsHistory.Length; i++)
         {
+            data.receivedBeepsHistory[i] = receivedBeepsHistory[i].GenerateSaveData();
             data.receivedMessagesHistory[i] = receivedMessagesHistory[i].GenerateMessageSaveData();
             data.plannedBeepsHistory[i] = plannedBeepsHistory[i].GenerateSaveData();
             data.plannedMessagesHistory[i] = plannedMessageHistory[i].GenerateMessageSaveData();
@@ -1827,28 +1829,29 @@ public class Particle : IParticleState, IReplayHistory
         pinConfigurationHistory = new ValueHistoryPinConfiguration(data.pinConfigurationHistory);
         pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
 
-        receivedBeepsHistory = new ValueHistoryBitArray(data.receivedBeepsHistory);
-        receivedBeeps = (BitArray)receivedBeepsHistory.GetMarkedValue().Clone();
-
+        receivedBeeps = new BitArray(maxNumPins);
+        receivedMessages = new Message[maxNumPins];
         plannedBeeps = new BitArray(maxNumPins);
         plannedMessages = new Message[maxNumPins];
 
+        receivedBeepsHistory = new ValueHistory<bool>[maxNumPins];
         receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
         plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
         plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
         partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
         partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
-        receivedMessages = new Message[maxNumPins];
         partitionSetColors = new Color[maxNumPins];
         partitionSetColorsOverride = new bool[maxNumPins];
         for (int i = 0; i < maxNumPins; i++)
         {
+            receivedBeepsHistory[i] = new ValueHistory<bool>(data.receivedBeepsHistory[i]);
             receivedMessagesHistory[i] = new ValueHistoryMessage(data.receivedMessagesHistory[i]);
             plannedBeepsHistory[i] = new ValueHistory<bool>(data.plannedBeepsHistory[i]);
             plannedMessageHistory[i] = new ValueHistoryMessage(data.plannedMessagesHistory[i]);
             partitionSetColorHistory[i] = new ValueHistory<Color>(data.partitionSetColorHistory[i]);
             partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(data.partitionSetColorOverrideHistory[i]);
 
+            receivedBeeps[i] = receivedBeepsHistory[i].GetMarkedValue();
             receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
             plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
             plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
