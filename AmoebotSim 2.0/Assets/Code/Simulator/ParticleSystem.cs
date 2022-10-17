@@ -959,7 +959,7 @@ public class ParticleSystem : IReplayHistory
         ActivateParticlesBeep();
         inBeepPhase = false;
         ApplyNewPinConfigurations();
-        DiscoverCircuits();
+        DiscoverCircuits(true);
         FinishBeepAndMessageInfo();
         _previousRound++;
         UpdateAllParticleVisuals(false);
@@ -2218,7 +2218,7 @@ public class ParticleSystem : IReplayHistory
     /// <param name="sendBeepsAndMessages">Determines whether beeps
     /// and messages are sent. Set to <c>false</c> to only recompute
     /// the current circuits and update their graphics info.</param>
-    public void DiscoverCircuits(bool sendBeepsAndMessages = true)
+    public void DiscoverCircuits(bool sendBeepsAndMessages)
     {
         float tStart = Time.realtimeSinceStartup;
         // TODO: Experiment with initial capacity
@@ -3174,7 +3174,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = true;
-            DiscoverCircuits();
+            DiscoverCircuits(false);
             LoadMovementGraphicsInfo(stepFromSecondLastRound);
             UpdateAllParticleVisuals(!stepFromSecondLastRound);
             CleanupAfterRound();
@@ -3192,6 +3192,9 @@ public class ParticleSystem : IReplayHistory
             {
                 p.CutOffAtMarker();
                 p.ContinueTracking();
+                // We must reset the planned beeps and messages because they have
+                // been loaded for visualization
+                p.ResetPlannedBeepsAndMessages();
             }
             isTracking = true;
         }

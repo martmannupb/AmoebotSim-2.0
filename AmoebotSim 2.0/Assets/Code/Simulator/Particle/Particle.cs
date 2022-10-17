@@ -1660,6 +1660,8 @@ public class Particle : IParticleState, IReplayHistory
             receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
             plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
             plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
+            if (plannedMessages[i] != null)
+                hasPlannedMessages = true;
             partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
             partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
         }
