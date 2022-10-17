@@ -92,6 +92,22 @@ public abstract class ParticleAlgorithm
     public static string GenerationMethod { get { return null; } }
 
     /// <summary>
+    /// Finds the official name of this algorithm. This is the name used by
+    /// the algorithm manager to identify the algorithms. It is defined by
+    /// the static <c>Name</c> property.
+    /// </summary>
+    /// <returns>The official name of this algorithm, if it is defined,
+    /// otherwise the full name of the class.</returns>
+    public string GetAlgorithmName()
+    {
+        System.Reflection.PropertyInfo nameProp = this.GetType().GetProperty("Name");
+        if (nameProp == null)
+            return this.GetType().FullName;
+        else
+            return (string)nameProp.GetValue(null);
+    }
+
+    /// <summary>
     /// This is one part of the main activation logic of the particle.
     /// It is called exactly once in each round and should contain the
     /// algorithm code that implements the look-compute-move cycle.

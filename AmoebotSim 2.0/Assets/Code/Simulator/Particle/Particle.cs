@@ -1682,7 +1682,7 @@ public class Particle : IParticleState, IReplayHistory
         data.comDir = comDir;
         data.chirality = chirality;
 
-        data.algorithmType = algorithm.GetType().FullName;
+        data.algorithmType = algorithm.GetAlgorithmName();
 
         data.tailPositionHistory = tailPosHistory.GenerateSaveData();
         data.expansionDirHistory = expansionDirHistory.GenerateSaveData();
@@ -1775,8 +1775,17 @@ public class Particle : IParticleState, IReplayHistory
         p.isActive = true;
         p.inReinitialize = true;
         // Then create algorithm
-        Type algoType = Type.GetType(data.algorithmType);
-        algoType.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) }).Invoke(new object[] { p, new int[0] });
+        string algoName = data.algorithmType;
+        AlgorithmManager man = AlgorithmManager.Instance;
+        if (man.IsAlgorithmKnown(algoName))
+        {
+            man.Instantiate(algoName, p, new int[0]);
+        }
+        else
+        {
+            Log.Error("Error: Algorithm '" + algoName + "' is not known, cannot instantiate algorithm");
+        }
+
         p.inReinitialize = false;
         p.isActive = false;
         p.InitWithAlgorithm(data);
