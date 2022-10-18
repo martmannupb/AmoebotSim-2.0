@@ -128,6 +128,11 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     public static new string GenerationMethod => LineFormationInitializer.Name;
 
+    public override bool IsFinished()
+    {
+        return state == LFState.FINISHED;
+    }
+
     public override void ActivateMove()
     {
         // Use old movement system - we don't have to worry about bonds

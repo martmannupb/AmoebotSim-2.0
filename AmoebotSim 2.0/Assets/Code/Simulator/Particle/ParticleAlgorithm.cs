@@ -142,6 +142,24 @@ public abstract class ParticleAlgorithm
     public abstract void ActivateBeep();
 
     /// <summary>
+    /// Checks whether this particle has finished its algorithm.
+    /// <para>
+    /// Override this method to return <c>true</c> when a particle
+    /// is done executing the algorithm. Once all particles in the
+    /// system are finished, the simulation will stop automatically.
+    /// When a particle's state results in this method returning
+    /// <c>true</c>, its activation methods should not change its
+    /// state any more.
+    /// </para>
+    /// </summary>
+    /// <returns><c>true</c> if and only if this particle has
+    /// finished its algorithm.</returns>
+    public virtual bool IsFinished()
+    {
+        return false;
+    }
+
+    /// <summary>
     /// Checks if the particle is currently active and throws
     /// an exception if it is not.
     /// <para>

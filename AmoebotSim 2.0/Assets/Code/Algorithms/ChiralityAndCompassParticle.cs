@@ -215,6 +215,11 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     public static new string GenerationMethod => ChiralityAndCompassInitializer.Name;
 
+    public override bool IsFinished()
+    {
+        return finished;
+    }
+
     public override void ActivateMove()
     {
 

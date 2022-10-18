@@ -10,5 +10,7 @@ public class SimulationStateSaveData
     public int earliestRound;
     public int latestRound;
 
+    public int finishedRound;
+
     public ParticleStateSaveData[] particles;
 }

@@ -176,6 +176,11 @@ namespace BoundaryTestAlgo
 
         public static new string Name => "Boundary Test";
 
+        public override bool IsFinished()
+        {
+            return terminated;
+        }
+
         public override void ActivateMove()
         {
 

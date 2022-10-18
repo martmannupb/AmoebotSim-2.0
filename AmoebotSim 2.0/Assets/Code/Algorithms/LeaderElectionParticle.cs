@@ -54,6 +54,11 @@ public class LeaderElectionParticle : ParticleAlgorithm
     public static new Initialization.Chirality Chirality => Initialization.Chirality.Random;
     public static new Initialization.Compass Compass => Initialization.Compass.Random;
 
+    public override bool IsFinished()
+    {
+        return terminated;
+    }
+
     public override void ActivateMove()
     {
 

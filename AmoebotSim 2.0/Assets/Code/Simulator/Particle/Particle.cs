@@ -375,6 +375,17 @@ public class Particle : IParticleState, IReplayHistory
         isActive = false;
     }
 
+    /// <summary>
+    /// Checks whether the algorithm executed by this particle
+    /// is finished.
+    /// </summary>
+    /// <returns><c>true</c> if and only if the particle has
+    /// finished executing its algorithm.</returns>
+    public bool IsFinished()
+    {
+        return algorithm.IsFinished();
+    }
+
 
     /**
      * State information retrieval

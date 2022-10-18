@@ -133,6 +133,19 @@ public class ParticleSystem : IReplayHistory
         get { return inBeepPhase; }
     }
 
+    private bool finished = false;
+    /// <summary>
+    /// <c>true</c> if the simulation has reached a round after which all
+    /// particles in the system were finished, even if this round lies later
+    /// in the history than the currently marked round.
+    /// </summary>
+    public bool Finished
+    {
+        get { return finished; }
+    }
+    // The first round in which all particles were finished
+    private int finishedRound = -1;
+
     // References
     public AmoebotSimulator sim;
     public RenderSystem renderSystem;
@@ -860,6 +873,9 @@ public class ParticleSystem : IReplayHistory
         _currentRound = 0;
         _previousRound = 0;
         isTracking = true;
+
+        finished = false;
+        finishedRound = -1;
     }
 
     /// <summary>
@@ -933,6 +949,12 @@ public class ParticleSystem : IReplayHistory
     /// </summary>
     public void SimulateRound()
     {
+        if (!isTracking)
+        {
+            Log.Error("Simulation cannot proceed while not in tracking state.");
+            return;
+        }
+
         _currentRound++;
         Debug.Log("Simulate round " + _currentRound + " (previous round: " + _previousRound + ")");
         _latestRound++;
@@ -964,6 +986,15 @@ public class ParticleSystem : IReplayHistory
         _previousRound++;
         UpdateAllParticleVisuals(false);
         CleanupAfterRound();
+
+        // Check if the simulation is over
+        if (!finished && HasSimulationFinished())
+        {
+            // TODO: Stop the simulation (?)
+            finished = true;
+            finishedRound = _currentRound;
+            Log.Debug("Simulation finished.");
+        }
     }
 
     /// <summary>
@@ -2471,6 +2502,16 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    private bool HasSimulationFinished()
+    {
+        foreach (Particle p in particles)
+        {
+            if (!p.IsFinished())
+                return false;
+        }
+        return true;
+    }
+
     /// <summary>
     /// Stores the released and marked bonds and resets
     /// them for each particle. Use this to prepare the
@@ -3069,7 +3110,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
-            // TODO: This should be structured better
+            // TODO: Puth this into a helper method?
             DiscoverCircuits(false);
             LoadMovementGraphicsInfo(false);
             UpdateAllParticleVisuals(true);
@@ -3086,6 +3127,7 @@ public class ParticleSystem : IReplayHistory
             throw new System.InvalidOperationException("Cannot step back because the system is in the earliest round " + _earliestRound);
         }
         // Have to synchronize to given round if we are still tracking
+        // (just to be sure, particles could be in different rounds while tracking)
         if (isTracking)
         {
             SetMarkerToRound(_currentRound - 1);
@@ -3197,9 +3239,18 @@ public class ParticleSystem : IReplayHistory
                 p.ResetPlannedBeepsAndMessages();
             }
             isTracking = true;
+
+            // Also reset finished state if necessary
+            if (finished && _latestRound < finishedRound)
+            {
+                finished = false;
+                finishedRound = -1;
+            }
         }
     }
 
+    // Warning: Shifting timescale into the negative can cause issue
+    // when loading save state (if finishedRound is -1)
     public void ShiftTimescale(int amount)
     {
         _currentRound += amount;
@@ -3210,6 +3261,9 @@ public class ParticleSystem : IReplayHistory
         {
             p.ShiftTimescale(amount);
         }
+
+        if (finished)
+            finishedRound += amount;
     }
 
 
@@ -3229,6 +3283,7 @@ public class ParticleSystem : IReplayHistory
 
         data.earliestRound = _earliestRound;
         data.latestRound = _latestRound;
+        data.finishedRound = finishedRound;
 
         data.particles = new ParticleStateSaveData[particles.Count];
         for (int i = 0; i < particles.Count; i++)
@@ -3258,6 +3313,10 @@ public class ParticleSystem : IReplayHistory
         _latestRound = data.latestRound;
         _currentRound = _latestRound;
         _previousRound = _latestRound;
+
+        finishedRound = data.finishedRound;
+        if (finishedRound != -1)
+            finished = true;
 
         foreach (ParticleStateSaveData pData in data.particles)
         {
@@ -3318,9 +3377,15 @@ public class ParticleSystem : IReplayHistory
         {
             // Store the simulation state
             SimulationStateSaveData saveData = GenerateSaveData();
-            SaveStateUtility.Save(saveData, SaveStateUtility.tmpSaveFile);
-            storedSimulationState = true;
-            storedSimulationRound = _currentRound;
+            if (SaveStateUtility.Save(saveData, SaveStateUtility.tmpSaveFile))
+            {
+                storedSimulationState = true;
+                storedSimulationRound = _currentRound;
+            }
+            else
+            {
+                Log.Warning("Could not save current simulation state.");
+            }
 
             // Use the current system state as starting point for initialization system
             foreach (Particle p in particles)
