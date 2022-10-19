@@ -63,7 +63,7 @@ public class RendererUI
         Vector2 mouseWorldPos = CameraUtils.MainCamera_Mouse_WorldPosition();
         Vector2Int mouseWorldField = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(mouseWorldPos));
         UIHandler.UITool activeTool = sim.uiHandler.activeTool;
-        Particle state_particleUnderPointer = null;
+        IParticleState state_particleUnderPointer = null;
         bool state_pointerOverMap = EventSystem.current.IsPointerOverGameObject() == false;
         if (state_pointerOverMap)
         {
@@ -146,7 +146,7 @@ public class RendererUI
                                             // If particle has been selected and can be moved, then move it
                                             if (moveToolParticleSelected)
                                             {
-                                                Particle selectedParticle;
+                                                IParticleState selectedParticle;
                                                 sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
                                                 if(selectedParticle != null)
                                                 {
@@ -175,8 +175,8 @@ public class RendererUI
                         // Drag has been executed
                         Vector2Int node1 = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(action.positionStart));
                         Vector2Int node2 = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(action.positionTarget));
-                        Particle p1 = null;
-                        Particle p2 = null;
+                        IParticleState p1 = null;
+                        IParticleState p2 = null;
                         sim.system.TryGetParticleAt(node1, out p1);
                         sim.system.TryGetParticleAt(node2, out p2);
                         if (action.ongoing)
@@ -283,7 +283,7 @@ public class RendererUI
                                     // If particle has been selected and can be moved, then move it
                                     if(moveToolParticleSelected)
                                     {
-                                        Particle selectedParticle;
+                                        IParticleState selectedParticle;
                                         sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
                                         if (selectedParticle != null)
                                         {
@@ -345,7 +345,7 @@ public class RendererUI
         Vector2 mouseWorldPos = CameraUtils.MainCamera_Mouse_WorldPosition();
         Vector2Int mouseWorldField = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(mouseWorldPos));
         UIHandler.UITool activeTool = sim.uiHandler.activeTool;
-        Particle state_particleUnderPointer = null;
+        IParticleState state_particleUnderPointer = null;
         bool state_pointerOverMap = EventSystem.current.IsPointerOverGameObject() == false;
         if (state_pointerOverMap)
         {
@@ -439,7 +439,7 @@ public class RendererUI
                     if (moveToolParticleSelected || (state_pointerOverMap && state_particleUnderPointer != null))
                     {
                         // Mark Selected Particle
-                        Particle selectedParticle;
+                        IParticleState selectedParticle;
                         if (moveToolParticleSelected) sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
                         else selectedParticle = state_particleUnderPointer;
                         if (selectedParticle != null)

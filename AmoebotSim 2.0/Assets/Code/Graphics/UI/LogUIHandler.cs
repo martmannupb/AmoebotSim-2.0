@@ -86,7 +86,11 @@ public class LogUIHandler : MonoBehaviour
     public void Update()
     {
         // Scroll to Bottom
-        if (scrollToBottomInAmountOfFrames == 0) ScrollToBottom();
+        if (scrollToBottomInAmountOfFrames == 0)
+        {
+            ScrollToBottom();
+            scrollToBottomInAmountOfFrames--;
+        }
         else scrollToBottomInAmountOfFrames--;
 
         // Hide Timer

@@ -921,8 +921,18 @@ public class ParticleSystem : IReplayHistory
     /// <returns><c>true</c> if and only if a particle was found at the given position.</returns>
     public bool TryGetParticleAt(Vector2Int position, out IParticleState particle)
     {
-        if (TryGetParticleAt(position, out particle))
+        Particle p;
+        InitializationParticle pInit;
+        if (particleMap.ContainsKey(position) && particleMap.TryGetValue(position, out p))
+        {
+            particle = p;
             return true;
+        }
+        else if(particleMapInit.ContainsKey(position) && particleMapInit.TryGetValue(position, out pInit))
+        {
+            particle = pInit;
+            return true;
+        }
         else
         {
             particle = null;
