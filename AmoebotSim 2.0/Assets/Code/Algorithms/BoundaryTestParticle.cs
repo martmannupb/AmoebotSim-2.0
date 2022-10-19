@@ -176,6 +176,8 @@ namespace BoundaryTestAlgo
 
         public static new string Name => "Boundary Test";
 
+        public static new string GenerationMethod => InitRandomWithHoles.Name;
+
         public override bool IsFinished()
         {
             return terminated;

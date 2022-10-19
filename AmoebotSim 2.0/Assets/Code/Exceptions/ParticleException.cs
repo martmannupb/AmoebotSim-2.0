@@ -7,7 +7,19 @@ using UnityEngine;
 /// </summary>
 public class ParticleException : AmoebotSimException
 {
+    public Particle particle;
+
     public ParticleException() { }
 
+    public ParticleException(Particle particle)
+    {
+        this.particle = particle;
+    }
+
     public ParticleException(string msg) : base(msg) { }
+
+    public ParticleException(Particle particle, string msg) : base(msg)
+    {
+        this.particle = particle;
+    }
 }

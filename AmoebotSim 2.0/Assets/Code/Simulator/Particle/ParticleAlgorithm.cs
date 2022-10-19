@@ -176,7 +176,7 @@ public abstract class ParticleAlgorithm
     {
         if (!particle.isActive)
         {
-            throw new InvalidActionException(errorMessage);
+            throw new InvalidActionException(particle, errorMessage);
         }
     }
 
@@ -187,13 +187,17 @@ public abstract class ParticleAlgorithm
     /// <param name="warningMessage">The warning message to be logged
     /// if we are not in the move phase. No warning will be logged if
     /// this is <c>null</c>.</param>
+    /// <param name="exception">If <c>true</c>, throw an exception
+    /// with the given message.</param>
     /// <returns><c>true</c> if and only if the system is currently
     /// simulating the move phase.</returns>
-    private bool CheckMove(string warningMessage)
+    private bool CheckMove(string warningMessage, bool exception = false)
     {
         if (!particle.system.InMovePhase)
         {
-            if (warningMessage != null)
+            if (exception)
+                throw new InvalidActionException(particle, warningMessage);
+            else if (warningMessage != null)
                 Debug.LogWarning(warningMessage);
             return false;
         }
@@ -207,13 +211,17 @@ public abstract class ParticleAlgorithm
     /// <param name="warningMessage">The warning message to be logged
     /// if we are not in the beep phase. No warning will be logged if
     /// this is <c>null</c>.</param>
+    /// <param name="exception">If <c>true</c>, throw an exception
+    /// with the given message.</param>
     /// <returns><c>true</c> if and only if the system is currently
     /// simulating the beep phase.</returns>
-    private bool CheckBeep(string warningMessage)
+    private bool CheckBeep(string warningMessage, bool exception = false)
     {
         if (!particle.system.InBeepPhase)
         {
-            if (warningMessage != null)
+            if (exception)
+                throw new InvalidActionException(particle, warningMessage);
+            else if (warningMessage != null)
                 Debug.LogWarning(warningMessage);
             return false;
         }
@@ -585,7 +593,7 @@ public abstract class ParticleAlgorithm
     public void SetPlannedPinConfiguration(PinConfiguration pinConfiguration)
     {
         CheckActive("Cannot set pin configuration of other particles.");
-        if (!CheckBeep("Cannot set pin configuration during move phase."))
+        if (!CheckBeep("Cannot set pin configuration during move phase.", true))
         {
             return;
         }
@@ -736,7 +744,7 @@ public abstract class ParticleAlgorithm
     public void ReleaseBond(Direction locDir, bool head = true)
     {
         CheckActive("Particles cannot change bonds of neighbors.");
-        if (!CheckMove("Cannot release bonds during beep phase."))
+        if (!CheckMove("Cannot release bonds during beep phase.", true))
         {
             return;
         }
@@ -777,7 +785,7 @@ public abstract class ParticleAlgorithm
     public void MarkBond(Direction locDir, bool head = true)
     {
         CheckActive("Particles cannot change bonds of neighbors.");
-        if (!CheckMove("Cannot mark bonds during beep phase."))
+        if (!CheckMove("Cannot mark bonds during beep phase.", true))
         {
             return;
         }
@@ -820,7 +828,7 @@ public abstract class ParticleAlgorithm
     public void UseAutomaticBonds()
     {
         CheckActive("Particles cannot change bonds of neighbors.");
-        if (!CheckMove(null)) return;
+        if (!CheckMove("Cannot change bond settings during beep phase", true)) return;
         particle.markedForAutomaticBonds = true;
     }
 
@@ -848,7 +856,7 @@ public abstract class ParticleAlgorithm
     public void Expand(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
-        if (!CheckMove("Cannot schedule extension movement during beep phase."))
+        if (!CheckMove("Cannot schedule expansion movement during beep phase.", true))
             return;
         particle.system.ExpandParticle(particle, locDir);
     }
@@ -870,7 +878,7 @@ public abstract class ParticleAlgorithm
     public void ContractHead()
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
-        if (!CheckMove("Cannot schedule contraction movement during beep phase."))
+        if (!CheckMove("Cannot schedule contraction movement during beep phase.", true))
             return;
         particle.system.ContractParticleHead(particle);
     }
@@ -892,7 +900,7 @@ public abstract class ParticleAlgorithm
     public void ContractTail()
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
-        if (!CheckMove("Cannot schedule contraction movement during beep phase."))
+        if (!CheckMove("Cannot schedule contraction movement during beep phase.", true))
             return;
         particle.system.ContractParticleTail(particle);
     }
@@ -925,7 +933,7 @@ public abstract class ParticleAlgorithm
     public void PushHandover(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
-        if (!CheckMove("Cannot schedule handover movement during beep phase."))
+        if (!CheckMove("Cannot schedule handover movement during beep phase.", true))
             return;
         particle.system.PerformPushHandover(particle, locDir);
     }
@@ -960,7 +968,7 @@ public abstract class ParticleAlgorithm
     public void PullHandoverHead(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
-        if (!CheckMove("Cannot schedule handover movement during beep phase."))
+        if (!CheckMove("Cannot schedule handover movement during beep phase.", true))
             return;
         particle.system.PerformPullHandoverHead(particle, locDir);
     }
@@ -995,7 +1003,7 @@ public abstract class ParticleAlgorithm
     public void PullHandoverTail(Direction locDir)
     {
         CheckActive("Movement actions cannot be triggered for other particles.");
-        if (!CheckMove("Cannot schedule handover movement during beep phase."))
+        if (!CheckMove("Cannot schedule handover movement during beep phase.", true))
             return;
         particle.system.PerformPullHandoverTail(particle, locDir);
     }

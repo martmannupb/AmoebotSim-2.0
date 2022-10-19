@@ -10,5 +10,9 @@ public class AlgorithmException : ParticleException
 {
     public AlgorithmException() { }
 
+    public AlgorithmException(Particle p) : base(p) { }
+
     public AlgorithmException(string msg) : base(msg) { }
+
+    public AlgorithmException(Particle p, string msg) : base(p, msg) { }
 }

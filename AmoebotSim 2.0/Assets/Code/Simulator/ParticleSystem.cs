@@ -963,22 +963,54 @@ public class ParticleSystem : IReplayHistory
         // All particles set their new bonds and schedule movements
         // Then the movements are evaluated and applied
         inMovePhase = true;
-        bool particlesMove = ActivateParticlesMove();
+        bool particlesMove = false;
+        try
+        {
+            particlesMove = ActivateParticlesMove();
+        }
+        catch (ParticleException pe)
+        {
+            Log.Error("Exception caught during movement activations: " + pe + "\n" + pe.StackTrace + "\nParticle: " +
+                    (pe.particle == null ? "NULL" : (pe.particle.Head() + ", " + pe.particle.Tail())));
+            ResetAfterException();
+            return;
+        }
         inMovePhase = false;
+
         // Skip the movement computation if no particle has moved
         // TODO: No connectivity check is performed then! Should this always be executed?
-        if (particlesMove)
-            SimulateJointMovements();
-        else
-            // Compute bond information anyway
-            ComputeBondsStatic();
-        FinishMovementInfo();
+        try
+        {
+            if (particlesMove)
+                SimulateJointMovements();
+            else
+                // Compute bond information anyway
+                ComputeBondsStatic();
+            FinishMovementInfo();
+        }
+        catch (AmoebotSimException ase)
+        {
+            Log.Error("Exception caught during movement simulation: " + ase + "\n" + ase.StackTrace);
+            ResetAfterException();
+            return;
+        }
 
         // Second: Beep cycle
         // All particles set their new pin configurations and send beeps and messages
         // Then the circuits are computed and the sent information is distributed
         inBeepPhase = true;
-        ActivateParticlesBeep();
+        try
+        {
+            ActivateParticlesBeep();
+        }
+        catch (ParticleException pe)
+        {
+            Log.Error("Exception caught during beep activations: " + pe + "\n" + pe.StackTrace + "\nParticle: " +
+                    (pe.particle == null ? "NULL" : (pe.particle.Head() + ", " + pe.particle.Tail())));
+            ResetAfterException();
+            return;
+        }
+
         inBeepPhase = false;
         ApplyNewPinConfigurations();
         DiscoverCircuits(true);
@@ -995,6 +1027,15 @@ public class ParticleSystem : IReplayHistory
             finishedRound = _currentRound;
             Log.Debug("Simulation finished.");
         }
+    }
+
+    private void ResetAfterException()
+    {
+        inMovePhase = false;
+        inBeepPhase = false;
+        CleanupAfterRound();
+        SetMarkerToRound(_currentRound - 1);
+        CutOffAtMarker();
     }
 
     /// <summary>
@@ -1015,7 +1056,22 @@ public class ParticleSystem : IReplayHistory
         for (int i = 0; i < particles.Count; i++)
         {
             Particle p = particles[i];
-            p.ActivateMove();
+
+            try
+            {
+                p.ActivateMove();
+            }
+            catch (AmoebotSimException ase)
+            {
+                // Keep stack trace
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ase).Throw();
+            }
+            catch (System.Exception e)
+            {
+                Log.Error("Caught non-AmoebotSim exception in movement activation");
+                throw new AlgorithmException(p, e.ToString() + "\n" + e.StackTrace);
+            }
+
             ParticleAction a = p.ScheduledMovement;
             // Determine the local origin
             p.isHeadOrigin = p.IsContracted() && a == null || p.IsExpanded() && a != null && (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD);
@@ -1146,7 +1202,20 @@ public class ParticleSystem : IReplayHistory
     {
         for (int i = 0; i < particles.Count; i++)
         {
-            particles[i].ActivateBeep();
+            try
+            {
+                particles[i].ActivateBeep();
+            }
+            catch (AmoebotSimException ase)
+            {
+                // Keep stack trace
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ase).Throw();
+            }
+            catch (System.Exception e)
+            {
+                Log.Error("Caught non-AmoebotSim exception in beep activation");
+                throw new AlgorithmException(particles[i], e.ToString() + "\n" + e.StackTrace);
+            }
         }
     }
 
@@ -1499,7 +1568,8 @@ public class ParticleSystem : IReplayHistory
 
                             if (weMove ^ nbrMoves)
                             {
-                                throw new SimulationException("Conflict during joint movement: Two parallel expanded particles with two bonds have conflicting movements.");
+                                throw new SimulationException("Conflict during joint movement: Two parallel expanded particles with two bonds have conflicting movements."
+                                    + "\nParticles at " + p.Head() + ", " + p.Tail() + " and " + nbr.Head() + ", " + nbr.Tail());
                             }
 
                             // If we move, we have to apply an offset if the movement directions are inverted
@@ -1556,7 +1626,8 @@ public class ParticleSystem : IReplayHistory
                         {
                             if (movementAction.type == ActionType.CONTRACT_HEAD || movementAction.type == ActionType.CONTRACT_TAIL)
                             {
-                                throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor tries to contract.");
+                                throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor tries to contract."
+                                    + "\nParticles at " + p.Head() + ", " + p.Tail() + " and " + nbr.Head() + ", " + nbr.Tail());
                             }
 
                             // Movement is handover, check if the non-origin bonds are marked
@@ -1564,7 +1635,8 @@ public class ParticleSystem : IReplayHistory
                             {
                                 if ((p.isHeadOrigin ^ bondOwnHead[i]) && !p.markedBondsGlobal[bondLabels[i]])
                                 {
-                                    throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond.");
+                                    throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond."
+                                        + "\nParticles at " + p.Head() + ", " + p.Tail() + " and " + nbr.Head() + ", " + nbr.Tail());
                                 }
                             }
                         }
@@ -1575,7 +1647,8 @@ public class ParticleSystem : IReplayHistory
                         {
                             if (nbrAction.type == ActionType.CONTRACT_HEAD || nbrAction.type == ActionType.CONTRACT_TAIL)
                             {
-                                throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor tries to contract.");
+                                throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor tries to contract."
+                                    + "\nParticles at " + p.Head() + ", " + p.Tail() + " and " + nbr.Head() + ", " + nbr.Tail());
                             }
 
                             // Movement is handover, check if the non-origin bonds are marked
@@ -1583,7 +1656,8 @@ public class ParticleSystem : IReplayHistory
                             {
                                 if ((nbr.isHeadOrigin ^ bondNbrHead[i]) && !nbr.markedBondsGlobal[nbrBondLabels[i]])
                                 {
-                                    throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond.");
+                                    throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond."
+                                        + "\nParticles at " + p.Head() + ", " + p.Tail() + " and " + nbr.Head() + ", " + nbr.Tail());
                                 }
                             }
                         }
@@ -1639,7 +1713,8 @@ public class ParticleSystem : IReplayHistory
 
                 if (newPositions.ContainsKey(head) || newPositions.ContainsKey(tail))
                 {
-                    throw new SimulationException("Conflict during joint movement: Target location of expanded particle is already occupied.");
+                    throw new SimulationException("Conflict during joint movement: Target location of expanded particle is already occupied."
+                        + "\nParticle at " + p.Head() + ", " + p.Tail() + ", target locations are " + head + ", " + tail);
                 }
                 newPositions[head] = p;
                 newPositions[tail] = p;
@@ -1654,7 +1729,8 @@ public class ParticleSystem : IReplayHistory
                 }
                 if (newPositions.ContainsKey(pos))
                 {
-                    throw new SimulationException("Conflict during joint movement: target location of contracted particle is already occupied.");
+                    throw new SimulationException("Conflict during joint movement: target location of contracted particle is already occupied."
+                        + "\nParticle at " + p.Head() + ", target location is " + pos);
                 }
                 newPositions[pos] = p;
             }
@@ -1668,7 +1744,8 @@ public class ParticleSystem : IReplayHistory
         {
             if (!p.processedJointMovement)
             {
-                Debug.LogError("Bond structure is not connected, some particle movements were not processed!");
+                throw new SimulationException("Bond structure is not connected, some particle movements were not processed!"
+                    + "\nFirst encountered non-processed particle at " + p.Head() + ", " + p.Tail());
             }
             else if (p.ScheduledMovement != null)
             {
@@ -1824,7 +1901,8 @@ public class ParticleSystem : IReplayHistory
 
             if (weWantHandover ^ nbrWantsHandover)
             {
-                throw new SimulationException("Conflict during movements: Disagreement on handover with one bond");
+                throw new SimulationException("Conflict during movements: Disagreement on handover with one bond."
+                    + "\nParticles at " + c.Head() + " and " + e.Head() + ", " + e.Tail());
             }
 
             if (weWantHandover)
@@ -1906,7 +1984,8 @@ public class ParticleSystem : IReplayHistory
 
             if ((weWantHandoverFirst ^ nbrWantsHandoverFirst) || (weWantHandoverSecond ^ nbrWantsHandoverSecond))
             {
-                throw new SimulationException("Conflict during movements: Disagreement on handover with two bonds");
+                throw new SimulationException("Conflict during movements: Disagreement on handover with two bonds."
+                    + "\nParticles at " + c.Head() + " and " + e.Head() + ", " + e.Tail());
             }
 
             // Prepare info for second bond
@@ -1924,7 +2003,8 @@ public class ParticleSystem : IReplayHistory
                 // But we have to check that the other bond is not marked by the contracted particle
                 if (handoverFirst && c.markedBondsGlobal[cLabel2] || handoverSecond && c.markedBondsGlobal[cLabel1])
                 {
-                    throw new SimulationException("Conflict during movements: Handover with two bonds and one bond is marked");
+                    throw new SimulationException("Conflict during movements: Handover with two bonds and one bond is marked."
+                        + "\nParticles at " + c.Head() + " and " + e.Head() + ", " + e.Tail());
                 }
 
                 // We also have to rotate the corresponding bond
@@ -1954,7 +2034,8 @@ public class ParticleSystem : IReplayHistory
                         (eAction.type == ActionType.PULL_HEAD && !e.markedBondsGlobal[eTailBond]) ||
                         (eAction.type == ActionType.PULL_TAIL && !e.markedBondsGlobal[eHeadBond]))
                     {
-                        throw new SimulationException("Conflict during movements: Expanded neighbor with two bonds tries to contract");
+                        throw new SimulationException("Conflict during movements: Expanded neighbor with two bonds tries to contract."
+                            + "\nParticles at " + c.Head() + " and " + e.Head() + ", " + e.Tail());
                     }
                 }
 
@@ -1962,7 +2043,8 @@ public class ParticleSystem : IReplayHistory
                 {
                     if (c.markedBondsGlobal[cLabel1] ^ c.markedBondsGlobal[cLabel2])
                     {
-                        throw new SimulationException("Conflict during movements: Bonds to expanded neighbor have different marked status");
+                        throw new SimulationException("Conflict during movements: Bonds to expanded neighbor have different marked status."
+                            + "\nParticles at " + c.Head() + " and " + e.Head() + ", " + e.Tail());
                     }
 
                     // If the bonds are marked, we apply our offset
@@ -2029,13 +2111,15 @@ public class ParticleSystem : IReplayHistory
             // The particle must not contract without handover
             if (eAction.type == ActionType.CONTRACT_HEAD || eAction.type == ActionType.CONTRACT_TAIL)
             {
-                throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by contraction.");
+                throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by contraction."
+                    + "\nParticles at " + pCorner.Head() + ", " + pCorner.Tail() + " and " + pEdge.Head() + ", " + pEdge.Tail());
             }
 
             // It may perform a handover if it has marked the moving bond
             if (eAction.type == ActionType.PULL_HEAD && !edgeMarkedTail || eAction.type == ActionType.PULL_TAIL && !edgeMarkedHead)
             {
-                throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by handover.");
+                throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by handover."
+                    + "\nParticles at " + pCorner.Head() + ", " + pCorner.Tail() + " and " + pEdge.Head() + ", " + pEdge.Tail());
             }
         }
 
@@ -2049,7 +2133,8 @@ public class ParticleSystem : IReplayHistory
             {
                 if (cornerMarked1 ^ cornerMarked2)
                 {
-                    throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by unequal handover transfer.");
+                    throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by unequal handover transfer."
+                        + "\nParticles at " + pCorner.Head() + ", " + pCorner.Tail() + " and " + pEdge.Head() + ", " + pEdge.Tail());
                 }
                 if (cornerMarked1)
                     applyOffset = false;
@@ -2488,8 +2573,22 @@ public class ParticleSystem : IReplayHistory
     {
         foreach (Particle p in particles)
         {
-            if (!p.IsFinished())
+            try
+            {
+                if (!p.IsFinished())
+                    return false;
+            }
+            catch (ParticleException pe)
+            {
+                Log.Error("Exception caught during termination check: " + pe + "\n" + pe.StackTrace + "\nParticle: " +
+                    (pe.particle == null ? "NULL" : (pe.particle.Head() + ", " + pe.particle.Tail())));
                 return false;
+            }
+            catch (System.Exception e)
+            {
+                Log.Error("Exception caught during termination check: " + e + "\n" + e.StackTrace);
+                return false;
+            }
         }
         return true;
     }
@@ -2756,7 +2855,7 @@ public class ParticleSystem : IReplayHistory
         // Reject if the particle is already expanded
         if (p.IsExpanded())
         {
-            throw new InvalidActionException("Expanded particle cannot expand again.");
+            throw new InvalidActionException(p, "Expanded particle cannot expand again.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -2812,7 +2911,7 @@ public class ParticleSystem : IReplayHistory
         // Reject if the particle is already contracted
         if (p.IsContracted())
         {
-            throw new InvalidActionException("Contracted particle cannot contract again.");
+            throw new InvalidActionException(p, "Contracted particle cannot contract again.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -2848,14 +2947,14 @@ public class ParticleSystem : IReplayHistory
         // Reject if the particle is already expanded
         if (p.IsExpanded())
         {
-            throw new InvalidActionException("Expanded particle cannot perform a push handover.");
+            throw new InvalidActionException(p, "Expanded particle cannot perform a push handover.");
         }
 
         // Reject if there is no expanded particle on the target node
         Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
         if (!particleMap.TryGetValue(targetLoc, out Particle p2) || p2.IsContracted())
         {
-            throw new InvalidActionException("Particle cannot perform push handover onto node occupied by no or contracted particle.");
+            throw new InvalidActionException(p, "Particle cannot perform push handover onto node occupied by no or contracted particle.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -2921,14 +3020,14 @@ public class ParticleSystem : IReplayHistory
         // Reject if the particle is already contracted
         if (p.IsContracted())
         {
-            throw new InvalidActionException("Contracted particle cannot perform pull handover.");
+            throw new InvalidActionException(p, "Contracted particle cannot perform pull handover.");
         }
 
         // Reject if there is no contracted particle on the target node
         Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, !head);
         if (!particleMap.TryGetValue(targetLoc, out Particle p2) || p2.IsExpanded())
         {
-            throw new InvalidActionException("Particle cannot perform pull handover onto node occupied by no or expanded particle.");
+            throw new InvalidActionException(p, "Particle cannot perform pull handover onto node occupied by no or expanded particle.");
         }
 
         // Warning if particle already has a scheduled movement operation

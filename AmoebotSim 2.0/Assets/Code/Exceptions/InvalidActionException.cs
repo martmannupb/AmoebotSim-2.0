@@ -10,5 +10,9 @@ public class InvalidActionException : ParticleException
 {
     public InvalidActionException() { }
 
+    public InvalidActionException(Particle p) : base(p) { }
+
     public InvalidActionException(string msg) : base(msg) { }
+
+    public InvalidActionException(Particle p, string msg) : base(p, msg) { }
 }
