@@ -618,7 +618,6 @@ public class Particle : IParticleState, IReplayHistory
         {
             return null;
         }
-        
     }
 
 

@@ -169,14 +169,14 @@ public abstract class ParticleAlgorithm
     /// </summary>
     /// <param name="errorMessage">The error message to be
     /// used for the exception.</param>
-    /// <exception cref="System.InvalidOperationException">
+    /// <exception cref="InvalidActionException">
     /// Thrown if this particle is currently not active.
     /// </exception>
     private void CheckActive(string errorMessage)
     {
         if (!particle.isActive)
         {
-            throw new System.InvalidOperationException(errorMessage);
+            throw new InvalidActionException(errorMessage);
         }
     }
 
@@ -239,7 +239,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<int> CreateAttributeInt(string name, int initialValue = 0)
     {
-        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        CheckActive("Particles can only create attributes for themselves, not for other particles.");
         return ParticleAttributeFactory.CreateParticleAttributeInt(particle, name, initialValue);
     }
 
@@ -252,7 +252,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<float> CreateAttributeFloat(string name, float initialValue = 0f)
     {
-        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        CheckActive("Particles can only create attributes for themselves, not for other particles.");
         return ParticleAttributeFactory.CreateParticleAttributeFloat(particle, name, initialValue);
     }
 
@@ -265,7 +265,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<string> CreateAttributeString(string name, string initialValue = "")
     {
-        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        CheckActive("Particles can only create attributes for themselves, not for other particles.");
         return ParticleAttributeFactory.CreateParticleAttributeString(particle, name, initialValue);
     }
 
@@ -278,7 +278,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<bool> CreateAttributeBool(string name, bool initialValue = false)
     {
-        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        CheckActive("Particles can only create attributes for themselves, not for other particles.");
         return ParticleAttributeFactory.CreateParticleAttributeBool(particle, name, initialValue);
     }
 
@@ -294,7 +294,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<Direction> CreateAttributeDirection(string name, Direction initialValue = Direction.NONE)
     {
-        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        CheckActive("Particles can only create attributes for themselves, not for other particles.");
         return ParticleAttributeFactory.CreateParticleAttributeDirection(particle, name, initialValue);
     }
 
@@ -308,7 +308,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<EnumT> CreateAttributeEnum<EnumT>(string name, EnumT initialValue) where EnumT : System.Enum
     {
-        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        CheckActive("Particles can only create attributes for themselves, not for other particles.");
         return ParticleAttributeFactory.CreateParticleAttributeEnum<EnumT>(particle, name, initialValue);
     }
 
@@ -337,7 +337,7 @@ public abstract class ParticleAlgorithm
     /// <returns>The <see cref="ParticleAttribute{T}"/> initialized to <paramref name="initialValue"/>.</returns>
     public ParticleAttribute<PinConfiguration> CreateAttributePinConfiguration(string name, PinConfiguration initialValue)
     {
-        CheckActive("Particles can only create attributes for themselves, not for other particles");
+        CheckActive("Particles can only create attributes for themselves, not for other particles.");
         return ParticleAttributeFactory.CreateParticleAttributePinConfiguration(particle, name, initialValue);
     }
 
@@ -735,6 +735,7 @@ public abstract class ParticleAlgorithm
     /// indicates whether the bond is located at the head or the tail.</param>
     public void ReleaseBond(Direction locDir, bool head = true)
     {
+        CheckActive("Particles cannot change bonds of neighbors.");
         if (!CheckMove("Cannot release bonds during beep phase."))
         {
             return;
@@ -756,6 +757,7 @@ public abstract class ParticleAlgorithm
     /// still marked as active.</returns>
     public bool BondActive(Direction locDir, bool head = true)
     {
+        CheckActive("Particles cannot check bonds of neighbors.");
         if (!CheckMove(null))
             return true;
         int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
@@ -774,6 +776,7 @@ public abstract class ParticleAlgorithm
     /// indicates whether the bond is located at the head or the tail.</param>
     public void MarkBond(Direction locDir, bool head = true)
     {
+        CheckActive("Particles cannot change bonds of neighbors.");
         if (!CheckMove("Cannot mark bonds during beep phase."))
         {
             return;
@@ -796,6 +799,7 @@ public abstract class ParticleAlgorithm
     /// been marked.</returns>
     public bool BondMarked(Direction locDir, bool head = true)
     {
+        CheckActive("Particles cannot check bonds of neighbors.");
         if (!CheckMove(null))
             return false;
         int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
@@ -815,6 +819,7 @@ public abstract class ParticleAlgorithm
     /// </summary>
     public void UseAutomaticBonds()
     {
+        CheckActive("Particles cannot change bonds of neighbors.");
         if (!CheckMove(null)) return;
         particle.markedForAutomaticBonds = true;
     }

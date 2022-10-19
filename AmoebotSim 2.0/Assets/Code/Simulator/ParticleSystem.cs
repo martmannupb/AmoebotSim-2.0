@@ -1499,8 +1499,7 @@ public class ParticleSystem : IReplayHistory
 
                             if (weMove ^ nbrMoves)
                             {
-                                Debug.LogError("Error: Two parallel expanded particles with two bonds have conflicting movements.");
-                                throw new System.InvalidOperationException("Conflict during joint movement");
+                                throw new SimulationException("Conflict during joint movement: Two parallel expanded particles with two bonds have conflicting movements.");
                             }
 
                             // If we move, we have to apply an offset if the movement directions are inverted
@@ -1557,8 +1556,7 @@ public class ParticleSystem : IReplayHistory
                         {
                             if (movementAction.type == ActionType.CONTRACT_HEAD || movementAction.type == ActionType.CONTRACT_TAIL)
                             {
-                                Debug.LogError("Error: Expanded particle with three bonds to expanded neighbor tries to contract.");
-                                throw new System.InvalidOperationException("Conflict during joint movement");
+                                throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor tries to contract.");
                             }
 
                             // Movement is handover, check if the non-origin bonds are marked
@@ -1566,8 +1564,7 @@ public class ParticleSystem : IReplayHistory
                             {
                                 if ((p.isHeadOrigin ^ bondOwnHead[i]) && !p.markedBondsGlobal[bondLabels[i]])
                                 {
-                                    Debug.LogError("Error: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond.");
-                                    throw new System.InvalidOperationException("Conflict during joint movement");
+                                    throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond.");
                                 }
                             }
                         }
@@ -1578,8 +1575,7 @@ public class ParticleSystem : IReplayHistory
                         {
                             if (nbrAction.type == ActionType.CONTRACT_HEAD || nbrAction.type == ActionType.CONTRACT_TAIL)
                             {
-                                Debug.LogError("Error: Expanded particle with three bonds to expanded neighbor tries to contract.");
-                                throw new System.InvalidOperationException("Conflict during joint movement");
+                                throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor tries to contract.");
                             }
 
                             // Movement is handover, check if the non-origin bonds are marked
@@ -1587,8 +1583,7 @@ public class ParticleSystem : IReplayHistory
                             {
                                 if ((nbr.isHeadOrigin ^ bondNbrHead[i]) && !nbr.markedBondsGlobal[nbrBondLabels[i]])
                                 {
-                                    Debug.LogError("Error: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond.");
-                                    throw new System.InvalidOperationException("Conflict during joint movement");
+                                    throw new SimulationException("Conflict during joint movement: Expanded particle with three bonds to expanded neighbor performs handover with unmarked bond.");
                                 }
                             }
                         }
@@ -1617,10 +1612,8 @@ public class ParticleSystem : IReplayHistory
                 {
                     if (nbr.jmOffset != nbrOffset)
                     {
-                        Debug.LogError("Offset for particle does not match! Previous offset: " + nbr.jmOffset + ", new offset: " + nbrOffset);
-                        Debug.Log("Current particle at " + p.Head() + ", " + p.Tail());
-                        Debug.Log("Neighbor at " + nbr.Head() + ", " + nbr.Tail());
-                        throw new System.InvalidOperationException("Conflict during joint movement");
+                        throw new SimulationException("Conflict during joint movement: Offset for particle does not match! Previous offset: " + nbr.jmOffset + ", new offset: " + nbrOffset
+                            + "\nCurrent particle at " + p.Head() + ", " + p.Tail() + ", neighbor at " + nbr.Head() + ", " + nbr.Tail());
                     }
                 }
                 else
@@ -1646,8 +1639,7 @@ public class ParticleSystem : IReplayHistory
 
                 if (newPositions.ContainsKey(head) || newPositions.ContainsKey(tail))
                 {
-                    Debug.LogError("Error: Conflict during joint movement, target location of expanded particle is already occupied.");
-                    throw new System.InvalidOperationException();
+                    throw new SimulationException("Conflict during joint movement: Target location of expanded particle is already occupied.");
                 }
                 newPositions[head] = p;
                 newPositions[tail] = p;
@@ -1662,8 +1654,7 @@ public class ParticleSystem : IReplayHistory
                 }
                 if (newPositions.ContainsKey(pos))
                 {
-                    Debug.LogError("Error: Conflict during joint movement, target location of contracted particle is already occupied.");
-                    throw new System.InvalidOperationException();
+                    throw new SimulationException("Conflict during joint movement: target location of contracted particle is already occupied.");
                 }
                 newPositions[pos] = p;
             }
@@ -1773,9 +1764,8 @@ public class ParticleSystem : IReplayHistory
             // Error if there is no neighbor here although a handover is scheduled
             if (label == handoverLabelToCheck && !bondNbrs[label])
             {
-                Debug.LogError("Error: Particle at position " + p.Head() + ", " + p.Tail() + " has scheduled handover at label " + handoverLabelToCheck
-                    + " but has no neighbor at that label");
-                throw new System.InvalidOperationException("Error computing movements");
+                throw new SimulationException("Error computing movements: Particle at position " + p.Head() + ", " + p.Tail() + " has scheduled handover at label " + handoverLabelToCheck
+                    + " but has no neighbor at that label.");
             }
         }
     }
@@ -1834,8 +1824,7 @@ public class ParticleSystem : IReplayHistory
 
             if (weWantHandover ^ nbrWantsHandover)
             {
-                Debug.LogError("Error: Disagreement on handover with one bond");
-                throw new System.InvalidOperationException("Conflict during movements");
+                throw new SimulationException("Conflict during movements: Disagreement on handover with one bond");
             }
 
             if (weWantHandover)
@@ -1917,8 +1906,7 @@ public class ParticleSystem : IReplayHistory
 
             if ((weWantHandoverFirst ^ nbrWantsHandoverFirst) || (weWantHandoverSecond ^ nbrWantsHandoverSecond))
             {
-                Debug.LogError("Error: Disagreement on handover with two bonds");
-                throw new System.InvalidOperationException("Conflict during movements");
+                throw new SimulationException("Conflict during movements: Disagreement on handover with two bonds");
             }
 
             // Prepare info for second bond
@@ -1936,8 +1924,7 @@ public class ParticleSystem : IReplayHistory
                 // But we have to check that the other bond is not marked by the contracted particle
                 if (handoverFirst && c.markedBondsGlobal[cLabel2] || handoverSecond && c.markedBondsGlobal[cLabel1])
                 {
-                    Debug.LogError("Error: Handover with two bonds and one bond is marked");
-                    throw new System.InvalidOperationException("Conflict during movements");
+                    throw new SimulationException("Conflict during movements: Handover with two bonds and one bond is marked");
                 }
 
                 // We also have to rotate the corresponding bond
@@ -1967,8 +1954,7 @@ public class ParticleSystem : IReplayHistory
                         (eAction.type == ActionType.PULL_HEAD && !e.markedBondsGlobal[eTailBond]) ||
                         (eAction.type == ActionType.PULL_TAIL && !e.markedBondsGlobal[eHeadBond]))
                     {
-                        Debug.LogError("Error: Expanded neighbor with two bonds tries to contract");
-                        throw new System.InvalidOperationException("Conflict during movements");
+                        throw new SimulationException("Conflict during movements: Expanded neighbor with two bonds tries to contract");
                     }
                 }
 
@@ -1976,8 +1962,7 @@ public class ParticleSystem : IReplayHistory
                 {
                     if (c.markedBondsGlobal[cLabel1] ^ c.markedBondsGlobal[cLabel2])
                     {
-                        Debug.LogError("Error: Bonds to expanded neighbor have different marked status");
-                        throw new System.InvalidOperationException("Conflict during movements");
+                        throw new SimulationException("Conflict during movements: Bonds to expanded neighbor have different marked status");
                     }
 
                     // If the bonds are marked, we apply our offset
@@ -2044,15 +2029,13 @@ public class ParticleSystem : IReplayHistory
             // The particle must not contract without handover
             if (eAction.type == ActionType.CONTRACT_HEAD || eAction.type == ActionType.CONTRACT_TAIL)
             {
-                Debug.LogError("Error: Two expanded particles form triangle of bonds which is broken by contraction.");
-                throw new System.InvalidOperationException("Conflict during joint movements");
+                throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by contraction.");
             }
 
             // It may perform a handover if it has marked the moving bond
             if (eAction.type == ActionType.PULL_HEAD && !edgeMarkedTail || eAction.type == ActionType.PULL_TAIL && !edgeMarkedHead)
             {
-                Debug.LogError("Error: Two expanded particles form triangle of bonds which is broken by handover.");
-                throw new System.InvalidOperationException("Conflict during joint movements");
+                throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by handover.");
             }
         }
 
@@ -2066,8 +2049,7 @@ public class ParticleSystem : IReplayHistory
             {
                 if (cornerMarked1 ^ cornerMarked2)
                 {
-                    Debug.LogError("Error: Two expanded particles form triangle of bonds which is broken by unequal handover transfer.");
-                    throw new System.InvalidOperationException("Conflict during joint movements");
+                    throw new SimulationException("Conflict during joint movements: Two expanded particles form triangle of bonds which is broken by unequal handover transfer.");
                 }
                 if (cornerMarked1)
                     applyOffset = false;
@@ -2619,7 +2601,6 @@ public class ParticleSystem : IReplayHistory
     /// otherwise check relative to the tail.</param>
     /// <returns>The neighboring particle in the specified position, if it exists,
     /// otherwise <c>null</c>.</returns>
-    // TODO: How to handle case that neighbor does not exist? For now just return null
     public Particle GetNeighborAt(Particle p, Direction locDir, bool fromHead = true)
     {
         Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
@@ -2775,7 +2756,7 @@ public class ParticleSystem : IReplayHistory
         // Reject if the particle is already expanded
         if (p.IsExpanded())
         {
-            throw new System.InvalidOperationException("Expanded particle cannot expand again.");
+            throw new InvalidActionException("Expanded particle cannot expand again.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -2831,7 +2812,7 @@ public class ParticleSystem : IReplayHistory
         // Reject if the particle is already contracted
         if (p.IsContracted())
         {
-            throw new System.InvalidOperationException("Contracted particle cannot contract again.");
+            throw new InvalidActionException("Contracted particle cannot contract again.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -2867,14 +2848,14 @@ public class ParticleSystem : IReplayHistory
         // Reject if the particle is already expanded
         if (p.IsExpanded())
         {
-            throw new System.InvalidOperationException("Expanded particle cannot perform a push handover.");
+            throw new InvalidActionException("Expanded particle cannot perform a push handover.");
         }
 
         // Reject if there is no expanded particle on the target node
         Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, true);
         if (!particleMap.TryGetValue(targetLoc, out Particle p2) || p2.IsContracted())
         {
-            throw new System.InvalidOperationException("Particle cannot perform push handover onto node occupied by no or contracted particle.");
+            throw new InvalidActionException("Particle cannot perform push handover onto node occupied by no or contracted particle.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -2940,14 +2921,14 @@ public class ParticleSystem : IReplayHistory
         // Reject if the particle is already contracted
         if (p.IsContracted())
         {
-            throw new System.InvalidOperationException("Contracted particle cannot perform pull handover.");
+            throw new InvalidActionException("Contracted particle cannot perform pull handover.");
         }
 
         // Reject if there is no contracted particle on the target node
         Vector2Int targetLoc = ParticleSystem_Utils.GetNeighborPosition(p, locDir, !head);
         if (!particleMap.TryGetValue(targetLoc, out Particle p2) || p2.IsExpanded())
         {
-            throw new System.InvalidOperationException("Particle cannot perform pull handover onto node occupied by no or expanded particle.");
+            throw new InvalidActionException("Particle cannot perform pull handover onto node occupied by no or expanded particle.");
         }
 
         // Warning if particle already has a scheduled movement operation
@@ -3086,7 +3067,7 @@ public class ParticleSystem : IReplayHistory
     {
         if (round < _earliestRound || round > _latestRound)
         {
-            throw new System.ArgumentOutOfRangeException("Cannot set system to round " + round + "; must be between " + _earliestRound + " and " + _latestRound);
+            throw new SimulatorStateException("Cannot set system to round " + round + "; must be between " + _earliestRound + " and " + _latestRound);
         }
         if (round != _currentRound)
         {
@@ -3124,7 +3105,7 @@ public class ParticleSystem : IReplayHistory
     {
         if (_currentRound == _earliestRound)
         {
-            throw new System.InvalidOperationException("Cannot step back because the system is in the earliest round " + _earliestRound);
+            throw new SimulatorStateException("Cannot step back because the system is in the earliest round " + _earliestRound);
         }
         // Have to synchronize to given round if we are still tracking
         // (just to be sure, particles could be in different rounds while tracking)
@@ -3162,7 +3143,7 @@ public class ParticleSystem : IReplayHistory
     {
         if (_currentRound == _latestRound)
         {
-            throw new System.InvalidOperationException("Cannot step forward because the system is in the latest round " + _latestRound);
+            throw new SimulatorStateException("Cannot step forward because the system is in the latest round " + _latestRound);
         }
         if (_currentRound == _latestRound - 1)
         {
