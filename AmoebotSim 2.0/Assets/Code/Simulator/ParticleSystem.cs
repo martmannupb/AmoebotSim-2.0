@@ -2527,8 +2527,9 @@ public class ParticleSystem : IReplayHistory
                     ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                     pset.UpdatePSetData(
                         circuits[ps.circuit].color,
-                        circuits[ps.circuit].hasBeep,
-                        p.HasPlannedBeep(ps.Id),
+                        // TODO: Visualize messages differently?
+                        circuits[ps.circuit].hasBeep || circuits[ps.circuit].message != null,
+                        p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
                         new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir.ToInt(), pin.globalEdgeOffset, pin.head) });
                     p.gCircuit.singletonSets.Add(pset);
                 }
@@ -2549,8 +2550,9 @@ public class ParticleSystem : IReplayHistory
                     ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                     pset.UpdatePSetData(
                         circuits[ps.circuit].color,
-                        circuits[ps.circuit].hasBeep,
-                        p.HasPlannedBeep(ps.Id),
+                        // TODO: Visualize messages differently?
+                        circuits[ps.circuit].hasBeep || circuits[ps.circuit].message != null,
+                        p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
                         pins);
                     p.gCircuit.partitionSets.Add(pset);
                 }
