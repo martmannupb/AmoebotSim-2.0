@@ -155,8 +155,8 @@ public class ParticleSystem : IReplayHistory
     private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
     // Initialization mode data structures
-    private List<InitializationParticle> particlesInit = new List<InitializationParticle>();
-    private Dictionary<Vector2Int, InitializationParticle> particleMapInit = new Dictionary<Vector2Int, InitializationParticle>();
+    private List<OpenInitParticle> particlesInit = new List<OpenInitParticle>();
+    private Dictionary<Vector2Int, OpenInitParticle> particleMapInit = new Dictionary<Vector2Int, OpenInitParticle>();
 
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
@@ -923,7 +923,7 @@ public class ParticleSystem : IReplayHistory
     {
         if (inInitializationState)
         {
-            if (particleMapInit.TryGetValue(position, out InitializationParticle p))
+            if (particleMapInit.TryGetValue(position, out OpenInitParticle p))
             {
                 particle = p;
                 return true;
@@ -3482,7 +3482,7 @@ public class ParticleSystem : IReplayHistory
             // Use the current system state as starting point for initialization system
             foreach (Particle p in particles)
             {
-                InitializationParticle ip = new InitializationParticle(this, p.Tail(), p.chirality, p.comDir, p.GlobalHeadDirection());
+                OpenInitParticle ip = new OpenInitParticle(this, p.Tail(), p.chirality, p.comDir, p.GlobalHeadDirection());
                 particlesInit.Add(ip);
                 particleMapInit[p.Tail()] = ip;
                 if (p.IsExpanded())
@@ -3655,7 +3655,7 @@ public class ParticleSystem : IReplayHistory
             return null;
         }
 
-        InitializationParticle ip = new InitializationParticle(this, tailPos, chirality, compassDir, headDirection);
+        OpenInitParticle ip = new OpenInitParticle(this, tailPos, chirality, compassDir, headDirection);
 
         if (particleMapInit.ContainsKey(ip.Tail()) || ip.IsExpanded() && particleMapInit.ContainsKey(ip.Head()))
         {
@@ -3755,7 +3755,7 @@ public class ParticleSystem : IReplayHistory
                 }
                 if (ip.IsExpanded())
                     particleMapInit.Remove(ip.Head());
-                particleMapInit[newHeadPos] = ip;
+                particleMapInit[newHeadPos] = (OpenInitParticle)ip;
             }
         }
 
@@ -3911,22 +3911,39 @@ public class ParticleSystem : IReplayHistory
         return particlesInit.ToArray();
     }
 
-
-
-
-
-
-    // TODO
-
-    public void RemoveParticle(Particle p)
-    {
-        Log.Debug("ParticleSystem: Remove Particle called.");
-        Log.Error("Do not call this, use IParticleState instead");
-    }
-
+    /// <summary>
+    /// Removes the given particle when in initialization state.
+    /// </summary>
+    /// <param name="p">The particle to be removed.</param>
     public void RemoveParticle(IParticleState p)
     {
-        Log.Error("Not implemented");
+        if (!inInitializationState)
+        {
+            Log.Warning("Cannot remove particles in simulation mode.");
+            return;
+        }
+
+        int idx = -1;
+        for (int i = 0; i < particlesInit.Count; i++)
+        {
+            if (particlesInit[i] == p)
+            {
+                idx = i;
+                break;
+            }
+        }
+
+        if (idx == -1)
+        {
+            Log.Warning("Could not find particle to be removed.");
+            return;
+        }
+
+        particleMapInit.Remove(p.Tail());
+        if (p.IsExpanded())
+            particleMapInit.Remove(p.Head());
+        particlesInit[idx].graphics.RemoveParticle();
+        particlesInit.RemoveAt(idx);
     }
 
     /// <summary>
@@ -3938,8 +3955,9 @@ public class ParticleSystem : IReplayHistory
     /// <returns><c>true</c> if and only if a particle was found at the given position.</returns>
     public bool TryGetInitParticleAt(Vector2Int position, out InitializationParticle particle)
     {
-        if (particleMapInit.TryGetValue(position, out particle))
+        if (particleMapInit.TryGetValue(position, out OpenInitParticle p))
         {
+            particle = p;
             return true;
         }
         else
@@ -3950,37 +3968,106 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// Here we want to move a particle (contracted or expanded) to a new place where it is contracted.
+    /// Moves the given particle to a new location in which it is contracted,
+    /// when in initialization mode.
     /// </summary>
-    /// <param name="p"></param>
-    /// <param name="gridPos"></param>
-    public void MoveParticleToNewContractedPosition(Particle p, Vector2Int gridPos)
-    {
-        Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
-        Log.Error("Do not call this, use IParticleState instead");
-    }
-
+    /// <param name="p">The particle to be moved.</param>
+    /// <param name="gridPos">The new grid position to which <paramref name="p"/>
+    /// should be moved.</param>
     public void MoveParticleToNewContractedPosition(IParticleState p, Vector2Int gridPos)
     {
-        Log.Debug("ParticleSystem: MoveParticleToNewContractedPosition called.");
-        Log.Error("Not implemented");
+        if (!inInitializationState)
+        {
+            Log.Warning("Cannot move particles in simulation mode.");
+            return;
+        }
+
+        int idx = -1;
+        for (int i = 0; i < particlesInit.Count; i++)
+        {
+            if (particlesInit[i] == p)
+            {
+                idx = i;
+                break;
+            }
+        }
+
+        if (idx == -1)
+        {
+            Log.Warning("Could not find particle to be moved.");
+            return;
+        }
+
+        OpenInitParticle ip = particlesInit[idx];
+
+        if (particleMapInit.TryGetValue(gridPos, out OpenInitParticle prt) && prt != ip)
+        {
+            Log.Error("Cannot move particle to grid position " + gridPos + ": Already occupied.");
+            return;
+        }
+
+        // This will already remove the head position from the map if p is expanded
+        ip.ExpansionDir = Direction.NONE;
+
+        particleMapInit.Remove(ip.Tail());
+        ip.TailPosDirect = gridPos;
+        ip.HeadPosDirect = gridPos;
+        particleMapInit[gridPos] = ip;
+        ip.graphics.UpdateReset();
     }
 
     /// <summary>
-    /// Here we want to move a particle (contracted or expanded) to a new place where it is expanded.
+    /// Moves the given particle to a new location in which it is expanded,
+    /// when in initialization mode.
     /// </summary>
-    /// <param name="p"></param>
-    /// <param name="gridPosHead"></param>
-    /// <param name="gridPosTail"></param>
-    public void MoveParticleToNewExpandedPosition(Particle p, Vector2Int gridPosHead, Vector2Int gridPosTail)
-    {
-        Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
-        Log.Error("Do not call this, use IParticleState instead");
-    }
-
+    /// <param name="p">The particle to be moved.</param>
+    /// <param name="gridPosHead">The new grid position to which
+    /// <paramref name="p"/>'s head should be moved.</param>
+    /// <param name="gridPosTail">The new grid position to which
+    /// <paramref name="p"/>'s tail should be moved. Must be
+    /// adjacent to <paramref name="gridPosHead"/>.</param>
     public void MoveParticleToNewExpandedPosition(IParticleState p, Vector2Int gridPosHead, Vector2Int gridPosTail)
     {
-        Log.Debug("ParticleSystem: MoveParticleToNewExpandedPosition called.");
-        Log.Error("Not implemented");
+        if (!inInitializationState)
+        {
+            Log.Warning("Cannot move particles in simulation mode.");
+            return;
+        }
+
+        int idx = -1;
+        for (int i = 0; i < particlesInit.Count; i++)
+        {
+            if (particlesInit[i] == p)
+            {
+                idx = i;
+                break;
+            }
+        }
+
+        if (idx == -1)
+        {
+            Log.Warning("Could not find particle to be moved.");
+            return;
+        }
+
+        OpenInitParticle ip = particlesInit[idx];
+
+        if (particleMapInit.TryGetValue(gridPosHead, out OpenInitParticle prt1) && prt1 != ip || particleMapInit.TryGetValue(gridPosTail, out OpenInitParticle prt2) && prt2 != ip)
+        {
+            Log.Error("Cannot move particle to grid positions " + gridPosHead + ", " + gridPosTail + ": Already occupied.");
+            return;
+        }
+
+        // This will remove the head position from the map if p is expanded
+        ip.ExpansionDir = Direction.NONE;
+
+        Direction newExpDir = ParticleSystem_Utils.VectorToDirection(gridPosHead - gridPosTail);
+        particleMapInit.Remove(ip.Tail());
+        ip.TailPosDirect = gridPosTail;
+        ip.HeadPosDirect = gridPosHead;
+        ip.ExpansionDirDirect = newExpDir;
+        particleMapInit[gridPosTail] = ip;
+        particleMapInit[gridPosHead] = ip;
+        ip.graphics.UpdateReset();
     }
 }

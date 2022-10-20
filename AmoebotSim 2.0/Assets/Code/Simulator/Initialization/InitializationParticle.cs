@@ -8,12 +8,12 @@ using UnityEngine;
 /// is used to instantiate the proper particles and the
 /// associated algorithms when simulation mode is entered.
 /// </summary>
-public class InitializationParticle : IParticleState
+public abstract class InitializationParticle : IParticleState
 {
-    private Vector2Int tailPos;
-    private Vector2Int headPos;
+    protected Vector2Int tailPos;
+    protected Vector2Int headPos;
 
-    private Direction expansionDir;
+    protected Direction expansionDir;
     public Direction ExpansionDir
     {
         get { return expansionDir; }
@@ -34,14 +34,14 @@ public class InitializationParticle : IParticleState
         }
     }
 
-    private bool chirality;
+    protected bool chirality;
     public bool Chirality
     {
         get { return chirality; }
         set { chirality = value; }
     }
 
-    private Direction compassDir;
+    protected Direction compassDir;
     public Direction CompassDir
     {
         get { return compassDir; }
@@ -54,10 +54,9 @@ public class InitializationParticle : IParticleState
         }
     }
 
-
     public List<int> genericParams;
     public ParticleGraphicsAdapterImpl graphics;
-    private ParticleSystem system;
+    protected ParticleSystem system;
 
     public InitializationParticle(ParticleSystem system, Vector2Int position, bool chirality, Direction compassDir, Direction expansionDir = Direction.NONE)
     {
