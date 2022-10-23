@@ -270,10 +270,6 @@ public class Particle : IParticleState, IReplayHistory
     // for others)
     public bool isActive = false;
 
-    // Neighbor cache
-    public Particle[] neighborCache = new Particle[10];
-    public bool[] neighborCacheValid = new bool[10];
-
     // Graphical information
     // TODO: Cache neighbor information in particles instead of this
     public ParticlePinGraphicState gCircuit;
