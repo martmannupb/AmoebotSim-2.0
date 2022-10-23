@@ -2458,8 +2458,6 @@ public class ParticleSystem : IReplayHistory
                 p.processedPinConfig = true;
             }
         }
-
-        totalCircuitCompTime += (Time.realtimeSinceStartup - tStart);
         string s = "Found " + circuits.Count + " circuits in " + (Time.realtimeSinceStartup - tStart) + " seconds\n";
 
         Debug.Log(s);
@@ -2545,6 +2543,8 @@ public class ParticleSystem : IReplayHistory
         {
             Circuit.Free(c);
         }
+
+        totalCircuitCompTime += Time.realtimeSinceStartup - tStart;
     }
 
     /// <summary>
