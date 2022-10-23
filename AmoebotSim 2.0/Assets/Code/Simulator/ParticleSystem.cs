@@ -158,6 +158,8 @@ public class ParticleSystem : IReplayHistory
     private List<OpenInitParticle> particlesInit = new List<OpenInitParticle>();
     private Dictionary<Vector2Int, OpenInitParticle> particleMapInit = new Dictionary<Vector2Int, OpenInitParticle>();
 
+    private float totalCircuitCompTime = 0f;
+
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
         this.sim = sim;
@@ -857,6 +859,7 @@ public class ParticleSystem : IReplayHistory
     /// </summary>
     public void Reset()
     {
+        totalCircuitCompTime = 0f;
         // Remove particles from the renderer system
         foreach (Particle p in particles)
         {
@@ -1030,6 +1033,8 @@ public class ParticleSystem : IReplayHistory
         _previousRound++;
         UpdateAllParticleVisuals(false);
         CleanupAfterRound();
+
+        Log.Debug("Average circuit computation time: " + totalCircuitCompTime / _currentRound);
 
         // Check if the simulation is over
         if (!finished && HasSimulationFinished())
@@ -2331,7 +2336,6 @@ public class ParticleSystem : IReplayHistory
     public void DiscoverCircuits(bool sendBeepsAndMessages)
     {
         float tStart = Time.realtimeSinceStartup;
-        // TODO: Experiment with initial capacity
         List<Circuit> circuits = new List<Circuit>(particles.Count * 6);
 
         // Go through all particles, start search for each unfinished one
@@ -2446,7 +2450,7 @@ public class ParticleSystem : IReplayHistory
                     // If we have not found a circuit after going through all pins, create a new circuit
                     if (!foundCircuit)
                     {
-                        Circuit c = new Circuit(circuits.Count);
+                        Circuit c = Circuit.Get(circuits.Count);
                         c.AddPartitionSet(ps);
                         circuits.Add(c);
                     }
@@ -2455,69 +2459,46 @@ public class ParticleSystem : IReplayHistory
             }
         }
 
+        totalCircuitCompTime += (Time.realtimeSinceStartup - tStart);
         string s = "Found " + circuits.Count + " circuits in " + (Time.realtimeSinceStartup - tStart) + " seconds\n";
-        //string s = "Found " + circuits.Count + " circuits:\n";
-        //foreach (Circuit c in circuits)
-        //{
-        //    //s += c.Print() + "\n";
-        //    if (c.partitionSets.Count > 1)
-        //    {
-        //        s += "Circuit with " + c.partitionSets.Count + " partition sets: " + (c.hasBeep ? "HAS BEEP" : "HAS NO BEEP") + "\n";
-        //        foreach (SysPartitionSet ps in c.partitionSets)
-        //        {
-        //            s += "Partition set with ID " + ps.Id + " and pins: ";
-        //            foreach (int i in ps.GetPinIds())
-        //            {
-        //                s += i + " ";
-        //            }
-        //            s += "\n";
-        //        }
-        //    }
-        //}
+
         Debug.Log(s);
 
-        // Apply beeps and send messages to all circuits
-        // Also apply colors to circuits
+        // Apply colors to circuits
         int colIdx = 0;
         foreach (Circuit c in circuits)
         {
-            if (!c.active)
-            {
+            if (!c.IsRoot())
                 continue;
-            }
-            if (sendBeepsAndMessages)
-            {
-                if (c.hasBeep)
-                {
-                    foreach (SysPartitionSet ps in c.partitionSets)
-                    {
-                        ps.pinConfig.particle.ReceiveBeep(ps.id);
-                    }
-                }
-                if (c.message != null)
-                {
-                    foreach (SysPartitionSet ps in c.partitionSets)
-                    {
-                        ps.pinConfig.particle.ReceiveMessage(ps.id, c.message);
-                    }
-                }
-            }
 
             // Only apply color to circuits with more than 2 partition sets
-            if (c.partitionSets.Count > 2 && !c.colorOverride)
+            if (c.NumPartitionSets > 2 && !c.HasColorOverride())
             {
-                c.color = c.colorOverride ? c.color : ColorData.Circuit_Colors[colIdx];
+                c.SetColor(ColorData.Circuit_Colors[colIdx]);
                 colIdx = (colIdx + 1) % ColorData.Circuit_Colors.Length;
             }
         }
 
-        // Complete graphics information for all particles
+
+        // Send beeps and messages
+        // Also complete graphics information for all particles
         foreach (Particle p in particles)
         {
             // Compute each partition set
             foreach (SysPartitionSet ps in p.PinConfiguration.partitionSets)
             {
                 if (ps.IsEmpty()) continue;
+
+                Circuit circ = circuits[ps.circuit];
+
+                if (sendBeepsAndMessages)
+                {
+                    if (circ.HasBeep())
+                        p.ReceiveBeep(ps.Id);
+                    Message msg = circ.GetMessage();
+                    if (msg != null)
+                        p.ReceiveMessage(ps.Id, msg);
+                }
 
                 // Singleton sets must be created independently
                 if (ps.NumStoredPins == 1)
@@ -2526,9 +2507,9 @@ public class ParticleSystem : IReplayHistory
                     Direction pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
                     ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                     pset.UpdatePSetData(
-                        circuits[ps.circuit].color,
+                        circ.GetColor(),
                         // TODO: Visualize messages differently?
-                        circuits[ps.circuit].hasBeep || circuits[ps.circuit].message != null,
+                        circ.HasBeep() || circ.GetMessage() != null,
                         p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
                         new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir.ToInt(), pin.globalEdgeOffset, pin.head) });
                     p.gCircuit.singletonSets.Add(pset);
@@ -2549,14 +2530,20 @@ public class ParticleSystem : IReplayHistory
                     }
                     ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                     pset.UpdatePSetData(
-                        circuits[ps.circuit].color,
+                        circ.GetColor(),
                         // TODO: Visualize messages differently?
-                        circuits[ps.circuit].hasBeep || circuits[ps.circuit].message != null,
+                        circ.HasBeep() || circ.GetMessage() != null,
                         p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
                         pins);
                     p.gCircuit.partitionSets.Add(pset);
                 }
             }
+        }
+
+        // Free the circuits
+        foreach (Circuit c in circuits)
+        {
+            Circuit.Free(c);
         }
     }
 
