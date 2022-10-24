@@ -158,8 +158,6 @@ public class ParticleSystem : IReplayHistory
     private List<OpenInitParticle> particlesInit = new List<OpenInitParticle>();
     private Dictionary<Vector2Int, OpenInitParticle> particleMapInit = new Dictionary<Vector2Int, OpenInitParticle>();
 
-    private float totalCircuitCompTime = 0f;
-
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
         this.sim = sim;
@@ -859,7 +857,6 @@ public class ParticleSystem : IReplayHistory
     /// </summary>
     public void Reset()
     {
-        totalCircuitCompTime = 0f;
         // Remove particles from the renderer system
         foreach (Particle p in particles)
         {
@@ -1033,8 +1030,6 @@ public class ParticleSystem : IReplayHistory
         _previousRound++;
         UpdateAllParticleVisuals(false);
         CleanupAfterRound();
-
-        Log.Debug("Average circuit computation time: " + totalCircuitCompTime / _currentRound);
 
         // Check if the simulation is over
         if (!finished && HasSimulationFinished())
@@ -2543,8 +2538,6 @@ public class ParticleSystem : IReplayHistory
         {
             Circuit.Free(c);
         }
-
-        totalCircuitCompTime += Time.realtimeSinceStartup - tStart;
     }
 
     /// <summary>
