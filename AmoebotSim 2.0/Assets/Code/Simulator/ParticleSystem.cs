@@ -2791,33 +2791,70 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
-    // TODO: Documentation
-
-    public bool FindFirstNeighbor<T>(Particle p, out Neighbor<T> neighbor, Direction startDir = Direction.NONE, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    /// <summary>
+    /// System-side implementation of <see cref="ParticleAlgorithm.FindFirstNeighbor{T}(out Neighbor{T}, Direction, bool, bool, int)"/>.
+    /// </summary>
+    /// <typeparam name="T">The algorithm type to search for.</typeparam>
+    /// <param name="p">The particle searching for a neighbor.</param>
+    /// <param name="neighbor">The neighbor to be returned.</param>
+    /// <param name="startDir">The direction in which to start searching.</param>
+    /// <param name="startAtHead">If <c>true</c>, start searching at the particle's head.</param>
+    /// <param name="withChirality">If <c>true</c>, search in direction of the particle's chirality.</param>
+    /// <param name="maxNumber">Maximum number of neighbor nodes to search.</param>
+    /// <returns><c>true</c> if and only if a neighbor was found.</returns>
+    public bool FindFirstNeighbor<T>(Particle p, out Neighbor<T> neighbor, Direction startDir = Direction.E, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
-        if (startDir == Direction.NONE)
-            startDir = DirectionHelpers.Cardinal(0);
-        if (maxNumber == -1)
+        if (!startDir.IsCardinal())
         {
-            maxNumber = p.IsExpanded() ? 10 : 6;
+            Log.Error("Cannot search for neighbor in direction " + startDir + ", must be cardinal direction.");
+            neighbor = Neighbor<T>.Null;
+            return false;
         }
+
+        // Limit maxNumber to total number of neighbor nodes
+        if (maxNumber < 0)
+        {
+            maxNumber = 10;
+        }
+        maxNumber = Mathf.Min(maxNumber, p.IsContracted() ? 6 : 10);
+
         foreach(Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxNumber, maxNumber))
         {
             neighbor = nbr;
             return true;
         }
-        neighbor = new Neighbor<T>(null, Direction.NONE, true);
+        neighbor = Neighbor<T>.Null;
         return false;
     }
 
-    public bool FindFirstNeighborWithProperty<T>(Particle p, System.Func<T, bool> prop, out Neighbor<T> neighbor, Direction startDir = Direction.NONE, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    /// <summary>
+    /// System-side implementation of <see cref="ParticleAlgorithm.FindFirstNeighborWithProperty{T}(System.Func{T, bool}, out Neighbor{T}, Direction, bool, bool, int)"/>.
+    /// </summary>
+    /// <typeparam name="T">The algorithm type to search for.</typeparam>
+    /// <param name="prop">The property to be satisfied by the neighbor.</param>
+    /// <param name="p">The particle searching for a neighbor.</param>
+    /// <param name="neighbor">The neighbor to be returned.</param>
+    /// <param name="startDir">The direction in which to start searching.</param>
+    /// <param name="startAtHead">If <c>true</c>, start searching at the particle's head.</param>
+    /// <param name="withChirality">If <c>true</c>, search in direction of the particle's chirality.</param>
+    /// <param name="maxNumber">Maximum number of neighbor nodes to search.</param>
+    /// <returns><c>true</c> if and only if a neighbor was found.</returns>
+    public bool FindFirstNeighborWithProperty<T>(Particle p, System.Func<T, bool> prop, out Neighbor<T> neighbor, Direction startDir = Direction.E, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
-        if (startDir == Direction.NONE)
-            startDir = DirectionHelpers.Cardinal(0);
-        if (maxNumber == -1)
+        if (!startDir.IsCardinal())
         {
-            maxNumber = p.IsExpanded() ? 10 : 6;
+            Log.Error("Cannot search for neighbor in direction " + startDir + ", must be cardinal direction.");
+            neighbor = Neighbor<T>.Null;
+            return false;
         }
+
+        // Limit maxNumber to total number of neighbor nodes
+        if (maxNumber < 0)
+        {
+            maxNumber = 10;
+        }
+        maxNumber = Mathf.Min(maxNumber, p.IsContracted() ? 6 : 10);
+
         foreach (Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxNumber, maxNumber))
         {
             if (prop(nbr.neighbor))
@@ -2826,8 +2863,84 @@ public class ParticleSystem : IReplayHistory
                 return true;
             }
         }
-        neighbor = new Neighbor<T>(null, Direction.NONE, true);
+        neighbor = Neighbor<T>.Null;
         return false;
+    }
+
+    /// <summary>
+    /// System-side implementation of <see cref="ParticleAlgorithm.FindNeighbors{T}(Direction, bool, bool, int, int)"/>.
+    /// </summary>
+    /// <typeparam name="T">The algorithm type to search for.</typeparam>
+    /// <param name="p">The particle searching for a neighbor.</param>
+    /// <param name="startDir">The direction in which to start searching.</param>
+    /// <param name="startAtHead">If <c>true</c>, start searching at the particle's head.</param>
+    /// <param name="withChirality">If <c>true</c>, search in direction of the particle's chirality.</param>
+    /// <param name="maxSearch">Maximum number of neighbor nodes to search.</param>
+    /// <param name="maxReturn">Maximum number of neighbors to return.</param>
+    /// <returns>The list of discovered neighbors.</returns>
+    public List<Neighbor<T>> FindNeighbors<T>(Particle p, Direction startDir = Direction.E, bool startAtHead = true,
+        bool withChirality = true, int maxSearch = -1, int maxReturn = -1) where T : ParticleAlgorithm
+    {
+        List<Neighbor<T>> nbrs = new List<Neighbor<T>>();
+        if (!startDir.IsCardinal())
+        {
+            Log.Error("Cannot search for neighbor in direction " + startDir + ", must be cardinal direction.");
+            return nbrs;
+        }
+
+        // Limit maxSearch and maxReturn to total number of neighbor nodes
+        if (maxSearch < 0)
+            maxSearch = 10;
+        if (maxReturn < 0)
+            maxReturn = 10;
+        maxSearch = Mathf.Min(maxSearch, p.IsContracted() ? 6 : 10);
+        maxReturn = Mathf.Min(maxReturn, p.IsContracted() ? 6 : 10);
+
+        foreach (Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxSearch, maxReturn))
+        {
+            nbrs.Add(nbr);
+        }
+
+        return nbrs;
+    }
+
+    /// <summary>
+    /// System-side implementation of <see cref="ParticleAlgorithm.FindNeighborsWithProperty{T}(System.Func{T, bool}, Direction, bool, bool, int, int)"/>.
+    /// </summary>
+    /// <typeparam name="T">The algorithm type to search for.</typeparam>
+    /// <param name="p">The particle searching for a neighbor.</param>
+    /// <param name="prop">The property to be satisfied by the neighbors.</param>
+    /// <param name="startDir">The direction in which to start searching.</param>
+    /// <param name="startAtHead">If <c>true</c>, start searching at the particle's head.</param>
+    /// <param name="withChirality">If <c>true</c>, search in direction of the particle's chirality.</param>
+    /// <param name="maxSearch">Maximum number of neighbor nodes to search.</param>
+    /// <param name="maxReturn">Maximum number of neighbors to return.</param>
+    /// <returns>The list of discovered neighbors.</returns>
+    public List<Neighbor<T>> FindNeighborsWithProperty<T>(Particle p, System.Func<T, bool> prop, Direction startDir = Direction.E,
+        bool startAtHead = true, bool withChirality = true, int maxSearch = -1, int maxReturn = -1) where T : ParticleAlgorithm
+    {
+        List<Neighbor<T>> nbrs = new List<Neighbor<T>>();
+        if (!startDir.IsCardinal())
+        {
+            Log.Error("Cannot search for neighbor in direction " + startDir + ", must be cardinal direction.");
+            return nbrs;
+        }
+
+        // Limit maxSearch and maxReturn to total number of neighbor nodes
+        if (maxSearch < 0)
+            maxSearch = 10;
+        if (maxReturn < 0)
+            maxReturn = 10;
+        maxSearch = Mathf.Min(maxSearch, p.IsContracted() ? 6 : 10);
+        maxReturn = Mathf.Min(maxReturn, p.IsContracted() ? 6 : 10);
+
+        foreach (Neighbor<T> nbr in IterateNeighbors<T>(p, startDir, startAtHead, withChirality, maxSearch, maxReturn))
+        {
+            if (prop(nbr.neighbor))
+                nbrs.Add(nbr);
+        }
+
+        return nbrs;
     }
 
     /// <summary>

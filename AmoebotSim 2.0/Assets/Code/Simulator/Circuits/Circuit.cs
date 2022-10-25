@@ -224,9 +224,9 @@ public class Circuit
     {
         if (pool.Count > 0)
         {
-            Circuit t = pool.Pop();
-            t.Reset(id);
-            return t;
+            Circuit c = pool.Pop();
+            c.Reset(id);
+            return c;
         }
         else
         {
@@ -237,10 +237,10 @@ public class Circuit
     /// <summary>
     /// Returns the given circuit instance to the pool.
     /// </summary>
-    /// <param name="t">The circuit to be returned to the pool.</param>
-    public static void Free(Circuit t)
+    /// <param name="c">The circuit to be returned to the pool.</param>
+    public static void Free(Circuit c)
     {
-        if (t != null)
-            pool.Push(t);
+        if (c != null)
+            pool.Push(c);
     }
 }

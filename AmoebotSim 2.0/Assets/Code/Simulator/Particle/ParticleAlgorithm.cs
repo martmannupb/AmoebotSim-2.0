@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -20,6 +21,28 @@ public struct Neighbor<T> where T : ParticleAlgorithm
         this.neighbor = neighbor;
         this.localDir = localDir;
         this.atHead = atHead;
+    }
+
+    public static Neighbor<T> Null = new Neighbor<T>(null, Direction.NONE, false);
+
+    public static bool operator==(Neighbor<T> nbr1, Neighbor<T> nbr2)
+    {
+        return nbr1.neighbor == nbr2.neighbor && nbr1.localDir == nbr2.localDir && nbr1.atHead == nbr2.atHead;
+    }
+
+    public static bool operator !=(Neighbor<T> nbr1, Neighbor<T> nbr2)
+    {
+        return !(nbr1 == nbr2);
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj != null && obj.GetType() == GetType() && this == (Neighbor<T>)obj;
+    }
+
+    public override int GetHashCode()
+    {
+        return System.HashCode.Combine(neighbor, localDir, atHead);
     }
 }
 
@@ -570,6 +593,8 @@ public abstract class ParticleAlgorithm
         return new SysPinConfiguration(particle, PinsPerEdge, headDirection);
     }
 
+    // TODO: Update the documentation here
+
     /// <summary>
     /// Sets the pin configuration that should be applied to the particle
     /// at the end of this round. Only works in <see cref="ActivateBeep"/>.
@@ -714,19 +739,110 @@ public abstract class ParticleAlgorithm
         return particle.system.IsTailAt(particle, locDir, fromHead);
     }
 
-    // TODO: Documentation
-
-    public bool FindFirstNeighbor<T>(out Neighbor<T> neighbor, Direction startDir = Direction.NONE, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    /// <summary>
+    /// Searches for the first neighboring particle in the specified range.
+    /// </summary>
+    /// <typeparam name="T">The algorithm type to search for. Should be the
+    /// same type as the algorithm that calls this method.</typeparam>
+    /// <param name="neighbor">The first neighbor particle that is encountered,
+    /// or <see cref="Neighbor{T}.Null"/> if no neighbor is found.</param>
+    /// <param name="startDir">The local direction of the first port to search.</param>
+    /// <param name="startAtHead">Indicates whether <paramref name="startDir"/>
+    /// is relative to the particle's head. Has no effect for contracted
+    /// particles.</param>
+    /// <param name="withChirality">If <c>true</c>, the search progresses in
+    /// the particle's local counter-clockwise direction, otherwise in the
+    /// local clockwise direction.</param>
+    /// <param name="maxNumber">The maximum number of ports to check.
+    /// The maximum value is <c>6</c> for contracted particles and <c>10</c>
+    /// for expanded particles. Negative values automatically select the
+    /// maximum number.</param>
+    /// <returns><c>true</c> if and only if a neighbor was found.</returns>
+    public bool FindFirstNeighbor<T>(out Neighbor<T> neighbor, Direction startDir = Direction.E, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
         CheckActive("Neighbor information is not available for other particles.");
         return particle.system.FindFirstNeighbor<T>(particle, out neighbor, startDir, startAtHead, withChirality, maxNumber);
     }
 
-    public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, Direction startDir = Direction.NONE, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
+    /// <summary>
+    /// Searches for the first neighboring particle in the specified range
+    /// that satisfies the given property.
+    /// </summary>
+    /// <typeparam name="T">The algorithm type to search for. Should be the
+    /// same type as the algorithm that calls this method.</typeparam>
+    /// <param name="prop">The property the neighbor has to satisfy.</param>
+    /// <param name="neighbor">The first neighbor particle that is encountered,
+    /// or <see cref="Neighbor{T}.Null"/> if no neighbor is found.</param>
+    /// <param name="startDir">The local direction of the first port to search
+    /// at.</param>
+    /// <param name="startAtHead">Indicates whether <paramref name="startDir"/>
+    /// is relative to the particle's head. Has no effect for contracted
+    /// particles.</param>
+    /// <param name="withChirality">If <c>true</c>, the search progresses in
+    /// the particle's local counter-clockwise direction, otherwise in the
+    /// local clockwise direction.</param>
+    /// <param name="maxNumber">The maximum number of ports to check.
+    /// The maximum value is <c>6</c> for contracted particles and <c>10</c>
+    /// for expanded particles. Negative values automatically select the
+    /// maximum number.</param>
+    /// <returns><c>true</c> if and only if a neighbor was found.</returns>
+    public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, Direction startDir = Direction.E, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
     {
         
         CheckActive("Neighbor information is not available for other particles.");
         return particle.system.FindFirstNeighborWithProperty<T>(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
+    }
+
+    /// <summary>
+    /// Searches for neighboring particles in the specified range.
+    /// </summary>
+    /// <typeparam name="T">The algorithm type to search for. Should be the
+    /// same type as the algorithm that calls this method.</typeparam>
+    /// <param name="startDir">The local direction of the first port to search.</param>
+    /// <param name="startAtHead">Indicates whether <paramref name="startDir"/>
+    /// is relative to the particle's head. Has no effect for contracted
+    /// particles.</param>
+    /// <param name="withChirality">If <c>true</c>, the search progresses in
+    /// the particle's local counter-clockwise direction, otherwise in the
+    /// local clockwise direction.</param>
+    /// <param name="maxSearch">The maximum number of ports to search. Will always
+    /// be limited to the total number of ports. Negative values mean that all
+    /// ports will be searched.</param>
+    /// <param name="maxReturn">The maximum number of neighbors to return. The
+    /// same restrictions as for <paramref name="maxSearch"/> apply.</param>
+    /// <returns>A list containing all discovered neighbors.</returns>
+    public List<Neighbor<T>> FindNeighbors<T>(Direction startDir = Direction.E, bool startAtHead = true,
+        bool withChirality = true, int maxSearch = -1, int maxReturn = -1) where T : ParticleAlgorithm
+    {
+        CheckActive("Neighbor information is not available for other particles.");
+        return particle.system.FindNeighbors<T>(particle, startDir, startAtHead, withChirality, maxSearch, maxReturn);
+    }
+
+    /// <summary>
+    /// Searches for neighboring particles in the specified range that satisfy
+    /// the given property.
+    /// </summary>
+    /// <typeparam name="T">The algorithm type to search for. Should be the
+    /// same type as the algorithm that calls this method.</typeparam>
+    /// <param name="prop">The property the neighbors have to satisfy.</param>
+    /// <param name="startDir">The local direction of the first port to search.</param>
+    /// <param name="startAtHead">Indicates whether <paramref name="startDir"/>
+    /// is relative to the particle's head. Has no effect for contracted
+    /// particles.</param>
+    /// <param name="withChirality">If <c>true</c>, the search progresses in
+    /// the particle's local counter-clockwise direction, otherwise in the
+    /// local clockwise direction.</param>
+    /// <param name="maxSearch">The maximum number of ports to search. Will always
+    /// be limited to the total number of ports. Negative values mean that all
+    /// ports will be searched.</param>
+    /// <param name="maxReturn">The maximum number of neighbors to return. The
+    /// same restrictions as for <paramref name="maxSearch"/> apply.</param>
+    /// <returns>A list containing all discovered neighbors.</returns>
+    public List<Neighbor<T>> FindNeighborsWithProperty<T>(System.Func<T, bool> prop, Direction startDir = Direction.E, bool startAtHead = true,
+        bool withChirality = true, int maxSearch = -1, int maxReturn = -1) where T : ParticleAlgorithm
+    {
+        CheckActive("Neighbor information is not available for other particles.");
+        return particle.system.FindNeighborsWithProperty<T>(particle, prop, startDir, startAtHead, withChirality, maxSearch, maxReturn);
     }
 
     /**
@@ -771,6 +887,8 @@ public abstract class ParticleAlgorithm
         int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
         return particle.BondActive(label);
     }
+
+    // TODO: Update documentation
 
     /// <summary>
     /// Marks the specified bond to have special behavior.
