@@ -12,5 +12,7 @@ public class SimulationStateSaveData
 
     public int finishedRound;
 
+    public ValueHistorySaveData<int> anchorIdxHistory;
+
     public ParticleStateSaveData[] particles;
 }

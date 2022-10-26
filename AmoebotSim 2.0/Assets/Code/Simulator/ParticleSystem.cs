@@ -146,6 +146,9 @@ public class ParticleSystem : IReplayHistory
     // The first round in which all particles were finished
     private int finishedRound = -1;
 
+    // The current anchor particle
+    private ValueHistory<int> anchorIdxHistory = new ValueHistory<int>(0, 0);
+
     // References
     public AmoebotSimulator sim;
     public RenderSystem renderSystem;
@@ -876,6 +879,10 @@ public class ParticleSystem : IReplayHistory
 
         finished = false;
         finishedRound = -1;
+
+        anchorIdxHistory.SetMarkerToRound(0);
+        anchorIdxHistory.CutOffAtMarker();
+        anchorIdxHistory.ContinueTracking();
     }
 
     /// <summary>
@@ -1273,7 +1280,7 @@ public class ParticleSystem : IReplayHistory
         Queue<Particle> queue = new Queue<Particle>();
 
         // Start with the anchor particle
-        Particle anchor = particles[0];
+        Particle anchor = particles[anchorIdxHistory.GetMarkedValue()];
         anchor.jmOffset = Vector2Int.zero;
 
         queue.Enqueue(anchor);
@@ -3221,7 +3228,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// Returns the world coordinates of the system's current seed particle.
+    /// Returns the world coordinates of the system's current seed/anchor particle.
     /// </summary>
     /// <returns>The world coordinates of the system's seed particle, if it
     /// exists, otherwise <c>(0, 0)</c>.</returns>
@@ -3240,7 +3247,7 @@ public class ParticleSystem : IReplayHistory
         {
             n = particles.Count;
             if (n > 0)
-                seed = particles[0];
+                seed = particles[anchorIdxHistory.GetMarkedValue()];
         }
 
         if (n > 0)
@@ -3249,6 +3256,29 @@ public class ParticleSystem : IReplayHistory
             result = Vector2.zero;
 
         return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(result.x, result.y);
+    }
+
+    public void SetAnchor(IParticleState p)
+    {
+        if (inInitializationState || !isTracking)
+        {
+            Log.Error("Can only set anchor particle while in the last round in simulation mode.");
+            return;
+        }
+        for (int i = 0; i < particles.Count; i++)
+        {
+            if (particles[i] == p)
+            {
+                anchorIdxHistory.RecordValueInRound(i, _currentRound);
+                return;
+            }    
+        }
+        Log.Warning("Could not find new anchor particle.");
+    }
+
+    public bool IsAnchor(IParticleState p)
+    {
+        return !inInitializationState && p == particles[anchorIdxHistory.GetMarkedValue()];
     }
 
 
@@ -3297,7 +3327,8 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
-            // TODO: Puth this into a helper method?
+            anchorIdxHistory.SetMarkerToRound(round);
+            // TODO: Put this into a helper method?
             DiscoverCircuits(false);
             LoadMovementGraphicsInfo(false);
             UpdateAllParticleVisuals(true);
@@ -3336,6 +3367,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
+            anchorIdxHistory.StepBack();
             DiscoverCircuits(false);
             LoadMovementGraphicsInfo(false);
             UpdateAllParticleVisuals(true);
@@ -3371,6 +3403,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = false;
+            anchorIdxHistory.StepForward();
             DiscoverCircuits(false);
             LoadMovementGraphicsInfo(true);
             UpdateAllParticleVisuals(false);
@@ -3403,6 +3436,7 @@ public class ParticleSystem : IReplayHistory
                 }
             }
             isTracking = true;
+            anchorIdxHistory.ContinueTracking();
             DiscoverCircuits(false);
             LoadMovementGraphicsInfo(stepFromSecondLastRound);
             UpdateAllParticleVisuals(!stepFromSecondLastRound);
@@ -3426,6 +3460,8 @@ public class ParticleSystem : IReplayHistory
                 p.ResetPlannedBeepsAndMessages();
             }
             isTracking = true;
+            anchorIdxHistory.CutOffAtMarker();
+            anchorIdxHistory.ContinueTracking();
 
             // Also reset finished state if necessary
             if (finished && _latestRound < finishedRound)
@@ -3448,6 +3484,7 @@ public class ParticleSystem : IReplayHistory
         {
             p.ShiftTimescale(amount);
         }
+        anchorIdxHistory.ShiftTimescale(amount);
 
         if (finished)
             finishedRound += amount;
@@ -3471,6 +3508,7 @@ public class ParticleSystem : IReplayHistory
         data.earliestRound = _earliestRound;
         data.latestRound = _latestRound;
         data.finishedRound = finishedRound;
+        data.anchorIdxHistory = anchorIdxHistory.GenerateSaveData();
 
         data.particles = new ParticleStateSaveData[particles.Count];
         for (int i = 0; i < particles.Count; i++)
@@ -3500,6 +3538,7 @@ public class ParticleSystem : IReplayHistory
         _latestRound = data.latestRound;
         _currentRound = _latestRound;
         _previousRound = _latestRound;
+        anchorIdxHistory = new ValueHistory<int>(data.anchorIdxHistory);
 
         finishedRound = data.finishedRound;
         if (finishedRound != -1)
