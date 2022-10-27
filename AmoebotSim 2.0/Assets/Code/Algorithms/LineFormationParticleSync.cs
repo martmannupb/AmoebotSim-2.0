@@ -120,6 +120,11 @@ public class LineFormationParticleSync : ParticleAlgorithm
         }
     }
 
+    public void Init(int myInt, float myFloat)
+    {
+
+    }
+
     // Only need one pin per edge in this algorithm because communication
     // is very simple
     public override int PinsPerEdge => 1;

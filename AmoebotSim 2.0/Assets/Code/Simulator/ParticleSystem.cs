@@ -161,6 +161,12 @@ public class ParticleSystem : IReplayHistory
     private List<OpenInitParticle> particlesInit = new List<OpenInitParticle>();
     private Dictionary<Vector2Int, OpenInitParticle> particleMapInit = new Dictionary<Vector2Int, OpenInitParticle>();
 
+    private string selectedAlgorithm = "Line Formation";
+    public string SelectedAlgorithm
+    {
+        get { return selectedAlgorithm; }
+    }
+
     public ParticleSystem(AmoebotSimulator sim, RenderSystem renderSystem)
     {
         this.sim = sim;
@@ -3584,6 +3590,8 @@ public class ParticleSystem : IReplayHistory
         InitializationMethodManager.Instance.GenerateSystem(this, methodName, parameters);
     }
 
+    // TODO: Use method with string parameter instead
+
     /// <summary>
     /// Switches the system state to initialization mode.
     /// </summary>
@@ -3594,6 +3602,58 @@ public class ParticleSystem : IReplayHistory
 
         // Note: The initialization window has just been opened. So it might be possible to save the state of a running algorithm and convert its particles to the initialization particles
         // in order to be able to use the given state for new algorithms / save the particle configuration.
+
+        particlesInit.Clear();
+        particleMapInit.Clear();
+
+        // Use the current system if we have one
+        if (particles.Count > 0)
+        {
+            // Store the simulation state
+            SimulationStateSaveData saveData = GenerateSaveData();
+            if (SaveStateUtility.Save(saveData, SaveStateUtility.tmpSaveFile))
+            {
+                storedSimulationState = true;
+                storedSimulationRound = _currentRound;
+            }
+            else
+            {
+                Log.Warning("Could not save current simulation state.");
+            }
+
+            // Use the current system state as starting point for initialization system
+            foreach (Particle p in particles)
+            {
+                OpenInitParticle ip = new OpenInitParticle(this, p.Tail(), p.chirality, p.comDir, p.GlobalHeadDirection());
+                particlesInit.Add(ip);
+                particleMapInit[p.Tail()] = ip;
+                if (p.IsExpanded())
+                    particleMapInit[p.Head()] = ip;
+                ip.graphics.AddParticle(new ParticleMovementState(ip.Head(), ip.Tail(), ip.IsExpanded(), ip.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
+                ip.graphics.UpdateReset();
+            }
+        }
+        // Hide the circuits
+        renderSystem.CircuitCalculationOver();
+
+        Reset();
+        inInitializationState = true;
+    }
+
+    /// <summary>
+    /// Switches the system state to initialization mode.
+    /// </summary>
+    /// <param name="selectedAlgo">The name of the first algorithm
+    /// that should be selected.</param>
+    public void InitializationModeStarted(string selectedAlgo)
+    {
+        if (inInitializationState)
+            return;
+
+        // Note: The initialization window has just been opened. So it might be possible to save the state of a running algorithm and convert its particles to the initialization particles
+        // in order to be able to use the given state for new algorithms / save the particle configuration.
+
+        selectedAlgorithm = selectedAlgo;
 
         particlesInit.Clear();
         particleMapInit.Clear();
@@ -3699,6 +3759,16 @@ public class ParticleSystem : IReplayHistory
     public bool IsInLatestRound()
     {
         return CurrentRound == LatestRound;
+    }
+
+    public void SetSelectedAlgorithm(string algoName)
+    {
+        if (!inInitializationState)
+            return;
+
+        selectedAlgorithm = algoName;
+
+        // TODO: Reset system and generate again
     }
 
     /// <summary>

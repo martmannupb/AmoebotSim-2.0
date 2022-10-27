@@ -11,6 +11,7 @@ public class AlgorithmManager
     private static readonly string Chirality_Property = "Chirality";
     private static readonly string Compass_Property = "Compass";
     private static readonly string Generator_Property = "GenerationMethod";
+    private static readonly string Init_Method = "Init";
     
     // Singleton
     private static AlgorithmManager instance = new AlgorithmManager();
@@ -26,16 +27,18 @@ public class AlgorithmManager
         public ConstructorInfo ctor;
         public Initialization.Chirality chirality;
         public Initialization.Compass compassDir;
+        public MethodInfo initMethod;
         public string generationMethod;
 
         public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, Initialization.Chirality chirality, Initialization.Compass compassDir,
-            string generationMethod)
+            MethodInfo initMethod, string generationMethod)
         {
             this.name = name;
             this.type = type;
             this.ctor = ctor;
             this.chirality = chirality;
             this.compassDir = compassDir;
+            this.initMethod = initMethod;
             this.generationMethod = generationMethod;
         }
     }
@@ -92,13 +95,15 @@ public class AlgorithmManager
                 continue;
             }
 
+            MethodInfo initMethod = algoType.GetMethod(Init_Method);
+
             if (algorithms.ContainsKey(name))
             {
                 Debug.LogWarning("ParticleAlgorithm with name '" + name + "' already exists, cannot load algorithm");
             }
             else
             {
-                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, chirality, compass, generator);
+                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, chirality, compass, initMethod, generator);
             }
         }
     }
@@ -143,6 +148,15 @@ public class AlgorithmManager
             throw new System.ArgumentException("Could not find algorithm");
     }
 
+    public ParameterInfo[] GetInitParameters(string name)
+    {
+        AlgorithmInfo info = FindAlgorithm(name);
+        if (info == null || info.initMethod == null)
+            return null;
+
+        return info.initMethod.GetParameters();
+    }
+
     public ParticleAlgorithm Instantiate(string name, Particle particle, int[] genericParams)
     {
         AlgorithmInfo info = FindAlgorithm(name);
@@ -153,6 +167,20 @@ public class AlgorithmManager
 
         //ConstructorInfo ctor = info.type.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) });
         return (ParticleAlgorithm)info.ctor.Invoke(new object[] { particle, genericParams });
+    }
+
+    public void Initialize(string name, ParticleAlgorithm algo, object[] parameters)
+    {
+        AlgorithmInfo info = FindAlgorithm(name);
+        if (info == null)
+        {
+            throw new System.ArgumentException("Could not find algorithm");
+        }
+
+        if (info.initMethod != null)
+        {
+            info.initMethod.Invoke(algo, parameters);
+        }
     }
 
     public List<string> GetAlgorithmNames()

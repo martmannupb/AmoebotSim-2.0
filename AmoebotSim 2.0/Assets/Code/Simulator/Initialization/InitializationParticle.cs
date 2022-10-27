@@ -54,6 +54,9 @@ public abstract class InitializationParticle : IParticleState
         }
     }
 
+    // Attributes representing the parameter values
+    protected List<IParticleAttribute> attributes;
+
     public List<int> genericParams;
     public ParticleGraphicsAdapterImpl graphics;
     protected ParticleSystem system;
@@ -69,6 +72,49 @@ public abstract class InitializationParticle : IParticleState
         else
             headPos = ParticleSystem_Utils.GetNbrInDir(tailPos, expansionDir);
         this.system = system;
+
+        // Setup the attributes according to the selected algorithm's init parameters
+        string algo = system.SelectedAlgorithm;
+        AlgorithmManager man = AlgorithmManager.Instance;
+        if (man.IsAlgorithmKnown(algo))
+        {
+            System.Reflection.ParameterInfo[] initParams = man.GetInitParameters(algo);
+            if (initParams != null)
+            {
+                foreach (System.Reflection.ParameterInfo param in initParams)
+                {
+                    if (param.ParameterType == typeof(bool))
+                    {
+                        attributes.Add(new ParticleAttribute_Bool(null, param.Name, param.HasDefaultValue ? (bool)param.DefaultValue : false));
+                    }
+                    else if (param.ParameterType == typeof(Direction))
+                    {
+                        attributes.Add(new ParticleAttribute_Direction(null, param.Name, param.HasDefaultValue ? (Direction)param.DefaultValue : Direction.NONE));
+                    }
+                    else if (param.ParameterType == typeof(float))
+                    {
+                        attributes.Add(new ParticleAttribute_Float(null, param.Name, param.HasDefaultValue ? (float)param.DefaultValue : 0f));
+                    }
+                    else if (param.ParameterType == typeof(int))
+                    {
+                        attributes.Add(new ParticleAttribute_Int(null, param.Name, param.HasDefaultValue ? (int)param.DefaultValue : 0));
+                    }
+                    else if (param.ParameterType == typeof(string))
+                    {
+                        attributes.Add(new ParticleAttribute_String(null, param.Name, param.HasDefaultValue ? (string)param.DefaultValue : ""));
+                    }
+                    else if (param.ParameterType.IsEnum)
+                    {
+                        System.Type enumAttrType = typeof(ParticleAttribute_Enum<>);
+                        enumAttrType = enumAttrType.MakeGenericType(new System.Type[] { param.ParameterType });
+                        System.Reflection.ConstructorInfo ctor = enumAttrType.GetConstructor(new System.Type[] { typeof(Particle), typeof(string), param.ParameterType });
+                        IParticleAttribute attr = (IParticleAttribute)ctor.Invoke(new object[] { null, param.Name, param.HasDefaultValue ? param.DefaultValue : null});
+                        attributes.Add(attr);
+                        //attributes.Add(new ParticleAttribute_Enum<param.ParameterType>(null, param.Name, param.HasDefaultValue ? (Direction)param.DefaultValue : Direction.NONE));
+                    }
+                }
+            }
+        }
 
         genericParams = new List<int>(system.NumGenericParameters);
         for (int i = 0; i < system.NumGenericParameters; i++)
@@ -136,11 +182,16 @@ public abstract class InitializationParticle : IParticleState
 
     public List<IParticleAttribute> GetAttributes()
     {
-        return new List<IParticleAttribute>();
+        return attributes;
     }
 
     public IParticleAttribute TryGetAttributeByName(string attrName)
     {
+        foreach (IParticleAttribute attr in attributes)
+        {
+            if (attr.ToString_AttributeName().Equals(attrName))
+                return attr;
+        }
         return null;
     }
 
