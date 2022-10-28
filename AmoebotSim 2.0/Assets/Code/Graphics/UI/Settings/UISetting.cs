@@ -121,14 +121,14 @@ public abstract class UISetting
     public void Lock()
     {
         LockSetting();
-        button.enabled = false;
+        if (button != null) button.enabled = false;
         locked = true;
     }
 
     public void Unlock()
     {
         UnlockSetting();
-        button.enabled = true;
+        if (button != null) button.enabled = true;
         locked = false;
     }
 
