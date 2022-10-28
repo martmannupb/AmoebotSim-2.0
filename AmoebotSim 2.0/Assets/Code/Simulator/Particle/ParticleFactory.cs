@@ -37,9 +37,16 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateParticle(ParticleSystem system, string algorithmId, InitializationParticle ip)
+    public static Particle CreateParticle(ParticleSystem system, string algorithmId, InitializationParticle ip, bool initialize = false)
     {
-        return CreateParticle(system, algorithmId, ip.genericParams, ip.Tail(), ip.CompassDir, ip.Chirality, ip.ExpansionDir);
+        Particle p = CreateParticle(system, algorithmId, ip.genericParams, ip.Tail(), ip.CompassDir, ip.Chirality, ip.ExpansionDir);
+        if (initialize)
+        {
+            p.isActive = true;
+            AlgorithmManager.Instance.Initialize(algorithmId, p.algorithm, ip.GetParameterValues());
+            p.isActive = false;
+        }
+        return p;
     }
 
     public static Particle CreateExpandedTestParticle(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)

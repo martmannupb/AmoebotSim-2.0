@@ -18,22 +18,25 @@ public class SmartMaterialParticle : ParticleAlgorithm
             return;
         }
 
-        if (genericParams.Length < 1)
-        {
-            Log.Error("Not enough generic parameters: Require at least 1");
-            return;
-        }
-
         int d = HeadDirection().ToInt();
         SetMainColor(ColorData.Circuit_Colors[d]);
 
         firstRound = CreateAttributeBool("First Round", true);
-        hexType = CreateAttributeInt("Hexagon Type", genericParams[0]);
+        hexType = CreateAttributeInt("Hexagon Type", 0);
         onLeftEdge = CreateAttributeBool("On Left Edge", false);
         onRightEdge = CreateAttributeBool("On Right Edge", false);
         onTopEdge = CreateAttributeBool("On Top Edge", false);
         onBotEdge = CreateAttributeBool("On Bottom Edge", false);
         headDirection = CreateAttributeDirection("Head Direction", HeadDirection());
+    }
+
+    public void Init(int hexagonType = 0)
+    {
+        if (hexagonType != 1 && hexagonType != 2)
+        {
+            Log.Error("Hexagon type is " + hexagonType + ", must be 1 or 2");
+        }
+        hexType.SetValue(hexagonType);
     }
 
     public override int PinsPerEdge => 0;
@@ -261,7 +264,7 @@ public class SmartMaterialInitializer : InitializationMethod
                 for (int col = 0; col < scale * 2; col++)
                 {
                     InitializationParticle ip = AddParticle(pos, expansionDir);
-                    ip.genericParams[0] = type2 ? 2 : 1;
+                    ip.SetAttribute("hexagonType", type2 ? 2 : 1);
                     pos = ParticleSystem_Utils.GetNbrInDir(pos, rowDir);
                 }
                 startPos = ParticleSystem_Utils.GetNbrInDir(startPos, expansionDir, 2);

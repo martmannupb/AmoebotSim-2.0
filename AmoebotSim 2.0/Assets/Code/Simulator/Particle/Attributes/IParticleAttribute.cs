@@ -46,6 +46,8 @@ public interface IParticleAttribute : IReplayHistory
     /// </summary>
     void ResetIntermediateValue();
 
+    object GetObjectValue();
+
     /// <summary>
     /// Returns a serializable object representing the attribute's data.
     /// </summary>

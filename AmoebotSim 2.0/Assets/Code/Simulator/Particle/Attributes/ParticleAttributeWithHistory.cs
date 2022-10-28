@@ -100,6 +100,11 @@ public abstract class ParticleAttributeWithHistory<T> : ParticleAttribute<T>, IR
         hasIntermediateVal = false;
     }
 
+    public virtual object GetObjectValue()
+    {
+        return history.GetMarkedValue();
+    }
+
     /// <summary>
     /// Implementation of <see cref="IParticleAttribute.GenerateSaveData"/>.
     /// </summary>

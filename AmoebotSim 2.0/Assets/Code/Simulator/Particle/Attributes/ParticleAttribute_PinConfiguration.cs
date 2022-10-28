@@ -136,6 +136,11 @@ public class ParticleAttribute_PinConfiguration : ParticleAttributeWithHistory<P
      * Some methods of IParticleAttribute interface can already be implemented here
      */
 
+    public override object GetObjectValue()
+    {
+        return pcHistory.GetMarkedValue();
+    }
+
     /// <summary>
     /// Implementation of <see cref="ParticleAttributeWithHistory{T}.GenerateSaveData"/>.
     /// Generates data specifically for pin configuration attributes.

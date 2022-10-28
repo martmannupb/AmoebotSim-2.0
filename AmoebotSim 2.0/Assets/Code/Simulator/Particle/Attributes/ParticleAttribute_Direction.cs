@@ -8,11 +8,13 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<Directio
 {
     public ParticleAttribute_Direction(Particle particle, string name, Direction value = Direction.NONE) : base(particle, name)
     {
-        history = new ValueHistory<Direction>(value, particle.system.CurrentRound);
+        history = new ValueHistory<Direction>(value, particle != null ? particle.system.CurrentRound : 0);
     }
 
     public override Direction GetValue()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (particle.system.InMovePhase || !hasIntermediateVal)
         {
             return history.GetValueInRound(particle.system.PreviousRound);
@@ -25,6 +27,8 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<Directio
 
     public override Direction GetValue_After()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to read other particles' updated states!");
@@ -34,6 +38,8 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<Directio
 
     public override void SetValue(Direction value)
     {
+        if (particle == null)
+            history.RecordValueInRound(value, 0);
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
@@ -60,7 +66,7 @@ public class ParticleAttribute_Direction : ParticleAttributeWithHistory<Directio
     {
         if (Enum.TryParse(typeof(Direction), value, out object parsedVal))
         {
-            history.RecordValueInRound((Direction)parsedVal, particle.system.CurrentRound);
+            history.RecordValueInRound((Direction)parsedVal, particle != null ? particle.system.CurrentRound : 0);
             return true;
         }
         else

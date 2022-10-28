@@ -955,6 +955,37 @@ public class ParticleSystem : IReplayHistory
         return false;
     }
 
+    /// <summary>
+    /// Copies the attribute value of the given particle to all
+    /// particles in the system.
+    /// <para>
+    /// All particles that have an attribute with name
+    /// <paramref name="attributeName"/> will try to read the string
+    /// representation of <paramref name="p"/>'s attribute value.
+    /// This only works for attribute types that can be represented
+    /// as strings (i.e., pin configurations will not work).
+    /// </para>
+    /// </summary>
+    /// <param name="p">The particle from which to copy the attribute value.</param>
+    /// <param name="attributeName">The name of the attribute to copy.</param>
+    public void ApplyAttributeValueToAllParticles(IParticleState p, string attributeName)
+    {
+        IParticleAttribute attr = p.TryGetAttributeByName(attributeName);
+        if (attr == null)
+        {
+            Log.Error("Cannot apply attribute value: Attribute '" + attributeName + "' not found.");
+            return;
+        }
+        string valueStr = attr.ToString_AttributeValue();
+        IEnumerable<IParticleState> particleList = inInitializationState ? particlesInit : particles;
+        foreach (IParticleState part in particleList)
+        {
+            IParticleAttribute a = part.TryGetAttributeByName(attributeName);
+            if (a != null)
+                a.UpdateAttributeValue(valueStr);
+        }
+    }
+
 
     /**
      * Simulation functions
@@ -3704,7 +3735,7 @@ public class ParticleSystem : IReplayHistory
 
         foreach (InitializationParticle ip in particlesInit)
         {
-            Particle p = ParticleFactory.CreateParticle(this, algorithmName, ip);
+            Particle p = ParticleFactory.CreateParticle(this, algorithmName, ip, true);
             particles.Add(p);
             particleMap[p.Tail()] = p;
             if (p.IsExpanded())

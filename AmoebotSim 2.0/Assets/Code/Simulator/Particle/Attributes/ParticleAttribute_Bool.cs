@@ -7,11 +7,13 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
 {
     public ParticleAttribute_Bool(Particle particle, string name, bool value = false) : base(particle, name)
     {
-        history = new ValueHistory<bool>(value, particle.system.CurrentRound);
+        history = new ValueHistory<bool>(value, particle != null ? particle.system.CurrentRound : 0);
     }
 
     public override bool GetValue()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (particle.system.InMovePhase || !hasIntermediateVal)
         {
             return history.GetValueInRound(particle.system.PreviousRound);
@@ -24,6 +26,8 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
 
     public override bool GetValue_After()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to read other particles' updated states!");
@@ -33,6 +37,8 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
 
     public override void SetValue(bool value)
     {
+        if (particle == null)
+            history.RecordValueInRound(value, 0);
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
@@ -59,7 +65,7 @@ public class ParticleAttribute_Bool : ParticleAttributeWithHistory<bool>, IParti
     {
         if (bool.TryParse(value, out bool parsedVal))
         {
-            history.RecordValueInRound(parsedVal, particle.system.CurrentRound);
+            history.RecordValueInRound(parsedVal, particle != null ? particle.system.CurrentRound : 0);
             return true;
         }
         else

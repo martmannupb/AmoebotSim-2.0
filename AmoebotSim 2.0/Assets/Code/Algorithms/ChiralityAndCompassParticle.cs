@@ -169,12 +169,6 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     public ChiralityAndCompassParticle(Particle p, int[] genericParams) : base(p)
     {
-        if (genericParams.Length < 2)
-        {
-            Log.Error("Chirality & Compass particle requires 2 generic parameters.");
-            return;
-        }
-
         SetMainColor(ColorData.Particle_Green);
 
         compassOffset = CreateAttributeDirection("Compass offset", DirectionHelpers.Cardinal(0));
@@ -200,9 +194,14 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
         }
         mergeOffset = CreateAttributeInt("Merge offset", -1);
 
+        realChirality = CreateAttributeBool("Real chirality", true);
+        realCompassDir = CreateAttributeDirection("Real compass dir", Direction.E);
+    }
 
-        realChirality = CreateAttributeBool("Real chirality", genericParams[0] == 1);
-        realCompassDir = CreateAttributeDirection("Real compass dir", DirectionHelpers.Cardinal(genericParams[1]));
+    public void Init(bool realChirality, Direction realCompassDir)
+    {
+        this.realChirality.SetValue(realChirality);
+        this.realCompassDir.SetValue(realCompassDir);
     }
 
     public override int PinsPerEdge => 2;
@@ -812,17 +811,12 @@ public class ChiralityAndCompassInitializer : InitializationMethod
 
     public void Generate(int numParticles = 50, float holeProb = 0.3f)
     {
-        // TODO: Add way to set number of parameters directly?
-        while (NumGenericParameters() < 2)
-            AddGenericParameter();
-
         GenerateRandomWithHoles(numParticles, holeProb, Initialization.Chirality.Random, Initialization.Compass.Random);
 
         // Tell the particles their real chirality and compass direction
         foreach (InitializationParticle ip in GetParticles())
         {
-            ip.genericParams[0] = ip.Chirality ? 1 : 0;
-            ip.genericParams[1] = ip.CompassDir.ToInt();
+            ip.SetAttributes(new object[] { ip.Chirality, ip.CompassDir });
         }
     }
 }

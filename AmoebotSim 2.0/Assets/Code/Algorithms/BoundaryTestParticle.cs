@@ -176,7 +176,7 @@ namespace BoundaryTestAlgo
 
         public static new string Name => "Boundary Test";
 
-        public static new string GenerationMethod => InitRandomWithHoles.Name;
+        public static new string GenerationMethod => BoundaryTestInitializer.Name;
 
         public override bool IsFinished()
         {
@@ -982,6 +982,18 @@ namespace BoundaryTestAlgo
                     SetMainColor(active ? activeColor : passiveColor);
                 }
             }
+        }
+    }
+
+    public class BoundaryTestInitializer : InitializationMethod
+    {
+        public static new string Name => "Boundary Test";
+
+        public BoundaryTestInitializer(ParticleSystem system) : base(system) { }
+
+        public void Generate(int numParticles = 50, float holeProb = 0.3f)
+        {
+            GenerateRandomWithHoles(numParticles, holeProb);
         }
     }
 

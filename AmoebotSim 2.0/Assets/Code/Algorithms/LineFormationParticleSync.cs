@@ -93,11 +93,6 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     public LineFormationParticleSync(Particle p, int[] genericParams) : base(p)
     {
-        if (genericParams.Length < 1)
-        {
-            Log.Error("Line formation requires one generic parameter");
-            return;
-        }
         constructionDir = CreateAttributeDirection("constructionDir", Direction.NONE);
         moveDir = CreateAttributeDirection("moveDir", Direction.NONE);
         followDir = CreateAttributeDirection("followDir", Direction.NONE);
@@ -110,19 +105,17 @@ public class LineFormationParticleSync : ParticleAlgorithm
         beepInLastRound = CreateAttributeBool("Beep in last round", false);
 
         SetMainColor(idleColor);
+    }
 
-        // Particle becomes the leader if first generic parameter is set unequal to 0
-        if (genericParams[0] != 0)
+    public void Init(bool leader = false)
+    {
+        // Exactly one particle will become the leader and choose a random construction direction
+        if (leader)
         {
             state.SetValue(LFState.LEADER);
             constructionDir.SetValue(DirectionHelpers.Cardinal(Random.Range(0, 6)));
             SetMainColor(leaderColor);
         }
-    }
-
-    public void Init(int myInt, float myFloat)
-    {
-
     }
 
     // Only need one pin per edge in this algorithm because communication
@@ -939,7 +932,7 @@ public class LineFormationInitializer : InitializationMethod
         InitializationParticle[] particles = GetParticles();
         if (particles.Length > 0)
         {
-            particles[Random.Range(0, particles.Length)].genericParams[0] = 1;
+            particles[Random.Range(0, particles.Length)].SetAttribute("leader", true);
         }
     }
 }

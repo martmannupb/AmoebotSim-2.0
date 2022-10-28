@@ -74,6 +74,7 @@ public abstract class InitializationParticle : IParticleState
         this.system = system;
 
         // Setup the attributes according to the selected algorithm's init parameters
+        attributes = new List<IParticleAttribute>();
         string algo = system.SelectedAlgorithm;
         AlgorithmManager man = AlgorithmManager.Instance;
         if (man.IsAlgorithmKnown(algo))
@@ -83,35 +84,9 @@ public abstract class InitializationParticle : IParticleState
             {
                 foreach (System.Reflection.ParameterInfo param in initParams)
                 {
-                    if (param.ParameterType == typeof(bool))
-                    {
-                        attributes.Add(new ParticleAttribute_Bool(null, param.Name, param.HasDefaultValue ? (bool)param.DefaultValue : false));
-                    }
-                    else if (param.ParameterType == typeof(Direction))
-                    {
-                        attributes.Add(new ParticleAttribute_Direction(null, param.Name, param.HasDefaultValue ? (Direction)param.DefaultValue : Direction.NONE));
-                    }
-                    else if (param.ParameterType == typeof(float))
-                    {
-                        attributes.Add(new ParticleAttribute_Float(null, param.Name, param.HasDefaultValue ? (float)param.DefaultValue : 0f));
-                    }
-                    else if (param.ParameterType == typeof(int))
-                    {
-                        attributes.Add(new ParticleAttribute_Int(null, param.Name, param.HasDefaultValue ? (int)param.DefaultValue : 0));
-                    }
-                    else if (param.ParameterType == typeof(string))
-                    {
-                        attributes.Add(new ParticleAttribute_String(null, param.Name, param.HasDefaultValue ? (string)param.DefaultValue : ""));
-                    }
-                    else if (param.ParameterType.IsEnum)
-                    {
-                        System.Type enumAttrType = typeof(ParticleAttribute_Enum<>);
-                        enumAttrType = enumAttrType.MakeGenericType(new System.Type[] { param.ParameterType });
-                        System.Reflection.ConstructorInfo ctor = enumAttrType.GetConstructor(new System.Type[] { typeof(Particle), typeof(string), param.ParameterType });
-                        IParticleAttribute attr = (IParticleAttribute)ctor.Invoke(new object[] { null, param.Name, param.HasDefaultValue ? param.DefaultValue : null});
+                    IParticleAttribute attr = ParticleAttributeFactory.CreateParticleAttribute(null, param.ParameterType, param.Name, param.HasDefaultValue ? param.DefaultValue : null);
+                    if (attr != null)
                         attributes.Add(attr);
-                        //attributes.Add(new ParticleAttribute_Enum<param.ParameterType>(null, param.Name, param.HasDefaultValue ? (Direction)param.DefaultValue : Direction.NONE));
-                    }
                 }
             }
         }
@@ -193,6 +168,40 @@ public abstract class InitializationParticle : IParticleState
                 return attr;
         }
         return null;
+    }
+
+    public void SetAttribute(string attrName, object value)
+    {
+        foreach (IParticleAttribute attr in attributes)
+        {
+            if (attr.ToString_AttributeName().Equals(attrName))
+            {
+                attr.UpdateAttributeValue(value.ToString());
+                return;
+            }
+        }
+        Log.Warning("Tried to set value of attribute '" + attrName + "' but could not find this attribute.");
+    }
+
+    public void SetAttributes(object[] values)
+    {
+        int n = Mathf.Min(values.Length, attributes.Count);
+        for (int i = 0; i < n; i++)
+        {
+            attributes[i].UpdateAttributeValue(values[i].ToString());
+        }
+    }
+
+    public object[] GetParameterValues()
+    {
+        object[] vals = new object[attributes.Count];
+
+        for (int i = 0; i < vals.Length; i++)
+        {
+            vals[i] = attributes[i].GetObjectValue();
+        }
+
+        return vals;
     }
 
     /// <summary>

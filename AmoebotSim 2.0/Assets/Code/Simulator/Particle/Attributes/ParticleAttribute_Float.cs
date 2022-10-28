@@ -7,11 +7,13 @@ public class ParticleAttribute_Float : ParticleAttributeWithHistory<float>, IPar
 {
     public ParticleAttribute_Float(Particle particle, string name, float value = 0f) : base(particle, name)
     {
-        history = new ValueHistory<float>(value, particle.system.CurrentRound);
+        history = new ValueHistory<float>(value, particle != null ? particle.system.CurrentRound : 0);
     }
 
     public override float GetValue()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (particle.system.InMovePhase || !hasIntermediateVal)
         {
             return history.GetValueInRound(particle.system.PreviousRound);
@@ -24,6 +26,8 @@ public class ParticleAttribute_Float : ParticleAttributeWithHistory<float>, IPar
 
     public override float GetValue_After()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to read other particles' updated states!");
@@ -33,6 +37,8 @@ public class ParticleAttribute_Float : ParticleAttributeWithHistory<float>, IPar
 
     public override void SetValue(float value)
     {
+        if (particle == null)
+            history.RecordValueInRound(value, 0);
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
@@ -59,7 +65,7 @@ public class ParticleAttribute_Float : ParticleAttributeWithHistory<float>, IPar
     {
         if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float parsedVal))
         {
-            history.RecordValueInRound(parsedVal, particle.system.CurrentRound);
+            history.RecordValueInRound(parsedVal, particle != null ? particle.system.CurrentRound : 0);
             return true;
         }
         else
