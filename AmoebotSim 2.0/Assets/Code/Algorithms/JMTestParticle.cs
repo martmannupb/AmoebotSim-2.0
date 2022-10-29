@@ -12,47 +12,8 @@ public class JMTestParticle : ParticleAlgorithm
     private ParticleAttribute<int> role;
     private ParticleAttribute<bool> terminated;
 
-    public JMTestParticle(Particle p, int[] genericParams) : base(p)
+    public JMTestParticle(Particle p) : base(p)
     {
-        //if (genericParams.Length < 2)
-        //{
-        //    Log.Error("JM Test particles requires 2 generic parameters.");
-        //    return;
-        //}
-        //int m = genericParams[0];
-        //int r = genericParams[1];
-
-        //if (m == 6)
-        //{
-        //    if (r == 0)
-        //    {
-        //        SetMainColor(ColorData.Particle_Blue);
-        //    }
-        //    else if (r == 1)
-        //    {
-        //        SetMainColor(ColorData.Particle_Green);
-        //    }
-        //    else
-        //    {
-        //        SetMainColor(ColorData.Particle_Orange);
-        //    }
-        //}
-        //else if (m == 15)
-        //{
-        //    if (r == 1)
-        //    {
-        //        SetMainColor(ColorData.Particle_Green);
-        //    }
-        //    else
-        //    {
-        //        SetMainColor(ColorData.Particle_Black);
-        //    }
-        //}
-        //else
-        //{
-        //    SetMainColor(ColorData.Particle_Black);
-        //}
-
         mode = CreateAttributeInt("Mode", 0);
         role = CreateAttributeInt("Role", 0);
         terminated = CreateAttributeBool("Terminated", false);
@@ -94,13 +55,6 @@ public class JMTestParticle : ParticleAlgorithm
         }
         this.mode.SetValue(m);
         this.role.SetValue(r);
-    }
-
-    public JMTestParticle(Particle p) : base(p)
-    {
-        this.mode = CreateAttributeInt("Mode", -1);
-        this.role = CreateAttributeInt("Role", -1);
-        terminated = CreateAttributeBool("Terminated", false);
     }
 
     public override void ActivateBeep()
@@ -869,9 +823,6 @@ public class JMTestInitializer : InitializationMethod
 
     public void Generate(int mode)
     {
-        while (NumGenericParameters() < 2)
-            AddGenericParameter();
-
         InitializationParticle p;
         if (mode == 0)
         {

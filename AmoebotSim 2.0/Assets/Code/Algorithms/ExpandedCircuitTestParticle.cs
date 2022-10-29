@@ -8,7 +8,7 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
 
     public static new string GenerationMethod => ExpandedCircuitTestInitializer.Name;
 
-    public ExpandedCircuitTestParticle(Particle p, int[] genericParams) : base(p)
+    public ExpandedCircuitTestParticle(Particle p) : base(p)
     {
         SetMainColor(Color.gray);
     }

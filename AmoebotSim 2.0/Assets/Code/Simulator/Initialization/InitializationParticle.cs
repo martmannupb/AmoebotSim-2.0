@@ -57,7 +57,6 @@ public abstract class InitializationParticle : IParticleState
     // Attributes representing the parameter values
     protected List<IParticleAttribute> attributes;
 
-    public List<int> genericParams;
     public ParticleGraphicsAdapterImpl graphics;
     protected ParticleSystem system;
 
@@ -90,10 +89,6 @@ public abstract class InitializationParticle : IParticleState
                 }
             }
         }
-
-        genericParams = new List<int>(system.NumGenericParameters);
-        for (int i = 0; i < system.NumGenericParameters; i++)
-            genericParams.Add(0);
         
         // Add particle to the render system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
@@ -202,35 +197,5 @@ public abstract class InitializationParticle : IParticleState
         }
 
         return vals;
-    }
-
-    /// <summary>
-    /// Appends a new generic parameter with the given initial value.
-    /// <para>
-    /// This method should not be called on individual particles.
-    /// Instead, add a new parameter to all current particles at
-    /// once using the corresponding interface method.
-    /// </para>
-    /// </summary>
-    /// <param name="initialVal">The initial value of the new
-    /// generic parameter.</param>
-    public void AddGenericParam(int initialVal = 0)
-    {
-        genericParams.Add(initialVal);
-    }
-
-    /// <summary>
-    /// Removes the generic parameter with the given index.
-    /// <para>
-    /// This method should not be called on individual particles.
-    /// Instead, remove the parameter from all current particles
-    /// at once using the corresponding interface method.
-    /// </para>
-    /// </summary>
-    /// <param name="index">The index of the generic parameter
-    /// to be removed.</param>
-    public void RemoveGenericParam(int index)
-    {
-        genericParams.RemoveAt(index);
     }
 }

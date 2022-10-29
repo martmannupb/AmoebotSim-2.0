@@ -32,7 +32,7 @@ public class LeaderElectionParticle : ParticleAlgorithm
     private ParticleAttribute<bool> beepFromHeads;      // Flag storing whether we have received a beep sent in the HEADS round
     private ParticleAttribute<bool> terminated;         // Final termination flag
 
-    public LeaderElectionParticle(Particle p, int[] genericParams) : base(p)
+    public LeaderElectionParticle(Particle p) : base(p)
     {
         SetMainColor(ColorData.Particle_Green);
         firstActivation = CreateAttributeBool("First activation", true);

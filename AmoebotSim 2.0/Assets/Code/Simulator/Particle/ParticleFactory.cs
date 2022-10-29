@@ -16,19 +16,17 @@ using UnityEngine;
 /// </summary>
 public class ParticleFactory
 {
-    public static Particle CreateParticle(ParticleSystem system, string algorithmId, List<int> genericParams, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true, Direction headDir = Direction.NONE)
+    public static Particle CreateParticle(ParticleSystem system, string algorithmId, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true, Direction headDir = Direction.NONE)
     {
         if (compassDir == Direction.NONE)
             compassDir = DirectionHelpers.Cardinal(0);
-        if (genericParams == null)
-            genericParams = new List<int>();
         if (headDir != Direction.NONE)
         {
             headDir = ParticleSystem_Utils.GlobalToLocalDir(headDir, compassDir, chirality);
         }
         Particle p = new Particle(system, position, compassDir, chirality, headDir);
         p.isActive = true;
-        AlgorithmManager.Instance.Instantiate(algorithmId, p, genericParams.ToArray());
+        AlgorithmManager.Instance.Instantiate(algorithmId, p);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
@@ -39,7 +37,7 @@ public class ParticleFactory
 
     public static Particle CreateParticle(ParticleSystem system, string algorithmId, InitializationParticle ip, bool initialize = false)
     {
-        Particle p = CreateParticle(system, algorithmId, ip.genericParams, ip.Tail(), ip.CompassDir, ip.Chirality, ip.ExpansionDir);
+        Particle p = CreateParticle(system, algorithmId, ip.Tail(), ip.CompassDir, ip.Chirality, ip.ExpansionDir);
         if (initialize)
         {
             p.isActive = true;
@@ -55,7 +53,7 @@ public class ParticleFactory
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        new ExpandedCircuitTestParticle(p, new int[0]);
+        new ExpandedCircuitTestParticle(p);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
@@ -63,13 +61,14 @@ public class ParticleFactory
         return p;
     }
 
-    public static Particle CreateLineFormationParticleSync(ParticleSystem system, Vector2Int position, Direction compassDir = Direction.NONE, bool chirality = true)
+    public static Particle CreateLineFormationParticleSync(ParticleSystem system, Vector2Int position, bool leader, Direction compassDir = Direction.NONE, bool chirality = true)
     {
         if (compassDir == Direction.NONE)
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        new LineFormationParticleSync(p, new int[1]);
+        LineFormationParticleSync algo = new LineFormationParticleSync(p);
+        algo.Init(leader);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
@@ -83,7 +82,7 @@ public class ParticleFactory
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        new LeaderElectionParticle(p, new int[0]);
+        new LeaderElectionParticle(p);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
@@ -95,9 +94,8 @@ public class ParticleFactory
     {
         Particle p = new Particle(system, position, DirectionHelpers.Cardinal(Random.Range(0, 6)), Random.Range(0f, 1f) <= 0.5f);
         p.isActive = true;
-        ChiralityAndCompassParticle alg = new ChiralityAndCompassParticle(p, new int[2] { p.chirality ? 1 : 0, p.comDir.ToInt() });
-        //alg.realChirality.SetValue(p.chirality);
-        //alg.realCompassDir.SetValue(p.comDir);
+        ChiralityAndCompassParticle alg = new ChiralityAndCompassParticle(p);
+        alg.Init(p.chirality, p.comDir);
         p.InitWithAlgorithm();
         p.isActive = false;
         p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
@@ -111,7 +109,7 @@ public class ParticleFactory
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality);
         p.isActive = true;
-        new BoundaryTestAlgo.BoundaryTestParticle(p, new int[0]);
+        new BoundaryTestAlgo.BoundaryTestParticle(p);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
@@ -125,7 +123,8 @@ public class ParticleFactory
             compassDir = DirectionHelpers.Cardinal(0);
         Particle p = new Particle(system, position, compassDir, chirality, initialHeadDir);
         p.isActive = true;
-        new JMTestParticle(p, new int[] { mode, role });
+        JMTestParticle algo = new JMTestParticle(p);
+        algo.Init(mode, role);
         p.isActive = false;
         p.InitWithAlgorithm();
         p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));

@@ -10,7 +10,7 @@ public class SmartMaterialParticle : ParticleAlgorithm
     private ParticleAttribute<bool> onBotEdge;
     private ParticleAttribute<Direction> headDirection;
 
-    public SmartMaterialParticle(Particle p, int[] genericParams) : base(p)
+    public SmartMaterialParticle(Particle p) : base(p)
     {
         if (IsContracted())
         {
@@ -165,9 +165,6 @@ public class SmartMaterialInitializer : InitializationMethod
 
     public void Generate(int scale = 2, int rows = 2, int cols = 2, bool hexagonShape = false)
     {
-        if (NumGenericParameters() < 1)
-            AddGenericParameter();
-
         if (scale < 1)
         {
             Log.Warning("Scale must be at least 1");

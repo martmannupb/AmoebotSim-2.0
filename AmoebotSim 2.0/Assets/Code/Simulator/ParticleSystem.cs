@@ -100,16 +100,6 @@ public class ParticleSystem : IReplayHistory
     private bool storedSimulationState = false;
     // The round we were in when we stored the simulation state
     private int storedSimulationRound = -1;
-    // The number of generic parameters stored in the initialization particles
-    private int numGenericParameters = 0;
-    /// <summary>
-    /// The number of generic parameters used by the particle templates in
-    /// initialization mode.
-    /// </summary>
-    public int NumGenericParameters
-    {
-        get { return numGenericParameters; }
-    }
 
     // Simulation phase flags
     // Used to indicate which of the two cycles is currently being executed
@@ -216,7 +206,8 @@ public class ParticleSystem : IReplayHistory
         Vector2Int node = new Vector2Int(0, 0);
         //Particle p = ParticleFactory.CreateLineFormationParticleSeq(this, node);
         //Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node);
-        Particle p = ParticleFactory.CreateParticle(this, "Line Formation", new List<int>() { leaderIdx == 0 ? 1 : 0 }, node);
+        //Particle p = ParticleFactory.CreateParticle(this, "Line Formation", new List<int>() { leaderIdx == 0 ? 1 : 0 }, node);
+        Particle p = ParticleFactory.CreateLineFormationParticleSync(this, node, leaderIdx == 0);
         particles.Add(p);
         particleMap.Add(p.Head(), p);
 
@@ -244,7 +235,8 @@ public class ParticleSystem : IReplayHistory
 
                 //p = ParticleFactory.CreateLineFormationParticleSeq(this, newPos);
                 //p = ParticleFactory.CreateLineFormationParticleSync(this, newPos);
-                p = ParticleFactory.CreateParticle(this, "Line Formation", new List<int>() { leaderIdx == n ? 1 : 0 }, newPos);
+                //p = ParticleFactory.CreateParticle(this, "Line Formation", new List<int>() { leaderIdx == n ? 1 : 0 }, newPos);
+                p = ParticleFactory.CreateLineFormationParticleSync(this, newPos, leaderIdx == n);
                 particles.Add(p);
                 particleMap.Add(p.Head(), p);
 
@@ -270,6 +262,8 @@ public class ParticleSystem : IReplayHistory
 
     public void InitializeLeaderElection(int numParticles, float holeProb)
     {
+
+
         int n = 1;
         // Always start by adding a particle at position (0, 0)
         List<Vector2Int> candidates = new List<Vector2Int>();
@@ -3995,145 +3989,6 @@ public class ParticleSystem : IReplayHistory
         }
 
         return true;
-    }
-
-    /// <summary>
-    /// Adds a new generic parameter with the given initial value
-    /// to all particles in initialization mode.
-    /// </summary>
-    /// <param name="initialValue">The initial value given to
-    /// the new parameter.</param>
-    public void AddGenericParameter(int initialValue = 0)
-    {
-        foreach (InitializationParticle ip in particlesInit)
-            ip.AddGenericParam(initialValue);
-        numGenericParameters++;
-    }
-
-    /// <summary>
-    /// Removes the generic parameter with the given index from
-    /// all particles in initialization mode.
-    /// </summary>
-    /// <param name="index">The index of the parameter to
-    /// be removed.</param>
-    public void RemoveGenericParameter(int index)
-    {
-        if (index < 0 || index >= numGenericParameters)
-        {
-            Log.Error("Cannot remove generic parameter with index " + index + ", have " + numGenericParameters + " parameters.");
-            return;
-        }
-        foreach (InitializationParticle ip in particlesInit)
-            ip.RemoveGenericParam(index);
-        numGenericParameters--;
-    }
-
-    /// <summary>
-    /// Assigns values to the generic parameters of a fixed number of particles.
-    /// The values of the other particles can be reset to 0 if desired. Each
-    /// chosen particle's value is set to a random value between
-    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
-    /// </summary>
-    /// <param name="paramIdx">The index of the generic parameter to set.</param>
-    /// <param name="minVal">The minimum value to be set.</param>
-    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
-    /// the same value as <paramref name="minVal"/> to fix the value.</param>
-    /// <param name="numParticles">The number of particles to get assigned
-    /// a new value.</param>
-    /// <param name="reset">Flag indicating whether the parameter values should
-    /// be reset to 0 before assigning the new values.</param>
-    public void SetGenericParameterFixed(int paramIdx, int minVal, int maxVal, int numParticles, bool reset = true)
-    {
-        if (paramIdx < 0 || paramIdx >= numGenericParameters)
-        {
-            Log.Error("Invalid generic parameter index: " + paramIdx + "; have " + numGenericParameters + " parameters.");
-            return;
-        }
-
-        numParticles = Mathf.Min(numParticles, particlesInit.Count);
-        if (numParticles <= 0 && !reset)
-            return;
-
-        // Use the selection sampling algorithm to get the right number of particles
-        // For choosing k out of n elements randomly, select the first with probability
-        // k/n. If it is selected, repeat the algorithm to choose k-1 from the remaining n-1
-        // elements. Otherwise, repeat the algorithm to choose k from the n-1 elements.
-        int n = particlesInit.Count;
-        int k = numParticles;
-        foreach (InitializationParticle ip in particlesInit)
-        {
-            if (reset)
-                ip.genericParams[paramIdx] = 0;
-
-            if (k > 0 && Random.Range(0.0f, 1.0f) <= ((float)k) / n)
-            {
-                ip.genericParams[paramIdx] = Random.Range(minVal, maxVal + 1);
-                k--;
-            }
-            n--;
-        }
-
-        // This should not happen, but keep the warning in case it needs to be debugged
-        if (k != 0)
-        {
-            Log.Warning("Selected " + (numParticles - k) + " particles (wanted " + numParticles + ")");
-        }
-    }
-
-    /// <summary>
-    /// Assigns values to the generic parameters of a fixed fraction of particles.
-    /// The values of the other particles can be reset to 0 if desired. Each
-    /// chosen particle's value is set to a random value between
-    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
-    /// </summary>
-    /// <param name="paramIdx">The index of the generic parameter to set.</param>
-    /// <param name="minVal">The minimum value to be set.</param>
-    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
-    /// the same value as <paramref name="minVal"/> to fix the value.</param>
-    /// <param name="fraction">The fraction of particles to receive a new value.</param>
-    /// <param name="reset">Flag indicating whether the parameter values should
-    /// be reset to 0 before assigning the new values.</param>
-    public void SetGenericParameterFraction(int paramIdx, int minVal, int maxVal, float fraction, bool reset = true)
-    {
-        int numParticles = Mathf.RoundToInt(fraction * particlesInit.Count);
-        SetGenericParameterFixed(paramIdx, minVal, maxVal, numParticles, reset);
-    }
-
-    /// <summary>
-    /// Assigns values to the generic parameters of randomly chosen particles.
-    /// The values of the other particles can be reset to 0 if desired. Each
-    /// chosen particle's value is set to a random value between
-    /// <paramref name="minVal"/> and <paramref name="maxVal"/>, inclusively.
-    /// </summary>
-    /// <param name="paramIdx">The index of the generic parameter to set.</param>
-    /// <param name="minVal">The minimum value to be set.</param>
-    /// <param name="maxVal">The maximum (inclusive) value to be set. Set to
-    /// the same value as <paramref name="minVal"/> to fix the value.</param>
-    /// <param name="prob">The probability with which each particle is chosen to
-    /// get a new value.</param>
-    /// <param name="reset">Flag indicating whether the parameter values should
-    /// be reset to 0 before assigning the new values.</param>
-    public void SetGenericParameterProb(int paramIdx, int minVal, int maxVal, float prob, bool reset = true)
-    {
-        if (paramIdx < 0 || paramIdx >= numGenericParameters)
-        {
-            Log.Error("Invalid generic parameter index: " + paramIdx + "; have " + numGenericParameters + " parameters.");
-            return;
-        }
-
-        if (prob <= 0.0f && !reset)
-            return;
-
-        foreach (InitializationParticle ip in particlesInit)
-        {
-            if (reset)
-                ip.genericParams[paramIdx] = 0;
-
-            if (prob > 0.0f && Random.Range(0.0f, 1.0f) <= prob)
-            {
-                ip.genericParams[paramIdx] = Random.Range(minVal, maxVal + 1);
-            }
-        }
     }
 
     /// <summary>

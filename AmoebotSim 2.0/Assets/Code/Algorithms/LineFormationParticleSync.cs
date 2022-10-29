@@ -91,7 +91,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
     // Flag to make LEADER send a beep every 2 rounds and recognize when the line is complete
     private ParticleAttribute<bool> beepInLastRound;
 
-    public LineFormationParticleSync(Particle p, int[] genericParams) : base(p)
+    public LineFormationParticleSync(Particle p) : base(p)
     {
         constructionDir = CreateAttributeDirection("constructionDir", Direction.NONE);
         moveDir = CreateAttributeDirection("moveDir", Direction.NONE);
@@ -923,9 +923,6 @@ public class LineFormationInitializer : InitializationMethod
 
     public void Generate(int numParticles = 50, float holeProb = 0.3f)
     {
-        if (NumGenericParameters() < 1)
-            AddGenericParameter();
-
         GenerateRandomWithHoles(numParticles, holeProb, Initialization.Chirality.CounterClockwise, Initialization.Compass.E);
 
         // Select a leader

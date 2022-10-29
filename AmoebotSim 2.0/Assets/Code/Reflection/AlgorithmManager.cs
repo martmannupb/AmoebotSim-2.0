@@ -88,10 +88,10 @@ public class AlgorithmManager
             if (generatorProp != null)
                 generator = (string)generatorProp.GetValue(null);
 
-            ConstructorInfo ctor = algoType.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) });
+            ConstructorInfo ctor = algoType.GetConstructor(new Type[] { typeof(Particle) });
             if (ctor == null)
             {
-                Debug.LogWarning("ParticleAlgorithm with name '" + name + "' does not declare a constructor with parameters (Particle, int[]), cannot load algorithm");
+                Debug.LogWarning("ParticleAlgorithm with name '" + name + "' does not declare a constructor with Particle parameter, cannot load algorithm");
                 continue;
             }
 
@@ -157,7 +157,7 @@ public class AlgorithmManager
         return info.initMethod.GetParameters();
     }
 
-    public ParticleAlgorithm Instantiate(string name, Particle particle, int[] genericParams)
+    public ParticleAlgorithm Instantiate(string name, Particle particle)
     {
         AlgorithmInfo info = FindAlgorithm(name);
         if (info == null)
@@ -166,7 +166,7 @@ public class AlgorithmManager
         }
 
         //ConstructorInfo ctor = info.type.GetConstructor(new Type[] { typeof(Particle), typeof(int[]) });
-        return (ParticleAlgorithm)info.ctor.Invoke(new object[] { particle, genericParams });
+        return (ParticleAlgorithm)info.ctor.Invoke(new object[] { particle });
     }
 
     public void Initialize(string name, ParticleAlgorithm algo, object[] parameters)
