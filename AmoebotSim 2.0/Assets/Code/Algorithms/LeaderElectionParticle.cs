@@ -54,7 +54,7 @@ public class LeaderElectionParticle : ParticleAlgorithm
     public static new Initialization.Chirality Chirality => Initialization.Chirality.Random;
     public static new Initialization.Compass Compass => Initialization.Compass.Random;
 
-    public static new string GenerationMethod => LeaderElectionInitializer.Name;
+    public static new string GenerationMethod => typeof(LeaderElectionInitializer).FullName;
 
     public override bool IsFinished()
     {
@@ -243,8 +243,6 @@ public class LeaderElectionParticle : ParticleAlgorithm
 public class LeaderElectionInitializer : InitializationMethod
 {
     public LeaderElectionInitializer(ParticleSystem system) : base(system) { }
-
-    public static new string Name => "Leader Election";
 
     public void Generate(int numParticles = 50, float holeProb = 0.3f)
     {

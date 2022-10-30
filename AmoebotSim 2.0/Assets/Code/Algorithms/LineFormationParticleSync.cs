@@ -124,7 +124,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     public static new string Name => "Line Formation";
 
-    public static new string GenerationMethod => LineFormationInitializer.Name;
+    public static new string GenerationMethod => typeof(LineFormationInitializer).FullName;
 
     public override bool IsFinished()
     {
@@ -918,8 +918,6 @@ public class LineFormationParticleSync : ParticleAlgorithm
 public class LineFormationInitializer : InitializationMethod
 {
     public LineFormationInitializer(ParticleSystem system) : base(system) { }
-
-    public static new string Name => "Line Formation";
 
     public void Generate(int numParticles = 50, float holeProb = 0.3f)
     {

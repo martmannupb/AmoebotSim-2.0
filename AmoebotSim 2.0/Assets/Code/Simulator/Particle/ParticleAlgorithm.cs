@@ -112,7 +112,7 @@ public abstract class ParticleAlgorithm
 
     public static Initialization.Compass Compass { get { return Initialization.Compass.E; } }
 
-    public static string GenerationMethod { get { return null; } }
+    public static string GenerationMethod { get { return typeof(InitRandomWithHoles).FullName; } }
 
     /// <summary>
     /// Finds the official name of this algorithm. This is the name used by

@@ -43,7 +43,7 @@ public class SmartMaterialParticle : ParticleAlgorithm
 
     public static new string Name => "Smart Material";
 
-    public static new string GenerationMethod => SmartMaterialInitializer.Name;
+    public static new string GenerationMethod => typeof(SmartMaterialInitializer).FullName;
 
     public override void ActivateBeep()
     {
@@ -160,8 +160,6 @@ public class SmartMaterialInitializer : InitializationMethod
     {
 
     }
-
-    public static new string Name => "Smart Material";
 
     public void Generate(int scale = 2, int rows = 2, int cols = 2, bool hexagonShape = false)
     {

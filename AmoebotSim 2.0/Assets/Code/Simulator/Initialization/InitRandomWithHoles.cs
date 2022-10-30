@@ -6,9 +6,7 @@ public class InitRandomWithHoles : InitializationMethod
 
     }
 
-    public static new string Name { get { return "Random With Holes"; } }
-
-    public void Generate(int numParticles = 50, float holeProb = 0.3f, Initialization.Chirality chirality = Initialization.Chirality.Random, Initialization.Compass compassDir = Initialization.Compass.Random)
+    public void Generate(int numParticles = 50, float holeProb = 0.3f, Initialization.Chirality chirality = Initialization.Chirality.CounterClockwise, Initialization.Compass compassDir = Initialization.Compass.E)
     {
         GenerateRandomWithHoles(numParticles, holeProb, chirality, compassDir);
     }

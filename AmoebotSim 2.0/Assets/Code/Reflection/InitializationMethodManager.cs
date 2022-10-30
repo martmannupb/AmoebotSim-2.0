@@ -9,9 +9,6 @@ public class InitializationMethodManager
     // The name of the method to be implemented
     private static readonly string GenerationMethodName = "Generate";
 
-    // Name of the property that gives the method its display name
-    private static readonly string Name_Property = "Name";
-
     // Singleton
     private static InitializationMethodManager instance = new InitializationMethodManager();
     public static InitializationMethodManager Instance
@@ -50,19 +47,8 @@ public class InitializationMethodManager
         {
             Debug.Log("Found initialization method with name " + algoType.FullName);
 
-            // Find out the algorithm's name
-            PropertyInfo nameProp = algoType.GetProperty(Name_Property);
-            string name;
-            if (nameProp == null)
-            {
-                name = algoType.FullName;
-            }
-            else
-            {
-                name = (string)nameProp.GetValue(null);
-            }
-
-            Debug.Log("Display name is '" + name + "'");
+            // Find out the algorithm's name (simply use the full type name)
+            string name = algoType.FullName;
 
             // Find the right constructor
             ConstructorInfo ci = algoType.GetConstructor(new Type[] { typeof(ParticleSystem) });

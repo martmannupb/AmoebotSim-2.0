@@ -6,7 +6,7 @@ public class JMTestParticle : ParticleAlgorithm
 
     public static new string Name => "Joint Movement Test";
 
-    public static new string GenerationMethod => JMTestInitializer.Name;
+    public static new string GenerationMethod => typeof(JMTestInitializer).FullName;
 
     private ParticleAttribute<int> mode;
     private ParticleAttribute<int> role;
@@ -818,8 +818,6 @@ public class JMTestParticle : ParticleAlgorithm
 public class JMTestInitializer : InitializationMethod
 {
     public JMTestInitializer(ParticleSystem system) : base(system) { }
-
-    public static new string Name => "JM Test";
 
     public void Generate(int mode)
     {

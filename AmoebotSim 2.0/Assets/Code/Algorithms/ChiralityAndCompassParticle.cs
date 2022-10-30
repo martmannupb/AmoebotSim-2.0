@@ -212,7 +212,7 @@ public class ChiralityAndCompassParticle : ParticleAlgorithm
 
     public static new Initialization.Compass Compass => Initialization.Compass.Random;
 
-    public static new string GenerationMethod => ChiralityAndCompassInitializer.Name;
+    public static new string GenerationMethod => typeof(ChiralityAndCompassInitializer).FullName;
 
     public override bool IsFinished()
     {
@@ -806,8 +806,6 @@ public class ChiralityAndCompassInitializer : InitializationMethod
     {
         // Empty
     }
-
-    public static new string Name => "Chirality & Compass Alignment";
 
     public void Generate(int numParticles = 50, float holeProb = 0.3f)
     {

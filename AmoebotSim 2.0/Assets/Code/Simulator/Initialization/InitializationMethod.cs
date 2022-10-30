@@ -11,8 +11,6 @@ public abstract class InitializationMethod
 {
     private ParticleSystem system;
 
-    public static string Name { get { return ""; } }
-
     public InitializationMethod(ParticleSystem system)
     {
         this.system = system;

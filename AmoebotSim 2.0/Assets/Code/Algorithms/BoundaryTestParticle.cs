@@ -176,8 +176,6 @@ namespace BoundaryTestAlgo
 
         public static new string Name => "Boundary Test";
 
-        public static new string GenerationMethod => BoundaryTestInitializer.Name;
-
         public override bool IsFinished()
         {
             return terminated;
@@ -984,17 +982,4 @@ namespace BoundaryTestAlgo
             }
         }
     }
-
-    public class BoundaryTestInitializer : InitializationMethod
-    {
-        public static new string Name => "Boundary Test";
-
-        public BoundaryTestInitializer(ParticleSystem system) : base(system) { }
-
-        public void Generate(int numParticles = 50, float holeProb = 0.3f)
-        {
-            GenerateRandomWithHoles(numParticles, holeProb);
-        }
-    }
-
 } // namespace BoundaryTestAlgo
