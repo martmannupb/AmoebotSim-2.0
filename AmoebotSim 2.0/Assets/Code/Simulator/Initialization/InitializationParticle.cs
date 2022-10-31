@@ -198,4 +198,6 @@ public abstract class InitializationParticle : IParticleState
 
         return vals;
     }
+
+    public abstract InitParticleSaveData GenerateSaveData();
 }
