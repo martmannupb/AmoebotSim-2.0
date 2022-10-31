@@ -280,9 +280,13 @@ public class InitializationUIHandler : MonoBehaviour
     /// </summary>
     public void ButtonPressed_Load()
     {
-        string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "json", false);
-        if (paths.Length != 0) Log.Debug("Here we should load the file " + paths[0] + ".");
-        else Log.Debug("No file chosen.");
+        string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "aminit", false);
+        if (paths.Length != 0)
+        {
+            uiHandler.sim.system.LoadInitSaveState(SaveStateUtility.LoadInit(paths[0]));
+            Log.Entry("Loaded initialization state from path: " + paths[0] + ".");
+        }
+        //else Log.Debug("No file chosen.");
     }
 
     /// <summary>
@@ -290,9 +294,13 @@ public class InitializationUIHandler : MonoBehaviour
     /// </summary>
     public void ButtonPressed_Save()
     {
-        string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "state", "json");
-        if (path.Equals("") == false) Log.Debug("Here we should save the file " + path + ".");
-        else Log.Debug("No file chosen.");
+        string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "initState", "aminit");
+        if (path.Equals("") == false)
+        {
+            SaveStateUtility.SaveInit(uiHandler.sim.system.GenerateInitSaveData(), path);
+            Log.Entry("Saved initialization state at path: " + path + ".");
+        }
+        //else Log.Entry("No path chosen.");
     }
 
     /// <summary>
