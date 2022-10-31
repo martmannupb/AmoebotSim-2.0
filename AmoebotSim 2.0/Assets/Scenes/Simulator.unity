@@ -12386,6 +12386,7 @@ MonoBehaviour:
   image_viewType: {fileID: 1780721759}
   sprite_viewTypeCircular: {fileID: 21300000, guid: b1611ee4cd595a14e9dda5d54b0903e0, type: 3}
   sprite_viewTypeHexagonal: {fileID: 21300000, guid: d0fbbd7eb9229d84490ec08b9176cd6c, type: 3}
+  sprite_viewTypeHexagonalCirc: {fileID: 21300000, guid: 6a9f575a3f5dfd943a506997c0eed600, type: 3}
   button_circuitViewType: {fileID: 560474985}
   image_circuitViewType: {fileID: 611792672}
   sprite_circuitViewTypeCircuitsEnabled: {fileID: 21300000, guid: 73e5c3d709cf09948b5a5b72bae33695, type: 3}

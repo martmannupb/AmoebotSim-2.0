@@ -5,5 +5,6 @@ using UnityEngine;
 public enum ViewType
 {
     Hexagonal,
+    HexagonalCirc,
     Circular
 }

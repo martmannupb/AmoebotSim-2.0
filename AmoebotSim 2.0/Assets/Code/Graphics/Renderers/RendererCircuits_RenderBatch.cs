@@ -228,6 +228,7 @@ public class RendererCircuits_RenderBatch
         switch (type)
         {
             case ViewType.Hexagonal:
+            case ViewType.HexagonalCirc:
                 if (properties.lineType == PropertyBlockData.LineType.BondCircular) return;
                 if (properties.lineType == PropertyBlockData.LineType.InternalLine || properties.lineType == PropertyBlockData.LineType.ExternalLine)
                 {

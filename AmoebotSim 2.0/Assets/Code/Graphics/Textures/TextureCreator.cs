@@ -14,29 +14,35 @@ public static class TextureCreator
     public static Dictionary<int, Texture2D> pinBorderTextures5Pins2 = new Dictionary<int, Texture2D>();
     // Hexagon Textures
     public static Dictionary<int, Texture2D> hexagonTextures = new Dictionary<int, Texture2D>();
+    public static Dictionary<int, Texture2D> hexagonCircTextures = new Dictionary<int, Texture2D>();
 
     // Materials
-    public static Dictionary<int, Material> pinBorderMaterials = new Dictionary<int, Material>();
+    public static Dictionary<int, Material> pinBorderHexMaterials = new Dictionary<int, Material>();
+    public static Dictionary<int, Material> pinBorderHexCircMaterials = new Dictionary<int, Material>();
+
     public static Dictionary<int, Material> hexagonMaterials = new Dictionary<int, Material>();
+    public static Dictionary<int, Material> hexagonCircMaterials = new Dictionary<int, Material>();
 
     private static Texture2D pinTexture = Resources.Load<Texture2D>(FilePaths.path_textures+"PinTex");
     private static Texture2D transTexture = Resources.Load<Texture2D>(FilePaths.path_textures + "TransparentPixel");
     private static Texture2D hexagonTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ Soft/HexagonSoft1_1024");
+    private static Texture2D hexagonCircTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ Soft/HexagonCircleSoft");
 
-    public static Material GetPinBorderMaterial(int pinsPerSide)
+    public static Material GetPinBorderMaterial(int pinsPerSide, ViewType viewType)
     {
-        if (pinBorderMaterials.ContainsKey(pinsPerSide)) return pinBorderMaterials[pinsPerSide];
+        if (viewType == ViewType.Hexagonal && pinBorderHexMaterials.ContainsKey(pinsPerSide)) return pinBorderHexMaterials[pinsPerSide];
+        if (viewType == ViewType.HexagonalCirc && pinBorderHexCircMaterials.ContainsKey(pinsPerSide)) return pinBorderHexCircMaterials[pinsPerSide];
 
         // Create Material
         Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
         Material mat = new Material(hexMat.shader);
         mat.CopyPropertiesFromMaterial(hexMat);
-        Texture2D borderTex1 = GetPinBorderTexture(pinsPerSide, true, true, 0, false);
-        Texture2D borderTex2 = GetPinBorderTexture(pinsPerSide, true, true, 3, true);
+        Texture2D borderTex1 = GetPinBorderTexture(pinsPerSide, true, true, 0, false, viewType);
+        Texture2D borderTex2 = GetPinBorderTexture(pinsPerSide, true, true, 3, true, viewType);
         //Texture2D borderTex1 = GetPinBorderTextureEmpty();
         //Texture2D borderTex2 = GetPinBorderTextureEmpty();
-        Texture2D borderTex100P = GetPinBorderTexture(pinsPerSide, true, false, 0, false);
-        Texture2D borderTex100P2 = GetPinBorderTexture(pinsPerSide, true, false, 3, true);
+        Texture2D borderTex100P = GetPinBorderTexture(pinsPerSide, true, false, 0, false, viewType);
+        Texture2D borderTex100P2 = GetPinBorderTexture(pinsPerSide, true, false, 3, true, viewType);
         //mat.SetTexture("_TextureHexagon", borderTex1);
         //mat.SetTexture("_TextureHexagon2", borderTex2);
         mat.SetTexture("_TextureHexagon", transTexture);
@@ -46,21 +52,23 @@ public static class TextureCreator
         mat.SetTexture("_TextureHexagonConnector", transTexture);
 
         // Add Material to Data
-        pinBorderMaterials.Add(pinsPerSide, mat);
+        if(viewType == ViewType.Hexagonal) pinBorderHexMaterials.Add(pinsPerSide, mat);
+        if (viewType == ViewType.HexagonalCirc) pinBorderHexCircMaterials.Add(pinsPerSide, mat);
         
         // Return
         return mat;
     }
 
-    public static Material GetHexagonWithPinsMaterial(int pinsPerSide)
+    public static Material GetHexagonWithPinsMaterial(int pinsPerSide, ViewType viewType)
     {
-        if (hexagonMaterials.ContainsKey(pinsPerSide)) return hexagonMaterials[pinsPerSide];
+        if (viewType == ViewType.Hexagonal && hexagonMaterials.ContainsKey(pinsPerSide)) return hexagonMaterials[pinsPerSide];
+        if (viewType == ViewType.HexagonalCirc && hexagonCircMaterials.ContainsKey(pinsPerSide)) return hexagonCircMaterials[pinsPerSide];
 
         // Create Material
         Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
         Material mat = new Material(hexMat.shader);
         mat.CopyPropertiesFromMaterial(hexMat);
-        Texture2D hexTex1 = GetHexagonBaseTextureWithPins(pinsPerSide);
+        Texture2D hexTex1 = GetHexagonBaseTextureWithPins(pinsPerSide, viewType);
         mat.SetTexture("_TextureHexagon", hexTex1);
         mat.SetTexture("_TextureHexagon2", hexTex1);
         mat.SetTexture("_TextureHexagon100P", hexTex1);
@@ -68,13 +76,14 @@ public static class TextureCreator
         //mat.SetTexture("_TextureHexagonConnector", transTexture);
 
         // Add Material to Data
-        hexagonMaterials.Add(pinsPerSide, mat);
+        if(viewType == ViewType.Hexagonal) hexagonMaterials.Add(pinsPerSide, mat);
+        else if(viewType == ViewType.HexagonalCirc) hexagonCircMaterials.Add(pinsPerSide, mat);
 
         // Return
         return mat;
     }
 
-    private static Texture2D GetPinBorderTexture(int pinsPerSide, bool omitSide, bool omit3Pins, int omittedSide, bool isTex1)
+    private static Texture2D GetPinBorderTexture(int pinsPerSide, bool omitSide, bool omit3Pins, int omittedSide, bool isTex1, ViewType viewType)
     {
         if (isTex1 && omit3Pins && pinBorderTextures3Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins1[pinsPerSide];
         if (isTex1 && !omit3Pins && pinBorderTextures5Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins1[pinsPerSide];
@@ -107,13 +116,29 @@ public static class TextureCreator
             Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides());
             for (int j = 0; j < pinsPerSide; j++)
             {
-                Vector2 relPosPinRight;
-                Vector2 relDistBottomToTop = relPosTopRight - relPosBottomRight;
-                if (pinsPerSide == 1) relPosPinRight = relPosBottomRight + 0.5f * relDistBottomToTop;
-                else
+                Vector2 relPosPinRight = Vector2.zero;
+                if (viewType == ViewType.Hexagonal)
                 {
-                    Vector2 relStep = relDistBottomToTop / (pinsPerSide + 1);
-                    relPosPinRight = relPosBottomRight + (j + 1) * relStep;
+                    // Hexagonal Particles (we take the right side as reference)
+                    Vector2 relDistBottomToTop = relPosTopRight - relPosBottomRight;
+                    if (pinsPerSide == 1) relPosPinRight = relPosBottomRight + 0.5f * relDistBottomToTop;
+                    else
+                    {
+                        Vector2 relStep = relDistBottomToTop / (pinsPerSide + 1);
+                        relPosPinRight = relPosBottomRight + (j + 1) * relStep;
+                    }
+                }
+                else if (viewType == ViewType.HexagonalCirc)
+                {
+                    // Circular Particles with Circuits (we have a circle and work with angles and the distance to the center)
+                    float distanceToCenter = AmoebotFunctions.HexVertex_XValue();
+                    relPosPinRight = new Vector2(distanceToCenter, 0f);
+                    if (pinsPerSide > 1)
+                    {
+                        float angleStep = 60f / (pinsPerSide + 1);
+                        float angle = -30f + (j + 1) * angleStep;
+                        relPosPinRight = Quaternion.Euler(new Vector3(0f, 0f, angle)) * relPosPinRight;
+                    }
                 }
                 // Use relPosPinRight to calculate absolute positions
                 for (int k = 0; k < 6; k++)
@@ -180,7 +205,7 @@ public static class TextureCreator
         return tex;
     }
 
-    private static Texture2D GetHexagonBaseTextureWithPins(int pinsPerSide)
+    private static Texture2D GetHexagonBaseTextureWithPins(int pinsPerSide, ViewType viewType)
     {
         // Create Texture
         Texture2D tex = new Texture2D(1024, 1024);
@@ -196,7 +221,8 @@ public static class TextureCreator
         {
             for (int y = 0; y < tex.height; y++)
             {
-                tex.SetPixel(x, y, hexagonTexture.GetPixel(x, y));
+                if(viewType == ViewType.Hexagonal) tex.SetPixel(x, y, hexagonTexture.GetPixel(x, y));
+                else if(viewType == ViewType.HexagonalCirc) tex.SetPixel(x, y, hexagonCircTexture.GetPixel(x, y));
             }
         }
 
@@ -208,13 +234,29 @@ public static class TextureCreator
             Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides());
             for (int j = 0; j < pinsPerSide; j++)
             {
-                Vector2 relPosPinRight;
-                Vector2 relDistBottomToTop = relPosTopRight - relPosBottomRight;
-                if (pinsPerSide == 1) relPosPinRight = relPosBottomRight + 0.5f * relDistBottomToTop;
-                else
+                Vector2 relPosPinRight = Vector2.zero;
+                if(viewType == ViewType.Hexagonal)
                 {
-                    Vector2 relStep = relDistBottomToTop / (pinsPerSide + 1);
-                    relPosPinRight = relPosBottomRight + (j + 1) * relStep;
+                    // Hexagonal Particles (we take the right side as reference)
+                    Vector2 relDistBottomToTop = relPosTopRight - relPosBottomRight;
+                    if (pinsPerSide == 1) relPosPinRight = relPosBottomRight + 0.5f * relDistBottomToTop;
+                    else
+                    {
+                        Vector2 relStep = relDistBottomToTop / (pinsPerSide + 1);
+                        relPosPinRight = relPosBottomRight + (j + 1) * relStep;
+                    }
+                }
+                else if(viewType == ViewType.HexagonalCirc)
+                {
+                    // Circular Particles with Circuits (we have a circle and work with angles and the distance to the center)
+                    float distanceToCenter = AmoebotFunctions.HexVertex_XValue();
+                    relPosPinRight = new Vector2(distanceToCenter, 0f);
+                    if(pinsPerSide > 1)
+                    {
+                        float angleStep = 60f / (pinsPerSide + 1);
+                        float angle = -30f + (j + 1) * angleStep;
+                        relPosPinRight = Quaternion.Euler(new Vector3(0f, 0f, angle)) * relPosPinRight;
+                    }
                 }
                 // Use relPosPinRight to calculate absolute positions
                 for (int k = 0; k < 6; k++)
@@ -248,7 +290,8 @@ public static class TextureCreator
         tex.Apply();
 
         // Add Texture to Data
-        if(hexagonTextures.ContainsKey(pinsPerSide) == false) hexagonTextures.Add(pinsPerSide, tex);
+        if (viewType == ViewType.Hexagonal && hexagonTextures.ContainsKey(pinsPerSide) == false) hexagonTextures.Add(pinsPerSide, tex);
+        if (viewType == ViewType.HexagonalCirc && hexagonCircTextures.ContainsKey(pinsPerSide) == false) hexagonCircTextures.Add(pinsPerSide, tex);
 
         // Return
         return tex;

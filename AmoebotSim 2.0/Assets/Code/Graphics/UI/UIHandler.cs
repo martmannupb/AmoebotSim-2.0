@@ -45,6 +45,7 @@ public class UIHandler : MonoBehaviour
     public Image image_viewType;
     public Sprite sprite_viewTypeCircular;
     public Sprite sprite_viewTypeHexagonal;
+    public Sprite sprite_viewTypeHexagonalCirc;
     public Button button_circuitViewType;
     public Image image_circuitViewType;
     public Sprite sprite_circuitViewTypeCircuitsEnabled;
@@ -218,6 +219,9 @@ public class UIHandler : MonoBehaviour
             {
                 case ViewType.Hexagonal:
                     if (image_viewType.sprite != sprite_viewTypeHexagonal) image_viewType.sprite = sprite_viewTypeHexagonal;
+                    break;
+                case ViewType.HexagonalCirc:
+                    if (image_viewType.sprite != sprite_viewTypeHexagonalCirc) image_viewType.sprite = sprite_viewTypeHexagonalCirc;
                     break;
                 case ViewType.Circular:
                     if (image_viewType.sprite != sprite_viewTypeCircular) image_viewType.sprite = sprite_viewTypeCircular;
