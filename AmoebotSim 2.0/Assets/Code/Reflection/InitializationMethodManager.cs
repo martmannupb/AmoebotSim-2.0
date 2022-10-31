@@ -124,23 +124,7 @@ public class InitializationMethodManager
 
     public bool GenerateSystem(ParticleSystem system, string algorithmName)
     {
-        AlgorithmInfo info = FindAlgorithm(algorithmName);
-        if (info == null)
-        {
-            return false;
-        }
-        ParameterInfo[] paramList = info.generateMethod.GetParameters();
-        object[] paramValues = new object[paramList.Length];
-        for (int i = 0; i < paramList.Length; i++)
-        {
-            if (!paramList[i].HasDefaultValue)
-            {
-                Log.Warning("Parameter '" + paramList[i].Name + "' of generation algorithm '" + algorithmName + "' does not have a default value.");
-            }
-            paramValues[i] = paramList[i].DefaultValue;
-        }
-
-        return GenerateSystem(system, algorithmName, paramValues);
+        return GenerateSystem(system, algorithmName, new object[0]);
     }
 
     public bool GenerateSystem(ParticleSystem system, string algorithmName, object[] parameters)
@@ -153,6 +137,24 @@ public class InitializationMethodManager
 
         try
         {
+            // Fill in missing parameters with default values
+            ParameterInfo[] parameterList = info.generateMethod.GetParameters();
+            if (parameters.Length < parameterList.Length)
+            {
+                object[] newParams = new object[parameterList.Length];
+                for (int i = 0; i < parameters.Length; i++)
+                    newParams[i] = parameters[i];
+                for (int i = parameters.Length; i < parameterList.Length; i++)
+                {
+                    if (!parameterList[i].HasDefaultValue)
+                    {
+                        Log.Warning("Parameter '" + parameterList[i].Name + "' of generation algorithm '" + algorithmName + "' does not have a default value.");
+                    }
+                    newParams[i] = parameterList[i].DefaultValue;
+                }
+                parameters = newParams;
+            }
+
             InitializationMethod methodObj = (InitializationMethod)info.ctor.Invoke(new object[] { system });
             info.generateMethod.Invoke(methodObj, parameters);
         }
