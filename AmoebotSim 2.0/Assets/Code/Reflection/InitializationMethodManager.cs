@@ -122,6 +122,27 @@ public class InitializationMethodManager
         return info.generateMethod.GetParameters();
     }
 
+    public bool GenerateSystem(ParticleSystem system, string algorithmName)
+    {
+        AlgorithmInfo info = FindAlgorithm(algorithmName);
+        if (info == null)
+        {
+            return false;
+        }
+        ParameterInfo[] paramList = info.generateMethod.GetParameters();
+        object[] paramValues = new object[paramList.Length];
+        for (int i = 0; i < paramList.Length; i++)
+        {
+            if (!paramList[i].HasDefaultValue)
+            {
+                Log.Warning("Parameter '" + paramList[i].Name + "' of generation algorithm '" + algorithmName + "' does not have a default value.");
+            }
+            paramValues[i] = paramList[i].DefaultValue;
+        }
+
+        return GenerateSystem(system, algorithmName, paramValues);
+    }
+
     public bool GenerateSystem(ParticleSystem system, string algorithmName, object[] parameters)
     {
         AlgorithmInfo info = FindAlgorithm(algorithmName);

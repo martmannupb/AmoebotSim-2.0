@@ -819,7 +819,7 @@ public class JMTestInitializer : InitializationMethod
 {
     public JMTestInitializer(ParticleSystem system) : base(system) { }
 
-    public void Generate(int mode)
+    public void Generate(int mode = 0)
     {
         InitializationParticle p;
         if (mode == 0)
