@@ -3594,6 +3594,42 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
+    public InitializationStateSaveData GenerateInitSaveData()
+    {
+        if (!inInitializationState)
+            return null;
+        
+        InitializationStateSaveData data = new InitializationStateSaveData();
+
+        data.selectedAlgorithm = selectedAlgorithm;
+        data.particles = new InitParticleSaveData[particlesInit.Count];
+        for (int i = 0; i < particlesInit.Count; i++)
+        {
+            data.particles[i] = particlesInit[i].GenerateSaveData();
+        }
+
+        return data;
+    }
+
+    public void LoadInitSaveState(InitializationStateSaveData data)
+    {
+        if (!inInitializationState)
+            return;
+
+        ResetInit();
+
+        selectedAlgorithm = data.selectedAlgorithm;
+
+        foreach (InitParticleSaveData d in data.particles)
+        {
+            OpenInitParticle p = new OpenInitParticle(this, d);
+            particlesInit.Add(p);
+            particleMapInit[p.Tail()] = p;
+            if (p.IsExpanded())
+                particleMapInit[p.Head()] = p;
+        }
+    }
+
 
     /**
      * Initialization mode functionality.
