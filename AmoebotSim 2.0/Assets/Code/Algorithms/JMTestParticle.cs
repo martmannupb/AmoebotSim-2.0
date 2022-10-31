@@ -6,22 +6,23 @@ public class JMTestParticle : ParticleAlgorithm
 
     public static new string Name => "Joint Movement Test";
 
-    public static new string GenerationMethod => JMTestInitializer.Name;
+    public static new string GenerationMethod => typeof(JMTestInitializer).FullName;
 
     private ParticleAttribute<int> mode;
     private ParticleAttribute<int> role;
     private ParticleAttribute<bool> terminated;
 
-    public JMTestParticle(Particle p, int[] genericParams) : base(p)
+    public JMTestParticle(Particle p) : base(p)
     {
-        if (genericParams.Length < 2)
-        {
-            Log.Error("JM Test particles requires 2 generic parameters.");
-            return;
-        }
-        int m = genericParams[0];
-        int r = genericParams[1];
+        mode = CreateAttributeInt("Mode", 0);
+        role = CreateAttributeInt("Role", 0);
+        terminated = CreateAttributeBool("Terminated", false);
+    }
 
+    public void Init(int mode, int role)
+    {
+        int m = mode;
+        int r = role;
         if (m == 6)
         {
             if (r == 0)
@@ -52,17 +53,8 @@ public class JMTestParticle : ParticleAlgorithm
         {
             SetMainColor(ColorData.Particle_Black);
         }
-
-        mode = CreateAttributeInt("Mode", m);
-        role = CreateAttributeInt("Role", r);
-        terminated = CreateAttributeBool("Terminated", false);
-    }
-
-    public JMTestParticle(Particle p) : base(p)
-    {
-        this.mode = CreateAttributeInt("Mode", -1);
-        this.role = CreateAttributeInt("Role", -1);
-        terminated = CreateAttributeBool("Terminated", false);
+        this.mode.SetValue(m);
+        this.role.SetValue(r);
     }
 
     public override void ActivateBeep()
@@ -827,13 +819,8 @@ public class JMTestInitializer : InitializationMethod
 {
     public JMTestInitializer(ParticleSystem system) : base(system) { }
 
-    public static new string Name => "JM Test";
-
     public void Generate(int mode)
     {
-        while (NumGenericParameters() < 2)
-            AddGenericParameter();
-
         InitializationParticle p;
         if (mode == 0)
         {
@@ -843,8 +830,7 @@ public class JMTestInitializer : InitializationMethod
                 for (int y = 0; y < 10; y++)
                 {
                     p = AddParticle(new Vector2Int(x, y));
-                    p.genericParams[0] = mode;
-                    p.genericParams[1] = 0;
+                    p.SetAttributes(new object[] { mode, 0 });
                 }
             }
         }
@@ -856,8 +842,7 @@ public class JMTestInitializer : InitializationMethod
                 for (int y = 0; y < 10; y++)
                 {
                     p = AddParticle(new Vector2Int(x, y));
-                    p.genericParams[0] = mode;
-                    p.genericParams[1] = 0;
+                    p.SetAttributes(new object[] { mode, 0 });
                 }
             }
         }
@@ -868,13 +853,11 @@ public class JMTestInitializer : InitializationMethod
 
             // Contracted
             p = AddParticle(new Vector2Int(0, 0));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Expanded
             p = AddParticle(new Vector2Int(-1, 1), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
         }
         else if (mode == 3)
         {
@@ -883,13 +866,11 @@ public class JMTestInitializer : InitializationMethod
 
             // Contracted
             p = AddParticle(new Vector2Int(0, 0));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Expanded
             p = AddParticle(new Vector2Int(-1, 1), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
         }
         else if (mode == 4)
         {
@@ -898,13 +879,11 @@ public class JMTestInitializer : InitializationMethod
 
             // Contracted
             p = AddParticle(new Vector2Int(0, 0));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Expanded
             p = AddParticle(new Vector2Int(-1, 1), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
         }
         else if (mode == 5)
         {
@@ -913,13 +892,11 @@ public class JMTestInitializer : InitializationMethod
 
             // Contracted
             p = AddParticle(new Vector2Int(0, 0));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Expanded
             p = AddParticle(new Vector2Int(-1, 1), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
         }
         else if (mode == 6)
         {
@@ -928,21 +905,18 @@ public class JMTestInitializer : InitializationMethod
 
             // Contracted particle pushing
             p = AddParticle(new Vector2Int(0, 0));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Expanded particle pulling
             p = AddParticle(new Vector2Int(-1, 1), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
 
             // Four particles that are passive and will be moved around by the other particles
             int role = 2;
             foreach (Vector2Int pos in new Vector2Int[] { new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(-2, 2), new Vector2Int(-1, 2) })
             {
                 p = AddParticle(pos);
-                p.genericParams[0] = mode;
-                p.genericParams[1] = role;
+                p.SetAttributes(new object[] { mode, role });
                 role++;
             }
         }
@@ -952,13 +926,11 @@ public class JMTestInitializer : InitializationMethod
 
             // Bottom particle
             p = AddParticle(new Vector2Int(0, 0), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Top particle
             p = AddParticle(new Vector2Int(0, 1), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
         }
         else if (mode == 8)
         {
@@ -966,22 +938,18 @@ public class JMTestInitializer : InitializationMethod
 
             // Bottom particle
             p = AddParticle(new Vector2Int(0, 0), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Top particle
             p = AddParticle(new Vector2Int(0, 1), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
 
             // Contracted neighbors
             p = AddParticle(new Vector2Int(0, -1));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 2;
+            p.SetAttributes(new object[] { mode, 2 });
 
             p = AddParticle(new Vector2Int(-1, 2));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 3;
+            p.SetAttributes(new object[] { mode, 3 });
         }
         else if (mode == 9)
         {
@@ -990,13 +958,11 @@ public class JMTestInitializer : InitializationMethod
 
             // Left particle
             p = AddParticle(new Vector2Int(0, 0), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Right particle
             p = AddParticle(new Vector2Int(2, 0), Direction.NNW);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
         }
         else if (mode == 10)
         {
@@ -1005,18 +971,15 @@ public class JMTestInitializer : InitializationMethod
 
             // Left particle
             p = AddParticle(new Vector2Int(0, 0), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Right particle
             p = AddParticle(new Vector2Int(2, 0), Direction.NNW);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
 
             // Contracted particle
             p = AddParticle(new Vector2Int(1, 2));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 2;
+            p.SetAttributes(new object[] { mode, 2 });
         }
         else if (mode == 11)
         {
@@ -1026,8 +989,7 @@ public class JMTestInitializer : InitializationMethod
             for (int i = 0; i < 10; i++)
             {
                 p = AddParticle(new Vector2Int(0, i), Direction.E);
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 0;
+                p.SetAttributes(new object[] { mode, 0 });
             }
         }
         else if (mode == 12)
@@ -1056,21 +1018,18 @@ public class JMTestInitializer : InitializationMethod
 
                 // Expanded particle
                 p = AddParticle(new Vector2Int(0, i), Direction.E);
-                p.genericParams[0] = mode;
-                p.genericParams[1] = role;
+                p.SetAttributes(new object[] { mode, role });
 
                 // Place the neighbor
                 if (neighbor == 1)
                 {
                     p = AddParticle(new Vector2Int(-1, i));
-                    p.genericParams[0] = mode;
-                    p.genericParams[1] = 6;
+                    p.SetAttributes(new object[] { mode, 6 });
                 }
                 else if (neighbor == 2)
                 {
                     p = AddParticle(new Vector2Int(2, i));
-                    p.genericParams[0] = mode;
-                    p.genericParams[1] = 7;
+                    p.SetAttributes(new object[] { mode, 7 });
                 }
             }
         }
@@ -1086,24 +1045,21 @@ public class JMTestInitializer : InitializationMethod
             for (int i = 0; i < widthLower; i++)
             {
                 p = AddParticle(new Vector2Int(i, 0));
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 0;
+                p.SetAttributes(new object[] { mode, 0 });
             }
 
             // Vertical column
             for (int i = 0; i < height; i++)
             {
                 p = AddParticle(new Vector2Int(0, i + 1));
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 1;
+                p.SetAttributes(new object[] { mode, 1 });
             }
 
             // Upper row
             for (int i = 0; i < widthUpper; i++)
             {
                 p = AddParticle(new Vector2Int(i, height + 1));
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 2;
+                p.SetAttributes(new object[] { mode, 2 });
             }
         }
         else if (mode == 14)
@@ -1113,18 +1069,15 @@ public class JMTestInitializer : InitializationMethod
 
             // Contracted
             p = AddParticle(new Vector2Int(0, 0));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 0;
+            p.SetAttributes(new object[] { mode, 0 });
 
             // Expanded
             p = AddParticle(new Vector2Int(-1, 1), Direction.E);
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
 
             // Contracted neighbor for handover
             p = AddParticle(new Vector2Int(-2, 2));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 2;
+            p.SetAttributes(new object[] { mode, 2 });
         }
         else if (mode == 15)
         {
@@ -1136,8 +1089,7 @@ public class JMTestInitializer : InitializationMethod
             // Idle particles have role 0, stripe particles have role 1
             // The lowest stripe particle is the anchor
             p = AddParticle(new Vector2Int(width / 2, 0));
-            p.genericParams[0] = mode;
-            p.genericParams[1] = 1;
+            p.SetAttributes(new object[] { mode, 1 });
 
             for (int x = 0; x < width; x++)
             {
@@ -1145,8 +1097,7 @@ public class JMTestInitializer : InitializationMethod
                 for (int y = (role == 0 ? 0 : 1); y < height; y++)
                 {
                     p = AddParticle(new Vector2Int(x, y));
-                    p.genericParams[0] = mode;
-                    p.genericParams[1] = role;
+                    p.SetAttributes(new object[] { mode, role });
                 }
             }
         }
@@ -1162,15 +1113,13 @@ public class JMTestInitializer : InitializationMethod
             for (int i = 0; i < floorSize; i++)
             {
                 p = AddParticle(new Vector2Int(i, 0));
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 0;
+                p.SetAttributes(new object[] { mode, 0 });
             }
 
             for (int i = 0; i < wormSize; i++)
             {
                 p = AddParticle(new Vector2Int(i, 1));
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 1;
+                p.SetAttributes(new object[] { mode, 1 });
             }
         }
         else if (mode == 17)
@@ -1186,19 +1135,16 @@ public class JMTestInitializer : InitializationMethod
             for (int i = 0; i < height; i++)
             {
                 p = AddParticle(new Vector2Int(0, i));
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 0;
+                p.SetAttributes(new object[] { mode, 0 });
 
                 p = AddParticle(new Vector2Int(3 * numSegments + 1, i));
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 0;
+                p.SetAttributes(new object[] { mode, 0 });
             }
             // Top line
             for (int i = 1; i < numSegments * 3 + 1; i++)
             {
                 p = AddParticle(new Vector2Int(i, height - 1));
-                p.genericParams[0] = mode;
-                p.genericParams[1] = 0;
+                p.SetAttributes(new object[] { mode, 0 });
             }
 
             // Bottom line
@@ -1212,8 +1158,7 @@ public class JMTestInitializer : InitializationMethod
                 if (expanded)
                 {
                     p = AddParticle(new Vector2Int(x, 0), Direction.E);
-                    p.genericParams[0] = mode;
-                    p.genericParams[1] = 1;
+                    p.SetAttributes(new object[] { mode, 1 });
 
                     numExpanded++;
                     x += 2;
@@ -1221,8 +1166,7 @@ public class JMTestInitializer : InitializationMethod
                 else
                 {
                     p = AddParticle(new Vector2Int(x, 0));
-                    p.genericParams[0] = mode;
-                    p.genericParams[1] = 1;
+                    p.SetAttributes(new object[] { mode, 1 });
 
                     numContracted++;
                     x++;

@@ -6,9 +6,9 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
 
     public static new string Name => "Expanded Circuit TEST";
 
-    public static new string GenerationMethod => ExpandedCircuitTestInitializer.Name;
+    public static new string GenerationMethod => typeof(ExpandedCircuitTestInitializer).FullName;
 
-    public ExpandedCircuitTestParticle(Particle p, int[] genericParams) : base(p)
+    public ExpandedCircuitTestParticle(Particle p) : base(p)
     {
         SetMainColor(Color.gray);
     }
@@ -70,8 +70,6 @@ public class ExpandedCircuitTestParticle : ParticleAlgorithm
 public class ExpandedCircuitTestInitializer : InitializationMethod
 {
     public ExpandedCircuitTestInitializer(ParticleSystem system) : base(system) { }
-
-    public static new string Name => "Expanded Circuit Test";
 
     public void Generate(int numParticles = 10)
     {

@@ -113,4 +113,58 @@ public static class ParticleAttributeFactory
         p.AddAttribute(attr);
         return attr;
     }
+
+    /// <summary>
+    /// Creates a particle attribute matching the desired type if a corresponding
+    /// attribute type exists. The attribute is not added to the given particle's
+    /// list of attributes.
+    /// </summary>
+    /// <param name="p">The particle holding the attribute.</param>
+    /// <param name="type">The data type stored by the attribute.</param>
+    /// <param name="name">The name of the attribute.</param>
+    /// <param name="initialValue">The initial value of the attribute. If <c>null</c>,
+    /// an appropriate default value is selected.</param>
+    /// <returns>A new attribute instance if the type could be matched,
+    /// otherwise <c>null</c>.</returns>
+    public static IParticleAttribute CreateParticleAttribute(Particle p, System.Type type, string name, object initialValue)
+    {
+        if (type == typeof(bool))
+        {
+            return new ParticleAttribute_Bool(p, name, initialValue != null ? (bool)initialValue : false);
+        }
+        else if (type == typeof(Direction))
+        {
+            return new ParticleAttribute_Direction(p, name, initialValue != null ? (Direction)initialValue : Direction.NONE);
+        }
+        else if (type == typeof(float))
+        {
+            return new ParticleAttribute_Float(p, name, initialValue != null ? (float)initialValue : 0f);
+        }
+        else if (type == typeof(int))
+        {
+            return new ParticleAttribute_Int(p, name, initialValue != null ? (int)initialValue : 0);
+        }
+        else if (type == typeof(string))
+        {
+            return new ParticleAttribute_String(p, name, initialValue != null ? (string)initialValue : "");
+        }
+        else if (type.IsEnum)
+        {
+            try
+            {
+                System.Type enumAttrType = typeof(ParticleAttribute_Enum<>);
+                enumAttrType = enumAttrType.MakeGenericType(new System.Type[] { type });
+                System.Reflection.ConstructorInfo ctor = enumAttrType.GetConstructor(new System.Type[] { typeof(Particle), typeof(string), type });
+                IParticleAttribute attr = (IParticleAttribute)ctor.Invoke(new object[] { p, name, initialValue });
+                return attr;
+            }
+            catch (System.Exception e)
+            {
+                Log.Error("Error while trying to instantiate enum attribute for enum type '" + type + "':\n" + e);
+            }
+        }
+
+        Log.Error("Cannot create attribute: Unsupported type '" + type + "'.");
+        return null;
+    }
 }

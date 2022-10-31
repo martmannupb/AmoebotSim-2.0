@@ -8,12 +8,12 @@ using UnityEngine;
 /// is used to instantiate the proper particles and the
 /// associated algorithms when simulation mode is entered.
 /// </summary>
-public class InitializationParticle : IParticleState
+public abstract class InitializationParticle : IParticleState
 {
-    private Vector2Int tailPos;
-    private Vector2Int headPos;
+    protected Vector2Int tailPos;
+    protected Vector2Int headPos;
 
-    private Direction expansionDir;
+    protected Direction expansionDir;
     public Direction ExpansionDir
     {
         get { return expansionDir; }
@@ -34,14 +34,14 @@ public class InitializationParticle : IParticleState
         }
     }
 
-    private bool chirality;
+    protected bool chirality;
     public bool Chirality
     {
         get { return chirality; }
         set { chirality = value; }
     }
 
-    private Direction compassDir;
+    protected Direction compassDir;
     public Direction CompassDir
     {
         get { return compassDir; }
@@ -54,10 +54,11 @@ public class InitializationParticle : IParticleState
         }
     }
 
+    // Attributes representing the parameter values
+    protected List<IParticleAttribute> attributes;
 
-    public List<int> genericParams;
     public ParticleGraphicsAdapterImpl graphics;
-    private ParticleSystem system;
+    protected ParticleSystem system;
 
     public InitializationParticle(ParticleSystem system, Vector2Int position, bool chirality, Direction compassDir, Direction expansionDir = Direction.NONE)
     {
@@ -71,9 +72,23 @@ public class InitializationParticle : IParticleState
             headPos = ParticleSystem_Utils.GetNbrInDir(tailPos, expansionDir);
         this.system = system;
 
-        genericParams = new List<int>(system.NumGenericParameters);
-        for (int i = 0; i < system.NumGenericParameters; i++)
-            genericParams.Add(0);
+        // Setup the attributes according to the selected algorithm's init parameters
+        attributes = new List<IParticleAttribute>();
+        string algo = system.SelectedAlgorithm;
+        AlgorithmManager man = AlgorithmManager.Instance;
+        if (man.IsAlgorithmKnown(algo))
+        {
+            System.Reflection.ParameterInfo[] initParams = man.GetInitParameters(algo);
+            if (initParams != null)
+            {
+                foreach (System.Reflection.ParameterInfo param in initParams)
+                {
+                    IParticleAttribute attr = ParticleAttributeFactory.CreateParticleAttribute(null, param.ParameterType, param.Name, param.HasDefaultValue ? param.DefaultValue : null);
+                    if (attr != null)
+                        attributes.Add(attr);
+                }
+            }
+        }
         
         // Add particle to the render system and update the visuals of the particle
         graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
@@ -137,41 +152,50 @@ public class InitializationParticle : IParticleState
 
     public List<IParticleAttribute> GetAttributes()
     {
-        return new List<IParticleAttribute>();
+        return attributes;
     }
 
     public IParticleAttribute TryGetAttributeByName(string attrName)
     {
+        foreach (IParticleAttribute attr in attributes)
+        {
+            if (attr.ToString_AttributeName().Equals(attrName))
+                return attr;
+        }
         return null;
     }
 
-    /// <summary>
-    /// Appends a new generic parameter with the given initial value.
-    /// <para>
-    /// This method should not be called on individual particles.
-    /// Instead, add a new parameter to all current particles at
-    /// once using the corresponding interface method.
-    /// </para>
-    /// </summary>
-    /// <param name="initialVal">The initial value of the new
-    /// generic parameter.</param>
-    public void AddGenericParam(int initialVal = 0)
+    public void SetAttribute(string attrName, object value)
     {
-        genericParams.Add(initialVal);
+        foreach (IParticleAttribute attr in attributes)
+        {
+            if (attr.ToString_AttributeName().Equals(attrName))
+            {
+                attr.UpdateAttributeValue(value.ToString());
+                return;
+            }
+        }
+        Log.Warning("Tried to set value of attribute '" + attrName + "' but could not find this attribute.");
     }
 
-    /// <summary>
-    /// Removes the generic parameter with the given index.
-    /// <para>
-    /// This method should not be called on individual particles.
-    /// Instead, remove the parameter from all current particles
-    /// at once using the corresponding interface method.
-    /// </para>
-    /// </summary>
-    /// <param name="index">The index of the generic parameter
-    /// to be removed.</param>
-    public void RemoveGenericParam(int index)
+    public void SetAttributes(object[] values)
     {
-        genericParams.RemoveAt(index);
+        int n = Mathf.Min(values.Length, attributes.Count);
+        for (int i = 0; i < n; i++)
+        {
+            attributes[i].UpdateAttributeValue(values[i].ToString());
+        }
+    }
+
+    public object[] GetParameterValues()
+    {
+        object[] vals = new object[attributes.Count];
+
+        for (int i = 0; i < vals.Length; i++)
+        {
+            vals[i] = attributes[i].GetObjectValue();
+        }
+
+        return vals;
     }
 }

@@ -91,13 +91,8 @@ public class LineFormationParticleSync : ParticleAlgorithm
     // Flag to make LEADER send a beep every 2 rounds and recognize when the line is complete
     private ParticleAttribute<bool> beepInLastRound;
 
-    public LineFormationParticleSync(Particle p, int[] genericParams) : base(p)
+    public LineFormationParticleSync(Particle p) : base(p)
     {
-        if (genericParams.Length < 1)
-        {
-            Log.Error("Line formation requires one generic parameter");
-            return;
-        }
         constructionDir = CreateAttributeDirection("constructionDir", Direction.NONE);
         moveDir = CreateAttributeDirection("moveDir", Direction.NONE);
         followDir = CreateAttributeDirection("followDir", Direction.NONE);
@@ -110,9 +105,12 @@ public class LineFormationParticleSync : ParticleAlgorithm
         beepInLastRound = CreateAttributeBool("Beep in last round", false);
 
         SetMainColor(idleColor);
+    }
 
-        // Particle becomes the leader if first generic parameter is set unequal to 0
-        if (genericParams[0] != 0)
+    public void Init(bool leader = false)
+    {
+        // Exactly one particle will become the leader and choose a random construction direction
+        if (leader)
         {
             state.SetValue(LFState.LEADER);
             constructionDir.SetValue(DirectionHelpers.Cardinal(Random.Range(0, 6)));
@@ -126,7 +124,7 @@ public class LineFormationParticleSync : ParticleAlgorithm
 
     public static new string Name => "Line Formation";
 
-    public static new string GenerationMethod => LineFormationInitializer.Name;
+    public static new string GenerationMethod => typeof(LineFormationInitializer).FullName;
 
     public override bool IsFinished()
     {
@@ -921,20 +919,15 @@ public class LineFormationInitializer : InitializationMethod
 {
     public LineFormationInitializer(ParticleSystem system) : base(system) { }
 
-    public static new string Name => "Line Formation";
-
     public void Generate(int numParticles = 50, float holeProb = 0.3f)
     {
-        if (NumGenericParameters() < 1)
-            AddGenericParameter();
-
         GenerateRandomWithHoles(numParticles, holeProb, Initialization.Chirality.CounterClockwise, Initialization.Compass.E);
 
         // Select a leader
         InitializationParticle[] particles = GetParticles();
         if (particles.Length > 0)
         {
-            particles[Random.Range(0, particles.Length)].genericParams[0] = 1;
+            particles[Random.Range(0, particles.Length)].SetAttribute("leader", true);
         }
     }
 }

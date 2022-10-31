@@ -6,26 +6,83 @@ using UnityEngine;
 /// <summary>
 /// Represents a collection of partition sets that are connected
 /// into a single circuit.
+/// <para>
+/// Use the pooling mechanism (<see cref="Get(int)"/> and
+/// <see cref="Free(Circuit)"/>) to obtain and free instances.
+/// </para>
 /// </summary>
 public class Circuit
 {
     public int id;
-    public List<SysPartitionSet> partitionSets;
-    public bool active;
-    public bool hasBeep;
-    public Message message;
-    public Color color;
-    public bool colorOverride;
+    private bool hasBeep;
+    private Message message;
+    private Color color;
+    private bool colorOverride;
+    private int numPartitionSets = 0;
+    /// <summary>
+    /// The number of partition sets belonging to this circuit.
+    /// </summary>
+    public int NumPartitionSets
+    {
+        get { return GetRoot().numPartitionSets; }
+    }
 
-    public Circuit(int id)
+    private List<Circuit> children = new List<Circuit>();
+    private Circuit rootParent = null;
+
+    private Circuit(int id)
+    {
+        Reset(id);
+    }
+
+    private void Reset(int id)
     {
         this.id = id;
-        partitionSets = new List<SysPartitionSet>();
-        active = true;
         hasBeep = false;
         message = null;
         color = Color.black;
         colorOverride = false;
+        numPartitionSets = 0;
+        children.Clear();
+        rootParent = null;
+    }
+
+    public bool IsRoot()
+    {
+        return rootParent == null;
+    }
+
+    public bool HasBeep()
+    {
+        return GetRoot().hasBeep;
+    }
+
+    public Message GetMessage()
+    {
+        return GetRoot().message;
+    }
+
+    public bool HasColorOverride()
+    {
+        return GetRoot().colorOverride;
+    }
+
+    public Color GetColor()
+    {
+        return GetRoot().color;
+    }
+
+    public void SetColor(Color c)
+    {
+        GetRoot().color = c;
+    }
+
+    private Circuit GetRoot()
+    {
+        if (rootParent != null)
+            return rootParent;
+        else
+            return this;
     }
 
     /// <summary>
@@ -38,8 +95,13 @@ public class Circuit
     /// <param name="ps">The partition set to be added.</param>
     public void AddPartitionSet(SysPartitionSet ps)
     {
-        partitionSets.Add(ps);
+        GetRoot().AddPartitionSetRoot(ps);
+    }
+
+    private void AddPartitionSetRoot(SysPartitionSet ps)
+    {
         ps.circuit = id;
+        numPartitionSets++;
         if (!hasBeep && ps.pinConfig.particle.HasPlannedBeep(ps.Id))
         {
             hasBeep = true;
@@ -68,6 +130,11 @@ public class Circuit
         }
     }
 
+    public bool SameCircuitAs(Circuit other)
+    {
+        return GetRoot() == other.GetRoot();
+    }
+
     /// <summary>
     /// Merges this circuit with the given other circuit.
     /// <para>
@@ -83,11 +150,16 @@ public class Circuit
     /// with.</param>
     public void MergeWith(Circuit other)
     {
-        if (other.id == id)
-        {
+        if (SameCircuitAs(other))
             return;
-        }
-        if (partitionSets.Count >= other.partitionSets.Count)
+
+        GetRoot().MergeWithRoot(other.GetRoot());
+    }
+
+    private void MergeWithRoot(Circuit other)
+    {
+        //if (children.Count >= other.children.Count)
+        if (numPartitionSets >= other.numPartitionSets)
         {
             MergeOther(other);
         }
@@ -95,25 +167,6 @@ public class Circuit
         {
             other.MergeOther(this);
         }
-        bool beep = hasBeep || other.hasBeep;
-        hasBeep = beep;
-        other.hasBeep = beep;
-
-        Message newMsg = null;
-        if (message == null)
-        {
-            newMsg = other.message;
-        }
-        else if (other.message == null)
-        {
-            newMsg = message;
-        }
-        else
-        {
-            newMsg = other.message.GreaterThan(message) ? other.message : message;
-        }
-        message = newMsg;
-        other.message = newMsg;
     }
 
     /// <summary>
@@ -125,12 +178,25 @@ public class Circuit
     /// this one. It will be set to inactive after the merge.</param>
     private void MergeOther(Circuit other)
     {
-        foreach (SysPartitionSet ps in other.partitionSets)
+        foreach (Circuit c in other.children)
         {
-            ps.circuit = id;
+            c.rootParent = this;
+            children.Add(c);
         }
-        partitionSets.AddRange(other.partitionSets);
-        other.active = false;
+        other.children.Clear();
+        other.rootParent = this;
+        children.Add(other);
+        numPartitionSets += other.numPartitionSets;
+
+        hasBeep = hasBeep || other.hasBeep;
+
+        if (other.message != null)
+        {
+            if (message == null)
+                message = other.message;
+            else
+                message = other.message.GreaterThan(message) ? other.message : message;
+        }
 
         if (!colorOverride && other.colorOverride)
         {
@@ -139,10 +205,42 @@ public class Circuit
         }
     }
 
+    // Pooling
 
-    public string Print()
+    private static Stack<Circuit> pool = new Stack<Circuit>();
+
+    /// <summary>
+    /// Returns a new circuit instance with the given ID.
+    /// <para>
+    /// Use <see cref="Free(Circuit)"/> on the instance
+    /// when it is not needed anymore so that it can be
+    /// reused later.
+    /// </para>
+    /// </summary>
+    /// <param name="id">The ID for the new circuit.</param>
+    /// <returns>A new circuit instance obtained from the
+    /// pool or newly created.</returns>
+    public static Circuit Get(int id)
     {
-        string s = "Circuit with ID " + id + " and " + partitionSets.Count + " partition sets (" + (active ? "active" : "inactive") + "): " + (hasBeep ? "HAS BEEP" : "Has no beep") + ", " + (message != null ? "HAS MESSAGE" : "Has no message");
-        return s;
+        if (pool.Count > 0)
+        {
+            Circuit c = pool.Pop();
+            c.Reset(id);
+            return c;
+        }
+        else
+        {
+            return new Circuit(id);
+        }
+    }
+
+    /// <summary>
+    /// Returns the given circuit instance to the pool.
+    /// </summary>
+    /// <param name="c">The circuit to be returned to the pool.</param>
+    public static void Free(Circuit c)
+    {
+        if (c != null)
+            pool.Push(c);
     }
 }

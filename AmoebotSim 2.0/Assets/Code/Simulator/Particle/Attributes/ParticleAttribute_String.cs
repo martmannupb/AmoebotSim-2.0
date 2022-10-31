@@ -7,11 +7,13 @@ public class ParticleAttribute_String : ParticleAttributeWithHistory<string>, IP
 {
     public ParticleAttribute_String(Particle particle, string name, string value = "") : base(particle, name)
     {
-        history = new ValueHistory<string>(value, particle.system.CurrentRound);
+        history = new ValueHistory<string>(value, particle != null ? particle.system.CurrentRound : 0);
     }
 
     public override string GetValue()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (particle.system.InMovePhase || !hasIntermediateVal)
         {
             return history.GetValueInRound(particle.system.PreviousRound);
@@ -24,6 +26,8 @@ public class ParticleAttribute_String : ParticleAttributeWithHistory<string>, IP
 
     public override string GetValue_After()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to read other particles' updated states!");
@@ -33,6 +37,8 @@ public class ParticleAttribute_String : ParticleAttributeWithHistory<string>, IP
 
     public override void SetValue(string value)
     {
+        if (particle == null)
+            history.RecordValueInRound(value, 0);
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
@@ -59,7 +65,7 @@ public class ParticleAttribute_String : ParticleAttributeWithHistory<string>, IP
     {
         if (value != null)
         {
-            history.RecordValueInRound(value, particle.system.CurrentRound);
+            history.RecordValueInRound(value, particle != null ? particle.system.CurrentRound : 0);
             return true;
         }
         else

@@ -39,11 +39,13 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
 
     public ParticleAttribute_Enum(Particle particle, string name, T initialValue) : base(particle, name)
     {
-        history = new ValueHistory<T>(initialValue, particle.system.CurrentRound);
+        history = new ValueHistory<T>(initialValue, particle != null ? particle.system.CurrentRound : 0);
     }
 
     public override T GetValue()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (particle.system.InMovePhase || !hasIntermediateVal)
         {
             return history.GetValueInRound(particle.system.PreviousRound);
@@ -56,6 +58,8 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
 
     public override T GetValue_After()
     {
+        if (particle == null)
+            return history.GetMarkedValue();
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to read other particles' updated states!");
@@ -65,6 +69,8 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
 
     public override void SetValue(T value)
     {
+        if (particle == null)
+            history.RecordValueInRound(value, 0);
         if (!particle.isActive)
         {
             throw new System.InvalidOperationException("Particles are not allowed to write other particles' attributes directly!");
@@ -101,7 +107,7 @@ public class ParticleAttribute_Enum<T> : ParticleAttributeWithHistory<T>, IParti
     {
         if (Enum.TryParse(typeof(T), value, true, out object parsedVal))
         {
-            history.RecordValueInRound((T)parsedVal, particle.system.CurrentRound);
+            history.RecordValueInRound((T)parsedVal, particle != null ? particle.system.CurrentRound : 0);
             return true;
         }
         else

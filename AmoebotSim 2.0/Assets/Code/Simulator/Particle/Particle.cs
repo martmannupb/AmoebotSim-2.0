@@ -1789,7 +1789,7 @@ public class Particle : IParticleState, IReplayHistory
         AlgorithmManager man = AlgorithmManager.Instance;
         if (man.IsAlgorithmKnown(algoName))
         {
-            man.Instantiate(algoName, p, new int[0]);
+            man.Instantiate(algoName, p);
         }
         else
         {
