@@ -416,7 +416,7 @@ public class ParticleUIHandler : MonoBehaviour
         {
             // Setting held down long enough to apply attribute value to all particles (of same type)
             Log.Debug("Setting " + name + " with value "+particle.TryGetAttributeByName(name).ToString_AttributeValue()+" is applied to all particles of the same type. However, this feature is not implemented yet.");
-            //sim.system.
+            sim.system.ApplyAttributeValueToAllParticles(particle, name);
             if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
         }
     }

@@ -132,8 +132,15 @@ public abstract class UISetting
         locked = false;
     }
 
+    public void SetInteractable(bool interactable, bool backgroundInteractable = true)
+    {
+        button.interactable = backgroundInteractable;
+        SetInteractableState(interactable);
+    }
+
     protected abstract void LockSetting();
     protected abstract void UnlockSetting();
+    protected abstract void SetInteractableState(bool interactable);
     public void Clear()
     {
         backgroundButton_onButtonPressedEvent = null;
@@ -178,6 +185,11 @@ public class UISetting_Header : UISetting
         // empty
     }
 
+    protected override void SetInteractableState(bool interactable)
+    {
+        // empty
+    }
+
     protected override void ClearRefs()
     {
         // empty
@@ -209,6 +221,11 @@ public class UISetting_Spacing : UISetting
     }
 
     protected override void UnlockSetting()
+    {
+        // empty
+    }
+
+    protected override void SetInteractableState(bool interactable)
     {
         // empty
     }
@@ -259,6 +276,11 @@ public class UISetting_Slider : UISetting
     protected override void UnlockSetting()
     {
         slider.enabled = true;
+    }
+
+    protected override void SetInteractableState(bool interactable)
+    {
+        slider.interactable = interactable;
     }
 
     protected override void ClearRefs()
@@ -352,6 +374,11 @@ public class UISetting_Text : UISetting
     protected override void UnlockSetting()
     {
         input.enabled = true;
+    }
+
+    protected override void SetInteractableState(bool interactable)
+    {
+        input.interactable = interactable;
     }
 
     protected override void ClearRefs()
@@ -464,6 +491,11 @@ public class UISetting_Dropdown : UISetting
         dropdown.enabled = true;
     }
 
+    protected override void SetInteractableState(bool interactable)
+    {
+        dropdown.interactable = interactable;
+    }
+
     protected override void ClearRefs()
     {
         onValueChangedEvent = null;
@@ -528,6 +560,11 @@ public class UISetting_Toggle : UISetting
     protected override void UnlockSetting()
     {
         toggle.enabled = true;
+    }
+
+    protected override void SetInteractableState(bool interactable)
+    {
+        toggle.interactable = interactable;
     }
 
     protected override void ClearRefs()
@@ -639,6 +676,11 @@ public class UISetting_ValueSlider : UISetting
     protected override void UnlockSetting()
     {
         slider.enabled = true;
+    }
+
+    protected override void SetInteractableState(bool interactable)
+    {
+        slider.interactable = interactable;
     }
 
     protected override void ClearRefs()
