@@ -529,49 +529,6 @@ public class LineFormationParticleSync : ParticleAlgorithm
         }
     }
 
-    private void FlwrActivate()
-    {
-        PinConfiguration pc = GetCurrentPinConfiguration();
-
-        if (IsContracted())
-        {
-            // Contracted FLWR must wait for followed particle to send beep
-            if (pc.GetPinAt(followDir, 0).PartitionSet.ReceivedBeep())
-            {
-                PushHandover(followDir);
-                // Also update the follow direction
-                LineFormationParticleSync nbr = GetNeighborAt(followDir) as LineFormationParticleSync;
-                followDir.SetValue(nbr.HeadDirection());
-                return;
-            }
-
-            // Otherwise, try becoming ROOT or even INLINE
-            if (TryToBecomeRootOrInline() > 0)
-            {
-                return;
-            }
-        }
-        else
-        {
-            // Expanded FLWR can pull other FLWR just like ROOTs do when they cannot pull a ROOT
-            if (PullIfSentBeep())
-            {
-                return;
-            }
-
-            if (SendBeepForPull())
-            {
-                return;
-            }
-
-            // Could not pull a FLWR: Try contracting if we are not blocked
-            if (!HaveBlockingTailNeighbor())
-            {
-                ContractHead();
-            }
-        }
-    }
-
     private void InlineActivate()
     {
         if (!localLineComplete && !hasChosenRoot && SendBeepToWaitingRoot())
