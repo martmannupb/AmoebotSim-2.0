@@ -26,6 +26,9 @@ public class RendererBackground
             case ViewType.Hexagonal:
                 Render_Hexagonal();
                 break;
+            case ViewType.HexagonalCirc:
+                Render_Hexagonal();
+                break;
             case ViewType.Circular:
                 Render_Circular();
                 break;

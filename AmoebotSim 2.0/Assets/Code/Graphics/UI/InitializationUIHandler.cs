@@ -103,6 +103,7 @@ public class InitializationUIHandler : MonoBehaviour
         List<string> genAlgStrings = InitializationMethodManager.Instance.GetAlgorithmNames();
         genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings[0]);
         genAlg_setting_genAlg.onValueChangedEvent += ValueChanged_Text;
+        genAlg_setting_genAlg.SetInteractable(false);
         // Additional Parameters
         List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(Initialization.Chirality)));
         chiralityList.Remove(Initialization.Chirality.Random.ToString());
@@ -249,8 +250,10 @@ public class InitializationUIHandler : MonoBehaviour
         // Notify System
         uiHandler.sim.PauseSim();
         uiHandler.sim.system.InitializationModeStarted();
+        // Generate
+        ButtonPressed_Generate();
         // Event
-        if(EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(true);
+        if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(true);
     }
 
     public void Close(bool aborted)
@@ -277,9 +280,13 @@ public class InitializationUIHandler : MonoBehaviour
     /// </summary>
     public void ButtonPressed_Load()
     {
-        string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "json", false);
-        if (paths.Length != 0) Log.Debug("Here we should load the file " + paths[0] + ".");
-        else Log.Debug("No file chosen.");
+        string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "aminit", false);
+        if (paths.Length != 0)
+        {
+            uiHandler.sim.system.LoadInitSaveState(SaveStateUtility.LoadInit(paths[0]));
+            Log.Entry("Loaded initialization state from path: " + paths[0] + ".");
+        }
+        //else Log.Debug("No file chosen.");
     }
 
     /// <summary>
@@ -287,9 +294,13 @@ public class InitializationUIHandler : MonoBehaviour
     /// </summary>
     public void ButtonPressed_Save()
     {
-        string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "state", "json");
-        if (path.Equals("") == false) Log.Debug("Here we should save the file " + path + ".");
-        else Log.Debug("No file chosen.");
+        string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "initState", "aminit");
+        if (path.Equals("") == false)
+        {
+            SaveStateUtility.SaveInit(uiHandler.sim.system.GenerateInitSaveData(), path);
+            Log.Entry("Saved initialization state at path: " + path + ".");
+        }
+        //else Log.Entry("No path chosen.");
     }
 
     /// <summary>
@@ -298,7 +309,8 @@ public class InitializationUIHandler : MonoBehaviour
     public void ButtonPressed_Generate()
     {
         // Collect Input Data
-        string algorithm = genAlg_setting_genAlg.GetValueString();
+        string algorithm = alg_setting_algo.GetValueString();
+        string genAlgorithm = genAlg_setting_genAlg.GetValueString();
         string[] parameters = new string[genAlg_settings.Count];
         for (int i = 0; i < genAlg_settings.Count; i++)
         {
@@ -313,7 +325,8 @@ public class InitializationUIHandler : MonoBehaviour
 
         // Call Generation Method
         uiHandler.sim.system.Reset();
-        uiHandler.sim.system.GenerateParticles(algorithm, parameterObjects);
+        uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
+        uiHandler.sim.system.GenerateParticles(genAlgorithm, parameterObjects);
 
         // Center Camera
         uiHandler.Button_CameraCenterPressed();

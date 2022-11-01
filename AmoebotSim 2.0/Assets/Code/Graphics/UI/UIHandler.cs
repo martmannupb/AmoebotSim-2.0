@@ -18,6 +18,7 @@ public class UIHandler : MonoBehaviour
     // UI Objects =====
     public GameObject ui;
     // Play/Pause
+    public Button button_playPause;
     public Image image_playPauseButton;
     public Sprite sprite_play;
     public Sprite sprite_pause;
@@ -44,6 +45,7 @@ public class UIHandler : MonoBehaviour
     public Image image_viewType;
     public Sprite sprite_viewTypeCircular;
     public Sprite sprite_viewTypeHexagonal;
+    public Sprite sprite_viewTypeHexagonalCirc;
     public Button button_circuitViewType;
     public Image image_circuitViewType;
     public Sprite sprite_circuitViewTypeCircuitsEnabled;
@@ -155,57 +157,82 @@ public class UIHandler : MonoBehaviour
 
     private void UpdateUI(bool running, bool forceRoundSliderUpdate)
     {
-        // Get Round Counter
-        int curRound = sim.system.CurrentRound;
-        int minRound = sim.system.EarliestRound;
-        int maxRound = sim.system.LatestRound;
-        int uiRound = (int)slider_round.value;
+        // UI State
+        if(initializationUI.IsOpen())
+        {
+            // Init Mode
 
-        // Play/Pause/Step
-        button_stepBack.interactable = uiRound > minRound && running == false;
-        button_stepForward.interactable = uiRound < maxRound && running == false;
-        // Round Slider
-        if (slider_round != null)
+            // Disable Bottom Panel Buttons
+            button_stepBack.interactable = false;
+            button_stepForward.interactable = false;
+            button_playPause.interactable = false;
+            slider_round.interactable = false;
+            button_jumpCut.interactable = false;
+            // Edit Texts
+            string textRound = "Init Mode";
+            if (text_round.text.Equals(textRound) == false) text_round.text = textRound;
+        }
+        else
         {
-            if(running || forceRoundSliderUpdate)
+            // Sim Mode
+            // Get Round Counter
+            int curRound = sim.system.CurrentRound;
+            int minRound = sim.system.EarliestRound;
+            int maxRound = sim.system.LatestRound;
+            int uiRound = (int)slider_round.value;
+
+            // Play/Pause/Step
+            button_stepBack.interactable = uiRound > minRound && running == false;
+            button_stepForward.interactable = uiRound < maxRound && running == false;
+            button_playPause.interactable = true;
+            // Round Slider
+            slider_round.interactable = true;
+            if (slider_round != null)
             {
-                // Sim running
-                // Update, do not allow editing of the slider
-                slider_round.enabled = false;
-                slider_round.minValue = 0;
-                slider_round.maxValue = maxRound;
-                slider_round.value = curRound;
+                if (running || forceRoundSliderUpdate)
+                {
+                    // Sim running
+                    // Update, do not allow editing of the slider
+                    slider_round.enabled = false;
+                    slider_round.minValue = 0;
+                    slider_round.maxValue = maxRound;
+                    slider_round.value = curRound;
+                }
+                else
+                {
+                    // Sim paused
+                    // Allow editing the slider and jump to the given round
+                    slider_round.enabled = true;
+                }
             }
-            else
+            // Round Text
+            if (text_round != null)
             {
-                // Sim paused
-                // Allow editing the slider and jump to the given round
-                slider_round.enabled = true;
+                string text = "Round: " + slider_round.value + " (of " + sim.system.LatestRound + ")";
+                if (text_round.text.Equals(text) == false) text_round.text = text;
             }
+            // JumpCut Button
+            button_jumpCut.interactable = uiRound < maxRound && running == false;
+            // View Button Images
+            // View Type
+            switch (sim.renderSystem.GetCurrentViewType())
+            {
+                case ViewType.Hexagonal:
+                    if (image_viewType.sprite != sprite_viewTypeHexagonal) image_viewType.sprite = sprite_viewTypeHexagonal;
+                    break;
+                case ViewType.HexagonalCirc:
+                    if (image_viewType.sprite != sprite_viewTypeHexagonalCirc) image_viewType.sprite = sprite_viewTypeHexagonalCirc;
+                    break;
+                case ViewType.Circular:
+                    if (image_viewType.sprite != sprite_viewTypeCircular) image_viewType.sprite = sprite_viewTypeCircular;
+                    break;
+                default:
+                    break;
+            }
+            // Circuit View Type
+            if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
+            else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
         }
-        // Round Text
-        if(text_round != null)
-        {
-            text_round.text = "Round: " + slider_round.value + " (of " + sim.system.LatestRound + ")";
-        }
-        // JumpCut Button
-        button_jumpCut.interactable = uiRound < maxRound && running == false;
-        // View Button Images
-        // View Type
-        switch (sim.renderSystem.GetCurrentViewType())
-        {
-            case ViewType.Hexagonal:
-                if (image_viewType.sprite != sprite_viewTypeHexagonal) image_viewType.sprite = sprite_viewTypeHexagonal;
-                break;
-            case ViewType.Circular:
-                if (image_viewType.sprite != sprite_viewTypeCircular) image_viewType.sprite = sprite_viewTypeCircular;
-                break;
-            default:
-                break;
-        }
-        // Circuit View Type
-        if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
-        else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
     }
 
     public void NotifyPlayPause(bool running)

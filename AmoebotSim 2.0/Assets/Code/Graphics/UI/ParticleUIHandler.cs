@@ -415,8 +415,47 @@ public class ParticleUIHandler : MonoBehaviour
         if(IsOpen() && duration >= 2f)
         {
             // Setting held down long enough to apply attribute value to all particles (of same type)
-            Log.Debug("Setting " + name + " with value "+particle.TryGetAttributeByName(name).ToString_AttributeValue()+" is applied to all particles of the same type. However, this feature is not implemented yet.");
-            //sim.system.
+            
+            string attributeValue = "";
+            IParticleAttribute attribute = particle.TryGetAttributeByName(name);
+            if (name.Equals("Chirality"))
+            {
+                if(sim.uiHandler.initializationUI.IsOpen()) // only editable in init mode
+                {
+                    attributeValue = particle.Chirality() ? "CounterClockwise" : "Clockwise";
+                    sim.system.SetSystemChirality(particle.Chirality() ? Initialization.Chirality.CounterClockwise : Initialization.Chirality.Clockwise);
+                    Log.Entry("Chirality with value " + attributeValue + " has been applied to all particles of the same type.");
+                }
+                else
+                {
+                    Log.Warning("Sorry, the chirality can only be set during init mode.");
+                }
+            }
+            else if (name.Equals("Compass Dir"))
+            {
+                if(sim.uiHandler.initializationUI.IsOpen()) // only editable in init mode
+                {
+                    attributeValue = particle.CompassDir().ToString();
+                    sim.system.SetSystemCompassDir((Initialization.Compass)particle.CompassDir().ToInt());
+                    Log.Entry("Compass Dir with value " + attributeValue + " has been applied to all particles of the same type.");
+                }
+                else
+                {
+                    Log.Warning("Sorry, the compass dir can only be set during init mode.");
+                }
+            }
+            else if (attribute != null)
+            {
+                attributeValue = attribute.ToString_AttributeValue();
+                sim.system.ApplyAttributeValueToAllParticles(particle, name);
+                Log.Entry("Setting " + name + " with value " + attributeValue + " has been applied to all particles of the same type.");
+            }
+            else
+            {
+                Log.Error("Setting " + name + " could not be applied since it has not been found!");
+            }
+
+            // Refresh UI
             if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
         }
     }

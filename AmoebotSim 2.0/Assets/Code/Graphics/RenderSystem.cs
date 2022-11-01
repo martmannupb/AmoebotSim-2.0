@@ -143,6 +143,9 @@ public class RenderSystem
         switch (setting_viewType)
         {
             case ViewType.Hexagonal:
+                setting_viewType = ViewType.HexagonalCirc;
+                break;
+            case ViewType.HexagonalCirc:
                 setting_viewType = ViewType.Circular;
                 break;
             case ViewType.Circular:
