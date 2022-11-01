@@ -125,7 +125,7 @@ public class Particle : IParticleState, IReplayHistory
     // Particle fill color
     private ValueHistory<Color> mainColorHistory;
     private ValueHistory<bool> mainColorSetHistory;
-    private Color mainColor = new Color();
+    private Color mainColor = new Color(0, 0, 0, 1);
     private bool mainColorSet = false;
 
     // Partition set colors
