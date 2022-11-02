@@ -155,7 +155,7 @@ public class UIHandler : MonoBehaviour
         UpdateUI(running, false);
     }
 
-    private void UpdateUI(bool running, bool forceRoundSliderUpdate)
+    public void UpdateUI(bool running, bool forceRoundSliderUpdate)
     {
         // UI State
         if(initializationUI.IsOpen())

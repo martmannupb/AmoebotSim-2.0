@@ -137,7 +137,8 @@ public class RendererUI
                                             // Pause Simulation
                                             sim.PauseSim();
                                             // Add particle at position
-                                            sim.system.AddParticleContracted(mouseWorldField);
+                                            if(sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
+                                            else sim.system.AddParticleContracted(mouseWorldField);
                                             break;
                                         case UIHandler.UITool.Remove:
                                             // magikarp uses splash, nothing happens
@@ -260,7 +261,8 @@ public class RendererUI
                                             // Pause Simulation
                                             sim.PauseSim();
                                             // Add particle at position
-                                            sim.system.AddParticleContracted(mouseWorldField);
+                                            if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
+                                            else sim.system.AddParticleContracted(mouseWorldField);
                                         }
                                     }
                                     else
@@ -272,6 +274,8 @@ public class RendererUI
                                             // Pause Simulation
                                             sim.PauseSim();
                                             // Add particle at position
+                                            if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
+                                            else sim.system.AddParticleExpanded(node2, node1);
                                             sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
                                         }
                                     }
