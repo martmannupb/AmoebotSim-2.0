@@ -12,13 +12,16 @@ public class WorkshopParticle : ParticleAlgorithm
     public static new string GenerationMethod => typeof(WorkshopParticleInitializer).FullName;
 
     // Declare attributes here
+    private ParticleAttribute<bool> isLeader;
     // ...
 
     public WorkshopParticle(Particle p) : base(p)
     {
         // Initialize the attributes here
+        isLeader = CreateAttributeBool("Leader", false);
+
         // Also, set the default initial color
-        //SetMainColor(ColorData.Particle_Black);
+        SetMainColor(ColorData.Particle_Blue);
     }
 
     // Implement this if the particles require special initialization
@@ -27,7 +30,10 @@ public class WorkshopParticle : ParticleAlgorithm
     {
         // This code is executed directly after the constructor
         if (leader)
-            SetMainColor(ColorData.Particle_Blue);
+        {
+            isLeader.SetValue(true);
+            SetMainColor(ColorData.Particle_Yellow);
+        }
     }
 
     // Implement this method if the algorithm terminates at some point
@@ -60,7 +66,9 @@ public class WorkshopParticleInitializer : InitializationMethod
     // Its parameters will be shown in the UI and they must have default values
     public void Generate(/* Parameters with default values */)
     {
+        // Place a line of 10 particles in East direction
         PlaceParallelogram(Vector2Int.zero, Direction.E, 10);
+
         // Select a random leader
         InitializationParticle[] particles = GetParticles();
         particles[Random.Range(0, particles.Length)].SetAttribute("leader", true);
