@@ -119,8 +119,6 @@ public class InitializationUIHandler : MonoBehaviour
         updatedSettings.Add(addPar_setting_compassDir);
         // Reset
         ResetUI();
-
-        SetUpDynamicParams(0);
     }
 
     private void ResetUI()
@@ -145,7 +143,7 @@ public class InitializationUIHandler : MonoBehaviour
             SetUpGenAlgUI(defaultGenAlg);
         }
         // Show algorithm parameters
-        // ..
+        uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
     }
 
     private void SetUpGenAlgUI(string algorithm)
@@ -204,11 +202,17 @@ public class InitializationUIHandler : MonoBehaviour
         }
     }
 
-    private void SetUpDynamicParams(int amount)
+    public Initialization.Chirality GetDropdownValue_Chirality()
     {
-        // (implement dynamic params here ...)
-        Log.Debug("Dynamic Params not implemented yet.");
-        
+        Initialization.Chirality chirality = (Initialization.Chirality)Enum.Parse(typeof(Initialization.Chirality), addPar_setting_chirality.GetValueString());
+        return chirality;
+    }
+
+    public Initialization.Compass GetDropdownValue_Compass()
+    {
+        Initialization.Compass compass = (Initialization.Compass)Enum.Parse(typeof(Initialization.Compass), addPar_setting_compassDir.GetValueString());
+        return compass;
+
     }
 
     public void ValueChanged_Text(string name, string text)
@@ -230,9 +234,6 @@ public class InitializationUIHandler : MonoBehaviour
     {
         switch (name)
         {
-            case "Param Amount":
-                SetUpDynamicParams((int)number);
-                break;
             default:
                 break;
         }
@@ -249,9 +250,9 @@ public class InitializationUIHandler : MonoBehaviour
         Camera.main.backgroundColor = camColorInitModeBG;
         // Notify System
         uiHandler.sim.PauseSim();
-        uiHandler.sim.system.InitializationModeStarted();
-        // Generate
-        ButtonPressed_Generate();
+        uiHandler.sim.system.InitializationModeStarted(alg_setting_algo.GetValueString());
+        // Generate (can be skipped)
+        //ButtonPressed_Generate();
         // Event
         if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(true);
     }
@@ -266,6 +267,8 @@ public class InitializationUIHandler : MonoBehaviour
         Camera.main.backgroundColor = camColorBG;
         // Notify System
         if (aborted) uiHandler.sim.system.InitializationModeAborted();
+        uiHandler.Update();
+        uiHandler.UpdateUI(false, true);
         // Event
         if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(false);
     }
@@ -325,7 +328,7 @@ public class InitializationUIHandler : MonoBehaviour
 
         // Call Generation Method
         uiHandler.sim.system.Reset();
-        uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
+        //uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
         uiHandler.sim.system.GenerateParticles(genAlgorithm, parameterObjects);
 
         // Center Camera
@@ -339,11 +342,13 @@ public class InitializationUIHandler : MonoBehaviour
             case "Chirality":
                 // Apply chirality setting to all particles
                 uiHandler.sim.system.SetSystemChirality((Initialization.Chirality)Enum.Parse(typeof(Initialization.Chirality), addPar_setting_chirality.GetValueString()));
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 Log.Entry("Chirality" + addPar_setting_chirality.GetValueString() + "applied to all particles.");
                 break;
             case "Compass Dir":
                 // Apply compass dir setting to all particles
                 uiHandler.sim.system.SetSystemCompassDir((Initialization.Compass)Enum.Parse(typeof(Initialization.Compass), addPar_setting_compassDir.GetValueString()));
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 Log.Entry("Compass dir" + addPar_setting_compassDir.GetValueString() + " applied to all particles.");
                 break;
             default:
