@@ -70,8 +70,10 @@ public class SettingsUIHandler : MonoBehaviour
         switch (name)
         {
             case "Camera Angle":
-                float cameraRotation = 30f * value;
-                Camera.main.transform.rotation = Quaternion.Euler(0, 0, cameraRotation);
+                float cameraRotationDegrees = 30f * value;
+                Camera.main.transform.rotation = Quaternion.Euler(0, 0, cameraRotationDegrees);
+                // Notify Systems
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.SetCameraRotation(cameraRotationDegrees);
                 break;
             default:
                 break;

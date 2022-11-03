@@ -265,6 +265,16 @@ public class WorldSpaceUIHandler : MonoBehaviour
         data.pos = new Vector2(particlePosition.x, particlePosition.y);
     }
 
+    public void SetCameraRotation(float cameraRotationDegrees)
+    {
+        foreach (var item in particleTextUIData.Values)
+        {
+            GameObject go = item.go;
+            RectTransform rt = go.GetComponent<RectTransform>();
+            rt.rotation = Quaternion.Euler(0f, 0f, cameraRotationDegrees);
+        }
+    }
+
     /// <summary>
     /// Shows the world space UI (all elements that are flagged as visible). This is the default value.
     /// Call Hide() to hide it.

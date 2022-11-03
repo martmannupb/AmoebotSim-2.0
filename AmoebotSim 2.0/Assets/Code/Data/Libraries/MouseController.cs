@@ -16,6 +16,7 @@ public class MouseController : MonoBehaviour {
 
     Vector3 currFramePosition;
     Vector3 lastFramePosition;
+    Quaternion curCamRotation;
 
     Vector3 dragStartPosition;
 
@@ -46,6 +47,7 @@ public class MouseController : MonoBehaviour {
     {
         currFramePosition = cam.ScreenToWorldPoint(Input.mousePosition);
         currFramePosition.z = 0;
+        curCamRotation = cam.transform.rotation;
 
         //UpdateCursor();
         UpdateDragging();
@@ -124,6 +126,8 @@ public class MouseController : MonoBehaviour {
 
             diffSmooth = diff; //one down???
             diff = lastFramePosition - currFramePosition;
+            //diff = Quaternion.Euler(0f, 0f, -curCamRotation.eulerAngles.z) * diff; // also works
+            diff = Quaternion.Inverse(curCamRotation) * diff;
             cam.transform.Translate(diff);
             // Calculate normalized difference (to 60fps)
             diffSmoothNormalized60FPS = (Time.deltaTime * 60f) * diff;

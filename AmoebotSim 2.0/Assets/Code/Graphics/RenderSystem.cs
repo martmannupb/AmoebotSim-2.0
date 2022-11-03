@@ -10,7 +10,7 @@ public class RenderSystem
 
     // Dynamic Settings _____
     // View
-    public ViewType setting_viewType = ViewType.Hexagonal;
+    public static ViewType setting_viewType = ViewType.Hexagonal;
     // Performance
     public int setting_antiAliasing = 8; // Valid values are 0 (no MSAA), 2, 4, and 8
 

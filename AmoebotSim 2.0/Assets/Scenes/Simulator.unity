@@ -5742,7 +5742,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.005065918}
+  m_AnchoredPosition: {x: 0, y: 0.005004883}
   m_SizeDelta: {x: 0, y: 933.01}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &521087757
@@ -8418,8 +8418,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1496484897}
   m_HandleRect: {fileID: 1496484896}
   m_Direction: 2
-  m_Value: -0.012048192
-  m_Size: 0.012048198
+  m_Value: 0.012048192
+  m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -11935,7 +11935,6 @@ MonoBehaviour:
   addPar_go_compassDir: {fileID: 4057573732903960697}
   alg_go_algo: {fileID: 5958492071287565533}
   alg_go_paramAmount: {fileID: 0}
-  alg_go_genericParamParent: {fileID: 0}
   button_algorithm_start: {fileID: 976407921}
   button_algorithm_abort: {fileID: 61733220}
   camColorInitModeBG: {r: 0.84313726, g: 1, b: 0.8666667, a: 1}
@@ -20178,7 +20177,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0, y: 2}
-  m_SizeDelta: {x: 0, y: 150}
+  m_SizeDelta: {x: 0, y: 671.9244}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &3944638711582346627
 MonoBehaviour:

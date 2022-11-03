@@ -87,14 +87,62 @@ public static class AmoebotFunctions
         return false;
     }
 
+    /// <summary>
+    /// Returns the neighbor's position. Dir is starting from the east (0) in cc orientation.
+    /// </summary>
+    /// <param name="pos"></param>
+    /// <param name="dir"></param>
+    /// <returns></returns>
+    public static Vector2Int GetNeighborPosition(Vector2Int pos, int dir)
+    {
+        return pos + GetNeighborPositionOffset(dir);
+    }
+
+    /// <summary>
+    /// Return the neighbor's position offset. Dir is starting from the east (0) in cc orientation.
+    /// </summary>
+    /// <param name="dir"></param>
+    /// <returns></returns>
+    public static Vector2Int GetNeighborPositionOffset(int dir)
+    {
+        switch (dir)
+        {
+            case 0:
+                return new Vector2Int(1, 0);
+            case 1:
+                return new Vector2Int(0, 1);
+            case 2:
+                return new Vector2Int(-1, 1);
+            case 3:
+                return new Vector2Int(-1, 0);
+            case 4:
+                return new Vector2Int(0, -1);
+            case 5:
+                return new Vector2Int(1, -1);
+            default:
+                return new Vector2Int(int.MaxValue, int.MaxValue);
+        }
+    }
+
     // Circuits ===============
 
-    public static Vector2 CalculateRelativePinPosition(ParticlePinGraphicState.PinDef pinDef, int particlesPerSide, float particleScale)
+    /// <summary>
+    /// Calculates the relativ pin position in world space relativ to the particle center based on the abstract pin position definition,
+    /// the number of particles, the scale and the viewType.
+    /// </summary>
+    /// <param name="pinDef"></param>
+    /// <param name="pinsPerSide"></param>
+    /// <param name="particleScale"></param>
+    /// <param name="viewType"></param>
+    /// <returns></returns>
+    public static Vector2 CalculateRelativePinPosition(ParticlePinGraphicState.PinDef pinDef, int pinsPerSide, float particleScale, ViewType viewType)
     {
-        float linePos = (pinDef.dirID + 1) / (float)(particlesPerSide + 1);
+        float linePos = (pinDef.dirID + 1) / (float)(pinsPerSide + 1);
         Vector2 topRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides());
         Vector2 bottomRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides());
-        Vector2 pinPosNonRotated = bottomRight + linePos * (topRight - bottomRight);
+        Vector2 pinPosNonRotated = Vector2.zero;
+        if (viewType == ViewType.Hexagonal) pinPosNonRotated = bottomRight + linePos * (topRight - bottomRight);
+        else if (viewType == ViewType.HexagonalCirc) pinPosNonRotated = Quaternion.Euler(0f, 0f, -30f + linePos * 60f) * new Vector2(AmoebotFunctions.HexVertex_XValue(), 0f);
         pinPosNonRotated *= particleScale;
         Vector2 pinPos = Quaternion.Euler(0f, 0f, 60f * pinDef.globalDir) * pinPosNonRotated;
         return pinPos;

@@ -8,10 +8,15 @@ public static class TextureCreator
     // Textures
     // Pin Border Textures
     public static Texture2D pinBorderTextureEmpty;
+
     public static Dictionary<int, Texture2D> pinBorderTextures3Pins1 = new Dictionary<int, Texture2D>();
     public static Dictionary<int, Texture2D> pinBorderTextures3Pins2 = new Dictionary<int, Texture2D>();
     public static Dictionary<int, Texture2D> pinBorderTextures5Pins1 = new Dictionary<int, Texture2D>();
     public static Dictionary<int, Texture2D> pinBorderTextures5Pins2 = new Dictionary<int, Texture2D>();
+    public static Dictionary<int, Texture2D> pinBorderCircTextures3Pins1 = new Dictionary<int, Texture2D>();
+    public static Dictionary<int, Texture2D> pinBorderCircTextures3Pins2 = new Dictionary<int, Texture2D>();
+    public static Dictionary<int, Texture2D> pinBorderCircTextures5Pins1 = new Dictionary<int, Texture2D>();
+    public static Dictionary<int, Texture2D> pinBorderCircTextures5Pins2 = new Dictionary<int, Texture2D>();
     // Hexagon Textures
     public static Dictionary<int, Texture2D> hexagonTextures = new Dictionary<int, Texture2D>();
     public static Dictionary<int, Texture2D> hexagonCircTextures = new Dictionary<int, Texture2D>();
@@ -85,10 +90,20 @@ public static class TextureCreator
 
     private static Texture2D GetPinBorderTexture(int pinsPerSide, bool omitSide, bool omit3Pins, int omittedSide, bool isTex1, ViewType viewType)
     {
-        if (isTex1 && omit3Pins && pinBorderTextures3Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins1[pinsPerSide];
-        if (isTex1 && !omit3Pins && pinBorderTextures5Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins1[pinsPerSide];
-        if (!isTex1 && omit3Pins && pinBorderTextures3Pins2.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins2[pinsPerSide];
-        if (!isTex1 && !omit3Pins && pinBorderTextures5Pins2.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins2[pinsPerSide];
+        if(viewType == ViewType.Hexagonal)
+        {
+            if (isTex1 && omit3Pins && pinBorderTextures3Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins1[pinsPerSide];
+            if (isTex1 && !omit3Pins && pinBorderTextures5Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins1[pinsPerSide];
+            if (!isTex1 && omit3Pins && pinBorderTextures3Pins2.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins2[pinsPerSide];
+            if (!isTex1 && !omit3Pins && pinBorderTextures5Pins2.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins2[pinsPerSide];
+        }
+        else if(viewType == ViewType.HexagonalCirc)
+        {
+            if (isTex1 && omit3Pins && pinBorderCircTextures3Pins1.ContainsKey(pinsPerSide)) return pinBorderCircTextures3Pins1[pinsPerSide];
+            if (isTex1 && !omit3Pins && pinBorderCircTextures5Pins1.ContainsKey(pinsPerSide)) return pinBorderCircTextures5Pins1[pinsPerSide];
+            if (!isTex1 && omit3Pins && pinBorderCircTextures3Pins2.ContainsKey(pinsPerSide)) return pinBorderCircTextures3Pins2[pinsPerSide];
+            if (!isTex1 && !omit3Pins && pinBorderCircTextures5Pins2.ContainsKey(pinsPerSide)) return pinBorderCircTextures5Pins2[pinsPerSide];
+        }
 
         // Create Texture
         Texture2D tex = new Texture2D(1024, 1024);
@@ -168,10 +183,20 @@ public static class TextureCreator
         tex.Apply();
 
         // Add Texture to Data
-        if (isTex1 && omit3Pins) pinBorderTextures3Pins1.Add(pinsPerSide, tex);
-        if (isTex1 && !omit3Pins) pinBorderTextures5Pins1.Add(pinsPerSide, tex);
-        if (!isTex1 && omit3Pins) pinBorderTextures3Pins2.Add(pinsPerSide, tex);
-        if (!isTex1 && !omit3Pins) pinBorderTextures5Pins2.Add(pinsPerSide, tex);
+        if(viewType == ViewType.Hexagonal)
+        {
+            if (isTex1 && omit3Pins) pinBorderTextures3Pins1.Add(pinsPerSide, tex);
+            if (isTex1 && !omit3Pins) pinBorderTextures5Pins1.Add(pinsPerSide, tex);
+            if (!isTex1 && omit3Pins) pinBorderTextures3Pins2.Add(pinsPerSide, tex);
+            if (!isTex1 && !omit3Pins) pinBorderTextures5Pins2.Add(pinsPerSide, tex);
+        }
+        else if(viewType == ViewType.HexagonalCirc)
+        {
+            if (isTex1 && omit3Pins) pinBorderCircTextures3Pins1.Add(pinsPerSide, tex);
+            if (isTex1 && !omit3Pins) pinBorderCircTextures5Pins1.Add(pinsPerSide, tex);
+            if (!isTex1 && omit3Pins) pinBorderCircTextures3Pins2.Add(pinsPerSide, tex);
+            if (!isTex1 && !omit3Pins) pinBorderCircTextures5Pins2.Add(pinsPerSide, tex);
+        }
 
         // Return
         return tex;

@@ -346,7 +346,7 @@ public class RendererCircuits_Instance
     private Vector2 CalculateGlobalPinPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
     {
         Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPosParticle);
-        Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.global_particleScale);
+        Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
         return posParticle + relPinPos;
     }
 
@@ -365,14 +365,14 @@ public class RendererCircuits_Instance
     private Vector2 CalculateGlobalOutterPinLineCenterPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
     {
         Vector2 pinPos = CalculateGlobalPinPosition(gridPosParticle, pinDef, pinsPerSide);
-        Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(new ParticlePinGraphicState.PinDef(pinDef.globalDir, 0, pinDef.isHead), 1, RenderSystem.global_particleScale);
-        //Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.global_particleScale);
-        Vector2 lineCenterOffset = relPinPos / RenderSystem.global_particleScale - relPinPos;
-        //if(pinDef.globalDir == 3)
-        //{
-            //Debug.Log("pinPos: "+pinPos+", relPinPos: " +relPinPos + ", lineCenterOffset: "+lineCenterOffset);
-        //}
-        return pinPos + lineCenterOffset;
+        //Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(new ParticlePinGraphicState.PinDef(pinDef.globalDir, pinDef.dirID, pinDef.isHead), pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+
+        // Calculate neighbor pin position
+        ParticlePinGraphicState.PinDef pinDefNeighbor = new ParticlePinGraphicState.PinDef((pinDef.globalDir + 3) % 6, pinsPerSide - 1 - pinDef.dirID, pinDef.isHead);
+        Vector2Int gridPosNeighbor = AmoebotFunctions.GetNeighborPosition(gridPosParticle, pinDef.globalDir);
+        Vector2 pinPosNeighbor = CalculateGlobalPinPosition(gridPosNeighbor, pinDefNeighbor, pinsPerSide);
+        //Vector2 relNeighborPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDefNeighbor, pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+        return pinPos + ((pinPosNeighbor - pinPos) / 2f);
     }
 
     private Vector2 CalculateRelativePartitionSetPinPosition(int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
