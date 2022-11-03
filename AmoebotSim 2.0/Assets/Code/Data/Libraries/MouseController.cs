@@ -120,7 +120,7 @@ public class MouseController : MonoBehaviour {
         
         // Handle screen dragging
         // 0 left 1 right 2 middle mouse button
-        if (Input.GetMouseButton(1)) {
+        if (Input.GetMouseButton(1) || Input.GetMouseButton(2)) {
 
             diffSmooth = diff; //one down???
             diff = lastFramePosition - currFramePosition;

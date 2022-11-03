@@ -28,7 +28,6 @@ public class InitializationUIHandler : MonoBehaviour
     // Algorithm Generation Menu UI
     public GameObject alg_go_algo;
     public GameObject alg_go_paramAmount;
-    public GameObject alg_go_genericParamParent;
     public Button button_algorithm_start;
     public Button button_algorithm_abort;
 
@@ -41,7 +40,6 @@ public class InitializationUIHandler : MonoBehaviour
     private UISetting_Dropdown addPar_setting_compassDir;
     // Algorithm Generation Menu UI
     private UISetting_Dropdown alg_setting_algo;
-    private UISetting_ValueSlider alg_setting_paramAmount;
 
     // Updated
     private List<UISetting> updatedSettings = new List<UISetting>();
@@ -79,12 +77,6 @@ public class InitializationUIHandler : MonoBehaviour
 
     private void InitUI()
     {
-        // Destroy generic param dummies
-        for (int i = alg_go_genericParamParent.transform.childCount - 1; i >= 0; i--)
-        {
-            DestroyImmediate(alg_go_genericParamParent.transform.GetChild(i).gameObject);
-        }
-
         // Null check
         if (InitializationMethodManager.Instance == null)
         {
@@ -97,8 +89,6 @@ public class InitializationUIHandler : MonoBehaviour
         List<string> algStrings = AlgorithmManager.Instance.GetAlgorithmNames();
         alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algStrings.ToArray(), algStrings[0]);
         alg_setting_algo.onValueChangedEvent += ValueChanged_Text;
-        alg_setting_paramAmount = new UISetting_ValueSlider(alg_go_paramAmount, null, "Param Amount", 0, 10, 0, true);
-        alg_setting_paramAmount.onValueChangedEvent += ValueChanged_Float;
         // Particle Generation
         List<string> genAlgStrings = InitializationMethodManager.Instance.GetAlgorithmNames();
         genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings[0]);
