@@ -120,7 +120,7 @@ public class MouseController : MonoBehaviour {
         
         // Handle screen dragging
         // 0 left 1 right 2 middle mouse button
-        if (Input.GetMouseButton(2)) {
+        if (Input.GetMouseButton(1)) {
 
             diffSmooth = diff; //one down???
             diff = lastFramePosition - currFramePosition;
@@ -142,9 +142,6 @@ public class MouseController : MonoBehaviour {
             else {
                 diffSmoothNormalized60FPS = Vector3.zero;
             }
-        }
-        if (Input.GetMouseButton(2)) {
-            
         }
 
         // Scrollwheel
