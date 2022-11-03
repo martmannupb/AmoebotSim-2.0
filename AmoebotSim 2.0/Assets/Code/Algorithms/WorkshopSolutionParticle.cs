@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class WorkshopSolutionParticle : ParticleAlgorithm
 {
-    // Specify the number of pins (may be 0)
+    // Specify the number of pins
     public override int PinsPerEdge => 1;
 
     // This is the display name of the algorithm (must be unique)
