@@ -2996,6 +2996,8 @@ public class ParticleSystem : IReplayHistory
             particleMapInit[p.Tail()] = p;
             if (p.IsExpanded())
                 particleMapInit[p.Head()] = p;
+            p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
+            p.graphics.UpdateReset();
         }
     }
 

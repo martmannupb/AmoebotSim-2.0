@@ -125,7 +125,7 @@ public class Particle : IParticleState, IReplayHistory
     // Particle fill color
     private ValueHistory<Color> mainColorHistory;
     private ValueHistory<bool> mainColorSetHistory;
-    private Color mainColor = new Color();
+    private Color mainColor = new Color(0, 0, 0, 1);
     private bool mainColorSet = false;
 
     // Partition set colors
@@ -863,6 +863,9 @@ public class Particle : IParticleState, IReplayHistory
         pos_head = ParticleSystem_Utils.GetNbrInDir(pos_tail, ParticleSystem_Utils.LocalToGlobalDir(locDir, comDir, chirality));
         expansionDirHistory.RecordValueInRound(exp_expansionDir, system.CurrentRound);
         tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
+
+        // Set new pin configuration to be expanded
+        ResetPinConfigurationAfterMovement();
     }
 
     /// <summary>
@@ -894,17 +897,9 @@ public class Particle : IParticleState, IReplayHistory
         pos_tail = pos_head;
         tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
         expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
-    }
 
-    /// <summary>
-    /// Contracts this particle into the node occupied by its head.
-    /// </summary>
-    /// <remarks>
-    /// The method will not check if this operation is valid.
-    /// </remarks>
-    public void Apply_ContractHead()
-    {
-        Apply_ContractHead(Vector2Int.zero);
+        // Set new pin configuration to be contracted
+        ResetPinConfigurationAfterMovement();
     }
 
     /// <summary>
@@ -924,61 +919,19 @@ public class Particle : IParticleState, IReplayHistory
         pos_head = pos_tail;
         tailPosHistory.RecordValueInRound(pos_tail, system.CurrentRound);
         expansionDirHistory.RecordValueInRound(Direction.NONE, system.CurrentRound);
+
+        // Set new pin configuration to be contracted
+        ResetPinConfigurationAfterMovement();
     }
 
     /// <summary>
-    /// Contracts this particle into the node occupied by its tail.
+    /// Sets the current pin configuration to match the expansion state after
+    /// a movement, deleting all received beeps and messages.
     /// </summary>
-    /// <remarks>
-    /// The method will not check if this operation is valid.
-    /// </remarks>
-    public void Apply_ContractTail()
+    private void ResetPinConfigurationAfterMovement()
     {
-        Apply_ContractTail(Vector2Int.zero);
-    }
-
-    // TODO: Check if we need to do anything else in these 3 methods
-
-    /// <summary>
-    /// Same as <see cref="Apply_Expand(Direction)"/>.
-    /// </summary>
-    /// <remarks>
-    /// The method will not check if this operation is valid.
-    /// </remarks>
-    /// <param name="locDir">The local direction into which to expand.</param>
-    public void Apply_PushHandover(Direction locDir)
-    {
-        Apply_Expand(locDir);
-    }
-
-    // TODO: Remove unused parameters?
-
-    /// <summary>
-    /// Same as <see cref="Apply_ContractHead"/>.
-    /// </summary>
-    /// <remarks>
-    /// The method will not check if this operation is valid and the
-    /// <paramref name="locDir"/> parameter is not used.
-    /// </remarks>
-    /// <param name="locDir">The local direction from where to pull the
-    /// neighbor particle, relative to this particle's tail.</param>
-    public void Apply_PullHandoverHead(Direction locDir)
-    {
-        Apply_ContractHead();
-    }
-
-    /// <summary>
-    /// Same as <see cref="Apply_ContractHead"/>.
-    /// </summary>
-    /// <remarks>
-    /// The method will not check if this operation is valid and the
-    /// <paramref name="locDir"/> parameter is not used.
-    /// </remarks>
-    /// <param name="locDir">The local direction from where to pull the
-    /// neighbor particle, relative to this particle's head.</param>
-    public void Apply_PullHandoverTail(Direction locDir)
-    {
-        Apply_ContractTail();
+        plannedPinConfiguration = null;
+        ApplyPlannedPinConfiguration();
     }
 
     /// <summary>
