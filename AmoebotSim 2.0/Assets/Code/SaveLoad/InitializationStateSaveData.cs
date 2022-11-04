@@ -9,4 +9,6 @@ public class InitializationStateSaveData
     public string selectedAlgorithm;
 
     public InitParticleSaveData[] particles;
+
+    public InitModeSaveData initModeSaveData;
 }
