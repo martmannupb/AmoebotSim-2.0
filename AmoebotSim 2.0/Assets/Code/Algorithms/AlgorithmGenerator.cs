@@ -1,18 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public static class AlgorithmGenerator
+[ExecuteInEditMode]
+public class AlgorithmGenerator : MonoBehaviour
 {
     private static string template =
 "using UnityEngine;\n\n" +
 "public class {0} : ParticleAlgorithm\n{{\n" +
 
-"    // Specify the number of pins (may be 0)\n" +
-"    public override int PinsPerEdge => 1;\n\n" +
-
 "    // This is the display name of the algorithm (must be unique)\n" +
-"    public static new string Name => \"{0}\";\n\n" +
+"    public static new string Name => \"{1}\";\n\n" +
+
+"    // Specify the number of pins (may be 0)\n" +
+"    public override int PinsPerEdge => {2};\n\n" +
 
 "    // If the algorithm has a special generation method, specify its full name here\n" +
 "    //public static new string GenerationMethod => typeof(/* Generation method class */).FullName;\n\n" +
@@ -61,10 +60,26 @@ public static class AlgorithmGenerator
 "//    }}\n" +
 "//}}\n";
 
-    public static void CreateAlgorithm(string algoName, string fileName)
+    [Header("Algorithm Generation Utility")]
+
+    [Tooltip("The class name of the new algorithm. Usually ends with 'Particle'.")]
+    public string className = "MyNewAlgoParticle";
+
+    [Tooltip("The name of the algorithm displayed in the UI. Must be unique. Default value is the class name.")]
+    public string displayName = "";
+
+    [Tooltip("The number of pins on each port of a particle. Must be >= 0.")]
+    public int numPins = 1;
+
+    public static void CreateAlgorithm(string algoName, string dispName, int nPins, string filename)
     {
-        // TODO: Check if algoName is valid
-        // TODO: Handle cases that file exists or path does not exist
-        System.IO.File.WriteAllText(fileName, string.Format(template, algoName));
+        try
+        {
+            System.IO.File.WriteAllText(filename, string.Format(template, algoName, dispName, nPins));
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError(e);
+        }
     }
 }
