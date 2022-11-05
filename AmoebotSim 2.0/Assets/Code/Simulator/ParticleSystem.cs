@@ -2615,12 +2615,12 @@ public class ParticleSystem : IReplayHistory
             Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
             if (abs.x < xMin)
                 xMin = abs.x;
-            else if (abs.x > xMax)
+            if (abs.x > xMax)
                 xMax = abs.x;
 
             if (abs.y < yMin)
                 yMin = abs.y;
-            else if (abs.y > yMax)
+            if (abs.y > yMax)
                 yMax = abs.y;
         }
 
