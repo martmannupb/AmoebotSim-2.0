@@ -5,7 +5,10 @@ name: Build and Publish Documentation
 on:
   # Runs on pushes targeting any of these branches
   push:
-    branches: ["master", "dev", "docs"]
+    branches:
+      - master
+      - dev
+      - docs
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
