@@ -2,4 +2,7 @@
   href: articles/
 - name: Api Documentation
   href: api/
-  homepage: api/index.md
+  topicHref: api/index.md
+- name: Nested Pages
+  href: nested_pages/
+  topicHref: nested_pages/level_1_home.md

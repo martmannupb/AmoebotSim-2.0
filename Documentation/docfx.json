@@ -28,6 +28,8 @@
                 "files": [
                     "articles/**.md",
                     "articles/**/toc.yml",
+                    "nested_pages/**.md",
+                    "nested_pages/**/toc.yml",
                     "toc.yml",
                     "*.md"
                 ]
@@ -61,6 +63,7 @@
         "fileMetadataFiles": [],
         "template": [
             "statictoc",
+            // This custom template removes the list of inherited members from class documentation pages
             "templates/custom"
         ],
         "postProcessors": [ "ExtractSearchIndex" ],
