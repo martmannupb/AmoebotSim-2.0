@@ -915,7 +915,7 @@ public abstract class ParticleAlgorithm
     /// Checks if the bond at the given label is marked for special
     /// behavior. Always returns <c>false</c> when called in
     /// <see cref="ActivateBeep"/>.
-    /// <para>See <see cref="MarkBond(int)"/>.</para>
+    /// <para>See <see cref="MarkBond(Direction, bool)"/>.</para>
     /// </summary>
     /// <param name="locDir">The local direction into which the bond
     /// is pointing.</param>

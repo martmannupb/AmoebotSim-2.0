@@ -2073,7 +2073,7 @@ public class ParticleSystem : IReplayHistory
      */
 
     /// <summary>
-    /// System-side implementation of <see cref="ParticleAlgorithm.HasNeighborAt(int, bool)"/>.
+    /// System-side implementation of <see cref="ParticleAlgorithm.HasNeighborAt(Direction, bool)"/>.
     /// <para>See also <seealso cref="GetNeighborAt(Particle, Direction, bool)"/>.</para>
     /// </summary>
     /// <param name="p">The particle checking for a neighbor.</param>
@@ -2111,7 +2111,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// System-side implementation of <see cref="ParticleAlgorithm.IsHeadAt(int, bool)"/>.
+    /// System-side implementation of <see cref="ParticleAlgorithm.IsHeadAt(Direction, bool)"/>.
     /// </summary>
     /// <param name="p">The particle checking for a neighbor's head.</param>
     /// <param name="locDir">The local direction of the particle in which to check.</param>
@@ -2127,7 +2127,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// System-side implementation of <see cref="ParticleAlgorithm.IsTailAt(int, bool)"/>.
+    /// System-side implementation of <see cref="ParticleAlgorithm.IsTailAt(Direction, bool)"/>.
     /// </summary>
     /// <param name="p">The particle checking for a neighbor's tail.</param>
     /// <param name="locDir">The local direction of the particle in which to check.</param>
@@ -2441,7 +2441,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// System-side implementation of <see cref="ParticleAlgorithm.PushHandover(int)"/>.
+    /// System-side implementation of <see cref="ParticleAlgorithm.PushHandover(Direction)"/>.
     /// <para>
     /// Schedules a <see cref="ParticleAction"/> to expand the given particle in the
     /// specified direction, pushing away an expanded neighbor, if the action is applicable.
@@ -2484,7 +2484,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// System-side implementation of <see cref="ParticleAlgorithm.PullHandoverHead(int)"/>.
+    /// System-side implementation of <see cref="ParticleAlgorithm.PullHandoverHead(Direction)"/>.
     /// <para>
     /// Schedules a <see cref="ParticleAction"/> to contract the given particle into
     /// its head, pulling a contracted neighbor into its tail position, if the action
@@ -2507,7 +2507,7 @@ public class ParticleSystem : IReplayHistory
     }
 
     /// <summary>
-    /// System-side implementation of <see cref="ParticleAlgorithm.PullHandoverTail(int)"/>.
+    /// System-side implementation of <see cref="ParticleAlgorithm.PullHandoverTail(Direction)"/>.
     /// <para>
     /// Schedules a <see cref="ParticleAction"/> to contract the given particle into
     /// its tail, pulling a contracted neighbor into its head position, if the action
@@ -2596,8 +2596,10 @@ public class ParticleSystem : IReplayHistory
     /// <summary>
     /// Calculates the center position of the bounding box that encloses
     /// the particle system.
+    /// </summary>
     /// <returns>The center of the bounding box of the system in world coordinates.
     /// Will be <c>(0, 0)</c> if there are no particles.</returns>
+
     public Vector2 BBoxCenterPosition()
     {
         ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
