@@ -214,29 +214,30 @@ public class UIHandler : MonoBehaviour
             }
             // JumpCut Button
             button_jumpCut.interactable = uiRound < maxRound && running == false;
-            // View Button Images
-            // View Type
-            switch (sim.renderSystem.GetCurrentViewType())
-            {
-                case ViewType.Hexagonal:
-                    if (image_viewType.sprite != sprite_viewTypeHexagonal) image_viewType.sprite = sprite_viewTypeHexagonal;
-                    break;
-                case ViewType.HexagonalCirc:
-                    if (image_viewType.sprite != sprite_viewTypeHexagonalCirc) image_viewType.sprite = sprite_viewTypeHexagonalCirc;
-                    break;
-                case ViewType.Circular:
-                    if (image_viewType.sprite != sprite_viewTypeCircular) image_viewType.sprite = sprite_viewTypeCircular;
-                    break;
-                default:
-                    break;
-            }
-            // Circuit View Type
-            if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
-            else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
-            // Bonds Active
-            if (sim.renderSystem.AreBondsActive()) button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_active;
-            else button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
         }
+
+        // View Button Images
+        // View Type
+        switch (sim.renderSystem.GetCurrentViewType())
+        {
+            case ViewType.Hexagonal:
+                if (image_viewType.sprite != sprite_viewTypeHexagonal) image_viewType.sprite = sprite_viewTypeHexagonal;
+                break;
+            case ViewType.HexagonalCirc:
+                if (image_viewType.sprite != sprite_viewTypeHexagonalCirc) image_viewType.sprite = sprite_viewTypeHexagonalCirc;
+                break;
+            case ViewType.Circular:
+                if (image_viewType.sprite != sprite_viewTypeCircular) image_viewType.sprite = sprite_viewTypeCircular;
+                break;
+            default:
+                break;
+        }
+        // Circuit View Type
+        if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
+        else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
+        // Bonds Active
+        if (sim.renderSystem.AreBondsActive()) button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_active;
+        else button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
     }
 
     public void NotifyPlayPause(bool running)
