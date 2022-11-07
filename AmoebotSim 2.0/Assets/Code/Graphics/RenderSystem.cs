@@ -46,6 +46,7 @@ public class RenderSystem
     public static bool flag_particleRoundOver = true;
     public static bool flag_showCircuitView = true;
     public static bool flag_showBonds = true;
+    public static bool flag_showCircuitViewOutterRing = true;
 
     // Dynamic Data _____
     public static float data_particleMovementFinishedTimestamp;

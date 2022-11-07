@@ -15,6 +15,10 @@ public class MaterialPropertyBlockData_Particles : MaterialPropertyBlockData
     private float property_expansionMesh;
     private float property_width;
 
+    // Values
+    private float outterRingWidthDefault = MaterialDatabase.material_circular_particleComplete.GetFloat("_OutterRingWidth");
+    private float outterRingWidthPercentage = 1f;
+
     // Data Conversion
     private float[] globalDirToExpansionMeshMap = new float[] { 3, 2, 1, 0, 5, 4 };
 
@@ -44,6 +48,17 @@ public class MaterialPropertyBlockData_Particles : MaterialPropertyBlockData
         property_expansionMesh = globalDirToExpansionMeshMap[(visualExpansionDir + 6) % 6]; // % for the -1 values
         // Apply
         ApplyToBlock();
+    }
+
+    public void ApplyOutterCircleWidthPercentage(float p)
+    {
+        propertyBlock.SetFloat("_OutterRingWidth", outterRingWidthDefault * p);
+        outterRingWidthPercentage = p;
+    }
+
+    public float GetCurrentOutterCircleWidthPercentage()
+    {
+        return outterRingWidthPercentage;
     }
 
     public void ApplyConnectorValues(float animation_expansionPercentage1, float animation_expansionPercentage2, Vector3 animation_offset, Vector3 animation_staticOffset)

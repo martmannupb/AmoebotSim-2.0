@@ -110,8 +110,15 @@ public class UIHandler : MonoBehaviour
 
     private void ProcessInputs()
     {
-        // Process Inputs
-        if(Input.GetKey(KeyCode.LeftControl))
+        // Process Inputs ===============
+        // Default
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            // Pause/Play
+            sim.TogglePlayPause();
+        }
+        // Shift + ...
+        if (Input.GetKey(KeyCode.LeftControl))
         {
             if (Input.GetKeyDown(KeyCode.H))
             {

@@ -60,6 +60,9 @@ public class SettingsUIHandler : MonoBehaviour
         // Circuit Connections Look
         UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, "Circuit Border", SettingsGlobal.circuitBorderActive);
         setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
+        // Graph View Outter Ring
+        UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, "Circular Ring", RenderSystem.flag_showCircuitViewOutterRing);
+        setting_graphViewOutterRing.onValueChangedEvent += SettingChanged_Toggle;
         // Anti Aliasing
         UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(null, settingsParent.transform, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
         setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
@@ -139,6 +142,9 @@ public class SettingsUIHandler : MonoBehaviour
                     .rendererP
                     .circuitAndBondRenderer
                     .ReinitBatches();
+                break;
+            case "Circular Ring":
+                RenderSystem.flag_showCircuitViewOutterRing = isOn;
                 break;
             case "Animations On/Off":
                 RenderSystem.animationsOn = isOn;

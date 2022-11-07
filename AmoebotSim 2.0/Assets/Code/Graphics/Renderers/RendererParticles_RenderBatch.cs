@@ -448,6 +448,17 @@ public class RendererParticles_RenderBatch
 
     private void Render_Circular()
     {
+        // Outter Ring visible?
+        if(RenderSystem.flag_showCircuitViewOutterRing && propertyBlock_circle_contracted.GetCurrentOutterCircleWidthPercentage() != 1f
+            || RenderSystem.flag_showCircuitViewOutterRing == false && propertyBlock_circle_contracted.GetCurrentOutterCircleWidthPercentage() != 0f)
+        {
+            float val = RenderSystem.flag_showCircuitViewOutterRing ? 1f : 0f;
+            propertyBlock_circle_contracted.ApplyOutterCircleWidthPercentage(val);
+            propertyBlock_circle_expanded.ApplyOutterCircleWidthPercentage(val);
+            propertyBlock_circle_expanding.ApplyOutterCircleWidthPercentage(val);
+            propertyBlock_circle_contracting.ApplyOutterCircleWidthPercentage(val);
+        }
+
         // Connectors
         for (int i = 0; i < particleMatricesCircle_Contracted.Count; i++)
         {

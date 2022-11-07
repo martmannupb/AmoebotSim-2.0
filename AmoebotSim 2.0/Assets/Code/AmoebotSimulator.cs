@@ -103,18 +103,21 @@ public class AmoebotSimulator : MonoBehaviour
     /// </summary>
     public void TogglePlayPause()
     {
-        if (running == false)
+        if(uiHandler.initializationUI.IsOpen() == false)
         {
-            system.ContinueTracking();
-            if(EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(true);
+            if (running == false)
+            {
+                system.ContinueTracking();
+                if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(true);
+            }
+            else
+            {
+                //system.Print();
+                if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(false);
+            }
+            running = !running;
+            if (uiHandler != null) uiHandler.NotifyPlayPause(running);
         }
-        else
-        {
-            //system.Print();
-            if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(false);
-        }
-        running = !running;
-        if (uiHandler != null) uiHandler.NotifyPlayPause(running);
     }
 
     public void PlaySim()
