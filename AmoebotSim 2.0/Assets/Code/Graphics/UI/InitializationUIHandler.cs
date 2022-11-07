@@ -182,6 +182,13 @@ public class InitializationUIHandler : MonoBehaviour
                 UISetting_Text setting = new UISetting_Text(null, genAlg_go_paramParent.transform, param.Name, defValue, UISetting_Text.InputType.Text);
                 genAlg_settings.Add((UISetting)setting);
             }
+            else if(type == typeof(MinMax))
+            {
+                MinMax defValue = new MinMax(0, 0, true);
+                if (param.HasDefaultValue) defValue = (MinMax)param.DefaultValue;
+                UISetting_MinMax setting = new UISetting_MinMax(null, genAlg_go_paramParent.transform, param.Name, defValue);
+                genAlg_settings.Add((UISetting)setting);
+            }
             else if (type.IsSubclassOf(typeof(Enum)))
             {
                 string defValue = Enum.GetNames(type)[0].ToString();

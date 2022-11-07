@@ -10,7 +10,7 @@ public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     private RendererParticles renderer;
 
     // Defaults
-    private static Color defColor = MaterialDatabase.material_circular_particle.GetColor("_InputColor");
+    private static Color defColor = new Color(111f / 255f, 202f / 255f, 91f / 255f, 1f);
 
     // Data
     // Current Round
