@@ -26,3 +26,6 @@ AmoebotSim 2.0/*.VC.db
 
 # Gradle cache directory
 AmoebotSim 2.0/.gradle/
+
+# DocFX output
+AmoebotSim 2.0/**/obj.meta

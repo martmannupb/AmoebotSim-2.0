@@ -28,13 +28,45 @@
             },
             {
                 "files": [
-                    "articles/**.md",
-                    "articles/**/toc.yml",
-                    "nested_pages/**.md",
-                    "nested_pages/**/toc.yml",
+                    //"articles/**.md",
+                    //"articles/**/toc.yml",
+                    //"installation_guide/**.md",
+                    //"installation_guide/**/toc.yml",
+                    //"nested_pages/**.md",
+                    //"nested_pages/**/toc.yml",
                     "toc.yml",
                     "*.md"
                 ]
+            },
+            {
+                "src": "amoebot_model",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "amoebot_model"
+            },
+            {
+                "src": "dev_guide",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "dev_guide"
+            },
+            {
+                "src": "installation_guide",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "installation_guide"
+            },
+            {
+                "src": "model_ref",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "model_ref"
+            },
+            {
+                "src": "nested_pages",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "nested_pages"
+            },
+            {
+                "src": "user_guide",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "user_guide"
             }
         ],
         "resource": [

@@ -1,0 +1,4 @@
+- name: Algorithm Creation
+  href: creation.md
+- name: Implementation Walkthrough
+  href: demo.md
