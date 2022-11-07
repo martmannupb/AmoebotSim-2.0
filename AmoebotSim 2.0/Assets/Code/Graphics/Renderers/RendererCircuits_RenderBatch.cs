@@ -242,7 +242,7 @@ public class RendererCircuits_RenderBatch
                 }
                 break;
             case ViewType.Circular:
-                if (properties.lineType != PropertyBlockData.LineType.BondCircular) return;
+                if (properties.lineType != PropertyBlockData.LineType.BondCircular || RenderSystem.flag_showBonds == false) return;
                 break;
             default:
                 break;
