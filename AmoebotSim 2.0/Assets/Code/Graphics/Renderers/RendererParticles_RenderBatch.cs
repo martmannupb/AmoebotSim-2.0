@@ -27,14 +27,14 @@ public class RendererParticles_RenderBatch
     private List<Vector3[]> particlePositionOffsets_jointMovementsInv = new List<Vector3[]>();
     private List<ParticleGraphicsAdapterImpl[]> particleReferences = new List<ParticleGraphicsAdapterImpl[]>();
     // PropertyBlocks
-    private MaterialPropertyBlockData_CircParticles propertyBlock_circle_contracted = new MaterialPropertyBlockData_CircParticles();
-    private MaterialPropertyBlockData_CircParticles propertyBlock_circle_expanded = new MaterialPropertyBlockData_CircParticles();
-    private MaterialPropertyBlockData_CircParticles propertyBlock_circle_expanding = new MaterialPropertyBlockData_CircParticles();
-    private MaterialPropertyBlockData_CircParticles propertyBlock_circle_contracting = new MaterialPropertyBlockData_CircParticles();
-    private MaterialPropertyBlockData_CircParticles propertyBlock_circle_connector_contracted = new MaterialPropertyBlockData_CircParticles();
-    private MaterialPropertyBlockData_CircParticles propertyBlock_circle_connector_expanded = new MaterialPropertyBlockData_CircParticles();
-    private MaterialPropertyBlockData_CircParticles propertyBlock_circle_connector_expanding = new MaterialPropertyBlockData_CircParticles();
-    private MaterialPropertyBlockData_CircParticles propertyBlock_circle_connector_contracting = new MaterialPropertyBlockData_CircParticles();
+    private MaterialPropertyBlockData_Particles propertyBlock_circle_contracted = new MaterialPropertyBlockData_Particles();
+    private MaterialPropertyBlockData_Particles propertyBlock_circle_expanded = new MaterialPropertyBlockData_Particles();
+    private MaterialPropertyBlockData_Particles propertyBlock_circle_expanding = new MaterialPropertyBlockData_Particles();
+    private MaterialPropertyBlockData_Particles propertyBlock_circle_contracting = new MaterialPropertyBlockData_Particles();
+    private MaterialPropertyBlockData_Particles propertyBlock_circle_connector_contracted = new MaterialPropertyBlockData_Particles();
+    private MaterialPropertyBlockData_Particles propertyBlock_circle_connector_expanded = new MaterialPropertyBlockData_Particles();
+    private MaterialPropertyBlockData_Particles propertyBlock_circle_connector_expanding = new MaterialPropertyBlockData_Particles();
+    private MaterialPropertyBlockData_Particles propertyBlock_circle_connector_contracting = new MaterialPropertyBlockData_Particles();
     // Materials
     private Material circuitHexPinMaterial;
     private Material circuitHexCircPinMaterial;

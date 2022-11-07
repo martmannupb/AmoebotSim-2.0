@@ -13,6 +13,7 @@ public static class UIDatabase
     public static GameObject prefab_setting_toggle = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/Toggle");
     public static GameObject prefab_setting_dropdown = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/Dropdown");
     public static GameObject prefab_setting_valueSlider = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/ValueSlider");
+    public static GameObject prefab_setting_minMax = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/MinMax");
 
     // World Space
     public static GameObject prefab_worldSpace_particleTextUI = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/World Space/ParticleTextUI");

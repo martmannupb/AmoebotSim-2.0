@@ -405,6 +405,7 @@ public class UISetting_Text : UISetting
         else
         {
             // Input valid, continue
+            prevText = input.text;
             if (inputType == InputType.Float) text = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text);
             if (onValueChangedEvent != null) onValueChangedEvent(this.name, text);
         }
@@ -742,4 +743,140 @@ public class UISetting_ValueSlider : UISetting
     {
         return slider;
     }
+}
+
+public class UISetting_MinMax : UISetting
+{
+
+    private TMP_InputField input1;
+    private TMP_InputField input2;
+    private InputType inputType;
+
+    // Prev values
+    private string input1prev;
+    private string input2prev;
+
+    public enum InputType
+    {
+        Int, Float
+    }
+
+    public UISetting_MinMax(GameObject go, Transform parentTransform, string name, float inputMin, float inputMax, InputType inputType)
+    {
+        // Add GameObject
+        if (go == null) this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_minMax, Vector3.zero, Quaternion.identity, parentTransform);
+        else this.go = go;
+        // Set Name
+        this.name = name;
+        TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        tmpro.text = name;
+        // Set Values
+        this.inputType = inputType;
+        if(inputType == InputType.Int)
+        {
+            inputMin = (int)inputMin;
+            inputMax = (int)inputMax;
+        }
+        TMP_InputField[] inputFields = this.go.GetComponentsInChildren<TMP_InputField>();
+        input1 = inputFields[0];
+        input2 = inputFields[1];
+        input1.text = "" + inputMin;
+        input2.text = "" + inputMax;
+        input1prev = input1.text;
+        input2prev = input2.text;
+
+        // Add Callbacks
+        input1.onValueChanged.AddListener(delegate { OnValueChanged(); });
+    }
+
+    public UISetting_MinMax(GameObject go, Transform parentTransform, string name, MinMax minMax) : this(go, parentTransform, name, minMax.min, minMax.max, minMax.wholeNumbersOnly ? InputType.Int : InputType.Float) { }
+
+    protected bool IsInputValid(string input)
+    {
+        switch (inputType)
+        {
+            case InputType.Int:
+                int i;
+                if (int.TryParse(input, out i)) return true;
+                else return false;
+            case InputType.Float:
+                if (TypeConverter.ConvertStringToFloat(input).conversionSuccessful) return true;
+                else return false;
+            default:
+                return false;
+        }
+    }
+
+    public override string GetValueString()
+    {
+        string text1 = input1.text;
+        string text2 = input2.text;
+        if(inputType == InputType.Float)
+        {
+            text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text1);
+            text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text2);
+        }
+        string text = text1 + "-" + text2;
+        return text;
+    }
+
+    protected override void LockSetting()
+    {
+        input1.enabled = false;
+        input2.enabled = false;
+    }
+
+    protected override void UnlockSetting()
+    {
+        input1.enabled = true;
+        input2.enabled = true;
+    }
+
+    protected override void SetInteractableState(bool interactable)
+    {
+        input1.interactable = interactable;
+        input2.interactable = interactable;
+    }
+
+    protected override void ClearRefs()
+    {
+        onValueChangedEvent = null;
+    }
+
+    // Callbacks
+
+    public Action<string, string> onValueChangedEvent;
+    private void OnValueChanged()
+    {
+        bool isValid = true;
+        string text1 = input1.text;
+        if (IsInputValid(text1) == false)
+        {
+            // Input not valid, reset to old value
+            input1.text = input1prev;
+            isValid = false;
+        }
+        string text2 = input2.text;
+        if (IsInputValid(text2) == false)
+        {
+            // Input not valid, reset to old value
+            input2.text = input2prev;
+            isValid = false;
+        }
+        input1prev = input1.text;
+        input2prev = input2.text;
+
+        if (isValid)
+        {
+            // Input valid, continue
+            if(inputType == InputType.Float)
+            {
+                text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text1);
+                text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text2);
+            }
+            string text = input1.text + "-" + input2.text;
+            if (onValueChangedEvent != null) onValueChangedEvent(this.name, text);
+        }
+    }
+
 }

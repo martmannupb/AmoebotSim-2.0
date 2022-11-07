@@ -166,9 +166,19 @@ public class RenderSystem
         flag_showCircuitView = !flag_showCircuitView;
     }
 
+    public void ToggleBonds()
+    {
+        flag_showBonds = !flag_showBonds;
+    }
+
     public bool IsCircuitViewActive()
     {
         return flag_showCircuitView;
+    }
+
+    public bool AreBondsActive()
+    {
+        return flag_showBonds;
     }
 
     public void SetAntiAliasing(int value)

@@ -48,6 +48,7 @@ public class UIHandler : MonoBehaviour
     public Sprite sprite_viewTypeHexagonalCirc;
     public Button button_circuitViewType;
     public Image image_circuitViewType;
+    public Button button_bondsActive;
     public Sprite sprite_circuitViewTypeCircuitsEnabled;
     public Sprite sprite_circuitViewTypeCircuitsDisabled;
     private Color overlayColor_active;
@@ -232,6 +233,9 @@ public class UIHandler : MonoBehaviour
             // Circuit View Type
             if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
+            // Bonds Active
+            if (sim.renderSystem.AreBondsActive()) button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_active;
+            else button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
         }
     }
 
@@ -451,6 +455,11 @@ public class UIHandler : MonoBehaviour
     public void Button_ToggleCircuitViewPressed()
     {
         sim.renderSystem.ToggleCircuits();
+    }
+
+    public void Button_ToggleBondsPressed()
+    {
+        sim.renderSystem.ToggleBonds();
     }
 
     private void UpdateTools()

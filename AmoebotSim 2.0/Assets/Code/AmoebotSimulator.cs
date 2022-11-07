@@ -28,6 +28,12 @@ public class AmoebotSimulator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //// MinMax Test
+        //MinMax minMax = new MinMax(2.45f, 3, false);
+        //Debug.Log("MinMax Test: " + MinMax.Parse(minMax.ToString()));
+        //minMax = new MinMax(2.45f, 3, true);
+        //Debug.Log("MinMax Test: " + MinMax.Parse(minMax.ToString()));
+
         // Init Renderer + Particle System
         renderSystem = new RenderSystem(this, FindObjectOfType<InputController>());
         system = new ParticleSystem(this, renderSystem);

@@ -286,6 +286,15 @@ public class ParticleUIHandler : MonoBehaviour
             setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add(particleAttribute.ToString_AttributeName(), setting);
         }
+        else if(type == typeof(MinMax))
+        {
+            UISetting_MinMax setting = new UISetting_MinMax(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), MinMax.Parse(particleAttribute.ToString_AttributeValue()));
+            setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
+            setting.onValueChangedEvent += SettingChanged_Text;
+            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
+            settings.Add(particleAttribute.ToString_AttributeName(), setting);
+        }
         else if(type.IsEnum) // Enum (other than Direction)
         {
             string[] choices = System.Enum.GetNames(type);

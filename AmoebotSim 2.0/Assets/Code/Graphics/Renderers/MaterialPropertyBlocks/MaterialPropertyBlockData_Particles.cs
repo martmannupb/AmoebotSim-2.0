@@ -2,11 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MaterialPropertyBlockData_CircParticles : MaterialPropertyBlockData
+public class MaterialPropertyBlockData_Particles : MaterialPropertyBlockData
 {
 
     // Data
-    private Color property_color = MaterialDatabase.material_hexagonal_particleExpansion.GetColor("_InputColor");
+    private Color property_color;
     private float property_isExpanding;
     private float property_expansionPercentage;
     private float property_expansionPercentage2;
@@ -18,7 +18,7 @@ public class MaterialPropertyBlockData_CircParticles : MaterialPropertyBlockData
     // Data Conversion
     private float[] globalDirToExpansionMeshMap = new float[] { 3, 2, 1, 0, 5, 4 };
 
-    public MaterialPropertyBlockData_CircParticles()
+    public MaterialPropertyBlockData_Particles()
     {
         Init();
     }
