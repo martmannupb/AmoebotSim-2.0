@@ -1,7 +1,8 @@
 apiRules:
-  - exclude:
-    uidRegex: ^System\.Object.*
-    type: Type
-  - exclude:
-    uidRegex: ^UnityEngine\.MonoBehaviour
-    type: Type
+- exclude:
+    uidRegex: ^System
+#- exclude:
+#    uidRegex: ^UnityEngine
+# TODO: Include SFB?
+- exclude:
+    uidRegex: ^SFB

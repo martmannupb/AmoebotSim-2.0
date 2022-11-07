@@ -1,7 +1,7 @@
 AmoebotSim 2.0/.vs/
 AmoebotSim 2.0/Library/
 AmoebotSim 2.0/Temp/
-AmoebotSim 2.0/obj/
+AmoebotSim 2.0/**/obj/
 AmoebotSim 2.0/Build/
 AmoebotSim 2.0/Logs/
 AmoebotSim 2.0/UserSettings/
