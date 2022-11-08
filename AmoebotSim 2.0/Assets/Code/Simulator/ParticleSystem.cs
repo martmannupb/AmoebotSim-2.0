@@ -671,6 +671,9 @@ public class ParticleSystem : IReplayHistory
     /// </summary>
     private void SimulateJointMovements()
     {
+        if (particles.Count == 0)
+            return;
+
         float tStart = Time.realtimeSinceStartup;
 
         // New particle positions will be stored in new map
@@ -1576,11 +1579,14 @@ public class ParticleSystem : IReplayHistory
     /// </summary>
     private void ComputeBondsStatic()
     {
+        if (particles.Count == 0)
+            return;
+
         // Use BFS, just like for movement simulation
         Queue<Particle> queue = new Queue<Particle>();
 
         // Start with the anchor particle
-        Particle anchor = particles[0];
+        Particle anchor = particles[anchorIdxHistory.GetMarkedValue()];
         anchor.jmOffset = Vector2Int.zero;
 
         queue.Enqueue(anchor);
