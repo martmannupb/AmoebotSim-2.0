@@ -10,7 +10,7 @@ Refer to [Markdown](http://daringfireball.net/projects/markdown/) for how to wri
 Content:
 1. [Installation Guide](installation_guide/home.md)
 2. Amoebot Model
-3. User Guide: Using the simulator
+3. [User Guide: Using the simulator](user_guide/usage/home.md)
 4. User Guide: Algorithm development
 5. Model Reference
 6. Developer Guide

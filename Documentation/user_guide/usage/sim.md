@@ -1,5 +1,3 @@
-# Simulator Usage
-
-## Simulation Mode
+# Simulator Usage: Simulation Mode
 
 TODO

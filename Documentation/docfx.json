@@ -103,6 +103,14 @@
         //"template": ["default", "templates/unity"],
         "postProcessors": [ "ExtractSearchIndex" ],
         "markdownEngineName": "markdig",
+        "markdownEngineProperties": {
+            // See which extensions are available on https://github.com/xoofx/markdig/blob/203cfd6508d4f8fca510edd2f66f229ada2c25ad/src/Markdig/MarkdownExtensions.cs#L549-L647
+            // and https://geoffreymcgill.github.io/markdig/
+            "markdigExtensions": [
+                "footnotes",
+                "mathematics"
+            ]
+        },
         "noLangKeyword": false,
         "keepFileLink": false,
         "cleanupCacheHistory": false,

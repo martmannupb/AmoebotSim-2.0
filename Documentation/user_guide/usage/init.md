@@ -1,5 +1,3 @@
-# Simulator Usage
-
-## Initialization Mode
+# Simulator Usage: Initialization Mode
 
 TODO
