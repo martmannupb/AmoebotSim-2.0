@@ -28,12 +28,6 @@
             },
             {
                 "files": [
-                    //"articles/**.md",
-                    //"articles/**/toc.yml",
-                    //"installation_guide/**.md",
-                    //"installation_guide/**/toc.yml",
-                    //"nested_pages/**.md",
-                    //"nested_pages/**/toc.yml",
                     "toc.yml",
                     "*.md"
                 ]
@@ -89,7 +83,7 @@
         ],
         "dest": "_site",
         "globalMetadata": {
-            "_appTitle": "Amoebotsim 2.0",
+            "_appTitle": "AmoebotSim 2.0",
             "_appFooter": "WORK IN PROGRESS",
             "_enableSearch": true
         },

@@ -1,5 +1,32 @@
-# Model Reference
+# Model Reference: Round Simulation
 
-## Round Simulation
-
-TODO
+- Our Amoebot model uses synchronous rounds
+	- All particles are activated simultaneously
+	- Changes to particle states are only applied at the end of the round
+- Each round is split into two phases
+	- In the *movement phase*,
+		- the particles update their bonds
+		- the particles schedule their movements
+		- the joint movements are applied after all particles were activated
+	- In the *beep phase*,
+		- the particles update their pin configurations
+		- the particles send beeps and messages
+		- the circuits are constructed and beeps and messages are delivered
+	- The two phases are implemented using the `ActivateMove` and `ActivateBeep` methods
+- In the movement phase following a beep phase, the received beeps and messages can be read
+	- If a particle does not schedule a movement in this phase, the beeps and messages can still be read in the next beep phase
+- `ActivateMove`
+	- All bonds are present at the start of the round
+	- Bonds can be released using `ReleaseBond(Direction, bool)`
+	- Expanding particles can *mark* bonds
+		- Using `MarkBond(Direction, bool)`
+		- A marked bond pulls the neighboring particle with the head of the expanding particle
+		- If the bond remains unmarked, the neighbor will keep its position relative to the tail
+	- For handovers, the bond connecting the pushing and the pulling particle in the push direction must be active
+		- All bonds incident to the particles performing the handover keep their relative position (they cannot be pulled or pushed by the handover)
+- `ActivateBeep`
+	- If the particle has not moved since the last beep phase, its pin configuration will be the same as at the end of the last beep phase
+	- If it has moved, the pin configuration has been reset to a singleton configuration
+	- `GetCurrentPinConfiguration` returns the current configuration from which received beeps and messages can be read (unless the particle has moved)
+	- `SetPlannedPinConfiguration(PinConfiguration pc)` makes `pc` the planned configuration that will be applied at the end of this round
+		- This configuration must be used to send beeps and messages
