@@ -671,6 +671,9 @@ public class ParticleSystem : IReplayHistory
     /// </summary>
     private void SimulateJointMovements()
     {
+        if (particles.Count == 0)
+            return;
+
         float tStart = Time.realtimeSinceStartup;
 
         // New particle positions will be stored in new map
@@ -1576,11 +1579,14 @@ public class ParticleSystem : IReplayHistory
     /// </summary>
     private void ComputeBondsStatic()
     {
+        if (particles.Count == 0)
+            return;
+
         // Use BFS, just like for movement simulation
         Queue<Particle> queue = new Queue<Particle>();
 
         // Start with the anchor particle
-        Particle anchor = particles[0];
+        Particle anchor = particles[anchorIdxHistory.GetMarkedValue()];
         anchor.jmOffset = Vector2Int.zero;
 
         queue.Enqueue(anchor);
@@ -2615,12 +2621,12 @@ public class ParticleSystem : IReplayHistory
             Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
             if (abs.x < xMin)
                 xMin = abs.x;
-            else if (abs.x > xMax)
+            if (abs.x > xMax)
                 xMax = abs.x;
 
             if (abs.y < yMin)
                 yMin = abs.y;
-            else if (abs.y > yMax)
+            if (abs.y > yMax)
                 yMax = abs.y;
         }
 
@@ -2963,11 +2969,14 @@ public class ParticleSystem : IReplayHistory
         }
     }
 
-    public InitializationStateSaveData GenerateInitSaveData()
+    public InitializationStateSaveData GenerateInitSaveData(InitModeSaveData initModeSaveData = null)
     {
         if (!inInitializationState)
             return null;
-        
+
+        if (initModeSaveData == null)
+            initModeSaveData = new InitModeSaveData();
+
         InitializationStateSaveData data = new InitializationStateSaveData();
 
         data.selectedAlgorithm = selectedAlgorithm;
@@ -2976,14 +2985,15 @@ public class ParticleSystem : IReplayHistory
         {
             data.particles[i] = particlesInit[i].GenerateSaveData();
         }
+        data.initModeSaveData = initModeSaveData;
 
         return data;
     }
 
-    public void LoadInitSaveState(InitializationStateSaveData data)
+    public InitModeSaveData LoadInitSaveState(InitializationStateSaveData data)
     {
         if (!inInitializationState)
-            return;
+            return null;
 
         ResetInit();
 
@@ -2999,6 +3009,7 @@ public class ParticleSystem : IReplayHistory
             p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
             p.graphics.UpdateReset();
         }
+        return data.initModeSaveData;
     }
 
 
