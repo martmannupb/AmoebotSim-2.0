@@ -21,5 +21,6 @@ public static class UIDatabase
 
     // Log
     public static GameObject prefab_log_element = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Log/Log Element");
+    public static GameObject prefab_log_elementLarge = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Log/Log Element Large");
 
 }

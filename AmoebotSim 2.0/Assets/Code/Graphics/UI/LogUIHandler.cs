@@ -32,6 +32,7 @@ public class LogUIHandler : MonoBehaviour
     private float timestampLastInteraction = 0f;
     private float timeVisibleInitial = 5f;
     private float timeVisible = 10f;
+    private bool keepVisible = false;
 
     public enum EntryType
     {
@@ -65,22 +66,27 @@ public class LogUIHandler : MonoBehaviour
             }
         }
 
-        AddLogEntry("Welcome to AmoebotSim 2.0!", EntryType.Log, false);
+        AddLogEntry("Welcome to AmoebotSim 2.0!", EntryType.Log, false, true);
         //AddLogEntry("=============================================================================================", EntryType.Log, false);
-        AddLogEntry("University of Paderborn, Theory of Distributed Systems (Prof. Dr. Christian Scheideler)", EntryType.Log, false);
-        AddLogEntry("Created by Matthias Artmann [System + Functionality] and Tobias Maurer [Rendering + UI], project lead by Andreas Padalkin and Daniel Warner.", EntryType.Log, false);
+        AddLogEntry("University of Paderborn, Theory of Distributed Systems (Prof. Dr. Christian Scheideler)", EntryType.Log, false, true);
+        AddLogEntry("Created by Matthias Artmann [System + Functionality] and Tobias Maurer [Rendering + UI], project lead by Andreas Padalkin and Daniel Warner.", EntryType.Log, false, true);
         //AddLogEntry("=============================================================================================", EntryType.Log, false);
-        AddLogEntry("                                                                                                                              ___/|", EntryType.Log, false);
-        AddLogEntry("                                                                                                                              \\o.O|", EntryType.Log, false);
-        AddLogEntry("                                                                                                                              (___)", EntryType.Log, false);
-        AddLogEntry("                                                                                                                              U", EntryType.Log, false);
-        AddLogEntry("", EntryType.Empty);
-        AddLogEntry("Log  ========================================================================================", EntryType.Log, false);
+        AddLogEntry("                                                                                                                              ___/|", EntryType.Log, false, true);
+        AddLogEntry("                                                                                                                              \\o.O|", EntryType.Log, false, true);
+        AddLogEntry("                                                                                                                              (___)", EntryType.Log, false, true);
+        AddLogEntry("                                                                                                                              U", EntryType.Log, false, true);
+        AddLogEntry("", EntryType.Empty, false, true);
+        AddLogEntry("Log  ========================================================================================", EntryType.Log, false, true);
+
+        // Test
+        //AddLogEntry("This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
+        //    "This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
+        //    "This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
+        //    "\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test." +
+        //    "\nThis is a Test.\nThis is a Test.\nThis is a Test.\n", EntryType.Log, true);
         
         // Hide Log
         Hide();
-        timeVisibleInitial = 0f;
-        timestampLastInteraction = -100f;
     }
 
     public void Update()
@@ -99,17 +105,12 @@ public class LogUIHandler : MonoBehaviour
         if(hide)
         {
             // Hide
-            Hide();
-            if(timeVisibleInitial != 0f)
-            {
-                timeVisibleInitial = 0f;
-                timestampLastInteraction = -100f;
-            }
+            if(keepVisible == false) Hide();
         }
         else
         {
             // Show
-            Show();
+            Show(false, this.keepVisible);
         }
     }
 
@@ -118,9 +119,11 @@ public class LogUIHandler : MonoBehaviour
         AddLogEntry(text, type, true);
     }
 
-    protected void AddLogEntry(string text, EntryType type, bool showNumberOfEntry)
+    protected void AddLogEntry(string text, EntryType type, bool showNumberOfEntry, bool useOldPrefab = false)
     {
-        GameObject go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_log_element, Vector3.zero, Quaternion.identity, go_elementParent.transform);
+        GameObject go;
+        if(useOldPrefab) go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_log_element, Vector3.zero, Quaternion.identity, go_elementParent.transform);
+        else go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_log_elementLarge, Vector3.zero, Quaternion.identity, go_elementParent.transform);
         logElementList.Add(go);
         
         TextMeshProUGUI tmp_header = GetLogElementTMPHeader(go);
@@ -157,6 +160,7 @@ public class LogUIHandler : MonoBehaviour
             tmp_text.text = "";
             //go.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
         }
+        if(go.GetComponent<SizeFitter>() != null) go.GetComponent<SizeFitter>().ResizeCentralizedInFrameAmount(1);
         timestampLastInteraction = Time.timeSinceLevelLoad;
 
         // Check if list is too long
@@ -166,21 +170,26 @@ public class LogUIHandler : MonoBehaviour
             logElementList.RemoveAt(0);
         }
 
-        // Scroll Down
-        scrollToBottomInAmountOfFrames = 2;
-
+        // Show
+        Show(true, this.keepVisible);
     }
 
-    public void Show()
+    public void Show(bool scrollDown, bool keepVisible)
     {
+        this.keepVisible = keepVisible;
         go_log.SetActive(true);
         go_expand.SetActive(false);
+        // Scroll Down
+        if(scrollDown) scrollToBottomInAmountOfFrames = 2;
     }
 
     public void Hide()
     {
         go_log.SetActive(false);
         go_expand.SetActive(true);
+        timeVisibleInitial = 0f;
+        timestampLastInteraction = -100f;
+        keepVisible = false;
     }
 
     public void ScrollToBottom()
@@ -236,7 +245,12 @@ public class LogUIHandler : MonoBehaviour
     public void ButtonPressed_ExpandLog()
     {
         timestampLastInteraction = Time.timeSinceLevelLoad;
-        Show();
+        Show(true, true);
+    }
+
+    public void ButtonPressed_CollapseLog()
+    {
+        Hide();
     }
 
 }
