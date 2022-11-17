@@ -160,7 +160,8 @@ public class LogUIHandler : MonoBehaviour
             tmp_text.text = "";
             //go.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
         }
-        if(go.GetComponent<SizeFitter>() != null) go.GetComponent<SizeFitter>().ResizeCentralizedInFrameAmount(1);
+        Log.AddToLogHistory(text);
+        if (go.GetComponent<SizeFitter>() != null) go.GetComponent<SizeFitter>().ResizeCentralizedInFrameAmount(1);
         timestampLastInteraction = Time.timeSinceLevelLoad;
 
         // Check if list is too long

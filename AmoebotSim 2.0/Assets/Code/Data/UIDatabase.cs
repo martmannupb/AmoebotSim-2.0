@@ -18,6 +18,7 @@ public static class UIDatabase
     // World Space
     public static GameObject prefab_worldSpace_particleTextUI = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/World Space/ParticleTextUI");
     public static GameObject prefab_worldSpace_backgroundTextUI = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/World Space/BackgroundTextUI");
+    public static GameObject prefab_worldSpace_backgroundTextUIAdvanced = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/World Space/BackgroundTextUI (Combined, Y offset 0.16)");
 
     // Log
     public static GameObject prefab_log_element = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Log/Log Element");

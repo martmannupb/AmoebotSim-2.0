@@ -431,6 +431,16 @@ public class UIHandler : MonoBehaviour
         }
     }
 
+    public void Button_PrintLogToFilePressed()
+    {
+        string path = StandaloneFileBrowser.SaveFilePanel("Save Log to File", "", "amsim_log", "txt");
+        if (path.Equals("") == false)
+        {
+            Log.SaveLogToFile(path);
+            Log.Entry("Log saved to file " + path + ".");
+        }
+    }
+
     public void Button_ToolStandardPressed()
     {
         activeTool = UITool.Standard;
