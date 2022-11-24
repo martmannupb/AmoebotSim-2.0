@@ -7,17 +7,15 @@ public class RendererParticles
 
     public static RendererParticles instance;
 
+    // Renderers
+    // Particles ===============
+    public Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch>();
     // Circuits + Bonds ===============
     public RendererCircuitsAndBonds circuitAndBondRenderer = new RendererCircuitsAndBonds();
-
-    // Particles ===============
-    // Render Batch
-    public Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch>();
 
     // Data _____
     // Particles
     private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
-    private Dictionary<IParticleState, GameObject> particleToParticleTextUIMap = new Dictionary<IParticleState, GameObject>();
 
     public RendererParticles()
     {
