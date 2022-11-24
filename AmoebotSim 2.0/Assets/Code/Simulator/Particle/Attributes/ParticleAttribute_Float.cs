@@ -63,7 +63,9 @@ public class ParticleAttribute_Float : ParticleAttributeWithHistory<float>, IPar
 
     public bool UpdateAttributeValue(string value)
     {
-        if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float parsedVal))
+        float parsedVal;
+        if (float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out parsedVal)
+            || float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.CurrentCulture, out parsedVal))
         {
             history.RecordValueInRound(parsedVal, particle != null ? particle.system.CurrentRound : 0);
             return true;
