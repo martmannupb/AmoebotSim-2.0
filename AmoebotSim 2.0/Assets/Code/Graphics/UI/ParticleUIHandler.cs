@@ -218,7 +218,17 @@ public class ParticleUIHandler : MonoBehaviour
         settings.Add("Chirality", setting);
         // Compass Dir
         Direction compassDir = p.CompassDir();
-        choices = System.Enum.GetNames(typeof(Direction));
+        string[] choicesTemp = System.Enum.GetNames(typeof(Initialization.Compass));
+        choices = new string[choicesTemp.Length - 1];
+        int curIndex = 0;
+        for (int i = 0; i < choicesTemp.Length; i++)
+        {
+            if(choicesTemp[i].Equals("Random") == false)
+            {
+                choices[curIndex] = choicesTemp[i];
+                curIndex++;
+            }
+        }
         setting = new UISetting_Dropdown(null, go_attributeParent.transform, "Compass Dir", choices, compassDir.ToString());
         setting.GetGameObject().name = "Compass Dir";
         setting.onValueChangedEvent += SettingChanged_Dropdown;
