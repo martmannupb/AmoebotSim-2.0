@@ -238,6 +238,8 @@ public class InitializationUIHandler : MonoBehaviour
 
     public void Open()
     {
+        // Pause Sim
+        uiHandler.sim.PauseSim();
         // Update UI
         uiHandler.HideTopRightButtons();
         uiHandler.settingsUI.Close();
@@ -246,7 +248,6 @@ public class InitializationUIHandler : MonoBehaviour
         // Update Cam Color
         Camera.main.backgroundColor = camColorInitModeBG;
         // Notify System
-        uiHandler.sim.PauseSim();
         uiHandler.sim.system.InitializationModeStarted(alg_setting_algo.GetValueString());
         // Generate (can be skipped)
         //ButtonPressed_Generate();
