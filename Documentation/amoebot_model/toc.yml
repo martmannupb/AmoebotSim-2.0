@@ -1,0 +1,6 @@
+- name: Amoebot Basics
+  href: basics.md
+- name: Reconfigurable Circuits
+  href: circuits.md
+- name: Joint Movements
+  href: jm.md

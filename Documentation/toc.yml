@@ -1,0 +1,21 @@
+- name: Installation Guide
+  href: installation_guide/
+  topicHref: installation_guide/home.md
+- name: Amoebot Model
+  href: amoebot_model/
+  topicHref: amoebot_model/home.md
+- name: User Guide
+  href: user_guide/
+  topicHref: user_guide/home.md
+- name: Model Reference
+  href: model_ref/
+  topicHref: model_ref/home.md
+- name: Dev Guide
+  href: dev_guide/
+  topicHref: dev_guide/home.md
+- name: API Documentation
+  href: api/
+  topicHref: api/index.md
+- name: Nested Pages
+  href: nested_pages/
+  topicHref: nested_pages/level_1_home.md
