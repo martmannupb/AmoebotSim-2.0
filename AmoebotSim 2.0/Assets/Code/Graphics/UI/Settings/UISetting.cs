@@ -117,6 +117,12 @@ public abstract class UISetting
     /// </summary>
     /// <returns>The current value of the setting as a string.</returns>
     public abstract string GetValueString();
+    /// <summary>
+    /// The inverse of GetValueString().
+    /// If calling both methods after each other, nothing should change.
+    /// </summary>
+    /// <param name="input"></param>
+    public abstract void SetValueString(string input);
 
     public void Lock()
     {
@@ -175,6 +181,11 @@ public class UISetting_Header : UISetting
         return name;
     }
 
+    public override void SetValueString(string input)
+    {
+        // empty
+    }
+
     protected override void LockSetting()
     {
         // empty
@@ -213,6 +224,11 @@ public class UISetting_Spacing : UISetting
     public override string GetValueString()
     {
         return "";
+    }
+
+    public override void SetValueString(string input)
+    {
+        // empty
     }
 
     protected override void LockSetting()
@@ -266,6 +282,17 @@ public class UISetting_Slider : UISetting
     public override string GetValueString()
     {
         return slider.value.ToString();
+    }
+
+    public override void SetValueString(string input)
+    {
+        TypeConverter.ConversionResult res = TypeConverter.ConvertStringToFloat(input);
+        if(res.conversionSuccessful == false)
+        {
+            Log.Error("UISetting_Slider: SetValueString: Conversion to float failed for string: " + input + ".");
+            return;
+        }
+        slider.value = (float)res.obj;
     }
 
     protected override void LockSetting()
@@ -364,6 +391,21 @@ public class UISetting_Text : UISetting
         string text = input.text;
         if (inputType == InputType.Float) text = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text);
         return text;
+    }
+
+    public override void SetValueString(string input)
+    {
+        if (inputType == InputType.Float)
+        {
+            TypeConverter.ConversionResult res = TypeConverter.ConvertStringToFloat(input);
+            if (res.conversionSuccessful == false)
+            {
+                Log.Error("UISetting_Text: SetValueString: Conversion to float failed for string: " + input + ".");
+                return;
+            }
+            this.input.text = ((float)res.obj).ToString();
+        }
+        else this.input.text = input;
     }
 
     protected override void LockSetting()
@@ -482,6 +524,20 @@ public class UISetting_Dropdown : UISetting
         return dropdown.options[dropdown.value].text;
     }
 
+    public override void SetValueString(string input)
+    {
+        // Find dropdown value with given input
+        for (int i = 0; i < dropdown.options.Count; i++)
+        {
+            if(dropdown.options[i].text.Equals(input))
+            {
+                dropdown.value = i;
+                return;
+            }
+        }
+        Log.Error("UISetting_Dropdown: SetValueString: Value " + input + " not found in dropdown.");
+    }
+
     protected override void LockSetting()
     {
         dropdown.enabled = false;
@@ -551,6 +607,13 @@ public class UISetting_Toggle : UISetting
     public override string GetValueString()
     {
         return toggle.isOn ? "True" : "False";
+    }
+
+    public override void SetValueString(string input)
+    {
+        if (input.Equals("True") || input.Equals("true")) toggle.isOn = true;
+        else if (input.Equals("False") || input.Equals("false")) toggle.isOn = false;
+        else Log.Error("UISetting_Toggle: SetValueString: Input " + input + " could not be converted to true or false.");
     }
 
     protected override void LockSetting()
@@ -667,6 +730,34 @@ public class UISetting_ValueSlider : UISetting
     {
         if (mappingActive) return mapping[(int)slider.value];
         else return "" + slider.value;
+    }
+
+    public override void SetValueString(string input)
+    {
+        if(mappingActive)
+        {
+            // Find matching string in mapping
+            for(int i = 0; i < mapping.Length; i++)
+        {
+                string curVal = mapping[i];
+                if (curVal.Equals(input))
+                {
+                    slider.value = i;
+                    return;
+                }
+            }
+            Log.Error("UISetting_ValueSlider: SetValueString: Value " + input + " not found in mapping.");
+        }
+        else
+        {
+            TypeConverter.ConversionResult res = TypeConverter.ConvertStringToFloat(input);
+            if (res.conversionSuccessful == false)
+            {
+                Log.Error("UISetting_ValueSlider: SetValueString: Conversion to float failed for string: " + input + ".");
+                return;
+            }
+            slider.value = (float)res.obj;
+        }
     }
 
     protected override void LockSetting()
@@ -818,6 +909,26 @@ public class UISetting_MinMax : UISetting
         }
         string text = text1 + "-" + text2;
         return text;
+    }
+
+    public override void SetValueString(string input)
+    {
+        if(input.Contains('-') == false)
+        {
+            Log.Error("Setting_MinMax: SetValueString: No - in input!");
+            return;
+        }
+        string text1 = input.Substring(0, input.IndexOf('-'));
+        string text2 = input.Substring(input.IndexOf('-')+1);
+        TypeConverter.ConversionResult res1 = TypeConverter.ConvertStringToFloat(text1);
+        TypeConverter.ConversionResult res2 = TypeConverter.ConvertStringToFloat(text2);
+        if(res1.conversionSuccessful == false || res2.conversionSuccessful == false)
+        {
+            Log.Error("Setting_MinMax: SetValueString: Conversion to float failed for " + text1 + " and/or " + text2);
+            return;
+        }
+        input1.text = res1.ToString();
+        input2.text = res2.ToString();
     }
 
     protected override void LockSetting()

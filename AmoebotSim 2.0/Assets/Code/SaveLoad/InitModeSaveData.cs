@@ -6,5 +6,7 @@ using UnityEngine;
 [Serializable]
 public class InitModeSaveData
 {
-    // TODO
+    public string algString;
+    public string genAlgString;
+    public string[] genAlg_parameters;
 }

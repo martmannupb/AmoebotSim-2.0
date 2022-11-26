@@ -284,7 +284,17 @@ public class InitializationUIHandler : MonoBehaviour
         string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "aminit", false);
         if (paths.Length != 0)
         {
-            uiHandler.sim.system.LoadInitSaveState(SaveStateUtility.LoadInit(paths[0]));
+            // Init particle system
+            InitModeSaveData initModeSaveData = uiHandler.sim.system.LoadInitSaveState(SaveStateUtility.LoadInit(paths[0]));
+            // Update init mode
+            alg_setting_algo.SetValue(initModeSaveData.algString);
+            genAlg_setting_genAlg.SetValue(initModeSaveData.genAlgString);
+            for (int i = 0; i < genAlg_settings.Count; i++)
+            {
+                UISetting setting = genAlg_settings[i];
+                setting.SetValueString(initModeSaveData.genAlg_parameters[i]);
+            }
+            // Log
             Log.Entry("Loaded initialization state from path: " + paths[0] + ".");
         }
         //else Log.Debug("No file chosen.");
@@ -298,7 +308,22 @@ public class InitializationUIHandler : MonoBehaviour
         string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "initState", "aminit");
         if (path.Equals("") == false)
         {
-            SaveStateUtility.SaveInit(uiHandler.sim.system.GenerateInitSaveData(), path);
+            // Generate general save data
+            InitializationStateSaveData saveData = uiHandler.sim.system.GenerateInitSaveData();
+            // Generate init mode save data
+            InitModeSaveData initModeSaveData = new InitModeSaveData();
+            initModeSaveData.algString = alg_setting_algo.GetValueString();
+            initModeSaveData.genAlgString = genAlg_setting_genAlg.GetValueString();
+            initModeSaveData.genAlg_parameters = new string[genAlg_settings.Count];
+            for (int i = 0; i < genAlg_settings.Count; i++)
+            {
+                UISetting setting = genAlg_settings[i];
+                initModeSaveData.genAlg_parameters[i] = setting.GetValueString();
+            }
+            // Combine and give to save utility
+            saveData.initModeSaveData = initModeSaveData;
+            SaveStateUtility.SaveInit(saveData, path);
+            // Log
             Log.Entry("Saved initialization state at path: " + path + ".");
         }
         //else Log.Entry("No path chosen.");
