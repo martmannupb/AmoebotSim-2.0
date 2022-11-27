@@ -1,5 +1,21 @@
-# Model Reference
+# Model Reference: Pin Configurations
 
-## Pin Configurations
-
-TODO
+- The **pin configuration** of a particle defines how the particle's pins are connected internally
+	- Each algorithm specifies the **number of pins** $n$ used by the particles
+	- This means that every particle will have $n$ pins on each of its incident edges
+		- Contracted particles have $6n$ pins and expanded particles have $10n$ pins overall
+	- The pins on each edge are numbered $0,\ldots,n-1$ in *local* counter-clockwise direction
+	- Neighboring particles do not know the pin numberings of each other
+	- The pins of two particles incident to the same edge are connected, allowing the particles to form circuits
+		- If they have the same chirality, pin $0$ of one particle will be connected to pin $n-1$ of the other, pin $1$ to $n-2$, etc.
+		- If they have different chirality, connected pins will have the same number
+	- A particle can connect its pins internally by forming **partition sets**
+		- A partition set is a set of interconnected pins
+		- A pin that has no connections to other pins (of the same particle!) is a *singleton* partition set
+	- The pin configuration of a particle is simply the set of its partition sets
+		- A *singleton pin configuration* is a pin configuration in which all partition sets are singletons, i.e., there are no internal connections between the pins
+		- In a *global pin configuration*, all pins are contained in the same partition set
+	- Two partition sets of neighboring particles are connected if they contain a pair of pins on the same edge that are connected
+	- A *circuit* is a maximal connected set of partition sets
+		- A circuit can contain multiple different partition sets of the same particle
+		- If a circuit contains at least one partition set of each particle, it is called a *global circuit*
