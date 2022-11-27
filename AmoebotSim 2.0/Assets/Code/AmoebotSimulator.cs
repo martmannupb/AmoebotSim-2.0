@@ -53,9 +53,11 @@ public class AmoebotSimulator : MonoBehaviour
         //system.InitializeChiralityCompass(50, 0.2f);
         //system.InitializeBoundaryTest(100, 0.05f);
         //system.InitializeExpandedTest(10);
-        system.InitializeJMTest(17);
-    }
+        //system.InitializeJMTest(17);
 
+        // Open Init Mode (when initialized)
+        StartCoroutine(OpenInitModeCoroutine());
+    }
 
     // Update is called once per frame
     void Update()
@@ -133,6 +135,19 @@ public class AmoebotSimulator : MonoBehaviour
         if(running)
         {
             TogglePlayPause();
+        }
+    }
+
+    private IEnumerator OpenInitModeCoroutine()
+    {
+        yield return new WaitForEndOfFrame();
+        if (uiHandler != null && uiHandler.initializationUI != null && uiHandler.initializationUI.IsInitialized())
+        {
+            uiHandler.initializationUI.Open();
+        }
+        else
+        {
+            StartCoroutine(OpenInitModeCoroutine());
         }
     }
 

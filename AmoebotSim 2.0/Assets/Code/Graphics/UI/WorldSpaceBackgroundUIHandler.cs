@@ -107,13 +107,25 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
     {
         if(isActive == false)
         {
-            if(Input.GetKey(KeyCode.LeftControl) == false)
-            {
-                Log.Warning("Do you really want to freeze Unity? If yes, press Ctrl while clicking that button!");
-                return;
-            }
+            if (MouseController.instance != null) MouseController.instance.LockCameraMovement();
+            Log.Warning("The background grid is active, camera movement has been disabled.");
+            //if(Input.GetKey(KeyCode.LeftControl) == false)
+            //{
+            //    Log.Warning("Do you really want to show the background grid? If yes, press Ctrl while clicking that button!");
+            //    return;
+            //}
+        }
+        else
+        {
+            if (MouseController.instance != null) MouseController.instance.UnlockCameraMovement();
+            Log.Entry("Camera movement has been enabled again.");
         }
         isActive = !isActive;
+    }
+
+    public bool IsActive()
+    {
+        return isActive;
     }
 
 }

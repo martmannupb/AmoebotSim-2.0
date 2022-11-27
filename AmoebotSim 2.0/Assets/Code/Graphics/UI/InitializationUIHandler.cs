@@ -9,9 +9,8 @@ using SFB;
 
 public class InitializationUIHandler : MonoBehaviour
 {
-
-    // References
-    private UIHandler uiHandler;
+    // Init
+    private bool initialized = false;
 
     // UI References
     // UI
@@ -53,10 +52,6 @@ public class InitializationUIHandler : MonoBehaviour
 
     private void Start()
     {
-        // Set References
-        uiHandler = FindObjectOfType<UIHandler>();
-        if (uiHandler == null) Log.Error("Could not find UIHandler.");
-
         // Hide Panel
         initModePanel.SetActive(false);
         // Collect Data
@@ -64,6 +59,7 @@ public class InitializationUIHandler : MonoBehaviour
         // Init
         InitUI();
         ResetUI();
+        initialized = true;
     }
 
     private void Update()
@@ -111,6 +107,11 @@ public class InitializationUIHandler : MonoBehaviour
         ResetUI();
     }
 
+    public bool IsInitialized()
+    {
+        return initialized;
+    }
+
     private void ResetUI()
     {
         SetUpGenAlgUI(genAlg_setting_genAlg.GetValueString()); // reinit this first so that the default for the algo can be set afterwards (if available)
@@ -133,7 +134,7 @@ public class InitializationUIHandler : MonoBehaviour
             SetUpGenAlgUI(defaultGenAlg);
         }
         // Show algorithm parameters
-        uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
+        AmoebotSimulator.instance.system.SetSelectedAlgorithm(algorithm);
     }
 
     private void SetUpGenAlgUI(string algorithm)
@@ -239,16 +240,16 @@ public class InitializationUIHandler : MonoBehaviour
     public void Open()
     {
         // Pause Sim
-        uiHandler.sim.PauseSim();
+        AmoebotSimulator.instance.PauseSim();
         // Update UI
-        uiHandler.HideTopRightButtons();
-        uiHandler.settingsUI.Close();
-        uiHandler.particleUI.Close();
+        AmoebotSimulator.instance.uiHandler.HideTopRightButtons();
+        AmoebotSimulator.instance.uiHandler.settingsUI.Close();
+        AmoebotSimulator.instance.uiHandler.particleUI.Close();
         initModePanel.SetActive(true);
         // Update Cam Color
         Camera.main.backgroundColor = camColorInitModeBG;
         // Notify System
-        uiHandler.sim.system.InitializationModeStarted(alg_setting_algo.GetValueString());
+        AmoebotSimulator.instance.system.InitializationModeStarted(alg_setting_algo.GetValueString());
         // Generate (can be skipped)
         //ButtonPressed_Generate();
         // Event
@@ -258,15 +259,15 @@ public class InitializationUIHandler : MonoBehaviour
     public void Close(bool aborted)
     {
         // Update UI
-        uiHandler.ShowTopRightButtons();
-        uiHandler.particleUI.Close();
+        AmoebotSimulator.instance.uiHandler.ShowTopRightButtons();
+        AmoebotSimulator.instance.uiHandler.particleUI.Close();
         initModePanel.SetActive(false);
         // Update Cam Color
         Camera.main.backgroundColor = camColorBG;
         // Notify System
-        if (aborted) uiHandler.sim.system.InitializationModeAborted();
-        uiHandler.Update();
-        uiHandler.UpdateUI(false, true);
+        if (aborted) AmoebotSimulator.instance.system.InitializationModeAborted();
+        AmoebotSimulator.instance.uiHandler.Update();
+        AmoebotSimulator.instance.uiHandler.UpdateUI(false, true);
         // Event
         if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(false);
     }
@@ -285,7 +286,7 @@ public class InitializationUIHandler : MonoBehaviour
         if (paths.Length != 0)
         {
             // Init particle system
-            InitModeSaveData initModeSaveData = uiHandler.sim.system.LoadInitSaveState(SaveStateUtility.LoadInit(paths[0]));
+            InitModeSaveData initModeSaveData = AmoebotSimulator.instance.system.LoadInitSaveState(SaveStateUtility.LoadInit(paths[0]));
             // Update init mode
             alg_setting_algo.SetValue(initModeSaveData.algString);
             genAlg_setting_genAlg.SetValue(initModeSaveData.genAlgString);
@@ -309,7 +310,7 @@ public class InitializationUIHandler : MonoBehaviour
         if (path.Equals("") == false)
         {
             // Generate general save data
-            InitializationStateSaveData saveData = uiHandler.sim.system.GenerateInitSaveData();
+            InitializationStateSaveData saveData = AmoebotSimulator.instance.system.GenerateInitSaveData();
             // Generate init mode save data
             InitModeSaveData initModeSaveData = new InitModeSaveData();
             initModeSaveData.algString = alg_setting_algo.GetValueString();
@@ -350,12 +351,12 @@ public class InitializationUIHandler : MonoBehaviour
         }
 
         // Call Generation Method
-        uiHandler.sim.system.Reset();
+        AmoebotSimulator.instance.system.Reset();
         //uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
-        uiHandler.sim.system.GenerateParticles(genAlgorithm, parameterObjects);
+        AmoebotSimulator.instance.system.GenerateParticles(genAlgorithm, parameterObjects);
 
         // Center Camera
-        uiHandler.Button_CameraCenterPressed();
+        AmoebotSimulator.instance.uiHandler.Button_CameraCenterPressed();
     }
 
     public void SettingBarPressedLong(string name, float duration)
@@ -364,13 +365,13 @@ public class InitializationUIHandler : MonoBehaviour
         {
             case "Chirality":
                 // Apply chirality setting to all particles
-                uiHandler.sim.system.SetSystemChirality((Initialization.Chirality)Enum.Parse(typeof(Initialization.Chirality), addPar_setting_chirality.GetValueString()));
+                AmoebotSimulator.instance.system.SetSystemChirality((Initialization.Chirality)Enum.Parse(typeof(Initialization.Chirality), addPar_setting_chirality.GetValueString()));
                 if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 Log.Entry("Chirality" + addPar_setting_chirality.GetValueString() + "applied to all particles.");
                 break;
             case "Compass Dir":
                 // Apply compass dir setting to all particles
-                uiHandler.sim.system.SetSystemCompassDir((Initialization.Compass)Enum.Parse(typeof(Initialization.Compass), addPar_setting_compassDir.GetValueString()));
+                AmoebotSimulator.instance.system.SetSystemCompassDir((Initialization.Compass)Enum.Parse(typeof(Initialization.Compass), addPar_setting_compassDir.GetValueString()));
                 if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
                 Log.Entry("Compass dir" + addPar_setting_compassDir.GetValueString() + " applied to all particles.");
                 break;
@@ -381,7 +382,7 @@ public class InitializationUIHandler : MonoBehaviour
 
     public void ButtonPressed_StartAlgorithm()
     {
-        uiHandler.sim.system.InitializationModeFinished(alg_setting_algo.GetValueString());
+        AmoebotSimulator.instance.system.InitializationModeFinished(alg_setting_algo.GetValueString());
         Close(false);
     }
 

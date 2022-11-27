@@ -10,15 +10,23 @@ using UnityEngine.EventSystems;
 
 public class MouseController : MonoBehaviour {
 
+    // Singleton
+    public static MouseController instance;
+
+    // Our main cam
     public Camera cam;
 
     public bool updateManually = false;
+    public bool movementLocked = false;
 
     Vector3 currFramePosition;
     Vector3 lastFramePosition;
     Quaternion curCamRotation;
 
-    Vector3 dragStartPosition;
+    public MouseController()
+    {
+        instance = this;
+    }
 
 	// Use this for initialization
 	void Start () {
@@ -49,41 +57,10 @@ public class MouseController : MonoBehaviour {
         currFramePosition.z = 0;
         curCamRotation = cam.transform.rotation;
 
-        //UpdateCursor();
-        UpdateDragging();
         UpdateCameraMovement();
 
         lastFramePosition = cam.ScreenToWorldPoint(Input.mousePosition);
         lastFramePosition.z = 0;
-    }
-
-    void UpdateDragging() {
-        // If we're over a UI element, then bail out from this
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) {
-            return;
-        }
-
-        // Start Drag
-        if (Input.GetMouseButtonDown(0)) {
-            dragStartPosition = currFramePosition;
-        }
-
-        int start_x = Mathf.FloorToInt(dragStartPosition.x);
-        int end_x = Mathf.FloorToInt(currFramePosition.x);
-        int start_y = Mathf.FloorToInt(dragStartPosition.y);
-        int end_y = Mathf.FloorToInt(currFramePosition.y);
-
-        if (end_x < start_x) {
-            int tmp = end_x;
-            end_x = start_x;
-            start_x = tmp;
-        }
-        if (end_y < start_y) {
-            int tmp = end_y;
-            end_y = start_y;
-            start_y = tmp;
-        }
-        
     }
     
     Vector3 diff = Vector3.zero;
@@ -111,6 +88,9 @@ public class MouseController : MonoBehaviour {
     public int pixelDivisionConstant = 1;
 
     void UpdateCameraMovement() {
+
+        if (movementLocked) return;
+
         // Keyboard WASD
         //bool a = Input.GetKey(KeyCode.A);
         //bool s = Input.GetKey(KeyCode.S);
@@ -177,5 +157,15 @@ public class MouseController : MonoBehaviour {
                 cam.orthographicSize = (float)Screen.height / (2f * (float)desiredHeightOfSquare);
                 break;
         }
+    }
+
+    public void LockCameraMovement()
+    {
+        movementLocked = true;
+    }
+
+    public void UnlockCameraMovement()
+    {
+        movementLocked = false;
     }
 }

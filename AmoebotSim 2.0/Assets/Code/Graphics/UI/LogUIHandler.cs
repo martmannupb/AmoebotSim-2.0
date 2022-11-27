@@ -181,7 +181,7 @@ public class LogUIHandler : MonoBehaviour
         go_log.SetActive(true);
         go_expand.SetActive(false);
         // Scroll Down
-        if(scrollDown) scrollToBottomInAmountOfFrames = 2;
+        if(scrollDown) scrollToBottomInAmountOfFrames = 3;
     }
 
     public void Hide()

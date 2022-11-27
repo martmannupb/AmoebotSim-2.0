@@ -51,6 +51,7 @@ public class UIHandler : MonoBehaviour
     public Button button_bondsActive;
     public Sprite sprite_circuitViewTypeCircuitsEnabled;
     public Sprite sprite_circuitViewTypeCircuitsDisabled;
+    public Button button_backgroundGridActive;
     private Color overlayColor_active;
     private Color overlayColor_inactive;
     // Settings/Exit
@@ -245,6 +246,12 @@ public class UIHandler : MonoBehaviour
         // Bonds Active
         if (sim.renderSystem.AreBondsActive()) button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_active;
         else button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
+        // Background Grid Active
+        if(WorldSpaceBackgroundUIHandler.instance != null)
+        {
+            if (WorldSpaceBackgroundUIHandler.instance.IsActive()) button_backgroundGridActive.gameObject.GetComponent<Image>().color = overlayColor_active;
+            else button_backgroundGridActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
+        }
     }
 
     public void NotifyPlayPause(bool running)
@@ -370,32 +377,38 @@ public class UIHandler : MonoBehaviour
 
     public void Button_OpenPressed()
     {
-        if(initializationUI.IsOpen() == false)
+        bool isSimRunning = sim.running;
+        sim.PauseSim();
+        string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Algorithm State", "", "amalgo", false);
+        if (paths.Length != 0)
         {
-            bool isSimRunning = sim.running;
-            sim.PauseSim();
-            string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Algorithm State", "", "amalgo", false);
-            if (paths.Length != 0)
+            if (!sim.running)
             {
-                if (!sim.running)
+                // Close Init Mode (if necessary)
+                if (initializationUI.IsOpen()) initializationUI.ButtonPressed_Abort();
+                // Check if closed successfully
+                if(initializationUI.IsOpen())
                 {
-                    SimulationStateSaveData data = SaveStateUtility.Load(paths[0]);
-                    if (data != null)
-                    {
-                        sim.system.Reset();
-                        sim.system.InitializeFromSaveState(data);
-                        UpdateUI(sim.running, true);
-                    }
+                    Log.Error("UIHandler: Button_OpenPressed: Init Mode could not be closed.");
+                    return;
                 }
-                else
+
+                SimulationStateSaveData data = SaveStateUtility.Load(paths[0]);
+                if (data != null)
                 {
-                    Log.Error("Please pause the sim before loading an algorithm state!");
+                    sim.system.Reset();
+                    sim.system.InitializeFromSaveState(data);
+                    UpdateUI(sim.running, true);
                 }
             }
             else
             {
-                if (isSimRunning) sim.PlaySim();
+                Log.Error("Please pause the sim before loading an algorithm state!");
             }
+        }
+        else
+        {
+            if (isSimRunning) sim.PlaySim();
         }
     }
 
@@ -419,6 +432,11 @@ public class UIHandler : MonoBehaviour
                     Log.Error("Please pause the sim before saving the algorithm state!");
                 }
             }
+        }
+        else
+        {
+            // Init Mode open
+            Log.Entry("You need to execute an algorithm to save its state.\nGet out of init mode, mate!");
         }
     }
 
