@@ -1,5 +1,30 @@
-# Model Reference
+# Model Reference: Particle Attributes
 
-## Particle Attributes
-
-TODO
+- Particles are finite state machines
+	- Their state has a finite representation
+	- In the simulator, the representation should be as simple as possible
+- Particle state is defined by **attributes**
+	- Each attribute has
+		- A unique name,
+		- a data type, and
+		- a value
+	- All particles running the same algorithm have the same attributes
+	- The generic class `ParticleAttribute<T>` (and its subclasses) represent these attributes
+		- The class keeps a record of the attribute's values throughout the simulation and allows the values to be displayed and edited in the UI
+- How to use particle attributes:
+	- Creating attributes
+		- Declare attributes in the algorithm class: `public ParticleAttribute<int> myInt`
+		- Initialize in the constructor: `myInt = CreateAttributeInt("Attr name", 42)`
+		- There are creation methods (`CreateAttributeXYZ(<name>, <initial value>)`) for all attribute types
+		- Supported types are `int`, `bool`, `enum`, `float`, `string`
+		- The `Direction` enum has its own creation method
+		- Custom enums use the `CreateAttributeEnum<EnumT>(string name, EnumT initialValue)` creation method
+	- Reading and writing
+		- Attribute values can be read like simple variables of their type
+			- E.g., `int tmp = myInt` works for `ParticleAttribute<int> myInt`
+		- To write a new value, the `SetValue(value)` method must be used
+		- Attribute value changes only take effect *at the end of the round*
+			- Reading a value immediately after writing it returns the old value, not the new one!
+			- To read the new value, use the `GetValue_After()` method
+				- This method cannot be called on neighboring particles' attributes
+			- Values written in the movement phase can be read in the following beep phase
