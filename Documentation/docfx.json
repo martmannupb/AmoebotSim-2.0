@@ -1,0 +1,113 @@
+{
+    "metadata": [
+        {
+            "src": [
+                {
+                    //"src": "../Amoebotsim 2.0",
+                    "src": "../Amoebotsim 2.0/Assets",
+                    "files": [
+                        //"**.csproj"
+                        "**.cs"
+                    ]
+                }
+            ],
+            "dest": "api",
+            "disableGitFeatures": false,
+            //"disableDefaultFilter": true,
+            "filter": "filterConfig.yml",
+            "globalNamespaceId": "Global"
+        }
+    ],
+    "build": {
+        "content": [
+            {
+                "files": [
+                    "api/**.yml",
+                    "api/index.md"
+                ]
+            },
+            {
+                "files": [
+                    "toc.yml",
+                    "*.md"
+                ]
+            },
+            {
+                "src": "amoebot_model",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "amoebot_model"
+            },
+            {
+                "src": "dev_guide",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "dev_guide"
+            },
+            {
+                "src": "installation_guide",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "installation_guide"
+            },
+            {
+                "src": "model_ref",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "model_ref"
+            },
+            {
+                "src": "nested_pages",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "nested_pages"
+            },
+            {
+                "src": "user_guide",
+                "files": [ "**.md", "**.yml" ],
+                "dest": "user_guide"
+            }
+        ],
+        "resource": [
+            {
+                "files": [
+                    "images/**"
+                ]
+            }
+        ],
+        "overwrite": [
+            {
+                "files": [
+                    "apidoc/**.md"
+                ],
+                "exclude": [
+                    "obj/**",
+                    "_site/**"
+                ]
+            }
+        ],
+        "dest": "_site",
+        "globalMetadata": {
+            "_appTitle": "AmoebotSim 2.0",
+            "_appFooter": "WORK IN PROGRESS",
+            "_enableSearch": true
+        },
+        "globalMetadataFiles": [],
+        "fileMetadataFiles": [],
+        "template": [
+            "statictoc",
+            // This custom template removes the list of inherited members from class documentation pages
+            "templates/custom"
+        ],
+        //"template": ["default", "templates/unity"],
+        "postProcessors": [ "ExtractSearchIndex" ],
+        "markdownEngineName": "markdig",
+        "markdownEngineProperties": {
+            // See which extensions are available on https://github.com/xoofx/markdig/blob/203cfd6508d4f8fca510edd2f66f229ada2c25ad/src/Markdig/MarkdownExtensions.cs#L549-L647
+            // and https://geoffreymcgill.github.io/markdig/
+            "markdigExtensions": [
+                "footnotes",
+                "mathematics"
+            ]
+        },
+        "noLangKeyword": false,
+        "keepFileLink": false,
+        "cleanupCacheHistory": false,
+        "disableGitFeatures": false
+    }
+}

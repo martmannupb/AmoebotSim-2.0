@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: CircuitConnectorMat
+  m_Shader: {fileID: -6465566751694194690, guid: be2775b19a6ba23428d2ffea010f2aab, type: 3}
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlphaTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MaskTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Texture2D:
+        m_Texture: {fileID: 2800000, guid: 401a1a90d0497b04690610610138d733, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TextureHexagon:
+        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TextureHexagon2:
+        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TextureHexagonConnector:
+        m_Texture: {fileID: 2800000, guid: 309420024968d1b499c8cc9961f4d3a0, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AnimAlpha1: 1
+    - _AnimAlpha2: 1
+    - _AnimDuration: 0
+    - _AnimPercentage1: 0
+    - _AnimPercentage2: 0
+    - _AnimTriggerTime: 0
+    - _EnableExternalAlpha: 0
+    - _QueueControl: 0
+    - _QueueOffset: 0
+    - _Scale: 0.81
+    m_Colors:
+    - _AnimMeshRelativeUVOffset: {r: 0.33333, g: 0, b: 0, a: 0}
+    - _AnimOffset: {r: -0.624, g: 0, b: 0, a: 0}
+    - _BridgePivotOffset: {r: 0.33333, g: 0.5, b: 0, a: 0}
+    - _BridgeRelativeUVOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _BridgeScalePivotOffset: {r: 0.33333, g: 0.5, b: 0, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Flip: {r: 1, g: 1, b: 1, a: 1}
+    - _InnerColor: {r: 0, g: 0, b: 0, a: 0}
+    - _InputColor: {r: 0, g: 0, b: 0, a: 1}
+    - _MeshRelativeOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _MeshRelativeUVOffset: {r: -0.16666667, g: 0, b: 0, a: 0}
+    - _Offset: {r: -0.5, g: -0.5, b: 0, a: 0}
+    - _PivotOffset: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+    - _ScaleOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _ScalePivotOffset: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _Tiling: {r: 3, g: 2, b: 0, a: 0}
+    - _TilingScale: {r: 1.5, g: 1, b: 0, a: 0}
+  m_BuildTextureStacks: []
+--- !u!114 &8099981001400322457
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 5

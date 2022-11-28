@@ -1,0 +1,31 @@
+# Model Reference: Directions and Compasses
+
+- There are 6 primary (cardinal) directions and 6 secondary directions in the triangular grid
+	- The cardinal directions point along the edges of the grid, the secondary directions lie exactly between the cardinal directions
+	- The angle between two adjacent cardinal or adjacent secondary directions is 60°
+	- The angle between adjacent cardinal and secondary directions is 30°
+	- Cardinal directions are defined to be East, North-North East, North-North West, West, South-South West, South-South East
+		- Abbreviated as E, NNE, NNW, W, SSW, SSE and identified by integers 0, ..., 5
+	- Secondary directions are, analogously, defined as ENE, N, WNW, WSW, S, ESE
+		- They are also identified by integers 0, ..., 5 in this order
+- Directions are represented by the `Direction` enum in the code
+	- The `DirectionHelpers` class provides several helpers for computing and transforming directions
+	- The special `NONE` value represents no direction
+		- Every operation with `NONE` results in either `NONE` or `-1` (if the result of the operation is an `int`)
+- Every particle has a local *compass*
+	- The compass defines how the particle's local directions correspond to the global directions
+	- The *compass direction* of a particle is the *global* direction that the particle believes to be *East*
+	- The `ParticleSystem_Utils` class provides helper methods for converting between local and global directions
+		- The *chirality* of a particle has to be taken into account for the conversion
+		- If the particle has an inverted chirality, its local directions are mirrored, i.e., its local NNE direction will lie 60° in *clockwise* direction from its local E direction when translated into global directions
+- A particle *does not know* its compass direction
+	- Nor does it have a way to find out
+- Particles in a system can establish a common compass direction using a *compass alignment algorithm*
+	- The example algorithm uses 2 pins and establishes a common compass direction with high probability
+	- Particles have to actively rotate directions if their compass does not agree with the established compass
+		- They also have to take their chirality into account if a common chirality was established beforehand
+- Particle systems can be initialized with different compass direction settings
+	- All particles can have the same compass directions
+	- Compass directions can be random
+	- Compasses of individual particles can be changed manually
+- The compass direction of a particle cannot be changed while the simulation is running, it must be set during initialization

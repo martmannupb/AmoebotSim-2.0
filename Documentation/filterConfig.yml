@@ -1,0 +1,8 @@
+apiRules:
+- exclude:
+    uidRegex: ^System
+#- exclude:
+#    uidRegex: ^UnityEngine
+# TODO: Include SFB?
+- exclude:
+    uidRegex: ^SFB
