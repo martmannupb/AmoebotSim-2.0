@@ -19,3 +19,44 @@
 	- A *circuit* is a maximal connected set of partition sets
 		- A circuit can contain multiple different partition sets of the same particle
 		- If a circuit contains at least one partition set of each particle, it is called a *global circuit*
+- Implementation and API
+	- A particle's pin configuration is represented by an instance of the `PinConfiguration` class
+	- In a `PinConfiguration` instance, all pins and partition sets have integer IDs
+		- It is possible for partition sets to be empty (e.g., if partition set `0` contains all pins, all other partition sets are empty)
+	- A `PinConfiguration` is always specific to an *expansion state*
+		- Pin and partition set IDs are in the range $0,\ldots,6n-1$ if the configuration is contracted and $0,\ldots,10n-1$ if it is expanded
+		- A `PinConfiguration` for the contracted state is not compatible with a `PinConfiguration` for an expanded state
+		- Two expanded `PinConfiguration`s with different expansion directions are also incompatible
+		- *Incompatible* means that the pin and partition set IDs may not refer to the same pins and partition sets in both configurations
+	- The `GetCurrentPinConfiguration()` method returns the pin configuration from the beginning of the current round/phase
+		- If beeps and messages were received by the particle in the previous beep phase, they can be read using the returned `PinConfiguration` instance
+			- Call `ReceivedBeepOnPartitionSet(int id)`, `ReceivedMessageOnPartitionSet(int id)` and `GetReceivedMessageOfPartitionSet(int id)`
+		- In the movement phase, this will always work
+		- If the particle performs a movement in the movement phase, its pin configuration will be reset to a singleton and the beeps and messages received in the previous beep phase will be lost
+		- Note that it is possible for the system to perform a joint movement in which not all particles perform individual movements. Even if this movement breaks the circuits from the previous round, the particles that have not moved individually keep their local pin configurations and still "remember" what they had received, for convenience
+	- During the beep phase, a particle can change its pin configuration
+		- To do so, it needs to call `SetPlannedPinConfiguration(PinConfiguration pc)`, which will update the pin configuration to `pc` at the end of the phase
+		- The `PinConfiguration` instance `pc` must match the particle's expansion state
+		- It can either be the current pin configuration or a fresh one created using `Get<Contracted|Expanded>PinConfiguration`
+		- `PinConfiguration` instances can be modified in several ways
+			- `SetToGlobal(int id)` will collect all pins in the partition set with ID `id`
+			- `SetStarConfig(int offset, int id)` will collect all pins with offset `offset` in the partition set with ID `id`
+				- This partition set will contain exactly one pin from each edge
+				- The method has several overloads to select the pins more flexibly
+			- `MakePartitionSet(int[] pinIds, int id)` simply puts the pins specified by `pinIds` into the partition set with ID `id`
+	- Sending beeps and messages
+		- After a `PinConfiguration` instance `pc` has been committed using `SetPlannedPinConfiguration`, it can be used to send beeps and messages
+		- Simply call `pc.SendBeepOnPartitionSet(int id)` to send a beep on the partition set with ID `id`
+		- Call `pc.SendMessageOnPartitionSet(int id, Message msg)` to send a message `msg`
+			- Read the [Message reference page](messages.md) to learn how custom message types can be defined
+- Additional features
+	- Particles can set the color of a partition set to influence the display color of the circuit containing the partition set
+		- Use `pc.SetPartitionSetColor(int id, Color color)` to set the color of the planned pin configuration `pc`
+		- A circuit will take the color of the first colored partition set that is encountered while computing the circuits
+		- If no colored partition sets are encountered, the circuit will get a color from the circuit color pool
+	- Pin configurations can be stored in particle attributes
+		- `CreateAttributePinConfiguration` will create a particle attribute that can store `PinConfiguration` instances
+		- These attributes will not be displayed in the UI!
+		- This feature should be used to save complex pin configurations to reuse them later so that they do not have to be computed again
+		- Stored pin configurations cannot be used to read beeps or messages!
+		- It is not possible to read pin configurations of neighboring particles
