@@ -1,5 +1,54 @@
-# Model Reference
+# Model Reference: Bonds and Joint Movements
 
-## Bonds and Joint Movements
-
-TODO
+- **Bonds** represent connections between the particles that define the "physical" structure of the system and allow the particles to perform *joint movements*
+	- TODO: Reference to reconfigurable circuit extension page
+	- A bond between two neighboring particles can be interpreted as a fixed physical connection that prevents the particles from moving independently of each other, similar to the connection between the head and tail of an expanded particle
+- Bond lifecycle
+	- At the beginning of a round, all possible bonds are present/active
+		- I.e., there is a bond on each edge incident to two particles
+	- In the movement phase, particles can *release* bonds and perform individual movements
+	- If one particle releases a bond, the bond is removed from the system before any movement occurs
+		- It is recommended to write algorithms in such a way that both particles agree on releasing a bond to prevent unwanted releases
+	- The graph induced by the bonds and particles must remain connected at all times
+	- After all particles were activated in the movement phase, the released bonds are removed from the system and the scheduled movements are executed
+		- This may cause bonds to change their position or even the particles they are connecting
+	- After the movements are finished, new bonds are created for all particles to prepare for the next round
+- Movements
+	- Every individual particle movement is either an *expansion* or a *contraction* movement
+		- In a handover, the pushing particle performs an expansion and the pulling particle performs a contraction
+	- In the local view of a moving particle, one of its parts stays where it is and the other one moves
+		- For example, when a contracted particle expands, its head moves to a new position while the tail stays in place
+	- Bonds of the part that stays in place will never move relative to the particle
+	- For bonds of the moving part, there are several possibilities:
+		- If the particle **contracts**, the bonds are pulled with the moving part and then connect to the remaining part after the movement
+			- If there are no other conflicts, moving bonds that end up in the same position as a non-moving bond will be merged into the non-moving bond
+		- If the particle **expands**, it can *mark* some of its bonds to move with its head
+			- Unmarked bonds will stay at the particle's tail
+			- The bond pointing in the expansion direction will always be marked
+			- The bond in the opposite direction can never be marked
+		- **Handovers** are a special case
+			- Both particles must agree on the handover, i.e., one must perform a push movement and the other must perform a pull movement
+			- The bond pointing in the expansion direction of the pushing particle must be active
+				- It will move and turn with the two particles to keep the connection intact
+			- Any other bonds on the moving part of the pulling particle are *transferred* to the head of the pushing particle
+			- Their relative position to the non-moving parts of the two particles do not change
+			- Bond markings have no effect on this
+	- Conflicts
+		- If a *conflict* occurs during the movement phase, the round is aborted and an error is displayed
+		- The simplest conflict is caused by multiple particles moving onto the same grid node
+			- This can happen if two particles expand onto the same node
+			- It can also happen if a particle is pushed onto another one, even without moving on its own
+		- Other conflicts are caused by the bonds of neighboring particles not agreeing with their scheduled movements
+			- E.g., if two expanded particles are connected by at least two bonds and only one of them tries to contract
+- API
+	- Bonds can be released using `ReleaseBond(Direction d, bool head)`
+	- Bonds can be marked using `MarkBond(Direction d, bool head)`
+	- Calling `UseAutomaticBonds()` anywhere in the `ActivateMove()` method will cause the bonds to be set automatically such that the movements from the original Amoebot model are simulated
+		- Contracting particles will release all bonds of their moving part
+		- Expanding particles will not mark any bonds
+		- All other bonds stay active
+- The anchor particle
+	- One particle in the system is the *anchor*
+	- This movements of this particle are simulated as if it was the only particle in the system
+	- I.e., the non-moving part of it will *never* move globally
+	- The anchor allows the deterministic simulation of joint movements
