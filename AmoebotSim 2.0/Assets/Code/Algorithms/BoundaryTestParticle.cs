@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using Simulator;
 using UnityEngine;
 
-namespace BoundaryTestAlgo
+namespace Algorithms.BoundaryTest
 {
     public enum Phase { LE1, LE2, SUM }
     // Operation modes of the Sum Computation phase
@@ -982,4 +983,4 @@ namespace BoundaryTestAlgo
             }
         }
     }
-} // namespace BoundaryTestAlgo
+} // namespace Algorithms.BoundaryTest

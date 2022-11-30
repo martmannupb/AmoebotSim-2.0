@@ -1,4 +1,11 @@
 using System.Collections.Generic;
+using Algorithms.BoundaryTest;
+using Algorithms.ChiralityCompass;
+using Algorithms.ExpandedCircuitTest;
+using Algorithms.JMTest;
+using Algorithms.LeaderElection;
+using Algorithms.LineFormation;
+
 using UnityEngine;
 
 
@@ -214,7 +221,7 @@ namespace Simulator
 
         public void InitializeBoundaryTest(int numParticles, float holeProb)
         {
-            InitializeFixed(BoundaryTestAlgo.BoundaryTestParticle.Name, new object[] { numParticles, holeProb });
+            InitializeFixed(BoundaryTestParticle.Name, new object[] { numParticles, holeProb });
         }
 
         public void InitializeJMTest(int mode)

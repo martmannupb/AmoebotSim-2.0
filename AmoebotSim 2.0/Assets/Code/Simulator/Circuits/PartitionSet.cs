@@ -9,12 +9,12 @@ namespace Simulator
     /// Developer API for partition sets.
     /// <para>
     /// This is part of the pin configuration API, see
-    /// <see cref="global::PinConfiguration"/>.
+    /// <see cref="Simulator.PinConfiguration"/>.
     /// </para>
     /// <para>
     /// A partition set is a set of connected pins within
     /// a pin configuration. It belongs to an object
-    /// implementing the <see cref="global::PinConfiguration"/>
+    /// implementing the <see cref="Simulator.PinConfiguration"/>
     /// interface and may be changed through methods of
     /// this API or through the pin configuration itself.
     /// <br/>
@@ -24,7 +24,7 @@ namespace Simulator
     public abstract class PartitionSet
     {
         /// <summary>
-        /// The <see cref="global::PinConfiguration"/> to which this
+        /// The <see cref="Simulator.PinConfiguration"/> to which this
         /// partition set belongs.
         /// </summary>
         public abstract PinConfiguration PinConfiguration

@@ -1,5 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using Algorithms.BoundaryTest;
+using Algorithms.ChiralityCompass;
+using Algorithms.ExpandedCircuitTest;
+using Algorithms.JMTest;
+using Algorithms.LeaderElection;
+using Algorithms.LineFormation;
 using UnityEngine;
 
 namespace Simulator
@@ -109,7 +115,7 @@ namespace Simulator
                 compassDir = DirectionHelpers.Cardinal(0);
             Particle p = new Particle(system, position, compassDir, chirality);
             p.isActive = true;
-            new BoundaryTestAlgo.BoundaryTestParticle(p);
+            new BoundaryTestParticle(p);
             p.isActive = false;
             p.InitWithAlgorithm();
             p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
