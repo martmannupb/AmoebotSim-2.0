@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     [Serializable]
@@ -48,4 +48,4 @@ namespace Simulator
         public ValueHistoryJointMovement(ValueHistorySaveData<JointMovementInfo> data) : base(data) { }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

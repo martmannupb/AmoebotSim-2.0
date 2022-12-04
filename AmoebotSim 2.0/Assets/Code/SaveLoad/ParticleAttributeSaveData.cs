@@ -15,7 +15,7 @@ public abstract class ParticleAttributeSaveDataBase
 
 /// <summary>
 /// Container for serializing the simplest kind of particle attributes,
-/// <see cref="ParticleAttributeWithHistory{T}"/>.
+/// <see cref="AS2.Sim.ParticleAttributeWithHistory{T}"/>.
 /// </summary>
 /// <typeparam name="T">The type of values stored in the attribute history.</typeparam>
 [Serializable]

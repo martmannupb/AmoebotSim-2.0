@@ -1,5 +1,5 @@
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     public enum ActionType { EXPAND, CONTRACT_HEAD, CONTRACT_TAIL, PUSH, PULL_HEAD, PULL_TAIL, NULL }
@@ -107,4 +107,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

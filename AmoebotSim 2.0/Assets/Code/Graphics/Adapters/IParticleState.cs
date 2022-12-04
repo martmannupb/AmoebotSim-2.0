@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 public interface IParticleState
@@ -63,13 +63,13 @@ public interface IParticleState
     void SetCompassDir(Direction compassDir);
 
     /// <summary>
-    /// Returns a list of all <see cref="ParticleAttribute{T}"/>s of the particle.
+    /// Returns a list of all <see cref="AS2.Sim.ParticleAttribute{T}"/>s of the particle.
     /// </summary>
     /// <returns>A list containing all attributes of the particle.</returns>
     List<IParticleAttribute> GetAttributes();
 
     /// <summary>
-    /// Provides access to <see cref="ParticleAttribute{T}"/>s by their display names.
+    /// Provides access to <see cref="AS2.Sim.ParticleAttribute{T}"/>s by their display names.
     /// </summary>
     /// <param name="attrName">The display of the attribute to return.</param>
     /// <returns>The particle's attribute with the given name <paramref name="attrName"/>

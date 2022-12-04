@@ -1,4 +1,4 @@
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 namespace Algorithms.WorkshopBonus
@@ -156,7 +156,7 @@ namespace Algorithms.WorkshopBonus
     // Its class name must be specified as the algorithm's GenerationMethod
     public class WorkshopSolutionBonusParticleInitializer : InitializationMethod
     {
-        public WorkshopSolutionBonusParticleInitializer(Simulator.ParticleSystem system) : base(system) { }
+        public WorkshopSolutionBonusParticleInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values

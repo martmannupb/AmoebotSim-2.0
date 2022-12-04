@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     // TODO: Figure out how to display and edit this in the UI
@@ -178,4 +178,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

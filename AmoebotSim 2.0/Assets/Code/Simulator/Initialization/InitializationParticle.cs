@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
@@ -205,4 +205,4 @@ namespace Simulator
         public abstract InitParticleSaveData GenerateSaveData();
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

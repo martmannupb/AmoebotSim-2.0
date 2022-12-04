@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Container for saving and loading <see cref="ValueHistory{T}"/>
+/// Container for saving and loading <see cref="AS2.Sim.ValueHistory{T}"/>
 /// objects of serializable types.
 /// </summary>
 /// <typeparam name="T">The type of data stored in the history.</typeparam>

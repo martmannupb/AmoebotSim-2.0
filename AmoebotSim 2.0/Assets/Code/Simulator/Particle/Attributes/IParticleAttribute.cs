@@ -1,6 +1,6 @@
 using System;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
@@ -75,4 +75,4 @@ namespace Simulator
         void Print();
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

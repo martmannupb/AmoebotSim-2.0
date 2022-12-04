@@ -1,4 +1,4 @@
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 namespace Algorithms.SmartMaterial
@@ -160,7 +160,7 @@ namespace Algorithms.SmartMaterial
 
     public class SmartMaterialInitializer : InitializationMethod
     {
-        public SmartMaterialInitializer(Simulator.ParticleSystem system) : base(system)
+        public SmartMaterialInitializer(AS2.Sim.ParticleSystem system) : base(system)
         {
 
         }

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 namespace Algorithms.ChiralityCompass
@@ -806,7 +806,7 @@ namespace Algorithms.ChiralityCompass
     // Initialization method
     public class ChiralityAndCompassInitializer : InitializationMethod
     {
-        public ChiralityAndCompassInitializer(Simulator.ParticleSystem system) : base(system)
+        public ChiralityAndCompassInitializer(AS2.Sim.ParticleSystem system) : base(system)
         {
             // Empty
         }

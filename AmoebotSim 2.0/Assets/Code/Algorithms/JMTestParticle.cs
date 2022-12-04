@@ -1,4 +1,4 @@
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 namespace Algorithms.JMTest
@@ -836,7 +836,7 @@ namespace Algorithms.JMTest
     // Initialization method
     public class JMTestInitializer : InitializationMethod
     {
-        public JMTestInitializer(Simulator.ParticleSystem system) : base(system) { }
+        public JMTestInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         public void Generate(int mode = 0)
         {

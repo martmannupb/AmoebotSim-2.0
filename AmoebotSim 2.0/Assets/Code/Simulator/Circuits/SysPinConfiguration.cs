@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     // TODO: Change visibility of members (also other API classes) when circuit computation is finished
@@ -678,4 +678,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

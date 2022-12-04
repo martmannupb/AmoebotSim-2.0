@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     [Serializable]
@@ -94,4 +94,4 @@ namespace Simulator
         public ValueHistoryBondInfo(ValueHistorySaveData<BondMovementInfoList> data) : base(data) { }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

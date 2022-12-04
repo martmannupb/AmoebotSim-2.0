@@ -2,7 +2,7 @@ using System;
 
 /// <summary>
 /// Compressed representation of pin configuration data.
-/// Stores all information stored in a <see cref="SysPinConfiguration"/>
+/// Stores all information stored in a <see cref="AS2.Sim.SysPinConfiguration"/>
 /// instance except the particle reference, particle-specific information
 /// and state flags.
 /// <para>

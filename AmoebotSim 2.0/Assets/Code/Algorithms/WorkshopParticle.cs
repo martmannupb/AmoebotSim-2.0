@@ -1,4 +1,4 @@
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 namespace Algorithms.Workshop
@@ -64,7 +64,7 @@ namespace Algorithms.Workshop
     // Its class name must be specified as the algorithm's GenerationMethod
     public class WorkshopParticleInitializer : InitializationMethod
     {
-        public WorkshopParticleInitializer(Simulator.ParticleSystem system) : base(system) { }
+        public WorkshopParticleInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values

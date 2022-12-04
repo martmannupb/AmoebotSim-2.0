@@ -2,19 +2,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
     /// Developer API for partition sets.
     /// <para>
     /// This is part of the pin configuration API, see
-    /// <see cref="Simulator.PinConfiguration"/>.
+    /// <see cref="AS2.Sim.PinConfiguration"/>.
     /// </para>
     /// <para>
     /// A partition set is a set of connected pins within
     /// a pin configuration. It belongs to an object
-    /// implementing the <see cref="Simulator.PinConfiguration"/>
+    /// implementing the <see cref="AS2.Sim.PinConfiguration"/>
     /// interface and may be changed through methods of
     /// this API or through the pin configuration itself.
     /// <br/>
@@ -24,7 +24,7 @@ namespace Simulator
     public abstract class PartitionSet
     {
         /// <summary>
-        /// The <see cref="Simulator.PinConfiguration"/> to which this
+        /// The <see cref="AS2.Sim.PinConfiguration"/> to which this
         /// partition set belongs.
         /// </summary>
         public abstract PinConfiguration PinConfiguration
@@ -335,4 +335,4 @@ namespace Simulator
         public abstract void ResetColor();
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

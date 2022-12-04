@@ -1,7 +1,7 @@
 using System;
 
 /// <summary>
-/// Container for all data a <see cref="ParticleSystem"/> requires
+/// Container for all data a <see cref="AS2.Sim.ParticleSystem"/> requires
 /// to save and load its complete state.
 /// </summary>
 [Serializable]

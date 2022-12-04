@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     public static class ParticleSystem_Utils
@@ -372,4 +372,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

@@ -1,4 +1,4 @@
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 namespace Algorithms.LineFormation
@@ -878,7 +878,7 @@ namespace Algorithms.LineFormation
     // Initialization method
     public class LineFormationInitializer : InitializationMethod
     {
-        public LineFormationInitializer(Simulator.ParticleSystem system) : base(system) { }
+        public LineFormationInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         public void Generate(int numParticles = 50, float holeProb = 0.3f)
         {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Container for serializing <see cref="ValueHistoryPinConfiguration"/> objects.
+/// Container for serializing <see cref="AS2.Sim.ValueHistoryPinConfiguration"/> objects.
 /// </summary>
 [Serializable]
 public class PinConfigurationHistorySaveData

@@ -1,5 +1,5 @@
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
@@ -109,4 +109,4 @@ namespace Simulator
         void ShiftTimescale(int amount);
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

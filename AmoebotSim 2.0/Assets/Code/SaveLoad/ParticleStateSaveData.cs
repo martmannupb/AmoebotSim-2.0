@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 /// <summary>
-/// Container for all data a <see cref="Particle"/> requires
+/// Container for all data a <see cref="AS2.Sim.Particle"/> requires
 /// to save and load its complete state.
 /// </summary>
 [Serializable]

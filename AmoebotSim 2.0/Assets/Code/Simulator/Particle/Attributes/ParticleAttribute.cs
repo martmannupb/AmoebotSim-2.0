@@ -1,5 +1,5 @@
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
@@ -79,4 +79,4 @@ namespace Simulator
         public static implicit operator T(ParticleAttribute<T> attr) => attr.GetValue();
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

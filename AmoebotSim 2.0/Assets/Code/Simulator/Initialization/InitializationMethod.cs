@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     // TODO: Documentation
@@ -199,4 +199,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
@@ -15,4 +15,4 @@ namespace Simulator
         public AmoebotSimException(string msg) : base(msg) { }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

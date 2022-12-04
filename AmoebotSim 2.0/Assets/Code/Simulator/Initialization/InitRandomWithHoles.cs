@@ -1,5 +1,5 @@
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     public class InitRandomWithHoles : InitializationMethod
@@ -15,4 +15,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

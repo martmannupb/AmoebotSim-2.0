@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     public class InitializationMethodManager
@@ -177,4 +177,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

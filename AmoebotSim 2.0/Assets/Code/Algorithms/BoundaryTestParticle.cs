@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 namespace Algorithms.BoundaryTest

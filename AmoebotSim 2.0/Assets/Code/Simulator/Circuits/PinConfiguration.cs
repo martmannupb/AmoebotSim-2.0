@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     // TODO: Use generic collections instead of (or in addition to) arrays?
@@ -11,7 +11,7 @@ namespace Simulator
     /// Developer API for pin configuration definition.
     /// <para>
     /// Represents a complete pin configuration for a fixed
-    /// expansion state. The object contains <see cref="PartitionSet"/>
+    /// expansion state. The object contains <see cref="AS2.Sim.PartitionSet"/>
     /// and <see cref="Pin"/> instances which are connected such that
     /// changes to one of the objects may cause changes in any of the
     /// other objects. For example, adding a pin to a partition set
@@ -386,4 +386,4 @@ namespace Simulator
         public abstract void ResetPartitionSetColor(int partitionSetIndex);
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

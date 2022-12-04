@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using Simulator;
 using UnityEngine;
 using System;
 using TMPro;
@@ -13,7 +12,7 @@ public class AmoebotSimulator : MonoBehaviour
     public static AmoebotSimulator instance;
 
     // System Data
-    public Simulator.ParticleSystem system;
+    public AS2.Sim.ParticleSystem system;
     public RenderSystem renderSystem;
     // System State
     public bool running = true;
@@ -37,7 +36,7 @@ public class AmoebotSimulator : MonoBehaviour
 
         // Init Renderer + Particle System
         renderSystem = new RenderSystem(this, FindObjectOfType<InputController>());
-        system = new Simulator.ParticleSystem(this, renderSystem);
+        system = new AS2.Sim.ParticleSystem(this, renderSystem);
         // Set Sim Speed (not necessary with the new UI)
         //SetSimSpeed(0.005f);
         //SetSimSpeed(0.5f);

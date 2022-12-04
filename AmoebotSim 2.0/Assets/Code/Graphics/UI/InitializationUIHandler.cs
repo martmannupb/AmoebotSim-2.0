@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro;
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 using System.Linq;
 using System;

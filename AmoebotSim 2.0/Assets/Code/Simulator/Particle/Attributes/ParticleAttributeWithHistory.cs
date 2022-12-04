@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
@@ -153,4 +153,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

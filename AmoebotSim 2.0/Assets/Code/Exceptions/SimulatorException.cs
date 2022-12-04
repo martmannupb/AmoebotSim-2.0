@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
@@ -14,4 +14,4 @@ namespace Simulator
         public SimulatorException(string msg) : base(msg) { }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

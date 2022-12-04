@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     // TODO: Could also define priorities directly using a Priority property
@@ -216,4 +216,4 @@ namespace Simulator
         }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim

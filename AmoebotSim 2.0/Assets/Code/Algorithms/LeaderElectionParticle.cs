@@ -1,4 +1,4 @@
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 
@@ -246,7 +246,7 @@ namespace Algorithms.LeaderElection
 
     public class LeaderElectionInitializer : InitializationMethod
     {
-        public LeaderElectionInitializer(Simulator.ParticleSystem system) : base(system) { }
+        public LeaderElectionInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         public void Generate(int numParticles = 50, float holeProb = 0.3f)
         {

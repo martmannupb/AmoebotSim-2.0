@@ -1,4 +1,4 @@
-using Simulator;
+using AS2.Sim;
 using UnityEngine;
 
 namespace Algorithms.ExpandedCircuitTest
@@ -73,7 +73,7 @@ namespace Algorithms.ExpandedCircuitTest
     // Initialization method
     public class ExpandedCircuitTestInitializer : InitializationMethod
     {
-        public ExpandedCircuitTestInitializer(Simulator.ParticleSystem system) : base(system) { }
+        public ExpandedCircuitTestInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         public void Generate(int numParticles = 10)
         {

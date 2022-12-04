@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Simulator
+namespace AS2.Sim
 {
 
     /// <summary>
@@ -20,4 +20,4 @@ namespace Simulator
         public InvalidActionException(Particle p, string msg) : base(p, msg) { }
     }
 
-} // namespace Simulator
+} // namespace AS2.Sim
