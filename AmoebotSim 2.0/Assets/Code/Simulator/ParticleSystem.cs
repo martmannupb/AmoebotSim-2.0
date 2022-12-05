@@ -6,6 +6,7 @@ using AS2.Algos.JMTest;
 using AS2.Algos.LeaderElection;
 using AS2.Algos.LineFormation;
 
+using AS2.Graphics;
 using UnityEngine;
 
 
