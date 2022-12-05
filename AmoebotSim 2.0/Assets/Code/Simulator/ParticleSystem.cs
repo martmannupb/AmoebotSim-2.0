@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using Algorithms.BoundaryTest;
-using Algorithms.ChiralityCompass;
-using Algorithms.ExpandedCircuitTest;
-using Algorithms.JMTest;
-using Algorithms.LeaderElection;
-using Algorithms.LineFormation;
+using AS2.Algos.BoundaryTest;
+using AS2.Algos.ChiralityCompass;
+using AS2.Algos.ExpandedCircuitTest;
+using AS2.Algos.JMTest;
+using AS2.Algos.LeaderElection;
+using AS2.Algos.LineFormation;
 
 using UnityEngine;
 

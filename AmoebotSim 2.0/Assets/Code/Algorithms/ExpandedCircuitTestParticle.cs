@@ -1,7 +1,7 @@
 using AS2.Sim;
 using UnityEngine;
 
-namespace Algorithms.ExpandedCircuitTest
+namespace AS2.Algos.ExpandedCircuitTest
 {
 
     public class ExpandedCircuitTestParticle : ParticleAlgorithm
@@ -81,4 +81,4 @@ namespace Algorithms.ExpandedCircuitTest
         }
     }
 
-} // namespace Algorithms.ExpandedCircuitTest
+} // namespace AS2.Algos.ExpandedCircuitTest

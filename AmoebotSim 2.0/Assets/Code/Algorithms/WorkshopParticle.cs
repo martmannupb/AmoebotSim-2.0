@@ -1,7 +1,7 @@
 using AS2.Sim;
 using UnityEngine;
 
-namespace Algorithms.Workshop
+namespace AS2.Algos.Workshop
 {
 
     public class WorkshopParticle : ParticleAlgorithm
@@ -79,4 +79,4 @@ namespace Algorithms.Workshop
         }
     }
 
-} // namespace Algorithms.Workshop
+} // namespace AS2.Algos.Workshop

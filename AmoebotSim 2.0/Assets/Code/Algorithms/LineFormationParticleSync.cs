@@ -1,7 +1,7 @@
 using AS2.Sim;
 using UnityEngine;
 
-namespace Algorithms.LineFormation
+namespace AS2.Algos.LineFormation
 {
 
     public class MyMessage : Message
@@ -893,4 +893,4 @@ namespace Algorithms.LineFormation
         }
     }
 
-} // namespace Algorithms.LineFormation
+} // namespace AS2.Algos.LineFormation

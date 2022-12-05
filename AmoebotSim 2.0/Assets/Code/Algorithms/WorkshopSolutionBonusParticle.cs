@@ -1,7 +1,7 @@
 using AS2.Sim;
 using UnityEngine;
 
-namespace Algorithms.WorkshopBonus
+namespace AS2.Algos.WorkshopBonus
 {
 
     public class WSDirectionMessage : Message
@@ -176,4 +176,4 @@ namespace Algorithms.WorkshopBonus
         }
     }
 
-} // namespace Algorithms.WorkshopBonus
+} // namespace AS2.Algos.WorkshopBonus

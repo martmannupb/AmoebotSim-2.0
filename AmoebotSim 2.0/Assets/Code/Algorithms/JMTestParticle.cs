@@ -1,7 +1,7 @@
 using AS2.Sim;
 using UnityEngine;
 
-namespace Algorithms.JMTest
+namespace AS2.Algos.JMTest
 {
 
     public class JMTestParticle : ParticleAlgorithm
@@ -1195,4 +1195,4 @@ namespace Algorithms.JMTest
         }
     }
 
-} // namespace Algorithms.JMTest
+} // namespace AS2.Algos.JMTest

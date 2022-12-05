@@ -1,7 +1,7 @@
 using AS2.Sim;
 using UnityEngine;
 
-namespace Algorithms.SmartMaterial
+namespace AS2.Algos.SmartMaterial
 {
 
     public class SmartMaterialParticle : ParticleAlgorithm
@@ -349,4 +349,4 @@ namespace Algorithms.SmartMaterial
         }
     }
 
-} // namespace Algorithms.SmartMaterial
+} // namespace AS2.Algos.SmartMaterial

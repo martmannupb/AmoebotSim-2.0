@@ -2,7 +2,7 @@ using AS2.Sim;
 using UnityEngine;
 
 
-namespace Algorithms.LeaderElection
+namespace AS2.Algos.LeaderElection
 {
 
     /// <summary>
@@ -254,4 +254,4 @@ namespace Algorithms.LeaderElection
         }
     }
 
-} // namespace Algorithms.LeaderElection
+} // namespace AS2.Algos.LeaderElection

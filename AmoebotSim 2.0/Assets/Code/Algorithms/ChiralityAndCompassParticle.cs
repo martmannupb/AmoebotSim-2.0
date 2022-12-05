@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using AS2.Sim;
 using UnityEngine;
 
-namespace Algorithms.ChiralityCompass
+namespace AS2.Algos.ChiralityCompass
 {
 
     public enum CoinTossResult { HEADS, TAILS, FAILED }
@@ -823,4 +823,4 @@ namespace Algorithms.ChiralityCompass
         }
     }
 
-} // namespace Algorithms.ChiralityCompass
+} // namespace AS2.Algos.ChiralityCompass
