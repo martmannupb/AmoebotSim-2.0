@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using AS2.Sim;
 using UnityEngine;
 
-namespace AS2.Sim
+namespace AS2
 {
 
     // TODO: Documentation
@@ -12,9 +13,9 @@ namespace AS2.Sim
     /// </summary>
     public abstract class InitializationMethod
     {
-        private ParticleSystem system;
+        private AS2.Sim.ParticleSystem system;
 
-        public InitializationMethod(ParticleSystem system)
+        public InitializationMethod(AS2.Sim.ParticleSystem system)
         {
             this.system = system;
         }
@@ -37,7 +38,7 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Tries to get the <see cref="InitializationParticle"/> at the given position.
+        /// Tries to get the <see cref="AS2.Sim.InitializationParticle"/> at the given position.
         /// </summary>
         /// <param name="position">The grid position at which to look for the particle.</param>
         /// <param name="particle">The particle at the given position, if it exists,
@@ -199,4 +200,4 @@ namespace AS2.Sim
         }
     }
 
-} // namespace AS2.Sim
+} // namespace AS2

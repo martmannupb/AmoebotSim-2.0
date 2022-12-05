@@ -1,10 +1,10 @@
 
-namespace AS2.Sim
+namespace AS2
 {
 
     public class InitRandomWithHoles : InitializationMethod
     {
-        public InitRandomWithHoles(ParticleSystem system) : base(system)
+        public InitRandomWithHoles(AS2.Sim.ParticleSystem system) : base(system)
         {
 
         }
@@ -15,4 +15,4 @@ namespace AS2.Sim
         }
     }
 
-} // namespace AS2.Sim
+} // namespace AS2

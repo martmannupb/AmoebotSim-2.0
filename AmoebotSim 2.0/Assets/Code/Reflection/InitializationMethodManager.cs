@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace AS2.Sim
+namespace AS2
 {
 
     public class InitializationMethodManager
@@ -125,12 +125,12 @@ namespace AS2.Sim
             return info.generateMethod.GetParameters();
         }
 
-        public bool GenerateSystem(ParticleSystem system, string algorithmName)
+        public bool GenerateSystem(AS2.Sim.ParticleSystem system, string algorithmName)
         {
             return GenerateSystem(system, algorithmName, new object[0]);
         }
 
-        public bool GenerateSystem(ParticleSystem system, string algorithmName, object[] parameters)
+        public bool GenerateSystem(AS2.Sim.ParticleSystem system, string algorithmName, object[] parameters)
         {
             AlgorithmInfo info = FindAlgorithm(algorithmName);
             if (info == null)
@@ -177,4 +177,4 @@ namespace AS2.Sim
         }
     }
 
-} // namespace AS2.Sim
+} // namespace AS2
