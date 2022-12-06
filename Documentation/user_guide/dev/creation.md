@@ -5,7 +5,13 @@
 Amoebot algorithms are programmed from the perspective of individual Amoebots, i.e., the algorithms do not have access to a global view of the system.
 Every Amoebot in the system runs a separate instance of the algorithm, which defines its entire state and controls its behavior.
 
-TODO
+The simulation runs in *synchronous rounds*, as described on the [Amoebot model pages](~/amoebot_model/home.md).
+Each simulation round is split into two phases: The *movement phase* and the *communication (beep) phase*.
+In each phase, all Amoebots are activated simultaneously, allowing them to perform computations and movement or communication actions based on the system's state at the beginning of the phase.
+The Amoebot behavior during each of the phases is implemented in two methods called [ActivateMove][6] and [ActivateBeep][7], which are the most important parts of any algorithm.
+All changes made during the activations take effect *at the end of the phase*.
+Because all Amoebots are activated at the same time, they are unaware of any changes made by their neighbors until the next phase.
+The round computation process is explained in more detail on the [reference pages](~/model_ref/rounds.md).
 
 
 ## The Algorithm Generator
@@ -39,15 +45,15 @@ After a short refresh, your new algorithm file should be visible in the Project 
 
 ## Algorithm File Structure
 
-Double-click on the generated algorithm file to open it in your IDE.
+Find the generated algorithm file in `Assets/Code/Algorithms` using the Project window and double-click it to open it in your IDE.
 The file contains a blank algorithm template in which all optional features are commented out.
 In the following, we will go through the structure of this file and explain the meaning of each component.
 
 
 ### The Algorithm Class
 
-The largest part of the file is the algorithm class: A class with the name you entered in the Algorithm Generator which inherits from [Particle Algorithm][1].
-The [Particle Algorithm][1] class is the base class for all Amoebot algorithms and provides the API for defining the Amoebot's state and behavior.
+The largest part of the file is the algorithm class: A class with the name you entered in the Algorithm Generator which inherits from [ParticleAlgorithm][1].
+The [ParticleAlgorithm][1] class is the base class for all Amoebot algorithms and provides the API for defining the Amoebot's state and behavior.
 
 
 #### Properties
@@ -112,7 +118,7 @@ public void Init(<PARAMETERS WITH DEFAULT VALUES>)
 ```
 
 If you want to implement a custom initialization procedure, you can implement a method with the name `Init` and a list of parameters with simple types and default values.
-Simple types are types that can be represented as particle attributes, e.g., `int`, `bool`, `enum`s, `float` and `string`.
+Simple types are types that can be represented as particle attributes, e.g., `int`, `bool`, `enum`, `float` and `string`.
 The `Init` method will be called immediately after the constructor with the parameter values that were set in the Initialization Mode.
 It should be used to override the initial attribute values set in the constructor depending on the given parameters.
 Please refer to the [Implementation Walkthrough](demo.md) for details on how to setup custom initialization.
