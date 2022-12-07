@@ -4,6 +4,7 @@ On this page, we will demonstrate how to implement a simple algorithm from scrat
 The focus of this demo is showing how conceptual ideas for an algorithm are translated into code for the simulation environment.
 If you have set up the simulator according to the [Installation Guide](~/installation_guide/home.md), you can follow the walkthrough and experiment by changing the code along the way.
 
+
 ## A Simple Demo Algorithm
 
 Before we can start writing code, we need a clear idea of what the algorithm should do.
@@ -15,7 +16,7 @@ These questions should be answered before we start with the implementation.
 
 ![!Demo Algorithm](~/images/demo_final.gif "The desired algorithm behavior")
 
-For this example, we want the Amoebots to communicate using circuits and to perform simple joint movements.
+For this example, we want the Amoebots to communicate using circuits and to perform basic joint movements.
 To keep it simple, we will assume common chirality and compass alignment.
 The initial configuration of the system will be a line of particles parallel to the West-East axis.
 The idea for the algorithm is the following:
@@ -61,6 +62,7 @@ To start with, we uncomment the `DemoParticleInitializer` class at the bottom of
 public class DemoParticle : ParticleAlgorithm
 {
     ...
+    // If the algorithm has a special generation method, specify its full name here
     public static new string GenerationMethod => typeof(DemoParticleInitializer).FullName;
     ...
 }
@@ -131,15 +133,15 @@ public class DemoParticle : ParticleAlgorithm
     ...
 }
 ```
-Now, every particle has a `bool` attribute with the initial value `false`.
+Now, every particle has a `bool` attribute called `isLeader` with the initial value `false`.
 The attribute is `public` so that a particle can check whether its neighbor is the leader or not (this is not necessary for the algorithm though).
-It will also be displayed in the Particle Panel during the simulation, where its value can be edited and displayed for all particles simultaneously.
+It will also be displayed as "Is Leader" in the Particle Panel during the simulation, where its value can be edited and displayed for all particles simultaneously.
 To learn more about attributes, please refer to the [Particle Attribute reference page](~/model_ref/attrs.md).
 Note that we also set the color of the particle to [`ColorData.Particle_Blue`][5].
 This is optional, but it makes the algorithm more interesting to look at and colors can be very useful for visualizing different states or roles of the particles.
 The [`ColorData`][4] class contains several standard colors for particles.
 
-Next, we need to determine a leader and initialize its `isLeader` attribute to `true`.
+Next, we need to determine a leader and set its `isLeader` attribute to `true`.
 This is where the `Init` method of the particle class becomes relevant.
 It allows us to change attribute values based on parameters that can be passed to individual particles by the generation method or even manually through the UI.
 
@@ -162,10 +164,10 @@ In the Initialization Mode, all particles are placed as [`InitializationParticle
 When the "Start" button is pressed, the [`InitializationParticles`][6] are turned into proper particles and their attributes are passed as parameters to the `Init` method of those particles.
 Thus, we could now manually determine a leader by selecting one of the particles in the Init Mode, setting its `leader` attribute to `true` and pressing "Start":
 ![Selecting a leader manually](~/images/demo_init_manual_leader.png "Selecting a leader manually in Init Mode")
-![Selecting a leader manually](~/images/demo_init_manual_leader_2.png "Selecting a leader manually in Init Mode")
+![Selected leader during simulation](~/images/demo_init_manual_leader_2.png "Manually selected leader in Simulation Mode")
 
-However, we want this to be done automatically by the generation method.
-For this, we first need to find a random particle after placing the line in the `Generate` method of the initialization class.
+However, we want this to be done automatically by the initialization method.
+For this, we first need to find a random particle from the line we placed in the `Generate` method of the initialization class.
 The [`GetParticles`][7] method returns an array containing all [`InitializationParticles`][6] that have been placed so far.
 We can use the length of this array and Unity's `Random.Range(int min, int maxExclusive)` method to get a random particle.
 Having selected a particle, we can set its `leader` attribute by calling its [`SetAttribute`][8] method:
@@ -188,9 +190,44 @@ Note that it is *not* the name of the final particle's attribute (`isLeader`)!
 If we save the file and run the simulator now, the generation method will automatically determine a random leader each time we generate the system by clicking "Generate".
 The selected leader particle knows that it is the leader because its `isLeader` attribute is set to `true`.
 
+
 ## Implementing the Algorithm Behavior
 
+Now that the system is initialized correctly, we can implement the particle activation methods to achieve the desired behavior.
+This is what the algorithm should do:
+- The leader should decide randomly whether to perform a movement
+- If a movement shall be performed, the leader will send a beep on the global circuit (which has to be established first)
+- Every particle will perform a movement if it receives a beep
+	- Expansion to the East direction when contracted, contraction into the tail if expanded
+
+We will extend the algorithm incrementally until this behavior is achieved.
+
+### Deciding Randomly When to Move
+
+We want the leader particle to decide randomly whether or not the system should move in each simulation round.
+For now, we will simulate a coin toss for the random decision.
+Unity's `Random.Range(float min, float max)` method returns a uniformly random value between `min` and `max`, which means that the probability of a value in the range $[0,1]$ being less than $0.5$ will be $0.5$.
+Because the leader should send a beep when it decides to move, it makes sense to put this code into the beep activation method:
+```csharp
+public override void ActivateBeep()
+{
+    if (isLeader)  // Only the leader should run this code
+    {
+        if (Random.Range(0.0f, 1.0f) < 0.5f)
+        {
+            // Decided to move => Send a beep on the global circuit
+        }
+    }
+}
+```
+
+The beep has to be received by all particles in the system.
+Before sending a beep, we need to create a circuit that connects the particles.
+Due to the line structure of this system, we could set up a circuit that connects all particles along the line by putting the two pins in East and West direction into one partition set.
+However, it is easier to simply put all pins into one partition set, because the other pins are not used for anything else anyway.
+
 TODO
+
 
 
 [1]: xref:Global.InitializationMethod.AddParticle(Vector2Int,Direction,Initialization.Chirality,Initialization.Compass)
