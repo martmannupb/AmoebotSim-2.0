@@ -153,7 +153,7 @@ public void Init(bool leader = false)
     if (leader)
     {
         isLeader.SetValue(true);
-        SetMainColor(ColorData.Particle_Yellow);
+        SetMainColor(ColorData.Particle_Green);
     }
 }
 ```
@@ -207,6 +207,7 @@ We will extend the algorithm incrementally until this behavior is achieved.
 We want the leader particle to decide randomly whether or not the system should move in each simulation round.
 For now, we will simulate a coin toss for the random decision.
 Unity's `Random.Range(float min, float max)` method returns a uniformly random value between `min` and `max`, which means that the probability of a value in the range $[0,1]$ being less than $0.5$ will be $0.5$.
+There are other ways to simulate a coin toss, but this approach allows us to change the movement probability later.
 Because the leader should send a beep when it decides to move, it makes sense to put this code into the beep activation method:
 ```csharp
 public override void ActivateBeep()
@@ -221,12 +222,187 @@ public override void ActivateBeep()
 }
 ```
 
+### Setting Up the Communication
+
 The beep has to be received by all particles in the system.
 Before sending a beep, we need to create a circuit that connects the particles.
 Due to the line structure of this system, we could set up a circuit that connects all particles along the line by putting the two pins in East and West direction into one partition set.
 However, it is easier to simply put all pins into one partition set, because the other pins are not used for anything else anyway.
+The [`PinConfiguration`][9] class has a [`SetToGlobal(int ps)`][10] method that will put all pins into the partition set with index `ps`.
+Thus, setting up the circuit is as simple as calling this method in every beep activation:
+```csharp
+public override void ActivateBeep()
+{
+    PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
+    pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
+    SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
 
-TODO
+    ...
+}
+```
+We use the partition set with ID $0$ to hold the pins.
+Note that it may not be necessary to set up a new pin configuration in each round: If no movement is performed in a round, the particles keep their pin configurations and can reuse them in the next round.
+However, there is no disadvantage in setting the pin configuration explicitly in each round.
+You can read more about the pin configuration system on the [Pin Configuration reference page](~/model_ref/pin_cfgs.md).
+
+Now, the leader can use its partition set $0$ to send a beep if it decides to move:
+```csharp
+public override void ActivateBeep()
+{
+    PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
+    pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
+    SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
+
+    if (isLeader)  // Only the leader should run this code
+    {
+        if (Random.Range(0.0f, 1.0f) < 0.5f)
+        {
+            // Decided to move => Send a beep on the global circuit
+            pc.SendBeepOnPartitionSet(0);
+        }
+    }
+}
+```
+
+If we run the algorithm now, the particles will set up the global circuit and the leader will irregularly send a beep:
+
+![The established global circuit](~/images/demo_circuit_setup.png "The established global circuit")
+![Irregular beeps](~/images/demo_circuit_beep.png "Irregular beeps indicated by the white flashes")
+
+The visual representation of the pin configurations clearly shows that all pins of each particle are contained in a single partition set.
+When the leader sends a beep, its partition set is highlighted with a white dot and all connection lines of the circuit are flashing white.
+
+### Performing the Movements
+
+The algorithm is almost finished now, we only need to get the particles moving when they receive a beep.
+As explained in the [Round Simulation reference](~/model_ref/rounds.md) and according to the circuit model, beeps and messages sent in the beep phase can only be received in the following movement phase (the only exception is that they can still be received in the next beep phase if the particle has not expanded or contracted in the move phase).
+Thus, we have to check for received beeps in the movement activation method:
+```csharp
+public override void ActivateMove()
+{
+    PinConfiguration pc = GetCurrentPinConfiguration();
+    if (pc.ReceivedBeepOnPartitionSet(0))
+    {
+        // Received a beep => Perform movement
+    }
+}
+```
+We can use partition set $0$ because we have set up this partition set to contain the pins in the previous beep phase.
+In the first simulation round (recall that the simulation starts with a move phase), partition set $0$ contains only a single pin, but because no beeps have been sent at that point, no beeps can be received.
+Note that we do not have to distinguish between the leader and the other particles because the leader will receive the beep on partition set $0$ just like any other particle on the circuit.
+
+We want contracted particles to expand East and expanded particles to contract into their tail.
+The expansion status of a particle can be checked with the [`IsExpanded`][11] and [`IsContracted`][12] methods.
+Simple movements are performed using the [`Expand(Direction d)`][13] and [`ContractTail`][14] or [`ContractHead`][15] methods.
+Using these methods to perform our desired movements is straightforward:
+```csharp
+public override void ActivateMove()
+{
+    PinConfiguration pc = GetCurrentPinConfiguration();
+    if (pc.ReceivedBeepOnPartitionSet(0))
+    {
+        // Received a beep => Perform movement
+        if (IsContracted())  // Expand East if contracted
+            Expand(Direction.E);
+        else                 // Contract into tail if expanded
+            ContractTail();
+    }
+}
+```
+We do not have to care about bonds because there are no bonds that could hinder our movements.
+In fact, releasing any of the existing bonds would break the connectivity of the system and lead to an error.
+Please refer to the [Bonds and Joint Movements reference](~/model_ref/bonds_jm.md) for a more detailed explanation of bonds.
+
+With the movements in place, our demo algorithm is complete!
+Here is the final code:
+```csharp
+using UnityEngine;
+
+public class DemoParticle : ParticleAlgorithm
+{
+    // This is the display name of the algorithm (must be unique)
+    public static new string Name => "Demo Algorithm";
+
+    // Specify the number of pins (may be 0)
+    public override int PinsPerEdge => 1;
+
+    // If the algorithm has a special generation method, specify its full name here
+    public static new string GenerationMethod => typeof(DemoParticleInitializer).FullName;
+
+    // Declare attributes here
+    public ParticleAttribute<bool> isLeader;
+
+    public DemoParticle(Particle p) : base(p)
+    {
+        isLeader = CreateAttributeBool("Is Leader", false);
+
+        SetMainColor(ColorData.Particle_Blue);
+    }
+
+    // Implement this if the particles require special initialization
+    // The parameters will be converted to particle attributes for initialization
+    public void Init(bool leader = false)
+    {
+        if (leader)
+        {
+            isLeader.SetValue(true);
+            SetMainColor(ColorData.Particle_Green);
+        }
+    }
+
+    // The movement activation method
+    public override void ActivateMove()
+    {
+        PinConfiguration pc = GetCurrentPinConfiguration();
+        if (pc.ReceivedBeepOnPartitionSet(0))
+        {
+            // Received a beep => Perform movement
+            if (IsContracted())  // Expand East if contracted
+                Expand(Direction.E);
+            else                 // Contract into tail if expanded
+                ContractTail();
+        }
+    }
+
+    // The beep activation method
+    public override void ActivateBeep()
+    {
+        PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
+        pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
+        SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
+
+        if (isLeader)  // Only the leader should run this code
+        {
+            if (Random.Range(0.0f, 1.0f) < 0.5f)
+            {
+                // Decided to move => Send a beep on the global circuit
+                pc.SendBeepOnPartitionSet(0);
+            }
+        }
+    }
+}
+
+// Use this to implement a generation method for this algorithm
+// Its class name must be specified as the algorithm's GenerationMethod
+public class DemoParticleInitializer : InitializationMethod
+{
+    public DemoParticleInitializer(ParticleSystem system) : base(system) { }
+
+    // This method implements the system generation
+    // Its parameters will be shown in the UI and they must have default values
+    public void Generate(int numParticles = 10)
+    {
+        PlaceParallelogram(Vector2Int.zero, Direction.E, numParticles);
+
+        InitializationParticle[] particles = GetParticles();
+        if (particles.Length > 0)
+        {
+            int randIdx = Random.Range(0, particles.Length);
+            particles[randIdx].SetAttribute("leader", true);
+        }
+    }
+}
+```
 
 
 
@@ -238,3 +414,10 @@ TODO
 [6]: xref:Global.InitializationParticle
 [7]: xref:Global.InitializationMethod.GetParticles
 [8]: xref:Global.InitializationParticle.SetAttribute(System.String,System.Object)
+[9]: xref:Global.PinConfiguration
+[10]: xref:Global.PinConfiguration.SetToGlobal(System.Int32)
+[11]: xref:Global.ParticleAlgorithm.IsExpanded
+[12]: xref:Global.ParticleAlgorithm.IsContracted
+[13]: xref:Global.ParticleAlgorithm.Expand(Direction)
+[14]: xref:Global.ParticleAlgorithm.ContractTail
+[15]: xref:Global.ParticleAlgorithm.ContractHead
