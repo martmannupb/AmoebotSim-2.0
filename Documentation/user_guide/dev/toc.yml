@@ -2,3 +2,5 @@
   href: creation.md
 - name: Implementation Walkthrough
   href: demo.md
+- name: Advanced Features
+  href: advanced.md

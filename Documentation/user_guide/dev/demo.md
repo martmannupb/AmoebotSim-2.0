@@ -404,6 +404,14 @@ public class DemoParticleInitializer : InitializationMethod
 }
 ```
 
+## Next Steps
+
+Congratulations!
+If you completed this walkthrough successfully, you are now able to start developing your own Amoebot algorithms.
+You can use the API documentation and the reference pages to learn more about AmoebotSim 2.0 and try out your own ideas.
+However, there are several features of the simulation environment that have not been discussed in this guide and that might be useful, especially for more complex algorithms.
+The [Advanced Features guide](advanced.md) demonstrates some of these features by extending the demo algorithm we developed in this walkthrough.
+
 
 
 [1]: xref:Global.InitializationMethod.AddParticle(Vector2Int,Direction,Initialization.Chirality,Initialization.Compass)
