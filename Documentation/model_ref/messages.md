@@ -1,5 +1,11 @@
 # Model Reference: Messages
 
+Theoretically, information that can be encoded in $k$ bits can be sent in $k$ rounds by reserving one round for transmitting each bit as a beep (technically, $2k$ rounds are needed because beeps can only be sent in the beep rounds).
+It is possible to implement such a method by using a counter attribute and some other attributes to store the received information and the data that still has to be sent.
+But because this is tedious to implement and slows down the simulation, and since sending more complex data is a rather common requirement, the simulator provides an abstraction that allows the transmission of constant-size data packages, called *Messages*, in a single round.
+
+TODO
+
 - Circuits can be used to send beeps and messages
 - Beeps are the simplest form of communication, each beep is only one bit of information
 - Messages can be used to send more information in a single round
@@ -16,6 +22,7 @@
 - Implementation
 	- New message types are defined as subclasses of the `Message` class
 	- The subclass must meet several requirements:
+		- It must have a parameterless default constructor
 		- It must implement a `Copy()` method that returns a deep copy of the message
 		- It must be serializable for the save/load feature to work
 			- Easy to accomplish by using only simple data types and no data structures
@@ -32,6 +39,12 @@
 	    public IntMessage(int v)
 	    {
 	        val = v;
+	    }
+
+	    // Required parameterless default constructor
+	    public IntMessage()
+	    {
+	        val = 0;
 	    }
 
 	    public override Message Copy()
