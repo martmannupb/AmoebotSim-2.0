@@ -4,8 +4,8 @@ This page explains features that were not demonstrated in the [Implementation Wa
 We will use the demo algorithm implemented in the walkthrough as a basis and extend it with new functionality.
 The main topics that will be discussed here are:
 - Printing log messages
-- Using the message system
-- Releasing bonds to allow specific movements
+- Using the Message system
+- Marking and releasing bonds to allow specific movements
 
 
 ## Printing Log Messages
@@ -192,7 +192,7 @@ public class DemoParticle : ParticleAlgorithm
 This is *not* a state attribute of the particles because it is not a [`ParticleAttribute`][11].
 Constants and hyper-parameters like this should always be `static` and `readonly`.
 
-When the leader decides that a movement should be performed, it can simply determine a random index of the array.
+When the leader decides that a movement should be performed, it can simply determine a random index in the array.
 It then has to create a Message object and send it on the global circuit:
 ```csharp
 public override void ActivateBeep()
@@ -217,7 +217,7 @@ public override void ActivateBeep()
     }
 }
 ```
-Note that the leader will choose a direction even if the particles are expanded, in which case they should still contract into their tail and the chosen direction will be ignored.
+Note that the leader will choose a direction even if the particles are expanded, in which case they should still just contract into their tail and the chosen direction will be ignored.
 
 
 We can check whether we have received a Message on a partition set using the [`ReceivedMessageOnPartitionSet`][12] method.
@@ -242,21 +242,120 @@ public override void ActivateMove()
     }
 }
 ```
-Because [`GetReceivedMessageOfPartitionSet`][13] returns an object of type [`Message`][6], we need to cast it to our own Message type `DemoDirectionMsg` to access the stored direction.
+Because [`GetReceivedMessageOfPartitionSet`][13] returns the base type [`Message`][6], we need to cast it to our own Message type `DemoDirectionMsg` to access the stored direction.
+If we run this algorithm now, the behavior will be the same as before, but the log output should indicate that the leader chooses a movement direction and sends it to all particles.
 
 
+## Marking and Releasing Bonds
 
-## Releasing Bonds
+Now that all particles know the movement direction, we can implement the actual movements.
+Depending on the movement direction, the bonds may have to be set up differently.
+For the East direction, we already know that the movements are fine without changing any bonds.
+However, if we replace the fixed movement direction by North-North East, we get the following result:
+
+![North-North East movement without changing bonds](~/images/adv_nne_wrong.png "North-North East movement without changing bonds")
+
+Depending on the use case, this might be exactly what we want, but for this example, we want the particles to push each other and perform a proper joint movement in which the distance traveled by the easternmost particle increases with the number of particles in the line.
+The reason why this is not already happening is that the bonds are not marked by the expanding particles.
+As we can see in the image above, the bonds (indicated by the thick red connections) always connect the tails of two particles.
+This means that there is no relative movement between any two particles in the system, the particles hold each other in place instead.
+
+To change this, each expanding particle has to mark its Eastern bond, which will cause it to push the Eastern neighbor particle and thereby create a relative movement:
+```csharp
+public override void ActivateMove()
+{
+    ...
+    if (IsContracted())
+    {
+        MarkBond(Direction.E);
+        Expand(moveDir);
+    }
+    ...
+}
+```
+Note that we do not have to mark the bond if the movement direction is East because in this case, the bond would be marked automatically anyway.
+Thus, marking the bond for every movement direction does not cause any problems.
+The resulting behavior is the joint movement we wanted:
+
+![North-North East movement with marked East bond](~/images/adv_nne_right.png "North-North East movement with marked East bond")
+
+The Eastern bond of each particle has moved with its head while the Western bond has stayed at the tail, creating a chain of particles pushing each other North-North East.
+
+### Releasing Bonds
+
+The contraction movements for all current movement directions cause no problems because each particle is only connected to each neighbor by a single bond and because the bonds are on opposite sides of the particle.
+To demonstrate a case in which bonds have to be released to allow a movement, we will add two additional movement directions: North-North West and South-South West.
+First, we add the new directions to the array of allowed directions:
+```csharp
+public class DemoParticle : ParticleAlgorithm
+{
+    static readonly Direction[] movementDirs = new Direction[] { Direction.E, Direction.NNE, Direction.SSE, Direction.NNW, Direction.SSW };
+    ...
+}
+```
+If we run the algorithm now, the particles will expand into the new directions correctly, but when they should contract, an error message is logged, saying "Expanded particle with three bonds to expanded neighbor tries to contract." (or something similar).
+This is because at the beginning of a round, all possible bonds are active, and after a movement in direction North-North West or South-South West, there will be three bonds between two expanded neighbors:
+
+<img src="~/images/adv_nnw_bonds.png" alt="Bonds after North-North West movement" title="Bonds after North-North West movement" width="300"/>
+
+There is no way in which all of these bonds could behave consistently when any of the particles contract.
+To fix this, we need to figure out which bonds must be released such that a contraction will lead back to the original line structure.
+In this case, the orientation of the bonds is helpful: Originally, all bonds are oriented horizontally, i.e., the bonds are parallel to the West-East axis.
+Because bonds can only rotate in handover movements (which we do not have here), we must keep the horizontal bonds and release all non-horizontal bonds:
+
+<img src="~/images/adv_nnw_bonds_marked.png" alt="Bonds to keep and to release" title="Bonds to keep (green) and to release (red)" width="300"/>
+
+The green bonds must be kept and the red ones must be released.
+For the South-South West direction, the situation is very similar, but the bonds to be released are oriented on a different axis.
+
+To fix the error, we release the bonds in these directions, depending on the current expansion direction.
+The [`HeadDirection`][14] method returns the (local) direction of the particle's head relative to its tail.
+Because all particles have the same chirality and compass orientation, we can use this direction to determine which bonds have to be released.
+The final movement activation method looks like this:
+```csharp
+public override void ActivateMove()
+{
+    PinConfiguration pc = GetCurrentPinConfiguration();
+    if (pc.ReceivedMessageOnPartitionSet(0))  // Check for received Message
+    {
+        // Received a Message => Read direction
+        Message msg = pc.GetReceivedMessageOfPartitionSet(0);
+        Direction moveDir = ((DemoDirectionMsg)msg).dir;  // Typecast to our Message type
+        Debug.Log("Received Message with direction " + moveDir);
+
+        // Now perform the movement
+        if (IsContracted())  // Expand if contracted
+        {
+            MarkBond(Direction.E);
+            Expand(moveDir);
+        }
+        else                 // Contract into tail if expanded
+        {
+            // Release bonds if necessary
+            if (HeadDirection() == Direction.NNW)
+            {
+                ReleaseBond(Direction.NNE, true);
+                ReleaseBond(Direction.NNE, false);
+                ReleaseBond(Direction.SSW, true);
+                ReleaseBond(Direction.SSW, false);
+            }
+            else if (HeadDirection() == Direction.SSW)
+            {
+                ReleaseBond(Direction.NNW, true);
+                ReleaseBond(Direction.NNW, false);
+                ReleaseBond(Direction.SSE, true);
+                ReleaseBond(Direction.SSE, false);
+            }
+            ContractTail();
+        }
+    }
+}
+```
+
+This concludes our extensions of the demo algorithm.
+You can read more about bonds and joint movements on the corresponding [reference page](~/model_ref/bonds_jm.md).
 
 
-
-
-TODO
-
-- More movement directions
-	- Decide for random direction
-	- Create custom Message to send direction
-	- Setup bonds to allow other movement directions
 
 [1]: xref:Global.Log
 [2]: xref:Global.Log.Debug(System.String)
@@ -271,3 +370,4 @@ TODO
 [11]: xref:Global.ParticleAttribute`1
 [12]: xref:Global.PinConfiguration.ReceivedMessageOnPartitionSet(System.Int32)
 [13]: xref:Global.PinConfiguration.GetReceivedMessageOfPartitionSet(System.Int32)
+[14]: xref:Global.ParticleAlgorithm.HeadDirection
