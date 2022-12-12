@@ -30,6 +30,9 @@ public class SettingsUIHandler : MonoBehaviour
         InitSettings();
     }
 
+    /// <summary>
+    /// Initializes the settings UI. Dynamically sets up all the settings with all their input fields.
+    /// </summary>
     private void InitSettings()
     {
         // Defaults _________________________
@@ -58,7 +61,7 @@ public class SettingsUIHandler : MonoBehaviour
         UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, "Camera Angle", 0f, 11f, 0f, true);
         setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
         // Circuit Connections Look
-        UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, "Circuit Border", SettingsGlobal.circuitBorderActive);
+        UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, "Circuit Border", RenderSystem.flag_circuitBorderActive);
         setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
         // Graph View Outter Ring
         UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, "Circular Ring", RenderSystem.flag_showCircuitViewOutterRing);
@@ -68,6 +71,11 @@ public class SettingsUIHandler : MonoBehaviour
         setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
     }
 
+    /// <summary>
+    /// Called by a setting callback when a setting has been changed.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="value"></param>
     private void SettingChanged_Value(string name, float value)
     {
         switch (name)
@@ -83,6 +91,11 @@ public class SettingsUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called by a setting callback when a setting has been changed.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="text"></param>
     private void SettingChanged_Text(string name, string text)
     {
         switch (name)
@@ -110,6 +123,11 @@ public class SettingsUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called by a setting callback when a setting has been changed.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="isOn"></param>
     private void SettingChanged_Toggle(string name, bool isOn)
     {
         switch (name)
@@ -134,7 +152,7 @@ public class SettingsUIHandler : MonoBehaviour
                 }
                 break;
             case "Circuit Border":
-                SettingsGlobal.circuitBorderActive = isOn;
+                RenderSystem.flag_circuitBorderActive = isOn;
                 // Reinit RenderBatches to apply changes
                 uiHandler
                     .sim
@@ -157,6 +175,11 @@ public class SettingsUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called by a setting callback when a setting has been changed.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="value"></param>
     private void SettingChanged_Dropdown(string name, string value)
     {
         switch (name)
@@ -167,25 +190,20 @@ public class SettingsUIHandler : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// Activates/Deactivates the settings panel depending on its active state.
+    /// </summary>
     public void Button_SettingsPressed()
     {
         settingsPanel.SetActive(!settingsPanel.activeInHierarchy);
     }
 
+    /// <summary>
+    /// Closes the settings panel.
+    /// </summary>
     public void Close()
     {
         settingsPanel.SetActive(false);
     }
-
-
-
-
-
-
-
-
-    // Setting Callbacks =========================
-
-    
 
 }

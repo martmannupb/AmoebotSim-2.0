@@ -32,6 +32,11 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
         UpdateSystem();
     }
 
+    /// <summary>
+    /// Updates the background grid. Call this once per frame.
+    /// Note: This method only takes a lot of time if the system is displayed and the camera changes, so everything is regenerated.
+    /// Recommendation: Disable camera movement if this is active.
+    /// </summary>
     public void UpdateSystem()
     {
         // Check if active
@@ -103,6 +108,9 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// Toggles the background grid on/off.
+    /// </summary>
     public void ToggleBackgroundGrid()
     {
         if(isActive == false)
@@ -123,6 +131,10 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
         isActive = !isActive;
     }
 
+    /// <summary>
+    /// Returns true if the grid is active.
+    /// </summary>
+    /// <returns></returns>
     public bool IsActive()
     {
         return isActive;

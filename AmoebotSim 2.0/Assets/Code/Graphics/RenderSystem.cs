@@ -47,6 +47,7 @@ public class RenderSystem
     public static bool flag_showCircuitView = true;
     public static bool flag_showBonds = true;
     public static bool flag_showCircuitViewOutterRing = true;
+    public static bool flag_circuitBorderActive = false;
 
     // Dynamic Data _____
     public static float data_particleMovementFinishedTimestamp;
@@ -85,6 +86,9 @@ public class RenderSystem
         rendererUI = new RendererUI(sim, inputController);
     }
 
+    /// <summary>
+    /// The render loop of the render system. This is called once per frame.
+    /// </summary>
     public void Render()
     {
         // Calculate Progress
@@ -138,7 +142,9 @@ public class RenderSystem
         //if(animationsOn == false) data_hexagonalAnimationDuration = 0f;
     }
 
-
+    /// <summary>
+    /// Toggles through the several view types like hexagonal, circular and graph view.
+    /// </summary>
     public void ToggleViewType()
     {
         switch (setting_viewType)
@@ -157,37 +163,62 @@ public class RenderSystem
         }
     }
 
+    /// <summary>
+    /// Returns the current view type.
+    /// </summary>
+    /// <returns></returns>
     public ViewType GetCurrentViewType()
     {
         return setting_viewType;
     }
 
+    /// <summary>
+    /// Toggles the circuit view on and off.
+    /// </summary>
     public void ToggleCircuits()
     {
         flag_showCircuitView = !flag_showCircuitView;
     }
 
+    /// <summary>
+    /// Toggles the bonds on and off.
+    /// </summary>
     public void ToggleBonds()
     {
         flag_showBonds = !flag_showBonds;
     }
 
+    /// <summary>
+    /// Tells you if the circuits are currently visible.
+    /// </summary>
+    /// <returns></returns>
     public bool IsCircuitViewActive()
     {
         return flag_showCircuitView;
     }
 
+    /// <summary>
+    /// Returns true if the bonds are currently shown.
+    /// </summary>
+    /// <returns></returns>
     public bool AreBondsActive()
     {
         return flag_showBonds;
     }
 
+    /// <summary>
+    /// Updates the anti-aliasing setting of the graphical interface.
+    /// </summary>
+    /// <param name="value">0 = off, 2,4,8 = Anti-Aliasing Setting</param>
     public void SetAntiAliasing(int value)
     {
         if(value == 0 || value == 2 || value == 4 || value == 8) setting_antiAliasing = value;
         QualitySettings.antiAliasing = setting_antiAliasing;
     }
 
+    /// <summary>
+    /// Toggles through the anti-aliasing in the following order 0->2->4->8->0 ...
+    /// </summary>
     public void ToggleAntiAliasing()
     {
         switch (setting_antiAliasing)
@@ -208,11 +239,18 @@ public class RenderSystem
         QualitySettings.antiAliasing = setting_antiAliasing;
     }
 
+    /// <summary>
+    /// Returns the current anti-aliasing setting.
+    /// </summary>
+    /// <returns></returns>
     public int GetAntiAliasing()
     {
         return setting_antiAliasing;
     }
 
+    /// <summary>
+    /// Increments the anti-aliasing.
+    /// </summary>
     public void AntiAliasing_Incr()
     {
         switch (setting_antiAliasing)
@@ -233,6 +271,9 @@ public class RenderSystem
         QualitySettings.antiAliasing = setting_antiAliasing;
     }
 
+    /// <summary>
+    /// Decrements the anti-aliasing.
+    /// </summary>
     public void AntiAliasing_Decr()
     {
         switch (setting_antiAliasing)

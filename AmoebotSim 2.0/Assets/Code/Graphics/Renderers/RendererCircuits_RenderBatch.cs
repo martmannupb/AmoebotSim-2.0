@@ -72,7 +72,7 @@ public class RendererCircuits_RenderBatch
                 lineMaterial = MaterialDatabase.material_circuit_line;
                 break;
             case PropertyBlockData.LineType.ExternalLine:
-                lineMaterial = SettingsGlobal.circuitBorderActive ? MaterialDatabase.material_circuit_lineConnector : MaterialDatabase.material_circuit_line;
+                lineMaterial = RenderSystem.flag_circuitBorderActive ? MaterialDatabase.material_circuit_lineConnector : MaterialDatabase.material_circuit_line;
                 break;
             case PropertyBlockData.LineType.BondHexagonal:
                 lineMaterial = MaterialDatabase.material_bond_lineHexagonal;

@@ -54,6 +54,9 @@ public class WorldSpaceUIHandler : MonoBehaviour
     // Pooling
     private Stack<GameObject> pool_particleTextUI = new Stack<GameObject>();
 
+    /// <summary>
+    /// The type of the currently set overlay.
+    /// </summary>
     public enum TextType
     {
         Attribute, Chirality, CompassDir, Text
@@ -132,6 +135,10 @@ public class WorldSpaceUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Displays the currently set overlay for a given particle.
+    /// </summary>
+    /// <param name="particle">The particle for which the overlay should be displayed.</param>
     private void DisplayTextForParticle(IParticleState particle)
     {
         ParticleTextUIData data = particleTextUIData[particle];
@@ -186,6 +193,13 @@ public class WorldSpaceUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Adds a particle to the overlay system.
+    /// </summary>
+    /// <param name="particle">The particle to add.</param>
+    /// <param name="particlePosition">The initial position of the particle.</param>
+    /// <param name="isVisible">If the particle overlay is initially visible.</param>
+    /// <returns></returns>
     public GameObject AddParticleTextUI(IParticleState particle, Vector2 particlePosition, bool isVisible = true)
     {
         GameObject go = PoolCreate_particleTextUI(particle, isVisible);
@@ -194,6 +208,11 @@ public class WorldSpaceUIHandler : MonoBehaviour
         return go;
     }
 
+    /// <summary>
+    /// Removes a particle from the overlay system.
+    /// </summary>
+    /// <param name="particle">The particle to remove.</param>
+    /// <returns></returns>
     public bool RemoveParticleTextUI(IParticleState particle)
     {
         if(particleTextUIData.ContainsKey(particle) == false)
@@ -206,6 +225,11 @@ public class WorldSpaceUIHandler : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Updates the particle overlay for a single particle with a text.
+    /// </summary>
+    /// <param name="particle">The particle for which the overlay should be updated.</param>
+    /// <param name="text">The text to display.</param>
     private void UpdateParticleText(IParticleState particle, string text)
     {
         ParticleTextUIData data = particleTextUIData[particle];
@@ -218,6 +242,11 @@ public class WorldSpaceUIHandler : MonoBehaviour
         tmp.text = text;
     }
 
+    /// <summary>
+    /// Updates the particle overlay for a single particle with a text. Also sets a color based on the true/false value.
+    /// </summary>
+    /// <param name="particle">The particle for which the overlay should be updated.</param>
+    /// <param name="isTrue">The truth value to display.</param>
     private void UpdateParticleText(IParticleState particle, bool isTrue)
     {
         ParticleTextUIData data = particleTextUIData[particle];
@@ -232,6 +261,11 @@ public class WorldSpaceUIHandler : MonoBehaviour
         tmp.text = isTrue ? "True" : "False";
     }
 
+    /// <summary>
+    /// Updates the particle overlay for a single particle with a text. The chirality is displayed visually.
+    /// </summary>
+    /// <param name="particle">The particle for which the overlay should be updated.</param>
+    /// <param name="counterClockwise">The chirality to set.</param>
     private void UpdateParticleText_Chirality(IParticleState particle, bool counterClockwise)
     {
         ParticleTextUIData data = particleTextUIData[particle];
@@ -246,6 +280,11 @@ public class WorldSpaceUIHandler : MonoBehaviour
         tmp.text = counterClockwise ? "\u2B6F" : "\u2B6E";
     }
 
+    /// <summary>
+    /// Updates the particle overlay for a single particle with a text.
+    /// </summary>
+    /// <param name="particle">The particle for which the overlay should be updated.</param>
+    /// <param name="compassDir">The compass dir to display.</param>
     private void UpdateParticleText_CompassDir(IParticleState particle, Direction compassDir)
     {
         ParticleTextUIData data = particleTextUIData[particle];
@@ -258,6 +297,11 @@ public class WorldSpaceUIHandler : MonoBehaviour
         tmp.text = compassDir.ToString();
     }
 
+    /// <summary>
+    /// Updates the position of the particle overlay.
+    /// </summary>
+    /// <param name="particle">The particle for which the position of the overlay should be updated.</param>
+    /// <param name="particlePosition">The new overlay position.</param>
     private void UpdateParticleTextPosition(IParticleState particle, Vector2 particlePosition)
     {
         ParticleTextUIData data = particleTextUIData[particle];
@@ -265,6 +309,10 @@ public class WorldSpaceUIHandler : MonoBehaviour
         data.pos = new Vector2(particlePosition.x, particlePosition.y);
     }
 
+    /// <summary>
+    /// Sets the rotation of the particle overlay. Use this in combination with the global rotation of the main camera.
+    /// </summary>
+    /// <param name="cameraRotationDegrees"></param>
     public void SetCameraRotation(float cameraRotationDegrees)
     {
         foreach (var item in particleTextUIData.Values)
