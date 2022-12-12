@@ -1,6 +1,7 @@
 # Model Reference
 
-TODO
+These pages provide detailed explanations of the most important concepts in AmoebotSim 2.0.
+You should be familiar with these concepts in order to develop Amoebot algorithms for the simulator.
 
 1. [Round Simulation](rounds.md)
 2. [Chirality](chirality.md)
