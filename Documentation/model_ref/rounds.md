@@ -28,7 +28,7 @@ The process of a simulation round can be summarized as follows:
 2. The particle states are updated and their movements are performed
 	- First the bonds are set up, then the movements are simulated based on the bonds
 3. All particles' beep activations are executed
-4. The particle states are updated, circuits are computed and beeps and messages are delivered
+4. The particle states are updated, circuits are computed and beeps and Messages are delivered
 
 If an error occurs during any of these steps, be it an exception thrown by the algorithm or system code or a movement conflict, the round simulation is aborted and the previous simulation state is restored.
 
@@ -47,52 +47,40 @@ Within each method, the particle's behavior is defined using C# code and the [`P
 Apart from planning movement and communication actions, the computational capabilities of a particle are the same in both activation methods.
 The main parts of the general computation are generally reading and writing the particle's own attributes, looking for neighbors and reading their public attributes, and control logic.
 You can read more about attributes on the [Particle Attributes reference page](attrs.md).
-Most of these computations will be dependent on received beeps or messages or have the purpose of determining which action has to be taken.
+Most of these computations will be dependent on received beeps or Messages or have the purpose of determining which action has to be taken.
 This is where the two activation methods are different.
 
 ### Movement Activation
 
-TODO
+In the movement phase, the [`ActivateMove`][2] method is called once on each particle.
+This method is responsible for setting up the particle's bonds and scheduling its movement.
+At the beginning of the phase, all possible bonds are active.
+The particle can release and mark bonds using the [`ReleaseBond`][4] and [`MarkBond`][5] methods.
+Movements are scheduled using the [`Expand`][6], [`ContractTail`][7], [`ContractHead`][8], [`PushHandover`][9], [`PullHandoverTail`][10] and [`PullHandoverHead`][11] methods.
+The particle does not know how its neighbors have set their bonds or which movements they have scheduled and the movements are applied at the end of the phase, after all particles have been activated.
+For more details about bonds and joint movements, please refer to the corresponding [reference page](bonds_jm.md).
 
 ### Beep Activation
 
-TODO
+The [`ActivateBeep`][3] method is the [`ActivateMove`][2] method's counterpart that is called during the beep phase.
+In this method, the particle can set up its pin configuration and send beeps and Messages.
+The [`PinConfiguration`][12] class provides most of the API for this purpose.
+A detailed explanation of how pin configurations work can be found on the [Pin Configuration reference page](pin_cfgs.md).
+
+After all particles have been activated, their pin configurations are used to construct the circuits, which are then used to deliver the beeps and Messages to the particles.
+It should be noted here that beeps and Messages sent during the beep phase can be read during the next movement phase and also during the following beep phase *if the particle did not perform a movement*.
 
 
-
-
-
-- Our Amoebot model uses synchronous rounds
-	- All particles are activated simultaneously
-	- Changes to particle states are only applied at the end of the round
-- Each round is split into two phases
-	- In the *movement phase*,
-		- the particles update their bonds
-		- the particles schedule their movements
-		- the joint movements are applied after all particles were activated
-	- In the *beep phase*,
-		- the particles update their pin configurations
-		- the particles send beeps and messages
-		- the circuits are constructed and beeps and messages are delivered
-	- The two phases are implemented using the `ActivateMove` and `ActivateBeep` methods
-- In the movement phase following a beep phase, the received beeps and messages can be read
-	- If a particle does not schedule a movement in this phase, the beeps and messages can still be read in the next beep phase
-- `ActivateMove`
-	- All bonds are present at the start of the round
-	- Bonds can be released using `ReleaseBond(Direction, bool)`
-	- Expanding particles can *mark* bonds
-		- Using `MarkBond(Direction, bool)`
-		- A marked bond pulls the neighboring particle with the head of the expanding particle
-		- If the bond remains unmarked, the neighbor will keep its position relative to the tail
-	- For handovers, the bond connecting the pushing and the pulling particle in the push direction must be active
-		- All bonds incident to the particles performing the handover keep their relative position (they cannot be pulled or pushed by the handover)
-- `ActivateBeep`
-	- If the particle has not moved since the last beep phase, its pin configuration will be the same as at the end of the last beep phase
-	- If it has moved, the pin configuration has been reset to a singleton configuration
-	- `GetCurrentPinConfiguration` returns the current configuration from which received beeps and messages can be read (unless the particle has moved)
-	- `SetPlannedPinConfiguration(PinConfiguration pc)` makes `pc` the planned configuration that will be applied at the end of this round
-		- This configuration must be used to send beeps and messages
 
 [1]: xref:Global.ParticleAlgorithm
 [2]: xref:Global.ParticleAlgorithm.ActivateMove
 [3]: xref:Global.ParticleAlgorithm.ActivateBeep
+[4]: xref:Global.ParticleAlgorithm.ReleaseBond(Direction,System.Boolean)
+[5]: xref:Global.ParticleAlgorithm.MarkBond(Direction,System.Boolean)
+[6]: xref:Global.ParticleAlgorithm.Expand(Direction)
+[7]: xref:Global.ParticleAlgorithm.ContractTail
+[8]: xref:Global.ParticleAlgorithm.ContractHead
+[9]: xref:Global.ParticleAlgorithm.PushHandover(Direction)
+[10]: xref:Global.ParticleAlgorithm.PullHandoverTail(Direction)
+[11]: xref:Global.ParticleAlgorithm.PullHandoverHead(Direction)
+[12]: xref:Global.PinConfiguration
