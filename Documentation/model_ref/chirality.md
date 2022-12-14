@@ -38,7 +38,7 @@ However, in practice, this generally does not cause any problems.
 
 The chirality of a particle is set during the system initialization in the Init Mode and it cannot be changed during the simulation.
 The default generation algorithm, which places the particles randomly but connected, has a parameter that defines the chirality.
-If "Clockwise" or "CounterClockwise" is selected, all particles with have that same chirality setting.
+If "Clockwise" or "CounterClockwise" is selected, all particles will have that same chirality setting.
 If "Random" is selected, the chirality of each particle is chosen randomly.
 For custom initialization algorithms, all API methods that place particles have a similar parameter.
 The chirality can also be set manually in the UI while in Init Mode.

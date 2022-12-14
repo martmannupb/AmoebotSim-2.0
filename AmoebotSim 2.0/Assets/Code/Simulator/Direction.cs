@@ -37,7 +37,7 @@ public enum Direction
 /// <summary>
 /// Defines extension methods and helpers for the <see cref="Direction"/> enum.
 /// </summary>
-static class DirectionHelpers
+public static class DirectionHelpers
 {
     /// <summary>
     /// Returns the direction directly opposite to this direction.
