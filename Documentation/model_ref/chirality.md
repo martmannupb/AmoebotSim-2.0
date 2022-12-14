@@ -26,10 +26,12 @@ Such algorithms are usually based on the ability of two neighboring particles to
 This can be achieved using the two outermost pins (for example): Both particles send a beep to their pin with the smaller label.
 If they receive a beep on the *other* pin, they have the *same chirality*.
 Otherwise, their chirality is different and the pins on which they have sent the beeps are connected, meaning that they will only receive a beep on that pin.
-Then, coin flips can be used to agree on one of the particles to change its chirality to match its neighbor's.
+Then, coin tosses can be used to agree on one of the particles to change its chirality to match its neighbor's.
 A particle can flip its own chirality by actively treating rotations in the opposite way and using its pin labels differently.
 This process can be repeated until all particles in the system have the same chirality.
 The "Chirality & Compass Alignment" algorithm that is part of the simulator project demonstrates this technique and then also establishes a common compass orientation.
+Note that the algorithm relies on randomness due to the coin tosses, which means that it is not guaranteed to terminate.
+However, in practice, this generally does not cause any problems.
 
 
 ## Setting Chirality
