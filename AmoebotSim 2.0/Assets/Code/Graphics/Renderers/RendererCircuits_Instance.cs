@@ -2,6 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// The circuit and bond renderer instance that handles all the data that is added in a round.
+/// Has render batches for circuits (colorized lines) and pins (colorized dots) grouped by data with the same properties (like type, color, etc.).
+/// These batches are all rendered when the draw loop is called.
+/// </summary>
 public class RendererCircuits_Instance
 {
 
@@ -14,6 +19,11 @@ public class RendererCircuits_Instance
     private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
     private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
 
+    /// <summary>
+    /// Adds the data of a particle's partition set to the system. Combines it with the position data of the particle itself to calculate all positions of the circuits and pins.
+    /// </summary>
+    /// <param name="state">The particle's graphical pin and partition set data.</param>
+    /// <param name="snap">The particle's position and movement data.</param>
     public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
     {
         bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
@@ -197,7 +207,7 @@ public class RendererCircuits_Instance
 
     
 
-    public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping)
+    private void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping)
     {
         // Normal Circuit
         RendererCircuits_RenderBatch batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, false, false);
@@ -210,7 +220,7 @@ public class RendererCircuits_Instance
         }
     }
 
-    public void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping)
+    private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping)
     {
         RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false);
         batch.AddPin(pinPos, false);
@@ -222,20 +232,20 @@ public class RendererCircuits_Instance
         }
     }
 
-    public void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed)
+    private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed)
     {
         // Beep
         RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true);
         batch.AddPin(pinPos, true);
     }
 
-    public void AddConnectorPin(Vector2 pinPos, Color color, bool delayed)
+    private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed)
     {
         RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false);
         batch.AddConnectorPin(pinPos);
     }
 
-    public RendererCircuits_RenderBatch GetBatch_Line(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated)
+    private RendererCircuits_RenderBatch GetBatch_Line(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated)
     {
         RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, lineType, delayed, beeping, animated);
         RendererCircuits_RenderBatch batch;
@@ -253,7 +263,7 @@ public class RendererCircuits_Instance
         return batch;
     }
 
-    public RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping)
+    private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping)
     {
         RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping);
         RendererCircuitPins_RenderBatch batch;
@@ -271,6 +281,10 @@ public class RendererCircuits_Instance
         return batch;
     }
 
+    /// <summary>
+    /// Adds a single bond to the system.
+    /// </summary>
+    /// <param name="bondState"></param>
     public void AddBond(ParticleBondGraphicState bondState)
     {
         // Convert Grid to World Space
@@ -305,6 +319,10 @@ public class RendererCircuits_Instance
         }
     }
 
+    /// <summary>
+    /// Renders everything stored in the render batches.
+    /// </summary>
+    /// <param name="type"></param>
     public void Render(ViewType type)
     {
         bool firstRenderFrame = isRenderingActive == false;

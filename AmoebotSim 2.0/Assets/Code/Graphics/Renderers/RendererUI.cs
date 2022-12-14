@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+/// <summary>
+/// Renderer for the UI.
+/// Basically draws the overlay for the currently selected tool over the particles.
+/// </summary>
 public class RendererUI
 {
 
@@ -57,6 +61,11 @@ public class RendererUI
         this.material_hexagonMoveSelectionOverlay = MaterialDatabase.material_hexagonal_ui_baseHexagonMoveSelectionMaterial;
     }
 
+    /// <summary>
+    /// Called when a click or a drag (also ongoing drag) is executed.
+    /// Handles all the actions that should be executed when this happens (e.g. selecting a particle, adding a particle etc.)
+    /// </summary>
+    /// <param name="action"></param>
     public void ClickActionCallback(ClickAction action)
     {
         // Get Selection Data
@@ -342,7 +351,13 @@ public class RendererUI
                 break;
         }
     }
+
     private bool currentlyDragging = false;
+    /// <summary>
+    /// The render loop of the renderer.
+    /// Here the mostly hexagonal overlays are drawn based on the current state of the renderer UI and the current mouse position.
+    /// </summary>
+    /// <param name="viewType"></param>
     public void Render(ViewType viewType)
     {
         // Get Selection Data

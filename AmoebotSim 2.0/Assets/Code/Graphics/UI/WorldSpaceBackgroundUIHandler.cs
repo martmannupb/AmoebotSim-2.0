@@ -17,6 +17,7 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
     // State
     private bool isActive = false;
     private CellRect activeRect = new CellRect(0, 0, 0, 0);
+    private float activeCameraRotation = 0f;
     // Data
     private List<GameObject> uiElements = new List<GameObject>();
     private bool uiElementsActive = false;
@@ -33,6 +34,23 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
     }
 
     /// <summary>
+    /// Updates the background grid camera rotation.
+    /// </summary>
+    /// <param name="rotationDegrees"></param>
+    public void SetCameraRotation(float rotationDegrees)
+    {
+        if(activeCameraRotation != rotationDegrees)
+        {
+            activeCameraRotation = rotationDegrees;
+            // Update UI
+            foreach (var item in uiElements)
+            {
+                item.transform.rotation = Quaternion.Euler(0f, 0f, activeCameraRotation);
+            }
+        }
+    }
+
+    /// <summary>
     /// Updates the background grid. Call this once per frame.
     /// Note: This method only takes a lot of time if the system is displayed and the camera changes, so everything is regenerated.
     /// Recommendation: Disable camera movement if this is active.
@@ -43,10 +61,16 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
         if (isActive)
         {
             // Amoebot Border Coordinates
-            Vector2Int amoebotBL = AmoebotFunctions.GetGridPositionFromWorldPosition(CameraUtils.MainCamera_WorldPosition_BottomLeft() + new Vector2(-3f, -3f));
-            Vector2Int amoebotBR = AmoebotFunctions.GetGridPositionFromWorldPosition(CameraUtils.MainCamera_WorldPosition_BottomRight() + new Vector2(3f, -3f));
-            Vector2Int amoebotTL = AmoebotFunctions.GetGridPositionFromWorldPosition(CameraUtils.MainCamera_WorldPosition_TopLeft() + new Vector2(-3f, 3f));
-            Vector2Int amoebotTR = AmoebotFunctions.GetGridPositionFromWorldPosition(CameraUtils.MainCamera_WorldPosition_TopRight() + new Vector2(3f, 3f));
+            Vector2 camBL = CameraUtils.MainCamera_WorldPosition_BottomLeft() + (Vector2)(Quaternion.Euler(0f, 0f, activeCameraRotation) * ((Vector3)new Vector2(-3f, -3f)));
+            Vector2 camBR = CameraUtils.MainCamera_WorldPosition_BottomRight() + (Vector2)(Quaternion.Euler(0f, 0f, activeCameraRotation) * ((Vector3)new Vector2(3f, -3f)));
+            Vector2 camTL = CameraUtils.MainCamera_WorldPosition_TopLeft() + (Vector2)(Quaternion.Euler(0f, 0f, activeCameraRotation) * ((Vector3)new Vector2(-3f, 3f)));
+            Vector2 camTR = CameraUtils.MainCamera_WorldPosition_TopRight() + (Vector2)(Quaternion.Euler(0f, 0f, activeCameraRotation) * ((Vector3)new Vector2(3f, 3f)));
+            //Vector2 camMinCoordinates = new Vector2(Mathf.Min(camBL.x, camBR.x, camTL.x, camTR.x), Mathf.Min(camBL.y, camBR.y, camTL.y, camTR.y));
+            //Vector2 camMaxCoordinates = new Vector2(Mathf.Max(camBL.x, camBR.x, camTL.x, camTR.x), Mathf.Max(camBL.y, camBR.y, camTL.y, camTR.y));
+            Vector2Int amoebotBL = AmoebotFunctions.GetGridPositionFromWorldPosition(camBL);
+            Vector2Int amoebotBR = AmoebotFunctions.GetGridPositionFromWorldPosition(camBR);
+            Vector2Int amoebotTL = AmoebotFunctions.GetGridPositionFromWorldPosition(camTL);
+            Vector2Int amoebotTR = AmoebotFunctions.GetGridPositionFromWorldPosition(camTR);
             // Convert to Min/Max (check all because of unknown rotation)
             Vector2Int amoebotMinCoordinates = new Vector2Int(Mathf.Min(amoebotBL.x, amoebotBR.x, amoebotTL.x, amoebotTR.x), Mathf.Min(amoebotBL.y, amoebotBR.y, amoebotTL.y, amoebotTR.y));
             Vector2Int amoebotMaxCoordinates = new Vector2Int(Mathf.Max(amoebotBL.x, amoebotBR.x, amoebotTL.x, amoebotTR.x), Mathf.Max(amoebotBL.y, amoebotBR.y, amoebotTL.y, amoebotTR.y));
@@ -70,11 +94,13 @@ public class WorldSpaceBackgroundUIHandler : MonoBehaviour
                         // Element is in list
                         go = uiElements[i];
                         go.transform.position = amoebotWorldPosition;
+                        go.transform.rotation = Quaternion.Euler(0f, 0f, activeCameraRotation);
                     }
                     else
                     {
                         // Instantiate Go
                         go = Instantiate<GameObject>(UIDatabase.prefab_worldSpace_backgroundTextUI, amoebotWorldPosition, Quaternion.identity, go_worldSpaceBackgroundUI.transform);
+                        go.transform.rotation = Quaternion.Euler(0f, 0f, activeCameraRotation);
                         uiElements.Add(go);
                     }
                     go.GetComponentInChildren<TextMeshProUGUI>().text = amoebotPosition.x + "," + amoebotPosition.y;

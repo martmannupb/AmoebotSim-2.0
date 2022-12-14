@@ -85,6 +85,7 @@ public class SettingsUIHandler : MonoBehaviour
                 Camera.main.transform.rotation = Quaternion.Euler(0, 0, cameraRotationDegrees);
                 // Notify Systems
                 if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.SetCameraRotation(cameraRotationDegrees);
+                if (WorldSpaceBackgroundUIHandler.instance != null) WorldSpaceBackgroundUIHandler.instance.SetCameraRotation(cameraRotationDegrees);
                 break;
             default:
                 break;
