@@ -51,6 +51,10 @@ public class ParticleUIHandler : MonoBehaviour
         ClearPanel();
     }
 
+    /// <summary>
+    /// Opens the particle panel for the defined particle.
+    /// </summary>
+    /// <param name="p">The particle that should be shown.</param>
     public void Open(IParticleState p)
     {
         bool inInitMode = sim.uiHandler.initializationUI.IsOpen();
@@ -58,17 +62,29 @@ public class ParticleUIHandler : MonoBehaviour
         go_particlePanel.SetActive(true);
     }
 
+    /// <summary>
+    /// Closes the particle panel.
+    /// </summary>
     public void Close()
     {
         go_particlePanel.SetActive(false);
         ClearPanel();
     }
 
+    /// <summary>
+    /// Checks if the particle panel is open.
+    /// </summary>
+    /// <returns></returns>
     public bool IsOpen()
     {
         return go_particlePanel.activeSelf;
     }
 
+    /// <summary>
+    /// Returns the currently shown particle in the panel.
+    /// Before usage, please check if the panel is open and only use this method if this is the case.
+    /// </summary>
+    /// <returns></returns>
     public IParticleState GetShownParticle()
     {
         return particle;
@@ -99,6 +115,10 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Internal method. Reopens the particle panel with the specified particle. Called by the Open(..) method.
+    /// </summary>
+    /// <param name="p"></param>
     private void ReinitParticlePanel(IParticleState p)
     {
         // Clear
@@ -205,6 +225,10 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Adds the chirality and compass dir attributes to the particle panel attributes. These attributes are contained in all possible particles.
+    /// </summary>
+    /// <param name="p"></param>
     public void AddAttributes_ChiralityAndCompassDir(IParticleState p)
     {
         // Chirality
@@ -237,6 +261,10 @@ public class ParticleUIHandler : MonoBehaviour
         settings.Add("Compass Dir", setting);
     }
 
+    /// <summary>
+    /// Adds a particle attribute to the particle panel.
+    /// </summary>
+    /// <param name="particleAttribute"></param>
     public void AddAttribute(IParticleAttribute particleAttribute)
     {
         // Duplicate Check
@@ -322,6 +350,10 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when an attribute has been clicked. Opens the world space UI overlay which shows this attribute's state for all particles.
+    /// </summary>
+    /// <param name="name"></param>
     public void AttributeClicked(string name)
     {
         // Null Check
@@ -370,6 +402,9 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Clears the particle panel. Removes all attributes and texts after the delimiter, also clears all internally stored attributes.
+    /// </summary>
     public void ClearPanel()
     {
         particle = null;
@@ -400,11 +435,11 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
-    private bool IsParticlePanelActive()
-    {
-        return go_particlePanel.activeSelf;
-    }
-
+    /// <summary>
+    /// Notifies the particle panel that the system is running/not running.
+    /// Locks or unlocks the particle attributes, so that changes during runtime are not possible.
+    /// </summary>
+    /// <param name="running"></param>
     public void SimState_RunningToggled(bool running)
     {
         if(running)
@@ -419,6 +454,9 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Notifies the particle panel that the round has been changed, so it can refresh.
+    /// </summary>
     public void SimState_RoundChanged()
     {
         // Refresh Attributes
@@ -429,6 +467,11 @@ public class ParticleUIHandler : MonoBehaviour
 
     // Callbacks
 
+    /// <summary>
+    /// Called when a particle attribute has been clicked and held for some time. This should take the value of the attribute and set it at all other particles.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="duration"></param>
     private void SettingHeldDown(string name, float duration)
     {
         if(IsOpen() && duration >= 2f)
@@ -479,6 +522,11 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when one attribute has been changed by the user. Forwards this to the particle system and refreshes the relevant UI.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="value"></param>
     private void SettingChanged_Value(string name, float value)
     {
         if (AttributeChangeValid() == false) return;
@@ -494,6 +542,11 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when one attribute has been changed by the user. Forwards this to the particle system and refreshes the relevant UI.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="text"></param>
     private void SettingChanged_Text(string name, string text)
     {
         if (AttributeChangeValid() == false) return;
@@ -509,6 +562,11 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when one attribute has been changed by the user. Forwards this to the particle system and refreshes the relevant UI.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="isOn"></param>
     private void SettingChanged_Toggle(string name, bool isOn)
     {
         if (AttributeChangeValid() == false) return;
@@ -524,6 +582,11 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when one attribute has been changed by the user. Forwards this to the particle system and refreshes the relevant UI.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="value"></param>
     private void SettingChanged_Dropdown(string name, string value)
     {
         if (AttributeChangeValid() == false) return;
@@ -551,6 +614,10 @@ public class ParticleUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Returns true if the attribute is allowed to be changed. The particle panel must be active and the system has to be in the latest round while being paused to do so.
+    /// </summary>
+    /// <returns></returns>
     private bool AttributeChangeValid()
     {
         return go_particlePanel.activeSelf && sim.system.IsInLatestRound() && sim.running == false;

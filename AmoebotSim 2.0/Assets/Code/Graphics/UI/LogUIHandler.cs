@@ -55,6 +55,9 @@ public class LogUIHandler : MonoBehaviour
         //}
     }
 
+    /// <summary>
+    /// Initializes the log and writes some welcome message.
+    /// </summary>
     private void InitLog()
     {
         // Delete Dummies
@@ -89,6 +92,9 @@ public class LogUIHandler : MonoBehaviour
         Hide();
     }
 
+    /// <summary>
+    /// Update loop for the log UI, called each frame.
+    /// </summary>
     public void Update()
     {
         // Scroll to Bottom
@@ -114,11 +120,23 @@ public class LogUIHandler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Adds a log entry to the log.
+    /// </summary>
+    /// <param name="text">The text to log.</param>
+    /// <param name="type">The type of the log entry.</param>
     public void AddLogEntry(string text, EntryType type)
     {
         AddLogEntry(text, type, true);
     }
 
+    /// <summary>
+    /// Adds a log entry to the log.
+    /// </summary>
+    /// <param name="text">The text to log.</param>
+    /// <param name="type">The type of the log entry.</param>
+    /// <param name="showNumberOfEntry">True if the number of the entry should be shown.</param>
+    /// <param name="useOldPrefab">True if the old prefab which does not support multiline should be used. Recommendation: Keep this at false.</param>
     protected void AddLogEntry(string text, EntryType type, bool showNumberOfEntry, bool useOldPrefab = false)
     {
         GameObject go;
@@ -175,6 +193,11 @@ public class LogUIHandler : MonoBehaviour
         Show(true, this.keepVisible);
     }
 
+    /// <summary>
+    /// Shows the log.
+    /// </summary>
+    /// <param name="scrollDown">True if the log should scroll down.</param>
+    /// <param name="keepVisible">True if the log should be kept visible, false if it should disappear automatically after some time.</param>
     public void Show(bool scrollDown, bool keepVisible)
     {
         this.keepVisible = keepVisible;
@@ -184,6 +207,9 @@ public class LogUIHandler : MonoBehaviour
         if(scrollDown) scrollToBottomInAmountOfFrames = 3;
     }
 
+    /// <summary>
+    /// Hides the log.
+    /// </summary>
     public void Hide()
     {
         go_log.SetActive(false);
@@ -193,6 +219,10 @@ public class LogUIHandler : MonoBehaviour
         keepVisible = false;
     }
 
+    /// <summary>
+    /// Scrolls to the bottom of the log.
+    /// We call this method after some very small number of frames because Unity needs to update some internal UI stuff before the sizes of the UI elements are in the system.
+    /// </summary>
     public void ScrollToBottom()
     {
         scrollRect.verticalNormalizedPosition = 0f;
@@ -243,12 +273,18 @@ public class LogUIHandler : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// The user pressed the expand log button. I guess this means the log should expand.
+    /// </summary>
     public void ButtonPressed_ExpandLog()
     {
         timestampLastInteraction = Time.timeSinceLevelLoad;
         Show(true, true);
     }
 
+    /// <summary>
+    /// The user pressed the collapse log button. The log might disappear if you treated it nicely.
+    /// </summary>
     public void ButtonPressed_CollapseLog()
     {
         Hide();

@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// This monstrosity dynamically creates textures at runtime. For example, we take textures like hexagons as input and print a generic number of pins onto it.
+/// The class wants to confuse you. Don't let it confuse you!
+/// </summary>
 public static class TextureCreator
 {
 
@@ -33,6 +37,12 @@ public static class TextureCreator
     private static Texture2D hexagonTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ Soft/HexagonSoft1_1024");
     private static Texture2D hexagonCircTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ Soft/HexagonCircleSoft");
 
+    /// <summary>
+    /// Creates the material with the generated texture for the pins with the invisible hexagon. Read the method doc to GetPinBorderTexture to gain more info.
+    /// </summary>
+    /// <param name="pinsPerSide">The amount of pins per side.</param>
+    /// <param name="viewType">The view type, Hexagonal or HexagonalCirc, not Circular!</param>
+    /// <returns></returns>
     public static Material GetPinBorderMaterial(int pinsPerSide, ViewType viewType)
     {
         if (viewType == ViewType.Hexagonal && pinBorderHexMaterials.ContainsKey(pinsPerSide)) return pinBorderHexMaterials[pinsPerSide];
@@ -64,6 +74,12 @@ public static class TextureCreator
         return mat;
     }
 
+    /// <summary>
+    /// Creates the material with the generated texture for the pins with the visible hexagon. Read the method doc to GetHexagonBaseTextureWithPins to gain more info.
+    /// </summary>
+    /// <param name="pinsPerSide">The amount of pins per side.</param>
+    /// <param name="viewType">The view type, Hexagonal or HexagonalCirc, not Circular!</param>
+    /// <returns></returns>
     public static Material GetHexagonWithPinsMaterial(int pinsPerSide, ViewType viewType)
     {
         if (viewType == ViewType.Hexagonal && hexagonMaterials.ContainsKey(pinsPerSide)) return hexagonMaterials[pinsPerSide];
@@ -87,7 +103,28 @@ public static class TextureCreator
         // Return
         return mat;
     }
-
+    /// <summary>
+    /// This thing creates a texture from one of the base hexagon textures and dots which represent the pins.
+    /// The pins are merged on top of the original hexagon to get a figure with pins.
+    /// </summary>
+    /// <param name="pinsPerSide">The amount of pins per side.</param>
+    /// <param name="viewType">The view type, e.g. the standard hexagon or the circular view.
+    /// Please only use Hexagonal and HexagonalCirc here (the hexagonal base grid view), Circular (the graph view) is not meant to work.</param>
+    /// <returns></returns>
+    /// <summary>
+    /// This thing creates a texture from a transparent texture and dots which represent the pins.
+    /// The pins are merged on top of the original transparent texture to get a texture with pins.
+    /// This is done to lay this texture with a mesh on top of the original hexagon, so we can fit circuits in between the two meshes
+    /// and give the impression that all is one connected component.
+    /// </summary>
+    /// <param name="pinsPerSide">The amount of pins per side.</param>
+    /// <param name="omitSide">If one side's pin should be omitted.</param>
+    /// <param name="omit3Pins">If three pins should be omitted (the omittedSide and the neighboring sides),</param>
+    /// <param name="omittedSide">The side of the omitted pin/s.</param>
+    /// <param name="isTex1">If this is texture 1 of the 2 possible texture positions in the final shader.</param>
+    /// <param name="viewType">The type of the base hexagon texture. Circular and hexagonal forms have different pin positions.
+    /// Accepted inputs: Hexagonal or HexagonalCirc, but not Circular!</param>
+    /// <returns></returns>
     private static Texture2D GetPinBorderTexture(int pinsPerSide, bool omitSide, bool omit3Pins, int omittedSide, bool isTex1, ViewType viewType)
     {
         if(viewType == ViewType.Hexagonal)
@@ -230,6 +267,14 @@ public static class TextureCreator
         return tex;
     }
 
+    /// <summary>
+    /// This thing creates a texture from one of the base hexagon textures and dots which represent the pins.
+    /// The pins are merged on top of the original hexagon to get a figure with pins.
+    /// </summary>
+    /// <param name="pinsPerSide">The amount of pins per side.</param>
+    /// <param name="viewType">The view type, e.g. the standard hexagon or the circular view.
+    /// Please only use Hexagonal and HexagonalCirc here (the hexagonal base grid view), Circular (the graph view) is not meant to work.</param>
+    /// <returns></returns>
     private static Texture2D GetHexagonBaseTextureWithPins(int pinsPerSide, ViewType viewType)
     {
         // Create Texture
@@ -240,7 +285,7 @@ public static class TextureCreator
         // Metadata
         Vector2Int texCenterPixel = new Vector2Int(tex.width / 2, tex.height / 2);
 
-        // Make Tex Transparent
+        // Fill Tex with Hexagon/HexagonCirc Tex
         Color colorTransparent = new Color(0f, 0f, 0f, 0f);
         for (int x = 0; x < tex.width; x++)
         {
