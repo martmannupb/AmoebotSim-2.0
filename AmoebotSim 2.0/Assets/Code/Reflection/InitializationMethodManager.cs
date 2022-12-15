@@ -54,7 +54,7 @@ namespace AS2
                 string name = algoType.FullName;
 
                 // Find the right constructor
-                ConstructorInfo ci = algoType.GetConstructor(new Type[] { typeof(ParticleSystem) });
+                ConstructorInfo ci = algoType.GetConstructor(new Type[] { typeof(Sim.ParticleSystem) });
                 if (ci == null)
                 {
                     Log.Warning("Initialization method with name '" + name + "' does not implement a constructor with a single ParticleSystem parameter.");
