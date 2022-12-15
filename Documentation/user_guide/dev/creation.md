@@ -179,12 +179,12 @@ The [Implementation Walkthrough](demo.md) provides an example for how this syste
 
 
 
-[1]: xref:Global.ParticleAlgorithm
-[2]: xref:Global.Particle
-[3]: xref:Global.ParticleAlgorithm.SetMainColor(Color)
-[4]: xref:Global.ColorData
-[5]: xref:Global.ParticleAlgorithm.IsFinished
-[6]: xref:Global.ParticleAlgorithm.ActivateMove
-[7]: xref:Global.ParticleAlgorithm.ActivateBeep
-[8]: xref:Global.InitializationMethod
-[9]: xref:Global.ParticleSystem
+[1]: xref:AS2.Sim.ParticleAlgorithm
+[2]: xref:AS2.Sim.Particle
+[3]: xref:AS2.Sim.ParticleAlgorithm.SetMainColor(Color)
+[4]: xref:AS2.ColorData
+[5]: xref:AS2.Sim.ParticleAlgorithm.IsFinished
+[6]: xref:AS2.Sim.ParticleAlgorithm.ActivateMove
+[7]: xref:AS2.Sim.ParticleAlgorithm.ActivateBeep
+[8]: xref:AS2.InitializationMethod
+[9]: xref:AS2.Sim.ParticleSystem

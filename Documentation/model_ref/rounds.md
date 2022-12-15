@@ -72,15 +72,15 @@ It should be noted here that beeps and Messages sent during the beep phase can b
 
 
 
-[1]: xref:Global.ParticleAlgorithm
-[2]: xref:Global.ParticleAlgorithm.ActivateMove
-[3]: xref:Global.ParticleAlgorithm.ActivateBeep
-[4]: xref:Global.ParticleAlgorithm.ReleaseBond(Direction,System.Boolean)
-[5]: xref:Global.ParticleAlgorithm.MarkBond(Direction,System.Boolean)
-[6]: xref:Global.ParticleAlgorithm.Expand(Direction)
-[7]: xref:Global.ParticleAlgorithm.ContractTail
-[8]: xref:Global.ParticleAlgorithm.ContractHead
-[9]: xref:Global.ParticleAlgorithm.PushHandover(Direction)
-[10]: xref:Global.ParticleAlgorithm.PullHandoverTail(Direction)
-[11]: xref:Global.ParticleAlgorithm.PullHandoverHead(Direction)
-[12]: xref:Global.PinConfiguration
+[1]: xref:AS2.Sim.ParticleAlgorithm
+[2]: xref:AS2.Sim.ParticleAlgorithm.ActivateMove
+[3]: xref:AS2.Sim.ParticleAlgorithm.ActivateBeep
+[4]: xref:AS2.Sim.ParticleAlgorithm.ReleaseBond(AS2.Direction,System.Boolean)
+[5]: xref:AS2.Sim.ParticleAlgorithm.MarkBond(AS2.Direction,System.Boolean)
+[6]: xref:AS2.Sim.ParticleAlgorithm.Expand(AS2.Direction)
+[7]: xref:AS2.Sim.ParticleAlgorithm.ContractTail
+[8]: xref:AS2.Sim.ParticleAlgorithm.ContractHead
+[9]: xref:AS2.Sim.ParticleAlgorithm.PushHandover(AS2.Direction)
+[10]: xref:AS2.Sim.ParticleAlgorithm.PullHandoverTail(AS2.Direction)
+[11]: xref:AS2.Sim.ParticleAlgorithm.PullHandoverHead(AS2.Direction)
+[12]: xref:AS2.Sim.PinConfiguration

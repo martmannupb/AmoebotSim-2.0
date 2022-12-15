@@ -414,18 +414,18 @@ The [Advanced Features guide](advanced.md) demonstrates some of these features b
 
 
 
-[1]: xref:Global.InitializationMethod.AddParticle(Vector2Int,Direction,Initialization.Chirality,Initialization.Compass)
-[2]: xref:Global.InitializationMethod.PlaceParallelogram(Vector2Int,Direction,System.Int32,System.Boolean,System.Int32,Initialization.Chirality,Initialization.Compass)
-[3]: xref:Global.Direction.E
-[4]: xref:Global.ColorData
-[5]: xref:Global.ColorData.Particle_Blue
-[6]: xref:Global.InitializationParticle
-[7]: xref:Global.InitializationMethod.GetParticles
-[8]: xref:Global.InitializationParticle.SetAttribute(System.String,System.Object)
-[9]: xref:Global.PinConfiguration
-[10]: xref:Global.PinConfiguration.SetToGlobal(System.Int32)
-[11]: xref:Global.ParticleAlgorithm.IsExpanded
-[12]: xref:Global.ParticleAlgorithm.IsContracted
-[13]: xref:Global.ParticleAlgorithm.Expand(Direction)
-[14]: xref:Global.ParticleAlgorithm.ContractTail
-[15]: xref:Global.ParticleAlgorithm.ContractHead
+[1]: xref:AS2.InitializationMethod.AddParticle(Vector2Int,AS2.Direction,AS2.Initialization.Chirality,AS2.Initialization.Compass)
+[2]: xref:AS2.InitializationMethod.PlaceParallelogram(Vector2Int,AS2.Direction,System.Int32,System.Boolean,System.Int32,AS2.Initialization.Chirality,AS2.Initialization.Compass)
+[3]: xref:AS2.Direction.E
+[4]: xref:AS2.ColorData
+[5]: xref:AS2.ColorData.Particle_Blue
+[6]: xref:AS2.Sim.InitializationParticle
+[7]: xref:AS2.InitializationMethod.GetParticles
+[8]: xref:AS2.Sim.InitializationParticle.SetAttribute(System.String,System.Object)
+[9]: xref:AS2.Sim.PinConfiguration
+[10]: xref:AS2.Sim.PinConfiguration.SetToGlobal(System.Int32)
+[11]: xref:AS2.Sim.ParticleAlgorithm.IsExpanded
+[12]: xref:AS2.Sim.ParticleAlgorithm.IsContracted
+[13]: xref:AS2.Sim.ParticleAlgorithm.Expand(AS2.Direction)
+[14]: xref:AS2.Sim.ParticleAlgorithm.ContractTail
+[15]: xref:AS2.Sim.ParticleAlgorithm.ContractHead

@@ -357,17 +357,17 @@ You can read more about bonds and joint movements on the corresponding [referenc
 
 
 
-[1]: xref:Global.Log
-[2]: xref:Global.Log.Debug(System.String)
-[3]: xref:Global.Log.Entry(System.String)
-[4]: xref:Global.Log.Warning(System.String)
-[5]: xref:Global.Log.Error(System.String)
-[6]: xref:Global.Message
-[7]: xref:Global.Direction
-[8]: xref:Global.Message.Copy
-[9]: xref:Global.Message.Equals(Message)
-[10]: xref:Global.Message.GreaterThan(Message)
-[11]: xref:Global.ParticleAttribute`1
-[12]: xref:Global.PinConfiguration.ReceivedMessageOnPartitionSet(System.Int32)
-[13]: xref:Global.PinConfiguration.GetReceivedMessageOfPartitionSet(System.Int32)
-[14]: xref:Global.ParticleAlgorithm.HeadDirection
+[1]: xref:AS2.Log
+[2]: xref:AS2.Log.Debug(System.String)
+[3]: xref:AS2.Log.Entry(System.String)
+[4]: xref:AS2.Log.Warning(System.String)
+[5]: xref:AS2.Log.Error(System.String)
+[6]: xref:AS2.Sim.Message
+[7]: xref:AS2.Direction
+[8]: xref:AS2.Sim.Message.Copy
+[9]: xref:AS2.Sim.Message.Equals(AS2.Sim.Message)
+[10]: xref:AS2.Sim.Message.GreaterThan(AS2.Sim.Message)
+[11]: xref:AS2.Sim.ParticleAttribute`1
+[12]: xref:AS2.Sim.PinConfiguration.ReceivedMessageOnPartitionSet(System.Int32)
+[13]: xref:AS2.Sim.PinConfiguration.GetReceivedMessageOfPartitionSet(System.Int32)
+[14]: xref:AS2.Sim.ParticleAlgorithm.HeadDirection

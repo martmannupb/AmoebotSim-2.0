@@ -65,7 +65,7 @@ The compass direction can also be set manually in the UI while in Init Mode.
 
 
 
-[1]: xref:Global.Direction
-[2]: xref:Global.Direction.NONE
-[3]: xref:Global.DirectionHelpers.ToInt(Direction)
-[4]: xref:Global.DirectionHelpers
+[1]: xref:AS2.Direction
+[2]: xref:AS2.Direction.NONE
+[3]: xref:AS2.DirectionHelpers.ToInt(AS2.Direction)
+[4]: xref:AS2.DirectionHelpers
