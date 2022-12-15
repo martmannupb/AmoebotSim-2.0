@@ -2,13 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class MaterialPropertyBlockData
+namespace AS2.Graphics
 {
 
-    public MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
+    public abstract class MaterialPropertyBlockData
+    {
 
-    protected abstract void Init();
+        public MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
 
-    public abstract void Reset();
+        protected abstract void Init();
 
-}
+        public abstract void Reset();
+
+    }
+
+} // namespace AS2.Graphics

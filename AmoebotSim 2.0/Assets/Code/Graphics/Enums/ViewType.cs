@@ -2,9 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ViewType
+namespace AS2.Graphics
 {
-    Hexagonal,
-    HexagonalCirc,
-    Circular
-}
+
+    public enum ViewType
+    {
+        Hexagonal,
+        HexagonalCirc,
+        Circular
+    }
+
+} // namespace AS2.Graphics
