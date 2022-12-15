@@ -4,172 +4,177 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-public class InitializationMethodManager
+namespace AS2
 {
-    // The name of the method to be implemented
-    private static readonly string GenerationMethodName = "Generate";
 
-    // Singleton
-    private static InitializationMethodManager instance = new InitializationMethodManager();
-    public static InitializationMethodManager Instance
+    public class InitializationMethodManager
     {
-        get { return instance; }
-    }
+        // The name of the method to be implemented
+        private static readonly string GenerationMethodName = "Generate";
 
-    private class AlgorithmInfo
-    {
-        public string name;
-        public Type type;
-        public ConstructorInfo ctor;
-        public MethodInfo generateMethod;
-
-        public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo generateMethod)
+        // Singleton
+        private static InitializationMethodManager instance = new InitializationMethodManager();
+        public static InitializationMethodManager Instance
         {
-            this.name = name;
-            this.type = type;
-            this.ctor = ctor;
-            this.generateMethod = generateMethod;
+            get { return instance; }
         }
-    }
 
-    private Dictionary<string, AlgorithmInfo> algorithms;
-
-    public InitializationMethodManager()
-    {
-        // Find all InitializationMethod subtypes
-        Type baseAlgoType = typeof(InitializationMethod);
-        Assembly baseAlgoAssembly = baseAlgoType.Assembly;
-        IEnumerable<Type> subclasses = baseAlgoAssembly.GetTypes().Where(t => t.IsSubclassOf(baseAlgoType));
-
-        algorithms = new Dictionary<string, AlgorithmInfo>();
-
-        foreach (Type algoType in subclasses)
+        private class AlgorithmInfo
         {
-            Debug.Log("Found initialization method with name " + algoType.FullName);
+            public string name;
+            public Type type;
+            public ConstructorInfo ctor;
+            public MethodInfo generateMethod;
 
-            // Find out the algorithm's name (simply use the full type name)
-            string name = algoType.FullName;
-
-            // Find the right constructor
-            ConstructorInfo ci = algoType.GetConstructor(new Type[] { typeof(ParticleSystem) });
-            if (ci == null)
+            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo generateMethod)
             {
-                Log.Warning("Initialization method with name '" + name + "' does not implement a constructor with a single ParticleSystem parameter.");
-                continue;
+                this.name = name;
+                this.type = type;
+                this.ctor = ctor;
+                this.generateMethod = generateMethod;
             }
+        }
 
-            // Find the generation method and its signature
-            MethodInfo[] methods = algoType.GetMethods();
-            MethodInfo generateMethod = null;
-            foreach (MethodInfo mi in methods)
+        private Dictionary<string, AlgorithmInfo> algorithms;
+
+        public InitializationMethodManager()
+        {
+            // Find all InitializationMethod subtypes
+            Type baseAlgoType = typeof(InitializationMethod);
+            Assembly baseAlgoAssembly = baseAlgoType.Assembly;
+            IEnumerable<Type> subclasses = baseAlgoAssembly.GetTypes().Where(t => t.IsSubclassOf(baseAlgoType));
+
+            algorithms = new Dictionary<string, AlgorithmInfo>();
+
+            foreach (Type algoType in subclasses)
             {
-                if (mi.Name.Equals(GenerationMethodName))
+                Debug.Log("Found initialization method with name " + algoType.FullName);
+
+                // Find out the algorithm's name (simply use the full type name)
+                string name = algoType.FullName;
+
+                // Find the right constructor
+                ConstructorInfo ci = algoType.GetConstructor(new Type[] { typeof(Sim.ParticleSystem) });
+                if (ci == null)
                 {
-                    ParameterInfo[] parameters = mi.GetParameters();
-                    string s = "Params:\n";
-                    foreach (ParameterInfo pi in parameters)
-                    {
-                        s += pi.Name + ", " + pi.ParameterType + "\n";
-                    }
-                    Debug.Log(s);
-                    generateMethod = mi;
+                    Log.Warning("Initialization method with name '" + name + "' does not implement a constructor with a single ParticleSystem parameter.");
+                    continue;
                 }
-            }
 
-            if (generateMethod == null)
-            {
-                Debug.LogWarning("Initialization method with name '" + name + "' does not implement a " + GenerationMethodName + " method.");
-            }
-            else
-            {
-                Debug.Log("Found generation method!");
-                if (algorithms.ContainsKey(name))
+                // Find the generation method and its signature
+                MethodInfo[] methods = algoType.GetMethods();
+                MethodInfo generateMethod = null;
+                foreach (MethodInfo mi in methods)
                 {
-                    Debug.LogWarning("InitializationMethod with name '" + name + "' already exists, cannot load this method");
+                    if (mi.Name.Equals(GenerationMethodName))
+                    {
+                        ParameterInfo[] parameters = mi.GetParameters();
+                        string s = "Params:\n";
+                        foreach (ParameterInfo pi in parameters)
+                        {
+                            s += pi.Name + ", " + pi.ParameterType + "\n";
+                        }
+                        Debug.Log(s);
+                        generateMethod = mi;
+                    }
+                }
+
+                if (generateMethod == null)
+                {
+                    Debug.LogWarning("Initialization method with name '" + name + "' does not implement a " + GenerationMethodName + " method.");
                 }
                 else
                 {
-                    algorithms[name] = new AlgorithmInfo(name, algoType, ci, generateMethod);
-                }
-            }
-        }
-    }
-
-    private AlgorithmInfo FindAlgorithm(string name)
-    {
-        if (algorithms.TryGetValue(name, out AlgorithmInfo info))
-        {
-            return info;
-        }
-        else
-        {
-            Debug.LogError("Error: No algorithm with name '" + name + "' known");
-            return null;
-        }
-    }
-
-    public List<string> GetAlgorithmNames()
-    {
-        return algorithms.Keys.ToList();
-    }
-
-    public ParameterInfo[] GetAlgorithmParameters(string algorithmName)
-    {
-        AlgorithmInfo info = FindAlgorithm(algorithmName);
-        if (info == null)
-            return null;
-
-        return info.generateMethod.GetParameters();
-    }
-
-    public bool GenerateSystem(ParticleSystem system, string algorithmName)
-    {
-        return GenerateSystem(system, algorithmName, new object[0]);
-    }
-
-    public bool GenerateSystem(ParticleSystem system, string algorithmName, object[] parameters)
-    {
-        AlgorithmInfo info = FindAlgorithm(algorithmName);
-        if (info == null)
-        {
-            return false;
-        }
-
-        try
-        {
-            // Fill in missing parameters with default values
-            ParameterInfo[] parameterList = info.generateMethod.GetParameters();
-            if (parameters.Length < parameterList.Length)
-            {
-                object[] newParams = new object[parameterList.Length];
-                for (int i = 0; i < parameters.Length; i++)
-                    newParams[i] = parameters[i];
-                for (int i = parameters.Length; i < parameterList.Length; i++)
-                {
-                    if (!parameterList[i].HasDefaultValue)
+                    Debug.Log("Found generation method!");
+                    if (algorithms.ContainsKey(name))
                     {
-                        Log.Warning("Parameter '" + parameterList[i].Name + "' of generation algorithm '" + algorithmName + "' does not have a default value.");
+                        Debug.LogWarning("InitializationMethod with name '" + name + "' already exists, cannot load this method");
                     }
-                    newParams[i] = parameterList[i].DefaultValue;
+                    else
+                    {
+                        algorithms[name] = new AlgorithmInfo(name, algoType, ci, generateMethod);
+                    }
                 }
-                parameters = newParams;
+            }
+        }
+
+        private AlgorithmInfo FindAlgorithm(string name)
+        {
+            if (algorithms.TryGetValue(name, out AlgorithmInfo info))
+            {
+                return info;
+            }
+            else
+            {
+                Debug.LogError("Error: No algorithm with name '" + name + "' known");
+                return null;
+            }
+        }
+
+        public List<string> GetAlgorithmNames()
+        {
+            return algorithms.Keys.ToList();
+        }
+
+        public ParameterInfo[] GetAlgorithmParameters(string algorithmName)
+        {
+            AlgorithmInfo info = FindAlgorithm(algorithmName);
+            if (info == null)
+                return null;
+
+            return info.generateMethod.GetParameters();
+        }
+
+        public bool GenerateSystem(AS2.Sim.ParticleSystem system, string algorithmName)
+        {
+            return GenerateSystem(system, algorithmName, new object[0]);
+        }
+
+        public bool GenerateSystem(AS2.Sim.ParticleSystem system, string algorithmName, object[] parameters)
+        {
+            AlgorithmInfo info = FindAlgorithm(algorithmName);
+            if (info == null)
+            {
+                return false;
             }
 
-            InitializationMethod methodObj = (InitializationMethod)info.ctor.Invoke(new object[] { system });
-            info.generateMethod.Invoke(methodObj, parameters);
+            try
+            {
+                // Fill in missing parameters with default values
+                ParameterInfo[] parameterList = info.generateMethod.GetParameters();
+                if (parameters.Length < parameterList.Length)
+                {
+                    object[] newParams = new object[parameterList.Length];
+                    for (int i = 0; i < parameters.Length; i++)
+                        newParams[i] = parameters[i];
+                    for (int i = parameters.Length; i < parameterList.Length; i++)
+                    {
+                        if (!parameterList[i].HasDefaultValue)
+                        {
+                            Log.Warning("Parameter '" + parameterList[i].Name + "' of generation algorithm '" + algorithmName + "' does not have a default value.");
+                        }
+                        newParams[i] = parameterList[i].DefaultValue;
+                    }
+                    parameters = newParams;
+                }
+
+                InitializationMethod methodObj = (InitializationMethod)info.ctor.Invoke(new object[] { system });
+                info.generateMethod.Invoke(methodObj, parameters);
+            }
+            catch (Exception e)
+            {
+                Log.Error("Could not use initialization method '" + info.name + "': " + e);
+                return false;
+            }
+
+            return true;
         }
-        catch (Exception e)
+
+        public bool IsAlgorithmKnown(string name)
         {
-            Log.Error("Could not use initialization method '" + info.name + "': " + e);
-            return false;
+            AlgorithmInfo info = FindAlgorithm(name);
+            return info != null;
         }
-
-        return true;
     }
 
-    public bool IsAlgorithmKnown(string name)
-    {
-        AlgorithmInfo info = FindAlgorithm(name);
-        return info != null;
-    }
-}
+} // namespace AS2

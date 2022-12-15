@@ -3,101 +3,107 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public class InputManager {
+namespace AS2.UI
+{
 
-    private static InputManager instance;
-
-    // Actions for Callbacks
-    public Action<ClickAction> clickActionEvent;
-    //public Action<InputAction> inputActionEvent;
-
-    private bool debug = false;
-
-    private InputManager()
+    public class InputManager
     {
-        instance = this;
-    }
 
-    public static InputManager GetCurrentInstance()
-    {
-        return instance;
-    }
+        private static InputManager instance;
 
-    public static InputManager CreateInstance()
-    {
-        if (instance == null) instance = new InputManager();
-        return instance;
-    }
+        // Actions for Callbacks
+        public Action<ClickAction> clickActionEvent;
+        //public Action<InputAction> inputActionEvent;
 
+        private bool debug = false;
 
-    /// <summary>
-    /// Receives actions from the InputHandler and handles them accordingly.
-    /// </summary>
-    /// <param name="inputAction"></param>
-    public void ProcessInput(InputAction inputAction)
-    {
-        switch (inputAction.inputType)
+        private InputManager()
         {
-            case InputAction.InputType.Mouse:
-                ProcessInput_Mouse((ClickAction)inputAction);
-                break;
-            case InputAction.InputType.Keyboard:
-                ProcessInput_Keyboard();
-                break;
-            default:
-                break;
+            instance = this;
         }
-    }
 
-
-    // Mouse ClickActions ===============
-
-    /// <summary>
-    /// Receives mouse actions and processes inputs.
-    /// Addition: A "clickActionEvent" is called that other classes can subscribe to in order to receive updates of the input.
-    /// </summary>
-    /// <param name="clickAction"></param>
-    private void ProcessInput_Mouse(ClickAction clickAction)
-    {
-        switch (clickAction.clickButton)
+        public static InputManager GetCurrentInstance()
         {
-            case ClickAction.ClickButton.LeftMouse:
-                ProcessInput_LeftMouse(clickAction);
-                break;
-            case ClickAction.ClickButton.MiddleMouse:
-                ProcessInput_MiddleMouse(clickAction);
-                break;
-            case ClickAction.ClickButton.RightMouse:
-                ProcessInput_RightMouse(clickAction);
-                break;
-            default:
-                break;
+            return instance;
         }
-        this.clickActionEvent(clickAction);
-    }
 
-    private void ProcessInput_LeftMouse(ClickAction clickAction)
-    {
-        if(debug) if(clickAction.ongoing == false) Log.Debug("LeftMouse ClickAction is processed ... ");
-    }
-
-    private void ProcessInput_RightMouse(ClickAction clickAction)
-    {
-        if (debug) if (clickAction.ongoing == false) Log.Debug("RightMouse ClickAction is processed ... ");
-    }
-
-    private void ProcessInput_MiddleMouse(ClickAction clickAction)
-    {
-        throw new System.NotImplementedException();
-    }
+        public static InputManager CreateInstance()
+        {
+            if (instance == null) instance = new InputManager();
+            return instance;
+        }
 
 
+        /// <summary>
+        /// Receives actions from the InputHandler and handles them accordingly.
+        /// </summary>
+        /// <param name="inputAction"></param>
+        public void ProcessInput(InputAction inputAction)
+        {
+            switch (inputAction.inputType)
+            {
+                case InputAction.InputType.Mouse:
+                    ProcessInput_Mouse((ClickAction)inputAction);
+                    break;
+                case InputAction.InputType.Keyboard:
+                    ProcessInput_Keyboard();
+                    break;
+                default:
+                    break;
+            }
+        }
 
-    // Keyboard KeyActions ===============
 
-    private void ProcessInput_Keyboard()
-    {
-        throw new System.NotImplementedException();
+        // Mouse ClickActions ===============
+
+        /// <summary>
+        /// Receives mouse actions and processes inputs.
+        /// Addition: A "clickActionEvent" is called that other classes can subscribe to in order to receive updates of the input.
+        /// </summary>
+        /// <param name="clickAction"></param>
+        private void ProcessInput_Mouse(ClickAction clickAction)
+        {
+            switch (clickAction.clickButton)
+            {
+                case ClickAction.ClickButton.LeftMouse:
+                    ProcessInput_LeftMouse(clickAction);
+                    break;
+                case ClickAction.ClickButton.MiddleMouse:
+                    ProcessInput_MiddleMouse(clickAction);
+                    break;
+                case ClickAction.ClickButton.RightMouse:
+                    ProcessInput_RightMouse(clickAction);
+                    break;
+                default:
+                    break;
+            }
+            this.clickActionEvent(clickAction);
+        }
+
+        private void ProcessInput_LeftMouse(ClickAction clickAction)
+        {
+            if (debug) if (clickAction.ongoing == false) Log.Debug("LeftMouse ClickAction is processed ... ");
+        }
+
+        private void ProcessInput_RightMouse(ClickAction clickAction)
+        {
+            if (debug) if (clickAction.ongoing == false) Log.Debug("RightMouse ClickAction is processed ... ");
+        }
+
+        private void ProcessInput_MiddleMouse(ClickAction clickAction)
+        {
+            throw new System.NotImplementedException();
+        }
+
+
+
+        // Keyboard KeyActions ===============
+
+        private void ProcessInput_Keyboard()
+        {
+            throw new System.NotImplementedException();
+        }
+
     }
 
 }
