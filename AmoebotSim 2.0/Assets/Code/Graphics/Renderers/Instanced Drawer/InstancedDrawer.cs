@@ -15,6 +15,11 @@ namespace AS2.Visuals
 
         private List<Matrix4x4[]> matricesList = new List<Matrix4x4[]>();
         private int count = 0;
+        private int Capacity {
+            get {
+                return matricesList.Count * 1024;
+            }
+        }
 
         /// <summary>
         /// Adds a matrix to the system.
@@ -22,7 +27,7 @@ namespace AS2.Visuals
         /// <param name="matrix"></param>
         public void AddMatrix(Matrix4x4 matrix)
         {
-            if (count % 1024 == 0) matricesList.Add(new Matrix4x4[1024]);
+            if (Capacity < count + 1) matricesList.Add(new Matrix4x4[1024]);
             // Calc Index
             int listNumber = count / 1024;
             int listID = count % 1024;

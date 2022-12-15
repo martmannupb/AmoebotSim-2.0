@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using AS2.Graphics;
+using AS2.Visuals;
 using UnityEngine;
 
 public class HexagonalExpansionPrototype : MonoBehaviour
