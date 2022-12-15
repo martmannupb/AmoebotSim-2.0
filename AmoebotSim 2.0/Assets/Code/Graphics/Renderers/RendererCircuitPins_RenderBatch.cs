@@ -47,6 +47,9 @@ public class RendererCircuitPins_RenderBatch
         Init();
     }
 
+    /// <summary>
+    /// Initializes the materials and settings of this class.
+    /// </summary>
     public void Init()
     {
         // Set Material
@@ -67,6 +70,11 @@ public class RendererCircuitPins_RenderBatch
         }
     }
 
+    /// <summary>
+    /// Adds a pin.
+    /// </summary>
+    /// <param name="pinPos">The global pin center position.</param>
+    /// <param name="singletonPin">If this is a singleton pin. Singleton pins have their own pin size.</param>
     public void AddPin(Vector2 pinPos, bool singletonPin)
     {
         if(currentIndex >= maxArraySize * circuitMatrices_Pins.Count)
@@ -81,6 +89,12 @@ public class RendererCircuitPins_RenderBatch
         currentIndex++;
     }
 
+    /// <summary>
+    /// Adds a connector pin.
+    /// A connector pin is a internal pin in expanded particles that connects the two sides of the particle.
+    /// It has the width and color of the circuit lines, so that two lines that go to the same point do not have visibly sharp edges and seem like a connected structure.
+    /// </summary>
+    /// <param name="pinPos"></param>
     public void AddConnectorPin(Vector2 pinPos)
     {
         if (currentIndex_connectors >= maxArraySize * circuitMatrices_PinConnectors.Count)
@@ -95,6 +109,13 @@ public class RendererCircuitPins_RenderBatch
         currentIndex_connectors++;
     }
 
+    /// <summary>
+    /// Calculates the pin matrix from the positional information about the pin.
+    /// We basically take a standard quad with a pin texture and transform it, so that it forms a pin of the right size.
+    /// </summary>
+    /// <param name="pinPos">The global position of the pin.</param>
+    /// <param name="isSingletonPin">If this is a singleton pin. Singleton pins have their own pin size.</param>
+    /// <returns></returns>
     private Matrix4x4 CalculatePinMatrix(Vector2 pinPos, bool isSingletonPin)
     {
         // Calc Pin Size
@@ -104,6 +125,12 @@ public class RendererCircuitPins_RenderBatch
         return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins + zOffset), Quaternion.identity, new Vector3(pinSize, pinSize, 1f));
     }
 
+    /// <summary>
+    /// Calculates the pin connector matrix from the positional information about the pin connector.
+    /// We basically take a standard quad with a pin texture and transform it, so that it forms a pin of the right size.
+    /// </summary>
+    /// <param name="pinPos"></param>
+    /// <returns></returns>
     private Matrix4x4 CalculatePinConnectorMatrix(Vector2 pinPos)
     {
         return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
@@ -119,6 +146,10 @@ public class RendererCircuitPins_RenderBatch
         currentIndex_connectors = 0;
     }
 
+    /// <summary>
+    /// Applies the updates for the animations.
+    /// </summary>
+    /// <param name="animationStartTime">The start time of the animation.</param>
     public void ApplyUpdates(float animationStartTime)
     {
         if (properties.delayed)
@@ -139,6 +170,11 @@ public class RendererCircuitPins_RenderBatch
         }
     }
 
+    /// <summary>
+    /// Renders the pins.
+    /// </summary>
+    /// <param name="type">The current view type. Useful for deciding what to show.</param>
+    /// <param name="firstRenderFrame">If this is the first frame of the new round.</param>
     public void Render(ViewType type, bool firstRenderFrame)
     {
         if (type == ViewType.Circular) return;
@@ -179,20 +215,3 @@ public class RendererCircuitPins_RenderBatch
     }
 
 }
-
-/**
- * - Bugfixing
- * - Beeps
- * - UI (Parameter Editing)
- *     - Content
- * 
- * - Todo _____
- * - UI (Param Editing, Deleting, Adding)
- * - Load/save
- * - Performance (Time Checks, Threading)
- * - Strong Connections
- * - Screenshots
- * - Runtime Scripting
- * - Docs
- * - 
- **/

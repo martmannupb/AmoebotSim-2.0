@@ -63,6 +63,9 @@ public class RendererCircuits_RenderBatch
         Init();
     }
 
+    /// <summary>
+    /// Initializes the materials based on the circuit render batch type. Also sets certain parameters for the property blocks and general settings of this class.
+    /// </summary>
     public void Init()
     {
         // Set Material
@@ -116,6 +119,11 @@ public class RendererCircuits_RenderBatch
         }
     }
 
+    /// <summary>
+    /// Adds a line from A to B.
+    /// </summary>
+    /// <param name="globalLineStartPos">The start position of the line.</param>
+    /// <param name="globalLineEndPos">The end position of the line.</param>
     public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos)
     {
         if(currentIndex >= maxArraySize * circuitMatrices_Lines.Count)
@@ -129,6 +137,13 @@ public class RendererCircuits_RenderBatch
         currentIndex++;
     }
 
+    /// <summary>
+    /// Adds a animated line from A to B which can move.
+    /// </summary>
+    /// <param name="globalLineStartPos">The start position of the line at the beginning of the animation.</param>
+    /// <param name="globalLineEndPos">The end position of the line at the beginning of the animation.</param>
+    /// <param name="globalLineStartPos2">The start position of the line at the end of the animation.</param>
+    /// <param name="globalLineEndPos2">The end position of the line at the end of the animation.</param>
     public void AddAnimatedLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Vector2 globalLineStartPos2, Vector2 globalLineEndPos2)
     {
         if (currentIndex >= maxArraySize * circuitMatrices_Lines.Count)
@@ -150,6 +165,13 @@ public class RendererCircuits_RenderBatch
         currentIndex++;
     }
 
+    /// <summary>
+    /// Calculates the line matrix from the positional information about the line.
+    /// We basically take a standard quad and transform it, so that it forms a line.
+    /// </summary>
+    /// <param name="posInitial">The start position of the line.</param>
+    /// <param name="posEnd">The end position of the line.</param>
+    /// <returns></returns>
     private Matrix4x4 CalculateLineMatrix(Vector2 posInitial, Vector2 posEnd)
     {
         Vector2 vec = posEnd - posInitial;
@@ -163,6 +185,9 @@ public class RendererCircuits_RenderBatch
         return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, z), q, new Vector3(length, lineWidth, 1f));
     }
 
+    /// <summary>
+    /// Calculates the interpolated line matrices for a point in time of an animation. This should done every frame if the animations are running.
+    /// </summary>
     private void CalculateAnimationFrame()
     {
         float interpolationPercentage;
@@ -193,6 +218,11 @@ public class RendererCircuits_RenderBatch
 
     private float lastBeepStartTime;
 
+    /// <summary>
+    /// Applies the new data for the timing of animations and beeps.
+    /// </summary>
+    /// <param name="animationStartTime">Start time of the animation.</param>
+    /// <param name="beepStartTime">Start time of the beeps.</param>
     public void ApplyUpdates(float animationStartTime, float beepStartTime)
     {
         if(properties.beeping)
@@ -222,6 +252,11 @@ public class RendererCircuits_RenderBatch
         }
     }
 
+    /// <summary>
+    /// Draws the circuits to the screen based on current settings.
+    /// </summary>
+    /// <param name="type">The view type of the system. Useful for deciding what should be shown.</param>
+    /// <param name="firstRenderFrame">Set to true if a new round has just begun, so that the new timing settings can be applied.</param>
     public void Render(ViewType type, bool firstRenderFrame)
     {
         // Visibility Check
