@@ -26,12 +26,15 @@ In the Inspector window, you should now see the Algorithm Generator Component di
 
 You can now start editing the values in the input fields:
 
+- *Algo Name*: This is the basic internal identification of your algorithm.
+	It is used to name the classes belonging to the algorithm, a namespace that contains these classes and the file containing all your algorithm code.
+	It must be a valid C# identifier and unique among all algorithms.
 - *Class Name*: This will be the name of the class defining your algorithm.
 	It has to be a valid C# class name that does not already exist in the project.
-	The name you enter will also be used to name the algorithm file.
+	If you do not enter a name, the default name will be the algorithm base name with the suffix "Particle".
 - *Display Name*: This field defines the name that will be displayed in the algorithm selection field during runtime.
 	It can be an arbitrary string but it still has to be unique.
-	If you leave this field empty, the class name will be used.
+	If you leave this field empty, the base name will be used.
 - *Num Pins*: The number of pins per connection used by the algorithm.
 	Please refer to the [Reconfigurable Circuits page](~/amoebot_model/circuits.md) if you are not familiar with the concept of pins.
 	You can enter 0 if your algorithm does not use circuits at all.
@@ -49,6 +52,17 @@ Find the generated algorithm file in `Assets/Code/Algorithms` using the Project 
 The file contains a blank algorithm template in which all optional features are commented out.
 In the following, we will go through the structure of this file and explain the meaning of each component.
 
+### Namespaces
+
+The first two lines of the file include the [`AS2.Sim`][10] and the `UnityEngine` namespace.
+[`AS2.Sim`][10] contains classes and methods belonging to the algorithm and simulation API that are necessary for implementing an Amoebot algorithm, like the [`ParticleAlgorithm`][1] class.
+The `UnityEngine` namespace provides the Unity Editor logging system (accessed using `Debug.Log`) and random number generation (via `Random.Range`, for example).
+See [Advanced Features](advanced.md) for details.
+
+The rest of the code is contained in a namespace called `AS2.Algos.<YourAlgoBaseName>`.
+Every Amoebot algorithm should be contained in its own namespace within `AS2.Algos` to separate it from the other algorithms.
+Being contained in the [`AS2`][11] namespace provides access to all the relevant classes and methods of the algorithm API.
+It is safe to rename the algorithm's namespace later.
 
 ### The Algorithm Class
 
@@ -188,3 +202,5 @@ The [Implementation Walkthrough](demo.md) provides an example for how this syste
 [7]: xref:AS2.Sim.ParticleAlgorithm.ActivateBeep
 [8]: xref:AS2.InitializationMethod
 [9]: xref:AS2.Sim.ParticleSystem
+[10]: xref:AS2.Sim
+[11]: xref:AS2

@@ -87,7 +87,7 @@ The second problem will be solved in the next section.
 ### Defining a Custom Message Type
 
 Custom Messages are defined as subclasses of the [`Message`][6] class.
-We start by defining our new class in the demo algorithm file, above the algorithm class, and giving it a member to store the direction as well as a default constructor without parameters:
+We start by defining our new class in the demo algorithm file, above the algorithm class but *inside the algorithm namespace*, and giving it a member to store the direction as well as a default constructor without parameters:
 ```csharp
 public class DemoDirectionMsg : Message
 {

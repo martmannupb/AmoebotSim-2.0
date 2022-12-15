@@ -25,6 +25,7 @@ In each round, the leader randomly decides whether a movement should be performe
 If it decides to perform a movement, it will send a beep on the global circuit (which has to be established first).
 All particles receiving a beep will perform a movement:
 If they are contracted, they will expand in the East direction and if they are expanded, they will contract into their tail.
+If some of these terms seem unfamiliar, you can refer to the [Model Reference pages](~/model_ref/home.md) for more information.
 
 From this description of the algorithm, we can already deduce that we will need a custom initialization method to place the particles and determine a leader, and that a single pin will be sufficient for this simple communication.
 Due to the common compass orientation, all particles know where the East direction is, which simplifies the movements (although it is possible to lift that assumption and still achieve a very similar behavior!).
@@ -56,20 +57,20 @@ Our new initialization method does not need parameters, but we will make the num
 
 ### Enabling Custom Initialization
 
-To start with, we uncomment the `DemoParticleInitializer` class at the bottom of the template file as well as the `GenerationMethod` property of the `DemoParticle` class and enter the name of the initializer class:
+To start with, we uncomment the `DemoInitializer` class at the bottom of the template file as well as the `GenerationMethod` property of the `DemoParticle` class and enter the name of the initializer class:
 
 ```csharp
 public class DemoParticle : ParticleAlgorithm
 {
     ...
     // If the algorithm has a special generation method, specify its full name here
-    public static new string GenerationMethod => typeof(DemoParticleInitializer).FullName;
+    public static new string GenerationMethod => typeof(DemoInitializer).FullName;
     ...
 }
 
-public class DemoParticleInitializer : InitializationMethod
+public class DemoInitializer : InitializationMethod
 {
-    public DemoParticleInitializer(ParticleSystem system) : base(system) { }
+    public DemoInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
     // This method implements the system generation
     // Its parameters will be shown in the UI and they must have default values
@@ -162,7 +163,7 @@ We also change the leader particle's color so that it can be distinguished from 
 By adding the `leader` parameter to the `Init` method, we have implicitly created an attribute for the [`InitializationParticles`][6] placed by the generation method.
 In the Initialization Mode, all particles are placed as [`InitializationParticles`][6], which can be moved, deleted and edited freely.
 When the "Start" button is pressed, the [`InitializationParticles`][6] are turned into proper particles and their attributes are passed as parameters to the `Init` method of those particles.
-Thus, we could now manually determine a leader by selecting one of the particles in the Init Mode, setting its `leader` attribute to `true` and pressing "Start":
+Thus, we can now manually determine a leader by selecting one of the particles in the Init Mode, setting its `leader` attribute to `true` and pressing "Start":
 ![Selecting a leader manually](~/images/demo_init_manual_leader.png "Selecting a leader manually in Init Mode")
 ![Selected leader during simulation](~/images/demo_init_manual_leader_2.png "Manually selected leader in Simulation Mode")
 
@@ -269,7 +270,7 @@ If we run the algorithm now, the particles will set up the global circuit and th
 ![The established global circuit](~/images/demo_circuit_setup.png "The established global circuit")
 ![Irregular beeps](~/images/demo_circuit_beep.png "Irregular beeps indicated by the white flashes")
 
-The visual representation of the pin configurations clearly shows that all pins of each particle are contained in a single partition set.
+The visual representation of the pin configurations clearly shows that all pins of each particle are contained in a single partition set and that all partition sets are connected in a global circuit.
 When the leader sends a beep, its partition set is highlighted with a white dot and all connection lines of the circuit are flashing white.
 
 ### Performing the Movements
@@ -316,92 +317,98 @@ Please refer to the [Bonds and Joint Movements reference](~/model_ref/bonds_jm.m
 With the movements in place, our demo algorithm is complete!
 Here is the final code:
 ```csharp
+using AS2.Sim;
 using UnityEngine;
 
-public class DemoParticle : ParticleAlgorithm
+namespace AS2.Algos.Demo
 {
-    // This is the display name of the algorithm (must be unique)
-    public static new string Name => "Demo Algorithm";
 
-    // Specify the number of pins (may be 0)
-    public override int PinsPerEdge => 1;
-
-    // If the algorithm has a special generation method, specify its full name here
-    public static new string GenerationMethod => typeof(DemoParticleInitializer).FullName;
-
-    // Declare attributes here
-    public ParticleAttribute<bool> isLeader;
-
-    public DemoParticle(Particle p) : base(p)
+    public class DemoParticle : ParticleAlgorithm
     {
-        isLeader = CreateAttributeBool("Is Leader", false);
+        // This is the display name of the algorithm (must be unique)
+        public static new string Name => "Demo Algorithm";
 
-        SetMainColor(ColorData.Particle_Blue);
-    }
+        // Specify the number of pins (may be 0)
+        public override int PinsPerEdge => 1;
 
-    // Implement this if the particles require special initialization
-    // The parameters will be converted to particle attributes for initialization
-    public void Init(bool leader = false)
-    {
-        if (leader)
+        // If the algorithm has a special generation method, specify its full name here
+        public static new string GenerationMethod => typeof(DemoInitializer).FullName;
+
+        // Declare attributes here
+        public ParticleAttribute<bool> isLeader;
+
+        public DemoParticle(Particle p) : base(p)
         {
-            isLeader.SetValue(true);
-            SetMainColor(ColorData.Particle_Green);
+            isLeader = CreateAttributeBool("Is Leader", false);
+
+            SetMainColor(ColorData.Particle_Blue);
         }
-    }
 
-    // The movement activation method
-    public override void ActivateMove()
-    {
-        PinConfiguration pc = GetCurrentPinConfiguration();
-        if (pc.ReceivedBeepOnPartitionSet(0))
+        // Implement this if the particles require special initialization
+        // The parameters will be converted to particle attributes for initialization
+        public void Init(bool leader = false)
         {
-            // Received a beep => Perform movement
-            if (IsContracted())  // Expand East if contracted
-                Expand(Direction.E);
-            else                 // Contract into tail if expanded
-                ContractTail();
-        }
-    }
-
-    // The beep activation method
-    public override void ActivateBeep()
-    {
-        PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
-        pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
-        SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
-
-        if (isLeader)  // Only the leader should run this code
-        {
-            if (Random.Range(0.0f, 1.0f) < 0.5f)
+            if (leader)
             {
-                // Decided to move => Send a beep on the global circuit
-                pc.SendBeepOnPartitionSet(0);
+                isLeader.SetValue(true);
+                SetMainColor(ColorData.Particle_Green);
+            }
+        }
+
+        // The movement activation method
+        public override void ActivateMove()
+        {
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            if (pc.ReceivedBeepOnPartitionSet(0))
+            {
+                // Received a beep => Perform movement
+                if (IsContracted())  // Expand East if contracted
+                    Expand(Direction.E);
+                else                 // Contract into tail if expanded
+                    ContractTail();
+            }
+        }
+
+        // The beep activation method
+        public override void ActivateBeep()
+        {
+            PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
+            pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
+            SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
+
+            if (isLeader)  // Only the leader should run this code
+            {
+                if (Random.Range(0.0f, 1.0f) < 0.5f)
+                {
+                    // Decided to move => Send a beep on the global circuit
+                    pc.SendBeepOnPartitionSet(0);
+                }
             }
         }
     }
-}
 
-// Use this to implement a generation method for this algorithm
-// Its class name must be specified as the algorithm's GenerationMethod
-public class DemoParticleInitializer : InitializationMethod
-{
-    public DemoParticleInitializer(ParticleSystem system) : base(system) { }
-
-    // This method implements the system generation
-    // Its parameters will be shown in the UI and they must have default values
-    public void Generate(int numParticles = 10)
+    // Use this to implement a generation method for this algorithm
+    // Its class name must be specified as the algorithm's GenerationMethod
+    public class DemoInitializer : InitializationMethod
     {
-        PlaceParallelogram(Vector2Int.zero, Direction.E, numParticles);
+        public DemoInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
-        InitializationParticle[] particles = GetParticles();
-        if (particles.Length > 0)
+        // This method implements the system generation
+        // Its parameters will be shown in the UI and they must have default values
+        public void Generate(int numParticles = 10)
         {
-            int randIdx = Random.Range(0, particles.Length);
-            particles[randIdx].SetAttribute("leader", true);
+            PlaceParallelogram(Vector2Int.zero, Direction.E, numParticles);
+
+            InitializationParticle[] particles = GetParticles();
+            if (particles.Length > 0)
+            {
+                int randIdx = Random.Range(0, particles.Length);
+                particles[randIdx].SetAttribute("leader", true);
+            }
         }
     }
-}
+
+} // namespace AS2.Algos.Demo
 ```
 
 ## Next Steps
