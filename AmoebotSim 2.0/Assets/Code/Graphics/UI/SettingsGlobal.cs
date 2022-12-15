@@ -4,9 +4,14 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine;
 
-public static class SettingsGlobal
+namespace AS2.UI
 {
 
-    public static bool circuitBorderActive = false;
+    public static class SettingsGlobal
+    {
 
-}
+        public static bool circuitBorderActive = false;
+
+    }
+
+} // namespace AS2.UI

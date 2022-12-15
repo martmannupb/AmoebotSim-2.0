@@ -8572,7 +8572,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d7fdfb9d8b1f8b4ba4b6f78d52184fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  className: MyNewAlgoParticle
+  algoName: MyNewAlgo
+  className: 
   displayName: 
   numPins: 1
 --- !u!4 &787605689
@@ -8947,7 +8948,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1496484896}
   m_Direction: 2
   m_Value: 0.012048192
-  m_Size: 0.9999946
+  m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

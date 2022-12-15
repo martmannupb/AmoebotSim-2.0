@@ -1,27 +1,32 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-// Copyright ©
-// Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
-// Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
-
-/// <summary>
-/// Superclass for all kinds of mouse and keyboard events.
-/// </summary>
-public class InputAction
+namespace AS2.UI
 {
 
-    public InputType inputType;
+    // Copyright ©
+    // Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
+    // Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
 
-    public InputAction(InputType inputType)
+    /// <summary>
+    /// Superclass for all kinds of mouse and keyboard events.
+    /// </summary>
+    public class InputAction
     {
-        this.inputType = inputType;
+
+        public InputType inputType;
+
+        public InputAction(InputType inputType)
+        {
+            this.inputType = inputType;
+        }
+
+
+        public enum InputType
+        {
+            Mouse, Keyboard
+        }
+
     }
 
-
-    public enum InputType
-    {
-        Mouse, Keyboard
-    }
-
-}
+} // namespace AS2.UI
