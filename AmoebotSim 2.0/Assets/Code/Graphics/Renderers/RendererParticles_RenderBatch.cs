@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using AS2.UI;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// The renderer for the base particles and pins.
+    /// Stores many matrices in which the data for the mesh instancing is stored and rendered with Graphics.DrawMeshInstanced(..)
+    /// </summary>
     public class RendererParticles_RenderBatch
     {
-
+    
         // Data _____
         // Particles
         private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
@@ -101,6 +105,9 @@ namespace AS2.Graphics
             Init();
         }
 
+        /// <summary>
+        /// Initializes all the property blocks and materials.
+        /// </summary>
         public void Init()
         {
             // PropertyBlocks
@@ -125,6 +132,11 @@ namespace AS2.Graphics
             hexagonCircWithPinsMaterial = TextureCreator.GetHexagonWithPinsMaterial(properties.pinsPerSide, ViewType.HexagonalCirc);
         }
 
+        /// <summary>
+        /// Adds a particle to the render batch.
+        /// </summary>
+        /// <param name="graphicalData"></param>
+        /// <returns></returns>
         public bool Particle_Add(ParticleGraphicsAdapterImpl graphicalData)
         {
             if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle)) return false;
@@ -163,6 +175,12 @@ namespace AS2.Graphics
             return true;
         }
 
+        /// <summary>
+        /// Removes a particle from the render batch. The last element in the last array takes its position afterwards, so that we still have valid arrays for the DrawMeshInstanced(..)
+        /// method.
+        /// </summary>
+        /// <param name="graphicalData"></param>
+        /// <returns></returns>
         public bool Particle_Remove(ParticleGraphicsAdapterImpl graphicalData)
         {
             if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle) == false) return false;
@@ -214,6 +232,14 @@ namespace AS2.Graphics
             return true;
         }
 
+        /// <summary>
+        /// Copies the values from a specific matrix id and position to another matrix id and position.
+        /// Used for reordering matrix positions.
+        /// </summary>
+        /// <param name="orig_ListNumber"></param>
+        /// <param name="orig_ListID"></param>
+        /// <param name="moved_ListNumber"></param>
+        /// <param name="moved_ListID"></param>
         private void CutAndCopyMatrices(int orig_ListNumber, int orig_ListID, int moved_ListNumber, int moved_ListID)
         {
             // 1. Move Matrices
@@ -236,6 +262,12 @@ namespace AS2.Graphics
             ResetMatrices(orig_ListNumber, orig_ListID);
         }
 
+        /// <summary>
+        /// Zeroes the values at a specific matrix id and position. If you would render this, nothing would show up
+        /// (but at the position (0,0) the mesh would still be drawn and have performance impact).
+        /// </summary>
+        /// <param name="listNumber"></param>
+        /// <param name="listID"></param>
         private void ResetMatrices(int listNumber, int listID)
         {
             particleMatricesCircle_Contracted[listNumber][listID] = matrixTRS_zero;
@@ -254,6 +286,13 @@ namespace AS2.Graphics
             particleReferences[listNumber][listID] = null;
         }
 
+        /// <summary>
+        /// Updates the matrices for a specific particle. Usually done once per round (if executeJointMovement is false).
+        /// This method is also used for continouusly updating the joint movements each frame (if executeJointMovement is set to true).
+        /// </summary>
+        /// <param name="gd">The particle to update.</param>
+        /// <param name="executeJointMovement">If this is the execution of a joint movement which is done repeatedly.
+        /// (this might seem a little odd, but the system was added later and seemed to be easily implementable it this way)</param>
         public void UpdateMatrix(ParticleGraphicsAdapterImpl gd, bool executeJointMovement)
         {
             Vector3 particle_position1world = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles);
@@ -293,7 +332,7 @@ namespace AS2.Graphics
                     particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID] = Vector3.zero;
                 }
             }
-
+        
             // Calculate Rotation
             Quaternion rotation = Quaternion.identity;
             if (gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanded || gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding)
@@ -302,39 +341,12 @@ namespace AS2.Graphics
             }
             else if (gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting)
             {
-                // Find Rotation Dir
-                //Vector2Int curPosWithoutJointMovements1 = gd.state_cur.jointMovementState.isJointMovement ? gd.state_cur.position1 - gd.state_cur.jointMovementState.jointExpansionOffset : gd.state_cur.position1;
-                //Vector2Int posOffset1 = curPosWithoutJointMovements1 - gd.state_prev.position1;
-                //Vector2Int posOffset2 = curPosWithoutJointMovements1 - gd.state_prev.position2;
-                //Vector2Int offsetVector = Vector2Int.zero;
-                //bool contractsIntoPos1 = false;
-                //if (posOffset1 != Vector2Int.zero && posOffset2 != Vector2Int.zero) Log.Error("Particle Render Batch: UpdateMatrix: PosOffsets are both not zero!");
-                //else if (posOffset1 != Vector2Int.zero)
-                //{
-                //    offsetVector = posOffset1;
-                //    contractsIntoPos1 = true;
-                //}
-                //else if (posOffset2 != Vector2Int.zero)
-                //{
-                //    offsetVector = posOffset2;
-                //    contractsIntoPos1 = false;
-                //}
-                //else Log.Error("Particle Render Batch: UpdateMatrix: Both PosOffsets are zero!");
-                //int expansionDir = 0;
-                //if (offsetVector == new Vector2Int(1, 0)) expansionDir = 0;
-                //else if (offsetVector == new Vector2Int(0, 1)) expansionDir = 1;
-                //else if (offsetVector == new Vector2Int(-1, 1)) expansionDir = 2;
-                //else if (offsetVector == new Vector2Int(-1, 0)) expansionDir = 3;
-                //else if (offsetVector == new Vector2Int(0, -1)) expansionDir = 4;
-                //else if (offsetVector == new Vector2Int(1, -1)) expansionDir = 5;
-                //else Log.Error("Particle Render Batch: UpdateMatrix: offset vector (" + offsetVector.x + "," + offsetVector.y + ") is too big!");
-                //if (contractsIntoPos1) expansionDir = (expansionDir + 3) % 6;
                 // Apply Rotation
                 rotation = Quaternion.Euler(0f, 0f, (60f * gd.state_cur.globalExpansionOrContractionDir) % 360f) * Quaternion.identity;
             }
             // Update Matrices
             ParticleGraphicsAdapterImpl.ParticleMovement movement = gd.state_cur.movement;
-            if (RenderSystem.animationsOn == false)
+            if(RenderSystem.animationsOn == false)
             {
                 if (movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting) movement = ParticleGraphicsAdapterImpl.ParticleMovement.Contracted;
                 else if (movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding) movement = ParticleGraphicsAdapterImpl.ParticleMovement.Expanded;
@@ -371,6 +383,10 @@ namespace AS2.Graphics
 
         }
 
+        /// <summary>
+        /// Render loop of the particles. Calculates all timings of movements and draws the particles on the screen.
+        /// </summary>
+        /// <param name="viewType"></param>
         public void Render(ViewType viewType)
         {
             // 1. Update Properties
@@ -424,6 +440,10 @@ namespace AS2.Graphics
             }
         }
 
+        /// <summary>
+        /// Hexagonal particle drawing. Part of the render loop.
+        /// </summary>
+        /// <param name="viewType"></param>
         private void Render_Hexagonal(ViewType viewType)
         {
             for (int i = 0; i < particleMatricesCircle_Contracted.Count; i++)
@@ -432,28 +452,31 @@ namespace AS2.Graphics
                 if (i == particleMatricesCircle_Contracted.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
                 else listLength = maxArraySize;
 
-                // Particles (previous mat: MaterialDatabase.material_hexagonal_particleCombined)
-                Material mat = viewType == ViewType.Hexagonal ? hexagonWithPinsMaterial : hexagonCircWithPinsMaterial;
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
-                // Pins
-                if (RenderSystem.flag_showCircuitView)
-                {
-                    Material matCirc = viewType == ViewType.Hexagonal ? circuitHexPinMaterial : circuitHexCircPinMaterial;
-                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+                    // Particles (previous mat: MaterialDatabase.material_hexagonal_particleCombined)
+                    Material mat = viewType == ViewType.Hexagonal ? hexagonWithPinsMaterial : hexagonCircWithPinsMaterial;
+                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+                    // Pins
+                    if (RenderSystem.flag_showCircuitView)
+                    {
+                        Material matCirc = viewType == ViewType.Hexagonal ? circuitHexPinMaterial : circuitHexCircPinMaterial;
+                        UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+                        UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+                        UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+                        UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+                    }
                 }
             }
-        }
 
+        /// <summary>
+        /// Circular particle drawing. Part of the render loop.
+        /// </summary>
         private void Render_Circular()
         {
             // Outter Ring visible?
-            if (RenderSystem.flag_showCircuitViewOutterRing && propertyBlock_circle_contracted.GetCurrentOutterCircleWidthPercentage() != 1f
+            if(RenderSystem.flag_showCircuitViewOutterRing && propertyBlock_circle_contracted.GetCurrentOutterCircleWidthPercentage() != 1f
                 || RenderSystem.flag_showCircuitViewOutterRing == false && propertyBlock_circle_contracted.GetCurrentOutterCircleWidthPercentage() != 0f)
             {
                 float val = RenderSystem.flag_showCircuitViewOutterRing ? 1f : 0f;
@@ -495,4 +518,4 @@ namespace AS2.Graphics
 
     }
 
-} // namespace AS2.Graphics
+}

@@ -4,9 +4,13 @@ using AS2.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Renderer for the UI.
+    /// Basically draws the overlay for the currently selected tool over the particles.
+    /// </summary>
     public class RendererUI
     {
 
@@ -61,6 +65,11 @@ namespace AS2.Graphics
             this.material_hexagonMoveSelectionOverlay = MaterialDatabase.material_hexagonal_ui_baseHexagonMoveSelectionMaterial;
         }
 
+        /// <summary>
+        /// Called when a click or a drag (also ongoing drag) is executed.
+        /// Handles all the actions that should be executed when this happens (e.g. selecting a particle, adding a particle etc.)
+        /// </summary>
+        /// <param name="action"></param>
         public void ClickActionCallback(ClickAction action)
         {
             // Get Selection Data
@@ -75,257 +84,257 @@ namespace AS2.Graphics
                 sim.system.TryGetParticleAt(mouseWorldField, out state_particleUnderPointer);
             }
 
-            switch (action.clickButton)
-            {
-                case ClickAction.ClickButton.LeftMouse:
-                    switch (action.clickType)
-                    {
-                        case ClickAction.ClickType.Click:
-                            if (action.ongoing == false)
-                            {
-                                // Click has been executed
-                                //Log.Debug("Click!");
-                                if (state_pointerOverMap)
+                switch (action.clickButton)
+                {
+                    case ClickAction.ClickButton.LeftMouse:
+                        switch (action.clickType)
+                        {
+                            case ClickAction.ClickType.Click:
+                                if (action.ongoing == false)
                                 {
-                                    if (state_particleUnderPointer != null)
+                                    // Click has been executed
+                                    //Log.Debug("Click!");
+                                    if (state_pointerOverMap)
                                     {
-                                        // Particle has been clicked
-                                        switch (activeTool)
+                                        if (state_particleUnderPointer != null)
                                         {
-                                            case UIHandler.UITool.Standard:
-                                                // Select particle, open particle panel
-                                                // Pause Simulation
-                                                sim.PauseSim();
-                                                // Update State
-                                                selectionState = ParticleSelectionState.Selected;
-                                                selectedParticle_expanded = state_particleUnderPointer.IsExpanded();
-                                                selectedParticle_pos1 = state_particleUnderPointer.Head();
-                                                selectedParticle_pos2 = state_particleUnderPointer.Tail();
-                                                // Open Particle Panel
-                                                if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Open(state_particleUnderPointer);
-                                                break;
-                                            case UIHandler.UITool.Add:
-                                                // empty
-                                                break;
-                                            case UIHandler.UITool.Remove:
-                                                // Close Particle Panel (just in case)
-                                                if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Close();
-                                                // Remove particle
-                                                sim.system.RemoveParticle(state_particleUnderPointer);
-                                                break;
-                                            case UIHandler.UITool.Move:
-                                                // Select particle for movement
-                                                // Pause Simulation
-                                                sim.PauseSim();
-                                                // Select
-                                                moveToolParticleSelected = true;
-                                                moveToolParticlePosition = mouseWorldField;
-                                                break;
-                                            default:
-                                                break;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // Empty Node has been clicked
-                                        switch (activeTool)
-                                        {
-                                            case UIHandler.UITool.Standard:
-                                                // Reset selection, close particle panel (if open)
-                                                // Update State
-                                                selectionState = ParticleSelectionState.NoSelection;
-                                                // Close particle panel
-                                                if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Close();
-                                                break;
-                                            case UIHandler.UITool.Add:
-                                                // Pause Simulation
-                                                sim.PauseSim();
-                                                // Add particle at position
-                                                if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
-                                                else sim.system.AddParticleContracted(mouseWorldField);
-                                                break;
-                                            case UIHandler.UITool.Remove:
-                                                // magikarp uses splash, nothing happens
-                                                break;
-                                            case UIHandler.UITool.Move:
-                                                // If particle has been selected and can be moved, then move it
-                                                if (moveToolParticleSelected)
-                                                {
-                                                    IParticleState selectedParticle;
-                                                    sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
-                                                    if (selectedParticle != null)
-                                                    {
-                                                        sim.system.MoveParticleToNewContractedPosition(selectedParticle, mouseWorldField);
-                                                        moveToolParticleSelected = false;
-                                                    }
-                                                    else
-                                                    {
-                                                        // Should not happen
-                                                        Log.Error("UIRenderer: Cached move tool particle is not accessible, it must have been deleted or moved.");
-                                                    }
-                                                }
-                                                break;
-                                            default:
-                                                break;
-                                        }
-                                        if (activeTool == UIHandler.UITool.Standard)
-                                        {
-
-                                        }
-                                    }
-                                }
-                            }
-                            break;
-                        case ClickAction.ClickType.Drag:
-                            // Drag has been executed
-                            Vector2Int node1 = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(action.positionStart));
-                            Vector2Int node2 = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(action.positionTarget));
-                            IParticleState p1 = null;
-                            IParticleState p2 = null;
-                            sim.system.TryGetParticleAt(node1, out p1);
-                            sim.system.TryGetParticleAt(node2, out p2);
-                            if (action.ongoing)
-                            {
-                                // Drag ongoing
-                                switch (activeTool)
-                                {
-                                    case UIHandler.UITool.Standard:
-                                        break;
-                                    case UIHandler.UITool.Add:
-                                        // Sim must be paused to add particles
-                                        if (sim.running == false)
-                                        {
-                                            // Validity Check (either one empty field or two empty fields next to each other selected)
-                                            if (node1 == node2 && p1 == null)
+                                            // Particle has been clicked
+                                            switch (activeTool)
                                             {
-                                                // Show Add Overlay (for single particle)
-                                                Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
-                                            }
-                                            else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
-                                            {
-                                                // Show Add Overlay (for extended particle)
-                                                Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
-                                                Vector3 worldAbsPos2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node2);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos2 + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
-                                            }
-                                            else
-                                            {
-                                                // Show nothing (drag is too far apart or one node has a particle)
-                                            }
-                                        }
-                                        break;
-                                    case UIHandler.UITool.Remove:
-                                        break;
-                                    case UIHandler.UITool.Move:
-                                        // Move Overlay
-                                        if (sim.running == false)
-                                        {
-                                            // Validity Check (either one empty field or two empty fields next to each other selected)
-                                            if (node1 == node2 && p1 == null)
-                                            {
-                                                // Show Move Overlay (for single particle)
-                                                Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
-                                            }
-                                            else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
-                                            {
-                                                // Show Move Overlay (for extended particle)
-                                                Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
-                                                Vector3 worldAbsPos2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node2);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos2 + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
-                                            }
-                                            else
-                                            {
-                                                // Show nothing (drag is too far apart or one node has a particle)
-                                            }
-                                        }
-                                        break;
-                                    default:
-                                        break;
-                                }
-                                currentlyDragging = true;
-                            }
-                            else
-                            {
-                                // Drag finished
-                                switch (activeTool)
-                                {
-                                    case UIHandler.UITool.Standard:
-                                        // empty
-                                        break;
-                                    case UIHandler.UITool.Add:
-                                        if (node1 == node2)
-                                        {
-                                            // One node selected
-                                            if (p1 == null)
-                                            {
-                                                // Pause Simulation
-                                                sim.PauseSim();
-                                                // Add particle at position
-                                                if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
-                                                else sim.system.AddParticleContracted(mouseWorldField);
+                                                case UIHandler.UITool.Standard:
+                                                    // Select particle, open particle panel
+                                                    // Pause Simulation
+                                                    sim.PauseSim();
+                                                    // Update State
+                                                    selectionState = ParticleSelectionState.Selected;
+                                                    selectedParticle_expanded = state_particleUnderPointer.IsExpanded();
+                                                    selectedParticle_pos1 = state_particleUnderPointer.Head();
+                                                    selectedParticle_pos2 = state_particleUnderPointer.Tail();
+                                                    // Open Particle Panel
+                                                    if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Open(state_particleUnderPointer);
+                                                    break;
+                                                case UIHandler.UITool.Add:
+                                                    // empty
+                                                    break;
+                                                case UIHandler.UITool.Remove:
+                                                    // Close Particle Panel (just in case)
+                                                    if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Close();
+                                                    // Remove particle
+                                                    sim.system.RemoveParticle(state_particleUnderPointer);
+                                                    break;
+                                                case UIHandler.UITool.Move:
+                                                    // Select particle for movement
+                                                    // Pause Simulation
+                                                    sim.PauseSim();
+                                                    // Select
+                                                    moveToolParticleSelected = true;
+                                                    moveToolParticlePosition = mouseWorldField;
+                                                    break;
+                                                default:
+                                                    break;
                                             }
                                         }
                                         else
                                         {
-                                            // Multiple nodes selected
-                                            if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
+                                            // Empty Node has been clicked
+                                            switch (activeTool)
                                             {
-                                                // Neighboring nodes which are empty
-                                                // Pause Simulation
-                                                sim.PauseSim();
-                                                // Add particle at position
-                                                if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
-                                                else sim.system.AddParticleExpanded(node2, node1);
-                                                sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
+                                                case UIHandler.UITool.Standard:
+                                                    // Reset selection, close particle panel (if open)
+                                                    // Update State
+                                                    selectionState = ParticleSelectionState.NoSelection;
+                                                    // Close particle panel
+                                                    if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Close();
+                                                    break;
+                                                case UIHandler.UITool.Add:
+                                                    // Pause Simulation
+                                                    sim.PauseSim();
+                                                    // Add particle at position
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
+                                                    else sim.system.AddParticleContracted(mouseWorldField);
+                                                    break;
+                                                case UIHandler.UITool.Remove:
+                                                    // magikarp uses splash, nothing happens
+                                                    break;
+                                                case UIHandler.UITool.Move:
+                                                    // If particle has been selected and can be moved, then move it
+                                                    if (moveToolParticleSelected)
+                                                    {
+                                                        IParticleState selectedParticle;
+                                                        sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
+                                                        if (selectedParticle != null)
+                                                        {
+                                                            sim.system.MoveParticleToNewContractedPosition(selectedParticle, mouseWorldField);
+                                                            moveToolParticleSelected = false;
+                                                        }
+                                                        else
+                                                        {
+                                                            // Should not happen
+                                                            Log.Error("UIRenderer: Cached move tool particle is not accessible, it must have been deleted or moved.");
+                                                        }
+                                                    }
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+                                            if (activeTool == UIHandler.UITool.Standard)
+                                            {
+
                                             }
                                         }
-                                        break;
-                                    case UIHandler.UITool.Remove:
-                                        // empty
-                                        break;
-                                    case UIHandler.UITool.Move:
-                                        // If particle has been selected and can be moved, then move it
-                                        if (moveToolParticleSelected)
-                                        {
-                                            IParticleState selectedParticle;
-                                            sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
-                                            if (selectedParticle != null)
+                                    }
+                                }
+                                break;
+                            case ClickAction.ClickType.Drag:
+                                // Drag has been executed
+                                Vector2Int node1 = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(action.positionStart));
+                                Vector2Int node2 = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(action.positionTarget));
+                                IParticleState p1 = null;
+                                IParticleState p2 = null;
+                                sim.system.TryGetParticleAt(node1, out p1);
+                                sim.system.TryGetParticleAt(node2, out p2);
+                                if (action.ongoing)
+                                {
+                                    // Drag ongoing
+                                    switch (activeTool)
+                                    {
+                                        case UIHandler.UITool.Standard:
+                                            break;
+                                        case UIHandler.UITool.Add:
+                                            // Sim must be paused to add particles
+                                            if (sim.running == false)
                                             {
-                                                if (node1 == node2)
+                                                // Validity Check (either one empty field or two empty fields next to each other selected)
+                                                if (node1 == node2 && p1 == null)
                                                 {
-                                                    // One node selected
-                                                    if (p1 == null)
-                                                    {
-                                                        // Pause Simulation
-                                                        sim.PauseSim();
-                                                        // Move Particle
-                                                        sim.system.MoveParticleToNewContractedPosition(selectedParticle, mouseWorldField);
-                                                        moveToolParticleSelected = false;
-                                                    }
+                                                    // Show Add Overlay (for single particle)
+                                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
+                                                }
+                                                else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
+                                                {
+                                                    // Show Add Overlay (for extended particle)
+                                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
+                                                    Vector3 worldAbsPos2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node2);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos2 + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
                                                 }
                                                 else
                                                 {
-                                                    // Multiple nodes selected
-                                                    if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
-                                                    {
-                                                        // Neighboring nodes which are empty
-                                                        // Pause Simulation
-                                                        sim.PauseSim();
-                                                        // Move Particle
-                                                        sim.system.MoveParticleToNewExpandedPosition(selectedParticle, node2, node1); // mouse movement from tail to head
-                                                        moveToolParticleSelected = false;
-                                                    }
+                                                    // Show nothing (drag is too far apart or one node has a particle)
+                                                }
+                                            }
+                                            break;
+                                        case UIHandler.UITool.Remove:
+                                            break;
+                                        case UIHandler.UITool.Move:
+                                            // Move Overlay
+                                            if (sim.running == false)
+                                            {
+                                                // Validity Check (either one empty field or two empty fields next to each other selected)
+                                                if (node1 == node2 && p1 == null)
+                                                {
+                                                    // Show Move Overlay (for single particle)
+                                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
+                                                }
+                                                else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
+                                                {
+                                                    // Show Move Overlay (for extended particle)
+                                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
+                                                    Vector3 worldAbsPos2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node2);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos2 + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
+                                                }
+                                                else
+                                                {
+                                                    // Show nothing (drag is too far apart or one node has a particle)
+                                                }
+                                            }
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    currentlyDragging = true;
+                                }
+                                else
+                                {
+                                    // Drag finished
+                                    switch (activeTool)
+                                    {
+                                        case UIHandler.UITool.Standard:
+                                            // empty
+                                            break;
+                                        case UIHandler.UITool.Add:
+                                            if (node1 == node2)
+                                            {
+                                                // One node selected
+                                                if (p1 == null)
+                                                {
+                                                    // Pause Simulation
+                                                    sim.PauseSim();
+                                                    // Add particle at position
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
+                                                    else sim.system.AddParticleContracted(mouseWorldField);
                                                 }
                                             }
                                             else
                                             {
-                                                // Should not happen
-                                                Log.Error("UIRenderer: Cached move tool particle is not accessible, it must have been deleted or moved.");
+                                                // Multiple nodes selected
+                                                if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
+                                                {
+                                                    // Neighboring nodes which are empty
+                                                    // Pause Simulation
+                                                    sim.PauseSim();
+                                                    // Add particle at position
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
+                                                    else sim.system.AddParticleExpanded(node2, node1);
+                                                    sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
+                                                }
                                             }
+                                            break;
+                                        case UIHandler.UITool.Remove:
+                                            // empty
+                                            break;
+                                        case UIHandler.UITool.Move:
+                                            // If particle has been selected and can be moved, then move it
+                                            if (moveToolParticleSelected)
+                                            {
+                                                IParticleState selectedParticle;
+                                                sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
+                                                if (selectedParticle != null)
+                                                {
+                                                    if (node1 == node2)
+                                                    {
+                                                        // One node selected
+                                                        if (p1 == null)
+                                                        {
+                                                            // Pause Simulation
+                                                            sim.PauseSim();
+                                                            // Move Particle
+                                                            sim.system.MoveParticleToNewContractedPosition(selectedParticle, mouseWorldField);
+                                                            moveToolParticleSelected = false;
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        // Multiple nodes selected
+                                                        if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
+                                                        {
+                                                            // Neighboring nodes which are empty
+                                                            // Pause Simulation
+                                                            sim.PauseSim();
+                                                            // Move Particle
+                                                            sim.system.MoveParticleToNewExpandedPosition(selectedParticle, node2, node1); // mouse movement from tail to head
+                                                            moveToolParticleSelected = false;
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // Should not happen
+                                                    Log.Error("UIRenderer: Cached move tool particle is not accessible, it must have been deleted or moved.");
+                                                }
 
                                         }
                                         break;
@@ -346,7 +355,13 @@ namespace AS2.Graphics
                     break;
             }
         }
+
         private bool currentlyDragging = false;
+        /// <summary>
+        /// The render loop of the renderer.
+        /// Here the mostly hexagonal overlays are drawn based on the current state of the renderer UI and the current mouse position.
+        /// </summary>
+        /// <param name="viewType"></param>
         public void Render(ViewType viewType)
         {
             // Get Selection Data
@@ -485,4 +500,4 @@ namespace AS2.Graphics
 
     }
 
-} // namespace AS2.Graphics
+}

@@ -3,9 +3,14 @@ using System.Collections.Generic;
 using AS2.Sim;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// The base class of all particle rendering.
+    /// Particles that are added to the system give continouus updates on their state over the ParticleGraphicsAdapterImpl class, while the system handles the necessary updates of the 
+    /// visual data to perform the display on the screen.
+    /// </summary>
     public class RendererParticles
     {
 
@@ -13,23 +18,26 @@ namespace AS2.Graphics
 
         // Renderers
         // Particles ===============
+        /// <summary>
+        /// Collection of batches for the particle rendering (this is where the rendering of the base particles and pins happens)
+        /// </summary>
         public Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch>();
         // Circuits + Bonds ===============
+        /// <summary>
+        /// Renderer for the circuits and bonds
+        /// </summary>
         public RendererCircuitsAndBonds circuitAndBondRenderer = new RendererCircuitsAndBonds();
 
         // Data _____
         // Particles
+        /// <summary>
+        /// Storage of all registered particles at this system.
+        /// </summary>
         private Dictionary<IParticleState, ParticleGraphicsAdapterImpl> particleToParticleGraphicalDataMap = new Dictionary<IParticleState, ParticleGraphicsAdapterImpl>();
 
         public RendererParticles()
         {
             instance = this;
-        }
-
-        public ParticleGraphicsAdapterImpl GetGraphicsAdapterImpl(Particle particle)
-        {
-            if (particleToParticleGraphicalDataMap.ContainsKey((IParticleState)particle)) return particleToParticleGraphicalDataMap[(IParticleState)particle];
-            return null;
         }
 
         /// <summary>
@@ -55,7 +63,7 @@ namespace AS2.Graphics
                 propertiesToRenderBatchMap.Add(block, renderBatch);
                 renderBatch.Particle_Add(graphicalData);
             }
-            if (particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle) == false)
+            if(particleToParticleGraphicalDataMap.ContainsKey(graphicalData.particle) == false)
             {
                 particleToParticleGraphicalDataMap.Add(graphicalData.particle, graphicalData);
             }
@@ -112,4 +120,4 @@ namespace AS2.Graphics
 
     }
 
-} // namespace AS2.Graphics
+}

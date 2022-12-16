@@ -1,11 +1,16 @@
+using AS2.UI;
 using System.Collections;
 using System.Collections.Generic;
-using AS2.UI;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Base class for all the rendering of the particles. Stores most render settings and initiates the render process.
+    /// The render system is a tree-like structure with multiple sub-parts which all have their individual tasks.
+    /// RendererBackground: Renders the background. RendererParticles: Renders particles, circuits and connections. RendererUI: Renders the overlay over particles.
+    /// </summary>
     public class RenderSystem
     {
 
@@ -51,6 +56,7 @@ namespace AS2.Graphics
         public static bool flag_showCircuitView = true;
         public static bool flag_showBonds = true;
         public static bool flag_showCircuitViewOutterRing = true;
+        public static bool flag_circuitBorderActive = false;
 
         // Dynamic Data _____
         public static float data_particleMovementFinishedTimestamp;
@@ -89,6 +95,9 @@ namespace AS2.Graphics
             rendererUI = new RendererUI(sim, inputController);
         }
 
+        /// <summary>
+        /// The render loop of the render system. This is called once per frame.
+        /// </summary>
         public void Render()
         {
             // Calculate Progress
@@ -142,7 +151,9 @@ namespace AS2.Graphics
             //if(animationsOn == false) data_hexagonalAnimationDuration = 0f;
         }
 
-
+        /// <summary>
+        /// Toggles through the several view types like hexagonal, circular and graph view.
+        /// </summary>
         public void ToggleViewType()
         {
             switch (setting_viewType)
@@ -161,37 +172,62 @@ namespace AS2.Graphics
             }
         }
 
+        /// <summary>
+        /// Returns the current view type.
+        /// </summary>
+        /// <returns></returns>
         public ViewType GetCurrentViewType()
         {
             return setting_viewType;
         }
 
+        /// <summary>
+        /// Toggles the circuit view on and off.
+        /// </summary>
         public void ToggleCircuits()
         {
             flag_showCircuitView = !flag_showCircuitView;
         }
 
+        /// <summary>
+        /// Toggles the bonds on and off.
+        /// </summary>
         public void ToggleBonds()
         {
             flag_showBonds = !flag_showBonds;
         }
 
+        /// <summary>
+        /// Tells you if the circuits are currently visible.
+        /// </summary>
+        /// <returns></returns>
         public bool IsCircuitViewActive()
         {
             return flag_showCircuitView;
         }
 
+        /// <summary>
+        /// Returns true if the bonds are currently shown.
+        /// </summary>
+        /// <returns></returns>
         public bool AreBondsActive()
         {
             return flag_showBonds;
         }
 
+        /// <summary>
+        /// Updates the anti-aliasing setting of the graphical interface.
+        /// </summary>
+        /// <param name="value">0 = off, 2,4,8 = Anti-Aliasing Setting</param>
         public void SetAntiAliasing(int value)
         {
             if (value == 0 || value == 2 || value == 4 || value == 8) setting_antiAliasing = value;
             QualitySettings.antiAliasing = setting_antiAliasing;
         }
 
+        /// <summary>
+        /// Toggles through the anti-aliasing in the following order 0->2->4->8->0 ...
+        /// </summary>
         public void ToggleAntiAliasing()
         {
             switch (setting_antiAliasing)
@@ -212,11 +248,18 @@ namespace AS2.Graphics
             QualitySettings.antiAliasing = setting_antiAliasing;
         }
 
+        /// <summary>
+        /// Returns the current anti-aliasing setting.
+        /// </summary>
+        /// <returns></returns>
         public int GetAntiAliasing()
         {
             return setting_antiAliasing;
         }
 
+        /// <summary>
+        /// Increments the anti-aliasing.
+        /// </summary>
         public void AntiAliasing_Incr()
         {
             switch (setting_antiAliasing)
@@ -237,6 +280,9 @@ namespace AS2.Graphics
             QualitySettings.antiAliasing = setting_antiAliasing;
         }
 
+        /// <summary>
+        /// Decrements the anti-aliasing.
+        /// </summary>
         public void AntiAliasing_Decr()
         {
             switch (setting_antiAliasing)
@@ -257,5 +303,4 @@ namespace AS2.Graphics
             QualitySettings.antiAliasing = setting_antiAliasing;
         }
     }
-
-} // namespace AS2.Graphics
+}

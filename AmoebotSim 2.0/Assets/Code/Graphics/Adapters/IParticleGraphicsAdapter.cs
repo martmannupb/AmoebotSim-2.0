@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
     public interface IParticleGraphicsAdapter
@@ -83,4 +83,4 @@ namespace AS2.Graphics
         void ClearParticleColor();
     }
 
-} // namespace AS2.Graphics
+}

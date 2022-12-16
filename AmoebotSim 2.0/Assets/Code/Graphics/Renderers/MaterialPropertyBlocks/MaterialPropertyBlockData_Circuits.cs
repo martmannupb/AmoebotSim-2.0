@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
     public class MaterialPropertyBlockData_Circuits : MaterialPropertyBlockData
@@ -51,4 +51,4 @@ namespace AS2.Graphics
         }
     }
 
-} // namespace AS2.Graphics
+}

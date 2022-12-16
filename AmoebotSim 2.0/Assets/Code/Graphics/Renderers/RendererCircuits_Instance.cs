@@ -2,9 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// The circuit and bond renderer instance that handles all the data that is added in a round.
+    /// Has render batches for circuits (colorized lines) and pins (colorized dots) grouped by data with the same properties (like type, color, etc.).
+    /// These batches are all rendered when the draw loop is called.
+    /// </summary>
     public class RendererCircuits_Instance
     {
 
@@ -17,10 +22,15 @@ namespace AS2.Graphics
         private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
         private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
 
-        public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
-        {
-            bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
-            int amountPartitionSets = state.partitionSets.Count;
+    /// <summary>
+    /// Adds the data of a particle's partition set to the system. Combines it with the position data of the particle itself to calculate all positions of the circuits and pins.
+    /// </summary>
+    /// <param name="state">The particle's graphical pin and partition set data.</param>
+    /// <param name="snap">The particle's position and movement data.</param>
+    public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
+    {
+        bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
+        int amountPartitionSets = state.partitionSets.Count;
 
             if (state.isExpanded == false)
             {
@@ -200,96 +210,100 @@ namespace AS2.Graphics
 
 
 
-        public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping)
+    private void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping)
+    {
+        // Normal Circuit
+        RendererCircuits_RenderBatch batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, false, false);
+        batch.AddLine(globalLineStartPos, globalLineEndPos);
+        // Beep
+        if(beeping)
         {
-            // Normal Circuit
-            RendererCircuits_RenderBatch batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, false, false);
+            batch = GetBatch_Line(Color.white, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false);
             batch.AddLine(globalLineStartPos, globalLineEndPos);
-            // Beep
-            if (beeping)
-            {
-                batch = GetBatch_Line(Color.white, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false);
-                batch.AddLine(globalLineStartPos, globalLineEndPos);
-            }
         }
+    }
 
-        public void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping)
+    private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping)
+    {
+        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false);
+        batch.AddPin(pinPos, false);
+        // Beep
+        if (beeping)
         {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false);
+            batch = GetBatch_Pin(color, delayed, true);
             batch.AddPin(pinPos, false);
-            // Beep
-            if (beeping)
-            {
-                batch = GetBatch_Pin(color, delayed, true);
-                batch.AddPin(pinPos, false);
-            }
         }
+    }
 
-        public void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed)
-        {
-            // Beep
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true);
-            batch.AddPin(pinPos, true);
-        }
+    private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed)
+    {
+        // Beep
+        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true);
+        batch.AddPin(pinPos, true);
+    }
 
-        public void AddConnectorPin(Vector2 pinPos, Color color, bool delayed)
-        {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false);
-            batch.AddConnectorPin(pinPos);
-        }
+    private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed)
+    {
+        RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false);
+        batch.AddConnectorPin(pinPos);
+    }
 
-        public RendererCircuits_RenderBatch GetBatch_Line(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated)
+    private RendererCircuits_RenderBatch GetBatch_Line(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated)
+    {
+        RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, lineType, delayed, beeping, animated);
+        RendererCircuits_RenderBatch batch;
+        if (propertiesToRenderBatchMap.ContainsKey(propertyBlockData) == false)
         {
-            RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, lineType, delayed, beeping, animated);
-            RendererCircuits_RenderBatch batch;
-            if (propertiesToRenderBatchMap.ContainsKey(propertyBlockData) == false)
-            {
-                // Batch does not exist
-                // Create Batch
-                batch = new RendererCircuits_RenderBatch(propertyBlockData);
-                propertiesToRenderBatchMap.Add(propertyBlockData, batch);
-            }
-            else
-            {
-                propertiesToRenderBatchMap.TryGetValue(propertyBlockData, out batch);
-            }
-            return batch;
+            // Batch does not exist
+            // Create Batch
+            batch = new RendererCircuits_RenderBatch(propertyBlockData);
+            propertiesToRenderBatchMap.Add(propertyBlockData, batch);
         }
+        else
+        {
+            propertiesToRenderBatchMap.TryGetValue(propertyBlockData, out batch);
+        }
+        return batch;
+    }
 
-        public RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping)
+    private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping)
+    {
+        RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping);
+        RendererCircuitPins_RenderBatch batch;
+        if (propertiesToPinRenderBatchMap.ContainsKey(propertyBlockData) == false)
         {
-            RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping);
-            RendererCircuitPins_RenderBatch batch;
-            if (propertiesToPinRenderBatchMap.ContainsKey(propertyBlockData) == false)
-            {
-                // Batch does not exist
-                // Create Batch
-                batch = new RendererCircuitPins_RenderBatch(propertyBlockData);
-                propertiesToPinRenderBatchMap.Add(propertyBlockData, batch);
-            }
-            else
-            {
-                propertiesToPinRenderBatchMap.TryGetValue(propertyBlockData, out batch);
-            }
-            return batch;
+            // Batch does not exist
+            // Create Batch
+            batch = new RendererCircuitPins_RenderBatch(propertyBlockData);
+            propertiesToPinRenderBatchMap.Add(propertyBlockData, batch);
         }
+        else
+        {
+            propertiesToPinRenderBatchMap.TryGetValue(propertyBlockData, out batch);
+        }
+        return batch;
+    }
 
-        public void AddBond(ParticleBondGraphicState bondState)
-        {
-            // Convert Grid to World Space
-            Vector2 prevBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos1);
-            Vector2 prevBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos2);
-            Vector2 curBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos1);
-            Vector2 curBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos2);
-            // Hexagonal
-            RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondHexagonal, false, false, bondState.IsAnimated());
-            if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
-            else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
-            // Circular
-            batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondCircular, false, false, bondState.IsAnimated());
-            if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
-            else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
-        }
+    /// <summary>
+    /// Adds a single bond to the system.
+    /// </summary>
+    /// <param name="bondState"></param>
+    public void AddBond(ParticleBondGraphicState bondState)
+    {
+        // Convert Grid to World Space
+        Vector2 prevBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos1);
+        Vector2 prevBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos2);
+        Vector2 curBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos1);
+        Vector2 curBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos2);
+        // Hexagonal
+        RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondHexagonal, false, false, bondState.IsAnimated());
+        if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
+        else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
+        // Circular
+        batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondCircular, false, false, bondState.IsAnimated());
+        if (bondState.IsAnimated()) batch.AddAnimatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
+        else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
+    }
 
 
 
@@ -308,19 +322,23 @@ namespace AS2.Graphics
             }
         }
 
-        public void Render(ViewType type)
+    /// <summary>
+    /// Renders everything stored in the render batches.
+    /// </summary>
+    /// <param name="type"></param>
+    public void Render(ViewType type)
+    {
+        bool firstRenderFrame = isRenderingActive == false;
+        foreach (var batch in propertiesToRenderBatchMap.Values)
         {
-            bool firstRenderFrame = isRenderingActive == false;
-            foreach (var batch in propertiesToRenderBatchMap.Values)
-            {
-                batch.Render(type, firstRenderFrame);
-            }
-            foreach (var batch in propertiesToPinRenderBatchMap.Values)
-            {
-                batch.Render(type, firstRenderFrame);
-            }
-            isRenderingActive = true;
+            batch.Render(type, firstRenderFrame);
         }
+        foreach (var batch in propertiesToPinRenderBatchMap.Values)
+        {
+            batch.Render(type, firstRenderFrame);
+        }
+        isRenderingActive = true;
+    }
 
         /// <summary>
         /// Clears or nullifies the matrices to reset the data structures.
@@ -435,4 +453,4 @@ namespace AS2.Graphics
         }
     }
 
-} // namespace AS2.Graphics
+}

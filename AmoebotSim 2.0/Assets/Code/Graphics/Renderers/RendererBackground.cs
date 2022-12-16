@@ -2,26 +2,32 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Renders the background grid. Both the hexagonal grid and the graph view are supported.
+    /// </summary>
     public class RendererBackground
     {
 
         // Data _____
         // Hexagonal
         private Mesh mesh_hex_hexGrid = MeshCreator_HexagonalView.GetMesh_HexagonGridLine();
-        private List<Matrix4x4> matrix_hex_hexGridPos = new List<Matrix4x4>();
+        private InstancedDrawer instancedDrawer_hexGrid = new InstancedDrawer();
         // Circular
-        private List<Mesh> mesh_circ_bgHor = new List<Mesh>();
-        private List<Mesh> mesh_circ_bgDiaBLTR = new List<Mesh>();
-        private List<Mesh> mesh_circ_bgDiaBRTL = new List<Mesh>();
-        private List<Matrix4x4> matrix_circ_bgHor = new List<Matrix4x4>();
-        private List<Matrix4x4> matrix_circ_bgDia = new List<Matrix4x4>(); // same for both line types
+        private Mesh mesh_circ_bgHor = MeshCreator_CircularView.GetMesh_BGLinesHorizontal();
+        private Mesh mesh_circ_bgDiaBLTR = MeshCreator_CircularView.GetMesh_BGLinesTopRightBottomLeft();
+        private Mesh mesh_circ_bgDiaBRTL = MeshCreator_CircularView.GetMesh_BGLinesTopLeftBottomRight();
+        private InstancedDrawer instancedDrawer_circGrid_horLines = new InstancedDrawer();
+        private InstancedDrawer instancedDrawer_cricGrid_diaLines = new InstancedDrawer();
 
 
 
-
+        /// <summary>
+        /// Renders the background based on the current view.
+        /// </summary>
+        /// <param name="viewType"></param>
         public void Render(ViewType viewType)
         {
             switch (viewType)
@@ -40,6 +46,9 @@ namespace AS2.Graphics
             }
         }
 
+        /// <summary>
+        /// Renders a hexagonal grid with instanced drawing.
+        /// </summary>
         private void Render_Hexagonal()
         {
             // Camera
@@ -63,10 +72,7 @@ namespace AS2.Graphics
             firstBgMeshPos.z = RenderSystem.zLayer_background;
             secondBgMeshPos.z = RenderSystem.zLayer_background;
             // Add hex line meshes
-            while (matrix_hex_hexGridPos.Count < amountLines)
-            {
-                matrix_hex_hexGridPos.Add(new Matrix4x4());
-            }
+            instancedDrawer_hexGrid.ClearMatrices();
             // Update Matrices
             Vector3 pos;
             float heightDiff = AmoebotFunctions.HeightDifferenceBetweenRows();
@@ -74,16 +80,15 @@ namespace AS2.Graphics
             {
                 if (i % 2 == 0) pos = firstBgMeshPos + new Vector3(0f, heightDiff * i, 0f);
                 else pos = secondBgMeshPos + new Vector3(0f, heightDiff * (i - 1), 0f);
-                matrix_hex_hexGridPos[i] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
+                instancedDrawer_hexGrid.AddMatrix(Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one));
             }
             // Render
-            //Graphics.DrawMeshInstanced(mesh_hex_hexGrid, 0, MaterialDatabase.material_hexagonal_bgHex, matrix_hex_hexGridPos, amountLines);
-            for (int i = 0; i < amountLines; i++)
-            {
-                UnityEngine.Graphics.DrawMesh(mesh_hex_hexGrid, matrix_hex_hexGridPos[i], MaterialDatabase.material_hexagonal_bgHex, 0);
-            }
+            instancedDrawer_hexGrid.Draw(mesh_hex_hexGrid, MaterialDatabase.material_hexagonal_bgHex);
         }
 
+        /// <summary>
+        /// Render a grid for circular particles.
+        /// </summary>
         private void Render_Circular()
         {
             // Camera
@@ -104,32 +109,20 @@ namespace AS2.Graphics
             Vector2Int firstBgGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
             Vector3 firstBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(firstBgGridPos);
             firstBgMeshPos.z = RenderSystem.zLayer_background;
-            // Add diagonal meshes
-            while (mesh_circ_bgDiaBLTR.Count < amountDiagonalMeshes)
-            {
-                mesh_circ_bgDiaBLTR.Add(MeshCreator_CircularView.GetMesh_BGLinesTopRightBottomLeft());
-                mesh_circ_bgDiaBRTL.Add(MeshCreator_CircularView.GetMesh_BGLinesTopLeftBottomRight());
-                matrix_circ_bgDia.Add(new Matrix4x4());
-            }
-            // Add horizontal meshes
-            while (mesh_circ_bgHor.Count < amountHorizontalMeshes)
-            {
-                mesh_circ_bgHor.Add(MeshCreator_CircularView.GetMesh_BGLinesHorizontal());
-                matrix_circ_bgHor.Add(new Matrix4x4());
-            }
-            // Render
+            // Build matrices
+            instancedDrawer_circGrid_horLines.ClearMatrices();
+            instancedDrawer_cricGrid_diaLines.ClearMatrices();
             for (int i = 0; i < amountHorizontalMeshes; i++)
             {
-                matrix_circ_bgHor[i] = Matrix4x4.TRS(firstBgMeshPos + i * new Vector3(0f, RenderSystem.const_amountOfLinesPerMesh, 0f), Quaternion.identity, Vector3.one);
-                UnityEngine.Graphics.DrawMesh(mesh_circ_bgHor[i], matrix_circ_bgHor[i], MaterialDatabase.material_circular_bgLines, 0);
+                instancedDrawer_circGrid_horLines.AddMatrix(Matrix4x4.TRS(firstBgMeshPos + i * new Vector3(0f, RenderSystem.const_amountOfLinesPerMesh, 0f), Quaternion.identity, Vector3.one));
             }
             for (int i = 0; i < amountDiagonalMeshes; i++)
             {
-                matrix_circ_bgDia[i] = Matrix4x4.TRS(firstBgMeshPos + i * new Vector3(RenderSystem.const_amountOfLinesPerMesh, 0f, 0f), Quaternion.identity, Vector3.one);
-                UnityEngine.Graphics.DrawMesh(mesh_circ_bgDiaBLTR[i], matrix_circ_bgDia[i], MaterialDatabase.material_circular_bgLines, 0);
-                UnityEngine.Graphics.DrawMesh(mesh_circ_bgDiaBRTL[i], matrix_circ_bgDia[i], MaterialDatabase.material_circular_bgLines, 0);
+                instancedDrawer_cricGrid_diaLines.AddMatrix(Matrix4x4.TRS(firstBgMeshPos + i * new Vector3(RenderSystem.const_amountOfLinesPerMesh, 0f, 0f), Quaternion.identity, Vector3.one));
             }
+            instancedDrawer_circGrid_horLines.Draw(mesh_circ_bgHor, MaterialDatabase.material_circular_bgLines);
+            instancedDrawer_cricGrid_diaLines.Draw(mesh_circ_bgDiaBLTR, MaterialDatabase.material_circular_bgLines);
+            instancedDrawer_cricGrid_diaLines.Draw(mesh_circ_bgDiaBRTL, MaterialDatabase.material_circular_bgLines);
         }
     }
-
-} // namespace AS2.Graphics
+}

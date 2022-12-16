@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using AS2.UI;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
     public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
@@ -277,4 +277,4 @@ namespace AS2.Graphics
         }
     }
 
-} // namespace AS2.Graphics
+}

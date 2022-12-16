@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
     public static class MeshCreator_CircularView
@@ -217,4 +217,4 @@ namespace AS2.Graphics
 
     }
 
-} // namespace AS2.Graphics
+}

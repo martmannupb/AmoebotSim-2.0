@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using AS2.Sim;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
     public interface IParticleState
@@ -115,4 +115,4 @@ namespace AS2.Graphics
 
     }
 
-} // namespace AS2.Graphics
+}

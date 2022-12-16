@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AS2.Graphics
+namespace AS2.Visuals
 {
 
     public struct ParticleJointMovementState : IEquatable<ParticleJointMovementState>
@@ -59,4 +59,4 @@ namespace AS2.Graphics
         }
     }
 
-} // namespace AS2.Graphics
+}

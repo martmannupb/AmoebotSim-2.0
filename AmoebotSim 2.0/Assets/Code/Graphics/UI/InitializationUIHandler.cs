@@ -1,12 +1,12 @@
+using AS2.Sim;
+using SFB;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.UI;
-using TMPro;
-using AS2.Sim;
-using UnityEngine;
 using System.Linq;
-using System;
-using SFB;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace AS2.UI
 {
@@ -75,6 +75,9 @@ namespace AS2.UI
             }
         }
 
+        /// <summary>
+        /// Initializes the initialization UI, so that everything is set up.
+        /// </summary>
         private void InitUI()
         {
             // Null check
@@ -111,17 +114,29 @@ namespace AS2.UI
             ResetUI();
         }
 
+        /// <summary>
+        /// True, if the class has been initialized already.
+        /// </summary>
+        /// <returns></returns>
         public bool IsInitialized()
         {
             return initialized;
         }
 
+        /// <summary>
+        /// Regenerates the generation algorithm and the algorithm settings.
+        /// </summary>
         private void ResetUI()
         {
             SetUpGenAlgUI(genAlg_setting_genAlg.GetValueString()); // reinit this first so that the default for the algo can be set afterwards (if available)
             SetUpAlgUI(alg_setting_algo.GetValueString());
         }
 
+        /// <summary>
+        /// Sets up the UI for the given algorithm.
+        /// Checks if the given algorithm exists and then loads a default generation algorithm UI, if one has been defined. In the end, the system is generated once.
+        /// </summary>
+        /// <param name="algorithm"></param>
         private void SetUpAlgUI(string algorithm)
         {
             // Null Check (should never trigger)
@@ -141,6 +156,11 @@ namespace AS2.UI
             AmoebotSimulator.instance.system.SetSelectedAlgorithm(algorithm);
         }
 
+        /// <summary>
+        /// Sets up the UI for the given generation algorithm.
+        /// Here the parameters of the generation algorithm are loaded via reflection, packed into a list of UI settings and shown to the user. Default values defined in the code are also set.
+        /// </summary>
+        /// <param name="algorithm"></param>
         private void SetUpGenAlgUI(string algorithm)
         {
             // Set Value
@@ -204,12 +224,20 @@ namespace AS2.UI
             }
         }
 
+        /// <summary>
+        /// Gets the chirality value from the corresponding dropdown UI element.
+        /// </summary>
+        /// <returns></returns>
         public Initialization.Chirality GetDropdownValue_Chirality()
         {
             Initialization.Chirality chirality = (Initialization.Chirality)Enum.Parse(typeof(Initialization.Chirality), addPar_setting_chirality.GetValueString());
             return chirality;
         }
 
+        /// <summary>
+        /// Gets the compass dir value from the corresponding dropdown UI element.
+        /// </summary>
+        /// <returns></returns>
         public Initialization.Compass GetDropdownValue_Compass()
         {
             Initialization.Compass compass = (Initialization.Compass)Enum.Parse(typeof(Initialization.Compass), addPar_setting_compassDir.GetValueString());
@@ -217,6 +245,11 @@ namespace AS2.UI
 
         }
 
+        /// <summary>
+        /// Called when the user changes some values in certain dropdowns.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="text"></param>
         public void ValueChanged_Text(string name, string text)
         {
             switch (name)
@@ -232,6 +265,11 @@ namespace AS2.UI
             }
         }
 
+        /// <summary>
+        /// So far, this does absolutely nothing.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="number"></param>
         public void ValueChanged_Float(string name, float number)
         {
             switch (name)
@@ -241,6 +279,9 @@ namespace AS2.UI
             }
         }
 
+        /// <summary>
+        /// Opens the initialization panel.
+        /// </summary>
         public void Open()
         {
             // Pause Sim
@@ -260,6 +301,10 @@ namespace AS2.UI
             if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(true);
         }
 
+        /// <summary>
+        /// Closes the initialization panel.
+        /// </summary>
+        /// <param name="aborted">True if the init mode has been aborted. False if execution is successful.</param>
         public void Close(bool aborted)
         {
             // Update UI
@@ -276,6 +321,10 @@ namespace AS2.UI
             if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(false);
         }
 
+        /// <summary>
+        /// True if init mode is open.
+        /// </summary>
+        /// <returns></returns>
         public bool IsOpen()
         {
             return initModePanel.activeSelf;
@@ -363,6 +412,11 @@ namespace AS2.UI
             AmoebotSimulator.instance.uiHandler.Button_CameraCenterPressed();
         }
 
+        /// <summary>
+        /// Applies the chirality/compass dir if the corresponding button has been clicked long enough.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="duration"></param>
         public void SettingBarPressedLong(string name, float duration)
         {
             switch (name)
@@ -384,12 +438,18 @@ namespace AS2.UI
             }
         }
 
+        /// <summary>
+        /// The simulation is started. Loads everything and closes the init mode.
+        /// </summary>
         public void ButtonPressed_StartAlgorithm()
         {
             AmoebotSimulator.instance.system.InitializationModeFinished(alg_setting_algo.GetValueString());
             Close(false);
         }
 
+        /// <summary>
+        /// The init mode is aborted. Closes the init mode, the previous state is loaded afterwards.
+        /// </summary>
         public void ButtonPressed_Abort()
         {
             Close(true);
@@ -397,4 +457,4 @@ namespace AS2.UI
 
     }
 
-} // namespace AS2.UI
+}
