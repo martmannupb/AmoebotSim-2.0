@@ -54,6 +54,7 @@ namespace AS2.UI
 
         // State
         protected bool locked = false;
+        protected bool buttonHoldEnabled = true;
 
         protected void InitBackgroundButton()
         {
@@ -90,7 +91,7 @@ namespace AS2.UI
             if (button != null)
             {
                 float pressedTime = buttonTrigger.GetPressedTime();
-                if (pressedTime == -1 || pressedTime <= 0.2f || locked)
+                if (pressedTime == -1 || pressedTime <= 0.2f || locked || buttonHoldEnabled == false)
                 {
                     buttonBackgroundImage.fillAmount = 1f;
                 }
@@ -112,7 +113,7 @@ namespace AS2.UI
         public Action<string, float> backgroundButton_onButtonPressedLongEvent;
         private void OnButtonPressedLong(float duration)
         {
-            if (backgroundButton_onButtonPressedLongEvent != null && duration >= 2) backgroundButton_onButtonPressedLongEvent(name, duration);
+            if (backgroundButton_onButtonPressedLongEvent != null && duration >= 2 && buttonHoldEnabled) backgroundButton_onButtonPressedLongEvent(name, duration);
         }
 
         /// <summary>
@@ -127,18 +128,28 @@ namespace AS2.UI
         /// <param name="input"></param>
         public abstract void SetValueString(string input);
 
-        public void Lock()
+        public void Lock(bool lockButton = true)
         {
             LockSetting();
-            if (button != null) button.enabled = false;
+            if (button != null && lockButton) button.enabled = false;
             locked = true;
         }
 
-        public void Unlock()
+        public void Unlock(bool unlockButton = true)
         {
             UnlockSetting();
-            if (button != null) button.enabled = true;
+            if (button != null && unlockButton) button.enabled = true;
             locked = false;
+        }
+
+        public void EnableButtonHold()
+        {
+            buttonHoldEnabled = true;
+        }
+
+        public void DisableButtonHold()
+        {
+            buttonHoldEnabled = false;
         }
 
         public void SetInteractable(bool interactable, bool backgroundInteractable = true)

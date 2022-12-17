@@ -12,13 +12,28 @@ namespace AS2.Visuals
     public class ParticlePinGraphicState
     {
 
+        /// <summary>
+        /// None = no pin connection during the round,
+        /// Shown = shown pin connection during the round,
+        /// ShownFadingIn = pin connection only visible after the round movement
+        /// </summary>
+        public enum NeighborPinConnection
+        {
+            None, Shown, ShownFadingIn
+        }
+
         // General Data
         public int pinsPerSide;
 
         // State
+        // INTERFACE ADDITION
+        public NeighborPinConnection[] neighborPinConnection1 = new NeighborPinConnection[6]; // should replace/expand hasNeighbor1
+        public NeighborPinConnection[] neighborPinConnection2 = new NeighborPinConnection[6]; // should replace/expand hasNeighbor2
+        // Neighbors
         public bool[] hasNeighbor1 = new bool[6]; // like pins1 and pins2 (hasNeighbor2 is only relevant if particle is expanded), return true if there is a particle in that direction
         public bool[] hasNeighbor2 = new bool[6];
         public int neighbor1ToNeighbor2Direction = -1; // global direction from the neighbor1 to the neighbor2 (range 0 to 5), only set if particle is expanded (default -1)
+        // Sets
         public List<PSetData> partitionSets;
         public List<PSetData> singletonSets;
         public bool isExpanded
@@ -157,6 +172,8 @@ namespace AS2.Visuals
         {
             for (int i = 0; i < 6; i++)
             {
+                neighborPinConnection1[i] = NeighborPinConnection.None;
+                neighborPinConnection2[i] = NeighborPinConnection.None;
                 hasNeighbor1[i] = false;
                 hasNeighbor2[i] = false;
             }
@@ -167,6 +184,8 @@ namespace AS2.Visuals
             neighbor1ToNeighbor2Direction = -1;
             for (int i = 0; i < 6; i++)
             {
+                neighborPinConnection1[i] = NeighborPinConnection.None;
+                neighborPinConnection2[i] = NeighborPinConnection.None;
                 hasNeighbor1[i] = false;
                 hasNeighbor2[i] = false;
             }

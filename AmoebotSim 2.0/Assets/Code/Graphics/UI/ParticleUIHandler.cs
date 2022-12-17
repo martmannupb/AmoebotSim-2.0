@@ -23,6 +23,12 @@ namespace AS2.UI
         public TMPro.TextMeshProUGUI headerText;
         public GameObject go_particlePanel;
         public GameObject go_attributeParent;
+        public Button button_rootParticle;
+        private Image image_rootParticle;
+
+        // Colors
+        public Color button_color_default;
+        public Color button_color_active;
 
         // Data
         private IParticleState particle;
@@ -46,6 +52,7 @@ namespace AS2.UI
                     headerText = go.GetComponent<TextMeshProUGUI>();
                 }
             }
+            image_rootParticle = button_rootParticle.gameObject.GetComponent<Image>();
 
             // Register Events
             EventDatabase.event_sim_startedStopped += SimState_RunningToggled;
@@ -163,8 +170,27 @@ namespace AS2.UI
         /// </summary>
         private void RefreshHeader()
         {
-            if (particle != null) headerText.text = "Position: (" + (particle.IsExpanded() ? (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y) : (particle.Head().x + "," + particle.Head().y))
-                    + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted");
+
+            // Text
+            if (particle != null)
+            {
+                // Text
+                headerText.text = "Position: (" + (particle.IsExpanded() ?
+                    (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y)
+                    : (particle.Head().x + "," + particle.Head().y)) + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted");
+                // Color
+                bool isRootParticle = false; // dummy
+                if (isRootParticle)
+                {
+                    image_rootParticle.color = button_color_active;
+                    button_rootParticle.interactable = false;
+                }
+                else
+                {
+                    image_rootParticle.color = button_color_default;
+                    button_rootParticle.interactable = true;
+                }
+            }
         }
 
         /// <summary>
@@ -392,7 +418,7 @@ namespace AS2.UI
         {
             foreach (var setting in settings.Values)
             {
-                setting.Lock();
+                setting.Lock(false);
             }
         }
 
@@ -403,7 +429,7 @@ namespace AS2.UI
         {
             foreach (var setting in settings.Values)
             {
-                setting.Unlock();
+                setting.Unlock(false);
             }
         }
 
@@ -626,6 +652,15 @@ namespace AS2.UI
         private bool AttributeChangeValid()
         {
             return go_particlePanel.activeSelf && sim.system.IsInLatestRound() && sim.running == false;
+        }
+
+        /// <summary>
+        /// Called when the root particle button has been pressed.
+        /// Sets the current particle as root particle.
+        /// </summary>
+        public void ButtonPressed_RootParticle()
+        {
+            throw new System.NotImplementedException();
         }
 
     }
