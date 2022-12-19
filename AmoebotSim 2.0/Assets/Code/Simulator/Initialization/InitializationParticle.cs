@@ -204,6 +204,16 @@ namespace AS2.Sim
         }
 
         public abstract InitParticleSaveData GenerateSaveData();
+
+        public bool IsAnchor()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool MakeAnchor()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
 } // namespace AS2.Sim

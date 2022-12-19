@@ -1188,6 +1188,20 @@ namespace AS2.Sim
             CheckActive("Visualization info is not available for other particles.");
             return particle.IsParticleColorSet();
         }
+
+        /// <summary>
+        /// Turns this particle into the anchor of the system. The anchor
+        /// particle defines the movement of the whole system during joint
+        /// movements by keeping its global position.
+        /// <para>
+        /// If multiple particles call this method in the same activation,
+        /// the one that is activated last will become the anchor.
+        /// </para>
+        /// </summary>
+        public void MakeAnchor()
+        {
+            particle.MakeAnchor();
+        }
     }
 
 } // namespace AS2.Sim

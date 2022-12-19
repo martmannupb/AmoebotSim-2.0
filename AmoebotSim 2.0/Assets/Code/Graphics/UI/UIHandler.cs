@@ -644,7 +644,7 @@ namespace AS2.UI
         {
             Vector2 pos;
             if (sim.system.particles.Count <= 1000) pos = sim.system.BBoxCenterPosition();
-            else pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(sim.system.SeedPosition());
+            else pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(sim.system.AnchorPosition());
             Camera.main.transform.position = new Vector3(pos.x, pos.y, Camera.main.transform.position.z);
         }
 

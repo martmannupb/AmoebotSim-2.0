@@ -2645,11 +2645,11 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Returns the world coordinates of the system's current seed/anchor particle.
+        /// Returns the world coordinates of the system's current anchor particle.
         /// </summary>
-        /// <returns>The world coordinates of the system's seed particle, if it
+        /// <returns>The world coordinates of the system's anchor particle, if it
         /// exists, otherwise <c>(0, 0)</c>.</returns>
-        public Vector2 SeedPosition()
+        public Vector2 AnchorPosition()
         {
             Vector2 result;
             IParticleState seed = null;
@@ -2675,26 +2675,42 @@ namespace AS2.Sim
             return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(result.x, result.y);
         }
 
-        public void SetAnchor(IParticleState p)
+        /// <summary>
+        /// Sets the given particle to be the new anchor of the system.
+        /// Only works in the latest round of the simulation.
+        /// </summary>
+        /// <param name="p">The particle that should become the anchor.</param>
+        /// <returns><c>true</c> if and only if the anchor particle was
+        /// set successfully.</returns>
+        public bool SetAnchor(IParticleState p)
         {
             if (inInitializationState || !isTracking)
             {
+                // TODO: Allow setting anchor during init mode
                 Log.Error("Can only set anchor particle while in the last round in simulation mode.");
-                return;
+                return false;
             }
             for (int i = 0; i < particles.Count; i++)
             {
                 if (particles[i] == p)
                 {
                     anchorIdxHistory.RecordValueInRound(i, _currentRound);
-                    return;
+                    return true;
                 }
             }
             Log.Warning("Could not find new anchor particle.");
+            return false;
         }
 
+        /// <summary>
+        /// Checks if the given particle is the anchor of the system.
+        /// </summary>
+        /// <param name="p">The particle that should be checked.</param>
+        /// <returns><c>true</c> if and only if <paramref name="p"/> is
+        /// currently the anchor particle.</returns>
         public bool IsAnchor(IParticleState p)
         {
+            // TODO: Make this work in init mode
             return !inInitializationState && p == particles[anchorIdxHistory.GetMarkedValue()];
         }
 

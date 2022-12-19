@@ -79,6 +79,23 @@ namespace AS2.Visuals
         /// if it exists, otherwise <c>null</c>.</returns>
         IParticleAttribute TryGetAttributeByName(string attrName);
 
+        /// <summary>
+        /// Checks if the particle is currently the anchor of the system. The anchor
+        /// particle defines how the system moves during a joint movement by keeping
+        /// its global position.
+        /// </summary>
+        /// <returns><c>true</c> if and only if this particle is the anchor.</returns>
+        bool IsAnchor();
+
+        /// <summary>
+        /// Turns this particle into the anchor of the system. The anchor particle
+        /// defines how the system moves during a joint movement by keeping its
+        /// global position.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the particle was successfully
+        /// turned into the anchor.</returns>
+        bool MakeAnchor();
+
         // Circuits and Partition Sets _________________________
 
         /**

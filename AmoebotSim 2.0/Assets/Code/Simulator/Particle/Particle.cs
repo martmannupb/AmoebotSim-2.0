@@ -1332,6 +1332,21 @@ namespace AS2.Sim
         }
 
 
+        /*
+         * Additional IParticleState methods.
+         */
+
+        public bool IsAnchor()
+        {
+            return system.IsAnchor(this);
+        }
+
+        public bool MakeAnchor()
+        {
+            return system.SetAnchor(this);
+        }
+
+
         /**
          * Methods implementing the IReplayHistory interface.
          * These allow the particle to be reset to any
