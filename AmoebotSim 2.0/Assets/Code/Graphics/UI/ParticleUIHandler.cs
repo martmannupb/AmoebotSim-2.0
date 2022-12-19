@@ -179,8 +179,7 @@ namespace AS2.UI
                     (particle.Head().x + "," + particle.Head().y + "), (" + particle.Tail().x + "," + particle.Tail().y)
                     : (particle.Head().x + "," + particle.Head().y)) + ")\n" + (particle.IsExpanded() ? "Expanded" : "Contracted");
                 // Color
-                bool isRootParticle = false; // dummy
-                if (isRootParticle)
+                if (particle.IsAnchor())
                 {
                     image_rootParticle.color = button_color_active;
                     button_rootParticle.interactable = false;
@@ -660,7 +659,11 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_RootParticle()
         {
-            throw new System.NotImplementedException();
+            if(IsOpen())
+            {
+                particle.MakeAnchor();
+                RefreshParticlePanel();
+            }
         }
 
     }
