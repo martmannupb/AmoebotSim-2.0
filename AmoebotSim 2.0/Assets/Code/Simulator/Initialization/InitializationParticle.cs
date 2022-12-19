@@ -207,12 +207,12 @@ namespace AS2.Sim
 
         public bool IsAnchor()
         {
-            throw new System.NotImplementedException();
+            return system.IsAnchor(this);
         }
 
         public bool MakeAnchor()
         {
-            throw new System.NotImplementedException();
+            return system.SetAnchor(this);
         }
     }
 

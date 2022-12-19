@@ -159,6 +159,7 @@ namespace AS2.Sim
         // Initialization mode data structures
         private List<OpenInitParticle> particlesInit = new List<OpenInitParticle>();
         private Dictionary<Vector2Int, OpenInitParticle> particleMapInit = new Dictionary<Vector2Int, OpenInitParticle>();
+        private int anchorInit = -1;
 
         private string selectedAlgorithm = "Line Formation";
         public string SelectedAlgorithm
@@ -275,6 +276,7 @@ namespace AS2.Sim
             }
             particlesInit.Clear();
             particleMapInit.Clear();
+            anchorInit = -1;
         }
 
         /// <summary>
@@ -2677,27 +2679,44 @@ namespace AS2.Sim
 
         /// <summary>
         /// Sets the given particle to be the new anchor of the system.
-        /// Only works in the latest round of the simulation.
+        /// Only works in the latest round of the simulation or in
+        /// Initialization Mode.
         /// </summary>
         /// <param name="p">The particle that should become the anchor.</param>
         /// <returns><c>true</c> if and only if the anchor particle was
         /// set successfully.</returns>
         public bool SetAnchor(IParticleState p)
         {
-            if (inInitializationState || !isTracking)
+            // Init Mode: Search for the given particle
+            if (inInitializationState)
             {
-                // TODO: Allow setting anchor during init mode
-                Log.Error("Can only set anchor particle while in the last round in simulation mode.");
-                return false;
-            }
-            for (int i = 0; i < particles.Count; i++)
-            {
-                if (particles[i] == p)
+                for (int i = 0; i < particlesInit.Count; i++)
                 {
-                    anchorIdxHistory.RecordValueInRound(i, _currentRound);
-                    return true;
+                    if (particlesInit[i] == p)
+                    {
+                        anchorInit = i;
+                        return true;
+                    }
                 }
             }
+            // Simulation Mode: Only search if tracking, store anchor index in history
+            else
+            {
+                if (!isTracking)
+                {
+                    Log.Error("Can only set anchor particle while in the last round in simulation mode.");
+                    return false;
+                }
+                for (int i = 0; i < particles.Count; i++)
+                {
+                    if (particles[i] == p)
+                    {
+                        anchorIdxHistory.RecordValueInRound(i, _currentRound);
+                        return true;
+                    }
+                }
+            }
+            
             Log.Warning("Could not find new anchor particle.");
             return false;
         }
@@ -2710,8 +2729,14 @@ namespace AS2.Sim
         /// currently the anchor particle.</returns>
         public bool IsAnchor(IParticleState p)
         {
-            // TODO: Make this work in init mode
-            return !inInitializationState && p == particles[anchorIdxHistory.GetMarkedValue()];
+            if (inInitializationState)
+            {
+                return anchorInit != -1 && particlesInit[anchorInit] == p;
+            }
+            else
+            {
+                return p == particles[anchorIdxHistory.GetMarkedValue()];
+            }
         }
 
 
@@ -3060,57 +3085,6 @@ namespace AS2.Sim
             InitializationMethodManager.Instance.GenerateSystem(this, methodName, parameters);
         }
 
-        // TODO: Use method with string parameter instead
-
-        /// <summary>
-        /// Switches the system state to initialization mode.
-        /// </summary>
-        public void InitializationModeStarted()
-        {
-            InitializationModeStarted("Line Formation");
-            //if (inInitializationState)
-            //    return;
-
-            //// Note: The initialization window has just been opened. So it might be possible to save the state of a running algorithm and convert its particles to the initialization particles
-            //// in order to be able to use the given state for new algorithms / save the particle configuration.
-
-            //particlesInit.Clear();
-            //particleMapInit.Clear();
-
-            //// Use the current system if we have one
-            //if (particles.Count > 0)
-            //{
-            //    // Store the simulation state
-            //    SimulationStateSaveData saveData = GenerateSaveData();
-            //    if (SaveStateUtility.Save(saveData, SaveStateUtility.tmpSaveFile))
-            //    {
-            //        storedSimulationState = true;
-            //        storedSimulationRound = _currentRound;
-            //    }
-            //    else
-            //    {
-            //        Log.Warning("Could not save current simulation state.");
-            //    }
-
-            //    // Use the current system state as starting point for initialization system
-            //    foreach (Particle p in particles)
-            //    {
-            //        OpenInitParticle ip = new OpenInitParticle(this, p.Tail(), p.chirality, p.comDir, p.GlobalHeadDirection());
-            //        particlesInit.Add(ip);
-            //        particleMapInit[p.Tail()] = ip;
-            //        if (p.IsExpanded())
-            //            particleMapInit[p.Head()] = ip;
-            //        ip.graphics.AddParticle(new ParticleMovementState(ip.Head(), ip.Tail(), ip.IsExpanded(), ip.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
-            //        ip.graphics.UpdateReset();
-            //    }
-            //}
-            //// Hide the circuits
-            //renderSystem.CircuitCalculationOver();
-
-            //Reset();
-            //inInitializationState = true;
-        }
-
         /// <summary>
         /// Switches the system state to initialization mode.
         /// </summary>
@@ -3134,6 +3108,7 @@ namespace AS2.Sim
 
             particlesInit.Clear();
             particleMapInit.Clear();
+            anchorInit = -1;
 
             // Save the current system if we have one
             if (particles.Count > 0)
@@ -3179,6 +3154,11 @@ namespace AS2.Sim
                 if (p.IsExpanded())
                     particleMap[p.Head()] = p;
             }
+
+            if (anchorInit != -1)
+                anchorIdxHistory.RecordValueAtMarker(anchorInit);
+            else
+                anchorIdxHistory.RecordValueAtMarker(0);
 
             ResetInit();
             storedSimulationState = false;
@@ -3498,6 +3478,11 @@ namespace AS2.Sim
                 particleMapInit.Remove(p.Head());
             particlesInit[idx].graphics.RemoveParticle();
             particlesInit.RemoveAt(idx);
+            // Update anchor index
+            if (anchorInit == idx)
+                anchorInit = -1;
+            else if (anchorInit > idx)
+                anchorInit--;
         }
 
         /// <summary>
