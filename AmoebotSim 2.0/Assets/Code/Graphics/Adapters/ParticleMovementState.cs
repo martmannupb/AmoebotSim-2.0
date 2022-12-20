@@ -6,6 +6,9 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Contains the movement information for a single particle in a single round.
+    /// </summary>
     public struct ParticleMovementState
     {
 

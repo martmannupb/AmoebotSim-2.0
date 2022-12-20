@@ -5,6 +5,9 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Renderer for the circuit pins. Each instance of this class renders pins with the same properties (like color, type, etc.) with Unity's instanced drawing.
+    /// </summary>
     public class RendererCircuitPins_RenderBatch
     {
 

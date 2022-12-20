@@ -5,6 +5,9 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Contains the visual information for a single bond for a single round.
+    /// </summary>
     public struct ParticleBondGraphicState
     {
 

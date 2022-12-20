@@ -5,6 +5,10 @@ using System.Collections;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Simple script for resizing UI elements based on the childrens' sizes.
+    /// Used for resizing the elements in the log (e.g. when there is a text block).
+    /// </summary>
     public class SizeFitter : MonoBehaviour
     {
 

@@ -5,6 +5,10 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Serves as the bridge between the particles of the system and the render system. Particles have an instance of an implementation of this interface.
+    /// Used to pass visual information to the graphical system and draw the particle with circuits and bonds to the screen.
+    /// </summary>
     public interface IParticleGraphicsAdapter
     {
 

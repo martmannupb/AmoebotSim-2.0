@@ -7,6 +7,9 @@ using UnityEngine.UI;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Controls the log panel.
+    /// </summary>
     public class LogUIHandler : MonoBehaviour
     {
 

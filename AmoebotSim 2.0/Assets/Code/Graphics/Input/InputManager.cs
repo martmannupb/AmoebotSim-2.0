@@ -6,6 +6,9 @@ using System;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Receives the standardizes inputs from the InputHandler and passes them to the simulation environment.
+    /// </summary>
     public class InputManager
     {
 

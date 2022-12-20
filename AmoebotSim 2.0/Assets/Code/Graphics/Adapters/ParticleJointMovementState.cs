@@ -6,6 +6,9 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Contains the joint movement information for a single particle in a single round.
+    /// </summary>
     public struct ParticleJointMovementState : IEquatable<ParticleJointMovementState>
     {
 

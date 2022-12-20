@@ -8,6 +8,9 @@ using UnityEngine.UI;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Controls the setting panel.
+    /// </summary>
     public class SettingsUIHandler : MonoBehaviour
     {
 

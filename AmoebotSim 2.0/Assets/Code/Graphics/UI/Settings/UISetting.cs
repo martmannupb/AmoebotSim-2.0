@@ -9,6 +9,9 @@ using UnityEngine;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Listener for the background button for each setting.
+    /// </summary>
     public class ButtonHoldTrigger : MonoBehaviour, IPointerDownHandler, IPointerUpHandler // Note: MonoBehavious + Interfaces replace EventTrigger (which prevented scrolling)
     {
         private float timestampPointerDown = 0f;
@@ -42,6 +45,10 @@ namespace AS2.UI
         }
     }
 
+    /// <summary>
+    /// Superclass of all implemented settings (like dropdowns, toggles, text boxes, etc.).
+    /// Used together with the setting prefab GameObjects.
+    /// </summary>
     public abstract class UISetting
     {
         // Data

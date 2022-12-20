@@ -4,10 +4,9 @@ using System.Collections;
 namespace AS2.UI
 {
 
-    // Copyright ©
-    // Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
-    // Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
-
+    /// <summary>
+    /// Sets the cursor types.
+    /// </summary>
     public class CursorHandler
     {
 
@@ -15,6 +14,10 @@ namespace AS2.UI
 
         private Texture2D texture_mouseGameDefault = Resources.Load<Texture2D>(FilePaths.path_ui + "Cursor_Default");
 
+        /// <summary>
+        /// Changes the cursor to the given type.
+        /// </summary>
+        /// <param name="type"></param>
         public void SetCursorType(CursorType type)
         {
             if (type == currentCursorType)

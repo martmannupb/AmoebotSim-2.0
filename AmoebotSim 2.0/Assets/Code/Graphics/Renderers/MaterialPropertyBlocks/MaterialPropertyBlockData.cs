@@ -5,6 +5,10 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Wrapper for a MaterialPropertyBlock.
+    /// Can contain methods that dynamically set its values.
+    /// </summary>
     public abstract class MaterialPropertyBlockData
     {
 

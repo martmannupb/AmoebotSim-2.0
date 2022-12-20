@@ -6,6 +6,9 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Renderer for the circuits. Each instance of this class renders circuit lines with the same properties (like color, type, etc.) with Unity's instanced drawing.
+    /// </summary>
     public class RendererCircuits_RenderBatch
     {
 

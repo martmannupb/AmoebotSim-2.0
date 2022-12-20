@@ -5,6 +5,10 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Contains a MaterialPropertyBlock instance for the particle renderer.
+    /// Used for updating the block.
+    /// </summary>
     public class MaterialPropertyBlockData_Particles : MaterialPropertyBlockData
     {
 

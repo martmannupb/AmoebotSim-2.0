@@ -9,6 +9,9 @@ using UnityEngine.UI;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Controls the general UI (like top and bottom bars). Also references the other main panels of the UI.
+    /// </summary>
     public class UIHandler : MonoBehaviour
     {
 

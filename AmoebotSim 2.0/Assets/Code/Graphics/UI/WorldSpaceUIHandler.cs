@@ -10,6 +10,9 @@ using UnityEngine.UI;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Controls the world space UI overlay (which shows the attributes of the particles).
+    /// </summary>
     public class WorldSpaceUIHandler : MonoBehaviour
     {
 

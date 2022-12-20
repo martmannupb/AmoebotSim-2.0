@@ -5,9 +5,16 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Creates the meshes for the hexagonal views.
+    /// </summary>
     public static class MeshCreator_HexagonalView
     {
 
+        /// <summary>
+        /// Returns a mesh for a base hexagon in the standard size.
+        /// </summary>
+        /// <returns></returns>
         public static Mesh GetMesh_BaseHexagonBackground()
         {
             Mesh mesh = new Mesh();
@@ -809,6 +816,10 @@ namespace AS2.Visuals
             return mesh;
         }
 
+        /// <summary>
+        /// The base mesh for the rendering of the hexagonal particles (Quad that is scaled and offset so that the pivot is at one grid position).
+        /// </summary>
+        /// <returns></returns>
         public static Mesh GetMesh_MergingExpansionHexagon()
         {
             Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0.5f, 0.5f));
@@ -817,6 +828,11 @@ namespace AS2.Visuals
             return mesh;
         }
 
+        /// <summary>
+        /// A mesh that is a line of hexagons which form a grid.
+        /// Put multiple next to each other to form the background for the hexagonal views.
+        /// </summary>
+        /// <returns></returns>
         public static Mesh GetMesh_HexagonGridLine()
         {
             Mesh mesh = new Mesh();

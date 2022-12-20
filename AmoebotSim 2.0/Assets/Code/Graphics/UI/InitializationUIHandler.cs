@@ -11,6 +11,9 @@ using UnityEngine.UI;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Controls the init mode panel.
+    /// </summary>
     public class InitializationUIHandler : MonoBehaviour
     {
         // Init

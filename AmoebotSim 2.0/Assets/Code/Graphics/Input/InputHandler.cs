@@ -9,10 +9,7 @@ namespace AS2.UI
     // Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
 
     /// <summary>
-    /// Goal: Use the stream of MouseState information to build a logical InputState.
-    /// This should contain timestamps when a button has been pressed and where it has been pressed,
-    /// so we can determine when a correct mouse click or drag action has been processed.
-    /// Afterwards clicks, keyboard actions and are converted into InputActions and forwarded to the engine.
+    /// Takes the raw input from the InputControllers and converts them into suitable actions that are passed to the InputManager.
     /// </summary>
     public static class InputHandler
     {

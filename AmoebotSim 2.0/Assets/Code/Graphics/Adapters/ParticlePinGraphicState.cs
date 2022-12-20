@@ -168,6 +168,9 @@ namespace AS2.Visuals
             InitPins();
         }
 
+        /// <summary>
+        /// Initializes the neighbor arrays with default values.
+        /// </summary>
         private void InitPins()
         {
             for (int i = 0; i < 6; i++)
@@ -179,6 +182,10 @@ namespace AS2.Visuals
             }
         }
 
+        /// <summary>
+        /// Resets the object to the default values.
+        /// Does not change number of pins.
+        /// </summary>
         public void Reset()
         {
             neighbor1ToNeighbor2Direction = -1;
@@ -201,6 +208,10 @@ namespace AS2.Visuals
             singletonSets.Clear();
         }
 
+        /// <summary>
+        /// Resets the object to the default values with a specific number of pins.
+        /// </summary>
+        /// <param name="pinsPerSide"></param>
         public void Reset(int pinsPerSide)
         {
             if (this.pinsPerSide == pinsPerSide) Reset();

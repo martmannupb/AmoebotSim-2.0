@@ -6,6 +6,9 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Implemented by the particles. Contains helpful methods for the view to access standardized data from particles.
+    /// </summary>
     public interface IParticleState
     {
         // General Data _________________________

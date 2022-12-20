@@ -10,6 +10,9 @@ using UnityEngine.UI;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Controls the particle panel.
+    /// </summary>
     public class ParticleUIHandler : MonoBehaviour
     {
 

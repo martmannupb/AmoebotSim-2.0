@@ -6,6 +6,10 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Serves as the bridge between the particles of the system and the render system. Particles have an instance of this class.
+    /// Used to pass visual information to the graphical system and draw the particle with circuits and bonds to the screen.
+    /// </summary>
     public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
 
@@ -151,9 +155,6 @@ namespace AS2.Visuals
 
         private void Update(bool forceRenderUpdate, ParticleMovementState movementState, bool noAnimation)
         {
-            // Test: Bonds
-            //BondUpdate(new ParticleBondGraphicState(movementState.posHead + new Vector2Int(0, -1), movementState.posTail + new Vector2Int(0, -1), movementState.posHead + new Vector2Int(0, -2), movementState.posTail + new Vector2Int(0, -2), false));
-
             // Previous Data
             state_prev = state_cur;
             // Current Data

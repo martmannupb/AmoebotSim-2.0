@@ -9,6 +9,9 @@ using UnityEngine.UI;
 namespace AS2.UI
 {
 
+    /// <summary>
+    /// Controls the background grid (with the grid coordinates).
+    /// </summary>
     public class WorldSpaceBackgroundUIHandler : MonoBehaviour
     {
 

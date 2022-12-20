@@ -5,6 +5,9 @@ using UnityEngine;
 namespace AS2.Visuals
 {
 
+    /// <summary>
+    /// Creates the meshes for the circular view.
+    /// </summary>
     public static class MeshCreator_CircularView
     {
 
@@ -181,6 +184,10 @@ namespace AS2.Visuals
             return mesh;
         }
 
+        /// <summary>
+        /// Creates the mesh for the particles in the circular graph view.
+        /// </summary>
+        /// <returns></returns>
         public static Mesh GetMesh_ParticleOptimized()
         {
             Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(2f, 0f, new Vector2(0.25f, 0.5f));

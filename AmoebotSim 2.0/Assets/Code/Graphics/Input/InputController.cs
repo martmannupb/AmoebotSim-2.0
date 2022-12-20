@@ -10,6 +10,9 @@ namespace AS2.UI
     // Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
     // Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
 
+    /// <summary>
+    /// Reads in the inputs from the mouse and passes them to the InputHandler.
+    /// </summary>
     public class InputController : MonoBehaviour
     {
 
