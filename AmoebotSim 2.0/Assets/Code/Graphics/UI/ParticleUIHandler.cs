@@ -189,6 +189,7 @@ namespace AS2.UI
                     image_rootParticle.color = button_color_default;
                     button_rootParticle.interactable = true;
                 }
+                if (sim.system.IsInLatestRound() == false) button_rootParticle.interactable = false;
             }
         }
 
@@ -659,10 +660,14 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_RootParticle()
         {
-            if(IsOpen())
+            if(IsOpen() && sim.system.IsInLatestRound())
             {
                 particle.MakeAnchor();
                 RefreshParticlePanel();
+            }
+            else if(sim.system.IsInLatestRound() == false)
+            {
+                Log.Warning("You cannot set the anchor when you are not in the latest round!");
             }
         }
 
