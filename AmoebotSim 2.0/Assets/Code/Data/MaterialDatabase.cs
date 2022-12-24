@@ -31,14 +31,19 @@ namespace AS2
 
         // Circuits
         public static Material material_circuit_line = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitMat");
+        public static Material material_circuit_line_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitMatWithMovement");
         public static Material material_circuit_lineConnector = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitConnectorMat");
+        public static Material material_circuit_lineConnector_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitConnectorMatWithMovement");
         public static Material material_circuit_pin = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMat");
+        public static Material material_circuit_pin_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMatWithMovement");
         // Beeps
         public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");
         public static Material material_circuit_pin_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinBeepMat"); // not used
-                                                                                                                                                     // Bonds
+        // Bonds
         public static Material material_bond_lineHexagonal = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondHexMat");
+        public static Material material_bond_lineHexagonal_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondHexMatWithMovement");
         public static Material material_bond_lineCircular = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondCircMat");
+        public static Material material_bond_lineCircular_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondCircMatWithMovement");
 
         // UI
         public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");

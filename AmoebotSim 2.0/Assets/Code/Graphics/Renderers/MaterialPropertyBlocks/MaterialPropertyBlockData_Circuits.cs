@@ -49,6 +49,17 @@ namespace AS2.Visuals
             propertyBlock.SetFloat("_AnimAlpha2", alphaAfterAnimation);
         }
 
+        public void ApplyMovementTimestamp(float movementTriggerTime, float movementDuration)
+        {
+            propertyBlock.SetFloat("_MovementTriggerTime", movementTriggerTime);
+            propertyBlock.SetFloat("_MovementDuration", movementDuration);
+        }
+
+        public void ApplyMovementOffset(Vector2 movementOffset)
+        {
+            propertyBlock.SetVector("_MovementOffset", movementOffset);
+        }
+
         public override void Reset()
         {
             throw new System.NotImplementedException();

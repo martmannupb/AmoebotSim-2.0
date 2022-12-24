@@ -77,6 +77,9 @@ namespace AS2.Visuals
         // Trigger Times
         public static float animation_animationTriggerTimestamp;
         public static float animation_curAnimationPercentage;
+        // Mesh Bounding Boxes
+        public static bool const_mesh_useManualBoundingBoxRadius = true;
+        public static float const_mesh_boundingBoxRadius = float.MaxValue / 4;
 
 
         // Renderers _____

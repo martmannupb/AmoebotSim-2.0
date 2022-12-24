@@ -52,26 +52,9 @@ namespace AS2.Visuals
 
         // Precalculated Data _____
         // Meshes
-        private Mesh defaultQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
         private Mesh mesh_circle_particle = MeshCreator_CircularView.GetMesh_ParticleOptimized();
         private Mesh mesh_circle_particleConnector = MeshCreator_CircularView.GetMesh_ParticleConnector();
         private Mesh mesh_hex_particle = MeshCreator_HexagonalView.GetMesh_MergingExpansionHexagon();
-        private Mesh defaultQuadLeftSidePivot = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
-        private Mesh defaultHexagon = MeshCreator_HexagonalView.GetMesh_BaseExpansionHexagon();
-        private Mesh defaultHexagonCenter = MeshCreator_HexagonalView.GetMesh_BaseHexagonBackground();
-        // Matrix TRS Params
-        static Quaternion quaternion_horRightParticleConnection = Quaternion.Euler(0f, 0f, 0f) * Quaternion.identity;
-        //static Vector3 scale_horRightParticleConnection = new Vector3(1f, particleConnectedWidth, 1f);
-        static Quaternion quaternion_diaTopLeftParticleConnection = Quaternion.Euler(0f, 0f, 120f) * Quaternion.identity;
-        //static Vector3 scale_diaTopLeftParticleConnection = new Vector3(diagonalConnectionLength, particleConnectedWidth, 1f);
-        static Quaternion quaternion_diaTopRightParticleConnection = Quaternion.Euler(0f, 0f, 60f) * Quaternion.identity;
-        //static Vector3 scale_diaTopRightParticleConnection = new Vector3(diagonalConnectionLength, particleConnectedWidth, 1f);
-        static Quaternion quaternion_right = Quaternion.Euler(0f, 0f, 0f) * Quaternion.identity;
-        static Quaternion quaternion_topRight = Quaternion.Euler(0f, 0f, 60f) * Quaternion.identity;
-        static Quaternion quaternion_topLeft = Quaternion.Euler(0f, 0f, 120f) * Quaternion.identity;
-        static Quaternion quaternion_left = Quaternion.Euler(0f, 0f, 180f) * Quaternion.identity;
-        static Quaternion quaternion_botLeft = Quaternion.Euler(0f, 0f, 240f) * Quaternion.identity;
-        static Quaternion quaternion_botRight = Quaternion.Euler(0f, 0f, 300f) * Quaternion.identity;
         // Defaults
         Matrix4x4 matrixTRS_zero = Matrix4x4.TRS(new Vector3(float.MaxValue / 2f, float.MaxValue / 2f, 0f), Quaternion.identity, Vector3.zero);
         const int maxArraySize = 1023;

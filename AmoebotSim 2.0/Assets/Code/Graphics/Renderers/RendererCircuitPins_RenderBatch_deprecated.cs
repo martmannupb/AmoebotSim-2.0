@@ -8,7 +8,7 @@ namespace AS2.Visuals
     /// <summary>
     /// Renderer for the circuit pins. Each instance of this class renders pins with the same properties (like color, type, etc.) with Unity's instanced drawing.
     /// </summary>
-    public class RendererCircuitPins_RenderBatch : IGenerateDynamicMesh
+    public class RendererCircuitPins_RenderBatch_deprecated : IGenerateDynamicMesh
     {
 
         // Data
@@ -37,19 +37,16 @@ namespace AS2.Visuals
             public Color color;
             public bool delayed;
             public bool beeping;
-            public Vector2 animationOffset;
 
-            public PropertyBlockData(Color color, bool delayed, bool beeping) : this(color, delayed, beeping, Vector2.zero) { }
-            public PropertyBlockData(Color color, bool delayed, bool beeping, Vector2 animationOffset)
+            public PropertyBlockData(Color color, bool delayed, bool beeping)
             {
                 this.color = color;
                 this.delayed = delayed;
                 this.beeping = beeping;
-                this.animationOffset = animationOffset;
-        }
+            }
         }
 
-        public RendererCircuitPins_RenderBatch(PropertyBlockData properties)
+        public RendererCircuitPins_RenderBatch_deprecated(PropertyBlockData properties)
         {
             this.properties = properties;
 
@@ -77,8 +74,6 @@ namespace AS2.Visuals
                 propertyBlock_circuitMatrices_Pins.ApplyColor(Color.black);
                 propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
             }
-            propertyBlock_circuitMatrices_Pins.ApplyMovementOffset(properties.animationOffset);
-            propertyBlock_circuitMatrices_PinConnectors.ApplyMovementOffset(properties.animationOffset);
 
             // Generate Mesh
             RegenerateMeshes();
@@ -191,17 +186,6 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Applies the timestamps for the movement offsets.
-        /// </summary>
-        /// <param name="movementStartTime">Start time of the animation.</param>
-        /// <param name="movementDuration">Duration of the animation.</param>
-        public void ApplyMovementTimestamps(float movementStartTime, float movementDuration)
-        {
-            propertyBlock_circuitMatrices_Pins.ApplyMovementTimestamp(movementStartTime, movementDuration);
-            propertyBlock_circuitMatrices_PinConnectors.ApplyMovementTimestamp(movementStartTime, movementDuration);
-        }
-
-        /// <summary>
         /// Renders the pins.
         /// </summary>
         /// <param name="type">The current view type. Useful for deciding what to show.</param>
@@ -215,7 +199,6 @@ namespace AS2.Visuals
             if (firstRenderFrame)
             {
                 ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp);
-                ApplyMovementTimestamps(RenderSystem.animation_animationTriggerTimestamp, RenderSystem.data_hexagonalAnimationDuration);
             }
 
             // Pins

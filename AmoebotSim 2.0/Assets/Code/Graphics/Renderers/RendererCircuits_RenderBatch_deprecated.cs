@@ -9,7 +9,7 @@ namespace AS2.Visuals
     /// <summary>
     /// Renderer for the circuits. Each instance of this class renders circuit lines with the same properties (like color, type, etc.) with Unity's instanced drawing.
     /// </summary>
-    public class RendererCircuits_RenderBatch : IGenerateDynamicMesh
+    public class RendererCircuits_RenderBatch_deprecated : IGenerateDynamicMesh
     {
 
         // Data
@@ -51,22 +51,19 @@ namespace AS2.Visuals
             public LineType lineType;
             public bool delayed;
             public bool beeping;
-            public bool animationUpdatedManually;
-            public Vector2 animationOffset;
+            public bool animated;
 
-            public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animationUpdatedManually) : this(color, lineType, delayed, beeping, animationUpdatedManually, Vector2.zero) { }
-            public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animationUpdatedManually, Vector2 animationOffset)
+            public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animated)
             {
                 this.color = color;
                 this.lineType = lineType;
                 this.delayed = delayed;
                 this.beeping = beeping;
-                this.animationUpdatedManually = animationUpdatedManually;
-                this.animationOffset = animationOffset;
+                this.animated = animated;
             }
         }
 
-        public RendererCircuits_RenderBatch(PropertyBlockData properties)
+        public RendererCircuits_RenderBatch_deprecated(PropertyBlockData properties)
         {
             this.properties = properties;
 
@@ -108,7 +105,6 @@ namespace AS2.Visuals
                 lineMaterial = MaterialDatabase.material_circuit_beep;
                 zOffset = -0.1f;
             }
-            propertyBlock_circuitMatrices_Lines.ApplyMovementOffset(properties.animationOffset);
 
             // Settings
             switch (properties.lineType)
@@ -164,7 +160,7 @@ namespace AS2.Visuals
         /// <param name="globalLineEndPos">The end position of the line at the beginning of the animation.</param>
         /// <param name="globalLineStartPos2">The start position of the line at the end of the animation.</param>
         /// <param name="globalLineEndPos2">The end position of the line at the end of the animation.</param>
-        public void AddManuallyUpdatedLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Vector2 globalLineStartPos2, Vector2 globalLineEndPos2)
+        public void AddAnimatedLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Vector2 globalLineStartPos2, Vector2 globalLineEndPos2)
         {
             if (currentIndex >= maxArraySize * circuitMatrices_Lines.Count)
             {
@@ -212,7 +208,7 @@ namespace AS2.Visuals
         private void CalculateAnimationFrame()
         {
             float interpolationPercentage;
-            if (properties.animationUpdatedManually && RenderSystem.animationsOn) interpolationPercentage = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
+            if (properties.animated && RenderSystem.animationsOn) interpolationPercentage = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
             else interpolationPercentage = 1f;
             for (int i = 0; i < currentIndex; i++)
             {
@@ -274,16 +270,6 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Applies the timestamps for the movement offsets.
-        /// </summary>
-        /// <param name="movementStartTime">Start time of the animation.</param>
-        /// <param name="movementDuration">Duration of the animation.</param>
-        public void ApplyMovementTimestamps(float movementStartTime, float movementDuration)
-        {
-            propertyBlock_circuitMatrices_Lines.ApplyMovementTimestamp(movementStartTime, movementDuration);
-        }
-
-        /// <summary>
         /// Draws the circuits to the screen based on current settings.
         /// </summary>
         /// <param name="type">The view type of the system. Useful for deciding what should be shown.</param>
@@ -319,7 +305,6 @@ namespace AS2.Visuals
             if (firstRenderFrame)
             {
                 ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, RenderSystem.data_particleMovementFinishedTimestamp + RenderSystem.data_circuitAnimationDuration);
-                ApplyMovementTimestamps(RenderSystem.animation_animationTriggerTimestamp, RenderSystem.data_hexagonalAnimationDuration);
             }
             else if (properties.beeping && RenderSystem.data_circuitBeepRepeatOn && lastBeepStartTime + RenderSystem.data_circuitBeepDuration < Time.timeSinceLevelLoad)
             {
@@ -332,7 +317,7 @@ namespace AS2.Visuals
             if (currentIndex == 0) return;
 
             // Animations
-            if (properties.animationUpdatedManually) CalculateAnimationFrame();
+            if (properties.animated) CalculateAnimationFrame();
 
             int listDrawAmount = ((currentIndex - 1) / maxArraySize) + 1;
             for (int i = 0; i < listDrawAmount; i++)
