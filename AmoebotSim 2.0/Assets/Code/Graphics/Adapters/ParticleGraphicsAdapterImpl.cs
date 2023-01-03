@@ -22,8 +22,8 @@ namespace AS2.Visuals
 
         // Data
         // Current Round
-        public PositionSnap state_cur = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, ParticleMovement.Contracted, ParticleJointMovementState.None, 0f);
-        public PositionSnap state_prev = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, ParticleMovement.Contracted, ParticleJointMovementState.None, 0f);
+        public PositionSnap state_cur = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, true, ParticleMovement.Contracted, ParticleJointMovementState.None, 0f);
+        public PositionSnap state_prev = new PositionSnap(Vector2Int.zero, Vector2Int.zero, false, -1, true, ParticleMovement.Contracted, ParticleJointMovementState.None, 0f);
 
         // Graphical Data
         public bool graphics_isRegistered = false;
@@ -42,16 +42,18 @@ namespace AS2.Visuals
             public Vector2Int position2;
             public bool isExpanded;
             public int globalExpansionOrContractionDir;
+            public bool noAnimation;
             public ParticleMovement movement;
             public ParticleJointMovementState jointMovementState;
             public float timestamp;
 
-            public PositionSnap(Vector2Int p1, Vector2Int p2, bool isExpanded, int globalExpansionOrContractionDir, ParticleMovement movement, ParticleJointMovementState jointMovementState, float timestamp)
+            public PositionSnap(Vector2Int p1, Vector2Int p2, bool isExpanded, int globalExpansionOrContractionDir, bool noAnimation, ParticleMovement movement, ParticleJointMovementState jointMovementState, float timestamp)
             {
                 this.position1 = p1;
                 this.position2 = p2;
                 this.isExpanded = isExpanded;
                 this.globalExpansionOrContractionDir = globalExpansionOrContractionDir;
+                this.noAnimation = noAnimation;
                 this.movement = movement;
                 this.jointMovementState = jointMovementState;
                 this.timestamp = timestamp;
@@ -63,6 +65,7 @@ namespace AS2.Visuals
                     s1.position2 == s2.position2 &&
                     s1.isExpanded == s2.isExpanded &&
                     s1.globalExpansionOrContractionDir == s2.globalExpansionOrContractionDir &&
+                    s1.noAnimation == s2.noAnimation &&
                     s1.movement == s2.movement &&
                     s1.jointMovementState == s2.jointMovementState &&
                     s1.timestamp == s2.timestamp;
@@ -74,6 +77,7 @@ namespace AS2.Visuals
                     s1.position2 != s2.position2 ||
                     s1.isExpanded != s2.isExpanded ||
                     s1.globalExpansionOrContractionDir != s2.globalExpansionOrContractionDir ||
+                    s1.noAnimation != s2.noAnimation ||
                     s1.movement != s2.movement ||
                     s1.jointMovementState != s2.jointMovementState ||
                     s1.timestamp != s2.timestamp;
@@ -158,7 +162,7 @@ namespace AS2.Visuals
             // Previous Data
             state_prev = state_cur;
             // Current Data
-            state_cur = new PositionSnap(movementState.posHead, movementState.posTail, movementState.isExpanded, movementState.expansionOrContractionDir, ParticleMovement.Contracted, noAnimation == false ? movementState.jointMovement : ParticleJointMovementState.None, Time.timeSinceLevelLoad);
+            state_cur = new PositionSnap(movementState.posHead, movementState.posTail, movementState.isExpanded, movementState.expansionOrContractionDir, noAnimation, ParticleMovement.Contracted, noAnimation == false ? movementState.jointMovement : ParticleJointMovementState.None, Time.timeSinceLevelLoad);
 
             // Get Expanded State
             if (state_cur.isExpanded)
@@ -195,7 +199,7 @@ namespace AS2.Visuals
             // Previous Data
             state_prev = state_cur;
             // Current Data
-            state_cur = new PositionSnap(particle.Head(), particle.Tail(), particle.IsExpanded(), particle.GlobalHeadDirectionInt(), ParticleMovement.Contracted, noAnimation == false ? jointMovementState : ParticleJointMovementState.None, Time.timeSinceLevelLoad);
+            state_cur = new PositionSnap(particle.Head(), particle.Tail(), particle.IsExpanded(), particle.GlobalHeadDirectionInt(), noAnimation, ParticleMovement.Contracted, noAnimation == false ? jointMovementState : ParticleJointMovementState.None, Time.timeSinceLevelLoad);
 
             // Get Expanded State
             if (state_cur.isExpanded)

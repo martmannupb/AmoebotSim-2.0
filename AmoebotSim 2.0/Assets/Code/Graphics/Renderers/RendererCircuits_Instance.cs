@@ -30,7 +30,7 @@ namespace AS2.Visuals
         public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
         {
             //bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
-            bool delayed = RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
+            bool delayed = snap.noAnimation == false && RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
             bool movement = RenderSystem.animationsOn && snap.jointMovementState.isJointMovement && delayed == false;
             Vector2 movementOffset = movement ? -AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.jointMovementState.jointExpansionOffset) : Vector2.zero;
             int amountPartitionSets = state.partitionSets.Count;
@@ -58,12 +58,13 @@ namespace AS2.Visuals
                 {
                     if (state.hasNeighbor1[i] && globalDirLineSet1[i] == false)
                     {
+                        bool delayedState = delayed || state.neighborPinConnection1[i] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn;
                         for (int j = 0; j < state.pinsPerSide; j++)
                         {
                             ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
                             Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                             Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                            AddLine(posPin, posOutterLineCenter, Color.black, true, delayed, false, movementOffset);
+                            AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
                         }
                     }
                 }
@@ -119,7 +120,8 @@ namespace AS2.Visuals
                 if (state.hasNeighbor1[pin.globalDir])
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayed, pSet.beepsThisRound, movementOffset);
+                    bool delayedState = delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn;
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
                     globalDirLineSet1[pin.globalDir] = true;
                 }
             }
@@ -134,7 +136,8 @@ namespace AS2.Visuals
                 if (state.hasNeighbor1[pin.globalDir])
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayed, pSet.beepsThisRound, movementOffset);
+                    bool delayedState = delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn;
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
                     globalDirLineSet1[pin.globalDir] = true;
                 }
                 // Beep Origin
@@ -156,7 +159,8 @@ namespace AS2.Visuals
                 if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayed, pSet.beepsThisRound, movementOffset);
+                    bool delayedState = delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                     else globalDirLineSet2[pin.globalDir] = true;
                 }
@@ -172,7 +176,8 @@ namespace AS2.Visuals
                 if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayed, pSet.beepsThisRound, movementOffset);
+                    bool delayedState = delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                     else globalDirLineSet2[pin.globalDir] = true;
                 }
@@ -195,7 +200,8 @@ namespace AS2.Visuals
                         ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, true);
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                         Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayed, false, movementOffset);
+                        bool delayedState = delayed || state.neighborPinConnection1[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn;
+                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
                     }
                 }
                 if (state.hasNeighbor2[k] && globalDirLineSet2[k] == false && ((state.neighbor1ToNeighbor2Direction + 3) % 6) != k)
@@ -205,7 +211,8 @@ namespace AS2.Visuals
                         ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, false);
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
                         Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayed, false, movementOffset);
+                        bool delayedState = delayed || state.neighborPinConnection2[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn;
+                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
                     }
                 }
             }
