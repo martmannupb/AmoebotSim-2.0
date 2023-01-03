@@ -31,6 +31,12 @@ namespace AS2.Visuals
             propertyBlock.SetColor("_InputColor", color);
         }
 
+        public void ApplyColorSecondary(Color color)
+        {
+            this.color = color;
+            propertyBlock.SetColor("_InputColorSecondary", color);
+        }
+
         public void ApplyTexture(Texture tex)
         {
             propertyBlock.SetTexture("_Texture2D", tex);

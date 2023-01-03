@@ -38,6 +38,7 @@ namespace AS2
         public static Material material_circuit_pin_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMatWithMovement");
         // Beeps
         public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");
+        public static Material material_circuit_beepPaused = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepPausedMat");
         public static Material material_circuit_pin_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinBeepMat"); // not used
         // Bonds
         public static Material material_bond_lineHexagonal = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondHexMat");

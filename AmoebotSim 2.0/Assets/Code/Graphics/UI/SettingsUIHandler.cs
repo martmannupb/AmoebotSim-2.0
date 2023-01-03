@@ -162,12 +162,7 @@ namespace AS2.UI
                 case "Circuit Border":
                     RenderSystem.flag_circuitBorderActive = isOn;
                     // Reinit RenderBatches to apply changes
-                    uiHandler
-                        .sim
-                        .renderSystem
-                        .rendererP
-                        .circuitAndBondRenderer
-                        .ReinitBatches();
+                    uiHandler.sim.renderSystem.rendererP.circuitAndBondRenderer.ReinitBatches();
                     break;
                 case "Circular Ring":
                     RenderSystem.flag_showCircuitViewOutterRing = isOn;

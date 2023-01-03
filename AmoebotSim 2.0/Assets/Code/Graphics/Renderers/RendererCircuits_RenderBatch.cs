@@ -47,15 +47,23 @@ namespace AS2.Visuals
                 BondCircular
             }
 
+            public enum ActiveState
+            {
+                SimActive,
+                SimPaused,
+                SimActiveOrPaused
+            }
+
             public Color color;
             public LineType lineType;
             public bool delayed;
             public bool beeping;
             public bool animationUpdatedManually;
             public Vector2 animationOffset;
+            public ActiveState activeState;
 
             public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animationUpdatedManually) : this(color, lineType, delayed, beeping, animationUpdatedManually, Vector2.zero) { }
-            public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animationUpdatedManually, Vector2 animationOffset)
+            public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animationUpdatedManually, Vector2 animationOffset, ActiveState activeState = ActiveState.SimActiveOrPaused)
             {
                 this.color = color;
                 this.lineType = lineType;
@@ -63,6 +71,7 @@ namespace AS2.Visuals
                 this.beeping = beeping;
                 this.animationUpdatedManually = animationUpdatedManually;
                 this.animationOffset = animationOffset;
+                this.activeState = activeState;
             }
         }
 
@@ -96,21 +105,44 @@ namespace AS2.Visuals
                 default:
                     break;
             }
-
-            // Circle PropertyBlocks
+            
+            // Set Colors
             if (properties.lineType != PropertyBlockData.LineType.BondHexagonal && properties.lineType != PropertyBlockData.LineType.BondCircular)
             {
-                propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Bond Color stays
+                if (properties.beeping && properties.activeState == PropertyBlockData.ActiveState.SimPaused)
+                {
+                    // Special Case: Paused Beeps
+                    propertyBlock_circuitMatrices_Lines.ApplyColor(Color.white);
+                    propertyBlock_circuitMatrices_Lines.ApplyColorSecondary(properties.color);
+                }
+                else propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Bond Color stays
             }
+            // Beeping Properties
             if (properties.beeping)
             {
-                propertyBlock_circuitMatrices_Lines.ApplyTexture(lineMaterial.GetTexture("_Texture2D"));
-                lineMaterial = MaterialDatabase.material_circuit_beep;
-                zOffset = -0.1f;
+                switch (properties.activeState)
+                {
+                    case PropertyBlockData.ActiveState.SimActive:
+                    case PropertyBlockData.ActiveState.SimActiveOrPaused:
+                        // Running Mode
+                        propertyBlock_circuitMatrices_Lines.ApplyTexture(lineMaterial.GetTexture("_Texture2D"));
+                        lineMaterial = MaterialDatabase.material_circuit_beep;
+                        zOffset = -0.1f;
+                        break;
+                    case PropertyBlockData.ActiveState.SimPaused:
+                        // Paused Mode
+                        //propertyBlock_circuitMatrices_Lines.ApplyTexture(lineMaterial.GetTexture("_Texture2D")); // change this
+                        lineMaterial = MaterialDatabase.material_circuit_beepPaused;
+                        zOffset = -0.2f;
+                        break;
+                    default:
+                        break;
+                }
+                
             }
             propertyBlock_circuitMatrices_Lines.ApplyMovementOffset(properties.animationOffset);
 
-            // Settings
+            // Line Width
             switch (properties.lineType)
             {
                 case PropertyBlockData.LineType.InternalLine:
@@ -128,6 +160,7 @@ namespace AS2.Visuals
                 default:
                     break;
             }
+            if (properties.beeping && properties.activeState == PropertyBlockData.ActiveState.SimPaused) lineWidth = RenderSystem.const_circuitConnectorLineWidth; // Special Case
 
             // Generate Mesh
             RegenerateMeshes();
@@ -246,7 +279,7 @@ namespace AS2.Visuals
         /// <param name="beepStartTime">Start time of the beeps.</param>
         public void ApplyUpdates(float animationStartTime, float beepStartTime)
         {
-            if(properties.beeping)
+            if(properties.beeping && properties.activeState != PropertyBlockData.ActiveState.SimPaused)
             {
                 // Beeping Animation
                 float halfAnimationDuration = RenderSystem.data_circuitBeepDuration * 0.5f;
@@ -257,7 +290,7 @@ namespace AS2.Visuals
             }
             else
             {
-                // Static / Moving Animation
+                // Static / Moving Animation (and special beeping paused case)
                 if (properties.delayed)
                 {
                     // Moving
@@ -291,6 +324,21 @@ namespace AS2.Visuals
         public void Render(ViewType type, bool firstRenderFrame)
         {
             // Visibility Check
+            bool simRunning = AmoebotSimulator.instance != null && AmoebotSimulator.instance.running;
+            switch (properties.activeState)
+            {
+                case PropertyBlockData.ActiveState.SimActive:
+                    if (simRunning == false) return;
+                    break;
+                case PropertyBlockData.ActiveState.SimPaused:
+                    if (simRunning) return;
+                    break;
+                case PropertyBlockData.ActiveState.SimActiveOrPaused:
+                    // Show in both states
+                    break;
+                default:
+                    break;
+            }
             switch (type)
             {
                 case ViewType.Hexagonal:
@@ -321,7 +369,7 @@ namespace AS2.Visuals
                 ApplyUpdates(RenderSystem.data_particleMovementFinishedTimestamp, RenderSystem.data_particleMovementFinishedTimestamp + RenderSystem.data_circuitAnimationDuration);
                 ApplyMovementTimestamps(RenderSystem.animation_animationTriggerTimestamp, RenderSystem.data_hexagonalAnimationDuration);
             }
-            else if (properties.beeping && RenderSystem.data_circuitBeepRepeatOn && lastBeepStartTime + RenderSystem.data_circuitBeepDuration < Time.timeSinceLevelLoad)
+            else if (properties.beeping && properties.activeState != PropertyBlockData.ActiveState.SimPaused &&  RenderSystem.data_circuitBeepRepeatOn && lastBeepStartTime + RenderSystem.data_circuitBeepDuration < Time.timeSinceLevelLoad)
             {
                 // We show beeps and have shown the beep already
                 // Repeat Beep
