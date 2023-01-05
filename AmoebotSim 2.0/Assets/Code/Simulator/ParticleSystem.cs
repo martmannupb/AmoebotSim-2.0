@@ -425,6 +425,11 @@ namespace AS2.Sim
                 return;
             }
 
+            // Update neighbors
+            UpdateNeighborCaches();
+            // Setup pin graphics info
+            SetupPinGraphicState();
+
             // Second: Beep cycle
             // All particles set their new pin configurations and send beeps and messages
             // Then the circuits are computed and the sent information is distributed
@@ -1689,7 +1694,7 @@ namespace AS2.Sim
         /// Sets all global bonds of all particles so that
         /// their initial bonds can be computed easily.
         /// </summary>
-        public void SetInitialParticleBonds()
+        private void SetInitialParticleBonds()
         {
             foreach (Particle p in particles)
             {
@@ -1735,6 +1740,123 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// Updates the neighbor caches of all particles in the system
+        /// based on their current positions. The current cache will
+        /// become the old cache.
+        /// </summary>
+        private void UpdateNeighborCaches()
+        {
+            foreach (Particle p in particles)
+            {
+                p.SwapNeighborCaches();
+                int numNbrs = p.IsExpanded() ? 10 : 6;
+                Direction globalHeadDir = p.GlobalHeadDirection();
+
+                for (int label = 0; label < numNbrs; label++)
+                {
+                    Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+                    bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
+                    Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
+                    if (particleMap.TryGetValue(nbrPos, out Particle nbr))
+                    {
+                        // Store neighbor in cache
+                        p.neighborsNew[label] = nbr;
+                    }
+                    else
+                    {
+                        p.neighborsNew[label] = null;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Initializes the <see cref="ParticlePinGraphicState"/> of all particles
+        /// and sets the neighbor information. The neighbor caches must have been
+        /// updated and movement information must have been loaded at this point.
+        /// </summary>
+        /// <param name="reset">If <c>true</c>, all pin connections will be set
+        /// to "Shown" (i.e., no animations).</param>
+        private void SetupPinGraphicState(bool reset = false)
+        {
+            foreach (Particle p in particles)
+            {
+                Direction globalHeadDir = p.GlobalHeadDirection();
+
+                // Initialize graphics instance
+                p.gCircuit = ParticlePinGraphicState.PoolCreate(p.algorithm.PinsPerEdge);
+                p.gCircuit.neighbor1ToNeighbor2Direction = p.GlobalTailDirection().ToInt();
+
+                // Start with all neighbor flags set to None
+                for (int i = 0; i < 6; i++)
+                {
+                    p.gCircuit.neighborPinConnection1[i] = ParticlePinGraphicState.NeighborPinConnection.None;
+                    p.gCircuit.neighborPinConnection2[i] = ParticlePinGraphicState.NeighborPinConnection.None;
+                }
+
+                int numNbrs = p.IsExpanded() ? 10 : 6;
+
+                // Record all existing neighbors
+                for (int label = 0; label < numNbrs; label++)
+                {
+                    Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+                    int dirInt = dir.ToInt();
+                    bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
+
+                    if (p.neighborsNew[label] != null)
+                    {
+                        if (p.IsExpanded() && !head)
+                        {
+                            // neighbor2 is tail
+                            p.gCircuit.hasNeighbor2[dirInt] = true;
+                        }
+                        else
+                        {
+                            // neighbor1 is head
+                            p.gCircuit.hasNeighbor1[dirInt] = true;
+                        }
+                    }
+                }
+
+                // Enter the pin connection info based on the previous and new neighbors
+                // If the particle has not expanded or contracted: Check its neighbors
+                if (p.ScheduledMovement == null)
+                {
+                    for (int label = 0; label < numNbrs; label++)
+                    {
+                        bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
+                        Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
+                        int dirInt = dir.ToInt();
+
+                        // Determine into which array the connection state must be entered
+                        ParticlePinGraphicState.NeighborPinConnection[] pinConnections;
+                        if (p.IsExpanded() && !head)
+                            pinConnections = p.gCircuit.neighborPinConnection2;
+                        else
+                            pinConnections = p.gCircuit.neighborPinConnection1;
+
+                        // If there is a neighbor at the end of the round: Check if it has moved and if it is the same neighbor as before
+                        if (p.neighborsNew[label] != null)
+                        {
+                            // If it is the same neighbor as before and it has not moved (neither locally nor relatively),
+                            // show the connection the whole time
+                            // Also show it if there should be no animations
+                            if (reset || p.neighborsNew[label] == p.neighborsOld[label] && p.neighborsNew[label].ScheduledMovement == null && p.jmOffset == p.neighborsNew[label].jmOffset)
+                            {
+                                pinConnections[dirInt] = ParticlePinGraphicState.NeighborPinConnection.Shown;
+                            }
+                            // Otherwise fade in the connection
+                            else
+                            {
+                                pinConnections[dirInt] = ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // TODO: Circuit computation and beep/message handling should probably be done separately
 
         /// <summary>
@@ -1752,7 +1874,7 @@ namespace AS2.Sim
         /// <param name="sendBeepsAndMessages">Determines whether beeps
         /// and messages are sent. Set to <c>false</c> to only recompute
         /// the current circuits and update their graphics info.</param>
-        public void DiscoverCircuits(bool sendBeepsAndMessages)
+        private void DiscoverCircuits(bool sendBeepsAndMessages)
         {
             float tStart = Time.realtimeSinceStartup;
             List<Circuit> circuits = new List<Circuit>(particles.Count * 6);
@@ -1774,10 +1896,6 @@ namespace AS2.Sim
                     Direction globalHeadDir = p.GlobalHeadDirection();
                     int pinsPerEdge = p.algorithm.PinsPerEdge;
 
-                    // Initialize graphics computation as well
-                    p.gCircuit = ParticlePinGraphicState.PoolCreate(pinsPerEdge);
-                    p.gCircuit.neighbor1ToNeighbor2Direction = p.GlobalTailDirection().ToInt();
-
                     // First of all, find all neighboring particles and some relative positional information
                     int numNbrs = p.IsExpanded() ? 10 : 6;
                     Particle[] nbrParts = new Particle[numNbrs];
@@ -1786,23 +1904,11 @@ namespace AS2.Sim
                     for (int label = 0; label < numNbrs; label++)
                     {
                         Direction dir = ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir);
-                        int dirInt = dir.ToInt();
                         bool head = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir);
                         Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(head ? p.Head() : p.Tail(), dir);
                         if (particleMap.TryGetValue(nbrPos, out Particle nbr))
                         {
-                            // Has neighbor in this position, record in circuit graphics info
-                            if (p.IsExpanded() && !head)
-                            {
-                                // neighbor2 is tail
-                                p.gCircuit.hasNeighbor2[dirInt] = true;
-                            }
-                            else
-                            {
-                                // neighbor1 is head
-                                p.gCircuit.hasNeighbor1[dirInt] = true;
-                            }
-
+                            // Has neighbor in this position
                             // If the neighbor has already been processed: Compute required information
                             if (nbr.processedPinConfig)
                             {
@@ -1968,12 +2074,11 @@ namespace AS2.Sim
         /// Resets the helper information of all particles to prepare for
         /// the simulation of the next round.
         /// </summary>
-        public void CleanupAfterRound()
+        private void CleanupAfterRound()
         {
             // Remove simulation state flags from all particles
             foreach (Particle p in particles)
             {
-                p.hasMoved = false;
                 p.processedJointMovement = false;
                 p.queuedForJMProcessing = false;
                 p.processedPinConfig = false;
@@ -1987,6 +2092,13 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// Checks if the simulation has finished by calling the
+        /// <see cref="Particle.IsFinished"/> method on all particles.
+        /// </summary>
+        /// <returns><c>true</c> if and only if all particles are finished
+        /// and no particle caused an exception while running
+        /// <see cref="Particle.IsFinished"/>.</returns>
         private bool HasSimulationFinished()
         {
             foreach (Particle p in particles)
@@ -2016,7 +2128,7 @@ namespace AS2.Sim
         /// them for each particle. Use this to prepare the
         /// particles for the joint movements in the next round.
         /// </summary>
-        public void FinishMovementInfo()
+        private void FinishMovementInfo()
         {
             foreach (Particle p in particles)
             {
@@ -2030,7 +2142,7 @@ namespace AS2.Sim
         /// prepare the particles for the transmission and reception of
         /// beeps and messages in the next round.
         /// </summary>
-        public void FinishBeepAndMessageInfo()
+        private void FinishBeepAndMessageInfo()
         {
             foreach (Particle p in particles)
             {
@@ -2042,7 +2154,7 @@ namespace AS2.Sim
         /// <summary>
         /// Triggers a graphics update for each particle in the system.
         /// </summary>
-        public void UpdateAllParticleVisuals(bool resetVisuals)
+        private void UpdateAllParticleVisuals(bool resetVisuals)
         {
             // TODO: Maybe only update particles with changes
             // First update position info, then update circuit data
@@ -2744,7 +2856,6 @@ namespace AS2.Sim
          * IReplayHistory implementation
          */
 
-        // TODO: Test this thoroughly
         // TODO: Maybe find better way to update particleMap
 
         public int GetFirstRecordedRound()
@@ -2787,6 +2898,8 @@ namespace AS2.Sim
                 isTracking = false;
                 anchorIdxHistory.SetMarkerToRound(round);
                 // TODO: Put this into a helper method?
+                UpdateNeighborCaches();
+                SetupPinGraphicState(true);
                 DiscoverCircuits(false);
                 LoadMovementGraphicsInfo(false);
                 UpdateAllParticleVisuals(true);
@@ -2826,6 +2939,8 @@ namespace AS2.Sim
                 }
                 isTracking = false;
                 anchorIdxHistory.StepBack();
+                UpdateNeighborCaches();
+                SetupPinGraphicState(true);
                 DiscoverCircuits(false);
                 LoadMovementGraphicsInfo(false);
                 UpdateAllParticleVisuals(true);
@@ -2862,8 +2977,10 @@ namespace AS2.Sim
                 }
                 isTracking = false;
                 anchorIdxHistory.StepForward();
-                DiscoverCircuits(false);
+                UpdateNeighborCaches();
                 LoadMovementGraphicsInfo(true);
+                SetupPinGraphicState(false);
+                DiscoverCircuits(false);
                 UpdateAllParticleVisuals(false);
                 CleanupAfterRound();
                 foreach (Particle p in particles)
@@ -2895,8 +3012,10 @@ namespace AS2.Sim
                 }
                 isTracking = true;
                 anchorIdxHistory.ContinueTracking();
-                DiscoverCircuits(false);
+                UpdateNeighborCaches();
                 LoadMovementGraphicsInfo(stepFromSecondLastRound);
+                SetupPinGraphicState(!stepFromSecondLastRound);
+                DiscoverCircuits(false);
                 UpdateAllParticleVisuals(!stepFromSecondLastRound);
                 CleanupAfterRound();
                 foreach (Particle p in particles)
@@ -3015,6 +3134,8 @@ namespace AS2.Sim
 
             if (updateVisuals)
             {
+                UpdateNeighborCaches();
+                SetupPinGraphicState(true);
                 DiscoverCircuits(false);
                 CleanupAfterRound();
                 UpdateAllParticleVisuals(true);
@@ -3167,6 +3288,8 @@ namespace AS2.Sim
             SetInitialParticleBonds();
             ComputeBondsStatic();
             FinishMovementInfo();
+            UpdateNeighborCaches();
+            SetupPinGraphicState(true);
             DiscoverCircuits(false);
             UpdateAllParticleVisuals(true);
             CleanupAfterRound();

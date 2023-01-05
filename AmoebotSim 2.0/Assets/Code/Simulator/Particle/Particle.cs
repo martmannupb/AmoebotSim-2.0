@@ -123,6 +123,15 @@ namespace AS2.Sim
         private ValueHistoryMessage[] plannedMessageHistory;
         private bool hasPlannedMessages = false;
 
+        // Neighbor cache
+        // Indices are global labels.
+        // The two caches are swapped each round such that we always have
+        // the cache of the previous round available.
+        // The cache is used to determine whether pin connections to the
+        // neighbors should be displayed or not.
+        public Particle[] neighborsNew = new Particle[10];
+        public Particle[] neighborsOld = new Particle[10];
+
 
         // Visualization
 
@@ -236,14 +245,6 @@ namespace AS2.Sim
         public bool[] markedBondsGlobal = new bool[10];
 
         /// <summary>
-        /// Flag indicating whether the particle has moved during the current round.
-        /// Used to determine whether a particle can be pushed or pulled by a
-        /// handover.
-        /// <para>Reset to <c>false</c> after simulating a round.</para>
-        /// </summary>
-        public bool hasMoved = false;
-
-        /// <summary>
         /// Flag indicating whether the pin configuration of the particle has
         /// already been processed for finding circuits. Becomes <c>true</c>
         /// as soon as all non-empty partition sets have been assigned to a
@@ -275,7 +276,6 @@ namespace AS2.Sim
         public bool isActive = false;
 
         // Graphical information
-        // TODO: Cache neighbor information in particles instead of this
         public ParticlePinGraphicState gCircuit;
 
         // Stores visualization info about some of the bonds incident to this particle
@@ -992,7 +992,6 @@ namespace AS2.Sim
             ResetReceivedBeepsAndMessages();
         }
 
-
         /**
          * Methods used by the system to read, set and reset planned actions.
          */
@@ -1244,6 +1243,21 @@ namespace AS2.Sim
             }
         }
 
+        /**
+         * Other helper methods
+         */
+
+        /// <summary>
+        /// Swaps the old and the new neighbor cache so that the
+        /// new cache can be written and the current new cache is
+        /// turned into the old cache.
+        /// </summary>
+        public void SwapNeighborCaches()
+        {
+            Particle[] tmp = neighborsNew;
+            neighborsNew = neighborsOld;
+            neighborsOld = tmp;
+        }
 
         /**
          * Attribute handling
