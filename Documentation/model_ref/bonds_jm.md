@@ -40,47 +40,75 @@ The bonds of a moving particle behave according to the part they are connected t
 	This bond will move with both moving parts of the two particles so that they stay connected, and it is allowed to rotate to match their new positions.
 	Any other bonds on the moving part of the pulling particle are *transferred* to the head of the pushing particle without moving relative to the two stationary parts.
 	The bonds at the stationary parts of the particles cannot move either, even if they are marked.
+> [!NOTE]
+> When a bond "moves" or "stays" relative to the stationary part of a particle, this means that the
+> part of the neighboring particle at the other end of the bond behaves the same way. It is possible
+> that the movement of this bond is interpreted differently from the neighbor particle's perspective.
+
+### Joint Movements
+
+By performing a movement and setting up its bonds appropriately, a particle is able to move its bonded neighbors relative to its own position, regardless of their individual movements.
+If these neighbors, in turn, do the same to their neighbors, some particles can be moved more than one position away from their original grid position, relative to other particles as well as the global coordinates.
+Without the joint movement extension, this kind of movement would not be possible.
+It allows the particles to move across greater distances through coordinated movements, but it may require additional coordination effort.
+
+#### The Anchor Particle
+
+In theory, the final position of a particle system after performing joint movements is only defined in terms of the particle positions relative to each other.
+The global positions of the particles are not uniquely defined: Imagine two particles, say one on the left and one on the right, and each of them tries to push the other one away by expanding into the direction of the neighbor.
+The final system will have the shape of four occupied nodes in a horizontal line, but how far should each particle move in the global coordinate system?
+What if there are more particles trying to push each other away?
+
+Because questions like this need a definitive answer in the simulator, we define an *anchor particle*.
+At any time, the particle system has exactly one anchor particle which "anchors" the whole system to the global grid.
+All movements are performed relative to this particle's position.
+If the anchor performs a movement, its stationary part will always keep its global position.
+Even if another particle tries to push the anchor away, the resulting movement will only push the particle away from the anchor.
+However, no particle in the system is able to know the difference because the particles do not have access to their global coordinates.
+This system only has the purpose of making the outcome of a joint movement uniquely defined.
+In some cases, it may also be used to create a specific visualization by changing the anchor during the simulation.
+
+### Conflicts
+
+If movements are not coordinated properly, *movement conflicts* can occur.
+The simplest kind of conflict is caused by multiple particles moving onto the same grid node.
+This can happen if two particles expand onto the same node or if a particle is pushed into another one, even without moving on its own.
+
+Other conflicts are caused by the bonds of neighboring particles not agreeing with their individual movements.
+For example, if two expanded particles are connected by three bonds and one of them tries to contract, its own bonds would try crossing each other, which is not allowed.
+In a similar situation where there are only two bonds between the two expanded particles, such that each of them has one bond at its head and one at its tail, it is impossible for one of them to contract while the other one stays expanded.
+
+Any conflict of these types will cause the round simulation to be aborted.
+In any algorithm that uses particle movements, it is essential that movement conflicts are prevented since the particles cannot react to them when they occur.
+
+> [!NOTE]
+> "Conflicts" that arise from particles moving through each other (but not necessarily ending up in an invalid position) are not handled by the system yet.
+> However, this kind of conflict should also be avoided because such movements would not be possible in a physical environment.
+
+
+## Implementation
+
+There are various methods for scheduling movements and releasing bonds in the algorithm API.
+Simple movements can be scheduled by calling [`Expand(Direction d)`][1], [`ContractTail`][2] and [`ContractHead`][3], handovers are scheduled with [`PushHandover(Direction d)`][4], [`PullHandoverTail(Direction d)`][5] and [`PullHandoverHead(Direction d)`][6], where `d` is the expansion direction for expansion and push movements or the direction of the pushing neighbor for pull handovers.
+
+To release or mark bonds, the [`ReleaseBond(Direction d, bool head)`][7] and [`MarkBond(Direction d, bool head)`][8] methods are used.
+The parameters `d` and `head` indicate the local direction of the bond and whether the bond is at the particle's head, respectively.
+All of these methods can only be called in the [`ActivateMove`][9] method.
+
+For convenience, the [`UseAutomaticBonds`][10] method can be called to avoid joint movement behavior.
+Calling this method will automatically set the bonds such that neighbors are not pulled by a contraction or pushed by an expansion (if possible), and it will block warning messages caused by disagreeing bond releases.
+This can be used to perform movements like in the original Amoebot model without the joint movement extension.
+However, the system must still remain connected by bonds at all times.
 
 
 
-
-
-- Movements
-	- Every individual particle movement is either an *expansion* or a *contraction* movement
-		- In a handover, the pushing particle performs an expansion and the pulling particle performs a contraction
-	- In the local view of a moving particle, one of its parts stays where it is and the other one moves
-		- For example, when a contracted particle expands, its head moves to a new position while the tail stays in place
-	- Bonds of the part that stays in place will never move relative to the particle
-	- For bonds of the moving part, there are several possibilities:
-		- If the particle **contracts**, the bonds are pulled with the moving part and then connect to the remaining part after the movement
-			- If there are no other conflicts, moving bonds that end up in the same position as a non-moving bond will be merged into the non-moving bond
-		- If the particle **expands**, it can *mark* some of its bonds to move with its head
-			- Unmarked bonds will stay at the particle's tail
-			- The bond pointing in the expansion direction will always be marked
-			- The bond in the opposite direction can never be marked
-		- **Handovers** are a special case
-			- Both particles must agree on the handover, i.e., one must perform a push movement and the other must perform a pull movement
-			- The bond pointing in the expansion direction of the pushing particle must be active
-				- It will move and turn with the two particles to keep the connection intact
-			- Any other bonds on the moving part of the pulling particle are *transferred* to the head of the pushing particle
-			- Their relative position to the non-moving parts of the two particles do not change
-			- Bond markings have no effect on this
-	- Conflicts
-		- If a *conflict* occurs during the movement phase, the round is aborted and an error is displayed
-		- The simplest conflict is caused by multiple particles moving onto the same grid node
-			- This can happen if two particles expand onto the same node
-			- It can also happen if a particle is pushed onto another one, even without moving on its own
-		- Other conflicts are caused by the bonds of neighboring particles not agreeing with their scheduled movements
-			- E.g., if two expanded particles are connected by at least two bonds and only one of them tries to contract
-- API
-	- Bonds can be released using `ReleaseBond(Direction d, bool head)`
-	- Bonds can be marked using `MarkBond(Direction d, bool head)`
-	- Calling `UseAutomaticBonds()` anywhere in the `ActivateMove()` method will cause the bonds to be set automatically such that the movements from the original Amoebot model are simulated
-		- Contracting particles will release all bonds of their moving part
-		- Expanding particles will not mark any bonds
-		- All other bonds stay active
-- The anchor particle
-	- One particle in the system is the *anchor*
-	- This movements of this particle are simulated as if it was the only particle in the system
-	- I.e., the non-moving part of it will *never* move globally
-	- The anchor allows the deterministic simulation of joint movements
+[1]: xref:AS2.Sim.ParticleAlgorithm.Expand(AS2.Direction)
+[2]: xref:AS2.Sim.ParticleAlgorithm.ContractTail
+[3]: xref:AS2.Sim.ParticleAlgorithm.ContractHead
+[4]: xref:AS2.Sim.ParticleAlgorithm.PushHandover(AS2.Direction)
+[5]: xref:AS2.Sim.ParticleAlgorithm.PullHandoverTail(AS2.Direction)
+[6]: xref:AS2.Sim.ParticleAlgorithm.PullHandoverHead(AS2.Direction)
+[7]: xref:AS2.Sim.ParticleAlgorithm.ReleaseBond(AS2.Direction,System.Boolean)
+[8]: xref:AS2.Sim.ParticleAlgorithm.MarkBond(AS2.Direction,System.Boolean)
+[9]: xref:AS2.Sim.ParticleAlgorithm.ActivateMove
+[10]: xref:AS2.Sim.ParticleAlgorithm.UseAutomaticBonds
