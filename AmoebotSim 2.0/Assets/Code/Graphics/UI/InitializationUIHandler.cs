@@ -149,6 +149,8 @@ namespace AS2.UI
                 throw new System.NullReferenceException();
             }
 
+            // Close particle panel
+            AmoebotSimulator.instance.uiHandler.particleUI.Close();
             // Show default generation algorithm
             string defaultGenAlg = AlgorithmManager.Instance.GetAlgorithmGenerationMethod(algorithm);
             if (defaultGenAlg != null)
