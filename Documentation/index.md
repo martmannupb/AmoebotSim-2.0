@@ -9,9 +9,9 @@ Refer to [Markdown](http://daringfireball.net/projects/markdown/) for how to wri
 
 Content:
 1. [Installation Guide](installation_guide/home.md)
-2. Amoebot Model
+2. [Amoebot Model](amoebot_model/home.md)
 3. [User Guide: Using the simulator](user_guide/usage/home.md)
-4. User Guide: Algorithm development
-5. Model Reference
-6. Developer Guide
-7. API Reference
+4. [User Guide: Algorithm development](user_guide/dev/home.md)
+5. [Model Reference](model_ref/home.md)
+6. [Developer Guide](dev_guide/home.md)
+7. [API Reference](api/index.md)

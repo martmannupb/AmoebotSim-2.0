@@ -3,12 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
-public class InitializationStateSaveData
+namespace AS2
 {
-    public string selectedAlgorithm;
 
-    public InitParticleSaveData[] particles;
+    [Serializable]
+    public class InitializationStateSaveData
+    {
+        public string selectedAlgorithm;
 
-    public InitModeSaveData initModeSaveData;
-}
+        public InitParticleSaveData[] particles;
+
+        public InitModeSaveData initModeSaveData;
+    }
+
+} // namespace AS2

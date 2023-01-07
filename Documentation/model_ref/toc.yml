@@ -1,9 +1,9 @@
 - name: Round Simulation
   href: rounds.md
-- name: Chirality
-  href: chirality.md
 - name: Directions and Compass
   href: direction.md
+- name: Chirality
+  href: chirality.md
 - name: Particle Attributes
   href: attrs.md
 - name: Pin Configurations

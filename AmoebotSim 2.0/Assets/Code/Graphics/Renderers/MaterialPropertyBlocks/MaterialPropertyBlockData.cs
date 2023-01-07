@@ -2,13 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class MaterialPropertyBlockData
+namespace AS2.Visuals
 {
 
-    public MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
+    /// <summary>
+    /// Wrapper for a MaterialPropertyBlock.
+    /// Can contain methods that dynamically set its values.
+    /// </summary>
+    public abstract class MaterialPropertyBlockData
+    {
 
-    protected abstract void Init();
+        public MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
 
-    public abstract void Reset();
+        protected abstract void Init();
+
+        public abstract void Reset();
+
+    }
 
 }

@@ -3,10 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
-public class InitModeSaveData
+namespace AS2
 {
-    public string algString;
-    public string genAlgString;
-    public string[] genAlg_parameters;
-}
+
+    [Serializable]
+    public class InitModeSaveData
+    {
+        public string algString;
+        public string genAlgString;
+        public string[] genAlg_parameters;
+    }
+
+} // namespace AS2

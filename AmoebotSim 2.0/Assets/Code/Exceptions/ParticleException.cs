@@ -1,25 +1,30 @@
 using UnityEngine;
 
-/// <summary>
-/// Base class for exceptions thrown because a particle tried
-/// to perform an invalid operation or its algorithm code caused
-/// a problem.
-/// </summary>
-public class ParticleException : AmoebotSimException
+namespace AS2.Sim
 {
-    public Particle particle;
 
-    public ParticleException() { }
-
-    public ParticleException(Particle particle)
+    /// <summary>
+    /// Base class for exceptions thrown because a particle tried
+    /// to perform an invalid operation or its algorithm code caused
+    /// a problem.
+    /// </summary>
+    public class ParticleException : AmoebotSimException
     {
-        this.particle = particle;
+        public Particle particle;
+
+        public ParticleException() { }
+
+        public ParticleException(Particle particle)
+        {
+            this.particle = particle;
+        }
+
+        public ParticleException(string msg) : base(msg) { }
+
+        public ParticleException(Particle particle, string msg) : base(msg)
+        {
+            this.particle = particle;
+        }
     }
 
-    public ParticleException(string msg) : base(msg) { }
-
-    public ParticleException(Particle particle, string msg) : base(msg)
-    {
-        this.particle = particle;
-    }
-}
+} // namespace AS2.Sim

@@ -53,11 +53,6 @@
                 "dest": "model_ref"
             },
             {
-                "src": "nested_pages",
-                "files": [ "**.md", "**.yml" ],
-                "dest": "nested_pages"
-            },
-            {
                 "src": "user_guide",
                 "files": [ "**.md", "**.yml" ],
                 "dest": "user_guide"

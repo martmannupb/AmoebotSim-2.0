@@ -49,6 +49,17 @@ namespace Engine.Library {
         }
 
         /// <summary>
+        /// Returns a default mesh with the given bound radius. Useful for shaders with vertex offsets.
+        /// </summary>
+        /// <param name="boundRadius">The manually set bounds of the mesh.</param>
+        /// <returns></returns>
+        public static Mesh getDefaultMeshQuad(float boundRadius)
+        {
+            Mesh mesh = getDefaultMeshQuad();
+            return AddManualBoundsToMesh(mesh, Vector3.zero, boundRadius, true);
+        }
+
+        /// <summary>
         /// Scales a mesh around the pivot. From the scaleVector each coordinate is multiplied with the corresponding coordinates from the mesh vertices.
         /// </summary>
         /// <param name="mesh"></param>
@@ -66,6 +77,12 @@ namespace Engine.Library {
             return mesh;
         }
 
+        /// <summary>
+        /// Offsets the mesh's vertices by a certain vector.
+        /// </summary>
+        /// <param name="mesh"></param>
+        /// <param name="offsetVector"></param>
+        /// <returns></returns>
         public static Mesh offsetMeshVertices(Mesh mesh, Vector3 offsetVector)
         {
             Vector3[] vertices = mesh.vertices;
@@ -75,6 +92,19 @@ namespace Engine.Library {
             }
             mesh.vertices = vertices;
 
+            return mesh;
+        }
+
+        /// <summary>
+        /// Adds some manual bounds to the mesh. Useful for shaders with vertex offsets.
+        /// </summary>
+        /// <param name="mesh">The mesh to edit.</param>
+        /// <param name="boundPivotWorldSpace">The pivot of the cubic bounds.</param>
+        /// <param name="boundRadius">The radius of the cubic bounds.</param>
+        /// <returns></returns>
+        public static Mesh AddManualBoundsToMesh(Mesh mesh, Vector3 boundPivotWorldSpace, float boundRadius, bool flatZ = false)
+        {
+            mesh.bounds = new Bounds(boundPivotWorldSpace, new Vector3(boundRadius * 2, boundRadius * 2, flatZ ? 0.01f : boundRadius * 2));
             return mesh;
         }
 
