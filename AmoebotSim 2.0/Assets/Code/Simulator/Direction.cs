@@ -3,7 +3,6 @@ using UnityEngine;
 namespace AS2
 {
 
-
     /// <summary>
     /// Constants for the 6 cardinal directions as well as the
     /// 6 directions perpendicular to them. The directions are
@@ -40,7 +39,7 @@ namespace AS2
     /// <summary>
     /// Defines extension methods and helpers for the <see cref="Direction"/> enum.
     /// </summary>
-    static class DirectionHelpers
+    public static class DirectionHelpers
     {
         /// <summary>
         /// Returns the direction directly opposite to this direction.

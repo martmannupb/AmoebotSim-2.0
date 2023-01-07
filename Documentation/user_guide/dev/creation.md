@@ -5,7 +5,13 @@
 Amoebot algorithms are programmed from the perspective of individual Amoebots, i.e., the algorithms do not have access to a global view of the system.
 Every Amoebot in the system runs a separate instance of the algorithm, which defines its entire state and controls its behavior.
 
-TODO
+The simulation runs in *synchronous rounds*, as described on the [Amoebot model pages](~/amoebot_model/home.md).
+Each simulation round is split into two phases: The *movement phase* and the *communication (beep) phase*.
+In each phase, all Amoebots are activated simultaneously, allowing them to perform computations and movement or communication actions based on the system's state at the beginning of the phase.
+The Amoebot behavior during each of the phases is implemented in two methods called [ActivateMove][6] and [ActivateBeep][7], which are the most important parts of any algorithm.
+All changes made during the activations take effect *at the end of the phase*.
+Because all Amoebots are activated at the same time, they are unaware of any changes made by their neighbors until the next phase.
+The round computation process is explained in more detail on the [reference pages](~/model_ref/rounds.md).
 
 
 ## The Algorithm Generator
@@ -20,12 +26,15 @@ In the Inspector window, you should now see the Algorithm Generator Component di
 
 You can now start editing the values in the input fields:
 
+- *Algo Name*: This is the basic internal identification of your algorithm.
+	It is used to name the classes belonging to the algorithm, a namespace that contains these classes and the file containing all your algorithm code.
+	It must be a valid C# identifier and unique among all algorithms.
 - *Class Name*: This will be the name of the class defining your algorithm.
 	It has to be a valid C# class name that does not already exist in the project.
-	The name you enter will also be used to name the algorithm file.
+	If you do not enter a name, the default name will be the algorithm base name with the suffix "Particle".
 - *Display Name*: This field defines the name that will be displayed in the algorithm selection field during runtime.
 	It can be an arbitrary string but it still has to be unique.
-	If you leave this field empty, the class name will be used.
+	If you leave this field empty, the base name will be used.
 - *Num Pins*: The number of pins per connection used by the algorithm.
 	Please refer to the [Reconfigurable Circuits page](~/amoebot_model/circuits.md) if you are not familiar with the concept of pins.
 	You can enter 0 if your algorithm does not use circuits at all.
@@ -39,15 +48,26 @@ After a short refresh, your new algorithm file should be visible in the Project 
 
 ## Algorithm File Structure
 
-Double-click on the generated algorithm file to open it in your IDE.
+Find the generated algorithm file in `Assets/Code/Algorithms` using the Project window and double-click it to open it in your IDE.
 The file contains a blank algorithm template in which all optional features are commented out.
 In the following, we will go through the structure of this file and explain the meaning of each component.
 
+### Namespaces
+
+The first two lines of the file include the [`AS2.Sim`][10] and the `UnityEngine` namespace.
+[`AS2.Sim`][10] contains classes and methods belonging to the algorithm and simulation API that are necessary for implementing an Amoebot algorithm, like the [`ParticleAlgorithm`][1] class.
+The `UnityEngine` namespace provides the Unity Editor logging system (accessed using `Debug.Log`) and random number generation (via `Random.Range`, for example).
+See [Advanced Features](advanced.md) for details.
+
+The rest of the code is contained in a namespace called `AS2.Algos.<YourAlgoBaseName>`.
+Every Amoebot algorithm should be contained in its own namespace within `AS2.Algos` to separate it from the other algorithms.
+Being contained in the [`AS2`][11] namespace provides access to all the relevant classes and methods of the algorithm API.
+It is safe to rename the algorithm's namespace later.
 
 ### The Algorithm Class
 
-The largest part of the file is the algorithm class: A class with the name you entered in the Algorithm Generator which inherits from [Particle Algorithm][1].
-The [Particle Algorithm][1] class is the base class for all Amoebot algorithms and provides the API for defining the Amoebot's state and behavior.
+The largest part of the file is the algorithm class: A class with the name you entered in the Algorithm Generator which inherits from [ParticleAlgorithm][1].
+The [ParticleAlgorithm][1] class is the base class for all Amoebot algorithms and provides the API for defining the Amoebot's state and behavior.
 
 
 #### Properties
@@ -112,7 +132,7 @@ public void Init(<PARAMETERS WITH DEFAULT VALUES>)
 ```
 
 If you want to implement a custom initialization procedure, you can implement a method with the name `Init` and a list of parameters with simple types and default values.
-Simple types are types that can be represented as particle attributes, e.g., `int`, `bool`, `enum`s, `float` and `string`.
+Simple types are types that can be represented as particle attributes, e.g., `int`, `bool`, `enum`, `float` and `string`.
 The `Init` method will be called immediately after the constructor with the parameter values that were set in the Initialization Mode.
 It should be used to override the initial attribute values set in the constructor depending on the given parameters.
 Please refer to the [Implementation Walkthrough](demo.md) for details on how to setup custom initialization.
@@ -173,12 +193,14 @@ The [Implementation Walkthrough](demo.md) provides an example for how this syste
 
 
 
-[1]: xref:Global.ParticleAlgorithm
-[2]: xref:Global.Particle
-[3]: xref:Global.ParticleAlgorithm.SetMainColor(Color)
-[4]: xref:Global.ColorData
-[5]: xref:Global.ParticleAlgorithm.IsFinished
-[6]: xref:Global.ParticleAlgorithm.ActivateMove
-[7]: xref:Global.ParticleAlgorithm.ActivateBeep
-[8]: xref:Global.InitializationMethod
-[9]: xref:Global.ParticleSystem
+[1]: xref:AS2.Sim.ParticleAlgorithm
+[2]: xref:AS2.Sim.Particle
+[3]: xref:AS2.Sim.ParticleAlgorithm.SetMainColor(Color)
+[4]: xref:AS2.ColorData
+[5]: xref:AS2.Sim.ParticleAlgorithm.IsFinished
+[6]: xref:AS2.Sim.ParticleAlgorithm.ActivateMove
+[7]: xref:AS2.Sim.ParticleAlgorithm.ActivateBeep
+[8]: xref:AS2.InitializationMethod
+[9]: xref:AS2.Sim.ParticleSystem
+[10]: xref:AS2.Sim
+[11]: xref:AS2

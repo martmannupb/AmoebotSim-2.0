@@ -16,6 +16,3 @@
 - name: API Documentation
   href: api/
   topicHref: api/index.md
-- name: Nested Pages
-  href: nested_pages/
-  topicHref: nested_pages/level_1_home.md
