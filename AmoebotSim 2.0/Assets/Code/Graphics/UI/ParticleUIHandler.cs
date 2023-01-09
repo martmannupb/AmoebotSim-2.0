@@ -23,7 +23,7 @@ namespace AS2.UI
         private AmoebotSimulator sim;
 
         // UI References
-        public TMPro.TextMeshProUGUI headerText;
+        private TMPro.TextMeshProUGUI headerText;
         public GameObject go_particlePanel;
         public GameObject go_attributeParent;
         public Button button_rootParticle;
