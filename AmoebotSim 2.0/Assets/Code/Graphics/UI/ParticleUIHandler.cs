@@ -26,6 +26,7 @@ namespace AS2.UI
         private TMPro.TextMeshProUGUI headerText;
         public GameObject go_particlePanel;
         public GameObject go_attributeParent;
+        public GameObject go_attributeRandomizationParent;
         public Button button_rootParticle;
         private Image image_rootParticle;
 
@@ -37,6 +38,7 @@ namespace AS2.UI
         private IParticleState particle;
         private Dictionary<string, IParticleAttribute> attributeNameToIParticleAttribute = new Dictionary<string, IParticleAttribute>();
         private Dictionary<string, UISetting> settings = new Dictionary<string, UISetting>();
+        private Dictionary<string, GameObject> settings_randomization = new Dictionary<string, GameObject>();
 
         private void Start()
         {
@@ -274,6 +276,9 @@ namespace AS2.UI
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
             setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add("Chirality", setting);
+            GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+            settings_randomization.Add("Chirality", go_randomization);
+            InitRandomizationGameObject(go_randomization, "Chirality");
             // Compass Dir
             Direction compassDir = p.CompassDir();
             string[] choicesTemp = System.Enum.GetNames(typeof(Initialization.Compass));
@@ -293,6 +298,9 @@ namespace AS2.UI
             setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
             setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
             settings.Add("Compass Dir", setting);
+            go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+            settings_randomization.Add("Compass Dir", go_randomization);
+            InitRandomizationGameObject(go_randomization, "Compass Dir");
         }
 
         /// <summary>
@@ -320,6 +328,10 @@ namespace AS2.UI
                 setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
                 setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
                 settings.Add(particleAttribute.ToString_AttributeName(), setting);
+                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
+                InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
+
             }
             else if (type == typeof(int))
             {
@@ -329,6 +341,8 @@ namespace AS2.UI
                 setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
                 setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
                 settings.Add(particleAttribute.ToString_AttributeName(), setting);
+                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_placeholder, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
             }
             else if (type == typeof(float))
             {
@@ -338,6 +352,8 @@ namespace AS2.UI
                 setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
                 setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
                 settings.Add(particleAttribute.ToString_AttributeName(), setting);
+                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_placeholder, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
             }
             else if (type == typeof(string))
             {
@@ -347,6 +363,8 @@ namespace AS2.UI
                 setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
                 setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
                 settings.Add(particleAttribute.ToString_AttributeName(), setting);
+                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_placeholder, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
             }
             else if (type == typeof(Direction))
             {
@@ -357,6 +375,9 @@ namespace AS2.UI
                 setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
                 setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
                 settings.Add(particleAttribute.ToString_AttributeName(), setting);
+                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
+                InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
             }
             else if (type == typeof(MinMax))
             {
@@ -366,6 +387,9 @@ namespace AS2.UI
                 setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
                 setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
                 settings.Add(particleAttribute.ToString_AttributeName(), setting);
+                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
+                InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
             }
             else if (type.IsEnum) // Enum (other than Direction)
             {
@@ -376,6 +400,9 @@ namespace AS2.UI
                 setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
                 setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
                 settings.Add(particleAttribute.ToString_AttributeName(), setting);
+                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
+                InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
             }
             else
             {
@@ -423,6 +450,15 @@ namespace AS2.UI
             {
                 setting.Lock(false);
             }
+            foreach (var setting in settings_randomization.Values)
+            {
+                Button[] buttons = setting.GetComponentsInChildren<Button>(); // first button is random, second is randomize all
+                if(buttons.Length > 1)
+                {
+                    buttons[0].interactable = false;
+                    buttons[1].interactable = false;
+                }
+            }
         }
 
         /// <summary>
@@ -434,6 +470,15 @@ namespace AS2.UI
             {
                 setting.Unlock(false);
             }
+            foreach (var setting in settings_randomization.Values)
+            {
+                Button[] buttons = setting.GetComponentsInChildren<Button>(); // first button is random, second is randomize all
+                if(buttons.Length > 1)
+                {
+                    buttons[0].interactable = true;
+                    buttons[1].interactable = true;
+                }
+            }
         }
 
         /// <summary>
@@ -442,6 +487,24 @@ namespace AS2.UI
         public void ClearPanel()
         {
             particle = null;
+            // Clear Randomization GameObject
+            for (int i = 0; i < go_attributeRandomizationParent.transform.childCount; i++)
+            {
+                if (go_attributeRandomizationParent.transform.GetChild(i).gameObject.name.Equals("Delimiter"))
+                {
+                    // Found the Delimiter
+                    // Delete following children
+                    for (int j = go_attributeRandomizationParent.transform.childCount - 1; j > i; j--)
+                    {
+                        GameObject go = go_attributeRandomizationParent.transform.GetChild(j).gameObject;
+                        Destroy(go);
+                    }
+                    // Clear References
+                    settings_randomization.Clear();
+                    return;
+                }
+            }
+            // Clear Settings + Lists
             for (int i = 0; i < go_attributeParent.transform.childCount; i++)
             {
                 if (go_attributeParent.transform.GetChild(i).gameObject.name.Equals("Delimiter"))
@@ -671,6 +734,28 @@ namespace AS2.UI
             else if(sim.system.IsInLatestRound() == false)
             {
                 Log.Warning("You cannot set the anchor when you are not in the latest round!");
+            }
+        }
+
+
+        public void InitRandomizationGameObject(GameObject dicePanel, string attributeName)
+        {
+            Button[] buttons = dicePanel.GetComponentsInChildren<Button>();
+            buttons[0].onClick.AddListener(delegate { ButtonPressed_Randomize(attributeName, false); });
+            buttons[1].onClick.AddListener(delegate { ButtonPressed_Randomize(attributeName, true); });
+        }
+
+        public void ButtonPressed_Randomize(string attributeName, bool randomizeAll)
+        {
+            if(randomizeAll)
+            {
+                // Find random values for all attributes
+                Log.Debug("Randomization not implemented yet!");
+            }
+            else
+            {
+                // Only find random values for current attribute
+                Log.Debug("Randomization not implemented yet!");
             }
         }
 

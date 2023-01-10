@@ -17,6 +17,9 @@ namespace AS2
         public static GameObject prefab_setting_dropdown = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/Dropdown");
         public static GameObject prefab_setting_valueSlider = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/ValueSlider");
         public static GameObject prefab_setting_minMax = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/MinMax");
+        // Randomization
+        public static GameObject prefab_randomization_dices = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Randomization/Randomization Dices");
+        public static GameObject prefab_randomization_placeholder = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Randomization/Randomization Placeholder");
 
         // World Space
         public static GameObject prefab_worldSpace_particleTextUI = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/World Space/ParticleTextUI");
