@@ -487,23 +487,6 @@ namespace AS2.UI
         public void ClearPanel()
         {
             particle = null;
-            // Clear Randomization GameObject
-            for (int i = 0; i < go_attributeRandomizationParent.transform.childCount; i++)
-            {
-                if (go_attributeRandomizationParent.transform.GetChild(i).gameObject.name.Equals("Delimiter"))
-                {
-                    // Found the Delimiter
-                    // Delete following children
-                    for (int j = go_attributeRandomizationParent.transform.childCount - 1; j > i; j--)
-                    {
-                        GameObject go = go_attributeRandomizationParent.transform.GetChild(j).gameObject;
-                        Destroy(go);
-                    }
-                    // Clear References
-                    settings_randomization.Clear();
-                    return;
-                }
-            }
             // Clear Settings + Lists
             for (int i = 0; i < go_attributeParent.transform.childCount; i++)
             {
@@ -527,7 +510,24 @@ namespace AS2.UI
                         setting.Clear();
                     }
                     settings.Clear();
-                    return;
+                    break;
+                }
+            }
+            // Clear Randomization GameObject
+            for (int i = 0; i < go_attributeRandomizationParent.transform.childCount; i++)
+            {
+                if (go_attributeRandomizationParent.transform.GetChild(i).gameObject.name.Equals("Delimiter"))
+                {
+                    // Found the Delimiter
+                    // Delete following children
+                    for (int j = go_attributeRandomizationParent.transform.childCount - 1; j > i; j--)
+                    {
+                        GameObject go = go_attributeRandomizationParent.transform.GetChild(j).gameObject;
+                        Destroy(go);
+                    }
+                    // Clear References
+                    settings_randomization.Clear();
+                    break;
                 }
             }
         }
