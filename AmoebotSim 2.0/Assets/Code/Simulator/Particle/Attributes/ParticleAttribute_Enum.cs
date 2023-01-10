@@ -120,6 +120,14 @@ namespace AS2.Sim
             }
         }
 
+        public bool SetRandomValue()
+        {
+            // Find random enum value
+            Array values = Enum.GetValues(Value.GetType());
+            history.RecordValueInRound((T)values.GetValue(UnityEngine.Random.Range(0, values.Length)), particle != null ? particle.system.CurrentRound : 0);
+            return true;
+        }
+
         /// <summary>
         /// Implementation of <see cref="ParticleAttributeWithHistory{T}.GenerateSaveData"/>.
         /// Generates data specifically for enum attributes, which includes the name of the

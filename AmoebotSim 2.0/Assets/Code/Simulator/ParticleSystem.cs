@@ -3682,6 +3682,21 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Sets the given attribute to a random value for each particle in the system.
+        /// </summary>
+        /// <param name="attributeName">The name of the attribute to randomize.</param>
+        public void SetSystemAttributeRandom(string attributeName)
+        {
+            IEnumerable<IParticleState> pList = inInitializationState ? particlesInit : particles;
+            foreach (IParticleState p in pList)
+            {
+                IParticleAttribute attr = p.TryGetAttributeByName(attributeName);
+                if (attr != null)
+                    attr.SetRandomValue();
+            }
+        }
+
+        /// <summary>
         /// Tries to change a particle's expansion state when in initialization mode.
         /// This method should only be called from within the particle itself so that
         /// it can update its own state after this check is complete.

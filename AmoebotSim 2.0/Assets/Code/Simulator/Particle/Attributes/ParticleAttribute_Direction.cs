@@ -78,6 +78,13 @@ namespace AS2.Sim
                 return false;
             }
         }
+
+        public bool SetRandomValue()
+        {
+            // Set random direction value that is not NONE
+            history.RecordValueInRound((Direction)UnityEngine.Random.Range(0, 12), particle != null ? particle.system.CurrentRound : 0);
+            return true;
+        }
     }
 
 } // namespace AS2.Sim

@@ -38,6 +38,17 @@ namespace AS2.Sim
         bool UpdateAttributeValue(string value);
 
         /// <summary>
+        /// Sets the attribute's value to a random value if the attribute type
+        /// allows this.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the value was updated
+        /// successfully.</returns>
+        bool SetRandomValue()
+        {
+            return false;
+        }
+
+        /// <summary>
         /// Returns the type of the attribute's value.
         /// </summary>
         /// <returns>The type of value stored in the attribute.</returns>
@@ -49,6 +60,10 @@ namespace AS2.Sim
         /// </summary>
         void ResetIntermediateValue();
 
+        /// <summary>
+        /// Returns the attribute's current value as an <see cref="object"/>.
+        /// </summary>
+        /// <returns>The attribute's current value.</returns>
         object GetObjectValue();
 
         /// <summary>
@@ -69,10 +84,6 @@ namespace AS2.Sim
         /// <returns><c>true</c> if and only if the state update was
         /// successful.</returns>
         bool RestoreFromSaveData(ParticleAttributeSaveDataBase data);
-
-        // TEMPORARY FOR DEBUGGING
-
-        void Print();
     }
 
 } // namespace AS2.Sim

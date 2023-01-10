@@ -77,6 +77,13 @@ namespace AS2.Sim
                 return false;
             }
         }
+
+        public bool SetRandomValue()
+        {
+            // Find a random bool value
+            history.RecordValueInRound(Random.Range(0, 2) == 0, particle != null ? particle.system.CurrentRound : 0);
+            return true;
+        }
     }
 
 } // namespace AS2.Sim
