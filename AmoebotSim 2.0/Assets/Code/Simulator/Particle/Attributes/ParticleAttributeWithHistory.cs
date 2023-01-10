@@ -136,21 +136,6 @@ namespace AS2.Sim
             history = new ValueHistory<T>(myData.history);
             return true;
         }
-
-
-        // <<<TEMPORARY: FOR DEBUGGING HISTORIES>>>
-        public void Print()
-        {
-            Debug.Log(name + ":");
-            if (history != null)
-            {
-                history.Print();
-            }
-            else
-            {
-                Debug.LogWarning("History is null.");
-            }
-        }
     }
 
 } // namespace AS2.Sim
