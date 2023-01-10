@@ -24,7 +24,47 @@ namespace AS2.Sim
     /// </summary>
     public class ParticleSystem : IReplayHistory
     {
-        // Round indexing
+        /*
+         * References
+         */
+
+        /// <summary>
+        /// The simulator object to which this system belongs.
+        /// </summary>
+        public AmoebotSimulator sim;
+
+        /// <summary>
+        /// The object responsible for rendering this particle system.
+        /// </summary>
+        public RenderSystem renderSystem;
+
+
+        /*
+         * Main data structures
+         */
+
+        /// <summary>
+        /// A list of all particles in the simulation.
+        /// <para>
+        /// This list does not change during the simulation.
+        /// </para>
+        /// </summary>
+        public List<Particle> particles = new List<Particle>();
+
+        /// <summary>
+        /// A map of the grid positions of all particles in the simulation.
+        /// <para>
+        /// The map is updated at the end of each round simulation or when
+        /// jumping to a round in the history.
+        /// </para>
+        /// </summary>
+        private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
+
+
+        /*
+         * Round indexing
+         */
+
         private int _currentRound = 0;
         private int _previousRound = 0;
         private int _earliestRound = 0;
@@ -86,9 +126,16 @@ namespace AS2.Sim
             private set { _latestRound = value; }
         }
 
-        private bool isTracking = true;     // For IReplayHistory
+        /// <summary>
+        /// <c>true</c> while tracking the latest simulation round.
+        /// Useful for <see cref="IReplayHistory"/> implementation.
+        /// </summary>
+        private bool isTracking = true;
 
-        // State information
+
+        /*
+         * State information
+         */
 
         /// <summary>
         /// Indicates whether the system is currently in the initialization state.
@@ -105,15 +152,26 @@ namespace AS2.Sim
         }
         private bool inInitializationState = false;
 
-        // Is true when we entered initialization mode and saved the previous simulation state
+        /// <summary>
+        /// Is <c>true</c> when we entered initialization mode and saved
+        /// the previous simulation state.
+        /// </summary>
         private bool storedSimulationState = false;
-        // The round we were in when we stored the simulation state
+        /// <summary>
+        /// The round we were in when we stored the simulation state.
+        /// </summary>
         private int storedSimulationRound = -1;
 
         // Simulation phase flags
         // Used to indicate which of the two cycles is currently being executed
         // so that all parts of the simulator have the corresponding behavior
+        /// <summary>
+        /// <c>true</c> while in the move phase during round simulation.
+        /// </summary>
         private bool inMovePhase = false;
+        /// <summary>
+        /// <c>true</c> while in the beep phase during round simulation.
+        /// </summary>
         private bool inBeepPhase = false;
 
         /// <summary>
@@ -132,6 +190,9 @@ namespace AS2.Sim
             get { return inBeepPhase; }
         }
 
+        /// <summary>
+        /// <c>true</c> as soon as all particles are finished.
+        /// </summary>
         private bool finished = false;
         /// <summary>
         /// <c>true</c> if the simulation has reached a round after which all
@@ -142,26 +203,49 @@ namespace AS2.Sim
         {
             get { return finished; }
         }
-        // The first round in which all particles were finished
+
+        /// <summary>
+        /// The first round in which all particles were finished.
+        /// </summary>
         private int finishedRound = -1;
 
-        // The current anchor particle
+        /// <summary>
+        /// The history of the anchor particle's index.
+        /// </summary>
         private ValueHistory<int> anchorIdxHistory = new ValueHistory<int>(0, 0);
 
-        // References
-        public AmoebotSimulator sim;
-        public RenderSystem renderSystem;
 
-        // Main data structures
-        public List<Particle> particles = new List<Particle>();
-        private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
+        /*
+         * Initialization mode data structures
+         */
 
-        // Initialization mode data structures
+        /// <summary>
+        /// List of <see cref="InitializationParticle"/>s, similar to
+        /// <see cref="particles"/> for the initialization mode.
+        /// </summary>
         private List<OpenInitParticle> particlesInit = new List<OpenInitParticle>();
+
+        /// <summary>
+        /// Map of <see cref="InitializationParticle"/> posiitons, similar to
+        /// <see cref="particleMap"/> for the initialization mode.
+        /// </summary>
         private Dictionary<Vector2Int, OpenInitParticle> particleMapInit = new Dictionary<Vector2Int, OpenInitParticle>();
+
+        /// <summary>
+        /// The index of the anchor particle selected in initialization mode.
+        /// <c>-1</c> means that no anchor has been selected, in which case the
+        /// first particle on the list will become the anchor.
+        /// </summary>
         private int anchorInit = -1;
 
+        /// <summary>
+        /// The name of the selected algorithm in initialization mode.
+        /// </summary>
         private string selectedAlgorithm = "Line Formation";
+
+        /// <summary>
+        /// The name of the currently selected algorithm in initialization mode.
+        /// </summary>
         public string SelectedAlgorithm
         {
             get { return selectedAlgorithm; }
@@ -174,13 +258,22 @@ namespace AS2.Sim
         }
 
 
-        /**
-         * Methods for controlling the system
+        /*
+         * System initialization outside of init mode
          */
 
         // TODO: Keep these example initialization methods?
         #region AlgorithmInitialization
 
+        /// <summary>
+        /// Helper for initializing the system with a specific
+        /// algorithm and starting the simulation. Does not work
+        /// in initialization mode.
+        /// </summary>
+        /// <param name="algorithmName">The name of the algorithm
+        /// to be initialized.</param>
+        /// <param name="parameters">The parameters that should be
+        /// passed to the algorithm's generation method.</param>
         private void InitializeFixed(string algorithmName, object[] parameters)
         {
             if (inInitializationState)
@@ -194,6 +287,9 @@ namespace AS2.Sim
             selectedAlgorithm = oldSelectedAlgo;
         }
 
+        /// <summary>
+        /// See <see cref="InitializeLineFormation(int, float)"/>.
+        /// </summary>
         public void InitializeExpandedTest(int numParticles)
         {
             InitializeFixed(ExpandedCircuitTestParticle.Name, new object[] { numParticles });
@@ -211,27 +307,44 @@ namespace AS2.Sim
             InitializeFixed(LineFormationParticleSync.Name, new object[] { numParticles, holeProb });
         }
 
+        /// <summary>
+        /// See <see cref="InitializeLineFormation(int, float)"/>.
+        /// </summary>
         public void InitializeLeaderElection(int numParticles, float holeProb)
         {
             InitializeFixed(LeaderElectionParticle.Name, new object[] { numParticles, holeProb });
         }
 
+        /// <summary>
+        /// See <see cref="InitializeLineFormation(int, float)"/>.
+        /// </summary>
         public void InitializeChiralityCompass(int numParticles, float holeProb)
         {
             InitializeFixed(ChiralityAndCompassParticle.Name, new object[] { numParticles, holeProb });
         }
 
+        /// <summary>
+        /// See <see cref="InitializeLineFormation(int, float)"/>.
+        /// </summary>
         public void InitializeBoundaryTest(int numParticles, float holeProb)
         {
             InitializeFixed(BoundaryTestParticle.Name, new object[] { numParticles, holeProb });
         }
 
+        /// <summary>
+        /// See <see cref="InitializeLineFormation(int, float)"/>.
+        /// </summary>
         public void InitializeJMTest(int mode)
         {
             InitializeFixed(JMTestParticle.Name, new object[] { mode });
         }
 
         #endregion
+
+
+        /*
+         * General system control methods
+         */
 
         /// <summary>
         /// Resets the entire system to a state from which it can be
@@ -281,12 +394,13 @@ namespace AS2.Sim
 
         /// <summary>
         /// Tries to get the <see cref="Particle"/> at the given position.
+        /// Only works in simulation mode.
         /// </summary>
         /// <param name="position">The grid position at which to look for the particle.</param>
         /// <param name="particle">The particle at the given position, if it exists,
         /// otherwise <c>null</c>.</param>
         /// <returns><c>true</c> if and only if a particle was found at the given position.</returns>
-        public bool TryGetParticleAt(Vector2Int position, out Particle particle)
+        private bool TryGetParticleAt(Vector2Int position, out Particle particle)
         {
             if (particleMap.TryGetValue(position, out particle))
             {
@@ -361,7 +475,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Simulation functions
          */
 
@@ -373,12 +487,23 @@ namespace AS2.Sim
         /// and the resulting movements are simulated and applied. Afterwards,
         /// the particles' beep activations are executed, the resulting circuits
         /// are determined and the sent beeps and messages are delivered.
-        /// The order of activations is the same in
-        /// both rounds as long as no particles are added to or
-        /// removed from the system.
+        /// The order of activations is the same in both rounds.
+        /// <para>
+        /// If a catchable exception occurs during the simulation, the system
+        /// state is reset to the previous round.
+        /// </para>
+        /// <para>
+        /// Only works while in tracking state during simulation mode.
+        /// </para>
         /// </summary>
         public void SimulateRound()
         {
+            if (inInitializationState)
+            {
+                Log.Error("Cannot simulate round while in initialization mode.");
+                return;
+            }
+
             if (!isTracking)
             {
                 Log.Error("Simulation cannot proceed while not in tracking state.");
@@ -390,6 +515,7 @@ namespace AS2.Sim
             _latestRound++;
 
             // First: Move cycle
+
             // All particles set their new bonds and schedule movements
             // Then the movements are evaluated and applied
             inMovePhase = true;
@@ -407,14 +533,13 @@ namespace AS2.Sim
             }
             inMovePhase = false;
 
-            // Skip the movement computation if no particle has moved
-            // TODO: No connectivity check is performed then! Should this always be executed?
+            // Skip the movement computation if no particle has moved or released a bond
             try
             {
                 if (particlesMove)
                     SimulateJointMovements();
                 else
-                    // Compute bond information anyway
+                    // Compute bond information for the case with no movements
                     ComputeBondsStatic();
                 FinishMovementInfo();
             }
@@ -430,7 +555,9 @@ namespace AS2.Sim
             // Setup pin graphics info
             SetupPinGraphicState();
 
+
             // Second: Beep cycle
+
             // All particles set their new pin configurations and send beeps and messages
             // Then the circuits are computed and the sent information is distributed
             inBeepPhase = true;
@@ -445,11 +572,14 @@ namespace AS2.Sim
                 ResetAfterException();
                 return;
             }
-
             inBeepPhase = false;
+
+            // Compute circuits and deliver beeps and messages
             ApplyNewPinConfigurations();
             DiscoverCircuits(true);
             FinishBeepAndMessageInfo();
+
+            // Finalize round simulation
             _previousRound++;
             UpdateAllParticleVisuals(false);
             CleanupAfterRound();
@@ -464,6 +594,10 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// Resets the simulation state to the previous round if
+        /// an exception has occurred during round simulation.
+        /// </summary>
         private void ResetAfterException()
         {
             inMovePhase = false;
@@ -484,7 +618,8 @@ namespace AS2.Sim
         /// particles is reset to <c>(0, 0)</c>.
         /// </para>
         /// </summary>
-        /// <returns><c>true</c> if any particle has scheduled a movement.</returns>
+        /// <returns><c>true</c> if any particle has scheduled a movement
+        /// or released a bond.</returns>
         private bool ActivateParticlesMove()
         {
             bool anyParticleMoved = false;
@@ -509,7 +644,7 @@ namespace AS2.Sim
 
                 ParticleAction a = p.ScheduledMovement;
                 // Determine the local origin
-                p.isHeadOrigin = p.IsContracted() && a == null || p.IsExpanded() && a != null && (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD);
+                p.isHeadOrigin = p.IsContracted() && a == null || p.IsExpanded() && a != null && a.IsHeadContraction();
 
                 // Compute bonds by global labels
                 int numLabels = p.IsExpanded() ? 10 : 6;
@@ -545,13 +680,13 @@ namespace AS2.Sim
                                 }
                             }
                             // Contraction: Release bond if it is not at the origin
-                            else if (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.CONTRACT_TAIL)
+                            else if (a.IsRegularContraction())
                             {
                                 if (isHeadLabel ^ p.isHeadOrigin)
                                     active = false;
                             }
                             // Pull handover: Mark all non-origin bonds
-                            else if (a.type == ActionType.PULL_HEAD || a.type == ActionType.PULL_TAIL)
+                            else if (a.IsHandoverContraction())
                             {
                                 if (isHeadLabel ^ p.isHeadOrigin)
                                     marked = true;
@@ -570,6 +705,10 @@ namespace AS2.Sim
                         int localLabel = ParticleSystem_Utils.GlobalToLocalLabel(label, p.GlobalHeadDirection(), p.comDir, p.chirality);
                         p.activeBondsGlobal[label] = p.BondActive(localLabel);
                         p.markedBondsGlobal[label] = p.BondMarked(localLabel);
+
+                        // Releasing bond counts as "has moved"
+                        if (!p.BondActive(localLabel))
+                            anyParticleMoved = true;
                     }
                 }
 
@@ -616,11 +755,11 @@ namespace AS2.Sim
                 {
                     offsetDir = ParticleSystem_Utils.LocalToGlobalDir(a.localDir, p.comDir, p.chirality);
                 }
-                else if (a.type == ActionType.CONTRACT_HEAD || a.type == ActionType.PULL_HEAD)
+                else if (a.IsHeadContraction())
                 {
                     offsetDir = p.GlobalHeadDirection();
                 }
-                else if (a.type == ActionType.CONTRACT_TAIL || a.type == ActionType.PULL_TAIL)
+                else if (a.IsTailContraction())
                 {
                     offsetDir = p.GlobalTailDirection();
                 }
@@ -657,8 +796,8 @@ namespace AS2.Sim
         /// <summary>
         /// Updates the pin configuration for each particle.
         /// <para>
-        /// If a particle has moved, it must have set a new
-        /// pin configuration, otherwise it will be reset
+        /// If a particle has moved in the move phase and has
+        /// not set a new pin configuration, it will be reset
         /// to a singleton pattern.
         /// </para>
         /// </summary>
@@ -695,13 +834,12 @@ namespace AS2.Sim
             // New particle positions will be stored in new map
             Dictionary<Vector2Int, Particle> newPositions = new Dictionary<Vector2Int, Particle>(particles.Count);
 
-            // Use BFS
+            // Queue for BFS
             Queue<Particle> queue = new Queue<Particle>();
 
-            // Start with the anchor particle
+            // Start at the anchor particle
             Particle anchor = particles[anchorIdxHistory.GetMarkedValue()];
             anchor.jmOffset = Vector2Int.zero;
-
             queue.Enqueue(anchor);
             anchor.queuedForJMProcessing = true;
 
@@ -722,8 +860,8 @@ namespace AS2.Sim
                 // Find the bonded neighbors of the particle
                 int numNbrs = p.IsExpanded() ? 10 : 6;
                 Particle[] nbrParts = new Particle[numNbrs];
-                bool[] nbrHead = new bool[numNbrs]; // True if the neighbor's head is at this position
-                int[] nbrLabels = new int[numNbrs]; // Stores global neighbor label opposite of our label
+                bool[] nbrHead = new bool[numNbrs];     // True if the neighbor's head is at this position
+                int[] nbrLabels = new int[numNbrs];     // Stores global neighbor label opposite of our label
                 bool[] bondNbrs = new bool[numNbrs];    // True wherever we have a bonded neighbor
 
                 // If a handover is scheduled, also ensure that there is a bond to the
@@ -1112,7 +1250,6 @@ namespace AS2.Sim
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1));
-
                         }
                     }
 
@@ -1187,15 +1324,15 @@ namespace AS2.Sim
                 }
                 else if (p.ScheduledMovement != null)
                 {
-                    if (p.ScheduledMovement.type == ActionType.EXPAND || p.ScheduledMovement.type == ActionType.PUSH)
+                    if (p.ScheduledMovement.IsExpansion())
                     {
                         p.Apply_Expand(p.ScheduledMovement.localDir, p.jmOffset);
                     }
-                    else if (p.ScheduledMovement.type == ActionType.CONTRACT_HEAD || p.ScheduledMovement.type == ActionType.PULL_HEAD)
+                    else if (p.ScheduledMovement.IsHeadContraction())
                     {
                         p.Apply_ContractHead(p.jmOffset);
                     }
-                    else if (p.ScheduledMovement.type == ActionType.CONTRACT_TAIL || p.ScheduledMovement.type == ActionType.PULL_TAIL)
+                    else if (p.ScheduledMovement.IsTailContraction())
                     {
                         p.Apply_ContractTail(p.jmOffset);
                     }
@@ -1366,10 +1503,10 @@ namespace AS2.Sim
                     }
                     // Neighbor offset only applies if we are not bonded to its origin
                     if (eAction != null &&
-                        (eHead1 && (eAction.type == ActionType.CONTRACT_TAIL || eAction.type == ActionType.PULL_TAIL) ||
-                        !eHead1 && (eAction.type == ActionType.CONTRACT_HEAD || eAction.type == ActionType.PULL_HEAD)))
+                        (eHead1 && (eAction.IsTailContraction()) ||
+                        !eHead1 && (eAction.IsHeadContraction())))
                     {
-                        if (e.markedBondsGlobal[eLabel1] && (eAction.type == ActionType.PULL_HEAD || eAction.type == ActionType.PULL_TAIL))
+                        if (e.markedBondsGlobal[eLabel1] && (eAction.IsHandoverContraction()))
                         {
                             // Neighbor has marked this bond and is performing a handover
                             // We stay in place, the neighbor contracts toward the other direction
@@ -1567,7 +1704,7 @@ namespace AS2.Sim
                 // Bonds are not adjacent to the origin
                 // Apply offset if this is not a handover with both bonds marked
                 bool applyOffset = true;
-                if (cAction.type == ActionType.PULL_HEAD || cAction.type == ActionType.PULL_TAIL)
+                if (cAction.IsHandoverContraction())
                 {
                     if (cornerMarked1 ^ cornerMarked2)
                     {
@@ -1604,7 +1741,6 @@ namespace AS2.Sim
             // Start with the anchor particle
             Particle anchor = particles[anchorIdxHistory.GetMarkedValue()];
             anchor.jmOffset = Vector2Int.zero;
-
             queue.Enqueue(anchor);
             anchor.queuedForJMProcessing = true;
 
@@ -1691,7 +1827,7 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Sets all global bonds of all particles so that
+        /// Sets all global bonds of all particles to active so that
         /// their initial bonds can be computed easily.
         /// </summary>
         private void SetInitialParticleBonds()
@@ -1856,8 +1992,6 @@ namespace AS2.Sim
                 }
             }
         }
-
-        // TODO: Circuit computation and beep/message handling should probably be done separately
 
         /// <summary>
         /// Uses the particles' pin configurations to determine
@@ -2156,12 +2290,13 @@ namespace AS2.Sim
         /// </summary>
         private void UpdateAllParticleVisuals(bool resetVisuals)
         {
-            // TODO: Maybe only update particles with changes
+            // TODO: Maybe only update particles with changes (if possible)
             // First update position info, then update circuit data
             foreach (Particle p in particles)
             {
                 p.graphics.SetParticleColor(p.GetParticleColor());
-                if (resetVisuals) p.graphics.UpdateReset();
+                if (resetVisuals)
+                    p.graphics.UpdateReset();
                 else
                 {
                     // Direction is expansion direction for expansions and the opposite
@@ -2169,7 +2304,7 @@ namespace AS2.Sim
                     int contractionDir = -1;
                     if (p.ScheduledMovement != null)
                     {
-                        if (p.ScheduledMovement.type == ActionType.EXPAND || p.ScheduledMovement.type == ActionType.PUSH)
+                        if (p.ScheduledMovement.IsExpansion())
                             contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).ToInt();
                         else
                             contractionDir = ParticleSystem_Utils.VectorToDirection(p.movementOffset).Opposite().ToInt();
@@ -2197,7 +2332,8 @@ namespace AS2.Sim
 
         #endregion
 
-        /**
+
+        /*
          * Particle functions (called by particles to get information or trigger actions)
          */
 
@@ -2505,7 +2641,7 @@ namespace AS2.Sim
             // TODO: Turn this into an error?
             if (p.ScheduledMovement != null)
             {
-                Debug.LogWarning("Expanding particle already has a scheduled movement.");
+                Log.Warning("Expanding particle already has a scheduled movement.");
             }
 
             // Store expansion action in particle
@@ -2561,7 +2697,7 @@ namespace AS2.Sim
             // TODO: Turn this into an error?
             if (p.ScheduledMovement != null)
             {
-                Debug.LogWarning("Contracting particle already has a scheduled movement.");
+                Log.Warning("Contracting particle already has a scheduled movement.");
             }
 
             // Store contraction action in particle
@@ -2604,7 +2740,7 @@ namespace AS2.Sim
             // TODO: Turn this into an error?
             if (p.ScheduledMovement != null)
             {
-                Debug.LogWarning("Particle scheduling push handover already has a scheduled movement.");
+                Log.Warning("Particle scheduling push handover already has a scheduled movement.");
             }
 
             // Store push handover action in particle
@@ -2677,7 +2813,7 @@ namespace AS2.Sim
             // TODO: Turn this into an error?
             if (p.ScheduledMovement != null)
             {
-                Debug.LogWarning("Particle scheduling pull handover already has a scheduled movement.");
+                Log.Warning("Particle scheduling pull handover already has a scheduled movement.");
             }
 
             // Store pull handover action in particle
@@ -2686,17 +2822,7 @@ namespace AS2.Sim
         }
 
 
-        // <<<TEMPORARY: FOR DEBUGGING VALUE HISTORIES>>>
-        public void Print()
-        {
-            for (int i = 0; i < particles.Count; i++)
-            {
-                Debug.Log("========== Particle " + i + " ==========");
-                particles[i].Print();
-            }
-        }
-
-        /**
+        /*
          * Other system info and control
          */
 
@@ -2728,7 +2854,6 @@ namespace AS2.Sim
         /// </summary>
         /// <returns>The center of the bounding box of the system in world coordinates.
         /// Will be <c>(0, 0)</c> if there are no particles.</returns>
-
         public Vector2 BBoxCenterPosition()
         {
             ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
@@ -2766,23 +2891,23 @@ namespace AS2.Sim
         public Vector2 AnchorPosition()
         {
             Vector2 result;
-            IParticleState seed = null;
+            IParticleState anchor = null;
             int n;
             if (inInitializationState)
             {
                 n = particlesInit.Count;
                 if (n > 0)
-                    seed = particlesInit[0];
+                    anchor = particlesInit[anchorInit > -1 ? anchorInit : 0];
             }
             else
             {
                 n = particles.Count;
                 if (n > 0)
-                    seed = particles[anchorIdxHistory.GetMarkedValue()];
+                    anchor = particles[anchorIdxHistory.GetMarkedValue()];
             }
 
             if (n > 0)
-                result = 0.5f * (Vector2)(seed.Head() + seed.Tail());
+                result = 0.5f * (Vector2)(anchor.Head() + anchor.Tail());
             else
                 result = Vector2.zero;
 
@@ -2792,7 +2917,7 @@ namespace AS2.Sim
         /// <summary>
         /// Sets the given particle to be the new anchor of the system.
         /// Only works in the latest round of the simulation or in
-        /// Initialization Mode.
+        /// initialization mode.
         /// </summary>
         /// <param name="p">The particle that should become the anchor.</param>
         /// <returns><c>true</c> if and only if the anchor particle was
@@ -2852,7 +2977,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * IReplayHistory implementation
          */
 
@@ -2897,15 +3022,7 @@ namespace AS2.Sim
                 }
                 isTracking = false;
                 anchorIdxHistory.SetMarkerToRound(round);
-                // TODO: Put this into a helper method?
-                UpdateNeighborCaches();
-                SetupPinGraphicState(true);
-                DiscoverCircuits(false);
-                LoadMovementGraphicsInfo(false);
-                UpdateAllParticleVisuals(true);
-                CleanupAfterRound();
-                foreach (Particle p in particles)
-                    p.ResetPlannedBeepsAndMessages();
+                UpdateAfterStep();
             }
         }
 
@@ -2939,14 +3056,7 @@ namespace AS2.Sim
                 }
                 isTracking = false;
                 anchorIdxHistory.StepBack();
-                UpdateNeighborCaches();
-                SetupPinGraphicState(true);
-                DiscoverCircuits(false);
-                LoadMovementGraphicsInfo(false);
-                UpdateAllParticleVisuals(true);
-                foreach (Particle p in particles)
-                    p.ResetPlannedBeepsAndMessages();
-                CleanupAfterRound();
+                UpdateAfterStep();
             }
         }
 
@@ -2977,14 +3087,7 @@ namespace AS2.Sim
                 }
                 isTracking = false;
                 anchorIdxHistory.StepForward();
-                UpdateNeighborCaches();
-                LoadMovementGraphicsInfo(true);
-                SetupPinGraphicState(false);
-                DiscoverCircuits(false);
-                UpdateAllParticleVisuals(false);
-                CleanupAfterRound();
-                foreach (Particle p in particles)
-                    p.ResetPlannedBeepsAndMessages();
+                UpdateAfterStep(true, false, false);
             }
         }
 
@@ -3012,14 +3115,7 @@ namespace AS2.Sim
                 }
                 isTracking = true;
                 anchorIdxHistory.ContinueTracking();
-                UpdateNeighborCaches();
-                LoadMovementGraphicsInfo(stepFromSecondLastRound);
-                SetupPinGraphicState(!stepFromSecondLastRound);
-                DiscoverCircuits(false);
-                UpdateAllParticleVisuals(!stepFromSecondLastRound);
-                CleanupAfterRound();
-                foreach (Particle p in particles)
-                    p.ResetPlannedBeepsAndMessages();
+                UpdateAfterStep(stepFromSecondLastRound, !stepFromSecondLastRound, !stepFromSecondLastRound);
             }
         }
 
@@ -3067,8 +3163,33 @@ namespace AS2.Sim
                 finishedRound += amount;
         }
 
+        /// <summary>
+        /// Helper for updating particles and visualization info after
+        /// stepping or jumping through the history.
+        /// </summary>
+        /// <param name="withAnimation">Passed through to
+        /// <see cref="LoadMovementGraphicsInfo(bool)"/>, determines whether
+        /// info for animations should be loaded.</param>
+        /// <param name="pinGraphicStateReset">Passed through to
+        /// <see cref="SetupPinGraphicState(bool)"/>, determines whether pin
+        /// connections should be animated for a reset.</param>
+        /// <param name="resetVisuals">Passed through to
+        /// <see cref="UpdateAllParticleVisuals(bool)"/>, determines whether
+        /// the visuals update is a reset without animations.</param>
+        private void UpdateAfterStep(bool withAnimation = false, bool pinGraphicStateReset = true, bool resetVisuals = true)
+        {
+            UpdateNeighborCaches();
+            LoadMovementGraphicsInfo(withAnimation);
+            SetupPinGraphicState(pinGraphicStateReset);
+            DiscoverCircuits(false);
+            UpdateAllParticleVisuals(resetVisuals);
+            CleanupAfterRound();
+            foreach (Particle p in particles)
+                p.ResetPlannedBeepsAndMessages();
+        }
 
-        /**
+
+        /*
          * Saving and loading functionality.
          */
 
@@ -3077,7 +3198,7 @@ namespace AS2.Sim
         /// entire history into a serializable object.
         /// </summary>
         /// <returns>A serializable object containing the current
-        /// simulation state.</returns>
+        /// simulation state and its history.</returns>
         public SimulationStateSaveData GenerateSaveData()
         {
             SimulationStateSaveData data = new SimulationStateSaveData();
@@ -3142,6 +3263,13 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// Writes the current initialization state into a serializable object.
+        /// </summary>
+        /// <param name="initModeSaveData">Serializable information describing
+        /// the current UI state.</param>
+        /// <returns>A serializable object containing the current initialization
+        /// state including UI elements.</returns>
         public InitializationStateSaveData GenerateInitSaveData(InitModeSaveData initModeSaveData = null)
         {
             if (!inInitializationState)
@@ -3163,6 +3291,17 @@ namespace AS2.Sim
             return data;
         }
 
+        /// <summary>
+        /// Initializes the system to the initialization state that is
+        /// stored in the given save data object.
+        /// <para>
+        /// Only works correctly in Initialization mode.
+        /// </para>
+        /// </summary>
+        /// <param name="data">The object containing the saved
+        /// initialization state.</param>
+        /// <returns>The serializable data about the UI state that is
+        /// contained in <paramref name="data"/>.</returns>
         public InitModeSaveData LoadInitSaveState(InitializationStateSaveData data)
         {
             if (!inInitializationState)
@@ -3186,7 +3325,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Initialization mode functionality.
          */
 
@@ -3328,11 +3467,25 @@ namespace AS2.Sim
             inInitializationState = false;
         }
 
+        /// <summary>
+        /// Checks whether the simulation state is currently
+        /// in the latest recorded round.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the current simulation
+        /// state is in the latest round.</returns>
         public bool IsInLatestRound()
         {
             return CurrentRound == LatestRound;
         }
 
+        /// <summary>
+        /// Updates the currently selected algorithm in initialization mode.
+        /// <para>
+        /// This will trigger a new system generation if the selected algorithm
+        /// has changed.
+        /// </para>
+        /// </summary>
+        /// <param name="algoName">The name of the newly selected algorithm.</param>
         public void SetSelectedAlgorithm(string algoName)
         {
             if (!inInitializationState || algoName == selectedAlgorithm)
@@ -3351,12 +3504,22 @@ namespace AS2.Sim
             GenerateInitSystem();
         }
 
+        /// <summary>
+        /// Generates the particle system in initialization mode
+        /// using the selected algorithm's default parameters.
+        /// </summary>
         private void GenerateInitSystem()
         {
             string generationAlgo = AlgorithmManager.Instance.GetAlgorithmGenerationMethod(selectedAlgorithm);
             InitializationMethodManager.Instance.GenerateSystem(this, generationAlgo);
         }
 
+        /// <summary>
+        /// Generates the particle system in initialization mode
+        /// using the given parameters.
+        /// </summary>
+        /// <param name="parameters">The parameters that should be passed to
+        /// the selected algorithm's generation method.</param>
         private void GenerateInitSystem(object[] parameters)
         {
             string generationAlgo = AlgorithmManager.Instance.GetAlgorithmGenerationMethod(selectedAlgorithm);

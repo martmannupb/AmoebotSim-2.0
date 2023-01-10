@@ -57,6 +57,26 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Checks whether this action is a Head contraction.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the action represents a
+        /// contraction or pull handover into the particle's Head.</returns>
+        public bool IsHeadContraction()
+        {
+            return type == ActionType.CONTRACT_HEAD || type == ActionType.PULL_HEAD;
+        }
+
+        /// <summary>
+        /// Checks whether this action is a Tail contraction.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the action represents a
+        /// contraction or pull handover into the particle's Tail.</returns>
+        public bool IsTailContraction()
+        {
+            return type == ActionType.CONTRACT_TAIL || type == ActionType.PULL_TAIL;
+        }
+
+        /// <summary>
         /// Checks whether this action is an expansion of any kind.
         /// </summary>
         /// <returns><c>true</c> if and only if the action represents a

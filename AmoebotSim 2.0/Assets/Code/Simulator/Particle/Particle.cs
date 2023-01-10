@@ -21,49 +21,93 @@ namespace AS2.Sim
     /// <see cref="ParticleAlgorithm"/> instances. The conventional way to
     /// instantiate a pair of these objects is the following:
     /// <code>
-    /// Particle part = new Particle(particleSystem, startPosition[, compassDir][, chirality]);
-    /// new ParticleAlgorithmSubclass(part);
+    /// Particle part = new Particle(particleSystem, startPosition[, compassDir][, chirality][, initialHeadDir]);
+    /// part.isActive = true;
+    /// AlgorithmManager.Instance.Instantiate(algorithmId, part);
+    /// part.isActive = false;
+    /// p.InitWithAlgorithm();
     /// </code>
+    /// It is recommended to use the <see cref="ParticleFactory"/> class
+    /// instead of doing this manually.
     /// </para>
     /// </summary>
     public class Particle : IParticleState, IReplayHistory
     {
-        // References _____
+        // References
+
+        /// <summary>
+        /// The system containing this particle.
+        /// </summary>
         public ParticleSystem system;
+
+        /// <summary>
+        /// The algorithm controlling this particle's behavior.
+        /// </summary>
         public ParticleAlgorithm algorithm;
 
-        // Graphics _____
+        // Graphics
+
+        /// <summary>
+        /// An object that serves as the graphical representation
+        /// of this particle for the rendering system.
+        /// </summary>
         public IParticleGraphicsAdapter graphics;
 
-        // ID _____
-        public int id = curID++;
-        protected static int curID = 1;
 
-        // Data _____
+        /*
+         * Data
+         */
+
         // General
+        
         /// <summary>
         /// The compass orientation of the particle, represented as a global direction.
         /// </summary>
         public readonly Direction comDir;
+        
         /// <summary>
         /// If <c>true</c>, the positive rotation direction of the particle is counter-clockwise,
         /// else it is clockwise.
         /// </summary>
         public readonly bool chirality;
 
-        // Special flag that is set while a particle is being reinitialized on load
-        // Prevents state changes caused by an algorithm constructor
+        /// <summary>
+        /// Special flag that is set while a particle is being reinitialized on load.
+        /// Prevents state changes caused by an algorithm constructor.
+        /// </summary>
         private bool inReinitialize = false;
 
-        // State _____
-        // Position: Store tail position in history but always keep head position up to date
+        /*
+         * State
+         */
+
+        // Position
+        // Store tail position in history but always keep head position up to date
+
+        /// <summary>
+        /// The history of all global tail positions.
+        /// </summary>
         private ValueHistory<Vector2Int> tailPosHistory;
+        /// <summary>
+        /// The current global head position.
+        /// </summary>
         private Vector2Int pos_head;
+        /// <summary>
+        /// The current global tail position.
+        /// </summary>
         private Vector2Int pos_tail;
 
         // Expansion
-        // Store expansion direction in history
+        // The expansion direction is the local direction pointing from
+        // the particle's tail towards its head
+
+        /// <summary>
+        /// The history of all expansion directions.
+        /// </summary>
         private ValueHistory<Direction> expansionDirHistory;
+        /// <summary>
+        /// Indicates whether the particle is currently expanded.
+        /// </summary>
         private bool exp_isExpanded;
         /// <summary>
         /// The local direction pointing from the particle's tail towards its head.
@@ -71,28 +115,48 @@ namespace AS2.Sim
         private Direction exp_expansionDir;
 
         // Attributes
+        /// <summary>
+        /// A list containing the particle's attributes.
+        /// </summary>
         private List<IParticleAttribute> attributes = new List<IParticleAttribute>();
 
         // Bonds
+        
         /// <summary>
         /// Flags indicating which bonds should be active. Indices are
         /// local labels. Only the 10 lowest bits are used.
         /// </summary>
         private BitVector32 activeBonds;
+        /// <summary>
+        /// The history of all active bond settings.
+        /// </summary>
         private ValueHistory<int> activeBondHistory;
 
         /// <summary>
         /// Flags indicating which bonds have been marked for special
-        /// behavior. This includes being pulled with an expansion and
-        /// being transferred during a handover. Indices are local
-        /// labels and only the 10 lowest bits are used.
+        /// behavior, i.e., moving with a particle's head during an
+        /// expansion movement.
         /// </summary>
         private BitVector32 markedBonds;
+        /// <summary>
+        /// The history of all marked bond settings.
+        /// </summary>
         private ValueHistory<int> markedBondHistory;
 
         // Pin Configuration
+
+        /// <summary>
+        /// The history of all pin configurations.
+        /// </summary>
         private ValueHistoryPinConfiguration pinConfigurationHistory;
+
+        /// <summary>
+        /// The current pin configuration.
+        /// </summary>
         private SysPinConfiguration pinConfiguration;
+        /// <summary>
+        /// The current pin configuration.
+        /// </summary>
         public SysPinConfiguration PinConfiguration
         {
             get { return pinConfiguration; }
@@ -100,14 +164,25 @@ namespace AS2.Sim
         }
 
         // Beeps and messages
+
         /// <summary>
         /// Flags indicating which partition sets have received a beep.
         /// Indices equal (local) partition set IDs.
         /// </summary>
         private BitArray receivedBeeps;
+        /// <summary>
+        /// The histories of received beeps for all partition sets.
+        /// </summary>
         private ValueHistory<bool>[] receivedBeepsHistory;
 
+        /// <summary>
+        /// Array of the currently received messages. Indices are
+        /// (local) partition set IDs.
+        /// </summary>
         public Message[] receivedMessages;
+        /// <summary>
+        /// The histories of received messages for all partition sets.
+        /// </summary>
         private ValueHistoryMessage[] receivedMessagesHistory;
 
         /// <summary>
@@ -116,11 +191,29 @@ namespace AS2.Sim
         /// equal (local) partition set IDs.
         /// </summary>
         private BitArray plannedBeeps;
+        /// <summary>
+        /// The histories of sent beeps for all partition sets.
+        /// </summary>
         private ValueHistory<bool>[] plannedBeepsHistory;
+        /// <summary>
+        /// Indicates whether the particle has planned sending any
+        /// beeps in this round.
+        /// </summary>
         private bool hasPlannedBeeps = false;
 
+        /// <summary>
+        /// Array of the currently planned messages. Indices are
+        /// (local) partition set IDs.
+        /// </summary>
         private Message[] plannedMessages;
+        /// <summary>
+        /// The histories of sent messages for all partition sets.
+        /// </summary>
         private ValueHistoryMessage[] plannedMessageHistory;
+        /// <summary>
+        /// Indicates whether the particle has planned sending any
+        /// messages in this round.
+        /// </summary>
         private bool hasPlannedMessages = false;
 
         // Neighbor cache
@@ -129,38 +222,94 @@ namespace AS2.Sim
         // the cache of the previous round available.
         // The cache is used to determine whether pin connections to the
         // neighbors should be displayed or not.
+        /// <summary>
+        /// The current neighbors of the particle. Indices are
+        /// global labels.
+        /// </summary>
         public Particle[] neighborsNew = new Particle[10];
+        /// <summary>
+        /// The neighbors of the particle in the last round. Indices
+        /// are global labels.
+        /// </summary>
         public Particle[] neighborsOld = new Particle[10];
 
 
-        // Visualization
+        /*
+         * Visualization
+         */
 
         // Particle fill color
+        /// <summary>
+        /// History of particle colors.
+        /// </summary>
         private ValueHistory<Color> mainColorHistory;
+        /// <summary>
+        /// History of flags showing whether the particle color
+        /// is set.
+        /// </summary>
         private ValueHistory<bool> mainColorSetHistory;
+        /// <summary>
+        /// The current particle color.
+        /// </summary>
         private Color mainColor = new Color(0, 0, 0, 1);
+        /// <summary>
+        /// Indicates whether the particle color has been set.
+        /// </summary>
         private bool mainColorSet = false;
 
         // Partition set colors
+        /// <summary>
+        /// Histories of partition set colors.
+        /// Indices are partition set IDs.
+        /// </summary>
         private ValueHistory<Color>[] partitionSetColorHistory;
+        /// <summary>
+        /// Histories of flags indicating whether the partition set
+        /// colors are set.
+        /// Indices are partition set IDs.
+        /// </summary>
         private ValueHistory<bool>[] partitionSetColorOverrideHistory;
+        /// <summary>
+        /// Array of current partition set colors.
+        /// Indices are partition set IDs.
+        /// </summary>
         private Color[] partitionSetColors;
+        /// <summary>
+        /// Array of flags indicating whether the partition set
+        /// colors have been set.
+        /// Indices are partition set IDs.
+        /// </summary>
         private bool[] partitionSetColorsOverride;
+        /// <summary>
+        /// The current partition set colors.
+        /// Indices are partition set IDs.
+        /// </summary>
         public Color[] PartitionSetColors
         {
             get { return partitionSetColors; }
         }
+        /// <summary>
+        /// Flags indicating whether the partition set colors
+        /// have been set manually.
+        /// Indices are partition set IDs.
+        /// </summary>
         public bool[] PartitionSetColorsOverride
         {
             get { return partitionSetColorsOverride; }
         }
 
         // Bond and movement info
+        /// <summary>
+        /// History of joint movement information records.
+        /// </summary>
         private ValueHistoryJointMovement jointMovementHistory;
+        /// <summary>
+        /// History of bond information records.
+        /// </summary>
         private ValueHistoryBondInfo bondMovementHistory;
 
 
-        /**
+        /*
          * Data used by simulator to coordinate particle actions
          * 
          * This section is used by the particle and the simulator to
@@ -168,7 +317,7 @@ namespace AS2.Sim
          * coordinated and applied easily, and to provide a way for
          * the developer to access predicted information.
          * 
-         * Some information is maintained internally by the Particle to
+         * Some information is maintained internally by the particle to
          * cache predicted information.
          */
 
@@ -183,9 +332,24 @@ namespace AS2.Sim
             get { return scheduledMovement; }
             set { if (value == null) ResetScheduledMovement(); else SetScheduledMovement(value); }
         }
+        /// <summary>
+        /// The movement action scheduled during the current simulation round.
+        /// </summary>
         private ParticleAction scheduledMovement = null;
+        /// <summary>
+        /// Indicates whether the particle will be expanded at the end of this
+        /// round according to the currently scheduled movement.
+        /// </summary>
         private bool predictIsExpanded = false;
+        /// <summary>
+        /// Predicted tail direction if the particle will be expanded at the
+        /// end of this round according to the scheduled movement.
+        /// </summary>
         private Direction predictTailDir = Direction.NONE;
+        /// <summary>
+        /// Predicted head direction if the particle will be expanded at the
+        /// end of this round according to the scheduled movement.
+        /// </summary>
         private Direction predictHeadDir = Direction.NONE;
 
         /// <summary>
@@ -214,7 +378,7 @@ namespace AS2.Sim
         /// Indicates whether the particle's head is its local origin,
         /// i.e., the part that would stay at its absolute position if
         /// the particle was the anchor of the system. The head is the
-        /// anchor if the particle is and stays contracted or if it is
+        /// origin if the particle is and stays contracted or if it is
         /// expanded and contracts into its head.
         /// </summary>
         public bool isHeadOrigin;
@@ -268,19 +432,49 @@ namespace AS2.Sim
             get { return plannedPinConfiguration; }
             set { plannedPinConfiguration = value; }
         }
+        /// <summary>
+        /// The currently planned pin configuration to be applied at the end
+        /// of the round.
+        /// </summary>
         private SysPinConfiguration plannedPinConfiguration;
 
-        // Flag used to indicate that the particle is currently being activated
-        // (Causes ParticleAttributes to behave differently for this particle than
-        // for others)
+        /// <summary>
+        /// Flag used to indicate that the particle is currently being activated.
+        /// Causes the particle's attributes to behave differently for this particle
+        /// than for others to enable the "snapshot" semantics.
+        /// </summary>
         public bool isActive = false;
 
-        // Graphical information
+
+        /*
+         * Graphical information
+         */
+
+        /// <summary>
+        /// An object that represents this particle's pin configuration
+        /// and its pin connections (internal and external) so that it
+        /// can be rendered correctly.
+        /// </summary>
         public ParticlePinGraphicState gCircuit;
 
-        // Stores visualization info about some of the bonds incident to this particle
+        /// <summary>
+        /// Stores visualization info about some of the bonds incident to
+        /// this particle so that they can be animated correctly.
+        /// </summary>
         public List<ParticleBondGraphicState> bondGraphicInfo = new List<ParticleBondGraphicState>();
 
+
+        /// <summary>
+        /// Creates a new particle without an algorithm controlling its behavior.
+        /// </summary>
+        /// <param name="system">The system containing the new particle.</param>
+        /// <param name="pos">The initial grid position of the particle's tail.</param>
+        /// <param name="compassDir">The compass direction of the particle.</param>
+        /// <param name="chirality">The chirality of the particle. <c>true</c> means
+        /// counter-clockwise, <c>false</c> means clockwise.</param>
+        /// <param name="initialHeadDir">The initial local head direction if the
+        /// particle should be expanded. <see cref="Direction.NONE"/> will make
+        /// the particle contracted.</param>
         public Particle(ParticleSystem system, Vector2Int pos, Direction compassDir = Direction.NONE, bool chirality = true, Direction initialHeadDir = Direction.NONE)
         {
             this.system = system;
@@ -320,10 +514,11 @@ namespace AS2.Sim
 
         /// <summary>
         /// Initialization to be called after the <see cref="ParticleAlgorithm"/>
-        /// has been bound to this particle.
+        /// has been bound to this particle by instantiating it.
         /// </summary>
         public void InitWithAlgorithm()
         {
+            // Initialize everything that depends on the number of pins
             int maxNumPins = algorithm.PinsPerEdge * 10;
             int currentRound = system.CurrentRound;
             pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
@@ -391,12 +586,12 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * State information retrieval
          * 
-         * These methods return the latest known state of the Particle, not
+         * These methods return the latest known state of the particle, not
          * including the planned actions stored by the simulator.
-         * During an activation, these will return the Particle's state at
+         * During an activation, these will return the particle's state at
          * the beginning of the round.
          */
 
@@ -495,7 +690,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Bonds
          */
 
@@ -548,7 +743,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Pin configuration
          */
 
@@ -581,8 +776,8 @@ namespace AS2.Sim
         /// altered, its ability to send data expires. Setting
         /// the planned pin configuration to a different value
         /// after sending beeps or messages nullifies the
-        /// previously sent data. Partition set colors have the
-        /// same behavior.
+        /// previously sent data. Partition set colors are
+        /// affected in the same way.
         /// </para>
         /// </summary>
         /// <param name="pc">The new pin configuration.</param>
@@ -625,11 +820,11 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Predicted state information retrieval.
          * 
          * These methods provide a way for the developer to access the
-         * updated particle state during the Activate() method, based
+         * updated particle state during the ActivateXYZ() methods, based
          * on the actions that are currently planned.
          */
 
@@ -705,10 +900,16 @@ namespace AS2.Sim
             }
         }
 
-        /**
+
+        /*
          * Visualization
          */
 
+        /// <summary>
+        /// Returns the number of pins the particle's algorithm
+        /// defines for each edge.
+        /// </summary>
+        /// <returns>The number of pins on each edge.</returns>
         public int GetCircuitPinsPerSide()
         {
             return algorithm.PinsPerEdge;
@@ -838,7 +1039,7 @@ namespace AS2.Sim
                 ResetPartitionSetColor(i);
         }
 
-        /**
+        /*
          * Particle action methods that are used by the system to change the
          * particle's state at the appropriate time. They are NOT part of the
          * ParticleAlgorithm's interface used by the algorithm developer.
@@ -992,10 +1193,14 @@ namespace AS2.Sim
             ResetReceivedBeepsAndMessages();
         }
 
-        /**
+        /*
          * Methods used by the system to read, set and reset planned actions.
          */
 
+        /// <summary>
+        /// Sets the scheduled movement of this particle to the given action.
+        /// </summary>
+        /// <param name="a">The new movement action.</param>
         private void SetScheduledMovement(ParticleAction a)
         {
             scheduledMovement = a;
@@ -1019,6 +1224,10 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// Resets the scheduled movement to <c>null</c>.
+        /// Predicted state information is not reset.
+        /// </summary>
         private void ResetScheduledMovement()
         {
             scheduledMovement = null;
@@ -1204,6 +1413,10 @@ namespace AS2.Sim
             hasPlannedMessages = true;
         }
 
+        /// <summary>
+        /// Deletes all planned beeps and messages to prepare
+        /// for planning new ones in the next round.
+        /// </summary>
         public void ResetPlannedBeepsAndMessages()
         {
             plannedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
@@ -1218,6 +1431,10 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// Deletes all received beeps and messages to prepare for
+        /// receiving new ones in the next round.
+        /// </summary>
         public void ResetReceivedBeepsAndMessages()
         {
             receivedBeeps = new BitArray(algorithm.PinsPerEdge * 10);
@@ -1243,7 +1460,7 @@ namespace AS2.Sim
             }
         }
 
-        /**
+        /*
          * Other helper methods
          */
 
@@ -1259,7 +1476,7 @@ namespace AS2.Sim
             neighborsOld = tmp;
         }
 
-        /**
+        /*
          * Attribute handling
          */
 
@@ -1296,6 +1513,8 @@ namespace AS2.Sim
                 attr.ResetIntermediateValue();
         }
 
+        // From IParticleState interface
+
         public IParticleAttribute TryGetAttributeByName(string attrName)
         {
             foreach (IParticleAttribute attr in attributes)
@@ -1328,23 +1547,6 @@ namespace AS2.Sim
             Log.Warning("Compass direction of particles cannot be changed during simulation.");
         }
 
-        public void Print()
-        {
-            Debug.Log("Position history:");
-            tailPosHistory.Print();
-            Debug.Log("Expansion dir history:");
-            expansionDirHistory.Print();
-            Debug.Log("PinConfiguration history:");
-            pinConfigurationHistory.Print();
-            Debug.Log("Main color history:");
-            mainColorHistory.Print();
-            mainColorSetHistory.Print();
-            foreach (IParticleAttribute attr in attributes)
-            {
-                attr.Print();
-            }
-        }
-
 
         /*
          * Additional IParticleState methods.
@@ -1361,7 +1563,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Methods implementing the IReplayHistory interface.
          * These allow the particle to be reset to any
          * previous round.
@@ -1434,7 +1636,7 @@ namespace AS2.Sim
         }
 
         // Note for StepBack and StepForward:
-        // The individual histories are not synchronized automatically
+        // The individual histories are not synchronized automatically.
         // The ParticleSystem is responsible for synchronizing all particles
         // before calling one of these two methods.
         public void StepBack()
@@ -1667,10 +1869,16 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Saving and loading functionality.
          */
 
+        /// <summary>
+        /// Generates a serializable object that contains the current
+        /// state and history of this particle.
+        /// </summary>
+        /// <returns>A serializable object containing the entire
+        /// state history of the particle.</returns>
         public ParticleStateSaveData GenerateSaveData()
         {
             ParticleStateSaveData data = new ParticleStateSaveData();
@@ -1764,6 +1972,16 @@ namespace AS2.Sim
             return data;
         }
 
+        /// <summary>
+        /// Initializes a new particle from the data stored in the given
+        /// serializable object.
+        /// </summary>
+        /// <param name="system">The system in which the new particle should
+        /// be created.</param>
+        /// <param name="data">A serializable object created using
+        /// <see cref="GenerateSaveData"/> that stores the particle's
+        /// state history.</param>
+        /// <returns>A new particle recovered from the serializable object.</returns>
         public static Particle CreateFromSaveState(ParticleSystem system, ParticleStateSaveData data)
         {
             // First initialize particle's base data
@@ -1792,6 +2010,13 @@ namespace AS2.Sim
             return p;
         }
 
+        /// <summary>
+        /// Creates a new particle from the given serializable object.
+        /// </summary>
+        /// <param name="system">The system in which the particle should
+        /// be created.</param>
+        /// <param name="data">The serializable object from which the
+        /// particle's state history will be recovered.</param>
         private Particle(ParticleSystem system, ParticleStateSaveData data)
         {
             this.system = system;
@@ -1827,6 +2052,12 @@ namespace AS2.Sim
             graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
         }
 
+        /// <summary>
+        /// Equivalent of <see cref="InitWithAlgorithm"/> using data
+        /// stored in a serializable object.
+        /// </summary>
+        /// <param name="data">The serializable object from which the
+        /// particle's algorithm information should be recovered.</param>
         private void InitWithAlgorithm(ParticleStateSaveData data)
         {
             int maxNumPins = algorithm.PinsPerEdge * 10;
