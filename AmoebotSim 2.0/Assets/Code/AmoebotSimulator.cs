@@ -75,14 +75,21 @@ namespace AS2
         {
             if (running)
             {
-                ActivateParticle();
+                PlayStep();
             }
         }
 
-        public void ActivateParticle()
+        /// <summary>
+        /// Triggers the simulation of a single round or a step forward
+        /// in the simulation history, depending on where the marker is.
+        /// Called on each FixedUpdate while the simulation is running.
+        /// </summary>
+        public void PlayStep()
         {
-            //system.ActivateRandomParticle();
-            system.SimulateRound();
+            if (system.IsInLatestRound())
+                system.SimulateRound();
+            else
+                system.StepForward();
             RoundChanged();
         }
 
@@ -114,7 +121,6 @@ namespace AS2
             {
                 if (running == false)
                 {
-                    system.ContinueTracking();
                     if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(true);
                 }
                 else
