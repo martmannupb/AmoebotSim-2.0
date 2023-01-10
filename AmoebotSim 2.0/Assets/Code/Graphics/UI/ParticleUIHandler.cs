@@ -747,15 +747,36 @@ namespace AS2.UI
 
         public void ButtonPressed_Randomize(string attributeName, bool randomizeAll)
         {
-            if(randomizeAll)
+            if(IsOpen() && sim.system.IsInLatestRound())
             {
-                // Find random values for all attributes
-                Log.Debug("Randomization not implemented yet!");
-            }
-            else
-            {
-                // Only find random values for current attribute
-                Log.Debug("Randomization not implemented yet!");
+                if(randomizeAll)
+                {
+                    // Find random values for all attributes
+                    if(attributeName.Equals("Chirality"))
+                    {
+                        sim.system.SetSystemChirality(Initialization.Chirality.Random);
+                        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Chirality, attributeName);
+                    }
+                    else if(attributeName.Equals("Compass Dir"))
+                    {
+                        sim.system.SetSystemCompassDir(Initialization.Compass.Random);
+                        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.CompassDir, attributeName);
+                    }
+                    else
+                    {
+                        sim.system.SetSystemAttributeRandom(attributeName);
+                        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Attribute, attributeName);
+                    }
+                    Log.Entry("Setting " + name + " has been randomized for all particles of the same type.");
+                }
+                else
+                {
+                    // Only find random values for current attribute
+                    IParticleAttribute attribute = particle.TryGetAttributeByName(attributeName);
+                    if(attribute != null) attribute.SetRandomValue();
+                }
+                if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
+                RefreshParticlePanel();
             }
         }
 
