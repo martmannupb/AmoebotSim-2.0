@@ -69,6 +69,24 @@ namespace AS2.Visuals
         void SetCompassDir(Direction compassDir);
 
         /// <summary>
+        /// Sets the particle's chirality to a random value. Only works if
+        /// the particle is in a state that allows the chirality to be set.
+        /// </summary>
+        void SetChiralityRandom()
+        {
+            SetChirality(Random.Range(0, 2) == 0);
+        }
+
+        /// <summary>
+        /// Sets the particle's compass direction to a random value. Only works
+        /// if the particle is in a state that allows the compass to be set.
+        /// </summary>
+        void SetCompassDirRandom()
+        {
+            SetCompassDir(DirectionHelpers.Cardinal(Random.Range(0, 6)));
+        }
+
+        /// <summary>
         /// Returns a list of all <see cref="AS2.Sim.ParticleAttribute{T}"/>s of the particle.
         /// </summary>
         /// <returns>A list containing all attributes of the particle.</returns>
