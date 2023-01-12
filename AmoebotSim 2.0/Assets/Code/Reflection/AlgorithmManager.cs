@@ -12,8 +12,6 @@ namespace AS2
     {
         // Property names
         private static readonly string Name_Property = "Name";
-        private static readonly string Chirality_Property = "Chirality";
-        private static readonly string Compass_Property = "Compass";
         private static readonly string Generator_Property = "GenerationMethod";
         private static readonly string Init_Method = "Init";
 
@@ -29,19 +27,14 @@ namespace AS2
             public string name;
             public Type type;
             public ConstructorInfo ctor;
-            public Initialization.Chirality chirality;
-            public Initialization.Compass compassDir;
             public MethodInfo initMethod;
             public string generationMethod;
 
-            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, Initialization.Chirality chirality, Initialization.Compass compassDir,
-                MethodInfo initMethod, string generationMethod)
+            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo initMethod, string generationMethod)
             {
                 this.name = name;
                 this.type = type;
                 this.ctor = ctor;
-                this.chirality = chirality;
-                this.compassDir = compassDir;
                 this.initMethod = initMethod;
                 this.generationMethod = generationMethod;
             }
@@ -56,8 +49,6 @@ namespace AS2
             Assembly baseAlgoAssembly = baseAlgoType.Assembly;
             IEnumerable<Type> subclasses = baseAlgoAssembly.GetTypes().Where(t => t.IsSubclassOf(baseAlgoType));
 
-            Initialization.Chirality defaultChirality = (Initialization.Chirality)baseAlgoType.GetProperty(Chirality_Property).GetValue(null);
-            Initialization.Compass defaultCompass = (Initialization.Compass)baseAlgoType.GetProperty(Compass_Property).GetValue(null);
             string defaultGenerator = (string)baseAlgoType.GetProperty(Generator_Property).GetValue(null);
 
             algorithms = new Dictionary<string, AlgorithmInfo>();
@@ -65,8 +56,6 @@ namespace AS2
             foreach (Type algoType in subclasses)
             {
                 PropertyInfo nameProp = algoType.GetProperty(Name_Property);
-                PropertyInfo chiralityProp = algoType.GetProperty(Chirality_Property);
-                PropertyInfo compassProp = algoType.GetProperty(Compass_Property);
                 PropertyInfo generatorProp = algoType.GetProperty(Generator_Property);
 
                 string name;
@@ -79,15 +68,7 @@ namespace AS2
                     name = (string)nameProp.GetValue(null);
                 }
 
-                Initialization.Chirality chirality = defaultChirality;
-                Initialization.Compass compass = defaultCompass;
                 string generator = defaultGenerator;
-
-                if (chiralityProp != null)
-                    chirality = (Initialization.Chirality)chiralityProp.GetValue(null);
-
-                if (compassProp != null)
-                    compass = (Initialization.Compass)compassProp.GetValue(null);
 
                 if (generatorProp != null)
                     generator = (string)generatorProp.GetValue(null);
@@ -107,7 +88,7 @@ namespace AS2
                 }
                 else
                 {
-                    algorithms[name] = new AlgorithmInfo(name, algoType, ctor, chirality, compass, initMethod, generator);
+                    algorithms[name] = new AlgorithmInfo(name, algoType, ctor, initMethod, generator);
                 }
             }
         }
@@ -123,24 +104,6 @@ namespace AS2
                 Debug.LogError("Error: No algorithm with name '" + name + "' known");
                 return null;
             }
-        }
-
-        public Initialization.Chirality GetAlgorithmChirality(string name)
-        {
-            AlgorithmInfo info = FindAlgorithm(name);
-            if (info != null)
-                return info.chirality;
-            else
-                throw new System.ArgumentException("Could not find algorithm");
-        }
-
-        public Initialization.Compass GetAlgorithmCompass(string name)
-        {
-            AlgorithmInfo info = FindAlgorithm(name);
-            if (info != null)
-                return info.compassDir;
-            else
-                throw new System.ArgumentException("Could not find algorithm");
         }
 
         public string GetAlgorithmGenerationMethod(string name)
