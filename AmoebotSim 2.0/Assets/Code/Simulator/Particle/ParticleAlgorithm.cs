@@ -60,10 +60,8 @@ namespace AS2.Sim
     /// The subclass constructor must have the following signature and call the
     /// base class constructor:
     /// <code>
-    /// public MyClass(Particle p, int[] genericParams) : base(p) { ... }
+    /// public MyClass(Particle p) : base(p) { ... }
     /// </code>
-    /// The <c>genericParams</c> array contains the generic initialization
-    /// parameters, which can be freely interpreted by the algorithm.
     /// </para>
     /// <para>
     /// The number of pins used by the algorithm must be specified by overriding
@@ -90,7 +88,9 @@ namespace AS2.Sim
     /// </summary>
     public abstract class ParticleAlgorithm
     {
-        // Reference to the particle's system representation
+        /// <summary>
+        /// Reference to the particle's system representation.
+        /// </summary>
         private Particle particle;
 
         public ParticleAlgorithm(Particle particle)
@@ -109,12 +109,16 @@ namespace AS2.Sim
         /// </summary>
         public abstract int PinsPerEdge { get; }
 
+        /// <summary>
+        /// The display name of the algorithm. Must be unique among
+        /// all algorithms.
+        /// </summary>
         public static string Name { get { return ""; } }
 
-        public static Initialization.Chirality Chirality { get { return Initialization.Chirality.CounterClockwise; } }
-
-        public static Initialization.Compass Compass { get { return Initialization.Compass.E; } }
-
+        /// <summary>
+        /// The full type name of the algorithm's generation method.
+        /// This method must be a subclass of <see cref="AlgorithmGenerator"/>.
+        /// </summary>
         public static string GenerationMethod { get { return typeof(InitRandomWithHoles).FullName; } }
 
         /// <summary>
@@ -141,9 +145,9 @@ namespace AS2.Sim
         /// is called within the same round.
         /// <para>
         /// Inside of this method, particles are allowed to release bonds,
-        /// define which bonds should be moved or transferred, and
-        /// schedule movements. Only the last movement operation scheduled
-        /// in this method will be applied.
+        /// define which bonds should be marked, and schedule movements.
+        /// Only the last movement operation scheduled in this method will
+        /// be applied.
         /// </para>
         /// </summary>
         public abstract void ActivateMove();
@@ -254,7 +258,7 @@ namespace AS2.Sim
             return true;
         }
 
-        /**
+        /*
          * Attribute creation methods.
          * 
          * To be called in the particle constructor.
@@ -352,7 +356,7 @@ namespace AS2.Sim
         /// Note that <see cref="PinConfiguration"/> is a reference type but particle attributes
         /// have value semantics. This means that changes to the value of an attribute of this
         /// type must be "committed" by calling the <see cref="ParticleAttribute{T}.SetValue(T)"/>
-        /// method.
+        /// method. It is not sufficient to call methods on the pin configuration instance.
         /// </para>
         /// <para>
         /// Additionally, <see cref="PinConfiguration"/>s stored in attributes do not retain any
@@ -378,13 +382,13 @@ namespace AS2.Sim
         #endregion // AttributeCreation
 
 
-        /** ====================================================================================================
+        /* ====================================================================================================
          * Particle actions defining the API.
          * These methods should be called from the ActivateX() methods.
          * ====================================================================================================
          */
 
-        /**
+        /*
          * State information retrieval
          * The default methods return the state information recorded in the
          * snapshot at the beginning of the current round. There are specialized
@@ -458,7 +462,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Predicted state information retrieval
          * These methods return the predicted values for after the
          * current round based on the particle's actions during this
@@ -514,7 +518,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Pin configuration management
          * 
          * API is defined by <see cref="PinConfiguration"/>,
@@ -596,17 +600,14 @@ namespace AS2.Sim
             return new SysPinConfiguration(particle, PinsPerEdge, headDirection);
         }
 
-        // TODO: Update the documentation here
-
         /// <summary>
         /// Sets the pin configuration that should be applied to the particle
         /// at the end of this round. Only works in <see cref="ActivateBeep"/>.
         /// <para>
-        /// The expansion state of the pin configuration must match the planned
-        /// expansion state of the particle, i.e., if the particle plans to be
-        /// contracted at the end of the round, the pin configuration must be made
-        /// for the contracted state, and if the particle plans to be expanded at
-        /// the end of the round, the pin configuration must match the
+        /// The expansion state of the pin configuration must match the
+        /// expansion state of the particle, i.e., if the particle is contracted,
+        /// the pin configuration must be made for the contracted state, and if
+        /// the particle is expanded, the pin configuration must match the
         /// corresponding head direction.
         /// </para>
         /// <para>
@@ -643,12 +644,10 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * System information retrieval
          * Mainly for finding neighbor particles
          */
-
-        // TODO: Add many more helper functions (like firstNbrWithProperty etc.)
 
         /// <summary>
         /// Checks if this particle has a neighboring particle in the given local direction.
@@ -848,7 +847,8 @@ namespace AS2.Sim
             return particle.system.FindNeighborsWithProperty<T>(particle, prop, startDir, startAtHead, withChirality, maxSearch, maxReturn);
         }
 
-        /**
+
+        /*
          * Bond management
          */
 
@@ -891,12 +891,12 @@ namespace AS2.Sim
             return particle.BondActive(label);
         }
 
-        // TODO: Update documentation
-
         /// <summary>
         /// Marks the specified bond to have special behavior.
         /// This means that it will be pulled with an expansion
-        /// movement or transferred during a handover contraction.
+        /// movement if it does not point in the opposite direction
+        /// as the movement. The bond pointing in the same direction
+        /// as the movement will always be marked automatically.
         /// Only works in <see cref="ActivateMove"/>.
         /// </summary>
         /// <param name="locDir">The local direction into which the bond
@@ -924,7 +924,7 @@ namespace AS2.Sim
         /// is pointing.</param>
         /// <param name="head">If the particle is expanded, this flag
         /// indicates whether the bond is located at the head or the tail.</param>
-        /// <returns><c>true</c> if and only if the bond at the given label has
+        /// <returns><c>true</c> if and only if the bond at the given position has
         /// been marked.</returns>
         public bool BondMarked(Direction locDir, bool head = true)
         {
@@ -945,6 +945,11 @@ namespace AS2.Sim
         /// messages caused by disagreeing bonds.
         /// Only works in <see cref="ActivateMove"/>.
         /// </para>
+        /// <para>
+        /// Note that joint movements are not disabled completely by this
+        /// method. For example, expanding into another particle will
+        /// result in pushing the neighbor away if it causes no conflict.
+        /// </para>
         /// </summary>
         public void UseAutomaticBonds()
         {
@@ -954,7 +959,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Movement actions
          */
 
@@ -963,8 +968,6 @@ namespace AS2.Sim
         /// After the expansion, the particle's head will occupy the grid node
         /// in that direction, and its tail will remain at its current position.
         /// Only works in <see cref="ActivateMove"/>.
-        /// <para>Only allowed if there is no contracted particle in the
-        /// specified direction.</para>
         /// <para>Note that movements are only applied at the end of a round,
         /// i.e., after the activation is over. This means that calling this
         /// method will have no immediate effect.</para>
@@ -1027,19 +1030,16 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Expands this particle in the specified local direction and tries to
-        /// force the expanded neighbor particle to contract.
+        /// Expands this particle in the specified local direction while the
+        /// expanded neighbor particle in that direction contracts.
         /// After the expansion, the particle's head will occupy the grid node
         /// in that direction, and its tail will remain at its current position.
         /// The neighbor will have contracted away from that node.
         /// Only works in <see cref="ActivateMove"/>.
         /// <para>
-        /// Only allowed if there is an expanded particle in the
-        /// specified direction.
-        /// The handover will lead to a conflict if this neighboring particle
-        /// performs a movement that is not consistent with the handover in
-        /// the same round, such as contracting into the neighboring node or
-        /// attempting a pull handover with a third particle.
+        /// Only allowed if there is an expanded particle in the specified
+        /// direction that simultaneously performs a pull handover aimed at
+        /// this particle.
         /// </para>
         /// <para>Note that movements are only applied at the end of a round,
         /// i.e., after the activation is over. This means that calling this
@@ -1061,19 +1061,17 @@ namespace AS2.Sim
 
         /// <summary>
         /// Contracts this particle into the grid node that is currently
-        /// occupied by the particle's head and tries to force the contracted
-        /// neighbor particle in the specified direction to expand onto the
-        /// current tail node.
+        /// occupied by the particle's head while the contracted neighbor
+        /// particle in the specified direction expands onto the current
+        /// tail node.
         /// After the contraction, the head and tail of this particle will both
         /// occupy the current head node and the current tail node will be
         /// occupied by the neighbor.
         /// Only works in <see cref="ActivateMove"/>.
         /// <para>
         /// Only allowed if there is a contracted particle in the specified
-        /// direction relative to this particle's tail.
-        /// The handover will lead to a conflict if that neighboring particle
-        /// performs a movement that is not consistent with the handover in
-        /// the same round, such as expanding onto a different node.
+        /// direction relative to this particle's tail that simultaneously
+        /// performs a push handover.
         /// </para>
         /// <para>Note that movements are only applied at the end of a round,
         /// i.e., after the activation is over. This means that calling this
@@ -1096,19 +1094,17 @@ namespace AS2.Sim
 
         /// <summary>
         /// Contracts this particle into the grid node that is currently
-        /// occupied by the particle's tail and tries to force the contracted
-        /// neighbor particle in the specified direction to expand onto the
-        /// current head node.
+        /// occupied by the particle's tail while the contracted neighbor
+        /// particle in the specified direction expands onto the current
+        /// head node.
         /// After the contraction, the head and tail of this particle will both
         /// occupy the current tail node and the current head node will be
         /// occupied by the neighbor.
         /// Only works in <see cref="ActivateMove"/>.
         /// <para>
         /// Only allowed if there is a contracted particle in the specified
-        /// direction relative to this particle's head.
-        /// The handover will lead to a conflict if that neighboring particle
-        /// performs a movement that is not consistent with the handover in
-        /// the same round, such as expanding onto a different node.
+        /// direction relative to this particle's head that simultaneously
+        /// performs a push handover.
         /// </para>
         /// <para>Note that movements are only applied at the end of a round,
         /// i.e., after the activation is over. This means that calling this
@@ -1130,11 +1126,10 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Visualization
          * These methods should only be called on the particle itself.
-         * Calling them on other particles is not defined and should
-         * never be done.
+         * Calling them on other particles will lead to errors.
          */
 
         /// <summary>

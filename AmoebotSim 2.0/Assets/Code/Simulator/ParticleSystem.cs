@@ -3638,12 +3638,14 @@ namespace AS2.Sim
         /// <param name="chirality">The chirality to assign to each
         /// particle. If the value is <see cref="Initialization.Chirality.Random"/>,
         /// the particles get a clockwise chirality with a probability of 50%.</param>
-        public void SetSystemChirality(Initialization.Chirality chirality)
+        /// <returns><c>true</c> if and only if the chirality was set
+        /// successfully.</returns>
+        public bool SetSystemChirality(Initialization.Chirality chirality)
         {
             if (!inInitializationState)
             {
                 Log.Error("Cannot set system chirality outside of initialization mode.");
-                return;
+                return false;
             }
 
             foreach (InitializationParticle ip in particlesInit)
@@ -3654,6 +3656,7 @@ namespace AS2.Sim
                     chiralityPart = false;
                 ip.Chirality = chiralityPart;
             }
+            return true;
         }
 
         /// <summary>
@@ -3664,12 +3667,14 @@ namespace AS2.Sim
         /// particle. If the value is <see cref="Initialization.Compass.Random"/>,
         /// each particle gets one of the cardinal directions chosen uniformly
         /// and independently.</param>
-        public void SetSystemCompassDir(Initialization.Compass compassDir)
+        /// <returns><c>true</c> if and only if the compass direction was set
+        /// successfully.</returns>
+        public bool SetSystemCompassDir(Initialization.Compass compassDir)
         {
             if (!inInitializationState)
             {
                 Log.Error("Cannot set system compass direction outside of initialization mode.");
-                return;
+                return false;
             }
 
             foreach (InitializationParticle ip in particlesInit)
@@ -3679,6 +3684,7 @@ namespace AS2.Sim
                     );
                 ip.CompassDir = compass;
             }
+            return true;
         }
 
         /// <summary>
