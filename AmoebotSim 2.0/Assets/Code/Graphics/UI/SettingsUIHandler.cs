@@ -70,6 +70,9 @@ namespace AS2.UI
             // Camera Angle
             UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, "Camera Angle", 0f, 11f, 0f, true);
             setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
+            // Compass Dir Overlay Display
+            UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, "Compass Ov. Arrows", WorldSpaceUIHandler.instance.showCompassDirArrows);
+            setting_compassDirOverlayDisplayType.onValueChangedEvent += SettingChanged_Toggle;
             // Circuit Connections Look
             UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, "Circuit Border", RenderSystem.flag_circuitBorderActive);
             setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
@@ -173,6 +176,10 @@ namespace AS2.UI
                     RenderSystem.flag_circuitBorderActive = isOn;
                     // Reinit RenderBatches to apply changes
                     uiHandler.sim.renderSystem.rendererP.circuitAndBondRenderer.ReinitBatches();
+                    break;
+                case "Compass Ov. Arrows":
+                    WorldSpaceUIHandler.instance.showCompassDirArrows = isOn;
+                    WorldSpaceUIHandler.instance.Refresh();
                     break;
                 case "Circular Ring":
                     RenderSystem.flag_showCircuitViewOutterRing = isOn;
