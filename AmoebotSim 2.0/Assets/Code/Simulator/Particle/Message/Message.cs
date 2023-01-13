@@ -103,7 +103,7 @@ namespace AS2.Sim
         /// <paramref name="other"/> message.</returns>
         public abstract bool GreaterThan(Message other);
 
-        /**
+        /*
          * Saving and loading functionality.
          */
 
