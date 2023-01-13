@@ -33,9 +33,9 @@ namespace AS2.Visuals
         /// </summary>
         /// <param name="state">The graphical data of the particle's pin.</param>
         /// <param name="snap">The position data of the particle.</param>
-        public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
+        public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
         {
-            renderInstances[updateInstance].AddCircuits(state, snap);
+            renderInstances[updateInstance].AddCircuits(particle, state, snap);
         }
 
         /// <summary>

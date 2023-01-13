@@ -57,9 +57,44 @@ namespace AS2.Visuals
             public Color color;
             // Data
             public List<PinDef> pins; // all pins that belong to this partition set
-                                      // Beeping
+            // Beeping
             public bool beepsThisRound;
             public bool beepOrigin;
+
+            // Graphics
+            /// <summary>
+            /// This struct stores graphical data.
+            /// Please do not change the struct directly via the system, use the other methods in this class to assign coordinate values.
+            /// </summary>
+            public GraphicalData graphicalData;
+
+            public struct GraphicalData
+            {
+                // Latest Coordinate
+                /// <summary>
+                /// The active coordinate of the partition set.
+                /// </summary>
+                public Polar2DCoordinate active_coordinate;
+                // Manual Editing
+                /// <summary>
+                /// A coordinate used to manually override the default position of the partition set in the view.
+                /// Discarded when the positioning type changes.
+                /// </summary>
+                public Polar2DCoordinate manualEditing_coordinate;
+                // Code Editing
+                /// <summary>
+                /// A coordinate used to override the default position of the partition set in the view via code.
+                /// 
+                /// </summary>
+                public Polar2DCoordinate codeOverride_coordinate;
+
+                public void Reset()
+                {
+                    active_coordinate.Discard();
+                    codeOverride_coordinate.Discard();
+                    manualEditing_coordinate.Discard();
+                }
+            }
 
             private PSetData()
             {
@@ -95,6 +130,16 @@ namespace AS2.Visuals
                 }
             }
 
+            public void SetCodeOverrideCoordinate(Polar2DCoordinate coordinate)
+            {
+                graphicalData.codeOverride_coordinate = coordinate;
+            }
+
+            public void RemoveCodeOverrideCoordinate()
+            {
+                graphicalData.codeOverride_coordinate.Discard();
+            }
+
             /// <summary>
             /// Clears the system for pooling.
             /// </summary>
@@ -104,6 +149,7 @@ namespace AS2.Visuals
                 this.pins.Clear();
                 this.beepsThisRound = false;
                 this.beepOrigin = false;
+                this.graphicalData.Reset();
             }
 
 

@@ -121,12 +121,12 @@ namespace AS2
             {
                 if (running == false)
                 {
-                    if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(true);
+                    EventDatabase.event_sim_startedStopped?.Invoke(true);
                 }
                 else
                 {
                     //system.Print();
-                    if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(false);
+                    EventDatabase.event_sim_startedStopped?.Invoke(false);
                 }
                 running = !running;
                 if (uiHandler != null) uiHandler.NotifyPlayPause(running);

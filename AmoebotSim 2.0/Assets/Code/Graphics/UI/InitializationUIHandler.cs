@@ -159,6 +159,7 @@ namespace AS2.UI
             }
             // Show algorithm parameters
             AmoebotSimulator.instance.system.SetSelectedAlgorithm(algorithm);
+            AmoebotSimulator.instance.uiHandler.Button_CameraCenterPressed();
         }
 
         /// <summary>
@@ -303,7 +304,7 @@ namespace AS2.UI
             // Generate (can be skipped)
             //ButtonPressed_Generate();
             // Event
-            if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(true);
+            EventDatabase.event_initializationUI_initModeOpenClose?.Invoke(true);
         }
 
         /// <summary>
@@ -323,7 +324,7 @@ namespace AS2.UI
             AmoebotSimulator.instance.uiHandler.Update();
             AmoebotSimulator.instance.uiHandler.UpdateUI(false, true);
             // Event
-            if (EventDatabase.event_initializationUI_initModeOpenClose != null) EventDatabase.event_initializationUI_initModeOpenClose(false);
+            EventDatabase.event_initializationUI_initModeOpenClose?.Invoke(false);
         }
 
         /// <summary>

@@ -17,18 +17,36 @@ namespace AS2.Visuals
         public Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch> propertiesToPinRenderBatchMap = new Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch>();
 
         // Data
+        private Dictionary<ParticleGraphicsAdapterImpl, ParticleCircuitData> circuitData = new Dictionary<ParticleGraphicsAdapterImpl, ParticleCircuitData>();
+        // Flags
         public bool isRenderingActive = false;
         // Temporary
         private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
         private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
+
+        public struct ParticleCircuitData
+        {
+            public ParticleGraphicsAdapterImpl particle;
+            public ParticlePinGraphicState state;
+            public ParticleGraphicsAdapterImpl.PositionSnap snap;
+
+            public ParticleCircuitData(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
+            {
+                this.particle = particle;
+                this.state = state;
+                this.snap = snap;
+            }
+        }
 
         /// <summary>
         /// Adds the data of a particle's partition set to the system. Combines it with the position data of the particle itself to calculate all positions of the circuits and pins.
         /// </summary>
         /// <param name="state">The particle's graphical pin and partition set data.</param>
         /// <param name="snap">The particle's position and movement data.</param>
-        public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
+        public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
         {
+            circuitData.Add(particle, new ParticleCircuitData(particle, state, snap));
+
             //bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
             bool delayed = snap.noAnimation == false && RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
             bool movement = RenderSystem.animationsOn && snap.jointMovementState.isJointMovement && delayed == false;
@@ -385,6 +403,11 @@ namespace AS2.Visuals
             {
                 batch.ClearMatrices();
             }
+            foreach (var data in circuitData.Values)
+            {
+                ParticlePinGraphicState.PoolRelease(data.state);
+            }
+            circuitData.Clear();
             isRenderingActive = false;
         }
 

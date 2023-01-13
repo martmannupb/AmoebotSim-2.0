@@ -22,6 +22,9 @@ namespace AS2.UI
         public GameObject settingsParent;
         private Vector2Int nonFullScreenResolution = new Vector2Int(-1, -1);
 
+        // References
+        private ParticleUIExtensionSmoothLerp uiLerpScript;
+
         public enum SettingType
         {
             Slider, TextInt, TextFloat
@@ -76,6 +79,13 @@ namespace AS2.UI
             // Anti Aliasing
             UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(null, settingsParent.transform, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
             setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
+            // UI Lerp
+            uiLerpScript = FindObjectOfType<ParticleUIExtensionSmoothLerp>();
+            if(uiLerpScript != null)
+            {
+                UISetting_Toggle setting_uiLerp = new UISetting_Toggle(null, settingsParent.transform, "UI Animations", uiLerpScript.GetLerpEnabled());
+                setting_uiLerp.onValueChangedEvent += SettingChanged_Toggle;
+            }
         }
 
         /// <summary>
@@ -172,6 +182,9 @@ namespace AS2.UI
                     break;
                 case "Beep Repeat On/Off":
                     RenderSystem.data_circuitBeepRepeatOn = isOn;
+                    break;
+                case "UI Animations":
+                    uiLerpScript.SetLerpEnabled(isOn);
                     break;
                 default:
                     break;
