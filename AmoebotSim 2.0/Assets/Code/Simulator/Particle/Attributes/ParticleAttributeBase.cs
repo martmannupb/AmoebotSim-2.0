@@ -11,7 +11,13 @@ namespace AS2.Sim
     /// </summary>
     public abstract class ParticleAttributeBase
     {
+        /// <summary>
+        /// The <see cref="Particle"/> to which the attribute belongs.
+        /// </summary>
         protected Particle particle;
+        /// <summary>
+        /// The unique name of the attribute.
+        /// </summary>
         protected string name;
 
         public ParticleAttributeBase(Particle particle, string name)

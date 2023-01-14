@@ -57,6 +57,12 @@ namespace AS2.Sim
         /// <summary>
         /// Resets the attribute's intermediate value state. Must be called
         /// after each simulated round.
+        /// <para>
+        /// Intermediate values are used to keep a value written during the
+        /// movement phase available in the beep phase. This is necessary
+        /// because a simulation round contains two activations and an
+        /// attribute value can change in each of the phases.
+        /// </para>
         /// </summary>
         void ResetIntermediateValue();
 

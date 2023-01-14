@@ -13,10 +13,26 @@ namespace AS2.Sim
     /// </summary>
     public class SysPartitionSet : PartitionSet
     {
+        /// <summary>
+        /// The pin configuration to which this partition set belongs.
+        /// </summary>
         public SysPinConfiguration pinConfig;
+        /// <summary>
+        /// The unique ID of this partition set within the pin configuration.
+        /// </summary>
         public int id;
+        /// <summary>
+        /// A bit array indicating which pins are contained in this partition set.
+        /// Indices are pin IDs.
+        /// </summary>
         public BitArray pins;
+        /// <summary>
+        /// The number of pins contained in this partition set.
+        /// </summary>
         private int numStoredPins;
+        /// <summary>
+        /// The number of pins contained in this partition set.
+        /// </summary>
         public int NumStoredPins
         {
             get { return numStoredPins; }
@@ -87,20 +103,24 @@ namespace AS2.Sim
 
 
         // TODO: May have to put these into compressed storage classes/structs instead
-        /**
+        // (only if compact representation of pin configurations is desired)
+        /*
          * Comparison operators for comparing partition sets and pin configurations easily
          */
 
         public static bool operator ==(SysPartitionSet p1, SysPartitionSet p2)
         {
+            // Two nulls are equal
             if (p1 is null && p2 is null)
             {
                 return true;
             }
+            // Unequal if only one is null or IDs or number of stored pins differ
             else if (p1 is null || p2 is null || p1.id != p2.id || p1.numStoredPins != p2.numStoredPins || p1.pins.Count != p2.pins.Count)
             {
                 return false;
             }
+            // Unequal if pins are different
             for (int i = 0; i < p1.pins.Count; i++)
             {
                 if (p1.pins[i] != p2.pins[i])
@@ -113,6 +133,7 @@ namespace AS2.Sim
 
         public static bool operator !=(SysPartitionSet p1, SysPartitionSet p2)
         {
+            // Opposite of ==
             if (p1 is null && p2 is null)
             {
                 return false;
@@ -141,15 +162,15 @@ namespace AS2.Sim
             return this == other;
         }
 
-        // TODO: Make sure this is correct if it is used
+        // TODO: Make sure this is correct if it is ever used
         public override int GetHashCode()
         {
             return HashCode.Combine(id, pins, numStoredPins);
         }
 
 
-        /**
-         * PartitionSet: Developer API
+        /*
+         * PartitionSet: Developer API implementation
          */
 
         public override PinConfiguration PinConfiguration
@@ -352,7 +373,7 @@ namespace AS2.Sim
         }
 
 
-        // <<<TEMPORARY, FOR DEBUGGING>>>
+        // <<<FOR DEBUGGING>>>
         public string Print()
         {
             string s = "Partition Set with " + numStoredPins + " pins:\n";

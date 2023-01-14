@@ -135,7 +135,7 @@ namespace AS2.Sim
             pcHistory.ShiftTimescale(amount);
         }
 
-        /**
+        /*
          * Some methods of IParticleAttribute interface can already be implemented here
          */
 

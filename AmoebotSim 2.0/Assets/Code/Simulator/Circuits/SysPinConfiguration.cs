@@ -5,7 +5,6 @@ using UnityEngine;
 namespace AS2.Sim
 {
 
-    // TODO: Change visibility of members (also other API classes) when circuit computation is finished
     // TODO: Update documentation if compressed objects are used for storage
     /// <summary>
     /// System-side implementation of the abstract base class
@@ -18,17 +17,45 @@ namespace AS2.Sim
     /// </summary>
     public class SysPinConfiguration : PinConfiguration
     {
+        /// <summary>
+        /// The particle to which this pin configuration belongs.
+        /// </summary>
         public Particle particle;
+        /// <summary>
+        /// The number of pins on each edge.
+        /// </summary>
         private int pinsPerEdge;
+        /// <summary>
+        /// The local head direction if this pin configuration is expanded.
+        /// </summary>
         private Direction headDirection;
+        /// <summary>
+        /// The total number of pins.
+        /// </summary>
         private int numPins;
 
+        /// <summary>
+        /// The pins contained in this pin configuration.
+        /// </summary>
         public SysPin[] pins;
+        /// <summary>
+        /// Pins sorted by global IDs. These are the same pins as
+        /// the ones stored in <see cref="pins"/>.
+        /// </summary>
         public SysPin[] pinsGlobal;
+        /// <summary>
+        /// The partition sets defining this pin configuration.
+        /// </summary>
         public SysPartitionSet[] partitionSets;
 
         // State information for receiving and sending beeps and messages
+        /// <summary>
+        /// Indicates whether this is the current pin configuration.
+        /// </summary>
         public bool isCurrent = false;  // If true, give access to received data
+        /// <summary>
+        /// Indicates whether this is the planned pin configuration.
+        /// </summary>
         public bool isPlanned = false;  // If true, allow sending data
 
         public SysPinConfiguration(Particle particle, int pinsPerEdge, Direction headDirection = Direction.NONE)
@@ -92,21 +119,11 @@ namespace AS2.Sim
                     }
                 }
             }
-
-            // FOR DEBUGGING
-
-            // DEFAULT IS SINGLETON
-
-            // TRY GLOBAL
-            //SetToGlobal();
-
-            // TRY STAR ON ALL PINS
-            //for (int i = 0; i < pinsPerEdge; i++)
-            //{
-            //    SetStarConfig(i, i);
-            //}
         }
 
+        /// <summary>
+        /// Resets current and planned flags to <c>false</c>.
+        /// </summary>
         private void UpdateFlagsAfterChange()
         {
             isCurrent = false;
@@ -260,20 +277,23 @@ namespace AS2.Sim
         }
 
         // TODO: May have to put these into compressed storage classes/structs instead
-        /**
+        /*
          * Comparison operators for comparing pin configurations easily
          */
 
         public static bool operator ==(SysPinConfiguration pc1, SysPinConfiguration pc2)
         {
+            // Two nulls are equal
             if (pc1 is null && pc2 is null)
             {
                 return true;
             }
+            // Unequal if one is null or head direction or number of pins per edge differ
             else if (pc1 is null || pc2 is null || pc1.headDirection != pc2.headDirection || pc1.pinsPerEdge != pc2.pinsPerEdge)
             {
                 return false;
             }
+            // Unequal if any partition sets are not equal
             for (int i = 0; i < pc1.numPins; i++)
             {
                 if (pc1.partitionSets[i] != pc2.partitionSets[i])
@@ -286,6 +306,7 @@ namespace AS2.Sim
 
         public static bool operator !=(SysPinConfiguration pc1, SysPinConfiguration pc2)
         {
+            // Opposite of ==
             if (pc1 is null && pc2 is null)
             {
                 return false;
@@ -309,15 +330,15 @@ namespace AS2.Sim
             return obj is SysPinConfiguration other && this == other;
         }
 
-        // TODO: Make sure this is correct if it is used
+        // TODO: Make sure this is correct if it is ever used
         public override int GetHashCode()
         {
             return System.HashCode.Combine(pinsPerEdge, headDirection, partitionSets);
         }
 
 
-        /**
-         * PinConfiguration: Developer API
+        /*
+         * PinConfiguration: Developer API implementation
          */
 
         public override Direction HeadDirection
@@ -574,10 +595,16 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Saving and loading functionality, also used for histories.
          */
 
+        /// <summary>
+        /// Creates a serializable object containing all data needed
+        /// to restore the pin configuration.
+        /// </summary>
+        /// <returns>A serializable representation of this
+        /// pin configuration.</returns>
         public PinConfigurationSaveData GenerateSaveData()
         {
             PinConfigurationSaveData data = new PinConfigurationSaveData();
@@ -595,6 +622,17 @@ namespace AS2.Sim
         // TODO: Documentation
         // This constructor expects that the given particle already has an algorithm attached to it
         // and that it matches the given pin configuration save data
+
+        /// <summary>
+        /// Recovers a pin configuration from its serializable representation.
+        /// It is expected that the given particle already has an algorithm
+        /// attached to it and that it matches the given pin configuration
+        /// save data.
+        /// </summary>
+        /// <param name="data">The serializable representation of the
+        /// pin configuration.</param>
+        /// <param name="p">The particle to which the pin configuration
+        /// should belong.</param>
         public SysPinConfiguration(PinConfigurationSaveData data, Particle p)
         {
             particle = p;
@@ -663,7 +701,7 @@ namespace AS2.Sim
             }
         }
 
-        // <<<TEMPORARY, FOR DEBUGGING>>>
+        // <<<FOR DEBUGGING>>>
         public void Print()
         {
             string s = "Pin Configuration for head direction " + headDirection + " with " + pinsPerEdge + " pins per edge and " + numPins + " pins:\n";

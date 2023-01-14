@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace AS2.Sim
@@ -36,8 +34,8 @@ namespace AS2.Sim
     public abstract class PinConfiguration
     {
         /// <summary>
-        /// The head direction which encodes the expansion state of
-        /// this pin configuration. If the state is contracted, this
+        /// The local head direction which encodes the expansion state
+        /// of this pin configuration. If the state is contracted, this
         /// value is <see cref="Direction.NONE"/>.
         /// <para>
         /// A pin configuration can only be applied if its expansion
