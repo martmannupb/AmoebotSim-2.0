@@ -35,7 +35,7 @@ namespace AS2.Visuals
         /// <param name="snap">The position data of the particle.</param>
         public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
         {
-            renderInstances[updateInstance].AddCircuits(particle, state, snap);
+            renderInstances[updateInstance].AddCircuits(particle, state, snap, PartitionSetViewType.Auto);
         }
 
         /// <summary>

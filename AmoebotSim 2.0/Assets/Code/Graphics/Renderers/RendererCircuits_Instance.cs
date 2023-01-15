@@ -23,6 +23,7 @@ namespace AS2.Visuals
         // Temporary
         private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
         private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
+        private List<float> tempList_float = new List<float>();
 
         public struct ParticleCircuitData
         {
@@ -43,7 +44,7 @@ namespace AS2.Visuals
         /// </summary>
         /// <param name="state">The particle's graphical pin and partition set data.</param>
         /// <param name="snap">The particle's position and movement data.</param>
-        public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
+        public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType)
         {
             circuitData.Add(particle, new ParticleCircuitData(particle, state, snap));
 
@@ -56,15 +57,64 @@ namespace AS2.Visuals
             if (state.isExpanded == false)
             {
                 // Contracted
+                // Calc PartitionSet Positions
+                List<float> degreeList = new List<float>(state.partitionSets.Count);
+                if(pSetViewType == PartitionSetViewType.Auto)
+                {
+                    for (int i = 0; i < state.partitionSets.Count; i++)
+                    {
+                        ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
+                        // Calc average partition set position
+                        Vector2 relPos = Vector2.zero;
+                        foreach (var pinDef in pSet.pins)
+                        {
+                            relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+                        }
+                        relPos /= (float)pSet.pins.Count;
+                        if (relPos == Vector2.zero) degreeList.Add(0f);
+                        else
+                        {
+                            // Convert relPos to degree
+                            float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
+                            degreeList.Add(degree);
+                        }
+                        
+                    }
+                    degreeList = CircleDistribution.DistributePointsOnCircle(degreeList, Mathf.Min(0.8f * (360f / state.partitionSets.Count), 60f));
+                }
                 for (int i = 0; i < state.partitionSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                    Vector2 posPartitionSet = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, 0f, false);
-                    // 1. Add Pin
-                    AddPin(posPartitionSet, pSet.color, delayed, pSet.beepOrigin, movementOffset);
-                    // 2. Add Lines
-                    AddLines_PartitionSetContracted(state, snap, pSet, posPartitionSet, delayed, movementOffset);
+                    switch (pSetViewType)
+                    {
+                        case PartitionSetViewType.Default:
+                            // Default
+                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, 0f, false);
+                            break;
+                        case PartitionSetViewType.Auto:
+                            // Auto
+                            // Convert degree to coordinate
+                            float degree = degreeList[i];
+                            Vector2 localPinPos = state.partitionSets.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                            // Calc partition set position on the circle
+                            Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1);
+                            // Save position
+                            pSet.graphicalData.active_position1 = posParticle + localPinPos;
+                            break;
+                        default:
+                            break;
+                    }
                 }
+                // Add Internal Pins and Lines
+                for (int i = 0; i < state.partitionSets.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
+                    // 1. Add Pin
+                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset);
+                    // 2. Add Lines
+                    AddLines_PartitionSetContracted(state, snap, pSet, pSet.graphicalData.active_position1, delayed, movementOffset);
+                }
+                // Add Singleton Lines
                 for (int i = 0; i < state.singletonSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
@@ -91,27 +141,46 @@ namespace AS2.Visuals
             else
             {
                 // Expanded
+                // Calc PartitionSet Positions + Partition Set Connector Pin Positions
                 for (int i = 0; i < state.partitionSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                    float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
-                    float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
-                    Vector2 posPartitionSet1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, rot1, false);
-                    Vector2 posPartitionSet2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, amountPartitionSets, rot2, true);
-                    Vector2 posPartitionSetConnectorPin1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, rot1, false);
-                    Vector2 posPartitionSetConnectorPin2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, rot2, true);
+                    switch (pSetViewType)
+                    {
+                        case PartitionSetViewType.Auto:
+                            // Auto
+                            //throw new System.NotImplementedException();
+                            //break;
+                        case PartitionSetViewType.Default:
+                            // Default
+                            float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
+                            float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
+                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, rot1, false);
+                            pSet.graphicalData.active_position2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, amountPartitionSets, rot2, true);
+                            pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, rot1, false);
+                            pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, rot2, true);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                // Add Internal Pins and Lines
+                for (int i = 0; i < state.partitionSets.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
                     // 1. Add Pins + Connectors + Internal Lines
-                    AddPin(posPartitionSet1, pSet.color, delayed, pSet.beepOrigin, movementOffset);
-                    AddPin(posPartitionSet2, pSet.color, delayed, pSet.beepOrigin, movementOffset);
-                    AddConnectorPin(posPartitionSetConnectorPin1, pSet.color, delayed, movementOffset);
-                    AddConnectorPin(posPartitionSetConnectorPin2, pSet.color, delayed, movementOffset);
-                    AddLine(posPartitionSet1, posPartitionSetConnectorPin1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
-                    AddLine(posPartitionSet2, posPartitionSetConnectorPin2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
-                    AddLine(posPartitionSetConnectorPin1, posPartitionSetConnectorPin2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset);
+                    AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset);
+                    AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset);
+                    AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset);
+                    AddLine(pSet.graphicalData.active_position1, pSet.graphicalData.active_connector_position1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                    AddLine(pSet.graphicalData.active_position2, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                    AddLine(pSet.graphicalData.active_connector_position1, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
                     // 2. Add Lines + Connector Lines
-                    AddLines_PartitionSetExpanded(state, snap, pSet, posPartitionSet1, posPartitionSet2, delayed, movementOffset);
+                    AddLines_PartitionSetExpanded(state, snap, pSet, pSet.graphicalData.active_position1, pSet.graphicalData.active_position2, delayed, movementOffset);
 
                 }
+                // Add Singleton Lines
                 for (int i = 0; i < state.singletonSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
@@ -506,6 +575,18 @@ namespace AS2.Visuals
                 return position;
             }
         }
+    }
+
+    public enum PartitionSetViewType
+    {
+        /// <summary>
+        /// Standard view type: Partition Sets oriented in a row.
+        /// </summary>
+        Default,
+        /// <summary>
+        /// Automatic view type: Partition Sets oriented on a circle, automaticaly ordered by the median coordinates.
+        /// </summary>
+        Auto
     }
 
 }

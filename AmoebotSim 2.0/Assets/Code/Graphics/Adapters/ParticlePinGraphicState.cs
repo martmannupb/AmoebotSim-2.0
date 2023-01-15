@@ -72,9 +72,24 @@ namespace AS2.Visuals
             {
                 // Latest Coordinate
                 /// <summary>
-                /// The active coordinate of the partition set.
+                /// The active position of the partition set (at the end of the round).
                 /// </summary>
-                public Polar2DCoordinate active_coordinate;
+                public Vector2 active_position1;
+                /// <summary>
+                /// The active position of the partition set of the expanded particle at the grid position 2 of the snap (at the end of the round).
+                /// Only relevant for expanded particles.
+                /// </summary>
+                public Vector2 active_position2;
+                /// <summary>
+                /// The active connector position of the grid position 1 of the snap (for expanded particles).
+                /// </summary>
+                public Vector2 active_connector_position1;
+                /// <summary>
+                /// The active connector position of the grid position 2 of the snap (for expanded particles).
+                /// </summary>
+                public Vector2 active_connector_position2;
+
+
                 // Manual Editing
                 /// <summary>
                 /// A coordinate used to manually override the default position of the partition set in the view.
@@ -88,12 +103,21 @@ namespace AS2.Visuals
                 /// </summary>
                 public Polar2DCoordinate codeOverride_coordinate;
 
+                public bool HasExpandedActivePosition()
+                {
+                    return active_position2 != new Vector2(float.MinValue, float.MinValue);
+                }
+
                 public void Reset()
                 {
-                    active_coordinate.Discard();
+                    active_position1 = new Vector2(float.MinValue, float.MinValue);
+                    active_position2 = new Vector2(float.MinValue, float.MinValue);
+                    active_connector_position1 = new Vector2(float.MinValue, float.MinValue);
+                    active_connector_position2 = new Vector2(float.MinValue, float.MinValue);
                     codeOverride_coordinate.Discard();
                     manualEditing_coordinate.Discard();
                 }
+
             }
 
             private PSetData()
