@@ -3460,9 +3460,14 @@ namespace AS2.Sim
                 }
                 InitializeFromSaveState(saveData, false);
                 SetMarkerToRound(storedSimulationRound);
+                SetInitialParticleBonds();
+                ComputeBondsStatic();
+                FinishMovementInfo();
+                UpdateNeighborCaches();
+                SetupPinGraphicState(true);
                 DiscoverCircuits(false);
-                CleanupAfterRound();
                 UpdateAllParticleVisuals(true);
+                CleanupAfterRound();
             }
             inInitializationState = false;
         }
