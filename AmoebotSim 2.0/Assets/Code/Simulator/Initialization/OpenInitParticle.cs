@@ -16,18 +16,27 @@ namespace AS2.Sim
         public OpenInitParticle(ParticleSystem system, Vector2Int position, bool chirality, Direction compassDir, Direction expansionDir = Direction.NONE)
             : base(system, position, chirality, compassDir, expansionDir) { }
 
+        /// <summary>
+        /// Direct access to the tail position of the particle.
+        /// </summary>
         public Vector2Int TailPosDirect
         {
             get { return tailPos; }
             set { tailPos = value; }
         }
 
+        /// <summary>
+        /// Direct access to the head position of the particle.
+        /// </summary>
         public Vector2Int HeadPosDirect
         {
             get { return headPos; }
             set { headPos = value; }
         }
 
+        /// <summary>
+        /// Direct access to the expansion direction of the particle.
+        /// </summary>
         public Direction ExpansionDirDirect
         {
             get { return expansionDir; }

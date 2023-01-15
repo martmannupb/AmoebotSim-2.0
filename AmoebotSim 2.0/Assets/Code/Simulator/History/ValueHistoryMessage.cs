@@ -11,8 +11,13 @@ namespace AS2.Sim
     {
         public ValueHistoryMessage(Message initialValue, int initialRound = 0) : base(initialValue, initialRound) { }
 
-        // Compares two Messages using their specific comparison method
-        // Also takes care of null values
+        /// <summary>
+        /// Compares two messages using their specific comparison
+        /// method. <c>null</c> values can be handled.
+        /// </summary>
+        /// <param name="val1">The first message to compare.</param>
+        /// <param name="val2">The second message to compare.</param>
+        /// <returns><c>true</c> if and only if </returns>
         protected override bool ValuesEqual(Message val1, Message val2)
         {
             if (val1 == val2)
@@ -26,7 +31,7 @@ namespace AS2.Sim
             return val1.Equals(val2);
         }
 
-        /**
+        /*
          * Saving and loading functionality.
          */
 
