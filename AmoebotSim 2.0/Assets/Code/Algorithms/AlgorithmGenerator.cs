@@ -3,9 +3,20 @@ using UnityEngine;
 namespace AS2
 {
 
+    /// <summary>
+    /// Algorithm generation utility to be run in the Editor.
+    /// </summary>
     [ExecuteInEditMode]
     public class AlgorithmGenerator : MonoBehaviour
     {
+        /// <summary>
+        /// Template for new algorithm files.
+        /// <para>
+        /// Parameters are namespace (0), class name (1),
+        /// generation method name (2), display name (3)
+        /// and number of pins per edge (4).
+        /// </para>
+        /// </summary>
         private static readonly string template =
     "using AS2.Sim;\n" +
     "using UnityEngine;\n\n" +
@@ -80,6 +91,17 @@ namespace AS2
         [Tooltip("The number of pins on each port of a particle. Must be >= 0.")]
         public int numPins = 1;
 
+        /// <summary>
+        /// Creates a new algorithm file at the given location and
+        /// fills it with the template.
+        /// </summary>
+        /// <param name="nameSpace">The namespace in which the algorithm should be wrapped.
+        /// Usually <c>AS2.Algos.<basename></c>.</param>
+        /// <param name="className">The name of the algorithm class.</param>
+        /// <param name="initializerName">The name of the initializer class.</param>
+        /// <param name="dispName">The display name of the algorithm.</param>
+        /// <param name="nPins">The number of pins per edge used by the algorithm.</param>
+        /// <param name="filename">The file into which the algorithm should be written.</param>
         public static void CreateAlgorithm(string nameSpace, string className, string initializerName, string dispName, int nPins, string filename)
         {
             try

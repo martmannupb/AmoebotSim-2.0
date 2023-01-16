@@ -1,17 +1,35 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace AS2
 {
 
+    /// <summary>
+    /// Serializable representation of an
+    /// <see cref="Sim.InitializationParticle"/>'s state.
+    /// <para>
+    /// Attributes are stored separately by type.
+    /// </para>
+    /// </summary>
     [Serializable]
     public class InitParticleSaveData
     {
+        /// <summary>
+        /// The grid position of the particle's tail.
+        /// </summary>
         public Vector2Int tailPos;
+        /// <summary>
+        /// The global head direction of the particle.
+        /// </summary>
         public Direction expansionDir;
+        /// <summary>
+        /// The chirality of the particle.
+        /// </summary>
         public bool chirality;
+        /// <summary>
+        /// The compass direction of the particle.
+        /// </summary>
         public Direction compassDir;
 
         // Attribute data, sorted by type

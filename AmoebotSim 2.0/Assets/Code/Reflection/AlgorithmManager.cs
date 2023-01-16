@@ -8,6 +8,11 @@ using System.Reflection;
 namespace AS2
 {
 
+    /// <summary>
+    /// Singleton class that uses reflection to manage all particle
+    /// algorithms, providing an interface to access their names,
+    /// generation methods and parameters.
+    /// </summary>
     public class AlgorithmManager
     {
         // Property names
@@ -17,17 +22,47 @@ namespace AS2
 
         // Singleton
         private static AlgorithmManager instance = new AlgorithmManager();
+        /// <summary>
+        /// The singleton instance of this class.
+        /// </summary>
         public static AlgorithmManager Instance
         {
             get { return instance; }
         }
 
+        /// <summary>
+        /// Represents a single particle algorithm and contains all
+        /// information needed to create particles for it.
+        /// </summary>
         private class AlgorithmInfo
         {
+            /// <summary>
+            /// The string ID of the algorithm.
+            /// </summary>
             public string name;
+            /// <summary>
+            /// The type of the algorithm class.
+            /// </summary>
             public Type type;
+            /// <summary>
+            /// Reference to the algorithm's constructor.
+            /// This must be the constructor that gets a single
+            /// parameter of type <see cref="Particle"/>.
+            /// </summary>
             public ConstructorInfo ctor;
+            /// <summary>
+            /// Reference to the algorithm's <c>Init</c> method.
+            /// May be <c>null</c> if the algorithm does not implement
+            /// this method.
+            /// </summary>
             public MethodInfo initMethod;
+            /// <summary>
+            /// The full name of the algorithm's generator class.
+            /// This is a class that inherits from
+            /// <see cref="InitializationMethod"/> and that is used to
+            /// initialize the particle system. Has a default value if
+            /// the algorithm does not specify a method.
+            /// </summary>
             public string generationMethod;
 
             public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo initMethod, string generationMethod)
@@ -42,7 +77,7 @@ namespace AS2
 
         private Dictionary<string, AlgorithmInfo> algorithms;
 
-        public AlgorithmManager()
+        private AlgorithmManager()
         {
             // Find all ParticleAlgorithm subtypes
             Type baseAlgoType = typeof(ParticleAlgorithm);
@@ -58,6 +93,7 @@ namespace AS2
                 PropertyInfo nameProp = algoType.GetProperty(Name_Property);
                 PropertyInfo generatorProp = algoType.GetProperty(Generator_Property);
 
+                // Get the name
                 string name;
                 if (nameProp == null)
                 {
@@ -68,11 +104,20 @@ namespace AS2
                     name = (string)nameProp.GetValue(null);
                 }
 
-                string generator = defaultGenerator;
+                // Check for duplicates
+                if (algorithms.ContainsKey(name))
+                {
+                    Debug.LogWarning("ParticleAlgorithm with name '" + name + "' already exists, cannot load algorithm");
+                    continue;
+                }
 
+                // Get the generator
+                string generator = defaultGenerator;
                 if (generatorProp != null)
                     generator = (string)generatorProp.GetValue(null);
 
+                // Get the constructor
+                // It must have a single parameter of type Particle
                 ConstructorInfo ctor = algoType.GetConstructor(new Type[] { typeof(Particle) });
                 if (ctor == null)
                 {
@@ -80,19 +125,20 @@ namespace AS2
                     continue;
                 }
 
+                // Get the Init method
                 MethodInfo initMethod = algoType.GetMethod(Init_Method);
-
-                if (algorithms.ContainsKey(name))
-                {
-                    Debug.LogWarning("ParticleAlgorithm with name '" + name + "' already exists, cannot load algorithm");
-                }
-                else
-                {
-                    algorithms[name] = new AlgorithmInfo(name, algoType, ctor, initMethod, generator);
-                }
+                
+                // Add record for the new algorithm
+                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, initMethod, generator);
             }
         }
 
+        /// <summary>
+        /// Tries to get the algorithm with the given name.
+        /// </summary>
+        /// <param name="name">The string ID of the desired algorithm.</param>
+        /// <returns>The record of the algorithm with name <paramref name="name"/>
+        /// if it exists, otherwise <c>null</c>.</returns>
         private AlgorithmInfo FindAlgorithm(string name)
         {
             if (algorithms.TryGetValue(name, out AlgorithmInfo info))
@@ -106,6 +152,15 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Gets the name of the given algorithm's generation method.
+        /// </summary>
+        /// <param name="name">The string ID of the algorithm.</param>
+        /// <returns>The name of the algorithm's generation method,
+        /// if a record for this algorithm exists.</returns>
+        /// <exception cref="System.ArgumentException">
+        /// Thrown if the algorithm is not known.
+        /// </exception>
         public string GetAlgorithmGenerationMethod(string name)
         {
             AlgorithmInfo info = FindAlgorithm(name);
@@ -115,6 +170,13 @@ namespace AS2
                 throw new System.ArgumentException("Could not find algorithm");
         }
 
+        /// <summary>
+        /// Gets the parameters of the algorithm's <c>Init</c> method.
+        /// </summary>
+        /// <param name="name">The string ID of the algorithm.</param>
+        /// <returns>An array containing the parameters of the
+        /// algorithm's <c>Init</c> method, if the algorithm exists and
+        /// it implements this method, otherwise <c>null</c>.</returns>
         public ParameterInfo[] GetInitParameters(string name)
         {
             AlgorithmInfo info = FindAlgorithm(name);
@@ -124,6 +186,17 @@ namespace AS2
             return info.initMethod.GetParameters();
         }
 
+        /// <summary>
+        /// Creates a new instance of the given algorithm for the
+        /// given particle.
+        /// </summary>
+        /// <param name="name">The string ID of the algorithm.</param>
+        /// <param name="particle">The particle that shall be
+        /// controlled by the algorithm.</param>
+        /// <returns>A new instance of the specified algorithm.</returns>
+        /// <exception cref="System.ArgumentException">
+        /// Thrown if the algorithm is not known.
+        /// </exception>
         public ParticleAlgorithm Instantiate(string name, Particle particle)
         {
             AlgorithmInfo info = FindAlgorithm(name);
@@ -136,6 +209,17 @@ namespace AS2
             return (ParticleAlgorithm)info.ctor.Invoke(new object[] { particle });
         }
 
+        /// <summary>
+        /// Initializes the given algorithm with the given parameters
+        /// by calling its <c>Init</c> method.
+        /// </summary>
+        /// <param name="name">The string ID of the algorithm type.</param>
+        /// <param name="algo">The algorithm instance to initialize.</param>
+        /// <param name="parameters">The parameters to be passed to the
+        /// <c>Init</c> method.</param>
+        /// <exception cref="System.ArgumentException">
+        /// Thrown if the algorithm is not known.
+        /// </exception>
         public void Initialize(string name, ParticleAlgorithm algo, object[] parameters)
         {
             AlgorithmInfo info = FindAlgorithm(name);
@@ -150,11 +234,21 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Gets a list of all known algorithm names.
+        /// </summary>
+        /// <returns>A list containing the names of all algorithms.</returns>
         public List<string> GetAlgorithmNames()
         {
             return algorithms.Keys.ToList();
         }
 
+        /// <summary>
+        /// Checks if the given algorithm name is known.
+        /// </summary>
+        /// <param name="name">The string ID to check.</param>
+        /// <returns><c>true</c> if and only if a particle algorithm
+        /// with the given name is registered.</returns>
         public bool IsAlgorithmKnown(string name)
         {
             AlgorithmInfo info = FindAlgorithm(name);

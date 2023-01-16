@@ -14,7 +14,13 @@ namespace AS2
     public class ParticleStateSaveData
     {
         // Global info
+        /// <summary>
+        /// The particle's compass direction.
+        /// </summary>
         public Direction comDir;
+        /// <summary>
+        /// The particle's chirality.
+        /// </summary>
         public bool chirality;
 
         // Algorithm info
@@ -28,7 +34,13 @@ namespace AS2
         public string algorithmType;
 
         // Positional info
+        /// <summary>
+        /// History of tail positions.
+        /// </summary>
         public ValueHistorySaveData<Vector2Int> tailPositionHistory;
+        /// <summary>
+        /// History of head directions.
+        /// </summary>
         public ValueHistorySaveData<Direction> expansionDirHistory;
 
         // Attribute data, sorted by type
