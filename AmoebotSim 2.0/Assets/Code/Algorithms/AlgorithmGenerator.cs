@@ -96,7 +96,7 @@ namespace AS2
         /// fills it with the template.
         /// </summary>
         /// <param name="nameSpace">The namespace in which the algorithm should be wrapped.
-        /// Usually <c>AS2.Algos.<basename></c>.</param>
+        /// Usually <c>AS2.Algos.basename</c>.</param>
         /// <param name="className">The name of the algorithm class.</param>
         /// <param name="initializerName">The name of the initializer class.</param>
         /// <param name="dispName">The display name of the algorithm.</param>

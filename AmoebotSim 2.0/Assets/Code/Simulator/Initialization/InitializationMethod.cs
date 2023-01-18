@@ -11,8 +11,8 @@ namespace AS2
     /// <c>Generate</c> to create an initialization algorithm.
     /// <para>
     /// An initialization algorithm creates a system of
-    /// <see cref="InitializationParticle"/>s, which is used as a
-    /// template to initialize the system of <see cref="Particle"/>s
+    /// <see cref="Sim.InitializationParticle"/>s, which is used as a
+    /// template to initialize the system of <see cref="Sim.Particle"/>s
     /// in which the simulation is carried out.
     /// </para>
     /// </summary>
