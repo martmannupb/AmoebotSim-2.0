@@ -594,6 +594,18 @@ namespace AS2.Sim
             particle.ResetPartitionSetColor(partitionSetIndex);
         }
 
+        public override void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true)
+        {
+            if (!isPlanned)
+            {
+                throw new InvalidOperationException("Cannot set partition set position in non-planned pin configuration.");
+            }
+
+            // Convert coordinates to global
+            polarCoords.x = particle.CompassDir().ToInt() * 60.0f + (particle.Chirality() ? 1.0f : -1.0f) * polarCoords.x;
+            particle.SetPartitionSetPosition(partitionSetIndex, polarCoords, head);
+        }
+
 
         /*
          * Saving and loading functionality, also used for histories.

@@ -382,6 +382,32 @@ namespace AS2.Sim
         /// <param name="partitionSetIndex">The ID of the partition set whose
         /// color override to reset.</param>
         public abstract void ResetPartitionSetColor(int partitionSetIndex);
+
+        /// <summary>
+        /// Sets the specified partition set's position in polar coordinates and
+        /// sets the positioning mode of the pin configuration to manual.
+        /// <para>
+        /// Overriding the positions of partition sets is only possible for planned
+        /// pin configurations. Planning a new pin configuration will reset all
+        /// partition set colors.
+        /// </para>
+        /// </summary>
+        /// <param name="partitionSetIndex">The ID of the partition set whose
+        /// position to set.</param>
+        /// <param name="polarCoords">The polar coordinates of the partition
+        /// set's position inside of the particle as <c>(angle, distance)</c>.
+        /// An angle of <c>0</c> points in local direction
+        /// <see cref="Direction.E"/> and angles increase in the local
+        /// counter-clockwise direction. Distance <c>0</c> is the center
+        /// of the particle (part) and distance <c>1</c> is on the edge
+        /// of the particle.
+        /// </param>
+        /// <param name="head">Indicates whether the position in the
+        /// particle's head or tail should be set. For contracted particles,
+        /// this should be <c>true</c>.</param>
+        public abstract void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true);
+
+        // TODO: Method for setting (and resetting) placement mode
     }
 
 } // namespace AS2.Sim

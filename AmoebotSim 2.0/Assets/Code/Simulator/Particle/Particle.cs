@@ -258,6 +258,7 @@ namespace AS2.Sim
         private bool mainColorSet = false;
 
         // Partition set colors
+
         /// <summary>
         /// Histories of partition set colors.
         /// Indices are partition set IDs.
@@ -296,6 +297,47 @@ namespace AS2.Sim
         public bool[] PartitionSetColorsOverride
         {
             get { return partitionSetColorsOverride; }
+        }
+
+        // Partition set placement
+
+        /// <summary>
+        /// Histories of partition set polar coordinates (Head).
+        /// Indices are partition set IDs.
+        /// </summary>
+        private ValueHistory<Vector2>[] partitionSetPosHeadHistory;
+        /// <summary>
+        /// Histories of partition set polar coordinates (Tail).
+        /// Indices are partition set IDs.
+        /// </summary>
+        private ValueHistory<Vector2>[] partitionSetPosTailHistory;
+        /// <summary>
+        /// Array of current partition set positions (Head).
+        /// Indices are partition set IDs.
+        /// </summary>
+        private Vector2[] partitionSetPositionsHead;
+        /// <summary>
+        /// Array of current partition set positions (Tail).
+        /// Indices are partition set IDs.
+        /// </summary>
+        private Vector2[] partitionSetPositionsTail;
+        /// <summary>
+        /// The current partition set positions for the head part
+        /// in global polar coordinates.
+        /// Indices are partition set IDs.
+        /// </summary>
+        public Vector2[] PartitionSetPositionsHead
+        {
+            get { return partitionSetPositionsHead; }
+        }
+        /// <summary>
+        /// The current partition set positions for the tail part
+        /// in global polar coordinates.
+        /// Indices are partition set IDs.
+        /// </summary>
+        public Vector2[] PartitionSetPositionsTail
+        {
+            get { return partitionSetPositionsTail; }
         }
 
         // Bond and movement info
@@ -535,6 +577,10 @@ namespace AS2.Sim
             partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
             partitionSetColors = new Color[maxNumPins];
             partitionSetColorsOverride = new bool[maxNumPins];
+            partitionSetPosHeadHistory = new ValueHistory<Vector2>[maxNumPins];
+            partitionSetPosTailHistory = new ValueHistory<Vector2>[maxNumPins];
+            partitionSetPositionsHead = new Vector2[maxNumPins];
+            partitionSetPositionsTail = new Vector2[maxNumPins];
             for (int i = 0; i < maxNumPins; i++)
             {
                 receivedBeepsHistory[i] = new ValueHistory<bool>(false, currentRound);
@@ -545,6 +591,10 @@ namespace AS2.Sim
                 partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(false, currentRound);
                 partitionSetColors[i] = new Color();
                 partitionSetColorsOverride[i] = false;
+                partitionSetPosHeadHistory[i] = new ValueHistory<Vector2>(Vector2.zero, currentRound);
+                partitionSetPosTailHistory[i] = new ValueHistory<Vector2>(Vector2.zero, currentRound);
+                partitionSetPositionsHead[i] = Vector2.zero;
+                PartitionSetPositionsTail[i] = Vector2.zero;
             }
         }
 
@@ -791,7 +841,10 @@ namespace AS2.Sim
                     ResetPlannedBeepsAndMessages();
                 }
                 if (!pc.isCurrent)
+                {
                     ResetAllPartitionSetColors();
+                    ResetPartitionSetPositions();
+                }
             }
             plannedPinConfiguration = pc.Copy();
             pc.isPlanned = true;
@@ -1039,6 +1092,50 @@ namespace AS2.Sim
                 ResetPartitionSetColor(i);
         }
 
+        /// <summary>
+        /// Sets the specified partition set's position to the
+        /// given global polar coordinates within the particle.
+        /// The placement mode of the pin configuration is set
+        /// to TODO(MANUAL).
+        /// <para>
+        /// This method must only be called when the system is in
+        /// a tracking state.
+        /// </para>
+        /// <para>
+        /// See also <seealso cref="ResetPartitionSetPosition(int, bool)"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="idx">The index of the partition set.</param>
+        /// <param name="coords">The global polar coordinates
+        /// <c>(angle, distance)</c> at which the partition set
+        /// should be placed. Angle 0 means global direction
+        /// <see cref="Direction.E"/> and distance 1 is the
+        /// radius of the particle.</param>
+        /// <param name="head">Indicates whether the position in
+        /// the particle's head is set. Should be <c>true</c> for
+        /// contracted particles.</param>
+        public void SetPartitionSetPosition(int idx, Vector2 coords, bool head = true)
+        {
+            if (head)
+            {
+                partitionSetPositionsHead[idx] = coords;
+                partitionSetPosHeadHistory[idx].RecordValueInRound(coords, system.CurrentRound);
+            }
+            else
+            {
+                partitionSetPositionsTail[idx] = coords;
+                partitionSetPosTailHistory[idx].RecordValueInRound(coords, system.CurrentRound);
+            }
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        public void ResetPartitionSetPositions()
+        {
+            // TODO: Set positioning mode to NONE
+        }
+
         /*
          * Particle action methods that are used by the system to change the
          * particle's state at the appropriate time. They are NOT part of the
@@ -1179,6 +1276,7 @@ namespace AS2.Sim
                     // Have moved
                     newPC = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
                     ResetAllPartitionSetColors();
+                    ResetPartitionSetPositions();
                 }
             }
             if (!(newPC is null))
@@ -1616,6 +1714,8 @@ namespace AS2.Sim
                 plannedMessageHistory[i].SetMarkerToRound(round);
                 partitionSetColorHistory[i].SetMarkerToRound(round);
                 partitionSetColorOverrideHistory[i].SetMarkerToRound(round);
+                partitionSetPosHeadHistory[i].SetMarkerToRound(round);
+                partitionSetPosTailHistory[i].SetMarkerToRound(round);
             }
 
             // Reset visuals
@@ -1656,6 +1756,8 @@ namespace AS2.Sim
                 plannedMessageHistory[i].StepBack();
                 partitionSetColorHistory[i].StepBack();
                 partitionSetColorOverrideHistory[i].StepBack();
+                partitionSetPosHeadHistory[i].StepBack();
+                partitionSetPosTailHistory[i].StepBack();
             }
 
             mainColorHistory.StepBack();
@@ -1689,6 +1791,8 @@ namespace AS2.Sim
                 plannedMessageHistory[i].StepForward();
                 partitionSetColorHistory[i].StepForward();
                 partitionSetColorOverrideHistory[i].StepForward();
+                partitionSetPosHeadHistory[i].StepForward();
+                partitionSetPosTailHistory[i].StepForward();
             }
 
             mainColorHistory.StepForward();
@@ -1737,6 +1841,8 @@ namespace AS2.Sim
                 plannedMessageHistory[i].ContinueTracking();
                 partitionSetColorHistory[i].ContinueTracking();
                 partitionSetColorOverrideHistory[i].ContinueTracking();
+                partitionSetPosHeadHistory[i].ContinueTracking();
+                partitionSetPosTailHistory[i].ContinueTracking();
             }
 
             mainColorHistory.ContinueTracking();
@@ -1778,6 +1884,8 @@ namespace AS2.Sim
                 plannedMessageHistory[i].CutOffAtMarker();
                 partitionSetColorHistory[i].CutOffAtMarker();
                 partitionSetColorOverrideHistory[i].CutOffAtMarker();
+                partitionSetPosHeadHistory[i].CutOffAtMarker();
+                partitionSetPosTailHistory[i].CutOffAtMarker();
             }
 
             mainColorHistory.CutOffAtMarker();
@@ -1812,6 +1920,8 @@ namespace AS2.Sim
                 plannedMessageHistory[i].ShiftTimescale(amount);
                 partitionSetColorHistory[i].ShiftTimescale(amount);
                 partitionSetColorOverrideHistory[i].ShiftTimescale(amount);
+                partitionSetPosHeadHistory[i].ShiftTimescale(amount);
+                partitionSetPosTailHistory[i].ShiftTimescale(amount);
             }
 
             mainColorHistory.ShiftTimescale(amount);
@@ -1862,6 +1972,8 @@ namespace AS2.Sim
                     hasPlannedMessages = true;
                 partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
                 partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
+                partitionSetPositionsHead[i] = partitionSetPosHeadHistory[i].GetMarkedValue();
+                partitionSetPositionsTail[i] = partitionSetPosTailHistory[i].GetMarkedValue();
             }
 
             mainColor = mainColorHistory.GetMarkedValue();
@@ -1961,10 +2073,14 @@ namespace AS2.Sim
             data.mainColorSetHistory = mainColorSetHistory.GenerateSaveData();
             data.partitionSetColorHistory = new ValueHistorySaveData<Color>[partitionSetColorHistory.Length];
             data.partitionSetColorOverrideHistory = new ValueHistorySaveData<bool>[partitionSetColorOverrideHistory.Length];
+            data.partitionSetPositionHeadHistory = new ValueHistorySaveData<Vector2>[partitionSetPosHeadHistory.Length];
+            data.partitionSetPositionTailHistory = new ValueHistorySaveData<Vector2>[partitionSetPosTailHistory.Length];
             for (int i = 0; i < partitionSetColorHistory.Length; i++)
             {
                 data.partitionSetColorHistory[i] = partitionSetColorHistory[i].GenerateSaveData();
                 data.partitionSetColorOverrideHistory[i] = partitionSetColorOverrideHistory[i].GenerateSaveData();
+                data.partitionSetPositionHeadHistory[i] = partitionSetPosHeadHistory[i].GenerateSaveData();
+                data.partitionSetPositionTailHistory[i] = partitionSetPosTailHistory[i].GenerateSaveData();
             }
             data.jointMovementHistory = jointMovementHistory.GenerateSaveData();
             data.bondMovementHistory = bondMovementHistory.GenerateSaveData();
@@ -2080,6 +2196,10 @@ namespace AS2.Sim
             partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
             partitionSetColors = new Color[maxNumPins];
             partitionSetColorsOverride = new bool[maxNumPins];
+            partitionSetPosHeadHistory = new ValueHistory<Vector2>[maxNumPins];
+            partitionSetPosTailHistory = new ValueHistory<Vector2>[maxNumPins];
+            partitionSetPositionsHead = new Vector2[maxNumPins];
+            partitionSetPositionsTail = new Vector2[maxNumPins];
             for (int i = 0; i < maxNumPins; i++)
             {
                 receivedBeepsHistory[i] = new ValueHistory<bool>(data.receivedBeepsHistory[i]);
@@ -2088,6 +2208,8 @@ namespace AS2.Sim
                 plannedMessageHistory[i] = new ValueHistoryMessage(data.plannedMessagesHistory[i]);
                 partitionSetColorHistory[i] = new ValueHistory<Color>(data.partitionSetColorHistory[i]);
                 partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(data.partitionSetColorOverrideHistory[i]);
+                partitionSetPosHeadHistory[i] = new ValueHistory<Vector2>(data.partitionSetPositionHeadHistory[i]);
+                partitionSetPosTailHistory[i] = new ValueHistory<Vector2>(data.partitionSetPositionTailHistory[i]);
 
                 receivedBeeps[i] = receivedBeepsHistory[i].GetMarkedValue();
                 receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
@@ -2095,6 +2217,8 @@ namespace AS2.Sim
                 plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
                 partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
                 partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
+                partitionSetPositionsHead[i] = partitionSetPosHeadHistory[i].GetMarkedValue();
+                partitionSetPositionsTail[i] = partitionSetPosTailHistory[i].GetMarkedValue();
             }
 
             // Finally, update the attributes

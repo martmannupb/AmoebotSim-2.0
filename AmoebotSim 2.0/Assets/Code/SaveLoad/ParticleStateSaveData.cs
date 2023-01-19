@@ -68,6 +68,8 @@ namespace AS2
         public ValueHistorySaveData<bool> mainColorSetHistory;
         public ValueHistorySaveData<Color>[] partitionSetColorHistory;
         public ValueHistorySaveData<bool>[] partitionSetColorOverrideHistory;
+        public ValueHistorySaveData<Vector2>[] partitionSetPositionHeadHistory;
+        public ValueHistorySaveData<Vector2>[] partitionSetPositionTailHistory;
         public ValueHistorySaveData<JointMovementInfo> jointMovementHistory;
         public ValueHistorySaveData<BondMovementInfoList> bondMovementHistory;
     }
