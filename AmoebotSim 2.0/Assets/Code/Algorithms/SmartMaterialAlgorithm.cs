@@ -16,15 +16,6 @@ namespace AS2.Algos.SmartMaterial
 
         public SmartMaterialParticle(Particle p) : base(p)
         {
-            if (IsContracted())
-            {
-                Log.Error("Cannot determine role in smart material; must be expanded at initialization");
-                return;
-            }
-
-            int d = HeadDirection().ToInt();
-            SetMainColor(ColorData.Circuit_Colors[d]);
-
             firstRound = CreateAttributeBool("First Round", true);
             hexType = CreateAttributeInt("Hexagon Type", 0);
             onLeftEdge = CreateAttributeBool("On Left Edge", false);
@@ -36,11 +27,20 @@ namespace AS2.Algos.SmartMaterial
 
         public void Init(int hexagonType = 0)
         {
+            if (IsContracted())
+            {
+                Log.Error("Cannot determine role in smart material; must be expanded at initialization");
+                return;
+            }
+
             if (hexagonType != 1 && hexagonType != 2)
             {
                 Log.Error("Hexagon type is " + hexagonType + ", must be 1 or 2");
             }
             hexType.SetValue(hexagonType);
+
+            int d = HeadDirection().ToInt();
+            SetMainColor(ColorData.Circuit_Colors[d]);
         }
 
         public override int PinsPerEdge => 0;
