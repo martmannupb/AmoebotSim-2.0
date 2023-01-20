@@ -21,6 +21,9 @@ namespace AS2.Visuals
         private InputManager input;
         private InputController inputController;
 
+        // Helpers
+        private PSetDragHandler pSetDragHandler;
+
         // Graphical Data
         public Mesh mesh_baseHexagonBackground;
         public Material material_hexagonSelectionOverlay;
@@ -52,6 +55,7 @@ namespace AS2.Visuals
             this.sim = sim;
             this.input = InputManager.CreateInstance();
             this.inputController = inputController;
+            this.pSetDragHandler = new PSetDragHandler(sim);
 
             // Add Callbacks
             this.input.clickActionEvent += ClickActionCallback;
@@ -252,6 +256,10 @@ namespace AS2.Visuals
                                                 }
                                             }
                                             break;
+                                    case UIHandler.UITool.PSetMove:
+                                        // Partition Set Movement
+                                        pSetDragHandler.DragEvent_Ongoing(action.positionStart, action.positionTarget);
+                                        break;
                                         default:
                                             break;
                                     }
@@ -337,6 +345,10 @@ namespace AS2.Visuals
                                                 }
 
                                         }
+                                        break;
+                                    case UIHandler.UITool.PSetMove:
+                                        // Partition Set Movement
+                                        pSetDragHandler.DragEvent_Finished(action.positionStart, action.positionTarget);
                                         break;
                                     default:
                                         break;
@@ -491,6 +503,9 @@ namespace AS2.Visuals
                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
                             }
                         }
+                        break;
+                    case UIHandler.UITool.PSetMove:
+                        pSetDragHandler.Update(mouseWorldPos, mouseWorldField);
                         break;
                     default:
                         break;

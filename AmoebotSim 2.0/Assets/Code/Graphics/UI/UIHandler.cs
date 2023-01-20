@@ -45,6 +45,7 @@ namespace AS2.UI
         public Button button_toolAdd;
         public Button button_toolRemove;
         public Button button_toolMove;
+        public Button button_toolPSetMove;
         private Color toolColor_active;
         private Color toolColor_inactive;
         // Overlay Panel
@@ -70,7 +71,7 @@ namespace AS2.UI
 
         public enum UITool
         {
-            Standard, Add, Remove, Move
+            Standard, Add, Remove, Move, PSetMove
         }
 
 
@@ -577,6 +578,15 @@ namespace AS2.UI
         }
 
         /// <summary>
+        /// Selects the partition set move tool.
+        /// </summary>
+        public void Button_ToolPSetMovePressed()
+        {
+            activeTool = UITool.PSetMove;
+            UpdateTools();
+        }
+
+        /// <summary>
         /// Toggles the view type.
         /// </summary>
         public void Button_ToggleViewPressed()
@@ -610,6 +620,7 @@ namespace AS2.UI
             SetButtonColor(button_toolAdd, toolColor_inactive);
             SetButtonColor(button_toolRemove, toolColor_inactive);
             SetButtonColor(button_toolMove, toolColor_inactive);
+            SetButtonColor(button_toolPSetMove, toolColor_inactive);
             // Set Active Tool Color
             switch (activeTool)
             {
@@ -624,6 +635,9 @@ namespace AS2.UI
                     break;
                 case UITool.Move:
                     SetButtonColor(button_toolMove, toolColor_active);
+                    break;
+                case UITool.PSetMove:
+                    SetButtonColor(button_toolPSetMove, toolColor_active);
                     break;
                 default:
                     break;

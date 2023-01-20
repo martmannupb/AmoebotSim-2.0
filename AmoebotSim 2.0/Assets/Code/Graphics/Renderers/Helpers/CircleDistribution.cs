@@ -8,16 +8,21 @@ namespace AS2.Visuals
 {
     class CircleDistribution
     {
-        public static List<float> DistributePointsOnCircle(List<float> initialPointDegrees, float minDistanceBetweenPoints, float interationMovementTowardsCenterPercentage = 0.1f, float maxMovementPerInteraction = 360f)
+        private static List<float> points = new List<float>();
+        private static List<float> newPoints = new List<float>();
+
+        public static bool DistributePointsOnCircle(List<float> inputOutputDegreeList, float minDistanceBetweenPoints, float interationMovementTowardsCenterPercentage = 0.1f, float maxMovementPerInteraction = 360f)
         {
-            List<float> points = new List<float>(initialPointDegrees);
+            // Prepare lists
+            points.Clear();
+            newPoints.Clear();
+            points.AddRange(inputOutputDegreeList);
+            inputOutputDegreeList.Clear();
 
             // Define settings
             int maxIterations = 100;
-            if (minDistanceBetweenPoints * 1.1f >= 360f / initialPointDegrees.Count) minDistanceBetweenPoints = 360f / initialPointDegrees.Count / 1.1f; // adjust if min distance is set too large
+            if (minDistanceBetweenPoints * 1.1f >= 360f / inputOutputDegreeList.Count) minDistanceBetweenPoints = (360f / 1.1f) / inputOutputDegreeList.Count; // adjust if min distance is set too large
 
-            // Create a list to store the new positions of the points
-            var newPoints = new List<float>();
             // Perform edited version of the Lloyd relaxation algorithm
             for (int i = 0; i < maxIterations; i++)
             {
@@ -36,13 +41,17 @@ namespace AS2.Visuals
                         if(j != k)
                         {
                             float next = points[k];
-                            if(cur == next)
+                            if(Mathf.Abs(cur - next) < 0.2f) // yes, we cannot use == here bec. of precision errors
                             {
-                                // 2 points have the same values, repeat loop
+                                // 2 points have the same / similar values, repeat loop
+                                if(i != 0)
+                                {
+                                    Log.Error("CircleDistribution: Somehow adjustments are made after the first interation. This should not happen.");
+                                }
                                 points[j] += UnityEngine.Random.Range(1f, 2f);
+                                newPoints.Clear();
                                 j = -1;
                                 k = points.Count;
-                                if(i != 0) Log.Error("CircleDistribution: Somehow adjustments are made after the first interation. This should not happen.");
                                 continue;
                             }
                             else
@@ -54,34 +63,28 @@ namespace AS2.Visuals
                             }
                         }
                     }
-                    // Calc rel center, move into that direction
-                    float newPos = cur;
-                    if(minDist < minDistanceBetweenPoints)
+                    if(j >= 0)
                     {
-                        float relCenter = (minDist_counterclockwise + (-minDist_clockwise)) / 2f;
-                        newPos = ((cur + Mathf.Min(interationMovementTowardsCenterPercentage * relCenter, maxMovementPerInteraction)) + 360f) % 360f;
-                    }
-                    newPoints.Add(newPos);
+                        // Calc rel center, move into that direction
+                        float newPos = cur;
+                        if (minDist < minDistanceBetweenPoints)
+                        {
+                            float relCenter = (minDist_counterclockwise + (-minDist_clockwise)) / 2f;
+                            newPos = ((cur + Mathf.Min(interationMovementTowardsCenterPercentage * relCenter, maxMovementPerInteraction)) + 360f) % 360f;
+                        }
+                        newPoints.Add(newPos);
 
-                    // Check if the distances break the convergence
-                    if(minDist_clockwise < minDistanceBetweenPoints || minDist_counterclockwise < minDistanceBetweenPoints) converged = false;
-                    if (j == -1) converged = true; // loop repeat
+                        // Check if the distances break the convergence
+                        if (j == -1) converged = true; // loop repeat
+                        else if (minDist_clockwise < minDistanceBetweenPoints || minDist_counterclockwise < minDistanceBetweenPoints) converged = false;
+                    }
                 }
 
                 // Convergence
                 if (converged)
                 {
-                    //for (int a = 0; a < points.Count; a++)
-                    //{
-                    //    float dist = Mathf.Abs((initialPointDegrees[a] - points[a]) + 720f);
-                    //    dist %= 360f;
-                    //    if (dist > 180f) dist = 360f - dist;
-                    //    if(dist > minDistance)
-                    //    {
-                    //        Log.Debug("Here");
-                    //    }
-                    //}
-                    return points;
+                    inputOutputDegreeList.AddRange(points);
+                    return true;
                 }
                 
                 // Prepare lists for next iteration
@@ -91,7 +94,8 @@ namespace AS2.Visuals
                 newPoints = temp;
             }
 
-            return points;
+            inputOutputDegreeList.AddRange(points);
+            return false;
         }
 
         public static float DistanceBetweenPoints(float point1, float point2)

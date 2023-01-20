@@ -69,6 +69,15 @@ namespace AS2.Visuals
             updateInstance = (updateInstance + 1) % renderInstances.Length;
         }
 
+        /// <summary>
+        /// Gets the instance that is currently drawing.
+        /// </summary>
+        /// <returns></returns>
+        public RendererCircuits_Instance GetCurrentInstance()
+        {
+            return renderInstances[drawnInstance];
+        }
+
         public void Render(ViewType type)
         {
             renderInstances[drawnInstance].Render(type);

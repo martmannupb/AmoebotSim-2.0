@@ -66,9 +66,9 @@ namespace AS2.Visuals
             /// This struct stores graphical data.
             /// Please do not change the struct directly via the system, use the other methods in this class to assign coordinate values.
             /// </summary>
-            public GraphicalData graphicalData;
+            public GraphicalData graphicalData = new GraphicalData();
 
-            public struct GraphicalData
+            public class GraphicalData
             {
                 // Latest Coordinate
                 /// <summary>
@@ -89,6 +89,29 @@ namespace AS2.Visuals
                 /// </summary>
                 public Vector2 active_connector_position2;
 
+                // Indices (for pins and lines)
+                // Idea: We store the positions of the pins and connector pins, so we can update each position if it is grabbed by the partition set move tool and override the matrices
+                public RenderBatchIndex index_pSet1;
+                public RenderBatchIndex index_pSet1_beep;
+                public RenderBatchIndex index_pSet2;
+                public RenderBatchIndex index_pSet2_beep;
+                public List<RenderBatchIndex> index_lines1 = new List<RenderBatchIndex>(); // first values are pin lines, last value connector pin line (if expanded)
+                public List<RenderBatchIndex> index_lines1_beep = new List<RenderBatchIndex>(); // first values are pin lines, last value connector pin line (if expanded)
+                public List<RenderBatchIndex> index_lines2 = new List<RenderBatchIndex>(); // first values are pin lines, last value connector pin line (if expanded)
+                public List<RenderBatchIndex> index_lines2_beep = new List<RenderBatchIndex>(); // first values are pin lines, last value connector pin line (if expanded)
+                public RenderBatchIndex index_pSetConnectorPin1;
+                //public RenderBatchIndex index_pSetConnectorPin1_beep;
+                public RenderBatchIndex index_pSetConnectorPin2;
+                //public RenderBatchIndex index_pSetConnectorPin2_beep;
+                public RenderBatchIndex index_lineConnector;
+                public RenderBatchIndex index_lineConnector_beep;
+                public RendererCircuits_RenderBatch.PropertyBlockData properties_line;
+                public RendererCircuits_RenderBatch.PropertyBlockData properties_line_beep;
+                public RendererCircuitPins_RenderBatch.PropertyBlockData properties_pin;
+                public RendererCircuitPins_RenderBatch.PropertyBlockData properties_pin_beep;
+                public RendererCircuitPins_RenderBatch.PropertyBlockData properties_connectorPin;
+                public List<PinDef> pSet1_pins = new List<PinDef>(10);
+                public List<PinDef> pSet2_pins = new List<PinDef>(10);
 
                 // Manual Editing
                 /// <summary>
@@ -99,23 +122,77 @@ namespace AS2.Visuals
                 // Code Editing
                 /// <summary>
                 /// A coordinate used to override the default position of the partition set in the view via code.
-                /// 
+                /// For the head or contracted particle.
                 /// </summary>
-                public Polar2DCoordinate codeOverride_coordinate;
+                public Polar2DCoordinate codeOverride_coordinate1;
+                /// <summary>
+                /// A coordinate used to override the default position of the partition set in the view via code.
+                /// For the tail of the expanded particle.
+                /// </summary>
+                public Polar2DCoordinate codeOverride_coordinate2;
 
                 public bool HasExpandedActivePosition()
                 {
                     return active_position2 != new Vector2(float.MinValue, float.MinValue);
                 }
 
-                public void Reset()
+                public void Clear()
                 {
                     active_position1 = new Vector2(float.MinValue, float.MinValue);
                     active_position2 = new Vector2(float.MinValue, float.MinValue);
                     active_connector_position1 = new Vector2(float.MinValue, float.MinValue);
                     active_connector_position2 = new Vector2(float.MinValue, float.MinValue);
-                    codeOverride_coordinate.Discard();
+                    // Indices
+                    index_pSet1.Discard();
+                    index_pSet1_beep.Discard();
+                    index_pSet2.Discard();
+                    index_pSet2_beep.Discard();
+                    index_lines1.Clear();
+                    index_lines1_beep.Clear();
+                    index_lines2.Clear();
+                    index_lines2_beep.Clear();
+                    index_pSetConnectorPin1.Discard();
+                    //index_pSetConnectorPin1_beep.Discard();
+                    index_pSetConnectorPin2.Discard();
+                    //index_pSetConnectorPin2_beep.Discard();
+                    index_lineConnector.Discard();
+                    index_lineConnector_beep.Discard();
+                    // Positions
+                    pSet1_pins.Clear();
+                    pSet2_pins.Clear();
+                    // Manual Editing
+                    codeOverride_coordinate1.Discard();
+                    codeOverride_coordinate2.Discard();
                     manualEditing_coordinate.Discard();
+                }
+
+                // Updating ___________________
+
+                public enum ParticleUpdatePinType
+                {
+                    PSet1,
+                    PSet2,
+                    PConnector1,
+                    PConnector2,
+                }
+
+                // Pooling ___________________
+
+                private static Stack<GraphicalData> pool;
+
+                public static GraphicalData PoolCreate()
+                {
+                    if(pool.Count > 0)
+                    {
+                        return pool.Pop();
+                    }
+                    return new GraphicalData();
+                }
+
+                public static void PoolRelease(GraphicalData gd)
+                {
+                    gd.Clear();
+                    pool.Push(gd);
                 }
 
             }
@@ -154,15 +231,60 @@ namespace AS2.Visuals
                 }
             }
 
-            public void SetCodeOverrideCoordinate(Polar2DCoordinate coordinate)
+            // Code Overrides ______________________________
+
+            /// <summary>
+            /// Code override of the position of the partition set rotation of the standard partition set line.
+            /// Expanded particles must set the rotation manually with this mode.
+            /// </summary>
+            /// <param name="rotationDegrees1">The rotation degree, counterclockwise. It is recommended to use a value that is dividable by 60.</param>
+            /// <param name="isHead">True for contracted particles or the head of expanded particles.</param>
+            public void CodePositionOverride_LineRotated(float rotationDegrees1, bool isHead = true)
             {
-                graphicalData.codeOverride_coordinate = coordinate;
+                
             }
 
-            public void RemoveCodeOverrideCoordinate()
+            /// <summary>
+            /// Code override of the position of the partition set by the use of the standard partition set line.
+            /// Non rotated, except for the expanded particles where the line is oriented towards the other half of the particle.
+            /// </summary>
+            /// <param name="isHead">True for contracted particles or the head of expanded particles.</param>
+            public void CodePositionOverride_AutomaticLine(bool isHead = true)
             {
-                graphicalData.codeOverride_coordinate.Discard();
+
             }
+
+            /// <summary>
+            /// Code override of the position of the partition set by a polar coordinate.
+            /// </summary>
+            /// <param name="coordinate">The polar coordinate relative from the particle center.</param>
+            /// <param name="isHead">True for contracted particles or the head of expanded particles.</param>
+            public void CodePositionOverride_Coordinate(Polar2DCoordinate coordinate, bool isHead = true)
+            {
+                if (isHead) graphicalData.codeOverride_coordinate1 = coordinate;
+                else graphicalData.codeOverride_coordinate2 = coordinate;
+            }
+
+            /// <summary>
+            /// Code override of the position of the partition set by automatic ring placement.
+            /// We have a fancy variation of Lloyd's algorithm for that.
+            /// </summary>
+            /// <param name="isHead">True for contracted particles or the head of expanded particles.</param>
+            public void CodePositionOverride_AutomaticRingPlacement(bool isHead = true)
+            {
+
+            }
+
+            /// <summary>
+            /// Removes any code overrides that have been set. You might not need this.
+            /// </summary>
+            public void ResetCodePositionOverride()
+            {
+                graphicalData.codeOverride_coordinate1.Discard();
+                graphicalData.codeOverride_coordinate2.Discard();
+            }
+
+            // ___________________________________________
 
             /// <summary>
             /// Clears the system for pooling.
@@ -173,7 +295,7 @@ namespace AS2.Visuals
                 this.pins.Clear();
                 this.beepsThisRound = false;
                 this.beepOrigin = false;
-                this.graphicalData.Reset();
+                this.graphicalData.Clear();
             }
 
 

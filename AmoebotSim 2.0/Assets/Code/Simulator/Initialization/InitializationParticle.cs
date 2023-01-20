@@ -214,6 +214,13 @@ namespace AS2.Sim
         {
             return system.SetAnchor(this);
         }
+
+        // Added by Tobias (put it where you like) ____________________________
+
+        public IParticleGraphicsAdapter GetGraphicsAdapter()
+        {
+            return graphics;
+        }
     }
 
 } // namespace AS2.Sim

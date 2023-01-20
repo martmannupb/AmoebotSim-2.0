@@ -177,7 +177,7 @@ namespace AS2.Visuals
         /// </summary>
         /// <param name="globalLineStartPos">The start position of the line.</param>
         /// <param name="globalLineEndPos">The end position of the line.</param>
-        public void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos)
+        public RenderBatchIndex AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos)
         {
             if(currentIndex >= maxArraySize * circuitMatrices_Lines.Count)
             {
@@ -188,6 +188,18 @@ namespace AS2.Visuals
             int listIndex = currentIndex % maxArraySize;
             circuitMatrices_Lines[listNumber][listIndex] = CalculateLineMatrix(globalLineStartPos, globalLineEndPos);
             currentIndex++;
+            return new RenderBatchIndex(listNumber, listIndex);
+        }
+
+        /// <summary>
+        /// Updates a line from A to B.
+        /// </summary>
+        /// <param name="globalLineStartPos">The start position of the line.</param>
+        /// <param name="globalLineEndPos">The end position of the line.</param>
+        /// <param name="index">The index of the update.</param>
+        public void UpdateLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, RenderBatchIndex index)
+        {
+            circuitMatrices_Lines[index.listNumber][index.listIndex] = CalculateLineMatrix(globalLineStartPos, globalLineEndPos);
         }
 
         /// <summary>

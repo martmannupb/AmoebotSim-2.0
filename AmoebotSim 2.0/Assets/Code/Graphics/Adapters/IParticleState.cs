@@ -11,6 +11,12 @@ namespace AS2.Visuals
     /// </summary>
     public interface IParticleState
     {
+        /// <summary>
+        /// Returns the graphics adapter for the particle.
+        /// </summary>
+        /// <returns></returns>
+        IParticleGraphicsAdapter GetGraphicsAdapter();
+
         // General Data _________________________
 
         /// <summary>
