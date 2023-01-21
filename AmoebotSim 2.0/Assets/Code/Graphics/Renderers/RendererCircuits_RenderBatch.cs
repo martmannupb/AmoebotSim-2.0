@@ -199,6 +199,11 @@ namespace AS2.Visuals
         /// <param name="index">The index of the update.</param>
         public void UpdateLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, RenderBatchIndex index)
         {
+            if (index.isValid == false || index.listNumber < 0 || index.listNumber >= circuitMatrices_Lines.Count || index.listIndex < 0 || index.listIndex >= circuitMatrices_Lines[index.listNumber].Length)
+            {
+                Log.Error("Circuit Render Batch: UpdateLine: Array out of bounds.");
+                return;
+            }
             circuitMatrices_Lines[index.listNumber][index.listIndex] = CalculateLineMatrix(globalLineStartPos, globalLineEndPos);
         }
 

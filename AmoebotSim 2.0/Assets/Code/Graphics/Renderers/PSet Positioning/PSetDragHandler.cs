@@ -23,6 +23,10 @@ namespace AS2.Visuals
         private RendererCircuits_Instance.ParticleCircuitData drag_circuitData;
         private RendererCircuits_Instance.ParticleCircuitData.PSetInnerPinRef drag_innerPin;
 
+        // Graphics
+        private Mesh quad = Engine.Library.MeshConstants.getDefaultMeshQuad();
+        private float scale = 3f * 0.3f / 4f;
+
         public PSetDragHandler(AmoebotSimulator sim)
         {
             this.sim = sim;
@@ -30,6 +34,7 @@ namespace AS2.Visuals
 
         public void DragEvent_Ongoing(Vector2 originWorldPos, Vector2 curWorldPos)
         {
+            //Log.Debug("Dragging");
             // 1. Start Dragging
             if(drag_active == false)
             {
@@ -46,8 +51,7 @@ namespace AS2.Visuals
                     if(particle != null)
                     {
                         // There is a particle at the given position
-                        // Check if there is also is a partition set
-
+                        // Check if there also is a partition set
                         drag_circuitData = sim.renderSystem.rendererP.circuitAndBondRenderer.GetCurrentInstance().GetParticleCircuitData((ParticleGraphicsAdapterImpl)particle.GetGraphicsAdapter());
                         drag_innerPin = drag_circuitData.GetInnerPSetOrConnectorPinAtPosition(originWorldPos);
                         if(drag_innerPin.pinType != RendererCircuits_Instance.ParticleCircuitData.PSetInnerPinRef.PinType.None)
@@ -73,7 +77,9 @@ namespace AS2.Visuals
                     {
                         // Current position is at the same node(s) as the particle
                         // Update position
+                        //Log.Debug("Updating Pin Pos");
                         drag_circuitData.UpdatePSetOrConnectorPinPosition(drag_innerPin, curWorldPos);
+                        drag_innerPin.pinPos = curWorldPos;
                     }
                 }
                 else
@@ -89,6 +95,7 @@ namespace AS2.Visuals
         {
             DragEvent_Ongoing(originWorldPos, finalWorldPos);
             drag_active = false;
+            //Log.Debug("Drag finished");
         }
 
         public void AbortDrag()
@@ -102,7 +109,38 @@ namespace AS2.Visuals
         /// <param name="curMousePosition"></param>
         public void Update(Vector2 curMouseWorldPosition, Vector2Int curMouseWorldField)
         {
-
+            if(drag_active)
+            {
+                // Dragging
+                // Show UI Drag Overlay over pin
+                Graphics.DrawMesh(quad, Matrix4x4.TRS(drag_innerPin.pinPos, Quaternion.identity, scale * Vector3.one), MaterialDatabase.material_circuit_ui_pSetDragMaterial, 0);
+            }
+            else
+            {
+                // Not dragging
+                // Check if new drag could be started
+                if (sim.uiHandler.initializationUI.IsOpen() == false && sim.running == false)
+                {
+                    // Sim paused in simulation mode
+                    // Check if partition set is at the given position
+                    drag_originNodeWorldPos = AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(curMouseWorldPosition);
+                    drag_originGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(drag_originNodeWorldPos);
+                    IParticleState particle;
+                    sim.system.TryGetParticleAt(drag_originGridPos, out particle);
+                    if (particle != null)
+                    {
+                        // There is a particle at the given position
+                        // Check if there also is a partition set
+                        drag_circuitData = sim.renderSystem.rendererP.circuitAndBondRenderer.GetCurrentInstance().GetParticleCircuitData((ParticleGraphicsAdapterImpl)particle.GetGraphicsAdapter());
+                        drag_innerPin = drag_circuitData.GetInnerPSetOrConnectorPinAtPosition(curMouseWorldPosition);
+                        if (drag_innerPin.pinType != RendererCircuits_Instance.ParticleCircuitData.PSetInnerPinRef.PinType.None)
+                        {
+                            // We are hovering over an inner pin
+                            Graphics.DrawMesh(quad, Matrix4x4.TRS(drag_innerPin.pinPos, Quaternion.identity, scale * Vector3.one), MaterialDatabase.material_circuit_ui_pSetHoverMaterial, 0);
+                        }
+                    }
+                }
+            }
         }
 
     }

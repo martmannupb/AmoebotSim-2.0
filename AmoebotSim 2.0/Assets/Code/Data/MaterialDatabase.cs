@@ -52,6 +52,8 @@ namespace AS2
         public static Material material_hexagonal_ui_baseHexagonRemoveMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonRemoveMaterial");
         public static Material material_hexagonal_ui_baseHexagonMoveMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonMoveMaterial");
         public static Material material_hexagonal_ui_baseHexagonMoveSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonMoveSelectionMaterial");
+        public static Material material_circuit_ui_pSetHoverMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/PSetHoverMaterial");
+        public static Material material_circuit_ui_pSetDragMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/PSetDragMaterial");
 
     }
 

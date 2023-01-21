@@ -23,6 +23,7 @@ namespace AS2.Visuals
         // Temporary
         private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
         private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
+        private List<float> degreeList = new List<float>(16);
 
         public struct ParticleCircuitData
         {
@@ -48,11 +49,13 @@ namespace AS2.Visuals
 
                 public ParticlePinGraphicState.PSetData pSet;
                 public PinType pinType;
+                public Vector2 pinPos;
 
-                public PSetInnerPinRef(ParticlePinGraphicState.PSetData pSet, PinType pinType)
+                public PSetInnerPinRef(ParticlePinGraphicState.PSetData pSet, PinType pinType, Vector2 pinPos)
                 {
                     this.pSet = pSet;
                     this.pinType = pinType;
+                    this.pinPos = pinPos;
                 }
             }
 
@@ -61,15 +64,15 @@ namespace AS2.Visuals
                 float pinRadius = RenderSystem.const_circuitPinSize / 2f;
                 foreach (var pSet in this.state.partitionSets)
                 {
-                    if (Vector2.Distance(pSet.graphicalData.active_position1, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PSet1);
+                    if (Vector2.Distance(pSet.graphicalData.active_position1, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PSet1, pSet.graphicalData.active_position1);
                     else if(snap.isExpanded)
                     {
-                        if (Vector2.Distance(pSet.graphicalData.active_position2, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PSet2);
-                        if (Vector2.Distance(pSet.graphicalData.active_connector_position1, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PConnector1);
-                        if (Vector2.Distance(pSet.graphicalData.active_connector_position2, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PConnector2);
+                        if (Vector2.Distance(pSet.graphicalData.active_position2, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PSet2, pSet.graphicalData.active_position2);
+                        if (Vector2.Distance(pSet.graphicalData.active_connector_position1, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PConnector1, pSet.graphicalData.active_connector_position1);
+                        if (Vector2.Distance(pSet.graphicalData.active_connector_position2, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PConnector2, pSet.graphicalData.active_connector_position2);
                     }
                 }
-                return new PSetInnerPinRef(null, PSetInnerPinRef.PinType.None);
+                return new PSetInnerPinRef(null, PSetInnerPinRef.PinType.None, Vector2.zero);
             }
 
             public void UpdatePSetOrConnectorPinPosition(PSetInnerPinRef innerPin, Vector2 worldPos)
@@ -113,11 +116,10 @@ namespace AS2.Visuals
                             }
                         }
 
-                        // Beeps
-                        if(innerPin.pSet.beepsThisRound)
+                        // Beep Origin
+                        if (innerPin.pSet.beepOrigin)
                         {
                             // Pin
-                            batch_pins = instance.GetBatch_Pin(gd.properties_pin);
                             batch_pins = instance.GetBatch_Pin(gd.properties_pin_beep);
                             batch_pins.UpdatePin(worldPos, false, gd.index_pSet1_beep);
                         }
@@ -155,10 +157,9 @@ namespace AS2.Visuals
                         else Log.Error("UpdatePSetOrConnectorPinPosition: Trying to edit a partition set 2 for a particle that is contracted. This is not possible.");
 
                         // Beeps
-                        if (innerPin.pSet.beepsThisRound)
+                        if (innerPin.pSet.beepOrigin)
                         {
                             // Pin
-                            batch_pins = instance.GetBatch_Pin(gd.properties_pin);
                             batch_pins = instance.GetBatch_Pin(gd.properties_pin_beep);
                             batch_pins.UpdatePin(worldPos, false, gd.index_pSet2_beep);
                         }
@@ -225,7 +226,7 @@ namespace AS2.Visuals
             if (state.isExpanded == false)
             {
                 // 1. Contracted
-                List<float> degreeList = new List<float>(state.partitionSets.Count);
+                degreeList.Clear();
                 if (pSetViewType == PartitionSetViewType.Auto)
                 {
                     for (int i = 0; i < state.partitionSets.Count; i++)
@@ -306,10 +307,12 @@ namespace AS2.Visuals
                 for (int i = 0; i < state.partitionSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
+                    ParticlePinGraphicState.PSetData.GraphicalData gd = pSet.graphicalData;
                     // 1. Add Pin
-                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset);
+                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
                     // 2. Add Lines
-                    AddLines_PartitionSetContracted(state, snap, pSet, pSet.graphicalData.active_position1, delayed, movementOffset);
+                    GDRef gdRef_lines = new GDRef(gd, true, true, false, 0);
+                    AddLines_PartitionSetContracted(state, snap, pSet, pSet.graphicalData.active_position1, delayed, movementOffset, gdRef_lines);
                 }
                 // Add Singleton Lines
                 for (int i = 0; i < state.singletonSets.Count; i++)
@@ -329,7 +332,7 @@ namespace AS2.Visuals
                             ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
                             Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                             Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                            AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
+                            AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                         }
                     }
                 }
@@ -365,16 +368,21 @@ namespace AS2.Visuals
                 for (int i = 0; i < state.partitionSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
+                    ParticlePinGraphicState.PSetData.GraphicalData gd = pSet.graphicalData;
+                    GDRef gdRef_lines1 = new GDRef(gd, true, true, false, 0);
+                    GDRef gdRef_lines2 = new GDRef(gd, true, true, false, 0);
                     // 1. Add Pins + Connectors + Internal Lines
-                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset);
-                    AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset);
-                    AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset);
-                    AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset);
-                    AddLine(pSet.graphicalData.active_position1, pSet.graphicalData.active_connector_position1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
-                    AddLine(pSet.graphicalData.active_position2, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
-                    AddLine(pSet.graphicalData.active_connector_position1, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
+                    AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
+                    AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset, new GDRef(gd, false, true, true));
+                    AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset, new GDRef(gd, false, false, true));
+                    AddLine(pSet.graphicalData.active_position1, pSet.graphicalData.active_connector_position1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
+                    AddLine(pSet.graphicalData.active_position2, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines2);
+                    gdRef_lines1.lineIndex++;
+                    gdRef_lines2.lineIndex++;
+                    AddLine(pSet.graphicalData.active_connector_position1, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, new GDRef(gd, true, true, true), new GDRef(gd, true, true, true));
                     // 2. Add Lines + Connector Lines
-                    AddLines_PartitionSetExpanded(state, snap, pSet, pSet.graphicalData.active_position1, pSet.graphicalData.active_position2, delayed, movementOffset);
+                    AddLines_PartitionSetExpanded(state, snap, pSet, pSet.graphicalData.active_position1, pSet.graphicalData.active_position2, delayed, movementOffset, gdRef_lines1, gdRef_lines2);
 
                 }
                 // Add Singleton Lines
@@ -393,19 +401,21 @@ namespace AS2.Visuals
             }
         }
 
-        private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool delayed, Vector2 movementOffset)
+        private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
             foreach (var pin in pSet.pins)
             {
                 // Inner Line
                 Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                AddLine(posPartitionSet, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                gdRef.gd.pSet1_pins.Add(pin);
+                AddLine(posPartitionSet, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef, gdRef);
+                gdRef.lineIndex++;
                 // Outter Line
                 if (state.hasNeighbor1[pin.globalDir])
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     globalDirLineSet1[pin.globalDir] = true;
                 }
             }
@@ -421,7 +431,7 @@ namespace AS2.Visuals
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     globalDirLineSet1[pin.globalDir] = true;
                 }
                 // Beep Origin
@@ -432,19 +442,35 @@ namespace AS2.Visuals
             }
         }
 
-        private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool delayed, Vector2 movementOffset)
+        private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool delayed, Vector2 movementOffset, GDRef gdRef_lines1, GDRef gdRef_lines2)
         {
             foreach (var pin in pSet.pins)
             {
                 // Inner Line
-                Vector2 posPin = CalculateGlobalPinPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
-                AddLine(pin.isHead ? posPartitionSet1 : posPartitionSet2, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                Vector2 posPin;
+                if (pin.isHead)
+                {
+                    posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
+                    gdRef_lines1.gd.pSet1_pins.Add(pin);
+                    AddLine(posPartitionSet1, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
+                    gdRef_lines1.lineIndex++;
+                    //gdRef_lines1_beep.lineIndex++;
+                }
+                else
+                {
+                    posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
+                    gdRef_lines2.gd.pSet2_pins.Add(pin);
+                    AddLine(posPartitionSet2, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines1);
+                    gdRef_lines2.lineIndex++;
+                    //gdRef_lines2_beep.lineIndex++;
+                }
+
                 // Outter Line
                 if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                     else globalDirLineSet2[pin.globalDir] = true;
                 }
@@ -461,7 +487,7 @@ namespace AS2.Visuals
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                     else globalDirLineSet2[pin.globalDir] = true;
                 }
@@ -485,7 +511,7 @@ namespace AS2.Visuals
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                         Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                         bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
+                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                     }
                 }
                 if (state.hasNeighbor2[k] && globalDirLineSet2[k] == false && ((state.neighbor1ToNeighbor2Direction + 3) % 6) != k)
@@ -496,7 +522,7 @@ namespace AS2.Visuals
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
                         Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
                         bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection2[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
+                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                     }
                 }
             }
@@ -504,34 +530,56 @@ namespace AS2.Visuals
 
 
 
-        private void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping, Vector2 movementOffset)
+        private void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
         {
             // Normal Circuit
             RendererCircuits_RenderBatch batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, false, false, movementOffset);
-            batch.AddLine(globalLineStartPos, globalLineEndPos);
+            RenderBatchIndex index = batch.AddLine(globalLineStartPos, globalLineEndPos);
+            if(gdRef.valid)
+            {
+                StoreRenderBatchIndex(gdRef, index, true, false);
+                gdRef.gd.properties_line = batch.properties;
+            }
             // Beep
             if(beeping)
             {
                 // Play Mode
                 batch = GetBatch_Line(Color.white, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false, movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActive);
-                batch.AddLine(globalLineStartPos, globalLineEndPos);
+                index = batch.AddLine(globalLineStartPos, globalLineEndPos);
+                //StoreRenderBatchIndex(gdRef, index, true, true); // we only need to store the index for the paused mode
                 // Pause Mode
                 batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false, movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimPaused);
-                batch.AddLine(globalLineStartPos, globalLineEndPos);
+                index = batch.AddLine(globalLineStartPos, globalLineEndPos);
+                if(gdRef_beep.valid)
+                {
+                    StoreRenderBatchIndex(gdRef_beep, index, true, true);
+                    gdRef_beep.gd.properties_line_beep = batch.properties;
+                }
             }
         }
 
-        private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, Vector2 movementOffset)
+        private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
         {
             RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
-            batch.AddPin(pinPos, false);
+            RenderBatchIndex index = batch.AddPin(pinPos, false);
+            if(gdRef.valid)
+            {
+                StoreRenderBatchIndex(gdRef, index, false, false);
+                gdRef.gd.properties_pin = batch.properties;
+            }
             // Beep
             if (beeping)
             {
                 batch = GetBatch_Pin(color, delayed, true, movementOffset);
-                batch.AddPin(pinPos, false);
+                index = batch.AddPin(pinPos, false);
+                if(gdRef_beep.valid)
+                {
+                    StoreRenderBatchIndex(gdRef_beep, index, false, true);
+                    gdRef_beep.gd.properties_pin_beep = batch.properties;
+                }
             }
         }
+
 
         private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
         {
@@ -540,10 +588,121 @@ namespace AS2.Visuals
             batch.AddPin(pinPos, true);
         }
 
-        private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
+        private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
             RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
-            batch.AddConnectorPin(pinPos);
+            RenderBatchIndex index = batch.AddConnectorPin(pinPos);
+            if(gdRef.valid)
+            {
+                StoreRenderBatchIndex(gdRef, index, false, false);
+                gdRef.gd.properties_connectorPin = batch.properties;
+            }
+        }
+
+        public struct GDRef
+        {
+            // Defaults
+            public static GDRef Empty = new GDRef(); // valid = false
+
+            // Variables
+            public ParticlePinGraphicState.PSetData.GraphicalData gd;
+            public bool isLine;
+            public bool isHead;
+            public bool isConnector; // for both lines and pins
+            // Line
+            public int lineIndex;
+            // Pin
+            // -
+            // Validity
+            public bool valid;
+
+            public GDRef(ParticlePinGraphicState.PSetData.GraphicalData gd, bool isLine, bool isHead, bool isConnector, int lineIndex = -1)
+            {
+                this.gd = gd;
+                this.isLine = isLine;
+                this.isHead = isHead;
+                this.isConnector = isConnector;
+                this.lineIndex = lineIndex;
+                this.valid = true;
+            }
+        }
+
+        private void StoreRenderBatchIndex(GDRef gdRef, RenderBatchIndex index, bool isLine, bool isBeep)
+        {
+            if(gdRef.valid == false)
+            {
+                Log.Error("StoreRenderBatchIndex: GDRef is not valid.");
+                return;
+            }
+            if(isLine)
+            {
+                // Lines
+                if (gdRef.isLine == false)
+                {
+                    Log.Error("StoreRenderBatchIndex: isLine is set, but it is not set in GDRef");
+                    return;
+                }
+                if(isBeep == false)
+                {
+                    if(gdRef.isConnector)
+                    {
+                        gdRef.gd.index_lineConnector = index;
+                    }
+                    else
+                    {
+                        if(gdRef.isHead) gdRef.gd.index_lines1.Add(index);
+                        else gdRef.gd.index_lines2.Add(index);
+                    }
+                }
+                else
+                {
+                    if (gdRef.isConnector)
+                    {
+                        gdRef.gd.index_lineConnector_beep = index;
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_lines1_beep.Add(index);
+                        else gdRef.gd.index_lines2_beep.Add(index);
+                    }
+                }
+            }
+            else
+            {
+                // Pins
+                if(gdRef.isLine)
+                {
+                    Log.Error("StoreRenderBatchIndex: isLine is not set, but it is set in GDRef");
+                    return;
+                }
+                if (isBeep == false)
+                {
+                    if (gdRef.isConnector)
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSetConnectorPin1 = index;
+                        else gdRef.gd.index_pSetConnectorPin2 = index;
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSet1 = index;
+                        else gdRef.gd.index_pSet2 = index;
+                    }
+                }
+                else
+                {
+                    if (gdRef.isConnector)
+                    {
+                        // No beeps here
+                        //if (gdRef.isHead) gdRef.gd.index_pSetConnectorPin1 = index;
+                        //else gdRef.gd.index_pSetConnectorPin2 = index;
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSet1_beep = index;
+                        else gdRef.gd.index_pSet2_beep = index;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -817,7 +976,11 @@ namespace AS2.Visuals
         /// <summary>
         /// Automatic view type: Partition Sets oriented on a circle, automaticaly ordered by the median coordinates.
         /// </summary>
-        Auto
+        Auto,
+        /// <summary>
+        /// Code override view type: Partition Sets are oriented based on input from the code. If none is available we use auto positioning.
+        /// </summary>
+        CodeOverride,
     }
 
 }
