@@ -360,11 +360,6 @@ namespace AS2.Sim
         /// the partition set belongs will be displayed in this color unless it
         /// has been overridden by another partition set already.
         /// <para>
-        /// Overriding the color of partition sets is only possible for planned
-        /// pin configurations. Planning a new pin configuration will reset all
-        /// partition set colors.
-        /// </para>
-        /// <para>
         /// See also <seealso cref="ResetPartitionSetColor(int)"/>.
         /// </para>
         /// </summary>
@@ -384,13 +379,14 @@ namespace AS2.Sim
         public abstract void ResetPartitionSetColor(int partitionSetIndex);
 
         /// <summary>
+        /// Resets the color overrides of all partition sets.
+        /// </summary>
+        public abstract void ResetAllPartitionSetColors();
+
+        /// <summary>
         /// Sets the specified partition set's position in polar coordinates and
-        /// sets the positioning mode of the pin configuration to manual.
-        /// <para>
-        /// Overriding the positions of partition sets is only possible for planned
-        /// pin configurations. Planning a new pin configuration will reset all
-        /// partition set colors.
-        /// </para>
+        /// sets the positioning mode of the pin configuration to
+        /// <see cref="PSPlacementMode.MANUAL"/>.
         /// </summary>
         /// <param name="partitionSetIndex">The ID of the partition set whose
         /// position to set.</param>
@@ -407,7 +403,17 @@ namespace AS2.Sim
         /// this should be <c>true</c>.</param>
         public abstract void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true);
 
-        // TODO: Method for setting (and resetting) placement mode
+        /// <summary>
+        /// Sets the partition set placement mode to the given value.
+        /// </summary>
+        /// <param name="mode">The new partition set placement mode.</param>
+        public abstract void SetPSPlacementMode(PSPlacementMode mode);
+
+        /// <summary>
+        /// Resets the positions of all partition sets and sets the
+        /// placement mode to <see cref="PSPlacementMode.NONE"/>.
+        /// </summary>
+        public abstract void ResetAllPartitionSetPositions();
     }
 
 } // namespace AS2.Sim

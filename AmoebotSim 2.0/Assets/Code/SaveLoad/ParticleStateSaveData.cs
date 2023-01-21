@@ -66,10 +66,10 @@ namespace AS2
         // Visualization data
         public ValueHistorySaveData<Color> mainColorHistory;
         public ValueHistorySaveData<bool> mainColorSetHistory;
-        public ValueHistorySaveData<Color>[] partitionSetColorHistory;
-        public ValueHistorySaveData<bool>[] partitionSetColorOverrideHistory;
-        public ValueHistorySaveData<Vector2>[] partitionSetPositionHeadHistory;
-        public ValueHistorySaveData<Vector2>[] partitionSetPositionTailHistory;
+        //public ValueHistorySaveData<Color>[] partitionSetColorHistory;
+        //public ValueHistorySaveData<bool>[] partitionSetColorOverrideHistory;
+        //public ValueHistorySaveData<Vector2>[] partitionSetPositionHeadHistory;
+        //public ValueHistorySaveData<Vector2>[] partitionSetPositionTailHistory;
         public ValueHistorySaveData<JointMovementInfo> jointMovementHistory;
         public ValueHistorySaveData<BondMovementInfoList> bondMovementHistory;
     }

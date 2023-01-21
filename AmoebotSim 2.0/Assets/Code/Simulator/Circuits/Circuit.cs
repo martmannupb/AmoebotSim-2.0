@@ -209,10 +209,10 @@ namespace AS2.Sim
                 }
             }
 
-            if (!colorOverride && ps.pinConfig.particle.PartitionSetColorsOverride[ps.Id])
+            if (!colorOverride && ps.colorOverride)
             {
                 colorOverride = true;
-                color = ps.pinConfig.particle.PartitionSetColors[ps.Id];
+                color = ps.color;
             }
         }
 

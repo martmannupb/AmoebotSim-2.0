@@ -5,14 +5,13 @@ using UnityEngine;
 namespace AS2.Sim
 {
 
-    // TODO: Update documentation if compressed objects are used for storage
     /// <summary>
     /// System-side implementation of the abstract base class
     /// <see cref="PinConfiguration"/>, which declares the API
     /// for the developer.
     /// <para>
-    /// Implements comparison operators such that pin configurations can
-    /// be stored in a <see cref="ValueHistory{T}"/>.
+    /// Can generate a compressed representation to enable saving
+    /// and loading pin configurations, see <see cref="PinConfigurationSaveData"/>.
     /// </para>
     /// </summary>
     public class SysPinConfiguration : PinConfiguration
@@ -57,6 +56,12 @@ namespace AS2.Sim
         /// Indicates whether this is the planned pin configuration.
         /// </summary>
         public bool isPlanned = false;  // If true, allow sending data
+
+        // Visualization info
+        /// <summary>
+        /// The selected partition set placement mode.
+        /// </summary>
+        public PSPlacementMode placementMode = PSPlacementMode.NONE;
 
         public SysPinConfiguration(Particle particle, int pinsPerEdge, Direction headDirection = Direction.NONE)
         {
@@ -270,6 +275,16 @@ namespace AS2.Sim
                 {
                     copy.MakePartitionSet(partitionSets[i].GetPins(), i);
                 }
+            }
+            copy.placementMode = placementMode;
+            for (int i = 0; i < numPins; i++)
+            {
+                SysPartitionSet spCopy = copy.partitionSets[i];
+                SysPartitionSet spMine = partitionSets[i];
+                spCopy.color = spMine.color;
+                spCopy.colorOverride = spMine.colorOverride;
+                spCopy.positionHead = spMine.positionHead;
+                spCopy.positionTail = spMine.positionTail;
             }
             copy.isCurrent = isCurrent;
             copy.isPlanned = isPlanned;
@@ -578,34 +593,56 @@ namespace AS2.Sim
 
         public override void SetPartitionSetColor(int partitionSetIndex, Color color)
         {
-            if (!isPlanned)
-            {
-                throw new InvalidOperationException("Cannot override color in non-planned pin configuration.");
-            }
-            particle.SetPartitionSetColor(partitionSetIndex, color);
+            partitionSets[partitionSetIndex].SetColor(color);
         }
 
         public override void ResetPartitionSetColor(int partitionSetIndex)
         {
-            if (!isPlanned)
+            partitionSets[partitionSetIndex].ResetColor();
+        }
+
+        public override void ResetAllPartitionSetColors()
+        {
+            foreach (SysPartitionSet sp in partitionSets)
             {
-                throw new InvalidOperationException("Cannot override color in non-planned pin configuration.");
+                sp.ResetColor();
             }
-            particle.ResetPartitionSetColor(partitionSetIndex);
         }
 
         public override void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true)
         {
-            if (!isPlanned)
-            {
-                throw new InvalidOperationException("Cannot set partition set position in non-planned pin configuration.");
-            }
-
-            // Convert coordinates to global
-            polarCoords.x = particle.CompassDir().ToInt() * 60.0f + (particle.Chirality() ? 1.0f : -1.0f) * polarCoords.x;
-            particle.SetPartitionSetPosition(partitionSetIndex, polarCoords, head);
+            partitionSets[partitionSetIndex].SetPosition(polarCoords, head);
         }
 
+        public override void SetPSPlacementMode(PSPlacementMode mode)
+        {
+            placementMode = mode;
+
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (isPlanned)
+            {
+                SysPinConfiguration planned = particle.PlannedPinConfiguration;
+                planned.placementMode = mode;
+            }
+        }
+
+        public override void ResetAllPartitionSetPositions()
+        {
+            foreach (SysPartitionSet sp in partitionSets)
+            {
+                sp.SetPosition(Vector2.zero);
+            }
+            placementMode = PSPlacementMode.NONE;
+
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (isPlanned)
+            {
+                SysPinConfiguration planned = particle.PlannedPinConfiguration;
+                planned.placementMode = PSPlacementMode.NONE;
+            }
+        }
 
         /*
          * Saving and loading functionality, also used for histories.
@@ -622,18 +659,24 @@ namespace AS2.Sim
             PinConfigurationSaveData data = new PinConfigurationSaveData();
 
             data.headDirection = headDirection;
+            data.placementMode = placementMode;
             data.pinPartitionSets = new int[numPins];
+            data.partitionSetColors = new Color[numPins];
+            data.partitionSetColorOverrides = new bool[numPins];
+            data.partitionSetHeadPositions = new Vector2[numPins];
+            data.partitionSetTailPositions = new Vector2[numPins];
             for (int i = 0; i < numPins; i++)
             {
                 data.pinPartitionSets[i] = pins[i].partitionSet.id;
+                SysPartitionSet ps = partitionSets[i];
+                data.partitionSetColors[i] = ps.color;
+                data.partitionSetColorOverrides[i] = ps.colorOverride;
+                data.partitionSetHeadPositions[i] = ps.positionHead;
+                data.partitionSetTailPositions[i] = ps.positionTail;
             }
 
             return data;
         }
-
-        // TODO: Documentation
-        // This constructor expects that the given particle already has an algorithm attached to it
-        // and that it matches the given pin configuration save data
 
         /// <summary>
         /// Recovers a pin configuration from its serializable representation.
@@ -704,13 +747,24 @@ namespace AS2.Sim
                     }
                 }
             }
-            // Finally, add the pins to their partition sets
+            // Add the pins to their partition sets
             for (int i = 0; i < data.pinPartitionSets.Length; i++)
             {
                 int psIdx = data.pinPartitionSets[i];
                 partitionSets[psIdx].AddPinBasic(i);
                 pins[i].partitionSet = partitionSets[psIdx];
             }
+            // Set partition set visualization info
+            for (int i = 0; i < numPins; i++)
+            {
+                SysPartitionSet ps = partitionSets[i];
+                ps.color = data.partitionSetColors[i];
+                ps.colorOverride = data.partitionSetColorOverrides[i];
+                ps.positionHead = data.partitionSetHeadPositions[i];
+                ps.positionTail = data.partitionSetTailPositions[i];
+            }
+            // Set placement mode
+            placementMode = data.placementMode;
         }
 
         // <<<FOR DEBUGGING>>>

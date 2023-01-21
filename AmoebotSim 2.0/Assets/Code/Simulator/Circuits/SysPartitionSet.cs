@@ -38,6 +38,24 @@ namespace AS2.Sim
             get { return numStoredPins; }
         }
 
+        // Visualization
+        /// <summary>
+        /// The color override of this partition set.
+        /// </summary>
+        public Color color = Color.black;
+        /// <summary>
+        /// Indicates whether the partition set has a color override.
+        /// </summary>
+        public bool colorOverride = false;
+        /// <summary>
+        /// Global polar coordinates of this partition set in the particle's head.
+        /// </summary>
+        public Vector2 positionHead = Vector2.zero;
+        /// <summary>
+        /// Global polar coordinates of this partition set in the particle's tail.
+        /// </summary>
+        public Vector2 positionTail = Vector2.zero;
+
         /// <summary>
         /// The ID of the circuit this partition set currently belongs to.
         /// </summary>
@@ -128,6 +146,9 @@ namespace AS2.Sim
                     return false;
                 }
             }
+            // Unequal if color or position is different
+            if (p1.color != p2.color || p1.colorOverride != p2.colorOverride || p1.positionHead != p2.positionHead || p1.positionTail != p2.positionTail)
+                return false;
             return true;
         }
 
@@ -149,6 +170,8 @@ namespace AS2.Sim
                     return true;
                 }
             }
+            if (p1.color != p2.color || p1.colorOverride != p2.colorOverride || p1.positionHead != p2.positionHead || p1.positionTail != p2.positionTail)
+                return true;
             return false;
         }
 
@@ -165,7 +188,7 @@ namespace AS2.Sim
         // TODO: Make sure this is correct if it is ever used
         public override int GetHashCode()
         {
-            return HashCode.Combine(id, pins, numStoredPins);
+            return HashCode.Combine(id, pins, numStoredPins, color, colorOverride, positionHead, positionTail);
         }
 
 
@@ -364,12 +387,54 @@ namespace AS2.Sim
 
         public override void SetColor(Color color)
         {
-            pinConfig.SetPartitionSetColor(id, color);
+            this.color = color;
+            colorOverride = true;
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (pinConfig.isPlanned)
+            {
+                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
+                planned.partitionSets[id].color = color;
+                planned.partitionSets[id].colorOverride = colorOverride;
+            }
         }
 
         public override void ResetColor()
         {
-            pinConfig.ResetPartitionSetColor(id);
+            color = Color.black;
+            colorOverride = false;
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (pinConfig.isPlanned)
+            {
+                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
+                planned.partitionSets[id].color = Color.black;
+                planned.partitionSets[id].colorOverride = false;
+            }
+        }
+
+        public override void SetPosition(Vector2 polarCoords, bool head = true)
+        {
+            // Convert coordinates to global
+            polarCoords.x = pinConfig.particle.CompassDir().ToInt() * 60.0f + (pinConfig.particle.Chirality() ? 1.0f : -1.0f) * polarCoords.x;
+
+            if (head)
+                positionHead = polarCoords;
+            else
+                positionTail = polarCoords;
+
+            pinConfig.SetPSPlacementMode(PSPlacementMode.MANUAL);
+
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (pinConfig.isPlanned)
+            {
+                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
+                if (head)
+                    planned.partitionSets[id].positionHead = polarCoords;
+                else
+                    planned.partitionSets[id].positionTail = polarCoords;
+            }
         }
 
 

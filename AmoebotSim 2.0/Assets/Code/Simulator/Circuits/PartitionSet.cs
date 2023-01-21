@@ -305,32 +305,39 @@ namespace AS2.Sim
         public abstract void SendMessage(Message msg);
 
         /// <summary>
-        /// Overrides the color of this partition set if the pin configuration
-        /// it belongs to is the planned one.
+        /// Overrides the color of this partition set.
         /// <para>
         /// See <see cref="PinConfiguration.SetPartitionSetColor(int, Color)"/>.
         /// </para>
         /// </summary>
         /// <param name="color">The color in which to display this
         /// partition set.</param>
-        /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the planned
-        /// pin configuration.
-        /// </exception>
         public abstract void SetColor(Color color);
 
         /// <summary>
-        /// Resets the color override of this partition set if the pin
-        /// configuration it belongs to is the planned one.
+        /// Resets the color override of this partition set.
         /// <para>
         /// See <see cref="PinConfiguration.ResetPartitionSetColor(int)"/>.
         /// </para>
         /// </summary>
-        /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the planned
-        /// pin configuration.
-        /// </exception>
         public abstract void ResetColor();
+
+        /// <summary>
+        /// Sets the position of this partition set to the given polar
+        /// coordinates. Only affects the position if the partition set
+        /// contains at least two pins. Also sets the pin configuration's
+        /// placement mode to <see cref="PSPlacementMode.MANUAL"/>.
+        /// </summary>
+        /// <param name="polarCoords">The polar coordinates
+        /// <c>(angleDeg, distance)</c> of the partition set relative to
+        /// the center of the particle. Angle <c>0</c> points in local
+        /// <see cref="Direction.E"/> direction and angles increase in
+        /// local counter-clockwise direction. Distance <c>1</c> places
+        /// the partition set on the edge of the particle.</param>
+        /// <param name="head">Determines whether the partition set in
+        /// the particle's head or tail should be placed. For
+        /// contracted particles, this should be <c>true</c>.</param>
+        public abstract void SetPosition(Vector2 polarCoords, bool head = true);
     }
 
 } // namespace AS2.Sim
