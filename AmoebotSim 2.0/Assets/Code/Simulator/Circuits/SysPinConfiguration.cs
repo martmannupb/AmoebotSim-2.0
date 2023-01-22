@@ -291,7 +291,6 @@ namespace AS2.Sim
             return copy;
         }
 
-        // TODO: May have to put these into compressed storage classes/structs instead
         /*
          * Comparison operators for comparing pin configurations easily
          */
