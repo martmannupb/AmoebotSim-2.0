@@ -28,9 +28,6 @@ namespace AS2.UI
         public Button button_particle_load;
         public Button button_particle_save;
         public Button button_particle_generate;
-        // Additional Parameter UI
-        public GameObject addPar_go_chirality;
-        public GameObject addPar_go_compassDir;
         // Algorithm Generation Menu UI
         public GameObject alg_go_algo;
         public GameObject alg_go_paramAmount;
@@ -100,19 +97,6 @@ namespace AS2.UI
             genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings[0]);
             genAlg_setting_genAlg.onValueChangedEvent += ValueChanged_Text;
             genAlg_setting_genAlg.SetInteractable(false);
-            // Additional Parameters
-            List<string> chiralityList = new List<string>(System.Enum.GetNames(typeof(Initialization.Chirality)));
-            chiralityList.Remove(Initialization.Chirality.Random.ToString());
-            chiralityList.Insert(0, "Random");
-            addPar_setting_chirality = new UISetting_Dropdown(addPar_go_chirality, null, "Chirality", chiralityList.ToArray(), chiralityList[0]);
-            addPar_setting_chirality.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
-            updatedSettings.Add(addPar_setting_chirality);
-            List<string> compassDirList = new List<string>(System.Enum.GetNames(typeof(Initialization.Compass)));
-            compassDirList.Remove(Initialization.Compass.Random.ToString());
-            compassDirList.Insert(0, "Random");
-            addPar_setting_compassDir = new UISetting_Dropdown(addPar_go_compassDir, null, "Compass Dir", compassDirList.ToArray(), compassDirList[0]);
-            addPar_setting_compassDir.backgroundButton_onButtonPressedLongEvent += SettingBarPressedLong;
-            updatedSettings.Add(addPar_setting_compassDir);
             // Reset
             ResetUI();
         }
@@ -231,27 +215,6 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Gets the chirality value from the corresponding dropdown UI element.
-        /// </summary>
-        /// <returns></returns>
-        public Initialization.Chirality GetDropdownValue_Chirality()
-        {
-            Initialization.Chirality chirality = (Initialization.Chirality)Enum.Parse(typeof(Initialization.Chirality), addPar_setting_chirality.GetValueString());
-            return chirality;
-        }
-
-        /// <summary>
-        /// Gets the compass dir value from the corresponding dropdown UI element.
-        /// </summary>
-        /// <returns></returns>
-        public Initialization.Compass GetDropdownValue_Compass()
-        {
-            Initialization.Compass compass = (Initialization.Compass)Enum.Parse(typeof(Initialization.Compass), addPar_setting_compassDir.GetValueString());
-            return compass;
-
-        }
-
-        /// <summary>
         /// Called when the user changes some values in certain dropdowns.
         /// </summary>
         /// <param name="name"></param>
@@ -293,6 +256,7 @@ namespace AS2.UI
             // Pause Sim
             AmoebotSimulator.instance.PauseSim();
             // Update UI
+            AmoebotSimulator.instance.uiHandler.Button_ToolStandardPressed();
             AmoebotSimulator.instance.uiHandler.HideTopRightButtons();
             AmoebotSimulator.instance.uiHandler.settingsUI.Close();
             AmoebotSimulator.instance.uiHandler.particleUI.Close();
@@ -314,6 +278,7 @@ namespace AS2.UI
         public void Close(bool aborted)
         {
             // Update UI
+            AmoebotSimulator.instance.uiHandler.Button_ToolStandardPressed();
             AmoebotSimulator.instance.uiHandler.ShowTopRightButtons();
             AmoebotSimulator.instance.uiHandler.particleUI.Close();
             initModePanel.SetActive(false);

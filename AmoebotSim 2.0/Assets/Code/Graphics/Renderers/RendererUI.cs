@@ -153,9 +153,9 @@ namespace AS2.Visuals
                                                 case UIHandler.UITool.Add:
                                                     // Pause Simulation
                                                     sim.PauseSim();
-                                                    // Add particle at position
-                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
-                                                    else sim.system.AddParticleContracted(mouseWorldField);
+                                                // Add particle at position
+                                                if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
+                                                else sim.system.AddParticleContracted(mouseWorldField);
                                                     break;
                                                 case UIHandler.UITool.Remove:
                                                     // magikarp uses splash, nothing happens
@@ -282,7 +282,7 @@ namespace AS2.Visuals
                                                     // Pause Simulation
                                                     sim.PauseSim();
                                                     // Add particle at position
-                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
                                                     else sim.system.AddParticleContracted(mouseWorldField);
                                                 }
                                             }
@@ -295,9 +295,8 @@ namespace AS2.Visuals
                                                     // Pause Simulation
                                                     sim.PauseSim();
                                                     // Add particle at position
-                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
-                                                    else sim.system.AddParticleExpanded(node2, node1);
-                                                    sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
+                                                    else sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
                                                 }
                                             }
                                             break;

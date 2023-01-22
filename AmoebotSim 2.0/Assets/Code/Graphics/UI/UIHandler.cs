@@ -1,5 +1,6 @@
 using AS2.Visuals;
 using SFB;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -46,8 +47,12 @@ namespace AS2.UI
         public Button button_toolRemove;
         public Button button_toolMove;
         public Button button_toolPSetMove;
+        public TMP_Dropdown dropdown_chirality;
+        public TMP_Dropdown dropdown_compass;
         private Color toolColor_active;
         private Color toolColor_inactive;
+        private List<GameObject> tools_initMode = new List<GameObject>();
+        private List<GameObject> tools_playMode = new List<GameObject>();
         // Overlay Panel
         public Button button_viewType;
         public Image image_viewType;
@@ -109,6 +114,14 @@ namespace AS2.UI
             if (button_toolAdd != null) toolColor_inactive = button_toolAdd.gameObject.GetComponent<Image>().color;
             if (button_viewType != null) overlayColor_active = button_circuitViewType.gameObject.GetComponent<Image>().color;
             overlayColor_inactive = toolColor_inactive;
+            // Init Tools
+            tools_initMode.Add(button_toolStandard.gameObject);
+            tools_initMode.Add(button_toolAdd.gameObject);
+            tools_initMode.Add(button_toolRemove.gameObject);
+            tools_initMode.Add(button_toolMove.gameObject);
+            tools_initMode.Add(dropdown_chirality.gameObject.transform.parent.gameObject);
+            tools_playMode.Add(button_toolStandard.gameObject);
+            tools_playMode.Add(button_toolPSetMove.gameObject);
         }
 
         /// <summary>
@@ -198,7 +211,9 @@ namespace AS2.UI
             if (initializationUI.IsOpen())
             {
                 // Init Mode
-
+                // Update Top Panel Buttons
+                foreach (var item in tools_playMode) item.SetActive(false);
+                foreach (var item in tools_initMode) item.SetActive(true);
                 // Disable Bottom Panel Buttons
                 button_stepBack.interactable = false;
                 button_stepForward.interactable = false;
@@ -218,6 +233,9 @@ namespace AS2.UI
                 int maxRound = sim.system.LatestRound;
                 int uiRound = (int)slider_round.value;
 
+                // Update Top Panel Buttons
+                foreach (var item in tools_initMode) item.SetActive(false);
+                foreach (var item in tools_playMode) item.SetActive(true);
                 // Play/Pause/Step
                 button_stepBack.interactable = uiRound > minRound && running == false;
                 button_stepForward.interactable = uiRound < maxRound && running == false;
@@ -306,6 +324,43 @@ namespace AS2.UI
         public void HideUI()
         {
             ui.SetActive(false);
+        }
+
+        /// <summary>
+        /// Gets the chirality value from the corresponding dropdown UI element.
+        /// </summary>
+        /// <returns></returns>
+        public Initialization.Chirality GetDropdownValue_Chirality()
+        {
+            TMP_Dropdown dropdown = dropdown_chirality;
+            string value = dropdown.options[dropdown.value].text;
+            switch (value)
+            {
+                case "R":
+                    return Initialization.Chirality.Random;
+                case "C":
+                    return Initialization.Chirality.Clockwise;
+                case "CC":
+                    return Initialization.Chirality.CounterClockwise;
+                default:
+                    Log.Error("GetDropdownValue_Chirality: Value not found!");
+                    return Initialization.Chirality.Random;
+            }
+        }
+
+        /// <summary>
+        /// Gets the compass dir value from the corresponding dropdown UI element.
+        /// </summary>
+        /// <returns></returns>
+        public Initialization.Compass GetDropdownValue_Compass()
+        {
+            TMP_Dropdown dropdown = dropdown_compass;
+            string value = dropdown.options[dropdown.value].text;
+            if (value.Equals("R")) value = "Random";
+            object res;
+            if (Enum.TryParse(typeof(Initialization.Compass), value, out res)) return (Initialization.Compass)res;
+            else Log.Error("GetDropdownValue_Compass: Value not found!");
+            return Initialization.Compass.Random;
         }
 
 
