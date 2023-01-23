@@ -408,6 +408,21 @@ namespace AS2.Sim
         public abstract void SetPSPlacementMode(PSPlacementMode mode);
 
         /// <summary>
+        /// Sets the rotation of the line on which the partition sets are
+        /// arranged in <see cref="PSPlacementMode.LINE"/> mode.
+        /// Multiples of 30 or 60 degrees will usually look best.
+        /// The placement mode is changed automatically.
+        /// </summary>
+        /// <param name="angle">The new angle of the line in degrees.
+        /// <c>0</c> means vertical (perpendicular to the local
+        /// <see cref="Direction.E"/> direction) and increasing angles
+        /// rotate the line in local counter-clockwise direction.</param>
+        /// <param name="head">Indicates whether the rotation for the
+        /// particle's head or tail part should be set. Must be
+        /// <c>true</c> for contracted particles.</param>
+        public abstract void SetLineRotation(float angle, bool head = true);
+
+        /// <summary>
         /// Resets the positions of all partition sets and sets the
         /// placement mode to <see cref="PSPlacementMode.NONE"/>.
         /// </summary>

@@ -103,6 +103,8 @@ If a [`PinConfiguration`][1] instance `pc` has been set as the planned pin confi
 A circuit will take the color of the first colored partition set that is encountered while computing the circuits.
 If no colored partition sets are encountered, the circuit will get a color from the circuit color pool (found in [`ColorData`][13]).
 
+**TODO**: Mention partition set placement API
+
 Pin configurations can also be stored in [particle attributes](attrs.md).
 The special type of attribute for this purpose is created by the [`CreateAttributePinConfiguration`][14] method, which accepts `null` as an initial value.
 Attributes of this type are not displayed in the UI and cannot be accessed by other particles.

@@ -62,6 +62,16 @@ namespace AS2.Sim
         /// The selected partition set placement mode.
         /// </summary>
         public PSPlacementMode placementMode = PSPlacementMode.NONE;
+        /// <summary>
+        /// The global angle of the line along which partition sets are
+        /// placed in the particle's head.
+        /// </summary>
+        public float lineRotationHead = 0f;
+        /// <summary>
+        /// The global angle of the line along which partition sets are
+        /// placed in the particle's tail.
+        /// </summary>
+        public float lineRotationTail = 0f;
 
         public SysPinConfiguration(Particle particle, int pinsPerEdge, Direction headDirection = Direction.NONE)
         {
@@ -307,6 +317,9 @@ namespace AS2.Sim
             {
                 return false;
             }
+            // Unequal if placement mode or parameters are different
+            if (pc1.placementMode != pc2.placementMode || pc1.lineRotationHead != pc2.lineRotationHead || pc1.lineRotationTail != pc2.lineRotationTail)
+                return false;
             // Unequal if any partition sets are not equal
             for (int i = 0; i < pc1.numPins; i++)
             {
@@ -329,6 +342,8 @@ namespace AS2.Sim
             {
                 return true;
             }
+            if (pc1.placementMode != pc2.placementMode || pc1.lineRotationHead != pc2.lineRotationHead || pc1.lineRotationTail != pc2.lineRotationTail)
+                return true;
             for (int i = 0; i < pc1.numPins; i++)
             {
                 if (pc1.partitionSets[i] != pc2.partitionSets[i])
@@ -347,7 +362,7 @@ namespace AS2.Sim
         // TODO: Make sure this is correct if it is ever used
         public override int GetHashCode()
         {
-            return System.HashCode.Combine(pinsPerEdge, headDirection, partitionSets);
+            return System.HashCode.Combine(pinsPerEdge, headDirection, partitionSets, placementMode, lineRotationHead, lineRotationTail);
         }
 
 
@@ -626,6 +641,29 @@ namespace AS2.Sim
             }
         }
 
+        public override void SetLineRotation(float angle, bool head = true)
+        {
+            // Must convert angle from local to global
+            angle = particle.CompassDir().ToInt() * 60f + (particle.chirality ? angle : -angle);
+            if (head)
+                lineRotationHead = angle;
+            else
+                lineRotationTail = angle;
+            placementMode = PSPlacementMode.LINE;
+
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (isPlanned)
+            {
+                SysPinConfiguration planned = particle.PlannedPinConfiguration;
+                if (head)
+                    planned.lineRotationHead = angle;
+                else
+                    planned.lineRotationTail = angle;
+                planned.placementMode = PSPlacementMode.LINE;
+            }
+        }
+
         public override void ResetAllPartitionSetPositions()
         {
             foreach (SysPartitionSet sp in partitionSets)
@@ -659,6 +697,8 @@ namespace AS2.Sim
 
             data.headDirection = headDirection;
             data.placementMode = placementMode;
+            data.lineRotationHead = lineRotationHead;
+            data.lineRotationTail = lineRotationTail;
             data.pinPartitionSets = new int[numPins];
             data.partitionSetColors = new Color[numPins];
             data.partitionSetColorOverrides = new bool[numPins];
@@ -764,6 +804,8 @@ namespace AS2.Sim
             }
             // Set placement mode
             placementMode = data.placementMode;
+            lineRotationHead = data.lineRotationHead;
+            lineRotationTail = data.lineRotationTail;
         }
 
         // <<<FOR DEBUGGING>>>

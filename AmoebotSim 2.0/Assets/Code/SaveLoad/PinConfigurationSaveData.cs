@@ -49,6 +49,16 @@ namespace AS2
         /// </summary>
         public PSPlacementMode placementMode;
         /// <summary>
+        /// The global angle of the line along which partition
+        /// sets are placed in the particle's head.
+        /// </summary>
+        public float lineRotationHead;
+        /// <summary>
+        /// The global angle of the line along which partition
+        /// sets are placed in the particle's tail.
+        /// </summary>
+        public float lineRotationTail;
+        /// <summary>
         /// The colors of all partition sets.
         /// </summary>
         public Color[] partitionSetColors;
@@ -101,6 +111,8 @@ namespace AS2
                 }
             }
             // Compare colors and positions
+            if (placementMode != d.placementMode || lineRotationHead != d.lineRotationHead || lineRotationTail != d.lineRotationTail)
+                return false;
             // Colors
             myArrayNull = partitionSetColors == null;
             otherArrayNull = d.partitionSetColors == null;
@@ -158,7 +170,7 @@ namespace AS2
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(headDirection, pinPartitionSets);
+            return HashCode.Combine(headDirection, pinPartitionSets, placementMode, lineRotationHead, lineRotationTail, HashCode.Combine(partitionSetColors, partitionSetColorOverrides, partitionSetHeadPositions, partitionSetTailPositions));
         }
     }
 
