@@ -131,6 +131,24 @@ namespace AS2.Visuals
                 /// </summary>
                 public Polar2DCoordinate codeOverride_coordinate2;
 
+                // Pins
+                /// <summary>
+                /// If the particle has pins in the head. This value is set by the PrecalculateHasPinsInAndStoreInGD() method of the PSet.
+                /// </summary>
+                public bool hasPinsInHead = false;
+                /// <summary>
+                /// If the particle has pins in the tail. This value is set by the PrecalculateHasPinsInAndStoreInGD() method of the PSet.
+                /// </summary>
+                public bool hasPinsInTail = false;
+                /// <summary>
+                /// Number of pins in the head.
+                /// </summary>
+                public int pinsInHead = -1;
+                /// <summary>
+                /// Number of pins in the tail.
+                /// </summary>
+                public int pinsInTail = -1;
+
                 public bool HasExpandedActivePosition()
                 {
                     return active_position2 != new Vector2(float.MinValue, float.MinValue);
@@ -164,6 +182,11 @@ namespace AS2.Visuals
                     codeOverride_coordinate1.Discard();
                     codeOverride_coordinate2.Discard();
                     manualEditing_coordinate.Discard();
+                    // Pins
+                    hasPinsInHead = false;
+                    hasPinsInTail = false;
+                    pinsInHead = -1;
+                    pinsInTail = -1;
                 }
 
                 // Updating ___________________
@@ -229,6 +252,43 @@ namespace AS2.Visuals
                 {
                     this.pins.Add(pin);
                 }
+            }
+
+            /// <summary>
+            /// Returns if the partition set is connected to pins in the given part of the particle ('head' for contracted particles or the head, 'tail' for the tail of expanded particles).
+            /// </summary>
+            /// <param name="isHead">If a pin in the head should be searched. False if a pin in the tail should be searched.</param>
+            /// <returns>True if a pin has been found.</returns>
+            public bool HasPinsIn(bool isHead)
+            {
+                foreach (var pin in pins)
+                {
+                    if (isHead && pin.isHead) return true;
+                    else if (isHead == false && pin.isHead == false) return true;
+                }
+                return false;
+            }
+
+            /// <summary>
+            /// Calculates if the partition set has pins + the number of pins in the given part of the particle and stores it in variables in the graphical data for fast and easy access.
+            /// </summary>
+            public void PrecalculatePinNumbersAndStoreInGD()
+            {
+                graphicalData.pinsInHead = 0;
+                graphicalData.pinsInTail = 0;
+                foreach (var pin in pins)
+                {
+                    if (pin.isHead) graphicalData.pinsInHead++;
+                    else graphicalData.pinsInTail++;
+                }
+                graphicalData.hasPinsInHead = graphicalData.pinsInHead > 0;
+                graphicalData.hasPinsInTail = graphicalData.pinsInTail > 0;
+            }
+
+            public bool HasPinsInHeadAndTail(bool recalcPinNumbers = true)
+            {
+                if (recalcPinNumbers) PrecalculatePinNumbersAndStoreInGD();
+                return graphicalData.hasPinsInHead && graphicalData.hasPinsInTail;
             }
 
             // Code Overrides ______________________________
@@ -371,6 +431,27 @@ namespace AS2.Visuals
                 neighborPinConnection2[i] = NeighborPinConnection.None;
                 hasNeighbor1[i] = false;
                 hasNeighbor2[i] = false;
+            }
+        }
+
+        /// <summary>
+        /// Calculates the amount of partition sets that have pins in both halves of the expanded particle.
+        /// Returns 0 if the particle is contracted.
+        /// </summary>
+        /// <param name="recalcPinNumbers">If the pin numbers should be recalculated. Set this to false if you already did that for all particles to save time.</param>
+        /// <returns></returns>
+        public int CalculateAmountOfPSetsWithPinsInHeadAndTail(bool recalcPinNumbers = true)
+        {
+            if (isExpanded == false) return 0;
+            else
+            {
+                int counter = 0;
+                foreach (var pSet in partitionSets)
+                {
+                    if(recalcPinNumbers) pSet.PrecalculatePinNumbersAndStoreInGD();
+                    if (pSet.HasPinsInHeadAndTail(recalcPinNumbers)) counter++;
+                }
+                return counter;
             }
         }
 

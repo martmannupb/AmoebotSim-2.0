@@ -13,6 +13,9 @@ namespace AS2.Visuals
 
         public static bool DistributePointsOnCircle(List<float> inputOutputDegreeList, float minDistanceBetweenPoints, float interationMovementTowardsCenterPercentage = 0.1f, float maxMovementPerInteraction = 360f)
         {
+            // Null check
+            if (inputOutputDegreeList == null || inputOutputDegreeList.Count == 0) return true;
+
             // Prepare lists
             points.Clear();
             newPoints.Clear();

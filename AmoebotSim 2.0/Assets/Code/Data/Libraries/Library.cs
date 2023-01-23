@@ -583,6 +583,27 @@ namespace Engine.Library {
             return Tuple.Create((t.Item1 - degreeOffset + 360f) % 360f, t.Item2);
         }
 
+        /// <summary>
+        /// To calculate the orthogonal distance of a point to a line in Unity C#, you can use the dot product of the vector pointing from one point on the line to the target point,
+        /// and the normalized vector pointing in the direction of the line. The result of the dot product will be the magnitude of the projection of the vector pointing from the point
+        /// on the line to the target point onto the direction vector of the line. To get the orthogonal distance, you can subtract this magnitude from the length of the vector pointing
+        /// from the point on the line to the target point.
+        /// Thanks OpenAI.
+        /// </summary>
+        /// <param name="point"></param>
+        /// <param name="linePoint1"></param>
+        /// <param name="linePoint2"></param>
+        /// <returns>The distance will be positive on one side and negative on the other of the line.</returns>
+        public static float OrthogonalDistanceOfPointToLineFromAToB(Vector2 point, Vector2 linePoint1, Vector2 linePoint2)
+        {
+            Vector3 lineDirection = (linePoint2 - linePoint1).normalized;
+            Vector3 pointToLine = point - linePoint1;
+            float dot = Vector3.Dot(pointToLine, lineDirection);
+            float distance = pointToLine.magnitude - dot;
+            Debug.Log("OrthogonalDistanceOfPointToLineFromAToB: Point (" + point.ToString() + "), linePoint1 (" + linePoint1.ToString() + "), linePoint2 (" + linePoint2.ToString() + "), RESULT: " + distance);
+            return distance;
+        }
+
     }
 
 }

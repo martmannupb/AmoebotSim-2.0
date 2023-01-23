@@ -23,7 +23,9 @@ namespace AS2.Visuals
         // Temporary
         private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
         private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
-        private List<float> degreeList = new List<float>(16);
+        private List<float> degreeList1 = new List<float>(16);
+        private List<float> degreeList2 = new List<float>(16);
+        private SortedList<float, ParticlePinGraphicState.PSetData> pSetSortingList = new SortedList<float, ParticlePinGraphicState.PSetData>();
 
         public struct ParticleCircuitData
         {
@@ -223,11 +225,16 @@ namespace AS2.Visuals
 
         private void CalculatePartitionSetPositions(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType)
         {
+            // Precalculations
+            foreach (var pset in state.partitionSets) pset.PrecalculatePinNumbersAndStoreInGD();
+
+            // Partition Set Calculation
             if (state.isExpanded == false)
             {
                 // 1. Contracted
-                degreeList.Clear();
-                if (pSetViewType == PartitionSetViewType.Auto)
+                degreeList1.Clear();
+                PartitionSetViewType particleViewType = pSetViewType;
+                if (particleViewType == PartitionSetViewType.Auto)
                 {
                     for (int i = 0; i < state.partitionSets.Count; i++)
                     {
@@ -239,21 +246,21 @@ namespace AS2.Visuals
                             relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
                         }
                         relPos /= (float)pSet.pins.Count;
-                        if (relPos == Vector2.zero) degreeList.Add(0f);
+                        if (relPos == Vector2.zero) degreeList1.Add(0f);
                         else
                         {
                             // Convert relPos to degree
                             float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
-                            degreeList.Add(degree);
+                            degreeList1.Add(degree);
                         }
 
                     }
-                    CircleDistribution.DistributePointsOnCircle(degreeList, Mathf.Min(0.8f * (360f / state.partitionSets.Count), 60f));
+                    CircleDistribution.DistributePointsOnCircle(degreeList1, Mathf.Min(0.8f * (360f / degreeList1.Count), 60f));
                 }
                 for (int i = 0; i < state.partitionSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                    switch (pSetViewType)
+                    switch (particleViewType)
                     {
                         case PartitionSetViewType.Default:
                             // Default
@@ -262,7 +269,7 @@ namespace AS2.Visuals
                         case PartitionSetViewType.Auto:
                             // Auto
                             // Convert degree to coordinate
-                            float degree = degreeList[i];
+                            float degree = degreeList1[i];
                             Vector2 localPinPos = state.partitionSets.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                             // Calc partition set position on the circle
                             Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1);
@@ -278,7 +285,148 @@ namespace AS2.Visuals
             // 2. Expanded
             if(state.isExpanded)
             {
+                degreeList1.Clear();
+                degreeList2.Clear();
+                PartitionSetViewType particleViewType = pSetViewType;
+                if (particleViewType == PartitionSetViewType.Auto)
+                {
+                    // Auto Placement 1. Iteration (PSet Degrees)
+                    for (int i = 0; i < state.partitionSets.Count; i++)
+                    {
+                        ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
+                        // 1. Head Pins
+                        if(pSet.graphicalData.hasPinsInHead)
+                        {
+                            // Calc average partition set position 1
+                            Vector2 relPos = Vector2.zero;
+                            int virtualPinCount = 0;
+                            foreach (var pinDef in pSet.pins)
+                            {
+                                if(pinDef.isHead)
+                                {
+                                    relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+                                    virtualPinCount++;
+                                }
+                            }
+                            if(pSet.graphicalData.hasPinsInTail)
+                            {
+                                // Add one additional virtual position in direction of the center of the expanded particle
+                                relPos += CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, 1, 1, 60f * state.neighbor1ToNeighbor2Direction, false);
+                                virtualPinCount++;
+                            }
+                            relPos /= (float)virtualPinCount;
+                            if (relPos == Vector2.zero) degreeList1.Add(0f);
+                            else
+                            {
+                                // Convert relPos to degree
+                                float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
+                                degreeList1.Add(degree);
+                            }
+                        }
+                        // 2. Tail Pins
+                        if (pSet.graphicalData.hasPinsInTail)
+                        {
+                            // Calc average partition set position 2
+                            Vector2 relPos = Vector2.zero;
+                            int virtualPinCount = 0;
+                            foreach (var pinDef in pSet.pins)
+                            {
+                                if (pinDef.isHead == false)
+                                {
+                                    relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+                                    virtualPinCount++;
+                                }
+                            }
+                            if (pSet.graphicalData.hasPinsInHead)
+                            {
+                                // Add one additional virtual position in direction of the center of the expanded particle
+                                relPos += CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, 1, 1, 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6), true);
+                                virtualPinCount++;
+                            }
+                            relPos /= (float)virtualPinCount;
+                            if (relPos == Vector2.zero) degreeList2.Add(0f);
+                            else
+                            {
+                                // Convert relPos to degree
+                                float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
+                                degreeList2.Add(degree);
+                            }
+                        }
 
+
+                    }
+                    CircleDistribution.DistributePointsOnCircle(degreeList1, Mathf.Min(0.8f * (360f / degreeList1.Count), 60f));
+                    CircleDistribution.DistributePointsOnCircle(degreeList2, Mathf.Min(0.8f * (360f / degreeList2.Count), 60f));
+                }
+                int counter1 = 0;
+                int counter2 = 0;
+                for (int i = 0; i < state.partitionSets.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
+                    switch (particleViewType)
+                    {
+                        case PartitionSetViewType.Default:
+                            // Default
+                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, state.partitionSets.Count, 0f, false);
+                            float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
+                            float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
+                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, state.partitionSets.Count, rot1, false);
+                            pSet.graphicalData.active_position2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, state.partitionSets.Count, rot2, true);
+                            pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, state.partitionSets.Count, rot1, false);
+                            pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, state.partitionSets.Count, rot2, true);
+                            break;
+                        case PartitionSetViewType.Auto:
+                            // Auto
+                            // Auto Placement 2. Iteration (PSet Positions)
+                            if (pSet.graphicalData.hasPinsInHead)
+                            {
+                                // Convert degree to coordinate
+                                float degree = degreeList1[counter1];
+                                counter1++;
+                                Vector2 localPinPos = degreeList1.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1);
+                                // Save position
+                                pSet.graphicalData.active_position1 = posParticle + localPinPos;
+                            }
+                            if (pSet.graphicalData.hasPinsInTail)
+                            {
+                                // Convert degree to coordinate
+                                float degree = degreeList2[counter2];
+                                counter2++;
+                                Vector2 localPinPos = degreeList2.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position2);
+                                // Save position
+                                pSet.graphicalData.active_position2 = posParticle + localPinPos;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                // Pin Connector Placement
+                pSetSortingList.Clear();
+                for (int i = 0; i < state.partitionSets.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
+                    if(pSet.HasPinsInHeadAndTail(false))
+                    {
+                        // Calculate the average partition set positions
+                        Vector2 averageSetPosition = (pSet.graphicalData.active_position1 + pSet.graphicalData.active_position2) / 2f;
+                        // Distance to line through particles
+                        float distanceToLineThroughParticleHalves = Engine.Library.DegreeConstants.OrthogonalDistanceOfPointToLineFromAToB(averageSetPosition, AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1), AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position2));
+                        pSetSortingList.Add(distanceToLineThroughParticleHalves, pSet);
+                    }
+                }
+                for (int i = 0; i < pSetSortingList.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = pSetSortingList.Values[i];
+                    float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
+                    float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
+                    pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, pSetSortingList.Count, rot1, false);
+                    pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, pSetSortingList.Count, rot2, true);
+                }
             }
         }
 
@@ -295,7 +443,6 @@ namespace AS2.Visuals
             bool delayed = snap.noAnimation == false && RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
             bool movement = RenderSystem.animationsOn && snap.jointMovementState.isJointMovement && delayed == false;
             Vector2 movementOffset = movement ? -AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.jointMovementState.jointExpansionOffset) : Vector2.zero;
-            int amountPartitionSets = state.partitionSets.Count;
 
             // 1. Calc PartitionSet Positions
             CalculatePartitionSetPositions(state, snap, pSetViewType);
@@ -341,29 +488,6 @@ namespace AS2.Visuals
             else
             {
                 // Expanded
-                // Calc PartitionSet Positions + Partition Set Connector Pin Positions
-                for (int i = 0; i < state.partitionSets.Count; i++)
-                {
-                    ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                    switch (pSetViewType)
-                    {
-                        case PartitionSetViewType.Auto:
-                            // Auto
-                            //throw new System.NotImplementedException();
-                            //break;
-                        case PartitionSetViewType.Default:
-                            // Default
-                            float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
-                            float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
-                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, rot1, false);
-                            pSet.graphicalData.active_position2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, amountPartitionSets, rot2, true);
-                            pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, rot1, false);
-                            pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, rot2, true);
-                            break;
-                        default:
-                            break;
-                    }
-                }
                 // Add Internal Pins and Lines
                 for (int i = 0; i < state.partitionSets.Count; i++)
                 {
@@ -372,15 +496,18 @@ namespace AS2.Visuals
                     GDRef gdRef_lines1 = new GDRef(gd, true, true, false, 0);
                     GDRef gdRef_lines2 = new GDRef(gd, true, true, false, 0);
                     // 1. Add Pins + Connectors + Internal Lines
-                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
-                    AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
-                    AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset, new GDRef(gd, false, true, true));
-                    AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset, new GDRef(gd, false, false, true));
-                    AddLine(pSet.graphicalData.active_position1, pSet.graphicalData.active_connector_position1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
-                    AddLine(pSet.graphicalData.active_position2, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines2);
-                    gdRef_lines1.lineIndex++;
-                    gdRef_lines2.lineIndex++;
-                    AddLine(pSet.graphicalData.active_connector_position1, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, new GDRef(gd, true, true, true), new GDRef(gd, true, true, true));
+                    if(pSet.graphicalData.hasPinsInHead) AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
+                    if(pSet.graphicalData.hasPinsInTail) AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
+                    if(pSet.HasPinsInHeadAndTail())
+                    {
+                        AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset, new GDRef(gd, false, true, true));
+                        AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset, new GDRef(gd, false, false, true));
+                        AddLine(pSet.graphicalData.active_position1, pSet.graphicalData.active_connector_position1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
+                        AddLine(pSet.graphicalData.active_position2, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines2);
+                        gdRef_lines1.lineIndex++;
+                        gdRef_lines2.lineIndex++;
+                        AddLine(pSet.graphicalData.active_connector_position1, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, new GDRef(gd, true, true, true), new GDRef(gd, true, true, true));
+                    }
                     // 2. Add Lines + Connector Lines
                     AddLines_PartitionSetExpanded(state, snap, pSet, pSet.graphicalData.active_position1, pSet.graphicalData.active_position2, delayed, movementOffset, gdRef_lines1, gdRef_lines2);
 
