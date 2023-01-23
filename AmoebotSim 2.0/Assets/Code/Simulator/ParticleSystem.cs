@@ -60,6 +60,9 @@ namespace AS2.Sim
         /// </summary>
         private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
+        // Edge collection for collision check
+        private List<EdgeMovement> edgeMovements = new List<EdgeMovement>();
+
 
         /*
          * Round indexing
@@ -537,7 +540,22 @@ namespace AS2.Sim
             try
             {
                 if (particlesMove)
+                {
                     SimulateJointMovements();
+                    bool foundCollision = CheckForCollision();
+
+                    // Clear after processing edges and checking for collisions
+                    Log.Debug(edgeMovements.Count + " Edges:");
+                    foreach (EdgeMovement em in edgeMovements)
+                    {
+                        //Log.Debug(em.ToString());
+                        EdgeMovement.Release(em);
+                    }
+                    edgeMovements.Clear();
+
+                    if (foundCollision)
+                        throw new SimulationException("Detected collision");
+                }
                 else
                     // Compute bond information for the case with no movements
                     ComputeBondsStatic();
@@ -922,6 +940,7 @@ namespace AS2.Sim
                             nbrOffset -= nbr.movementOffset;
 
                         p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1));
+                        edgeMovements.Add(EdgeMovement.Create(bondStart1, bondEnd1, bondStart2, bondEnd2));
                     }
                     // We are contracted and the neighbor is expanded
                     else if (p.IsContracted() && nbr.IsExpanded())
@@ -1066,6 +1085,7 @@ namespace AS2.Sim
 
                             // Store the bond info
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond1_1, nbrBond1_1, ourBond1_2, nbrBond1_2));
                         }
                         else if (numBonds == 2)
                         {
@@ -1191,6 +1211,8 @@ namespace AS2.Sim
                             // Store the bond info
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond1_1, nbrBond1_1, ourBond1_2, nbrBond1_2));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond2_1, nbrBond2_1, ourBond2_2, nbrBond2_2));
                         }
                         else
                         {
@@ -1250,6 +1272,9 @@ namespace AS2.Sim
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond1_1, nbrBond1_1, ourBond1_2, nbrBond1_2));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond2_1, nbrBond2_1, ourBond2_2, nbrBond2_2));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond3_1, nbrBond3_1, ourBond3_2, nbrBond3_2));
                         }
                     }
 
@@ -1315,6 +1340,7 @@ namespace AS2.Sim
 
             // BFS has finished, now apply the movements to the particles locally
             // Also, check if any particle was not processed
+            // Edge movements are recorded for expanded, expanding and contracting particles
             foreach (Particle p in particles)
             {
                 if (!p.processedJointMovement)
@@ -1324,6 +1350,7 @@ namespace AS2.Sim
                 }
                 else if (p.ScheduledMovement != null)
                 {
+                    EdgeMovement em = EdgeMovement.Create(p.Tail(), p.Head(), Vector2Int.zero, Vector2Int.zero);
                     if (p.ScheduledMovement.IsExpansion())
                     {
                         p.Apply_Expand(p.ScheduledMovement.localDir, p.jmOffset);
@@ -1336,9 +1363,16 @@ namespace AS2.Sim
                     {
                         p.Apply_ContractTail(p.jmOffset);
                     }
+                    em.start2 = p.Tail();
+                    em.end2 = p.Head();
+                    edgeMovements.Add(em);
                 }
                 else
                 {
+                    if (p.IsExpanded())
+                    {
+                        edgeMovements.Add(EdgeMovement.Create(p.Tail(), p.Head(), p.Tail() + p.jmOffset, p.Head() + p.jmOffset));
+                    }
                     p.Apply_Offset(p.jmOffset);
                 }
             }
@@ -1531,10 +1565,12 @@ namespace AS2.Sim
                 if (bondForContracted)
                 {
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
+                    edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, cBond2 + c.jmOffset, eBond2 + c.jmOffset));
                 }
                 else
                 {
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
+                    edgeMovements.Add(EdgeMovement.Create(eBond1, cBond1, eBond2 + e.jmOffset, cBond2 + e.jmOffset));
                 }
             }
             else
@@ -1643,11 +1679,15 @@ namespace AS2.Sim
                 {
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1_2));
+                    edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, cBond2 + c.jmOffset, eBond2 + c.jmOffset));
+                    edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1_2, cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset));
                 }
                 else
                 {
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1_2, cBond1));
+                    edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, eBond2 + e.jmOffset, cBond2 + e.jmOffset));
+                    edgeMovements.Add(EdgeMovement.Create(eBond1_2, cBond1, eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset));
                 }
             }
             return eOffset;
@@ -1824,6 +1864,13 @@ namespace AS2.Sim
 
                 p.processedJointMovement = true;
             }
+        }
+
+        // TODO
+        private bool CheckForCollision()
+        {
+            // TODO
+            return false;
         }
 
         /// <summary>
