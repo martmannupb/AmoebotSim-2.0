@@ -584,24 +584,19 @@ namespace Engine.Library {
         }
 
         /// <summary>
-        /// To calculate the orthogonal distance of a point to a line in Unity C#, you can use the dot product of the vector pointing from one point on the line to the target point,
-        /// and the normalized vector pointing in the direction of the line. The result of the dot product will be the magnitude of the projection of the vector pointing from the point
-        /// on the line to the target point onto the direction vector of the line. To get the orthogonal distance, you can subtract this magnitude from the length of the vector pointing
-        /// from the point on the line to the target point.
-        /// Thanks OpenAI.
+        /// Calculates the signed orthogonal distance from a line to a point. Well, at least I hope the sign is correct.
         /// </summary>
-        /// <param name="point"></param>
-        /// <param name="linePoint1"></param>
-        /// <param name="linePoint2"></param>
-        /// <returns>The distance will be positive on one side and negative on the other of the line.</returns>
-        public static float OrthogonalDistanceOfPointToLineFromAToB(Vector2 point, Vector2 linePoint1, Vector2 linePoint2)
+        /// <param name="point">The point.</param>
+        /// <param name="linePoint1">First point of the line.</param>
+        /// <param name="linePoint2">Second point of the line that should not be the first point.</param>
+        /// <returns></returns>
+        public static float ManuallyImplementedSignedOrthogonalDistancesOfPointToLineFromAToB(Vector2 point, Vector2 linePoint1, Vector2 linePoint2)
         {
-            Vector3 lineDirection = (linePoint2 - linePoint1).normalized;
-            Vector3 pointToLine = point - linePoint1;
-            float dot = Vector3.Dot(pointToLine, lineDirection);
-            float distance = pointToLine.magnitude - dot;
-            Debug.Log("OrthogonalDistanceOfPointToLineFromAToB: Point (" + point.ToString() + "), linePoint1 (" + linePoint1.ToString() + "), linePoint2 (" + linePoint2.ToString() + "), RESULT: " + distance);
-            return distance;
+            Vector2 lineDirection = (linePoint2 - linePoint1).normalized;
+            Vector2 lineDirectionRot90Deg = Quaternion.Euler(0f, 0f, 90f) * lineDirection;
+            //Vector2 linePoint1ToPoint = point - linePoint1;
+            float distToC = ((point.x - linePoint1.x) * (-linePoint2.y + linePoint1.y) + (point.y - linePoint1.y) * (linePoint2.x - linePoint1.x)) / lineDirectionRot90Deg.magnitude;
+            return distToC;
         }
 
     }
