@@ -245,11 +245,39 @@ namespace AS2.Visuals
             foreach (var pset in state.partitionSets) pset.PrecalculatePinNumbersAndStoreInGD();
 
             // Partition Set Calculation
+            bool co_active = pSetViewType == PartitionSetViewType.CodeOverride;
+            ParticlePinGraphicState.CodeOverrideType_Node co_node1 = state.codeOverrideType1;
+            ParticlePinGraphicState.CodeOverrideType_Node co_node2 = state.codeOverrideType2;
             if (state.isExpanded == false)
             {
                 // 1. Contracted
                 degreeList1.Clear();
                 PartitionSetViewType particleViewType = pSetViewType;
+                //if(co_active)
+                //{
+                //    // Code Override
+                //    switch (co_node1)
+                //    {
+                //        case ParticlePinGraphicState.CodeOverrideType_Node.NotSet:
+                //            // do nothing, there might be code override in the partition sets
+                //            break;
+                //        case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
+                //            co_active = false;
+                //            co_node1 = ParticlePinGraphicState.CodeOverrideType_Node.NotSet;
+                //            particleViewType = PartitionSetViewType.Auto;
+                //            break;
+                //        case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
+                //            co_active = false;
+                //            co_node1 = ParticlePinGraphicState.CodeOverrideType_Node.NotSet;
+                //            particleViewType = PartitionSetViewType.Default;
+                //            break;
+                //        case ParticlePinGraphicState.CodeOverrideType_Node.LineRotated:
+                //            // standard mode with manual line roation
+                //            break;
+                //        default:
+                //            break;
+                //    }
+                //}
                 if (particleViewType == PartitionSetViewType.Auto)
                 {
                     for (int i = 0; i < state.partitionSets.Count; i++)
@@ -291,6 +319,25 @@ namespace AS2.Visuals
                             Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1);
                             // Save position
                             pSet.graphicalData.active_position1 = posParticle + localPinPos;
+                            break;
+                        case PartitionSetViewType.CodeOverride:
+                            //switch (state.codeOverrideType1)
+                            //{
+                            //    case ParticlePinGraphicState.CodeOverrideType_Node.NotSet:
+                            //        // (todo)
+                            //        break;
+                            //    case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
+                            //        // already handled
+                            //        break;
+                            //    case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
+                            //        // already handled
+                            //        break;
+                            //    case ParticlePinGraphicState.CodeOverrideType_Node.LineRotated:
+                            //        // (todo)
+                            //        break;
+                            //    default:
+                            //        break;
+                            //}
                             break;
                         default:
                             break;
