@@ -36,6 +36,16 @@ namespace AS2.Sim
             end2 = Vector2Int.zero;
         }
 
+        public Vector2Int StartTranslation()
+        {
+            return start2 - start1;
+        }
+
+        public Vector2Int EndTranslation()
+        {
+            return end2 - end1;
+        }
+
         public override string ToString()
         {
             return start1 + "-" + end1 + "  -->  " + start2 + "-" + end2;

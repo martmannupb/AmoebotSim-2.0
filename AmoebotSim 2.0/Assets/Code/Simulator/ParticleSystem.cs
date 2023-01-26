@@ -546,9 +546,15 @@ namespace AS2.Sim
 
                     // Clear after processing edges and checking for collisions
                     Log.Debug(edgeMovements.Count + " Edges:");
+                    bool drawDebugLines = true;
                     foreach (EdgeMovement em in edgeMovements)
                     {
-                        //Log.Debug(em.ToString());
+                        if (drawDebugLines)
+                        {
+                            Vector3 start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em.start1);
+                            Vector3 end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em.end1);
+                            Debug.DrawLine(start, end, Color.blue, 10f);
+                        }
                         EdgeMovement.Release(em);
                     }
                     edgeMovements.Clear();
@@ -1869,7 +1875,23 @@ namespace AS2.Sim
         // TODO
         private bool CheckForCollision()
         {
-            // TODO
+            float tStart = Time.realtimeSinceStartup;
+
+            // For each pair of edges, check if there is a collision
+            for (int i = 0; i < edgeMovements.Count - 1; i++)
+            {
+                EdgeMovement em1 = edgeMovements[i];
+                for (int j = i + 1; j < edgeMovements.Count; j++)
+                {
+                    EdgeMovement em2 = edgeMovements[j];
+
+                    if (CollisionChecker.EdgesCollide(em1, em2))
+                        return true;
+                }
+            }
+
+            Debug.Log("Finished collision check in " + (Time.realtimeSinceStartup - tStart) + " s");
+
             return false;
         }
 
