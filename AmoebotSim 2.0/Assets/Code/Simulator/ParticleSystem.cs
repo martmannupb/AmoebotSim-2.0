@@ -546,7 +546,7 @@ namespace AS2.Sim
 
                     // Clear after processing edges and checking for collisions
                     Log.Debug(edgeMovements.Count + " Edges:");
-                    bool drawDebugLines = true;
+                    bool drawDebugLines = false;
                     foreach (EdgeMovement em in edgeMovements)
                     {
                         if (drawDebugLines)
