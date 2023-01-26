@@ -61,9 +61,14 @@ namespace AS2.UI
         public Sprite sprite_viewTypeHexagonalCirc;
         public Button button_circuitViewType;
         public Image image_circuitViewType;
-        public Button button_bondsActive;
         public Sprite sprite_circuitViewTypeCircuitsEnabled;
         public Sprite sprite_circuitViewTypeCircuitsDisabled;
+        public Button button_pSetPositioning;
+        public Image image_pSetPositioning;
+        public Sprite sprite_pSetPositining_def;
+        public Sprite sprite_pSetPositining_auto;
+        public Sprite sprite_pSetPositining_line;
+        public Button button_bondsActive;
         public Button button_backgroundGridActive;
         private Color overlayColor_active;
         private Color overlayColor_inactive;
@@ -282,6 +287,22 @@ namespace AS2.UI
                     break;
                 case ViewType.Circular:
                     if (image_viewType.sprite != sprite_viewTypeCircular) image_viewType.sprite = sprite_viewTypeCircular;
+                    break;
+                default:
+                    break;
+            }
+            // PSet Button Images
+            // PSet Type
+            switch (sim.renderSystem.GetPSetViewType())
+            {
+                case PartitionSetViewType.Line:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositining_line) image_pSetPositioning.sprite = sprite_pSetPositining_line;
+                    break;
+                case PartitionSetViewType.Auto:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositining_auto) image_pSetPositioning.sprite = sprite_pSetPositining_auto;
+                    break;
+                case PartitionSetViewType.CodeOverride:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositining_def) image_pSetPositioning.sprite = sprite_pSetPositining_def;
                     break;
                 default:
                     break;
@@ -655,6 +676,14 @@ namespace AS2.UI
         public void Button_ToggleCircuitViewPressed()
         {
             sim.renderSystem.ToggleCircuits();
+        }
+
+        /// <summary>
+        /// Toggles the positioning mode of the partition sets.
+        /// </summary>
+        public void Button_TogglePSetPositioningPressed()
+        {
+            sim.renderSystem.TogglePSetPositioning();
         }
 
         /// <summary>

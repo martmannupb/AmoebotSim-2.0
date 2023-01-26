@@ -306,7 +306,7 @@ namespace AS2.Visuals
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
                     switch (particleViewType)
                     {
-                        case PartitionSetViewType.Default:
+                        case PartitionSetViewType.Line:
                             // Default
                             pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, state.partitionSets.Count, 0f, false);
                             break;
@@ -428,7 +428,7 @@ namespace AS2.Visuals
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
                     switch (particleViewType)
                     {
-                        case PartitionSetViewType.Default:
+                        case PartitionSetViewType.Line:
                             // Default
                             pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, state.partitionSets.Count, 0f, false);
                             float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
@@ -495,13 +495,29 @@ namespace AS2.Visuals
         }
 
         /// <summary>
+        /// Redraws the circuits with the given partition set view type.
+        /// </summary>
+        /// <param name="pSetViewType">The view type the circuits are drawn in.</param>
+        public void Refresh(PartitionSetViewType pSetViewType)
+        {
+            Clear(true);
+            foreach (var data in circuitData.Values)
+            {
+                AddCircuits(data.particle, data.state, data.snap, pSetViewType, false);
+            }
+        }
+
+        /// <summary>
         /// Adds the data of a particle's partition set to the system. Combines it with the position data of the particle itself to calculate all positions of the circuits and pins.
         /// </summary>
+        /// <param name="particle">The particle the data belongs to.</param>
         /// <param name="state">The particle's graphical pin and partition set data.</param>
         /// <param name="snap">The particle's position and movement data.</param>
-        public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType)
+        /// <param name="pSetViewType">The view type that the circuits should be drawn with.</param>
+        /// <param name="addToCircuitData">If the given input should be added to the circuit data. True by default, set to false when doing something like refreshing the circuits.</param>
+        public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType, bool addToCircuitData = true)
         {
-            circuitData.Add(particle, new ParticleCircuitData(this, particle, state, snap));
+            if(addToCircuitData) circuitData.Add(particle, new ParticleCircuitData(this, particle, state, snap));
 
             //bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
             bool delayed = snap.noAnimation == false && RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
@@ -1027,7 +1043,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Clears or nullifies the matrices to reset the data structures.
         /// </summary>
-        public void Clear()
+        public void Clear(bool keepCircuitData = false)
         {
             foreach (var batch in propertiesToRenderBatchMap.Values)
             {
@@ -1041,7 +1057,7 @@ namespace AS2.Visuals
             {
                 ParticlePinGraphicState.PoolRelease(data.state);
             }
-            circuitData.Clear();
+            if(keepCircuitData == false) circuitData.Clear();
             isRenderingActive = false;
         }
 
@@ -1163,13 +1179,13 @@ namespace AS2.Visuals
         /// <summary>
         /// Standard view type: Partition Sets oriented in a row.
         /// </summary>
-        Default,
+        Line,
         /// <summary>
         /// Automatic view type: Partition Sets oriented on a circle, automaticaly ordered by the median coordinates.
         /// </summary>
         Auto,
         /// <summary>
-        /// Code override view type: Partition Sets are oriented based on input from the code. If none is available we use auto positioning.
+        /// Default view type: Priorization of code positioning. If none has been set we use auto positioning.
         /// </summary>
         CodeOverride,
     }
