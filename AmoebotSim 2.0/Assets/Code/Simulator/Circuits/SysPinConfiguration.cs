@@ -59,9 +59,13 @@ namespace AS2.Sim
 
         // Visualization info
         /// <summary>
-        /// The selected partition set placement mode.
+        /// The selected partition set placement mode in the particle's head.
         /// </summary>
-        public PSPlacementMode placementMode = PSPlacementMode.NONE;
+        public PSPlacementMode placementModeHead = PSPlacementMode.NONE;
+        /// <summary>
+        /// The selected partition set placement mode in the particle's tail.
+        /// </summary>
+        public PSPlacementMode placementModeTail = PSPlacementMode.NONE;
         /// <summary>
         /// The global angle of the line along which partition sets are
         /// placed in the particle's head.
@@ -286,7 +290,8 @@ namespace AS2.Sim
                     copy.MakePartitionSet(partitionSets[i].GetPins(), i);
                 }
             }
-            copy.placementMode = placementMode;
+            copy.placementModeHead = placementModeHead;
+            copy.placementModeTail = placementModeTail;
             for (int i = 0; i < numPins; i++)
             {
                 SysPartitionSet spCopy = copy.partitionSets[i];
@@ -318,7 +323,7 @@ namespace AS2.Sim
                 return false;
             }
             // Unequal if placement mode or parameters are different
-            if (pc1.placementMode != pc2.placementMode || pc1.lineRotationHead != pc2.lineRotationHead || pc1.lineRotationTail != pc2.lineRotationTail)
+            if (pc1.placementModeHead != pc2.placementModeHead || pc1.placementModeTail != pc2.placementModeTail || pc1.lineRotationHead != pc2.lineRotationHead || pc1.lineRotationTail != pc2.lineRotationTail)
                 return false;
             // Unequal if any partition sets are not equal
             for (int i = 0; i < pc1.numPins; i++)
@@ -342,7 +347,7 @@ namespace AS2.Sim
             {
                 return true;
             }
-            if (pc1.placementMode != pc2.placementMode || pc1.lineRotationHead != pc2.lineRotationHead || pc1.lineRotationTail != pc2.lineRotationTail)
+            if (pc1.placementModeHead != pc2.placementModeHead || pc1.placementModeTail != pc2.placementModeTail || pc1.lineRotationHead != pc2.lineRotationHead || pc1.lineRotationTail != pc2.lineRotationTail)
                 return true;
             for (int i = 0; i < pc1.numPins; i++)
             {
@@ -362,7 +367,7 @@ namespace AS2.Sim
         // TODO: Make sure this is correct if it is ever used
         public override int GetHashCode()
         {
-            return System.HashCode.Combine(pinsPerEdge, headDirection, partitionSets, placementMode, lineRotationHead, lineRotationTail);
+            return System.HashCode.Combine(pinsPerEdge, headDirection, partitionSets, placementModeHead, placementModeTail, lineRotationHead, lineRotationTail);
         }
 
 
@@ -608,11 +613,29 @@ namespace AS2.Sim
         public override void SetPartitionSetColor(int partitionSetIndex, Color color)
         {
             partitionSets[partitionSetIndex].SetColor(color);
+
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (isPlanned)
+            {
+                SysPinConfiguration planned = particle.PlannedPinConfiguration;
+                if (planned != this)
+                    planned.SetPartitionSetColor(partitionSetIndex, color);
+            }
         }
 
         public override void ResetPartitionSetColor(int partitionSetIndex)
         {
             partitionSets[partitionSetIndex].ResetColor();
+
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (isPlanned)
+            {
+                SysPinConfiguration planned = particle.PlannedPinConfiguration;
+                if (planned != this)
+                    planned.ResetPartitionSetColor(partitionSetIndex);
+            }
         }
 
         public override void ResetAllPartitionSetColors()
@@ -621,23 +644,45 @@ namespace AS2.Sim
             {
                 sp.ResetColor();
             }
-        }
-
-        public override void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true)
-        {
-            partitionSets[partitionSetIndex].SetPosition(polarCoords, head);
-        }
-
-        public override void SetPSPlacementMode(PSPlacementMode mode)
-        {
-            placementMode = mode;
 
             // If the pin configuration is marked as planned, apply the same change
             // to the particle's planned PC
             if (isPlanned)
             {
                 SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                planned.placementMode = mode;
+                if (planned != this)
+                    planned.ResetAllPartitionSetColors();
+            }
+        }
+
+        public override void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true)
+        {
+            partitionSets[partitionSetIndex].SetPosition(polarCoords, head);
+
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (isPlanned)
+            {
+                SysPinConfiguration planned = particle.PlannedPinConfiguration;
+                if (planned != this)
+                    planned.SetPartitionSetPosition(partitionSetIndex, polarCoords, head);
+            }
+        }
+
+        public override void SetPSPlacementMode(PSPlacementMode mode, bool head = true)
+        {
+            if (head)
+                placementModeHead = mode;
+            else
+                placementModeTail = mode;
+
+            // If the pin configuration is marked as planned, apply the same change
+            // to the particle's planned PC
+            if (isPlanned)
+            {
+                SysPinConfiguration planned = particle.PlannedPinConfiguration;
+                if (planned != this)
+                    planned.SetPSPlacementMode(mode, head);
             }
         }
 
@@ -646,38 +691,44 @@ namespace AS2.Sim
             // Must convert angle from local to global
             angle = particle.CompassDir().ToInt() * 60f + (particle.chirality ? angle : -angle);
             if (head)
+            {
                 lineRotationHead = angle;
+                placementModeHead = PSPlacementMode.LINE;
+            }
             else
+            {
                 lineRotationTail = angle;
-            placementMode = PSPlacementMode.LINE;
+                placementModeTail = PSPlacementMode.LINE;
+            }
 
             // If the pin configuration is marked as planned, apply the same change
             // to the particle's planned PC
             if (isPlanned)
             {
                 SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (head)
-                    planned.lineRotationHead = angle;
-                else
-                    planned.lineRotationTail = angle;
-                planned.placementMode = PSPlacementMode.LINE;
+                if (planned != this)
+                    planned.SetLineRotation(angle, head);
             }
         }
 
-        public override void ResetAllPartitionSetPositions()
+        public override void ResetPartitionSetPlacement(bool head = true)
         {
             foreach (SysPartitionSet sp in partitionSets)
             {
-                sp.SetPosition(Vector2.zero);
+                sp.SetPosition(Vector2.zero, head);
             }
-            placementMode = PSPlacementMode.NONE;
+            if (head)
+                placementModeHead = PSPlacementMode.NONE;
+            else
+                placementModeTail = PSPlacementMode.NONE;
 
             // If the pin configuration is marked as planned, apply the same change
             // to the particle's planned PC
             if (isPlanned)
             {
                 SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                planned.placementMode = PSPlacementMode.NONE;
+                if (planned != this)
+                    planned.ResetPartitionSetPlacement(head);
             }
         }
 
@@ -696,7 +747,8 @@ namespace AS2.Sim
             PinConfigurationSaveData data = new PinConfigurationSaveData();
 
             data.headDirection = headDirection;
-            data.placementMode = placementMode;
+            data.placementModeHead = placementModeHead;
+            data.placementModeTail = placementModeTail;
             data.lineRotationHead = lineRotationHead;
             data.lineRotationTail = lineRotationTail;
             data.pinPartitionSets = new int[numPins];
@@ -803,7 +855,8 @@ namespace AS2.Sim
                 ps.positionTail = data.partitionSetTailPositions[i];
             }
             // Set placement mode
-            placementMode = data.placementMode;
+            placementModeHead = data.placementModeHead;
+            placementModeTail = data.placementModeTail;
             lineRotationHead = data.lineRotationHead;
             lineRotationTail = data.lineRotationTail;
         }

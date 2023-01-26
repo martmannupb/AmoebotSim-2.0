@@ -405,7 +405,9 @@ namespace AS2.Sim
         /// Sets the partition set placement mode to the given value.
         /// </summary>
         /// <param name="mode">The new partition set placement mode.</param>
-        public abstract void SetPSPlacementMode(PSPlacementMode mode);
+        /// <param name="head">Indicates whether the placement mode for
+        /// the particle's head or tail will be set.</param>
+        public abstract void SetPSPlacementMode(PSPlacementMode mode, bool head = true);
 
         /// <summary>
         /// Sets the rotation of the line on which the partition sets are
@@ -423,10 +425,13 @@ namespace AS2.Sim
         public abstract void SetLineRotation(float angle, bool head = true);
 
         /// <summary>
-        /// Resets the positions of all partition sets and sets the
-        /// placement mode to <see cref="PSPlacementMode.NONE"/>.
+        /// Resets the positions of the partition sets and sets the
+        /// placement mode to <see cref="PSPlacementMode.NONE"/> in the
+        /// particle's head or tail.
         /// </summary>
-        public abstract void ResetAllPartitionSetPositions();
+        /// <param name="head">Indicates whether the partition sets
+        /// should be reset in the particle's head or tail.</param>
+        public abstract void ResetPartitionSetPlacement(bool head = true);
     }
 
 } // namespace AS2.Sim
