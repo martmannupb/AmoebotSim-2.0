@@ -18,14 +18,14 @@ namespace AS2.Visuals
         public Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch> propertiesToPinRenderBatchMap = new Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch>();
 
         // Data
-        private Dictionary<ParticleGraphicsAdapterImpl, ParticleCircuitData> circuitData = new Dictionary<ParticleGraphicsAdapterImpl, ParticleCircuitData>();
+        private Dictionary<ParticleGraphicsAdapterImpl, ParticleCircuitData> circuitDataMap = new Dictionary<ParticleGraphicsAdapterImpl, ParticleCircuitData>();
+        private List<ParticleBondGraphicState> bondData = new List<ParticleBondGraphicState>();
         // Flags
         public bool isRenderingActive = false;
         // Temporary
         private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
         private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
-        private List<float> degreeList1 = new List<float>(16);
-        private List<float> degreeList2 = new List<float>(16);
+        private List<float> degreeList = new List<float>(16);
         private PriorityQueue<ParticlePinGraphicState.PSetData> pSetSortingList = new PriorityQueue<ParticlePinGraphicState.PSetData>();
         //private SortedList<float, ParticlePinGraphicState.PSetData> pSetSortingList = new SortedList<float, ParticlePinGraphicState.PSetData>();
 
@@ -239,204 +239,132 @@ namespace AS2.Visuals
             
         }
 
-        private void CalculatePartitionSetPositions(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType)
+        /// <summary>
+        /// Calculates the degrees on which the partition sets are placed on a circle.
+        /// </summary>
+        /// <param name="circuitData">Contains the references to the data.</param>
+        /// <param name="outputList">A list that has been already initialized. It will be cleared in this method.</param>
+        /// <param name="isHead">If we are looking at head partition sets.</param>
+        /// <param name="useRelaxationAlgorithm">True to make sure there is sufficient space between partition sets.</param>
+        private void CalculateCircleDegreesForPartitionSets(ParticleCircuitData circuitData, List<float> outputList, bool isHead, bool useRelaxationAlgorithm = true)
         {
-            // Precalculations
-            foreach (var pset in state.partitionSets) pset.PrecalculatePinNumbersAndStoreInGD();
-
-            // Partition Set Calculation
-            bool co_active = pSetViewType == PartitionSetViewType.CodeOverride;
-            ParticlePinGraphicState.CodeOverrideType_Node co_node1 = state.codeOverrideType1;
-            ParticlePinGraphicState.CodeOverrideType_Node co_node2 = state.codeOverrideType2;
-            if (state.isExpanded == false)
+            outputList.Clear();
+            // 1. Head Pins
+            for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
             {
-                // 1. Contracted
-                degreeList1.Clear();
-                PartitionSetViewType particleViewType = pSetViewType;
-                //if(co_active)
-                //{
-                //    // Code Override
-                //    switch (co_node1)
-                //    {
-                //        case ParticlePinGraphicState.CodeOverrideType_Node.NotSet:
-                //            // do nothing, there might be code override in the partition sets
-                //            break;
-                //        case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
-                //            co_active = false;
-                //            co_node1 = ParticlePinGraphicState.CodeOverrideType_Node.NotSet;
-                //            particleViewType = PartitionSetViewType.Auto;
-                //            break;
-                //        case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
-                //            co_active = false;
-                //            co_node1 = ParticlePinGraphicState.CodeOverrideType_Node.NotSet;
-                //            particleViewType = PartitionSetViewType.Default;
-                //            break;
-                //        case ParticlePinGraphicState.CodeOverrideType_Node.LineRotated:
-                //            // standard mode with manual line roation
-                //            break;
-                //        default:
-                //            break;
-                //    }
-                //}
-                if (particleViewType == PartitionSetViewType.Auto)
+                ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                if (isHead && pSet.graphicalData.hasPinsInHead || isHead == false && pSet.graphicalData.hasPinsInTail)
                 {
-                    for (int i = 0; i < state.partitionSets.Count; i++)
+                    // Calc average partition set position
+                    Vector2 relPos = CalculateAverageRelativePinPosForPartitionSet(pSet, circuitData, true);
+                    if (relPos == Vector2.zero) outputList.Add(0f);
+                    else
                     {
-                        ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                        // Calc average partition set position
-                        Vector2 relPos = Vector2.zero;
-                        foreach (var pinDef in pSet.pins)
-                        {
-                            relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
-                        }
-                        relPos /= (float)pSet.pins.Count;
-                        if (relPos == Vector2.zero) degreeList1.Add(0f);
-                        else
-                        {
-                            // Convert relPos to degree
-                            float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
-                            degreeList1.Add(degree);
-                        }
-
-                    }
-                    CircleDistribution.DistributePointsOnCircle(degreeList1, Mathf.Min(0.8f * (360f / degreeList1.Count), 60f));
-                }
-                for (int i = 0; i < state.partitionSets.Count; i++)
-                {
-                    ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                    switch (particleViewType)
-                    {
-                        case PartitionSetViewType.Line:
-                            // Default
-                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, state.partitionSets.Count, 0f, false);
-                            break;
-                        case PartitionSetViewType.Auto:
-                            // Auto
-                            // Convert degree to coordinate
-                            float degree = degreeList1[i];
-                            Vector2 localPinPos = state.partitionSets.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
-                            // Calc partition set position on the circle
-                            Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1);
-                            // Save position
-                            pSet.graphicalData.active_position1 = posParticle + localPinPos;
-                            break;
-                        case PartitionSetViewType.CodeOverride:
-                            //switch (state.codeOverrideType1)
-                            //{
-                            //    case ParticlePinGraphicState.CodeOverrideType_Node.NotSet:
-                            //        // (todo)
-                            //        break;
-                            //    case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
-                            //        // already handled
-                            //        break;
-                            //    case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
-                            //        // already handled
-                            //        break;
-                            //    case ParticlePinGraphicState.CodeOverrideType_Node.LineRotated:
-                            //        // (todo)
-                            //        break;
-                            //    default:
-                            //        break;
-                            //}
-                            break;
-                        default:
-                            break;
+                        // Convert relPos to degree
+                        float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
+                        outputList.Add(degree);
                     }
                 }
             }
+            if(useRelaxationAlgorithm) CircleDistribution.DistributePointsOnCircle(outputList, Mathf.Min(0.8f * (360f / outputList.Count), 60f));
+        }
 
-            // 2. Expanded
-            if(state.isExpanded)
+        /// <summary>
+        /// Calculates the average relative pin position of pins connected to a partition set.
+        /// </summary>
+        /// <param name="pSet">The given partition set.</param>
+        /// <param name="circuitData">Contains the references to the data.</param>
+        /// <param name="isHead">If we are looking at head pins.</param>
+        /// <returns></returns>
+        private Vector2 CalculateAverageRelativePinPosForPartitionSet(ParticlePinGraphicState.PSetData pSet, ParticleCircuitData circuitData, bool isHead)
+        {
+            if (isHead && pSet.graphicalData.hasPinsInHead || isHead == false && pSet.graphicalData.hasPinsInTail)
             {
-                degreeList1.Clear();
-                degreeList2.Clear();
-                PartitionSetViewType particleViewType = pSetViewType;
-                if (particleViewType == PartitionSetViewType.Auto)
+                // Calc average partition set position 2
+                Vector2 relPos = Vector2.zero;
+                int virtualPinCount = 0;
+                foreach (var pinDef in pSet.pins)
+                {
+                    if (isHead && pinDef.isHead || isHead == false && pinDef.isHead == false)
+                    {
+                        relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, circuitData.state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+                        virtualPinCount++;
+                    }
+                }
+                Vector2 addVector = Vector2.zero;
+                if (isHead && pSet.graphicalData.hasPinsInTail || isHead == false && pSet.graphicalData.hasPinsInHead)
+                {
+                    // Add one additional virtual position in direction of the center of the expanded particle
+                    addVector = CalculateGlobalExpandedPartitionSetCenterNodePosition(isHead ? circuitData.snap.position1 : circuitData.snap.position2, 1, 1, isHead ? 60f * circuitData.state.neighbor1ToNeighbor2Direction : 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6), isHead ? false : true) - (isHead ? AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1) : AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2));
+                    relPos += addVector;
+                    virtualPinCount++;
+                }
+                relPos /= (float)virtualPinCount;
+                if(relPos == Vector2.zero && (isHead && pSet.graphicalData.hasPinsInTail || isHead == false && pSet.graphicalData.hasPinsInHead)) relPos = (relPos + addVector) / 2f;
+                return relPos;
+            }
+            else return Vector2.zero;
+        }
+
+        private void CalculatePartitionSetPositions(ParticleCircuitData circuitData, PartitionSetViewType pSetViewType_global)
+        {
+            // Precalculations
+            foreach (var pset in circuitData.state.partitionSets) pset.PrecalculatePinNumbersAndStoreInGD();
+
+            // 1. Particle Head ====================
+            {
+                bool codeOverride_active = false;
+                PartitionSetViewType pSetViewType = pSetViewType_global;
+                // Get positioning type for both particle halves
+                switch (pSetViewType)
+                {
+                    case PartitionSetViewType.Line:
+                        break;
+                    case PartitionSetViewType.Auto:
+                        break;
+                    case PartitionSetViewType.CodeOverride:
+                        switch (circuitData.state.codeOverrideType1)
+                        {
+                            case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
+                                pSetViewType = PartitionSetViewType.Auto; // standard view type for this particle half
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
+                                pSetViewType = PartitionSetViewType.Line; // standard view type for this particle half
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.LineRotated:
+                                pSetViewType = PartitionSetViewType.Line;
+                                codeOverride_active = true;
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.ManualPlacement:
+                                codeOverride_active = true;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                if (pSetViewType == PartitionSetViewType.Auto)
                 {
                     // Auto Placement 1. Iteration (PSet Degrees)
-                    for (int i = 0; i < state.partitionSets.Count; i++)
-                    {
-                        ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                        // 1. Head Pins
-                        if(pSet.graphicalData.hasPinsInHead)
-                        {
-                            // Calc average partition set position 1
-                            Vector2 relPos = Vector2.zero;
-                            int virtualPinCount = 0;
-                            foreach (var pinDef in pSet.pins)
-                            {
-                                if(pinDef.isHead)
-                                {
-                                    relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
-                                    virtualPinCount++;
-                                }
-                            }
-                            if(pSet.graphicalData.hasPinsInTail)
-                            {
-                                // Add one additional virtual position in direction of the center of the expanded particle
-                                relPos += CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, 1, 1, 60f * state.neighbor1ToNeighbor2Direction, false) - AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1);
-                                virtualPinCount++;
-                            }
-                            relPos /= (float)virtualPinCount;
-                            if (relPos == Vector2.zero) degreeList1.Add(0f);
-                            else
-                            {
-                                // Convert relPos to degree
-                                float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
-                                degreeList1.Add(degree);
-                            }
-                        }
-                        // 2. Tail Pins
-                        if (pSet.graphicalData.hasPinsInTail)
-                        {
-                            // Calc average partition set position 2
-                            Vector2 relPos = Vector2.zero;
-                            int virtualPinCount = 0;
-                            foreach (var pinDef in pSet.pins)
-                            {
-                                if (pinDef.isHead == false)
-                                {
-                                    relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
-                                    virtualPinCount++;
-                                }
-                            }
-                            if (pSet.graphicalData.hasPinsInHead)
-                            {
-                                // Add one additional virtual position in direction of the center of the expanded particle
-                                relPos += CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, 1, 1, 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6), true) - AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position2);
-                                virtualPinCount++;
-                            }
-                            relPos /= (float)virtualPinCount;
-                            if (relPos == Vector2.zero) degreeList2.Add(0f);
-                            else
-                            {
-                                // Convert relPos to degree
-                                float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
-                                degreeList2.Add(degree);
-                            }
-                        }
-
-
-                    }
-                    CircleDistribution.DistributePointsOnCircle(degreeList1, Mathf.Min(0.8f * (360f / degreeList1.Count), 60f));
-                    CircleDistribution.DistributePointsOnCircle(degreeList2, Mathf.Min(0.8f * (360f / degreeList2.Count), 60f));
+                    // 1. Head Pins
+                    CalculateCircleDegreesForPartitionSets(circuitData, degreeList, true);
                 }
-                int counter1 = 0;
-                int counter2 = 0;
-                for (int i = 0; i < state.partitionSets.Count; i++)
+                int counter = 0;
+                for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
                 {
-                    ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                    switch (particleViewType)
+                    ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                    switch (pSetViewType)
                     {
                         case PartitionSetViewType.Line:
                             // Default
-                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, state.partitionSets.Count, 0f, false);
-                            float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
-                            float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
-                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, state.partitionSets.Count, rot1, false);
-                            pSet.graphicalData.active_position2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, state.partitionSets.Count, rot2, true);
-                            pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, state.partitionSets.Count, rot1, false);
-                            pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, state.partitionSets.Count, rot2, true);
+                            float rot1 = 0f;
+                            if(circuitData.state.isExpanded) rot1 = 60f * circuitData.state.neighbor1ToNeighbor2Direction;
+                            if (codeOverride_active) rot1 = circuitData.state.codeOverrideLineRotationDegrees1;
+                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(circuitData.snap.position1, i, circuitData.state.partitionSets.Count, rot1, false);
+                            pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position1, i, circuitData.state.partitionSets.Count, rot1, false);
                             break;
                         case PartitionSetViewType.Auto:
                             // Auto
@@ -444,22 +372,115 @@ namespace AS2.Visuals
                             if (pSet.graphicalData.hasPinsInHead)
                             {
                                 // Convert degree to coordinate
-                                float degree = degreeList1[counter1];
-                                counter1++;
-                                Vector2 localPinPos = degreeList1.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                float degree = degreeList[counter];
+                                counter++;
+                                Vector2 localPinPos = degreeList.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                                 // Calc partition set position on the circle
-                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1);
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
                                 // Save position
                                 pSet.graphicalData.active_position1 = posParticle + localPinPos;
                             }
+                            break;
+                        case PartitionSetViewType.CodeOverride:
+                            // Code Override
+                            // Manual Placement via Polar Coordinates
+                            if (pSet.graphicalData.hasPinsInHead)
+                            {
+                                // Convert degree and radius to coordinate
+                                counter++;
+                                Vector2 localPinPos = Engine.Library.DegreeConstants.DegreeToCoordinate(pSet.graphicalData.codeOverride_coordinate1.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate1.radiusPercentage, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
+                                // Save position
+                                pSet.graphicalData.active_position1 = posParticle + localPinPos;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            // 2. Particle Tail ====================
+            if (circuitData.state.isExpanded)
+            {
+                bool codeOverride_active = false;
+                PartitionSetViewType pSetViewType = pSetViewType_global;
+                // Get positioning type for both particle halves
+                switch (pSetViewType)
+                {
+                    case PartitionSetViewType.Line:
+                        break;
+                    case PartitionSetViewType.Auto:
+                        break;
+                    case PartitionSetViewType.CodeOverride:
+                        switch (circuitData.state.codeOverrideType1)
+                        {
+                            case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
+                                pSetViewType = PartitionSetViewType.Auto; // standard view type for this particle half
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
+                                pSetViewType = PartitionSetViewType.Line; // standard view type for this particle half
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.LineRotated:
+                                pSetViewType = PartitionSetViewType.Line;
+                                codeOverride_active = true;
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.ManualPlacement:
+                                codeOverride_active = true;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                if (pSetViewType == PartitionSetViewType.Auto)
+                {
+                    // Auto Placement 1. Iteration (PSet Degrees)
+                    // 2. Tail Pins
+                    CalculateCircleDegreesForPartitionSets(circuitData, degreeList, false);
+                }
+                int counter = 0;
+                for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                    switch (pSetViewType)
+                    {
+                        case PartitionSetViewType.Line:
+                            // Default
+                            float rot2 = 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6);
+                            if (codeOverride_active) rot2 = circuitData.state.codeOverrideLineRotationDegrees2;
+                            pSet.graphicalData.active_position2 = CalculateGlobalPartitionSetPinPosition(circuitData.snap.position2, i, circuitData.state.partitionSets.Count, rot2, true);
+                            pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position2, i, circuitData.state.partitionSets.Count, rot2, true);
+                            break;
+                        case PartitionSetViewType.Auto:
+                            // Auto
+                            // Auto Placement 2. Iteration (PSet Positions)
                             if (pSet.graphicalData.hasPinsInTail)
                             {
                                 // Convert degree to coordinate
-                                float degree = degreeList2[counter2];
-                                counter2++;
-                                Vector2 localPinPos = degreeList2.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                float degree = degreeList[counter];
+                                counter++;
+                                Vector2 localPinPos = degreeList.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                                 // Calc partition set position on the circle
-                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position2);
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
+                                // Save position
+                                pSet.graphicalData.active_position2 = posParticle + localPinPos;
+                            }
+                            break;
+                        case PartitionSetViewType.CodeOverride:
+                            // Code Override
+                            // Manual Placement via Polar Coordinates
+                            if (pSet.graphicalData.hasPinsInTail)
+                            {
+                                // Convert degree and radius to coordinate
+                                counter++;
+                                Vector2 localPinPos = Engine.Library.DegreeConstants.DegreeToCoordinate(pSet.graphicalData.codeOverride_coordinate2.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate2.radiusPercentage, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
                                 // Save position
                                 pSet.graphicalData.active_position2 = posParticle + localPinPos;
                             }
@@ -468,17 +489,21 @@ namespace AS2.Visuals
                             break;
                     }
                 }
-                // Pin Connector Placement
+            }
+
+            // 3. Pin Connector Placement ====================
+            if (circuitData.state.isExpanded)
+            {
                 pSetSortingList.Clear();
-                for (int i = 0; i < state.partitionSets.Count; i++)
+                for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
                 {
-                    ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
+                    ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
                     if(pSet.HasPinsInHeadAndTail(false))
                     {
                         // Calculate the average partition set positions
                         Vector2 averageSetPosition = (pSet.graphicalData.active_position1 + pSet.graphicalData.active_position2) / 2f;
                         // Distance to line through particles
-                        float distanceToLineThroughParticleHalves = Engine.Library.DegreeConstants.ManuallyImplementedSignedOrthogonalDistancesOfPointToLineFromAToB(averageSetPosition, AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position1), AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.position2));
+                        float distanceToLineThroughParticleHalves = Engine.Library.DegreeConstants.ManuallyImplementedSignedOrthogonalDistancesOfPointToLineFromAToB(averageSetPosition, AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1), AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2));
                         pSetSortingList.Enqueue(distanceToLineThroughParticleHalves, pSet);
                     }
                 }
@@ -486,12 +511,13 @@ namespace AS2.Visuals
                 for (int i = 0; i < pSetSortingList.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = list[i].Item2;
-                    float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
-                    float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
-                    pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, pSetSortingList.Count - 1 - i, pSetSortingList.Count, rot1, false);
-                    pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, pSetSortingList.Count - 1 - i, pSetSortingList.Count, rot2, true);
+                    float rot1 = 60f * circuitData.state.neighbor1ToNeighbor2Direction;
+                    float rot2 = 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6);
+                    pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position1, pSetSortingList.Count - 1 - i, pSetSortingList.Count, rot1, false);
+                    pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position2, pSetSortingList.Count - 1 - i, pSetSortingList.Count, rot2, true);
                 }
             }
+            // ================================================================================================================================================================
         }
 
         /// <summary>
@@ -500,10 +526,14 @@ namespace AS2.Visuals
         /// <param name="pSetViewType">The view type the circuits are drawn in.</param>
         public void Refresh(PartitionSetViewType pSetViewType)
         {
-            Clear(true);
-            foreach (var data in circuitData.Values)
+            Clear(true, true);
+            foreach (var data in circuitDataMap.Values)
             {
                 AddCircuits(data.particle, data.state, data.snap, pSetViewType, false);
+            }
+            foreach (var data in bondData)
+            {
+                AddBond(data, false);
             }
         }
 
@@ -517,15 +547,21 @@ namespace AS2.Visuals
         /// <param name="addToCircuitData">If the given input should be added to the circuit data. True by default, set to false when doing something like refreshing the circuits.</param>
         public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType, bool addToCircuitData = true)
         {
-            if(addToCircuitData) circuitData.Add(particle, new ParticleCircuitData(this, particle, state, snap));
+            ParticleCircuitData circuitData;
+            if (addToCircuitData)
+            {
+                circuitData = new ParticleCircuitData(this, particle, state, snap);
+                circuitDataMap.Add(particle, circuitData);
+            }
+            else circuitData = circuitDataMap[particle];
 
-            //bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
+            //bool delayed = RenderSystem.animationsOn && (circuitData.snap.jointMovementState.isJointMovement || (circuitData.snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || circuitData.snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
             bool delayed = snap.noAnimation == false && RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
             bool movement = RenderSystem.animationsOn && snap.jointMovementState.isJointMovement && delayed == false;
             Vector2 movementOffset = movement ? -AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.jointMovementState.jointExpansionOffset) : Vector2.zero;
 
             // 1. Calc PartitionSet Positions
-            CalculatePartitionSetPositions(state, snap, pSetViewType);
+            CalculatePartitionSetPositions(circuitData, pSetViewType);
             // 2. Generate Pins and Lines
             if (state.isExpanded == false)
             {
@@ -988,8 +1024,11 @@ namespace AS2.Visuals
         /// Adds a single bond to the system.
         /// </summary>
         /// <param name="bondState"></param>
-        public void AddBond(ParticleBondGraphicState bondState)
+        public void AddBond(ParticleBondGraphicState bondState, bool addToBondData = true)
         {
+            // Store Data
+            if(addToBondData) bondData.Add(bondState);
+
             // Convert Grid to World Space
             Vector2 prevBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos1);
             Vector2 prevBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos2);
@@ -1043,7 +1082,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Clears or nullifies the matrices to reset the data structures.
         /// </summary>
-        public void Clear(bool keepCircuitData = false)
+        public void Clear(bool keepCircuitData = false, bool keepBondData = false)
         {
             foreach (var batch in propertiesToRenderBatchMap.Values)
             {
@@ -1053,11 +1092,12 @@ namespace AS2.Visuals
             {
                 batch.ClearMatrices();
             }
-            foreach (var data in circuitData.Values)
+            foreach (var data in circuitDataMap.Values)
             {
                 ParticlePinGraphicState.PoolRelease(data.state);
             }
-            if(keepCircuitData == false) circuitData.Clear();
+            if(keepCircuitData == false) circuitDataMap.Clear();
+            if(keepBondData == false) bondData.Clear();
             isRenderingActive = false;
         }
 
@@ -1166,7 +1206,7 @@ namespace AS2.Visuals
         public ParticleCircuitData GetParticleCircuitData(ParticleGraphicsAdapterImpl p)
         {
             ParticleCircuitData d;
-            circuitData.TryGetValue(p, out d);
+            circuitDataMap.TryGetValue(p, out d);
             if (d.particle == null) Log.Error("RendererCircuits_Instance: GetParticleCircuitData for particle " + p.ToString() + " is not assigned!");
             return d;
         }

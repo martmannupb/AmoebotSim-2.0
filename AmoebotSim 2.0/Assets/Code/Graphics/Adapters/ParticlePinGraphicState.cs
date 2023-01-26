@@ -46,10 +46,10 @@ namespace AS2.Visuals
         // Code Position Override
         public enum CodeOverrideType_Node
         {
-            NotSet, Automatic, AutomaticLine, LineRotated
+            Automatic, AutomaticLine, LineRotated, ManualPlacement
         }
-        public CodeOverrideType_Node codeOverrideType1 = CodeOverrideType_Node.NotSet;
-        public CodeOverrideType_Node codeOverrideType2 = CodeOverrideType_Node.NotSet;
+        public CodeOverrideType_Node codeOverrideType1 = CodeOverrideType_Node.Automatic;
+        public CodeOverrideType_Node codeOverrideType2 = CodeOverrideType_Node.Automatic;
         public float codeOverrideLineRotationDegrees1 = 0f;
         public float codeOverrideLineRotationDegrees2 = 0f;
 
@@ -124,7 +124,7 @@ namespace AS2.Visuals
                 // Code Position Override
                 public enum CodeOverrideType_PSet
                 {
-                    NotSet, Coordinate, AutomaticRing
+                    NotSet, Coordinate
                 }
                 public CodeOverrideType_PSet codeOverrideType1 = CodeOverrideType_PSet.NotSet;
                 public CodeOverrideType_PSet codeOverrideType2 = CodeOverrideType_PSet.NotSet;
@@ -304,14 +304,14 @@ namespace AS2.Visuals
 
             /// <summary>
             /// Code override of the position of the partition set by a polar coordinate.
-            /// Priority 2 of code override (priority over higher priority values that have been set, overridden by lower values).
             /// Replaces other code override values that have been set at this level of the object (like AutomaticRingPlacement).
             /// Different override methods for head and tail are allowed.
+            /// Note that you also need to call the corresponding method in the ParticlePinGraphicState object to enable this mode.
             /// </summary>
             /// <param name="coordinate">The polar coordinate relative from the particle center.</param>
             /// <param name="isHead">True for contracted particles or the head of expanded particles.
             /// Set it to false if you want to position an expanded partition set at the tail.</param>
-            public void CodePositionOverride_Coordinate(Polar2DCoordinate coordinate, bool isHead = true)
+            public void CodePositionOverride_Coordinate(Polar2DCoordinate coordinate, bool isHead)
             {
                 if (isHead)
                 {
@@ -322,28 +322,6 @@ namespace AS2.Visuals
                 {
                     graphicalData.codeOverrideType2 = GraphicalData.CodeOverrideType_PSet.Coordinate;
                     graphicalData.codeOverride_coordinate2 = coordinate;
-                }
-            }
-
-            /// <summary>
-            /// Code override of the position of the partition set by automatic ring placement.
-            /// We have a fancy variation of Lloyd's algorithm for that.
-            /// Priority 2 of code override (priority over higher priority values that have been set, overridden by lower values).
-            /// Replaces other code override values that have been set at this level of the object (like Coordinate).
-            /// Different override methods for head and tail are allowed.
-            /// </summary>
-            /// <param name="isHead">True for contracted particles or the head of expanded particles.</param>
-            public void CodePositionOverride_AutomaticRingPlacement(bool isHead = true)
-            {
-                if (isHead)
-                {
-                    graphicalData.codeOverrideType1 = GraphicalData.CodeOverrideType_PSet.AutomaticRing;
-                    graphicalData.codeOverride_coordinate1.Discard();
-                }
-                else
-                {
-                    graphicalData.codeOverrideType2 = GraphicalData.CodeOverrideType_PSet.AutomaticRing;
-                    graphicalData.codeOverride_coordinate2.Discard();
                 }
             }
 
@@ -474,12 +452,11 @@ namespace AS2.Visuals
         /// <summary>
         /// Code override of the position of the partition set rotation of the standard partition set line.
         /// Expanded particles must set the rotation manually with this mode.
-        /// Priority 1 of code override (priority over higher priority values that have been set).
         /// Replaces other code override values that have been set at this level of the object (like AutomaticLine).
         /// </summary>
         /// <param name="rotationDegrees">The rotation degree, counterclockwise. It is recommended to use a value that is dividable by 60.</param>
         /// <param name="isHead">True for contracted particles or the head of expanded particles.</param>
-        public void CodePositionOverride_LineRotated(float rotationDegrees, bool isHead = true)
+        public void CodePositionOverride_LineRotated(float rotationDegrees, bool isHead)
         {
             if (isHead)
             {
@@ -496,11 +473,10 @@ namespace AS2.Visuals
         /// <summary>
         /// Code override of the position of the partition sets by the use of the standard partition set line.
         /// Non rotated, except for the expanded particles where the line is oriented towards the other half of the particle.
-        /// Priority 1 of code override (priority over higher priority values that have been set).
         /// Replaces other code override values that have been set at this level of the object (like LineRotated).
         /// </summary>
         /// <param name="isHead">True for contracted particles or the head of expanded particles.</param>
-        public void CodePositionOverride_AutomaticLine(bool isHead = true)
+        public void CodePositionOverride_AutomaticLine(bool isHead)
         {
             if (isHead)
             {
@@ -515,14 +491,24 @@ namespace AS2.Visuals
         /// <summary>
         /// Code override of the position of the partition sets by the use of the standard partition set line.
         /// Non rotated, except for the expanded particles where the line is oriented towards the other half of the particle.
-        /// Priority 1 of code override (priority over higher priority values that have been set).
         /// Replaces other code override values that have been set at this level of the object (like LineRotated).
         /// </summary>
         /// <param name="isHead">True for contracted particles or the head of expanded particles.</param>
-        public void CodePositionOverride_Automatic(bool isHead = true)
+        public void CodePositionOverride_Automatic(bool isHead)
         {
             if(isHead) codeOverrideType1 = CodeOverrideType_Node.Automatic;
             else codeOverrideType2 = CodeOverrideType_Node.Automatic;
+        }
+
+        /// <summary>
+        /// Code override of the position of the partition sets by the use of manually set polar coordinates that need to be defined in the partition sets.
+        /// Replaces other code override values that have been set at this level of the object (like LineRotated).
+        /// </summary>
+        /// <param name="isHead"></param>
+        public void CodePositionOverride_PolarCoordinatePlacement(bool isHead)
+        {
+            if (isHead) codeOverrideType1 = CodeOverrideType_Node.ManualPlacement;
+            else codeOverrideType2 = CodeOverrideType_Node.ManualPlacement;
         }
 
         /// <summary>
@@ -530,11 +516,11 @@ namespace AS2.Visuals
         /// </summary>
         public void ResetCodePositionOverride()
         {
-            codeOverrideType1 = CodeOverrideType_Node.NotSet;
-            codeOverrideType2 = CodeOverrideType_Node.NotSet;
+            codeOverrideType1 = CodeOverrideType_Node.Automatic;
+            codeOverrideType2 = CodeOverrideType_Node.Automatic;
             codeOverrideLineRotationDegrees1 = 0f;
             codeOverrideLineRotationDegrees2 = 0f;
-    }
+        }
 
         // _____________________________________________
 
