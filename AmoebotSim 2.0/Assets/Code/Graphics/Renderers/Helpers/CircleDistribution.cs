@@ -22,6 +22,10 @@ namespace AS2.Visuals
             points.AddRange(inputOutputDegreeList);
             inputOutputDegreeList.Clear();
 
+            // Prepare random number generator
+            int seed = 42;
+            UnityEngine.Random.InitState(seed);
+
             // Define settings
             int maxIterations = 100;
             if (minDistanceBetweenPoints * 1.1f >= 360f / inputOutputDegreeList.Count) minDistanceBetweenPoints = (360f / 1.1f) / inputOutputDegreeList.Count; // adjust if min distance is set too large

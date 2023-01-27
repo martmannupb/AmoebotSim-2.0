@@ -162,7 +162,7 @@ namespace AS2.Visuals
                     return active_position2 != new Vector2(float.MinValue, float.MinValue);
                 }
 
-                public void Clear()
+                public void Clear(bool clearIndicesOnly = false)
                 {
                     active_position1 = new Vector2(float.MinValue, float.MinValue);
                     active_position2 = new Vector2(float.MinValue, float.MinValue);
@@ -186,16 +186,22 @@ namespace AS2.Visuals
                     // Positions
                     pSet1_pins.Clear();
                     pSet2_pins.Clear();
-                    // Manual Editing
-                    codeOverrideType1 = CodeOverrideType_PSet.NotSet;
-                    codeOverrideType2 = CodeOverrideType_PSet.NotSet;
-                    codeOverride_coordinate1.Discard();
-                    codeOverride_coordinate2.Discard();
-                    // Pins
-                    hasPinsInHead = false;
-                    hasPinsInTail = false;
-                    pinsInHead = -1;
-                    pinsInTail = -1;
+                    
+                    // Non indices
+                    if(clearIndicesOnly == false)
+                    {
+                        // Manual Editing
+                        codeOverrideType1 = CodeOverrideType_PSet.NotSet;
+                        codeOverrideType2 = CodeOverrideType_PSet.NotSet;
+                        codeOverride_coordinate1.Discard();
+                        codeOverride_coordinate2.Discard();
+                        // Pins
+                        hasPinsInHead = false;
+                        hasPinsInTail = false;
+                        pinsInHead = -1;
+                        pinsInTail = -1;
+                    }
+                    
                 }
 
                 // Updating ___________________

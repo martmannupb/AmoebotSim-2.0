@@ -84,6 +84,7 @@ namespace AS2.Visuals
                 RendererCircuitPins_RenderBatch batch_pins;
                 RendererCircuits_RenderBatch batch_lines;
                 ParticlePinGraphicState.PSetData.GraphicalData gd = innerPin.pSet.graphicalData;
+                int offset = 0;
                 switch (innerPin.pinType)
                 {
                     case PSetInnerPinRef.PinType.None:
@@ -97,7 +98,7 @@ namespace AS2.Visuals
                         batch_pins = instance.GetBatch_Pin(gd.properties_pin);
                         batch_pins.UpdatePin(worldPos, false, gd.index_pSet1);
                         // Line to connector
-                        int offset = 0;
+                        offset = 0;
                         if (state.isExpanded && innerPin.pSet.HasPinsInHeadAndTail())
                         {
                             // Connector
@@ -144,27 +145,28 @@ namespace AS2.Visuals
                         batch_pins = instance.GetBatch_Pin(gd.properties_pin);
                         batch_pins.UpdatePin(worldPos, false, gd.index_pSet2);
                         // Connector
-                        batch_lines = instance.GetBatch_Line(gd.properties_line);
-                        batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2[0]);
-                        if (innerPin.pSet.beepsThisRound)
+                        offset = 0;
+                        if (innerPin.pSet.HasPinsInHeadAndTail())
                         {
-                            batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                            batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2_beep[0]);
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2[0]);
+                            if (innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2_beep[0]);
+                            }
+                            offset = 1;
                         }
                         // Lines
                         for (int i = 0; i < gd.pSet2_pins.Count; i++)
                         {
                             batch_lines = instance.GetBatch_Line(gd.properties_line);
                             Vector2 pinPos = instance.CalculateGlobalPinPosition(snap.position2, gd.pSet2_pins[i], state.pinsPerSide);
-                            batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines2[i + 1]);
+                            batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines2[i + offset]);
                             if (innerPin.pSet.beepsThisRound)
                             {
                                 batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                if(i+1 >= gd.index_lines2_beep.Count)
-                                {
-                                    Log.Debug("Here");
-                                }
-                                batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines2_beep[i + 1]);
+                                batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines2_beep[i + offset]);
                             }
                         }
 
@@ -249,14 +251,13 @@ namespace AS2.Visuals
         private void CalculateCircleDegreesForPartitionSets(ParticleCircuitData circuitData, List<float> outputList, bool isHead, bool useRelaxationAlgorithm = true)
         {
             outputList.Clear();
-            // 1. Head Pins
             for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
             {
                 ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
                 if (isHead && pSet.graphicalData.hasPinsInHead || isHead == false && pSet.graphicalData.hasPinsInTail)
                 {
                     // Calc average partition set position
-                    Vector2 relPos = CalculateAverageRelativePinPosForPartitionSet(pSet, circuitData, true);
+                    Vector2 relPos = CalculateAverageRelativePinPosForPartitionSet(pSet, circuitData, isHead);
                     if (relPos == Vector2.zero) outputList.Add(0f);
                     else
                     {
@@ -1097,6 +1098,17 @@ namespace AS2.Visuals
                 ParticlePinGraphicState.PoolRelease(data.state);
             }
             if(keepCircuitData == false) circuitDataMap.Clear();
+            else
+            {
+                // We need to clear the indices
+                foreach (var data in circuitDataMap.Values)
+                {
+                    foreach (var pSet in data.state.partitionSets)
+                    {
+                        pSet.graphicalData.Clear(true);
+                    }
+                }
+            }
             if(keepBondData == false) bondData.Clear();
             isRenderingActive = false;
         }
