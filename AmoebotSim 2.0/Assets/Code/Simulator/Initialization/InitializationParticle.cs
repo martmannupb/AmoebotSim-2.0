@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using AS2.Visuals;
 using UnityEngine;
@@ -14,10 +13,25 @@ namespace AS2.Sim
     /// </summary>
     public abstract class InitializationParticle : IParticleState
     {
+        /// <summary>
+        /// The grid position of the particle's tail.
+        /// </summary>
         protected Vector2Int tailPos;
+        /// <summary>
+        /// The grid position of the particle's head.
+        /// </summary>
         protected Vector2Int headPos;
 
+        /// <summary>
+        /// The particle's global head direction.
+        /// </summary>
         protected Direction expansionDir;
+
+        /// <summary>
+        /// The particle's global head direction.
+        /// <see cref="Direction.NONE"/> means the particle
+        /// is contracted.
+        /// </summary>
         public Direction ExpansionDir
         {
             get { return expansionDir; }
@@ -38,14 +52,32 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// The particle's chirality. <c>true</c> means
+        /// that it agrees with the global coordinate system.
+        /// </summary>
         protected bool chirality;
+        /// <summary>
+        /// The particle's chirality. <c>true</c> means
+        /// that it agrees with the global coordinate system.
+        /// </summary>
         public bool Chirality
         {
             get { return chirality; }
             set { chirality = value; }
         }
 
+        /// <summary>
+        /// The particle's compass direction. This is the
+        /// global direction that the particle believes to
+        /// be <see cref="Direction.E"/>.
+        /// </summary>
         protected Direction compassDir;
+        /// <summary>
+        /// The particle's compass direction. This is the
+        /// global direction that the particle believes to
+        /// be <see cref="Direction.E"/>.
+        /// </summary>
         public Direction CompassDir
         {
             get { return compassDir; }
@@ -59,9 +91,18 @@ namespace AS2.Sim
         }
 
         // Attributes representing the parameter values
+        /// <summary>
+        /// Attributes storing initialization parameters.
+        /// </summary>
         protected List<IParticleAttribute> attributes;
 
+        /// <summary>
+        /// Reference to the rendering representation of the particle.
+        /// </summary>
         public ParticleGraphicsAdapterImpl graphics;
+        /// <summary>
+        /// The system in which this particle is placed.
+        /// </summary>
         protected ParticleSystem system;
 
         public InitializationParticle(ParticleSystem system, Vector2Int position, bool chirality, Direction compassDir, Direction expansionDir = Direction.NONE)
@@ -97,6 +138,10 @@ namespace AS2.Sim
             // Add particle to the render system and update the visuals of the particle
             graphics = new ParticleGraphicsAdapterImpl(this, system.renderSystem.rendererP);
         }
+
+        /*
+         * IParticleState implementation
+         */
 
         public int GetCircuitPinsPerSide()
         {
@@ -203,6 +248,11 @@ namespace AS2.Sim
             return vals;
         }
 
+        /// <summary>
+        /// Generates a serializable representation of this
+        /// particle.
+        /// </summary>
+        /// <returns>A serializable object representing this particle.</returns>
         public abstract InitParticleSaveData GenerateSaveData();
 
         public bool IsAnchor()

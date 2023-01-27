@@ -29,16 +29,38 @@ namespace AS2.Sim
     /// implement an equality check.</typeparam>
     public class ValueHistory<T> : IReplayHistory
     {
-        protected List<T> values;       // Stores the different values
-        protected List<int> rounds;     // Stores the rounds in which values were changed
-        protected int lastRound;        // Stores the last round for which we have a certain recorded value
-
-        protected int markedRound;      // The currently marked round
-        protected int markedIndex;      // The index corresponding to the currently marked round for fast lookup
-        protected bool isTracking;      // Is true while the marked round is tracking the last round
+        /// <summary>
+        /// The history of values. If two consecutively recorded
+        /// values are equal, the second value is not stored.
+        /// </summary>
+        protected List<T> values;
+        /// <summary>
+        /// The history of rounds in which the recorded value
+        /// has changed.
+        /// </summary>
+        protected List<int> rounds;
+        /// <summary>
+        /// The last round for which we have a recorded value.
+        /// </summary>
+        protected int lastRound;
 
         /// <summary>
-        /// Creates a new history record for a variable of type <typeparamref name="T"/>.
+        /// The currently marked round.
+        /// </summary>
+        protected int markedRound;
+        /// <summary>
+        /// The record index corresponding to the currently marked round.
+        /// Useful for fast lookup.
+        /// </summary>
+        protected int markedIndex;
+        /// <summary>
+        /// Indicates whether the marked round is currently tracking
+        /// the last round.
+        /// </summary>
+        protected bool isTracking;
+
+        /// <summary>
+        /// Creates a new history for a variable of type <typeparamref name="T"/>.
         /// </summary>
         /// <param name="initialValue">The first recorded value of the variable.</param>
         /// <param name="initialRound">The round in which this value is recorded.</param>
@@ -152,6 +174,12 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// Checks whether the round marker is currently
+        /// tracking the latest round.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the marker
+        /// is tracking the latest round.</returns>
         public virtual bool IsTracking()
         {
             return isTracking;
@@ -385,23 +413,8 @@ namespace AS2.Sim
         /// <param name="history">The history whose marked value to return.</param>
         public static implicit operator T(ValueHistory<T> history) => history.values[history.markedIndex];
 
-        public void Print()
-        {
-            string s = "History (rounds " + rounds[0] + " - " + lastRound + ") with " + rounds.Count + " records:\n";
-            foreach (int r in rounds)
-            {
-                s += r + " ";
-            }
-            s += "\n";
-            foreach (T v in values)
-            {
-                s += v + " ";
-            }
-            Debug.Log(s);
-        }
 
-
-        /**
+        /*
          * Saving and loading functionality.
          */
 

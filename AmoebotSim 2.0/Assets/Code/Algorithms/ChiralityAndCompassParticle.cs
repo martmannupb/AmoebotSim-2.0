@@ -55,6 +55,7 @@ namespace AS2.Algos.ChiralityCompass
     /// <summary>
     /// Implementation of the chirality agreement and compass alignment
     /// algorithms described in https://arxiv.org/abs/2105.05071v1.
+    /// Both chirality and compasses can be random at initialization.
     /// <para>
     /// Both phases use the following basic procedure:
     /// <list type="number">
@@ -211,10 +212,6 @@ namespace AS2.Algos.ChiralityCompass
         public override int PinsPerEdge => 2;
 
         public static new string Name => "Chirality & Compass Alignment";
-
-        public static new Initialization.Chirality Chirality => Initialization.Chirality.Random;
-
-        public static new Initialization.Compass Compass => Initialization.Compass.Random;
 
         public static new string GenerationMethod => typeof(ChiralityAndCompassInitializer).FullName;
 
@@ -799,6 +796,7 @@ namespace AS2.Algos.ChiralityCompass
                     SetMainColor(compNoCandColor[realCompassDir.GetValue_After().ToInt()]);
                 }
             }
+            //SetPlannedPinConfiguration(pc);
         }
     }
 

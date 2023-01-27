@@ -257,47 +257,6 @@ namespace AS2.Sim
         /// </summary>
         private bool mainColorSet = false;
 
-        // Partition set colors
-        /// <summary>
-        /// Histories of partition set colors.
-        /// Indices are partition set IDs.
-        /// </summary>
-        private ValueHistory<Color>[] partitionSetColorHistory;
-        /// <summary>
-        /// Histories of flags indicating whether the partition set
-        /// colors are set.
-        /// Indices are partition set IDs.
-        /// </summary>
-        private ValueHistory<bool>[] partitionSetColorOverrideHistory;
-        /// <summary>
-        /// Array of current partition set colors.
-        /// Indices are partition set IDs.
-        /// </summary>
-        private Color[] partitionSetColors;
-        /// <summary>
-        /// Array of flags indicating whether the partition set
-        /// colors have been set.
-        /// Indices are partition set IDs.
-        /// </summary>
-        private bool[] partitionSetColorsOverride;
-        /// <summary>
-        /// The current partition set colors.
-        /// Indices are partition set IDs.
-        /// </summary>
-        public Color[] PartitionSetColors
-        {
-            get { return partitionSetColors; }
-        }
-        /// <summary>
-        /// Flags indicating whether the partition set colors
-        /// have been set manually.
-        /// Indices are partition set IDs.
-        /// </summary>
-        public bool[] PartitionSetColorsOverride
-        {
-            get { return partitionSetColorsOverride; }
-        }
-
         // Bond and movement info
         /// <summary>
         /// History of joint movement information records.
@@ -531,20 +490,12 @@ namespace AS2.Sim
             receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
             plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
             plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
-            partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
-            partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
-            partitionSetColors = new Color[maxNumPins];
-            partitionSetColorsOverride = new bool[maxNumPins];
             for (int i = 0; i < maxNumPins; i++)
             {
                 receivedBeepsHistory[i] = new ValueHistory<bool>(false, currentRound);
                 receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
                 plannedBeepsHistory[i] = new ValueHistory<bool>(false, currentRound);
                 plannedMessageHistory[i] = new ValueHistoryMessage(null, currentRound);
-                partitionSetColorHistory[i] = new ValueHistory<Color>(new Color(), currentRound);
-                partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(false, currentRound);
-                partitionSetColors[i] = new Color();
-                partitionSetColorsOverride[i] = false;
             }
         }
 
@@ -776,8 +727,9 @@ namespace AS2.Sim
         /// altered, its ability to send data expires. Setting
         /// the planned pin configuration to a different value
         /// after sending beeps or messages nullifies the
-        /// previously sent data. Partition set colors are
-        /// affected in the same way.
+        /// previously sent data. Partition set colors and positions
+        /// can still be changed as long as the pin configuration
+        /// itself does not change.
         /// </para>
         /// </summary>
         /// <param name="pc">The new pin configuration.</param>
@@ -790,8 +742,6 @@ namespace AS2.Sim
                     Debug.LogWarning("Setting planned pin configuration after sending data erases the sent data.");
                     ResetPlannedBeepsAndMessages();
                 }
-                if (!pc.isCurrent)
-                    ResetAllPartitionSetColors();
             }
             plannedPinConfiguration = pc.Copy();
             pc.isPlanned = true;
@@ -976,68 +926,6 @@ namespace AS2.Sim
             return mainColorSet;
         }
 
-        /// <summary>
-        /// Overrides the specified partition set's color with the
-        /// given color.
-        /// <para>
-        /// The circuit to which the partition set belongs will be
-        /// displayed with this color unless its color has been
-        /// overridden by another partition set already.
-        /// This method must only be called when the system is in
-        /// a tracking state.
-        /// </para>
-        /// <para>
-        /// See also <seealso cref="ResetPartitionSetColor(int)"/>.
-        /// </para>
-        /// </summary>
-        /// <param name="idx">The index of the partition set.</param>
-        /// <param name="color">The color to give to the partition set.</param>
-        public void SetPartitionSetColor(int idx, Color color)
-        {
-            partitionSetColors[idx] = color;
-            partitionSetColorsOverride[idx] = true;
-            partitionSetColorHistory[idx].RecordValueInRound(color, system.CurrentRound);
-            partitionSetColorOverrideHistory[idx].RecordValueInRound(true, system.CurrentRound);
-        }
-
-        /// <summary>
-        /// Resets the color override of the specified partition set.
-        /// <para>
-        /// This method must only be called when the system is in a
-        /// tracking state.
-        /// </para>
-        /// <para>
-        /// See also <seealso cref="SetPartitionSetColor(int, Color)"/>,
-        /// <seealso cref="ResetAllPartitionSetColors"/>.
-        /// </para>
-        /// </summary>
-        /// <param name="idx">The index of the partition set.</param>
-        public void ResetPartitionSetColor(int idx)
-        {
-            if (partitionSetColorsOverride[idx])
-            {
-                partitionSetColors[idx] = Color.black;
-                partitionSetColorsOverride[idx] = false;
-                partitionSetColorHistory[idx].RecordValueInRound(Color.black, system.CurrentRound);
-                partitionSetColorOverrideHistory[idx].RecordValueInRound(false, system.CurrentRound);
-            }
-        }
-
-        /// <summary>
-        /// Resets the colors of all partition sets.
-        /// <para>
-        /// This method must only be called when the system is in
-        /// a tracking state.
-        /// </para>
-        /// <para>
-        /// See also <seealso cref="ResetPartitionSetColor(int)"/>.
-        /// </para>
-        /// </summary>
-        public void ResetAllPartitionSetColors()
-        {
-            for (int i = 0; i < partitionSetColors.Length; i++)
-                ResetPartitionSetColor(i);
-        }
 
         /*
          * Particle action methods that are used by the system to change the
@@ -1178,7 +1066,6 @@ namespace AS2.Sim
                 {
                     // Have moved
                     newPC = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
-                    ResetAllPartitionSetColors();
                 }
             }
             if (!(newPC is null))
@@ -1614,8 +1501,6 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].SetMarkerToRound(round);
                 plannedBeepsHistory[i].SetMarkerToRound(round);
                 plannedMessageHistory[i].SetMarkerToRound(round);
-                partitionSetColorHistory[i].SetMarkerToRound(round);
-                partitionSetColorOverrideHistory[i].SetMarkerToRound(round);
             }
 
             // Reset visuals
@@ -1654,8 +1539,6 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].StepBack();
                 plannedBeepsHistory[i].StepBack();
                 plannedMessageHistory[i].StepBack();
-                partitionSetColorHistory[i].StepBack();
-                partitionSetColorOverrideHistory[i].StepBack();
             }
 
             mainColorHistory.StepBack();
@@ -1687,8 +1570,6 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].StepForward();
                 plannedBeepsHistory[i].StepForward();
                 plannedMessageHistory[i].StepForward();
-                partitionSetColorHistory[i].StepForward();
-                partitionSetColorOverrideHistory[i].StepForward();
             }
 
             mainColorHistory.StepForward();
@@ -1735,8 +1616,6 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].ContinueTracking();
                 plannedBeepsHistory[i].ContinueTracking();
                 plannedMessageHistory[i].ContinueTracking();
-                partitionSetColorHistory[i].ContinueTracking();
-                partitionSetColorOverrideHistory[i].ContinueTracking();
             }
 
             mainColorHistory.ContinueTracking();
@@ -1776,8 +1655,6 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].CutOffAtMarker();
                 plannedBeepsHistory[i].CutOffAtMarker();
                 plannedMessageHistory[i].CutOffAtMarker();
-                partitionSetColorHistory[i].CutOffAtMarker();
-                partitionSetColorOverrideHistory[i].CutOffAtMarker();
             }
 
             mainColorHistory.CutOffAtMarker();
@@ -1810,8 +1687,6 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].ShiftTimescale(amount);
                 plannedBeepsHistory[i].ShiftTimescale(amount);
                 plannedMessageHistory[i].ShiftTimescale(amount);
-                partitionSetColorHistory[i].ShiftTimescale(amount);
-                partitionSetColorOverrideHistory[i].ShiftTimescale(amount);
             }
 
             mainColorHistory.ShiftTimescale(amount);
@@ -1860,8 +1735,6 @@ namespace AS2.Sim
                 plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
                 if (plannedMessages[i] != null)
                     hasPlannedMessages = true;
-                partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
-                partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
             }
 
             mainColor = mainColorHistory.GetMarkedValue();
@@ -1959,13 +1832,7 @@ namespace AS2.Sim
 
             data.mainColorHistory = mainColorHistory.GenerateSaveData();
             data.mainColorSetHistory = mainColorSetHistory.GenerateSaveData();
-            data.partitionSetColorHistory = new ValueHistorySaveData<Color>[partitionSetColorHistory.Length];
-            data.partitionSetColorOverrideHistory = new ValueHistorySaveData<bool>[partitionSetColorOverrideHistory.Length];
-            for (int i = 0; i < partitionSetColorHistory.Length; i++)
-            {
-                data.partitionSetColorHistory[i] = partitionSetColorHistory[i].GenerateSaveData();
-                data.partitionSetColorOverrideHistory[i] = partitionSetColorOverrideHistory[i].GenerateSaveData();
-            }
+
             data.jointMovementHistory = jointMovementHistory.GenerateSaveData();
             data.bondMovementHistory = bondMovementHistory.GenerateSaveData();
 
@@ -2076,25 +1943,18 @@ namespace AS2.Sim
             receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
             plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
             plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
-            partitionSetColorHistory = new ValueHistory<Color>[maxNumPins];
-            partitionSetColorOverrideHistory = new ValueHistory<bool>[maxNumPins];
-            partitionSetColors = new Color[maxNumPins];
-            partitionSetColorsOverride = new bool[maxNumPins];
+
             for (int i = 0; i < maxNumPins; i++)
             {
                 receivedBeepsHistory[i] = new ValueHistory<bool>(data.receivedBeepsHistory[i]);
                 receivedMessagesHistory[i] = new ValueHistoryMessage(data.receivedMessagesHistory[i]);
                 plannedBeepsHistory[i] = new ValueHistory<bool>(data.plannedBeepsHistory[i]);
                 plannedMessageHistory[i] = new ValueHistoryMessage(data.plannedMessagesHistory[i]);
-                partitionSetColorHistory[i] = new ValueHistory<Color>(data.partitionSetColorHistory[i]);
-                partitionSetColorOverrideHistory[i] = new ValueHistory<bool>(data.partitionSetColorOverrideHistory[i]);
 
                 receivedBeeps[i] = receivedBeepsHistory[i].GetMarkedValue();
                 receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
                 plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
                 plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
-                partitionSetColors[i] = partitionSetColorHistory[i].GetMarkedValue();
-                partitionSetColorsOverride[i] = partitionSetColorOverrideHistory[i].GetMarkedValue();
             }
 
             // Finally, update the attributes

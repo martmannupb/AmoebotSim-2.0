@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,14 +11,45 @@ namespace AS2.Sim
     /// Use the pooling mechanism (<see cref="Get(int)"/> and
     /// <see cref="Free(Circuit)"/>) to obtain and free instances.
     /// </para>
+    /// <para>
+    /// A tree structure is used for merging circuits. When one
+    /// circuit is merged into another, all of its children and
+    /// the circuit itself are added as children to the other
+    /// circuit. All children of a root circuit dispatch operations
+    /// to their root.
+    /// </para>
     /// </summary>
     public class Circuit
     {
+        /// <summary>
+        /// The ID given to this circuit while computing circuits in
+        /// a particle system. Used to easily identify and refer to
+        /// circuits while merging.
+        /// </summary>
         public int id;
+        /// <summary>
+        /// Indicates whether a beep is sent on this circuit in this round.
+        /// </summary>
         private bool hasBeep;
+        /// <summary>
+        /// The message that is sent via this circuit in this round.
+        /// <c>null</c> if no message is sent.
+        /// </summary>
         private Message message;
+        /// <summary>
+        /// The color in which this circuit should be displayed.
+        /// </summary>
         private Color color;
+        /// <summary>
+        /// Indicates whether the circuit color has been set by a
+        /// partition set.
+        /// </summary>
         private bool colorOverride;
+        /// <summary>
+        /// The number of partition sets added directly to this circuit.
+        /// Since this circuit might be merged into a larger one, this
+        /// number is not always up to date.
+        /// </summary>
         private int numPartitionSets = 0;
         /// <summary>
         /// The number of partition sets belonging to this circuit.
@@ -29,7 +59,14 @@ namespace AS2.Sim
             get { return GetRoot().numPartitionSets; }
         }
 
+        /// <summary>
+        /// The circuits merged into this one.
+        /// </summary>
         private List<Circuit> children = new List<Circuit>();
+        /// <summary>
+        /// Reference to the root circuit that contains this one.
+        /// <c>null</c> if this circuit is the root.
+        /// </summary>
         private Circuit rootParent = null;
 
         private Circuit(int id)
@@ -37,6 +74,10 @@ namespace AS2.Sim
             Reset(id);
         }
 
+        /// <summary>
+        /// Completely reinitializes the circuit with a new ID.
+        /// </summary>
+        /// <param name="id">The new ID.</param>
         private void Reset(int id)
         {
             this.id = id;
@@ -49,36 +90,73 @@ namespace AS2.Sim
             rootParent = null;
         }
 
+        /// <summary>
+        /// Checks whether this circuit is currently a root.
+        /// </summary>
+        /// <returns><c>true</c> if and only if this circuit does
+        /// not have a root parent.</returns>
         public bool IsRoot()
         {
             return rootParent == null;
         }
 
+        /// <summary>
+        /// Checks whether a beep has been sent on this circuit.
+        /// </summary>
+        /// <returns><c>true</c> if and only if any partition set
+        /// contained in this circuit sends a beep in this round.</returns>
         public bool HasBeep()
         {
             return GetRoot().hasBeep;
         }
 
+        /// <summary>
+        /// Gets the message sent on this circuit in this round.
+        /// </summary>
+        /// <returns>The message sent on this circuit in this round,
+        /// or <c>null</c> if no message was sent.</returns>
         public Message GetMessage()
         {
             return GetRoot().message;
         }
 
+        /// <summary>
+        /// Checks whether the color of this circuit was changed
+        /// by a partition set.
+        /// </summary>
+        /// <returns><c>true</c> if and only if a partition set
+        /// in this circuit has defined a display color.</returns>
         public bool HasColorOverride()
         {
             return GetRoot().colorOverride;
         }
 
+        /// <summary>
+        /// Returns the color in which the circuit should be
+        /// displayed. This may be one of the default colors or
+        /// a color defined by a partition set.
+        /// </summary>
+        /// <returns>The desired display color of the circuit.</returns>
         public Color GetColor()
         {
             return GetRoot().color;
         }
 
+        /// <summary>
+        /// Sets the display color of this circuit.
+        /// </summary>
+        /// <param name="c">The new color in which the circuit
+        /// should be displayed.</param>
         public void SetColor(Color c)
         {
             GetRoot().color = c;
         }
 
+        /// <summary>
+        /// Returns the root circuit in this circuit's tree.
+        /// </summary>
+        /// <returns>The root of the circuit tree to which this
+        /// circuit belongs.</returns>
         private Circuit GetRoot()
         {
             if (rootParent != null)
@@ -90,8 +168,9 @@ namespace AS2.Sim
         /// <summary>
         /// Adds the given partition set to this circuit.
         /// <para>
-        /// If the partition set has a planned beep, this information
-        /// is stored in the circuit.
+        /// If the partition set has a planned beep or message
+        /// or has defined a display color, this information
+        /// will be stored in the circuit.
         /// </para>
         /// </summary>
         /// <param name="ps">The partition set to be added.</param>
@@ -100,6 +179,11 @@ namespace AS2.Sim
             GetRoot().AddPartitionSetRoot(ps);
         }
 
+        /// <summary>
+        /// Counterpart to <see cref="AddPartitionSet(SysPartitionSet)"/>
+        /// to be called on the root only.
+        /// </summary>
+        /// <param name="ps">The partition set to be added.</param>
         private void AddPartitionSetRoot(SysPartitionSet ps)
         {
             ps.circuit = id;
@@ -125,13 +209,20 @@ namespace AS2.Sim
                 }
             }
 
-            if (!colorOverride && ps.pinConfig.particle.PartitionSetColorsOverride[ps.Id])
+            if (!colorOverride && ps.colorOverride)
             {
                 colorOverride = true;
-                color = ps.pinConfig.particle.PartitionSetColors[ps.Id];
+                color = ps.color;
             }
         }
 
+        /// <summary>
+        /// Checks whether this circuit is part of the same tree
+        /// as the given circuit.
+        /// </summary>
+        /// <param name="other">The other circuit to be checked.</param>
+        /// <returns><c>true</c> if and only if the trees of this
+        /// circuit and the <paramref name="other"/> have the same root.</returns>
         public bool SameCircuitAs(Circuit other)
         {
             return GetRoot() == other.GetRoot();
@@ -145,7 +236,12 @@ namespace AS2.Sim
         /// merged into the bigger one and the smaller one is
         /// set to be inactive. If one of the circuits has a
         /// planned beep, the resulting circuit will also
-        /// have a planned beep.
+        /// have a planned beep. If any of the two circuits
+        /// has a message, the message with the higher
+        /// priority is sent on the resulting circuit. The
+        /// color is determined by override if only one has
+        /// a color set or by the larger one if both have a
+        /// color override.
         /// </para>
         /// </summary>
         /// <param name="other">The circuit to merge this one
@@ -158,9 +254,14 @@ namespace AS2.Sim
             GetRoot().MergeWithRoot(other.GetRoot());
         }
 
+        /// <summary>
+        /// Counterpart to <see cref="MergeWith(Circuit)"/> to be
+        /// called on the root only.
+        /// </summary>
+        /// <param name="other">The other circuit to merge with
+        /// this root.</param>
         private void MergeWithRoot(Circuit other)
         {
-            //if (children.Count >= other.children.Count)
             if (numPartitionSets >= other.numPartitionSets)
             {
                 MergeOther(other);
@@ -209,6 +310,9 @@ namespace AS2.Sim
 
         // Pooling
 
+        /// <summary>
+        /// A stack that contains the currently unused circuits.
+        /// </summary>
         private static Stack<Circuit> pool = new Stack<Circuit>();
 
         /// <summary>

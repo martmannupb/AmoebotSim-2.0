@@ -11,13 +11,24 @@ namespace AS2
     /// <para>
     /// A simulation state comprises the entire history of all particles in
     /// the system. It is stored in a <see cref="SimulationStateSaveData"/>
-    /// object, which can be serialized by Unity's <see cref="JsonUtility"/>.
+    /// object, which can be serialized and deserialized by Unity's
+    /// <see cref="JsonUtility"/>.
+    /// </para>
+    /// <para>
+    /// Similarly, <see cref="InitModeSaveData"/> objects represent the
+    /// system state in Initialization Mode.
     /// </para>
     /// </summary>
     public static class SaveStateUtility
     {
+        /// <summary>
+        /// Default file for saving simulation states.
+        /// </summary>
         public static string defaultSaveFile = Application.persistentDataPath + "/Amoebotsim_2_0_default_savedata.json";
-        public static string tmpSaveFile = Application.persistentDataPath + "/Amoebotsim_2_0_tmp_savedata.json";
+        /// <summary>
+        /// Temporary save file used to restore simulation when Init Mode is aborted.
+        /// </summary>
+        public static string tmpSaveFile = Application.persistentDataPath + "/.Amoebotsim_2_0_tmp_savedata.json";
 
         /// <summary>
         /// Converts the given simulation state to JSON format and writes it to

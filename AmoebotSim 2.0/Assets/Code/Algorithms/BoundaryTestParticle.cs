@@ -312,7 +312,7 @@ namespace AS2.Algos.BoundaryTest
                     // Compute the angle as number of 60° counter-clockwise turns mod 5
                     int oppositePredDir = (boundaryNbrs[regionIdx, 0].GetValue_After() + 3) % 6;
                     int numTurns = ((curDir + 1) + 6 - oppositePredDir) % 6;
-                    // 0, 1, 2, 3 turns means positive angle, 5 means negative angle (-1 = 4 mod 5)
+                    // 0, 1, 2, 3 turns means positive angle, 4 means negative angle (-1 = 4 mod 5)
                     boundaryAngles[regionIdx].SetValue(numTurns < 4 ? numTurns : 4);
                     regionIdx++;
                 }
@@ -816,6 +816,12 @@ namespace AS2.Algos.BoundaryTest
                         pc.GetPinAt(succDir, 0),
                         pc.GetPinAt(succDir, 1)
                     }, boundary);
+                    // Place the partition set close to the boundary
+                    float angle = (predDir.ToInt() + predDir.DistanceTo(succDir) / 4f) * 60f;
+                    float dist = 0.5f;
+                    if (predDir == succDir)
+                        dist = 0f;
+                    pc.SetPartitionSetPosition(boundary, new Vector2(angle, dist));
                 }
                 boundaryPC.SetValue(pc);
             }
@@ -836,6 +842,7 @@ namespace AS2.Algos.BoundaryTest
                 return;
 
             pc.SetToSingleton();
+            pc.ResetPartitionSetPlacement();
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
                 if (isCandidate[boundary])

@@ -2141,6 +2141,47 @@ namespace AS2.Sim
             // Also complete graphics information for all particles
             foreach (Particle p in particles)
             {
+                // Set partition set placement mode
+                if (p.PinConfiguration.placementModeHead != PSPlacementMode.NONE)
+                {
+                    switch (p.PinConfiguration.placementModeHead)
+                    {
+                        case PSPlacementMode.LINE:
+                            p.gCircuit.CodePositionOverride_AutomaticLine(true);
+                            break;
+                        case PSPlacementMode.LINE_ROTATED:
+                            // Rotation 0 means East in pin configuration API but North in graphics API
+                            p.gCircuit.CodePositionOverride_LineRotated(p.PinConfiguration.lineRotationHead - 90f, true);
+                            break;
+                        case PSPlacementMode.LLOYD:
+                            p.gCircuit.CodePositionOverride_Automatic(true);
+                            break;
+                        case PSPlacementMode.MANUAL:
+                            p.gCircuit.CodePositionOverride_PolarCoordinatePlacement(true);
+                            break;
+                    }
+                }
+                if (p.IsExpanded() && p.PinConfiguration.placementModeTail != PSPlacementMode.NONE)
+                {
+                    switch (p.PinConfiguration.placementModeTail)
+                    {
+                        case PSPlacementMode.LINE:
+                            p.gCircuit.CodePositionOverride_AutomaticLine(false);
+                            break;
+                        case PSPlacementMode.LINE_ROTATED:
+                            // Rotation 0 means East in pin configuration API but North in graphics API
+                            p.gCircuit.CodePositionOverride_LineRotated(p.PinConfiguration.lineRotationTail - 90f, false);
+                            break;
+                        case PSPlacementMode.LLOYD:
+                            p.gCircuit.CodePositionOverride_Automatic(false);
+                            break;
+                        case PSPlacementMode.MANUAL:
+                            p.gCircuit.CodePositionOverride_PolarCoordinatePlacement(false);
+                            break;
+                    }
+                }
+                bool manualPositionHead = p.PinConfiguration.placementModeHead == PSPlacementMode.MANUAL;
+                bool manualPositionTail = p.IsExpanded() && p.PinConfiguration.placementModeTail == PSPlacementMode.MANUAL;
                 // Compute each partition set
                 foreach (SysPartitionSet ps in p.PinConfiguration.partitionSets)
                 {
@@ -2192,6 +2233,11 @@ namespace AS2.Sim
                             circ.HasBeep() || circ.GetMessage() != null,
                             p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
                             pins);
+                        // Set manual coordinates (angle must be converted from East to North)
+                        if (manualPositionHead)
+                            pset.CodePositionOverride_Coordinate(new Polar2DCoordinate(ps.positionHead.x - 90f, ps.positionHead.y), true);
+                        if (manualPositionTail)
+                            pset.CodePositionOverride_Coordinate(new Polar2DCoordinate(ps.positionTail.x - 90f, ps.positionTail.y), false);
                         p.gCircuit.partitionSets.Add(pset);
                     }
                 }
@@ -3460,9 +3506,14 @@ namespace AS2.Sim
                 }
                 InitializeFromSaveState(saveData, false);
                 SetMarkerToRound(storedSimulationRound);
+                SetInitialParticleBonds();
+                ComputeBondsStatic();
+                FinishMovementInfo();
+                UpdateNeighborCaches();
+                SetupPinGraphicState(true);
                 DiscoverCircuits(false);
-                CleanupAfterRound();
                 UpdateAllParticleVisuals(true);
+                CleanupAfterRound();
             }
             inInitializationState = false;
         }

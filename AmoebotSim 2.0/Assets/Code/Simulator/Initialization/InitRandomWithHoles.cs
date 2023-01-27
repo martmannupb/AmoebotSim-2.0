@@ -2,6 +2,12 @@
 namespace AS2
 {
 
+    /// <summary>
+    /// Standard initialization method that generates
+    /// a connected system of contracted particles with
+    /// random holes.
+    /// See <see cref="InitializationMethod.GenerateRandomWithHoles(int, float, Initialization.Chirality, Initialization.Compass)"/>.
+    /// </summary>
     public class InitRandomWithHoles : InitializationMethod
     {
         public InitRandomWithHoles(AS2.Sim.ParticleSystem system) : base(system)
