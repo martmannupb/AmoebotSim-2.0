@@ -818,7 +818,10 @@ namespace AS2.Algos.BoundaryTest
                     }, boundary);
                     // Place the partition set close to the boundary
                     float angle = (predDir.ToInt() + predDir.DistanceTo(succDir) / 4f) * 60f;
-                    pc.SetPartitionSetPosition(boundary, new Vector2(angle, 0.7f));
+                    float dist = 0.5f;
+                    if (predDir == succDir)
+                        dist = 0f;
+                    pc.SetPartitionSetPosition(boundary, new Vector2(angle, dist));
                 }
                 boundaryPC.SetValue(pc);
             }
@@ -839,6 +842,7 @@ namespace AS2.Algos.BoundaryTest
                 return;
 
             pc.SetToSingleton();
+            pc.ResetPartitionSetPlacement();
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
                 if (isCandidate[boundary])
