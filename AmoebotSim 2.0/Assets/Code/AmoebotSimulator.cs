@@ -33,32 +33,12 @@ namespace AS2
         // Start is called before the first frame update
         void Start()
         {
-            //// MinMax Test
-            //MinMax minMax = new MinMax(2.45f, 3, false);
-            //Debug.Log("MinMax Test: " + MinMax.Parse(minMax.ToString()));
-            //minMax = new MinMax(2.45f, 3, true);
-            //Debug.Log("MinMax Test: " + MinMax.Parse(minMax.ToString()));
-
             // Init Renderer + Particle System
             renderSystem = new RenderSystem(this, FindObjectOfType<InputController>());
             system = new AS2.Sim.ParticleSystem(this, renderSystem);
-            // Set Sim Speed (not necessary with the new UI)
-            //SetSimSpeed(0.005f);
-            //SetSimSpeed(0.5f);
 
             // Register UI
             if (uiHandler != null) uiHandler.RegisterSim(this);
-
-            // Init Algorithm
-            //system.InitializeExample(1, 1, 1f, -9, -5);
-            //system.InitializeExample(50, 50, 0.3f, -9, -5);
-            //system.InitializeLineFormation(50, 0.4f);
-            //system.InitializeLineFormation(25, 0.4f);
-            //system.InitializeLeaderElection(50, 0.35f);
-            //system.InitializeChiralityCompass(50, 0.2f);
-            //system.InitializeBoundaryTest(100, 0.05f);
-            //system.InitializeExpandedTest(10);
-            //system.InitializeJMTest(17);
 
             // Open Init Mode (when initialized)
             StartCoroutine(OpenInitModeCoroutine());
@@ -121,12 +101,12 @@ namespace AS2
             {
                 if (running == false)
                 {
-                    if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(true);
+                    EventDatabase.event_sim_startedStopped?.Invoke(true);
                 }
                 else
                 {
                     //system.Print();
-                    if (EventDatabase.event_sim_startedStopped != null) EventDatabase.event_sim_startedStopped(false);
+                    EventDatabase.event_sim_startedStopped?.Invoke(false);
                 }
                 running = !running;
                 if (uiHandler != null) uiHandler.NotifyPlayPause(running);

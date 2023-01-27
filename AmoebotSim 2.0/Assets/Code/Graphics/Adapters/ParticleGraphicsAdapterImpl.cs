@@ -248,7 +248,7 @@ namespace AS2.Visuals
 
         public void CircuitUpdate(ParticlePinGraphicState state)
         {
-            renderer.circuitAndBondRenderer.AddCircuits(state, state_cur);
+            renderer.circuitAndBondRenderer.AddCircuits(this, state, state_cur);
         }
 
         public void SetParticleColor(Color color)

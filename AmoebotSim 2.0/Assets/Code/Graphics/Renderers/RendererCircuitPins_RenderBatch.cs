@@ -95,7 +95,7 @@ namespace AS2.Visuals
         /// </summary>
         /// <param name="pinPos">The global pin center position.</param>
         /// <param name="singletonPin">If this is a singleton pin. Singleton pins have their own pin size.</param>
-        public void AddPin(Vector2 pinPos, bool singletonPin)
+        public RenderBatchIndex AddPin(Vector2 pinPos, bool singletonPin)
         {
             if (currentIndex >= maxArraySize * circuitMatrices_Pins.Count)
             {
@@ -107,6 +107,24 @@ namespace AS2.Visuals
             Matrix4x4 matrix = CalculatePinMatrix(pinPos, singletonPin);
             circuitMatrices_Pins[listNumber][listIndex] = matrix;
             currentIndex++;
+            return new RenderBatchIndex(listNumber, listIndex);
+        }
+
+        /// <summary>
+        /// Updates a pin.
+        /// </summary>
+        /// <param name="pinPos">The global pin center position.</param>
+        /// <param name="singletonPin">If this is a singleton pin. Singleton pins have their own pin size.</param>
+        /// <param name="index">The index of the update.</param>
+        public void UpdatePin(Vector2 pinPos, bool singletonPin, RenderBatchIndex index)
+        {
+            if(index.isValid == false || index.listNumber < 0 || index.listNumber >= circuitMatrices_Pins.Count || index.listIndex < 0 || index.listIndex >= circuitMatrices_Pins[index.listNumber].Length)
+            {
+                Log.Error("Pin Render Batch: UpdatePin: Array out of bounds.");
+                return;
+            }
+            Matrix4x4 matrix = CalculatePinMatrix(pinPos, singletonPin);
+            circuitMatrices_Pins[index.listNumber][index.listIndex] = matrix;
         }
 
         /// <summary>
@@ -115,7 +133,8 @@ namespace AS2.Visuals
         /// It has the width and color of the circuit lines, so that two lines that go to the same point do not have visibly sharp edges and seem like a connected structure.
         /// </summary>
         /// <param name="pinPos"></param>
-        public void AddConnectorPin(Vector2 pinPos)
+        /// <param name="index">The index of the update.</param>
+        public RenderBatchIndex AddConnectorPin(Vector2 pinPos)
         {
             if (currentIndex_connectors >= maxArraySize * circuitMatrices_PinConnectors.Count)
             {
@@ -127,6 +146,22 @@ namespace AS2.Visuals
             Matrix4x4 matrix = CalculatePinConnectorMatrix(pinPos);
             circuitMatrices_PinConnectors[listNumber][listIndex] = matrix;
             currentIndex_connectors++;
+            return new RenderBatchIndex(listNumber, listIndex);
+        }
+
+        /// <summary>
+        /// Updates a connector pin.
+        /// </summary>
+        /// <param name="pinPos"></param>
+        public void UpdateConnectorPin(Vector2 pinPos, RenderBatchIndex index)
+        {
+            if (index.isValid == false || index.listNumber < 0 || index.listNumber >= circuitMatrices_PinConnectors.Count || index.listIndex < 0 || index.listIndex >= circuitMatrices_PinConnectors[index.listNumber].Length)
+            {
+                Log.Error("Pin Render Batch: UpdateConnectorPin: Array out of bounds.");
+                return;
+            }
+            Matrix4x4 matrix = CalculatePinConnectorMatrix(pinPos);
+            circuitMatrices_PinConnectors[index.listNumber][index.listIndex] = matrix;
         }
 
         /// <summary>

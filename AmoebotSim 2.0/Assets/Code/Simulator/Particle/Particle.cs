@@ -1985,6 +1985,18 @@ namespace AS2.Sim
                 }
             }
         }
+
+
+
+
+
+        // Added by Tobias (put it where you like) ____________________________
+        
+        public IParticleGraphicsAdapter GetGraphicsAdapter()
+        {
+            return graphics;
+        }
+
     }
 
 } // namespace AS2.Sim
