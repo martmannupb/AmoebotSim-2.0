@@ -894,6 +894,7 @@ namespace AS2.Algos.BoundaryTest
             if (numBoundaries > 0)
             {
                 pc.SetToGlobal();
+                pc.ResetPartitionSetPlacement();
                 SetPlannedPinConfiguration(pc);
                 if (beep)
                 {
