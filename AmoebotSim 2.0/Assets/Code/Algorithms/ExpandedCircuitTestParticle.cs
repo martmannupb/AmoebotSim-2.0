@@ -12,9 +12,18 @@ namespace AS2.Algos.ExpandedCircuitTest
 
         public static new string GenerationMethod => typeof(ExpandedCircuitTestInitializer).FullName;
 
+        public ParticleAttribute<Direction> moveDir;
+
         public ExpandedCircuitTestParticle(Particle p) : base(p)
         {
+            moveDir = CreateAttributeDirection("moveDir", Direction.NONE);
+
             SetMainColor(Color.gray);
+        }
+
+        public void Init(Direction moveDir)
+        {
+            this.moveDir.SetValue(moveDir);
         }
 
         public override void ActivateBeep()
@@ -32,13 +41,13 @@ namespace AS2.Algos.ExpandedCircuitTest
             }
             else
             {
-                Expand(DirectionHelpers.Cardinal(0));
+                Expand(moveDir);
             }
         }
 
         private void SetRandomPC(bool expanded)
         {
-            PinConfiguration pc = expanded ? GetExpandedPinConfiguration(0) : GetContractedPinConfiguration();
+            PinConfiguration pc = expanded ? GetExpandedPinConfiguration(HeadDirection()) : GetContractedPinConfiguration();
             int nPins = expanded ? (10 * PinsPerEdge) : (6 * PinsPerEdge);
             // Create random pin configuration
             // Change random number of partition sets by adding random pins
@@ -75,9 +84,15 @@ namespace AS2.Algos.ExpandedCircuitTest
     {
         public ExpandedCircuitTestInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
-        public void Generate(int numParticles = 10)
+        public void Generate(int numParticles = 10, Initialization.Compass moveDir = Initialization.Compass.E)
         {
-            PlaceParallelogram(Vector2Int.zero, Direction.NNE, numParticles);
+            Direction movementDir = DirectionHelpers.FromInitDir(moveDir);
+
+            PlaceParallelogram(Vector2Int.zero, movementDir.Rotate60(1), numParticles);
+            foreach (InitializationParticle ip in GetParticles())
+            {
+                ip.SetAttributes(new object[] { movementDir });
+            }
         }
     }
 

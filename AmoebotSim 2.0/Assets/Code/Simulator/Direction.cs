@@ -294,6 +294,12 @@ namespace AS2
 
             return directions;
         }
+
+        public static Direction FromInitDir(Initialization.Compass initDir)
+        {
+            int dirInt = initDir == Initialization.Compass.Random ? Random.Range(0, 6) : (int)initDir;
+            return Cardinal(dirInt);
+        }
     }
 
 } // namespace AS2
