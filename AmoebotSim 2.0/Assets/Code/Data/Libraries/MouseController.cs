@@ -99,10 +99,11 @@ namespace AS2
             if (movementLocked) return;
 
             // Keyboard WASD
-            bool arrowLeft = Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow);
-            bool arrowDown = Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow);
-            bool arrowRight = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
-            bool arrowUp = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow);
+            bool keyMovementActive = Input.GetKey(KeyCode.LeftControl) == false && Input.GetKey(KeyCode.RightControl);
+            bool arrowLeft = keyMovementActive && (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow));
+            bool arrowDown = keyMovementActive && (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow));
+            bool arrowRight = keyMovementActive && (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow));
+            bool arrowUp = keyMovementActive && (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow));
             bool anyArrowKeyPressed = arrowLeft || arrowDown || arrowRight || arrowUp;
 
             // Handle screen dragging

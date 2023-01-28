@@ -155,9 +155,29 @@ namespace AS2.UI
                 // Pause/Play
                 sim.TogglePlayPause();
             }
-            // Shift + ...
-            if (Input.GetKey(KeyCode.LeftControl))
+            if(Input.GetKeyDown(KeyCode.PageUp))
             {
+                // Forward
+                Button_StepForwardPressed();
+            }
+            if(Input.GetKeyDown(KeyCode.PageDown))
+            {
+                // Back
+                Button_StepBackPressed();
+            }
+            // Shift + ...
+            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+            {
+                if (Input.GetKeyDown(KeyCode.RightArrow))
+                {
+                    // Forward
+                    Button_StepForwardPressed();
+                }
+                if (Input.GetKeyDown(KeyCode.LeftArrow))
+                {
+                    // Backward
+                    Button_StepBackPressed();
+                }
                 if (Input.GetKeyDown(KeyCode.H))
                 {
                     // Hide UI
@@ -397,6 +417,8 @@ namespace AS2.UI
         /// </summary>
         public void Button_StepBackPressed()
         {
+            if (button_stepBack.interactable == false) return;
+
             // Check if valid
             if (sim.running)
             {
@@ -415,6 +437,8 @@ namespace AS2.UI
         /// </summary>
         public void Button_StepForwardPressed()
         {
+            if (button_stepForward.interactable == false) return;
+
             // Check if valid
             if (sim.running)
             {

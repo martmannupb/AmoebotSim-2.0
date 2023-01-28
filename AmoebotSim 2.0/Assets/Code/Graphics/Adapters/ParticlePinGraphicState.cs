@@ -331,17 +331,6 @@ namespace AS2.Visuals
                 }
             }
 
-            /// <summary>
-            /// Removes any code overrides that have been set on this level of the object. You might not need this.
-            /// </summary>
-            public void ResetCodePositionOverride()
-            {
-                graphicalData.codeOverrideType1 = GraphicalData.CodeOverrideType_PSet.NotSet;
-                graphicalData.codeOverrideType2 = GraphicalData.CodeOverrideType_PSet.NotSet;
-                graphicalData.codeOverride_coordinate1.Discard();
-                graphicalData.codeOverride_coordinate2.Discard();
-            }
-
             // ___________________________________________
 
             /// <summary>
