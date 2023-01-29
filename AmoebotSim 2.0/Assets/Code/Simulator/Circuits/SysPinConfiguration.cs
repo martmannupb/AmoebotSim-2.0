@@ -292,6 +292,8 @@ namespace AS2.Sim
             }
             copy.placementModeHead = placementModeHead;
             copy.placementModeTail = placementModeTail;
+            copy.lineRotationHead = lineRotationHead;
+            copy.lineRotationTail = lineRotationTail;
             for (int i = 0; i < numPins; i++)
             {
                 SysPartitionSet spCopy = copy.partitionSets[i];
@@ -689,16 +691,16 @@ namespace AS2.Sim
         public override void SetLineRotation(float angle, bool head = true)
         {
             // Must convert angle from local to global
-            angle = particle.CompassDir().ToInt() * 60f + (particle.chirality ? angle : -angle);
+            float angleLocal = particle.CompassDir().ToInt() * 60f + (particle.chirality ? angle : -angle);
             if (head)
             {
-                lineRotationHead = angle;
-                placementModeHead = PSPlacementMode.LINE;
+                lineRotationHead = angleLocal;
+                placementModeHead = PSPlacementMode.LINE_ROTATED;
             }
             else
             {
-                lineRotationTail = angle;
-                placementModeTail = PSPlacementMode.LINE;
+                lineRotationTail = angleLocal;
+                placementModeTail = PSPlacementMode.LINE_ROTATED;
             }
 
             // If the pin configuration is marked as planned, apply the same change
