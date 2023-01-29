@@ -312,6 +312,8 @@ namespace AS2.Visuals
             // Precalculations
             foreach (var pset in circuitData.state.partitionSets) pset.PrecalculatePinNumbersAndStoreInGD();
 
+            //Log.Debug("PartitionSetViewType: Head: " + circuitData.state.codeOverrideType1.ToString() + ", Tail: " + (circuitData.state.isExpanded == false ? "-" : circuitData.state.codeOverrideType2.ToString()));
+
             // 1. Particle Head ====================
             {
                 bool codeOverride_active = false;
@@ -415,7 +417,7 @@ namespace AS2.Visuals
                     case PartitionSetViewType.Auto:
                         break;
                     case PartitionSetViewType.CodeOverride:
-                        switch (circuitData.state.codeOverrideType1)
+                        switch (circuitData.state.codeOverrideType2)
                         {
                             case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
                                 pSetViewType = PartitionSetViewType.Auto; // standard view type for this particle half
