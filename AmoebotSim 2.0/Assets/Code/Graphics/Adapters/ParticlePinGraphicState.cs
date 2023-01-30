@@ -543,6 +543,7 @@ namespace AS2.Visuals
                 PSetData.PoolRelease(pSet);
             }
             singletonSets.Clear();
+            ResetCodePositionOverride();
         }
 
         /// <summary>
