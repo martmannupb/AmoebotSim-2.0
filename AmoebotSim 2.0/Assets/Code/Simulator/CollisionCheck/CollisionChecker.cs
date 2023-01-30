@@ -68,7 +68,7 @@ namespace AS2.Sim
                 // Collision
                 collision = true;
             }
-            if (otherMovement2 != Vector2Int.zero &&
+            else if (otherMovement2 != Vector2Int.zero &&
                 LineSegmentsIntersect(emStatic.start1, emStatic.end1, emOther.end1, emOther.end1 + otherMovement2))
             {
                 // Collision
@@ -92,6 +92,72 @@ namespace AS2.Sim
                 return true;
             }
 
+            return false;
+        }
+
+        public static bool EdgesCollideBothNonStatic(EdgeMovement em1, EdgeMovement em2)
+        {
+            // We always use the start point of the first edge as its origin
+
+            // Compute the vector pointing from the first edge's start point to
+            // its end point when the edge is expanded
+            Vector2Int startToEnd = (em1.start1 != em1.end1 ? (em1.end1 - em1.start1) : (em1.end2 - em1.start2));
+
+            // Construct the first virtual edge (going from the origin to the expanded position of the moving part)
+            // and check if the relative movement of the other edge intersects it
+            Vector2Int virtualMovement = em1.StartTranslation();
+            Vector2Int otherMovement1 = em2.StartTranslation() - virtualMovement;
+            Vector2Int otherMovement2 = em2.EndTranslation() - virtualMovement;
+
+            bool collision1 = false;
+
+            if (otherMovement1 != Vector2Int.zero && LineSegmentsIntersect(em1.start1, em1.start1 + startToEnd, em2.start1, em2.start1 + otherMovement1))
+            {
+                collision1 = true;
+            }
+            else if (otherMovement2 != Vector2Int.zero && LineSegmentsIntersect(em1.start1, em1.start1 + startToEnd, em2.end1, em2.end1 + otherMovement2))
+            {
+                collision1 = true;
+            }
+
+            // If there is no intersection, there cannot be a collision
+            if (!collision1)
+                return false;
+
+            // If there is a collision, do the same from the point of view of the end
+            virtualMovement = em1.EndTranslation();
+            otherMovement1 = em2.StartTranslation() - virtualMovement;
+            otherMovement2 = em2.EndTranslation() - virtualMovement;
+
+            bool collision2 = false;
+
+            if (otherMovement1 != Vector2Int.zero && LineSegmentsIntersect(em1.end1, em1.end1 + startToEnd, em2.start1, em2.start1 + otherMovement1))
+            {
+                collision2 = true;
+            }
+            else if (otherMovement2 != Vector2Int.zero && LineSegmentsIntersect(em1.end1, em1.end1 + startToEnd, em2.end1, em2.end1 + otherMovement2))
+            {
+                collision2 = true;
+            }
+
+            // Found a collision if there is an intersection here
+            if (collision2)
+            {
+                // TODO: Improve visualization
+                Vector3 em1_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.start1);
+                Vector3 em1_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.end1);
+                Vector3 em2_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.start1);
+                Vector3 em2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.end1);
+                Vector3 em2_moveStart = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.start1 + em2.StartTranslation() - em1.StartTranslation());
+                Vector3 em2_moveEnd = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.end1 + em2.EndTranslation() - em1.StartTranslation());
+
+                Debug.DrawLine(em1_start, em1_end, Color.red, debugDisplayTime, false);
+                Debug.DrawLine(em2_start, em2_end, Color.green, debugDisplayTime, false);
+                Debug.DrawLine(em2_start, em2_moveStart, Color.blue, debugDisplayTime, false);
+                Debug.DrawLine(em2_end, em2_moveEnd, Color.blue, debugDisplayTime, false);
+
+                Log.Debug("DETECTED COLLISION! (2 non-static)");
+            }
             return false;
         }
 
@@ -146,7 +212,11 @@ namespace AS2.Sim
             {
                 EdgesCollideOneStatic(em2, em1);
             }
-
+            // Case 3: Both edges have a contraction or expansion
+            else
+            {
+                EdgesCollideBothNonStatic(em1, em2);
+            }
 
             return false;
         }
