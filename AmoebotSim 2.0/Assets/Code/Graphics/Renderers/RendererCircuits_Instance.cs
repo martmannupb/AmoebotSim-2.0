@@ -349,11 +349,15 @@ namespace AS2.Visuals
                         break;
                 }
 
+                int numberOfPartitionSetPinsInNode = -1;
                 if (pSetViewType == PartitionSetViewType.Auto)
                 {
                     // Auto Placement 1. Iteration (PSet Degrees)
                     // 1. Head Pins
                     CalculateCircleDegreesForPartitionSets(circuitData, degreeList, true);
+                    // Get number of PSets
+                    numberOfPartitionSetPinsInNode = 0;
+                    foreach (var pSet in circuitData.state.partitionSets) if (pSet.graphicalData.hasPinsInHead) numberOfPartitionSetPinsInNode++;
                 }
                 int counter = 0;
                 for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
@@ -377,7 +381,7 @@ namespace AS2.Visuals
                                 // Convert degree to coordinate
                                 float degree = degreeList[counter];
                                 counter++;
-                                Vector2 localPinPos = degreeList.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                                 // Calc partition set position on the circle
                                 Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
                                 // Save position
@@ -440,11 +444,15 @@ namespace AS2.Visuals
                         break;
                 }
 
+                int numberOfPartitionSetPinsInNode = -1;
                 if (pSetViewType == PartitionSetViewType.Auto)
                 {
                     // Auto Placement 1. Iteration (PSet Degrees)
                     // 2. Tail Pins
                     CalculateCircleDegreesForPartitionSets(circuitData, degreeList, false);
+                    // Get number of PSets
+                    numberOfPartitionSetPinsInNode = 0;
+                    foreach (var pSet in circuitData.state.partitionSets) if (pSet.graphicalData.hasPinsInTail) numberOfPartitionSetPinsInNode++;
                 }
                 int counter = 0;
                 for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
@@ -467,7 +475,7 @@ namespace AS2.Visuals
                                 // Convert degree to coordinate
                                 float degree = degreeList[counter];
                                 counter++;
-                                Vector2 localPinPos = degreeList.Count == 1 ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                                 // Calc partition set position on the circle
                                 Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
                                 // Save position

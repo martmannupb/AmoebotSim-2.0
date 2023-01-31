@@ -8,6 +8,11 @@ namespace AS2.Visuals
 {
     class CircleDistribution
     {
+
+        // RNG
+        private const int rng_seed = 42;
+        private static RandomNumberGenerator rng = new RandomNumberGenerator(rng_seed);
+        // Lists
         private static List<float> points = new List<float>();
         private static List<float> newPoints = new List<float>();
 
@@ -23,8 +28,7 @@ namespace AS2.Visuals
             inputOutputDegreeList.Clear();
 
             // Prepare random number generator
-            int seed = 42;
-            UnityEngine.Random.InitState(seed);
+            rng.Reset();
 
             // Define settings
             int maxIterations = 100;
@@ -55,7 +59,7 @@ namespace AS2.Visuals
                                 {
                                     Log.Error("CircleDistribution: Somehow adjustments are made after the first interation. This should not happen.");
                                 }
-                                points[j] += UnityEngine.Random.Range(1f, 2f);
+                                points[j] += rng.Range(1f, 2f);
                                 newPoints.Clear();
                                 j = -1;
                                 k = points.Count;
