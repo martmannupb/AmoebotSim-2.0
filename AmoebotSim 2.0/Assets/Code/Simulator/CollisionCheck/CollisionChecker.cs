@@ -131,11 +131,11 @@ namespace AS2.Sim
 
             bool collision2 = false;
 
-            if (otherMovement1 != Vector2Int.zero && LineSegmentsIntersect(em1.end1, em1.end1 + startToEnd, em2.start1, em2.start1 + otherMovement1))
+            if (otherMovement1 != Vector2Int.zero && LineSegmentsIntersect(em1.end1, em1.end1 - startToEnd, em2.start1, em2.start1 + otherMovement1))
             {
                 collision2 = true;
             }
-            else if (otherMovement2 != Vector2Int.zero && LineSegmentsIntersect(em1.end1, em1.end1 + startToEnd, em2.end1, em2.end1 + otherMovement2))
+            else if (otherMovement2 != Vector2Int.zero && LineSegmentsIntersect(em1.end1, em1.end1 - startToEnd, em2.end1, em2.end1 + otherMovement2))
             {
                 collision2 = true;
             }
