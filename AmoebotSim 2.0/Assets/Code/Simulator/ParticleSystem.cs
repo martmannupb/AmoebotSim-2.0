@@ -1369,8 +1369,26 @@ namespace AS2.Sim
                     {
                         p.Apply_ContractTail(p.jmOffset);
                     }
-                    em.start2 = p.Tail();
-                    em.end2 = p.Head();
+
+                    // Overwrite edge movement in the case of handover
+                    if (p.ScheduledMovement.IsHandoverExpansion())
+                    {
+                        // Expansion: Make start position expanded too
+                        em.end1 += p.Head() - p.Tail();
+                        em.start2 = p.Tail();
+                        em.end2 = p.Head();
+                    }
+                    else if (p.ScheduledMovement.IsHandoverContraction())
+                    {
+                        // Contraction: Make end position expanded too
+                        em.start2 = p.Tail();
+                        em.end2 = p.Tail() + em.end1 - em.start1;
+                    }
+                    else
+                    {
+                        em.start2 = p.Tail();
+                        em.end2 = p.Head();
+                    }
                     edgeMovements.Add(em);
                 }
                 else
@@ -1568,15 +1586,18 @@ namespace AS2.Sim
                 }
 
                 // Store the bond info
+                // Only collect edge movement if we have no handover
                 if (bondForContracted)
                 {
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
-                    edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, cBond2 + c.jmOffset, eBond2 + c.jmOffset));
+                    if (!weWantHandover)
+                        edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, cBond2 + c.jmOffset, eBond2 + c.jmOffset));
                 }
                 else
                 {
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
-                    edgeMovements.Add(EdgeMovement.Create(eBond1, cBond1, eBond2 + e.jmOffset, cBond2 + e.jmOffset));
+                    if (!weWantHandover)
+                        edgeMovements.Add(EdgeMovement.Create(eBond1, cBond1, eBond2 + e.jmOffset, cBond2 + e.jmOffset));
                 }
             }
             else
@@ -1681,19 +1702,24 @@ namespace AS2.Sim
                 }
 
                 // Store the bond info
+                // Do not store info for bond on which handover is performed
                 if (bondForContracted)
                 {
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1_2));
-                    edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, cBond2 + c.jmOffset, eBond2 + c.jmOffset));
-                    edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1_2, cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset));
+                    if (!handoverFirst)
+                        edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, cBond2 + c.jmOffset, eBond2 + c.jmOffset));
+                    if (!handoverSecond)
+                        edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1_2, cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset));
                 }
                 else
                 {
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1_2, cBond1));
-                    edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, eBond2 + e.jmOffset, cBond2 + e.jmOffset));
-                    edgeMovements.Add(EdgeMovement.Create(eBond1_2, cBond1, eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset));
+                    if (!handoverFirst)
+                        edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, eBond2 + e.jmOffset, cBond2 + e.jmOffset));
+                    if (!handoverSecond)
+                        edgeMovements.Add(EdgeMovement.Create(eBond1_2, cBond1, eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset));
                 }
             }
             return eOffset;

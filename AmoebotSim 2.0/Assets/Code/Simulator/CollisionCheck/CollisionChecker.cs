@@ -7,9 +7,7 @@ namespace AS2.Sim
 
     public static class CollisionChecker
     {
-        private static readonly float debugDisplayTime = 20.0f;
-
-        public static bool showDebug = true;
+        public static float debugDisplayTime = 20.0f;
 
         public static bool HaveSharedNode(EdgeMovement em1, EdgeMovement em2)
         {
@@ -143,16 +141,19 @@ namespace AS2.Sim
             // Found a collision if there is an intersection here
             if (collision2)
             {
-                // TODO: Improve visualization
+                // Current edge (in expanded state)
                 Vector3 em1_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.start1);
-                Vector3 em1_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.end1);
+                Vector3 em1_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.start1 + startToEnd);
+                Debug.DrawLine(em1_start, em1_end, Color.red, debugDisplayTime, false);
+
+                // Movement lines of the other edge relative to first edge's start
                 Vector3 em2_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.start1);
                 Vector3 em2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.end1);
                 Vector3 em2_moveStart = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.start1 + em2.StartTranslation() - em1.StartTranslation());
                 Vector3 em2_moveEnd = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.end1 + em2.EndTranslation() - em1.StartTranslation());
 
-                Debug.DrawLine(em1_start, em1_end, Color.red, debugDisplayTime, false);
                 Debug.DrawLine(em2_start, em2_end, Color.green, debugDisplayTime, false);
+                Debug.DrawLine(em2_moveStart, em2_moveEnd, Color.green, debugDisplayTime, false);
                 Debug.DrawLine(em2_start, em2_moveStart, Color.blue, debugDisplayTime, false);
                 Debug.DrawLine(em2_end, em2_moveEnd, Color.blue, debugDisplayTime, false);
 
@@ -161,7 +162,7 @@ namespace AS2.Sim
             return false;
         }
 
-        public static bool EdgesCollide(EdgeMovement em1, EdgeMovement em2, bool debug = false)
+        public static bool EdgesCollide(EdgeMovement em1, EdgeMovement em2)
         {
             // If the two edges share a node before or after the movement,
             // then they belong to the same particle and cannot collide
