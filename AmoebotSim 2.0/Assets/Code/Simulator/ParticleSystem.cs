@@ -2144,8 +2144,6 @@ namespace AS2.Sim
                 // Set partition set placement mode
                 if (p.PinConfiguration.placementModeHead != PSPlacementMode.NONE)
                 {
-                    Log.Debug("Placement HEAD: " + p.PinConfiguration.placementModeHead
-                        + "\nLine rotation: " + (p.PinConfiguration.lineRotationHead - 90f));
                     switch (p.PinConfiguration.placementModeHead)
                     {
                         case PSPlacementMode.LINE:
@@ -2165,8 +2163,6 @@ namespace AS2.Sim
                 }
                 if (p.IsExpanded() && p.PinConfiguration.placementModeTail != PSPlacementMode.NONE)
                 {
-                    Log.Debug("Placement TAIL: " + p.PinConfiguration.placementModeTail
-                        + "\nLine rotation: " + (p.PinConfiguration.lineRotationTail - 90f));
                     switch (p.PinConfiguration.placementModeTail)
                     {
                         case PSPlacementMode.LINE:
