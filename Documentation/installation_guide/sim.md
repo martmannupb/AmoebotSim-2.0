@@ -35,20 +35,27 @@ After [installing Unity](unity.md), you can setup the simulator project.
 	> These errors should disappear after closing the Unity Editor and opening the project again.
 
 ### 2. Test the Project
-
-- When the Editor has finished importing the project, press the Play button in the middle of the top bar to run the simulator
+- When the project has finished loading, you should see the Unity Editor interface:
+	![Unity Editor Interface](~/images/editor_overview.png "The Unity Editor Interface")
+	The Editor is explained in more detail in the [User Guide](~/user_guide/home.md).
+- To run the simulator, you may have to open the correct *Scene* first
+	- Find the "Project" explorer window in the Editor (at the bottom if the Default layout is used; you can change the layout using the dropdown menu in the top-right corner)
+	- Under "Assets", open the `Scenes` folder and double-click the Scene called `Simulator`.
+		Discard any changes made to the initial Scene
+	- This usually only has to be done once when the project is opened for the first time
+- When the Scene has loaded, press the Play button in the middle of the top bar to run the simulator
 	![Play Button Image](../images/play_button.png "Unity's Play button")
 - The simulator should now display an example algorithm
 - Click the Play button again to close the simulator
 
 ### 3. Open the IDE
 
-- Find the "Project" explorer window in the Editor (at the bottom if the Default layout is used; you can change the layout using the dropdown menu in the top-right corner)
-- Under "Assets", open the folder `Code/Algorithms` and double-click one of the C# files
+- In the Project explorer window at the bottom of the Editor, under "Assets", open the folder `Code/Algorithms` and double-click one of the C# files
 - Your installed IDE should now start and open the file
-- If your IDE does not open, go to "Edit" > "Preferences...", select the "External Tools" tab and find your IDE in the "External Script Editor" dropdown
+- If your IDE does not open, go to "Edit" > "Preferences...", select the "External Tools" tab and find your IDE in the "External Script Editor" dropdown.
+	Now, double-clicking a script file should launch the correct IDE.
 
-You can now start editing the code in your IDE.
+You can now start editing the C# code in your IDE.
 Whenever you save your changes, the Unity project is compiled automatically and you can try out the simulator by pressing the Play button in the Editor.
 
 

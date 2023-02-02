@@ -7,6 +7,11 @@ using UnityEngine;
 namespace AS2
 {
 
+    /// <summary>
+    /// Singleton class that uses reflection to manage all initialization
+    /// methods, providing an interface to access their names and parameters
+    /// and to execute them to initialize the system.
+    /// </summary>
     public class InitializationMethodManager
     {
         // The name of the method to be implemented
@@ -14,16 +19,37 @@ namespace AS2
 
         // Singleton
         private static InitializationMethodManager instance = new InitializationMethodManager();
+        /// <summary>
+        /// The singleton instance of this class.
+        /// </summary>
         public static InitializationMethodManager Instance
         {
             get { return instance; }
         }
 
+        /// <summary>
+        /// Represents a single generation method and contains all
+        /// information needed to initialize a system with it.
+        /// </summary>
         private class AlgorithmInfo
         {
+            /// <summary>
+            /// The full name of the generation method.
+            /// </summary>
             public string name;
+            /// <summary>
+            /// The type of the generator class.
+            /// </summary>
             public Type type;
+            /// <summary>
+            /// Reference to the method's constructor.
+            /// This must be the constructor that gets a single
+            /// parameter of type <see cref="Sim.ParticleSystem"/>.
+            /// </summary>
             public ConstructorInfo ctor;
+            /// <summary>
+            /// Reference to the generation method itself.
+            /// </summary>
             public MethodInfo generateMethod;
 
             public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo generateMethod)
@@ -48,8 +74,6 @@ namespace AS2
 
             foreach (Type algoType in subclasses)
             {
-                Debug.Log("Found initialization method with name " + algoType.FullName);
-
                 // Find out the algorithm's name (simply use the full type name)
                 string name = algoType.FullName;
 
@@ -69,12 +93,6 @@ namespace AS2
                     if (mi.Name.Equals(GenerationMethodName))
                     {
                         ParameterInfo[] parameters = mi.GetParameters();
-                        string s = "Params:\n";
-                        foreach (ParameterInfo pi in parameters)
-                        {
-                            s += pi.Name + ", " + pi.ParameterType + "\n";
-                        }
-                        Debug.Log(s);
                         generateMethod = mi;
                     }
                 }
@@ -85,7 +103,6 @@ namespace AS2
                 }
                 else
                 {
-                    Debug.Log("Found generation method!");
                     if (algorithms.ContainsKey(name))
                     {
                         Debug.LogWarning("InitializationMethod with name '" + name + "' already exists, cannot load this method");
@@ -98,6 +115,12 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Tries to get the generation method with the given name.
+        /// </summary>
+        /// <param name="name">The string ID of the generation method.</param>
+        /// <returns>The record of the generation method with name
+        /// <paramref name="name"/> if it exists, otherwise <c>null</c>.</returns>
         private AlgorithmInfo FindAlgorithm(string name)
         {
             if (algorithms.TryGetValue(name, out AlgorithmInfo info))
@@ -111,11 +134,22 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Gets a list of all known generation method names.
+        /// </summary>
+        /// <returns>A list containing the names of all generation methods.</returns>
         public List<string> GetAlgorithmNames()
         {
             return algorithms.Keys.ToList();
         }
 
+        /// <summary>
+        /// Gets the parameters of the generation method.
+        /// </summary>
+        /// <param name="algorithmName">The string ID of the generation method.</param>
+        /// <returns>An array containing the parameters of the
+        /// generation method, if the algorithm exists and
+        /// it implements this method, otherwise <c>null</c>.</returns>
         public ParameterInfo[] GetAlgorithmParameters(string algorithmName)
         {
             AlgorithmInfo info = FindAlgorithm(algorithmName);
@@ -125,11 +159,29 @@ namespace AS2
             return info.generateMethod.GetParameters();
         }
 
+        /// <summary>
+        /// Calls the specified generation method to initialize the
+        /// given system with no parameters.
+        /// </summary>
+        /// <param name="system">The system to initialize.</param>
+        /// <param name="algorithmName">The string ID of the generation method.</param>
+        /// <returns><c>true</c> if and only if the generation method was
+        /// executed successfully.</returns>
         public bool GenerateSystem(AS2.Sim.ParticleSystem system, string algorithmName)
         {
             return GenerateSystem(system, algorithmName, new object[0]);
         }
 
+        /// <summary>
+        /// Calls the specified generation method to initialize the
+        /// given system with the given parameters.
+        /// </summary>
+        /// <param name="system">The system to initialize.</param>
+        /// <param name="algorithmName">The string ID of the generation method.</param>
+        /// <param name="parameters">The parameters to be forwarded to
+        /// the generation method.</param>
+        /// <returns><c>true</c> if and only if the generation method was
+        /// executed successfully.</returns>
         public bool GenerateSystem(AS2.Sim.ParticleSystem system, string algorithmName, object[] parameters)
         {
             AlgorithmInfo info = FindAlgorithm(algorithmName);
@@ -170,6 +222,12 @@ namespace AS2
             return true;
         }
 
+        /// <summary>
+        /// Checks if the given generation method name is known.
+        /// </summary>
+        /// <param name="name">The string ID to check.</param>
+        /// <returns><c>true</c> if and only if a generation method
+        /// with the given name is registered.</returns>
         public bool IsAlgorithmKnown(string name)
         {
             AlgorithmInfo info = FindAlgorithm(name);

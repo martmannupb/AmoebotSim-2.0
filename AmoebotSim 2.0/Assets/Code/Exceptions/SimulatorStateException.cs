@@ -5,7 +5,7 @@ namespace AS2.Sim
 
     /// <summary>
     /// Exception class for the case that some operation of the simulator
-    /// outside of the amoebot simulation failed. This includes operations
+    /// outside of the Amoebot simulation failed. This includes operations
     /// started in the wrong simulator state, save and load issues, and
     /// invalid input data.
     /// </summary>

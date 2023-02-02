@@ -217,7 +217,7 @@ namespace AS2.Sim
         }
 
 
-        /**
+        /*
          * Saving and loading functionality.
          */
 

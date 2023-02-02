@@ -9,10 +9,10 @@ namespace AS2.Sim
     /// <see cref="PinConfiguration"/>.
     /// </para>
     /// <para>
-    /// A pin represents a connection between two neighboring
-    /// particles through which they can communicate using beeps
-    /// or entire messages. Each edge incident to a particle
-    /// has the same number of pins and the pins are ordered
+    /// A pin represents a connection point on the edge of a particle
+    /// through which it can communicate with neighboring particles
+    /// using beeps or entire messages. Each edge incident to a
+    /// particle has the same number of pins and the pins are ordered
     /// according to each particle's chirality. This means that
     /// the same pin may have different IDs for the two particles.
     /// Pins are locally identified by IDs computed from the

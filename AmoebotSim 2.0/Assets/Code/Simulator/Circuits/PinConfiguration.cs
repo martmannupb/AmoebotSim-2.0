@@ -1,11 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace AS2.Sim
 {
-
-    // TODO: Use generic collections instead of (or in addition to) arrays?
 
     /// <summary>
     /// Developer API for pin configuration definition.
@@ -36,8 +32,8 @@ namespace AS2.Sim
     public abstract class PinConfiguration
     {
         /// <summary>
-        /// The head direction which encodes the expansion state of
-        /// this pin configuration. If the state is contracted, this
+        /// The local head direction which encodes the expansion state
+        /// of this pin configuration. If the state is contracted, this
         /// value is <see cref="Direction.NONE"/>.
         /// <para>
         /// A pin configuration can only be applied if its expansion
@@ -362,11 +358,6 @@ namespace AS2.Sim
         /// the partition set belongs will be displayed in this color unless it
         /// has been overridden by another partition set already.
         /// <para>
-        /// Overriding the color of partition sets is only possible for planned
-        /// pin configurations. Planning a new pin configuration will reset all
-        /// partition set colors.
-        /// </para>
-        /// <para>
         /// See also <seealso cref="ResetPartitionSetColor(int)"/>.
         /// </para>
         /// </summary>
@@ -384,6 +375,63 @@ namespace AS2.Sim
         /// <param name="partitionSetIndex">The ID of the partition set whose
         /// color override to reset.</param>
         public abstract void ResetPartitionSetColor(int partitionSetIndex);
+
+        /// <summary>
+        /// Resets the color overrides of all partition sets.
+        /// </summary>
+        public abstract void ResetAllPartitionSetColors();
+
+        /// <summary>
+        /// Sets the specified partition set's position in polar coordinates and
+        /// sets the positioning mode of the pin configuration to
+        /// <see cref="PSPlacementMode.MANUAL"/>.
+        /// </summary>
+        /// <param name="partitionSetIndex">The ID of the partition set whose
+        /// position to set.</param>
+        /// <param name="polarCoords">The polar coordinates of the partition
+        /// set's position inside of the particle as <c>(angle, distance)</c>.
+        /// An angle of <c>0</c> points in local direction
+        /// <see cref="Direction.E"/> and angles increase in the local
+        /// counter-clockwise direction. Distance <c>0</c> is the center
+        /// of the particle (part) and distance <c>1</c> is on the edge
+        /// of the particle.
+        /// </param>
+        /// <param name="head">Indicates whether the position in the
+        /// particle's head or tail should be set. For contracted particles,
+        /// this should be <c>true</c>.</param>
+        public abstract void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true);
+
+        /// <summary>
+        /// Sets the partition set placement mode to the given value.
+        /// </summary>
+        /// <param name="mode">The new partition set placement mode.</param>
+        /// <param name="head">Indicates whether the placement mode for
+        /// the particle's head or tail will be set.</param>
+        public abstract void SetPSPlacementMode(PSPlacementMode mode, bool head = true);
+
+        /// <summary>
+        /// Sets the rotation of the line on which the partition sets are
+        /// arranged in <see cref="PSPlacementMode.LINE"/> mode.
+        /// Multiples of 30 or 60 degrees will usually look best.
+        /// The placement mode is changed automatically.
+        /// </summary>
+        /// <param name="angle">The new angle of the line in degrees.
+        /// <c>0</c> means vertical (perpendicular to the local
+        /// <see cref="Direction.E"/> direction) and increasing angles
+        /// rotate the line in local counter-clockwise direction.</param>
+        /// <param name="head">Indicates whether the rotation for the
+        /// particle's head or tail part should be set. Must be
+        /// <c>true</c> for contracted particles.</param>
+        public abstract void SetLineRotation(float angle, bool head = true);
+
+        /// <summary>
+        /// Resets the positions of the partition sets and sets the
+        /// placement mode to <see cref="PSPlacementMode.NONE"/> in the
+        /// particle's head or tail.
+        /// </summary>
+        /// <param name="head">Indicates whether the partition sets
+        /// should be reset in the particle's head or tail.</param>
+        public abstract void ResetPartitionSetPlacement(bool head = true);
     }
 
 } // namespace AS2.Sim

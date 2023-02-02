@@ -32,7 +32,7 @@ namespace AS2.Sim
 
         public ParticleAttributeWithHistory(Particle p, string name) : base(p, name) { }
 
-        /**
+        /*
          * Methods implementing IReplayHistory.
          * These are implemented here already to avoid having to
          * implement them in every ParticleAttribute subclass.
@@ -83,7 +83,7 @@ namespace AS2.Sim
             history.ShiftTimescale(amount);
         }
 
-        /**
+        /*
          * Some methods of IParticleAttribute interface can already be implemented here
          */
 
@@ -135,21 +135,6 @@ namespace AS2.Sim
             }
             history = new ValueHistory<T>(myData.history);
             return true;
-        }
-
-
-        // <<<TEMPORARY: FOR DEBUGGING HISTORIES>>>
-        public void Print()
-        {
-            Debug.Log(name + ":");
-            if (history != null)
-            {
-                history.Print();
-            }
-            else
-            {
-                Debug.LogWarning("History is null.");
-            }
         }
     }
 

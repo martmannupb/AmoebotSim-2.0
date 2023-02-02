@@ -21,6 +21,9 @@ namespace AS2.Visuals
         private InputManager input;
         private InputController inputController;
 
+        // Helpers
+        private PSetDragHandler pSetDragHandler;
+
         // Graphical Data
         public Mesh mesh_baseHexagonBackground;
         public Material material_hexagonSelectionOverlay;
@@ -52,6 +55,7 @@ namespace AS2.Visuals
             this.sim = sim;
             this.input = InputManager.CreateInstance();
             this.inputController = inputController;
+            this.pSetDragHandler = new PSetDragHandler(sim);
 
             // Add Callbacks
             this.input.clickActionEvent += ClickActionCallback;
@@ -149,9 +153,9 @@ namespace AS2.Visuals
                                                 case UIHandler.UITool.Add:
                                                     // Pause Simulation
                                                     sim.PauseSim();
-                                                    // Add particle at position
-                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
-                                                    else sim.system.AddParticleContracted(mouseWorldField);
+                                                // Add particle at position
+                                                if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
+                                                else sim.system.AddParticleContracted(mouseWorldField);
                                                     break;
                                                 case UIHandler.UITool.Remove:
                                                     // magikarp uses splash, nothing happens
@@ -252,6 +256,10 @@ namespace AS2.Visuals
                                                 }
                                             }
                                             break;
+                                    case UIHandler.UITool.PSetMove:
+                                        // Partition Set Movement
+                                        pSetDragHandler.DragEvent_Ongoing(action.positionStart, action.positionTarget);
+                                        break;
                                         default:
                                             break;
                                     }
@@ -274,7 +282,7 @@ namespace AS2.Visuals
                                                     // Pause Simulation
                                                     sim.PauseSim();
                                                     // Add particle at position
-                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
                                                     else sim.system.AddParticleContracted(mouseWorldField);
                                                 }
                                             }
@@ -287,9 +295,8 @@ namespace AS2.Visuals
                                                     // Pause Simulation
                                                     sim.PauseSim();
                                                     // Add particle at position
-                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.initializationUI.GetDropdownValue_Chirality(), sim.uiHandler.initializationUI.GetDropdownValue_Compass());
-                                                    else sim.system.AddParticleExpanded(node2, node1);
-                                                    sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
+                                                    else sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
                                                 }
                                             }
                                             break;
@@ -337,6 +344,10 @@ namespace AS2.Visuals
                                                 }
 
                                         }
+                                        break;
+                                    case UIHandler.UITool.PSetMove:
+                                        // Partition Set Movement
+                                        pSetDragHandler.DragEvent_Finished(action.positionStart, action.positionTarget);
                                         break;
                                     default:
                                         break;
@@ -491,6 +502,9 @@ namespace AS2.Visuals
                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
                             }
                         }
+                        break;
+                    case UIHandler.UITool.PSetMove:
+                        pSetDragHandler.Update(mouseWorldPos, mouseWorldField);
                         break;
                     default:
                         break;

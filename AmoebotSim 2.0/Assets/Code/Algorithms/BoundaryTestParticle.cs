@@ -312,7 +312,7 @@ namespace AS2.Algos.BoundaryTest
                     // Compute the angle as number of 60° counter-clockwise turns mod 5
                     int oppositePredDir = (boundaryNbrs[regionIdx, 0].GetValue_After() + 3) % 6;
                     int numTurns = ((curDir + 1) + 6 - oppositePredDir) % 6;
-                    // 0, 1, 2, 3 turns means positive angle, 5 means negative angle (-1 = 4 mod 5)
+                    // 0, 1, 2, 3 turns means positive angle, 4 means negative angle (-1 = 4 mod 5)
                     boundaryAngles[regionIdx].SetValue(numTurns < 4 ? numTurns : 4);
                     regionIdx++;
                 }
@@ -655,6 +655,7 @@ namespace AS2.Algos.BoundaryTest
                             planned.GetPinAt(d, 2),
                             planned.GetPinAt(d, 3)
                         }, boundary * 2);
+                        planned.SetPartitionSetPosition(boundary * 2, new Vector2(d.ToInt() * 60 + 30, 0.6f));
 
                         // Send beep if current angle value is 1
                         if (boundaryAngles[boundary] == 1)
@@ -675,6 +676,7 @@ namespace AS2.Algos.BoundaryTest
                             planned.GetPinAt(d, 0),
                             planned.GetPinAt(d, 1)
                         }, boundary * 2);
+                        planned.SetPartitionSetPosition(boundary * 2, new Vector2(d.ToInt() * 60 - 30, 0.6f));
                         // Send beep if final angle result is 1
                         if (boundaryAngles[boundary] == 1)
                         {
@@ -784,6 +786,7 @@ namespace AS2.Algos.BoundaryTest
             if (numBoundaries > 0)
             {
                 pc.SetToGlobal();
+                pc.ResetPartitionSetPlacement();
                 SetPlannedPinConfiguration(pc);
                 if (beepOnGlobal)
                     pc.SendBeepOnPartitionSet(0);
@@ -816,6 +819,12 @@ namespace AS2.Algos.BoundaryTest
                         pc.GetPinAt(succDir, 0),
                         pc.GetPinAt(succDir, 1)
                     }, boundary);
+                    // Place the partition set close to the boundary
+                    float angle = (predDir.ToInt() + predDir.DistanceTo(succDir) / 4f) * 60f;
+                    float dist = 0.5f;
+                    if (predDir == succDir)
+                        dist = 0f;
+                    pc.SetPartitionSetPosition(boundary, new Vector2(angle, dist));
                 }
                 boundaryPC.SetValue(pc);
             }
@@ -836,20 +845,22 @@ namespace AS2.Algos.BoundaryTest
                 return;
 
             pc.SetToSingleton();
+            pc.ResetPartitionSetPlacement();
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
+                Direction ds = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
+                Direction dp = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0]);
                 if (isCandidate[boundary])
                 {
                     // If we are still a candidate, that means we are the leader of the boundary
-                    Direction d = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
-                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(d, 0) }, boundary * 2);
-                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(d, 1) }, boundary * 2 + 1);
+                    // Then we do not connect any pins, we just mark pins as primary and
+                    // secondary circuits
+                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(ds, 0) }, boundary * 2);
+                    pc.MakePartitionSet(new Pin[] { pc.GetPinAt(ds, 1) }, boundary * 2 + 1);
                 }
                 else
                 {
                     // We are not the leader of the boundary
-                    Direction ds = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1]);
-                    Direction dp = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0]);
                     Pin pSucc = pc.GetPinAt(ds, 0);
                     Pin sSucc = pc.GetPinAt(ds, 1);
                     Pin pPred = pc.GetPinAt(dp, 3);
@@ -867,6 +878,33 @@ namespace AS2.Algos.BoundaryTest
                         pc.MakePartitionSet(new Pin[] { sSucc, sPred }, boundary * 2 + 1);
                     }
                 }
+
+                // Set placement of the partition sets
+                // The two sets have the same angle but the primary partition set
+                // is closer to the boundary
+                float angleP = (dp.ToInt() + dp.DistanceTo(ds) / 4f) * 60f;
+                float angleS = angleP;
+                float distP = 0.7f;
+                float distS = 0.4f;
+                // If we are an endpoint (only one neighbor) and the two
+                // circuits cross: Put the partition sets next to each other
+                if (dp == ds)
+                {
+                    if (isActive[boundary].GetValue_After())
+                    {
+                        angleP -= 15;
+                        angleS += 15;
+                        distP = 0.6f;
+                        distS = 0.6f;
+                    }
+                    else
+                    {
+                        distP = 0.3f;
+                        distS = 0.7f;
+                    }
+                }
+                pc.SetPartitionSetPosition(boundary * 2, new Vector2(angleP, distP));
+                pc.SetPartitionSetPosition(boundary * 2 + 1, new Vector2(angleS, distS));
             }
         }
 
@@ -887,6 +925,7 @@ namespace AS2.Algos.BoundaryTest
             if (numBoundaries > 0)
             {
                 pc.SetToGlobal();
+                pc.ResetPartitionSetPlacement();
                 SetPlannedPinConfiguration(pc);
                 if (beep)
                 {

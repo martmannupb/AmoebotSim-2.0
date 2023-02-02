@@ -4,12 +4,29 @@ using UnityEngine;
 namespace AS2.Sim
 {
 
+    /// <summary>
+    /// Serializable representation of a single bond movement.
+    /// Describes the two locations of a bond before and after
+    /// a movement round.
+    /// </summary>
     [Serializable]
     public struct BondMovementInfo
     {
+        /// <summary>
+        /// The bond's start location before the movement.
+        /// </summary>
         public Vector2Int start1;
+        /// <summary>
+        /// The bond's end location before the movement.
+        /// </summary>
         public Vector2Int end1;
+        /// <summary>
+        /// The bond's start location after the movement.
+        /// </summary>
         public Vector2Int start2;
+        /// <summary>
+        /// The bond's end location after the movement.
+        /// </summary>
         public Vector2Int end2;
 
         public BondMovementInfo(Vector2Int start1, Vector2Int end1, Vector2Int start2, Vector2Int end2)
@@ -20,6 +37,9 @@ namespace AS2.Sim
             this.end2 = end2;
         }
 
+        /// <summary>
+        /// A movement info in which all positions are <c>(0,0)</c>.
+        /// </summary>
         public static BondMovementInfo Empty = new BondMovementInfo(Vector2Int.zero, Vector2Int.zero, Vector2Int.zero, Vector2Int.zero);
 
         public static bool operator ==(BondMovementInfo i1, BondMovementInfo i2)
@@ -43,9 +63,15 @@ namespace AS2.Sim
         }
     }
 
+    /// <summary>
+    /// Serializable representation of a list of bond movements.
+    /// </summary>
     [Serializable]
     public struct BondMovementInfoList
     {
+        /// <summary>
+        /// An array of <see cref="BondMovementInfo"/> structs.
+        /// </summary>
         public BondMovementInfo[] bondMovements;
 
         public BondMovementInfoList(BondMovementInfo[] bondMovements)
@@ -53,6 +79,9 @@ namespace AS2.Sim
             this.bondMovements = bondMovements;
         }
 
+        /// <summary>
+        /// A movement info list which is empty.
+        /// </summary>
         public static BondMovementInfoList Empty = new BondMovementInfoList(new BondMovementInfo[0]);
 
         public static bool operator ==(BondMovementInfoList l1, BondMovementInfoList l2)
@@ -87,6 +116,10 @@ namespace AS2.Sim
         }
     }
 
+    /// <summary>
+    /// Implementation of <see cref="ValueHistory{T}"/> storing
+    /// <see cref="BondMovementInfoList"/> structs.
+    /// </summary>
     public class ValueHistoryBondInfo : ValueHistory<BondMovementInfoList>
     {
         public ValueHistoryBondInfo(BondMovementInfoList initialValue, int initialRound = 0) : base(initialValue, initialRound) { }

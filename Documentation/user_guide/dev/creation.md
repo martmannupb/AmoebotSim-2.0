@@ -121,6 +121,11 @@ Finally, you can set the initial color of the particle by calling the [SetMainCo
 The [ColorData][4] class provides a set of default particle colors.
 If the color is not set explicitly, the particle will be rendered in black.
 
+> [!WARNING]
+> The constructor should *not* make assumptions about the particle's current expansion state or other properties that may change during the simulation.
+> This is because the constructor is also used to initialize the particle when loading a save file, in which case it may be in a position it could not have at the beginning of the simulation.
+> If the particle requires initialization based on its starting position and expansion state, use the `Init` method.
+
 
 #### Custom Initialization
 

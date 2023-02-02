@@ -5,14 +5,22 @@ using UnityEngine;
 namespace AS2
 {
 
-    // TODO: Documentation
     /// <summary>
     /// Base class for algorithms that initialize a particle system.
     /// Inherit from this class and implement a method called
     /// <c>Generate</c> to create an initialization algorithm.
+    /// <para>
+    /// An initialization algorithm creates a system of
+    /// <see cref="Sim.InitializationParticle"/>s, which is used as a
+    /// template to initialize the system of <see cref="Sim.Particle"/>s
+    /// in which the simulation is carried out.
+    /// </para>
     /// </summary>
     public abstract class InitializationMethod
     {
+        /// <summary>
+        /// The system in which particles are created.
+        /// </summary>
         private AS2.Sim.ParticleSystem system;
 
         public InitializationMethod(AS2.Sim.ParticleSystem system)
@@ -20,6 +28,15 @@ namespace AS2
             this.system = system;
         }
 
+        /// <summary>
+        /// Adds a new particle with the given parameters to the system.
+        /// </summary>
+        /// <param name="position">The initial tail position of the particle.</param>
+        /// <param name="headDir">The initial global head direction of the particle.
+        /// <see cref="Direction.NONE"/> means that the particle is contracted.</param>
+        /// <param name="chirality">The chirality of the particle.</param>
+        /// <param name="compassDir">The compass direction of the particle.</param>
+        /// <returns>The new initialization particle.</returns>
         public InitializationParticle AddParticle(Vector2Int position, Direction headDir = Direction.NONE,
             Initialization.Chirality chirality = Initialization.Chirality.CounterClockwise,
             Initialization.Compass compassDir = Initialization.Compass.E)

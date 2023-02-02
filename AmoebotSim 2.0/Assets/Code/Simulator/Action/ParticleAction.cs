@@ -2,6 +2,9 @@
 namespace AS2.Sim
 {
 
+    /// <summary>
+    /// All possible movement actions of a particle.
+    /// </summary>
     public enum ActionType { EXPAND, CONTRACT_HEAD, CONTRACT_TAIL, PUSH, PULL_HEAD, PULL_TAIL, NULL }
 
     /// <summary>
@@ -15,8 +18,17 @@ namespace AS2.Sim
     /// </summary>
     public class ParticleAction
     {
+        /// <summary>
+        /// The particle scheduling the action.
+        /// </summary>
         public Particle particle;
+        /// <summary>
+        /// The type of action. <see cref="ActionType.NULL"/> means no action.
+        /// </summary>
         public ActionType type;
+        /// <summary>
+        /// The local direction into which the action is aimed, if applicable.
+        /// </summary>
         public Direction localDir;
 
         public ParticleAction(Particle particle = null, ActionType type = ActionType.NULL, Direction localDir = Direction.NONE)
@@ -54,6 +66,26 @@ namespace AS2.Sim
         public bool IsHandoverContraction()
         {
             return type == ActionType.PULL_HEAD || type == ActionType.PULL_TAIL;
+        }
+
+        /// <summary>
+        /// Checks whether this action is a Head contraction.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the action represents a
+        /// contraction or pull handover into the particle's Head.</returns>
+        public bool IsHeadContraction()
+        {
+            return type == ActionType.CONTRACT_HEAD || type == ActionType.PULL_HEAD;
+        }
+
+        /// <summary>
+        /// Checks whether this action is a Tail contraction.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the action represents a
+        /// contraction or pull handover into the particle's Tail.</returns>
+        public bool IsTailContraction()
+        {
+            return type == ActionType.CONTRACT_TAIL || type == ActionType.PULL_TAIL;
         }
 
         /// <summary>

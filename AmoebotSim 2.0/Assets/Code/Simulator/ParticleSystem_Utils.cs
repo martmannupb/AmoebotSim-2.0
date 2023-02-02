@@ -3,9 +3,13 @@ using UnityEngine;
 namespace AS2.Sim
 {
 
+    /// <summary>
+    /// Utility methods and constants for computations done by the
+    /// <see cref="ParticleSystem"/>.
+    /// </summary>
     public static class ParticleSystem_Utils
     {
-        /**
+        /*
          * Label conversion matrices
          * 
          * Labels are indices assigned to the edges incident to a
@@ -16,12 +20,13 @@ namespace AS2.Sim
          * the global direction of the edges increases in clockwise
          * direction).
          * 
-         * Labels of contracted particles are the local directions.
+         * Labels of contracted particles are equal to the integer
+         * representations of the local directions.
          * 
          * For expanded particles, labels 0,1,2 always correspond to
          * directions 0,1,2. For head directions 0,1,2, label 0 belongs
-         * to the head, and for directions 3,4,5, label 0 belongs to
-         * the tail.
+         * to the head, and for head directions 3,4,5, label 0 belongs
+         * to the tail.
          * 
          * Label computations are always based on the integer mapping
          * of cardinal directions. Computing labels for secondary
@@ -38,6 +43,10 @@ namespace AS2.Sim
         /// corresponding to the local direction <c>loc</c>. To get
         /// the tail label for that direction, use <c>(exp + 3) % 6</c>
         /// as the first index.
+        /// </para>
+        /// <para>
+        /// A label value of <c>-1</c> means that the label does not
+        /// exist because there is no port in that location.
         /// </para>
         /// </summary>
         private static readonly int[,] expandedLabels = new int[6, 6]
@@ -205,7 +214,8 @@ namespace AS2.Sim
 
         /// <summary>
         /// Computes the unit vector in the grid coordinate system that
-        /// points in the given direction.
+        /// points in the given direction. Secondary directions are mapped
+        /// to their corresponding cardinal direction.
         /// </summary>
         /// <param name="globalDir">The global direction of the vector.</param>
         /// <returns>A grid vector representing one step in the indicated
@@ -298,7 +308,8 @@ namespace AS2.Sim
         public static Direction LocalToGlobalDir(Direction locDir, Direction compassDir, bool chirality)
         {
             return locDir.AddTo(compassDir, !chirality);
-            //return chirality ? (compassDir + locDir) % 6 : (compassDir - locDir + 6) % 6;
+            // Equivalent to this:
+            // return chirality ? (compassDir + locDir) % 6 : (compassDir - locDir + 6) % 6;
         }
 
         /// <summary>
@@ -316,7 +327,8 @@ namespace AS2.Sim
         public static Direction GlobalToLocalDir(Direction globalDir, Direction compassDir, bool chirality)
         {
             return globalDir.Subtract(compassDir, !chirality);
-            //return chirality ? (globalDir - compassDir + 6) % 6 : (compassDir - globalDir + 6) % 6;
+            // Equivalent to this:
+            // return chirality ? (globalDir - compassDir + 6) % 6 : (compassDir - globalDir + 6) % 6;
         }
 
         /// <summary>

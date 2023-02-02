@@ -12,8 +12,17 @@ namespace AS2
     [Serializable]
     public class ValueHistorySaveData<T>
     {
+        /// <summary>
+        /// The list of all different values stored in the history.
+        /// </summary>
         public List<T> values;
+        /// <summary>
+        /// The list of rounds in which the values have changed.
+        /// </summary>
         public List<int> rounds;
+        /// <summary>
+        /// The last recorded round.
+        /// </summary>
         public int lastRound;
     }
 

@@ -8,6 +8,7 @@ namespace AS2.Algos.LeaderElection
     /// <summary>
     /// Implementation of the leader election algorithm presented in
     /// https://arxiv.org/abs/2105.05071v1.
+    /// Chirality and compass direction can be arbitrary.
     /// <para>
     /// In the first phase, the algorithm alternates between rounds
     /// 0 and 1 in each iteration. In round 0, particles toss coins
@@ -53,9 +54,6 @@ namespace AS2.Algos.LeaderElection
         public override int PinsPerEdge => 1;
 
         public static new string Name => "Leader Election";
-
-        public static new Initialization.Chirality Chirality => Initialization.Chirality.Random;
-        public static new Initialization.Compass Compass => Initialization.Compass.Random;
 
         public static new string GenerationMethod => typeof(LeaderElectionInitializer).FullName;
 

@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace AS2
 {
@@ -42,6 +43,42 @@ namespace AS2
         /// </summary>
         public int[] pinPartitionSets;
 
+        // Visualization
+        /// <summary>
+        /// The placement mode of the pin configuration in the particle's head.
+        /// </summary>
+        public PSPlacementMode placementModeHead;
+        /// <summary>
+        /// The placement mode of the pin configuration in the particle's tail.
+        /// </summary>
+        public PSPlacementMode placementModeTail;
+        /// <summary>
+        /// The global angle of the line along which partition
+        /// sets are placed in the particle's head.
+        /// </summary>
+        public float lineRotationHead;
+        /// <summary>
+        /// The global angle of the line along which partition
+        /// sets are placed in the particle's tail.
+        /// </summary>
+        public float lineRotationTail;
+        /// <summary>
+        /// The colors of all partition sets.
+        /// </summary>
+        public Color[] partitionSetColors;
+        /// <summary>
+        /// Color override flags of all partition sets.
+        /// </summary>
+        public bool[] partitionSetColorOverrides;
+        /// <summary>
+        /// Head positions of all partition sets in polar coordinates.
+        /// </summary>
+        public Vector2[] partitionSetHeadPositions;
+        /// <summary>
+        /// Tail positions of all partition sets in polar coordinates.
+        /// </summary>
+        public Vector2[] partitionSetTailPositions;
+
         // Comparison operators to easily compare compressed pin configuration data by value
         public static bool operator ==(PinConfigurationSaveData d1, PinConfigurationSaveData d2)
         {
@@ -58,14 +95,16 @@ namespace AS2
 
         public override bool Equals(object obj)
         {
+            // null and other types are not equal
             if (obj == null || GetType() != obj.GetType())
                 return false;
             PinConfigurationSaveData d = (PinConfigurationSaveData)obj;
+            // Compare pin assignments and head direction
             bool myArrayNull = pinPartitionSets == null;
             bool otherArrayNull = d.pinPartitionSets == null;
-            if (headDirection != d.headDirection ||
-                myArrayNull != otherArrayNull ||
-                !myArrayNull && !otherArrayNull && pinPartitionSets.Length != d.pinPartitionSets.Length)
+            if (headDirection != d.headDirection || // Head direction
+                myArrayNull != otherArrayNull ||    // Null
+                !myArrayNull && !otherArrayNull && pinPartitionSets.Length != d.pinPartitionSets.Length)    // Lengths
                 return false;
             if (!myArrayNull && !otherArrayNull)
             {
@@ -75,12 +114,67 @@ namespace AS2
                         return false;
                 }
             }
+            // Compare colors and positions
+            if (placementModeHead != d.placementModeHead || placementModeTail != d.placementModeTail || lineRotationHead != d.lineRotationHead || lineRotationTail != d.lineRotationTail)
+                return false;
+            // Colors
+            myArrayNull = partitionSetColors == null;
+            otherArrayNull = d.partitionSetColors == null;
+            if (myArrayNull != otherArrayNull)
+                return false;
+            if (!myArrayNull)
+            {
+                for (int i = 0; i < partitionSetColors.Length; i++)
+                {
+                    if (partitionSetColors[i] != d.partitionSetColors[i])
+                        return false;
+                }
+            }
+            // Color overrides
+            myArrayNull = partitionSetColorOverrides == null;
+            otherArrayNull = d.partitionSetColorOverrides == null;
+            if (myArrayNull != otherArrayNull)
+                return false;
+            if (!myArrayNull)
+            {
+                for (int i = 0; i < partitionSetColorOverrides.Length; i++)
+                {
+                    if (partitionSetColorOverrides[i] != d.partitionSetColorOverrides[i])
+                        return false;
+                }
+            }
+            // Head positions
+            myArrayNull = partitionSetHeadPositions == null;
+            otherArrayNull = d.partitionSetHeadPositions == null;
+            if (myArrayNull != otherArrayNull)
+                return false;
+            if (!myArrayNull)
+            {
+                for (int i = 0; i < partitionSetHeadPositions.Length; i++)
+                {
+                    if (partitionSetHeadPositions[i] != d.partitionSetHeadPositions[i])
+                        return false;
+                }
+            }
+            // Tail positions
+            myArrayNull = partitionSetTailPositions == null;
+            otherArrayNull = d.partitionSetTailPositions == null;
+            if (myArrayNull != otherArrayNull)
+                return false;
+            if (!myArrayNull)
+            {
+                for (int i = 0; i < partitionSetTailPositions.Length; i++)
+                {
+                    if (partitionSetTailPositions[i] != d.partitionSetTailPositions[i])
+                        return false;
+                }
+            }
             return true;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(headDirection, pinPartitionSets);
+            return HashCode.Combine(headDirection, pinPartitionSets, placementModeHead, placementModeTail, lineRotationHead, lineRotationTail, HashCode.Combine(partitionSetColors, partitionSetColorOverrides, partitionSetHeadPositions, partitionSetTailPositions));
         }
     }
 
