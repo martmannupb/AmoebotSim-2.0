@@ -99,11 +99,31 @@ Simply call [`pc.SendBeepOnPartitionSet(int id)`][10] to send a beep on the part
 ## Additional Features
 
 Particles can set the color of a partition set to influence the display color of the circuit containing that partition set.
-If a [`PinConfiguration`][1] instance `pc` has been set as the planned pin configuration, [`pc.SetPartitionSetColor(int id, Color color)`][12] can be called to set the color of the partition set with ID `id`.
+The method [`pc.SetPartitionSetColor(int id, Color color)`][12] can be called on any [`PinConfiguration`][1] instance `pc` to set the color of its partition set with ID `id`.
+The pin configuration must be set as the planned pin configuration, otherwise the color override will not work.
 A circuit will take the color of the first colored partition set that is encountered while computing the circuits.
 If no colored partition sets are encountered, the circuit will get a color from the circuit color pool (found in [`ColorData`][13]).
 
-**TODO**: Mention partition set placement API
+Additionally, the placement of the partition sets inside the particle can be defined by setting the placement mode.
+This can be done by calling the [`SetPSPlacementMode(PSPlacementMode mode, bool head)`][15] method on a pin configuration.
+The [`PSPlacementMode`][16] enum specifies various modes for placing partition sets automatically or manually and the mode can be set individually for an expanded particle's head and tail by using the `head` parameter.
+Note that this only works for partition sets containing at least two pins because other partition sets do not have a separate visual representation.
+
+The available placement modes are:
+- [`NONE`][17]:
+	- Uses the default placement mode and does not override any positions.
+- [`LINE`][18]:
+	- Distributes the partition sets evenly on a line in the center of the particle (or its head or tail if it is expanded).
+	The line will be vertical for contracted particles and perpendicular to the expansion direction for expanded particles.
+- [`LINE_ROTATED`][19]:
+	- Similar to [`LINE`][18], but the rotation angle can be set manually using the [`SetLineRotation(float angle, bool head)`][22] method.
+- [`LLOYD`][20]:
+	- Places the partition sets on a circle such that each partition set is close to the average position of its pins but not too close to the other partition sets.
+- [`MANUAL`][21]:
+	- Places each partition set at a custom position defined using polar coordinates.
+	The position of a partition set can be defined by calling the [`SetPartitionSetPosition(int id, Vector2 polarCoords, bool head)`][23] method on a [`PinConfiguration`][1] instance or the [`SetPosition(Vector2 polarCoords, bool head)`][24] on a [`PartitionSet`][25] instance.
+	The `Vector2 polarCoords` defines the angle and distance of the partition set relative to the center of the particle.
+	Partition sets for which no position was set will be placed directly in the center.
 
 Pin configurations can also be stored in [particle attributes](attrs.md).
 The special type of attribute for this purpose is created by the [`CreateAttributePinConfiguration`][14] method, which accepts `null` as an initial value.
@@ -127,3 +147,14 @@ Note that stored pin configurations cannot be used to read beeps or messages.
 [12]: xref:AS2.Sim.PinConfiguration.SetPartitionSetColor(System.Int32,Color)
 [13]: xref:AS2.ColorData
 [14]: xref:AS2.Sim.ParticleAlgorithm.CreateAttributePinConfiguration(System.String,AS2.Sim.PinConfiguration)
+[15]: xref:AS2.Sim.PinConfiguration.SetPSPlacementMode(AS2.PSPlacementMode,System.Boolean)
+[16]: xref:AS2.PSPlacementMode
+[17]: xref:AS2.PSPlacementMode.NONE
+[18]: xref:AS2.PSPlacementMode.LINE
+[19]: xref:AS2.PSPlacementMode.LINE_ROTATED
+[20]: xref:AS2.PSPlacementMode.LLOYD
+[21]: xref:AS2.PSPlacementMode.MANUAL
+[22]: xref:AS2.Sim.PinConfiguration.SetLineRotation(System.Single,System.Boolean)
+[23]: xref:AS2.Sim.PinConfiguration.SetPartitionSetPosition(System.Int32,Vector2,System.Boolean)
+[24]: xref:AS2.Sim.PartitionSet.SetPosition(Vector2,System.Boolean)
+[25]: xref:AS2.Sim.PartitionSet
