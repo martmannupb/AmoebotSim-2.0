@@ -10,7 +10,8 @@ namespace AS2.Algos.CollisionTestAlgo2
         Dummy2,
         Static,
         Expanding,
-        Contracting
+        Contracting,
+        HandoverHelper
     }
 
     public class CollisionTestAlgo2Particle : ParticleAlgorithm
@@ -27,6 +28,7 @@ namespace AS2.Algos.CollisionTestAlgo2
         // Declare attributes here
         public ParticleAttribute<Role> role;
         public ParticleAttribute<Direction> expansionDir;
+        public ParticleAttribute<bool> handover;
         public ParticleAttribute<bool> finished;
 
         public CollisionTestAlgo2Particle(Particle p) : base(p)
@@ -34,15 +36,18 @@ namespace AS2.Algos.CollisionTestAlgo2
             // Initialize the attributes here
             role = CreateAttributeEnum<Role>("Role", Role.Static);
             expansionDir = CreateAttributeDirection("Expansion Dir", Direction.NONE);
+            handover = CreateAttributeBool("Handover", false);
             finished = CreateAttributeBool("Finished", false);
         }
 
         // Implement this if the particles require special initialization
         // The parameters will be converted to particle attributes for initialization
-        public void Init(Role role = Role.Static, Direction expansionDir = Direction.NONE)
+        public void Init(Role role = Role.Static, Direction expansionDir = Direction.NONE,
+            bool handover = false)
         {
             this.role.SetValue(role);
             this.expansionDir.SetValue(expansionDir);
+            this.handover.SetValue(handover);
 
             if (role == Role.Dummy1)
                 SetMainColor(ColorData.Particle_Green);
@@ -52,6 +57,8 @@ namespace AS2.Algos.CollisionTestAlgo2
                 SetMainColor(ColorData.Particle_Aqua);
             else if (role == Role.Contracting)
                 SetMainColor(ColorData.Particle_Orange);
+            else if (role == Role.HandoverHelper)
+                SetMainColor(ColorData.Particle_Yellow);
         }
 
         // Implement this method if the algorithm terminates at some point
@@ -76,6 +83,10 @@ namespace AS2.Algos.CollisionTestAlgo2
                         ReleaseBond(DirectionHelpers.Cardinal(i), true);
                     ContractTail();
                 }
+                else if (handover)
+                {
+                    PushHandover(expansionDir);
+                }
                 else
                 {
                     Expand(expansionDir);
@@ -90,6 +101,10 @@ namespace AS2.Algos.CollisionTestAlgo2
             else if (role == Role.Contracting)
             {
                 ContractTail();
+            }
+            else if (role == Role.HandoverHelper)
+            {
+                PullHandoverTail(expansionDir);
             }
 
             finished.SetValue(true);
@@ -113,7 +128,8 @@ namespace AS2.Algos.CollisionTestAlgo2
         public void Generate(int offsetX = 3, int offsetY = 3,
             Direction expansionDir1 = Direction.NNE, Direction expansionDir2 = Direction.SSW,
             bool expanding1 = true, bool expanding2 = true,
-            int movementX = 0, int movementY = 0)
+            int movementX = 0, int movementY = 0,
+            bool handover1 = false, bool handover2 = false)
         {
             if (offsetY < 0)
             {
@@ -125,34 +141,49 @@ namespace AS2.Algos.CollisionTestAlgo2
                 Log.Error("Y movement must be <= 0.");
                 return;
             }
-            else if (expansionDir1.IsSecondary() || expansionDir1 == Direction.SSW)
+            else if (expansionDir1.IsSecondary() || (!handover1 && expansionDir1 == Direction.SSW) || (handover1 && expansionDir1 == Direction.NNE))
             {
-                Log.Error("Invalid expansion direction 1: Must be cardinal and not SSW");
+                Log.Error("Invalid expansion direction 1: Must be cardinal and not SSW expansion or NNE handover");
                 return;
             }
-            else if (expansionDir2.IsSecondary() || expansionDir2 == Direction.NNE)
+            else if (expansionDir2.IsSecondary() || (!handover2 && expansionDir2 == Direction.NNE) || (handover2 && expansionDir2 == Direction.SSW))
             {
-                Log.Error("Invalid expansion direction 2: Must be cardinal and not NNE");
+                Log.Error("Invalid expansion direction 2: Must be cardinal and not NNE expansion or SSW handover");
                 return;
             }
 
             // Place the first dummy particle
-            InitializationParticle p1 = AddParticle(Vector2Int.zero, expanding1 ? Direction.NONE : expansionDir1);
+            InitializationParticle p1;
+            if (handover1)
+                p1 = AddParticle(new Vector2Int(0, -1) + ParticleSystem_Utils.DirectionToVector(expansionDir1.Opposite()));
+            else
+                p1 = AddParticle(Vector2Int.zero, expanding1 ? Direction.NONE : expansionDir1);
             p1.SetAttribute("role", Role.Dummy1);
             p1.SetAttribute("expansionDir", expansionDir1);
-            
-            // Place the second dummy particle
-            InitializationParticle p2 = AddParticle(new Vector2Int(offsetX, offsetY), expanding2 ? Direction.NONE : expansionDir2);
+            p1.SetAttribute("handover", handover1);
+
+            // Place the second dummy particle and its support particles
+            InitializationParticle p2;
+            if (handover2)
+            {
+                p2 = AddParticle(new Vector2Int(offsetX, offsetY + 1) + ParticleSystem_Utils.DirectionToVector(expansionDir2.Opposite()));
+                InitializationParticle p = AddParticle(new Vector2Int(offsetX, offsetY + 2), Direction.SSW);
+                p.SetAttribute("role", Role.HandoverHelper);
+                p.SetAttribute("expansionDir", expansionDir2.Opposite());
+            }
+            else
+            {
+                p2 = AddParticle(new Vector2Int(offsetX, offsetY), expanding2 ? Direction.NONE : expansionDir2);
+                AddParticle(new Vector2Int(offsetX, offsetY + 1));
+                AddParticle(new Vector2Int(offsetX, offsetY + 2));
+            }
             p2.SetAttribute("role", Role.Dummy2);
             p2.SetAttribute("expansionDir", expansionDir2);
-            // Place its support particles
-            AddParticle(new Vector2Int(offsetX, offsetY + 1));
-            AddParticle(new Vector2Int(offsetX, offsetY + 2));
-
+            p2.SetAttribute("handover", handover2);
 
             // Build support and movement structure
-            int xMin = Mathf.Min(Mathf.Min(p1.Head().x, p1.Tail().x) - 2, Mathf.Min(p2.Head().x, p2.Tail().x) - 2);
-            int yMin = Mathf.Min(-2, offsetX + movementX < 0 ? offsetY + movementY - 2 : 0);
+            int xMin = Mathf.Min(Mathf.Min(p1.Head().x, p1.Tail().x) - 3, Mathf.Min(p2.Head().x, p2.Tail().x) - 2);
+            int yMin = Mathf.Min(-3, offsetX + movementX < 0 ? offsetY + movementY - 2 : 0);
             int yMax = Mathf.Max(p2.Head().y, p2.Tail().y) + 3 - movementY;
 
             // Add expanding particles moving the second particle down
@@ -207,8 +238,16 @@ namespace AS2.Algos.CollisionTestAlgo2
                 AddParticle(new Vector2Int(x, yMax));
 
             // Place dummy 1 support particles
-            for (int y = yMin; y < 0; y++)
+            for (int y = yMin; y < (handover1 ? -2 : 0); y++)
                 AddParticle(new Vector2Int(0, y));
+
+            // Handover: Replace last two support particles with handover helper
+            if (handover1)
+            {
+                InitializationParticle p = AddParticle(new Vector2Int(0, -2), Direction.NNE);
+                p.SetAttribute("role", Role.HandoverHelper);
+                p.SetAttribute("expansionDir", expansionDir1.Opposite());
+            }
 
             // Horizontal support line for dummy 1
             for (int x = xMin; x < 0; x++)
@@ -218,23 +257,56 @@ namespace AS2.Algos.CollisionTestAlgo2
                 AddParticle(new Vector2Int(xMin, y));
 
             // Visualization of the movement
+            float displayTime = 5f;
             if (expansionDir1 != Direction.NONE)
             {
-                Vector3 part1Start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(Vector2Int.zero);
-                Vector3 part1End = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(Vector2Int.zero + ParticleSystem_Utils.DirectionToVector(expansionDir1));
-                Debug.DrawLine(part1Start, part1End, Color.green, 5f);
+                if (handover1)
+                {
+                    Vector3 pull1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(0, -2));
+                    Vector3 pull2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(0, -1));
+                    Vector3 part1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(p1.Head());
+                    Debug.DrawLine(pull1, pull2, Color.green, displayTime);
+                    Debug.DrawLine(pull2, part1, Color.green, displayTime);
+                }
+                else
+                {
+                    Vector3 part1Start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(Vector2Int.zero);
+                    Vector3 part1End = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(Vector2Int.zero + ParticleSystem_Utils.DirectionToVector(expansionDir1));
+                    Debug.DrawLine(part1Start, part1End, Color.green, displayTime);
+                }
             }
-            Vector3 part2Start1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX, offsetY));
-            Vector3 part2End1 = (!expanding2) && expansionDir2 != Direction.NONE ?
-                AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX, offsetY) + ParticleSystem_Utils.DirectionToVector(expansionDir2))
-                : part2Start1;
-            Vector3 part2Start2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX + movementX, offsetY + movementY));
-            Vector3 part2End2 = expanding2 && expansionDir2 != Direction.NONE ?
-                AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX + movementX, offsetY + movementY) + ParticleSystem_Utils.DirectionToVector(expansionDir2))
-                : part2Start2;
 
-            Debug.DrawLine(part2Start1, part2Start2, Color.blue, 5f);
-            Debug.DrawLine(part2End1, part2End2, Color.blue, 5f);
+            if (handover2)
+            {
+                Vector2Int pos1 = new Vector2Int(offsetX, offsetY + 2);
+                Vector2Int pos2 = new Vector2Int(offsetX, offsetY + 1);
+                Vector2Int pos3 = new Vector2Int(offsetX, offsetY + 1) + ParticleSystem_Utils.DirectionToVector(expansionDir2.Opposite());
+                Vector2Int offset = new Vector2Int(movementX, movementY);
+                Vector3 pull1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos1);
+                Vector3 pull2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos2);
+                Vector3 part2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos3);
+                Vector3 pull1_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos1 + offset);
+                Vector3 pull2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos2 + offset);
+                Vector3 part2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos3 + offset);
+
+                Debug.DrawLine(pull1, pull1_end, Color.blue, displayTime);
+                Debug.DrawLine(pull2, pull2_end, Color.blue, displayTime);
+                Debug.DrawLine(part2, part2_end, Color.blue, displayTime);
+            }
+            else
+            {
+                Vector3 part2Start1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX, offsetY));
+                Vector3 part2End1 = (!expanding2) && expansionDir2 != Direction.NONE ?
+                    AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX, offsetY) + ParticleSystem_Utils.DirectionToVector(expansionDir2))
+                    : part2Start1;
+                Vector3 part2Start2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX + movementX, offsetY + movementY));
+                Vector3 part2End2 = expanding2 && expansionDir2 != Direction.NONE ?
+                    AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX + movementX, offsetY + movementY) + ParticleSystem_Utils.DirectionToVector(expansionDir2))
+                    : part2Start2;
+
+                Debug.DrawLine(part2Start1, part2Start2, Color.blue, displayTime);
+                Debug.DrawLine(part2End1, part2End2, Color.blue, displayTime);
+            }
         }
     }
 
