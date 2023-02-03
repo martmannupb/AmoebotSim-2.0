@@ -1,26 +1,70 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace AS2.Sim
 {
 
+    /// <summary>
+    /// Helper methods for detecting collisions in joint movements.
+    /// <para>
+    /// Collision checks work by tracking the movements of all edges
+    /// in the system. Edges are created by all bonds and expanded,
+    /// expanding and contracting particles in the system.
+    /// If any two edges that do not coincide in one point at the start
+    /// or the end of the movement intersect during the movement, a
+    /// collision occurs.
+    /// </para>
+    /// </summary>
     public static class CollisionChecker
     {
+        /// <summary>
+        /// The number of seconds for which the collision visualization
+        /// should be displayed.
+        /// </summary>
         public static float debugDisplayTime = 20.0f;
 
+        /// <summary>
+        /// Checks whether the two given edge movements share an end point
+        /// at the start or the end of the movement.
+        /// </summary>
+        /// <param name="em1">The first edge movement.</param>
+        /// <param name="em2">The second edge movement.</param>
+        /// <returns><c>true</c> if and only if the two given edge
+        /// movements share an end point at the start or the
+        /// end of the movement.</returns>
         public static bool HaveSharedNode(EdgeMovement em1, EdgeMovement em2)
         {
             return em1.start1 == em2.start1 || em1.start1 == em2.end1 || em1.end1 == em2.start1 || em1.end1 == em2.end1 ||
                 em1.start2 == em2.start2 || em1.start2 == em2.end2 || em1.end2 == em2.start2 || em1.end2 == em2.end2;
         }
 
+        /// <summary>
+        /// Calculates the orientation of the triangle formed by the
+        /// three given points.
+        /// <para>
+        /// The orientation can be counter-clockwise, clockwise or
+        /// collinear.
+        /// </para>
+        /// </summary>
+        /// <param name="p1">The first point.</param>
+        /// <param name="p2">The second point.</param>
+        /// <param name="p3">The third point.</param>
+        /// <returns><c>1</c> if the orientation is clockwise,
+        /// <c>-1</c> if it is counter-clockwise and <c>0</c>
+        /// if it is collinear.</returns>
         public static int ComputeOrientationTwoSegments(Vector2Int p1, Vector2Int p2, Vector2Int p3)
         {
             int product = (p2.y - p1.y) * (p3.x - p2.x) - (p3.y - p2.y) * (p2.x - p1.x);
             return product > 0 ? 1 : (product < 0 ? -1 : 0);
         }
 
+        /// <summary>
+        /// Checks if the two given one-dimensional line segments intersect.
+        /// </summary>
+        /// <param name="p1">The start of the first segment.</param>
+        /// <param name="q1">The end of the first segment.</param>
+        /// <param name="p2">The start of the second segment.</param>
+        /// <param name="q2">The end of the second segment.</param>
+        /// <returns><c>true</c> if and only if the two segments intersect.</returns>
         public static bool SegmentsIntersect1D(float p1, float q1, float p2, float q2)
         {
             float min1 = Mathf.Min(p1, q1);
@@ -31,9 +75,19 @@ namespace AS2.Sim
                 || (min2 <= min1 && min1 <= max2);
         }
 
+        /// <summary>
+        /// Checks if the two given two-dimensional line segments intersect.
+        /// <para>
+        /// Uses the algorithm described in https://www.dcs.gla.ac.uk/~pat/52233/slides/Geometry1x1.pdf.
+        /// </para>
+        /// </summary>
+        /// <param name="p1">The start point of the first segment.</param>
+        /// <param name="q1">The end point of the first segment.</param>
+        /// <param name="p2">The start point of the second segment.</param>
+        /// <param name="q2">The end point of the second segment.</param>
+        /// <returns><c>true</c> if and only if the two segments intersect.</returns>
         public static bool LineSegmentsIntersect(Vector2Int p1, Vector2Int q1, Vector2Int p2, Vector2Int q2)
         {
-            // See https://www.dcs.gla.ac.uk/~pat/52233/slides/Geometry1x1.pdf
             int orientation1 = ComputeOrientationTwoSegments(p1, q1, p2);
             int orientation2 = ComputeOrientationTwoSegments(p1, q1, q2);
             int orientation3 = ComputeOrientationTwoSegments(p2, q2, p1);
@@ -50,6 +104,15 @@ namespace AS2.Sim
             return false;
         }
 
+        /// <summary>
+        /// Checks if the two given edges collide, given that the first
+        /// edge is not a contraction or expansion.
+        /// </summary>
+        /// <param name="emStatic">The edge movement that is not a
+        /// contraction or expansion.</param>
+        /// <param name="emOther">The other edge movement, which might
+        /// be a contraction or expansion.</param>
+        /// <returns><c>true</c> if and only if the two edges collide.</returns>
         public static bool EdgesCollideOneStatic(EdgeMovement emStatic, EdgeMovement emOther)
         {
             // Calculate the relative movement of both end points of the other edge
@@ -86,6 +149,13 @@ namespace AS2.Sim
             return false;
         }
 
+        /// <summary>
+        /// Checks if the two given edges collide, where both edges can be
+        /// contraction or expansion movements.
+        /// </summary>
+        /// <param name="em1">The first edge movement.</param>
+        /// <param name="em2">The second edge movement.</param>
+        /// <returns><c>true</c> if and only if the two given edges collide.</returns>
         public static bool EdgesCollideBothNonStatic(EdgeMovement em1, EdgeMovement em2)
         {
             // We always use the start point of the first edge as its origin
@@ -152,6 +222,15 @@ namespace AS2.Sim
             return false;
         }
 
+        /// <summary>
+        /// Checks if the two given edge movements collide.
+        /// This is the most general of the collision check methods.
+        /// It selects the most appropriate helper procedure to apply
+        /// to the two edges.
+        /// </summary>
+        /// <param name="em1">The first edge movement.</param>
+        /// <param name="em2">The second edge movement.</param>
+        /// <returns><c>true</c> if and only if the two edges collide.</returns>
         public static bool EdgesCollide(EdgeMovement em1, EdgeMovement em2)
         {
             // If the two edges share a node before or after the movement,
@@ -207,6 +286,15 @@ namespace AS2.Sim
             return false;
         }
 
+        /// <summary>
+        /// Helper for drawing debug lines.
+        /// </summary>
+        /// <param name="p">The start point of the line.</param>
+        /// <param name="q">The end point of the line.</param>
+        /// <param name="color">The color of the line.</param>
+        /// <param name="arrow">Determines whether the line should have an arrow.</param>
+        /// <param name="time">The time for which the line should be displayed.
+        /// Negative values lead to <see cref="debugDisplayTime"/> being used.</param>
         private static void DrawDebugLine(Vector2Int p, Vector2Int q, Color color, bool arrow = false, float time = -1)
         {
             if (time < 0)
