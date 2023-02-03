@@ -217,6 +217,20 @@ namespace AS2.Sim
         /// </summary>
         private ValueHistory<int> anchorIdxHistory = new ValueHistory<int>(0, 0);
 
+        /// <summary>
+        /// <c>true</c> when a collision occurred in the last recorded round.
+        /// </summary>
+        private bool inCollisionState = false;
+        /// <summary>
+        /// <c>true</c> if a collision has occurred in the last recorded round.
+        /// The simulation will not proceed until the last round is cut off
+        /// from the history.
+        /// </summary>
+        public bool InCollisionState
+        {
+            get { return InCollisionState; }
+        }
+
 
         /*
          * Initialization mode data structures
@@ -373,6 +387,7 @@ namespace AS2.Sim
             isTracking = true;
 
             finished = false;
+            inCollisionState = false;
             finishedRound = -1;
 
             anchorIdxHistory.SetMarkerToRound(0);
@@ -513,6 +528,12 @@ namespace AS2.Sim
                 return;
             }
 
+            if (inCollisionState)
+            {
+                Log.Error("A collision occurred! The simulation will not continue.");
+                return;
+            }
+
             _currentRound++;
             Debug.Log("Simulate round " + _currentRound + " (previous round: " + _previousRound + ")");
             _latestRound++;
@@ -560,7 +581,7 @@ namespace AS2.Sim
                     edgeMovements.Clear();
 
                     if (foundCollision)
-                        throw new SimulationException("Detected collision");
+                        inCollisionState = true;
                 }
                 else
                     // Compute bond information for the case with no movements
@@ -626,6 +647,7 @@ namespace AS2.Sim
         {
             inMovePhase = false;
             inBeepPhase = false;
+            inCollisionState = false;   // If the exception occurred after a collision, the collision has no effect
             CleanupAfterRound();
             SetMarkerToRound(_currentRound - 1);
             CutOffAtMarker();
@@ -3231,12 +3253,13 @@ namespace AS2.Sim
                 anchorIdxHistory.CutOffAtMarker();
                 anchorIdxHistory.ContinueTracking();
 
-                // Also reset finished state if necessary
+                // Also reset finished and collision state if necessary
                 if (finished && _latestRound < finishedRound)
                 {
                     finished = false;
                     finishedRound = -1;
                 }
+                inCollisionState = false;
             }
         }
 
@@ -3301,6 +3324,7 @@ namespace AS2.Sim
             data.earliestRound = _earliestRound;
             data.latestRound = _latestRound;
             data.finishedRound = finishedRound;
+            data.inCollisionState = inCollisionState;
             data.anchorIdxHistory = anchorIdxHistory.GenerateSaveData();
 
             data.particles = new ParticleStateSaveData[particles.Count];
@@ -3336,6 +3360,8 @@ namespace AS2.Sim
             finishedRound = data.finishedRound;
             if (finishedRound != -1)
                 finished = true;
+
+            inCollisionState = data.inCollisionState;
 
             foreach (ParticleStateSaveData pData in data.particles)
             {

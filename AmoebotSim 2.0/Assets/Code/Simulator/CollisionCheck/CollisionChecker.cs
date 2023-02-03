@@ -75,17 +75,10 @@ namespace AS2.Sim
 
             if (collision)
             {
-                Vector3 em1_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(emStatic.start1);
-                Vector3 em1_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(emStatic.end1);
-                Vector3 em2_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(emOther.start1);
-                Vector3 em2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(emOther.end1);
-                Vector3 em2_moveStart = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(emOther.start1 + otherMovement1);
-                Vector3 em2_moveEnd = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(emOther.end1 + otherMovement2);
-
-                Debug.DrawLine(em1_start, em1_end, Color.red, debugDisplayTime, false);
-                Debug.DrawLine(em2_start, em2_end, Color.green, debugDisplayTime, false);
-                Debug.DrawLine(em2_start, em2_moveStart, Color.blue, debugDisplayTime, false);
-                Debug.DrawLine(em2_end, em2_moveEnd, Color.blue, debugDisplayTime, false);
+                DrawDebugLine(emStatic.start1, emStatic.end1, Color.red);
+                DrawDebugLine(emOther.start1, emOther.end1, Color.green);
+                DrawDebugLine(emOther.start1, emOther.start1 + otherMovement1, Color.blue, true);
+                DrawDebugLine(emOther.end1, emOther.end1 + otherMovement2, Color.blue, true);
                 Log.Debug("DETECTED COLLISION! (1 static)");
                 return true;
             }
@@ -142,22 +135,19 @@ namespace AS2.Sim
             if (collision2)
             {
                 // Current edge (in expanded state)
-                Vector3 em1_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.start1);
-                Vector3 em1_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.start1 + startToEnd);
-                Debug.DrawLine(em1_start, em1_end, Color.red, debugDisplayTime, false);
+                DrawDebugLine(em1.start1, em1.start1 + startToEnd, Color.red);
 
                 // Movement lines of the other edge relative to first edge's start
-                Vector3 em2_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.start1);
-                Vector3 em2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.end1);
-                Vector3 em2_moveStart = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.start1 + em2.StartTranslation() - em1.StartTranslation());
-                Vector3 em2_moveEnd = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.end1 + em2.EndTranslation() - em1.StartTranslation());
+                Vector2Int em2_moveStart = em2.start1 + em2.StartTranslation() - em1.StartTranslation();
+                Vector2Int em2_moveEnd = em2.end1 + em2.EndTranslation() - em1.StartTranslation();
 
-                Debug.DrawLine(em2_start, em2_end, Color.green, debugDisplayTime, false);
-                Debug.DrawLine(em2_moveStart, em2_moveEnd, Color.green, debugDisplayTime, false);
-                Debug.DrawLine(em2_start, em2_moveStart, Color.blue, debugDisplayTime, false);
-                Debug.DrawLine(em2_end, em2_moveEnd, Color.blue, debugDisplayTime, false);
+                DrawDebugLine(em2.start1, em2.end1, Color.green);
+                DrawDebugLine(em2_moveStart, em2_moveEnd, Color.green);
+                DrawDebugLine(em2.start1, em2_moveStart, Color.blue, true);
+                DrawDebugLine(em2.end1, em2_moveEnd, Color.blue, true);
 
                 Log.Debug("DETECTED COLLISION! (2 non-static)");
+                return true;
             }
             return false;
         }
@@ -190,36 +180,50 @@ namespace AS2.Sim
                 if (LineSegmentsIntersect(em1.start1, em1.end1, em2.start1, em2.start1 + em2_rel) ||
                     LineSegmentsIntersect(em1.start1, em1.end1, em2.end1, em2.end1 + em2_rel))
                 {
-                    Vector3 em1_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.start1);
-                    Vector3 em1_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em1.end1);
-                    Vector3 em2_start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.start1);
-                    Vector3 em2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.end1);
-                    Vector3 em2_moveStart = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.start1 + em2_rel);
-                    Vector3 em2_moveEnd = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em2.end1 + em2_rel);
+                    DrawDebugLine(em1.start1, em1.end1, Color.red);
+                    DrawDebugLine(em2.start1, em2.end1, Color.green);
+                    DrawDebugLine(em2.start1, em2.start1 + em2_rel, Color.blue, true);
+                    DrawDebugLine(em2.end1, em2.end1 + em2_rel, Color.blue, true);
 
-                    Debug.DrawLine(em1_start, em1_end, Color.red, debugDisplayTime, false);
-                    Debug.DrawLine(em2_start, em2_end, Color.green, debugDisplayTime, false);
-                    Debug.DrawLine(em2_start, em2_moveStart, Color.blue, debugDisplayTime, false);
-                    Debug.DrawLine(em2_end, em2_moveEnd, Color.blue, debugDisplayTime, false);
                     Log.Debug("DETECTED COLLISION! (2 static)");
+                    return true;
                 }
             }
             // Case 2: One of the edges has only a translation movement
             else if (em1_tStart == em1_tEnd)
             {
-                EdgesCollideOneStatic(em1, em2);
+                return EdgesCollideOneStatic(em1, em2);
             }
             else if (em2_tStart == em2_tEnd)
             {
-                EdgesCollideOneStatic(em2, em1);
+                return EdgesCollideOneStatic(em2, em1);
             }
             // Case 3: Both edges have a contraction or expansion
             else
             {
-                EdgesCollideBothNonStatic(em1, em2);
+                return EdgesCollideBothNonStatic(em1, em2);
             }
 
             return false;
+        }
+
+        private static void DrawDebugLine(Vector2Int p, Vector2Int q, Color color, bool arrow = false, float time = -1)
+        {
+            if (time < 0)
+                time = debugDisplayTime;
+            Vector3 start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(p);
+            Vector3 end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(q);
+            Debug.DrawLine(start, end, color, time, false);
+            if (arrow)
+            {
+                Vector3 endToStart = start - end;
+                Quaternion rot1 = Quaternion.Euler(0, 0, 15);
+                Quaternion rot2 = Quaternion.Euler(0, 0, -15);
+                Vector3 a1 = rot1 * endToStart * 0.1f;
+                Vector3 a2 = rot2 * endToStart * 0.1f;
+                Debug.DrawLine(end, end + a1, color, time, false);
+                Debug.DrawLine(end, end + a2, color, time, false);
+            }
         }
     }
 

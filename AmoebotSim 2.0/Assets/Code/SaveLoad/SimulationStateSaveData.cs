@@ -25,6 +25,11 @@ namespace AS2
         public int finishedRound;
 
         /// <summary>
+        /// Indicates whether the simulation is in a collision state or not.
+        /// </summary>
+        public bool inCollisionState;
+
+        /// <summary>
         /// The history of the anchor particle indices.
         /// </summary>
         public ValueHistorySaveData<int> anchorIdxHistory;
