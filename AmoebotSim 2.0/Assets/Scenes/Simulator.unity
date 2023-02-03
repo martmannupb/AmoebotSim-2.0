@@ -10908,7 +10908,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1496484896}
   m_Direction: 2
   m_Value: -0.012048192
-  m_Size: 0.012048198
+  m_Size: 0.9999946
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -15058,9 +15058,10 @@ MonoBehaviour:
   sprite_circuitViewTypeCircuitsDisabled: {fileID: 21300000, guid: 69bc3821ad4b0d647a45537917dd26f7, type: 3}
   button_pSetPositioning: {fileID: 1809305701}
   image_pSetPositioning: {fileID: 42363882}
-  sprite_pSetPositining_def: {fileID: 21300000, guid: 543a416b9a8df2c4dbc19a9981c91c86, type: 3}
-  sprite_pSetPositining_auto: {fileID: 21300000, guid: 2f482731067f9a24d97c7de68ce1329a, type: 3}
-  sprite_pSetPositining_line: {fileID: 21300000, guid: 2a5b932d135096d4c9818922dff5cd0c, type: 3}
+  sprite_pSetPositioning_def: {fileID: 21300000, guid: 543a416b9a8df2c4dbc19a9981c91c86, type: 3}
+  sprite_pSetPositioning_auto: {fileID: 21300000, guid: 2f482731067f9a24d97c7de68ce1329a, type: 3}
+  sprite_pSetPositioning_auto2D: {fileID: 21300000, guid: 6e6f410f5fb8e8d4c942551523a119e5, type: 3}
+  sprite_pSetPositioning_line: {fileID: 21300000, guid: 2a5b932d135096d4c9818922dff5cd0c, type: 3}
   button_bondsActive: {fileID: 579480949}
   button_backgroundGridActive: {fileID: 2127019065}
   button_settings: {fileID: 2037601137}

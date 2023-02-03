@@ -65,9 +65,10 @@ namespace AS2.UI
         public Sprite sprite_circuitViewTypeCircuitsDisabled;
         public Button button_pSetPositioning;
         public Image image_pSetPositioning;
-        public Sprite sprite_pSetPositining_def;
-        public Sprite sprite_pSetPositining_auto;
-        public Sprite sprite_pSetPositining_line;
+        public Sprite sprite_pSetPositioning_def;
+        public Sprite sprite_pSetPositioning_auto;
+        public Sprite sprite_pSetPositioning_auto2D;
+        public Sprite sprite_pSetPositioning_line;
         public Button button_bondsActive;
         public Button button_backgroundGridActive;
         private Color overlayColor_active;
@@ -316,13 +317,16 @@ namespace AS2.UI
             switch (sim.renderSystem.GetPSetViewType())
             {
                 case PartitionSetViewType.Line:
-                    if (image_pSetPositioning.sprite != sprite_pSetPositining_line) image_pSetPositioning.sprite = sprite_pSetPositining_line;
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_line) image_pSetPositioning.sprite = sprite_pSetPositioning_line;
                     break;
                 case PartitionSetViewType.Auto:
-                    if (image_pSetPositioning.sprite != sprite_pSetPositining_auto) image_pSetPositioning.sprite = sprite_pSetPositining_auto;
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_auto) image_pSetPositioning.sprite = sprite_pSetPositioning_auto;
+                    break;
+                case PartitionSetViewType.Auto_2DCircle:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_auto2D) image_pSetPositioning.sprite = sprite_pSetPositioning_auto2D;
                     break;
                 case PartitionSetViewType.CodeOverride:
-                    if (image_pSetPositioning.sprite != sprite_pSetPositining_def) image_pSetPositioning.sprite = sprite_pSetPositining_def;
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_def) image_pSetPositioning.sprite = sprite_pSetPositioning_def;
                     break;
                 default:
                     break;

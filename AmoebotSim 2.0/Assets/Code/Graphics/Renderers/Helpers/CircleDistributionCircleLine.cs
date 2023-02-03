@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace AS2.Visuals
 {
-    class CircleDistribution
+    class CircleDistributionCircleLine
     {
 
         // RNG
@@ -19,7 +19,7 @@ namespace AS2.Visuals
         public static bool DistributePointsOnCircle(List<float> inputOutputDegreeList, float minDistanceBetweenPoints, float interationMovementTowardsCenterPercentage = 0.1f, float maxMovementPerInteraction = 360f)
         {
             // Null check
-            if (inputOutputDegreeList == null || inputOutputDegreeList.Count == 0) return true;
+            if (inputOutputDegreeList == null || inputOutputDegreeList.Count <= 1) return true;
 
             // Prepare lists
             points.Clear();
@@ -32,7 +32,7 @@ namespace AS2.Visuals
 
             // Define settings
             int maxIterations = 100;
-            if (minDistanceBetweenPoints * 1.1f >= 360f / inputOutputDegreeList.Count) minDistanceBetweenPoints = (360f / 1.1f) / inputOutputDegreeList.Count; // adjust if min distance is set too large
+            if (minDistanceBetweenPoints * 1.1f >= 360f / points.Count) minDistanceBetweenPoints = (360f / 1.1f) / points.Count; // adjust if min distance is set too large
 
             // Perform edited version of the Lloyd relaxation algorithm
             for (int i = 0; i < maxIterations; i++)

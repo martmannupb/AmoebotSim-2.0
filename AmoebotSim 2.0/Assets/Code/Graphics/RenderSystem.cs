@@ -217,8 +217,11 @@ namespace AS2.Visuals
                 case PartitionSetViewType.Auto:
                     flag_partitionSetViewType = PartitionSetViewType.Line;
                     break;
-                case PartitionSetViewType.CodeOverride:
+                case PartitionSetViewType.Auto_2DCircle:
                     flag_partitionSetViewType = PartitionSetViewType.Auto;
+                    break;
+                case PartitionSetViewType.CodeOverride:
+                    flag_partitionSetViewType = PartitionSetViewType.Auto_2DCircle;
                     break;
                 default:
                     break;

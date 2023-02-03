@@ -26,6 +26,7 @@ namespace AS2.Visuals
         private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
         private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
         private List<float> degreeList = new List<float>(16);
+        private List<Vector2> vectorList = new List<Vector2>(16);
         private PriorityQueue<ParticlePinGraphicState.PSetData> pSetSortingList = new PriorityQueue<ParticlePinGraphicState.PSetData>();
         //private SortedList<float, ParticlePinGraphicState.PSetData> pSetSortingList = new SortedList<float, ParticlePinGraphicState.PSetData>();
 
@@ -248,7 +249,7 @@ namespace AS2.Visuals
         /// <param name="outputList">A list that has been already initialized. It will be cleared in this method.</param>
         /// <param name="isHead">If we are looking at head partition sets.</param>
         /// <param name="useRelaxationAlgorithm">True to make sure there is sufficient space between partition sets.</param>
-        private void CalculateCircleDegreesForPartitionSets(ParticleCircuitData circuitData, List<float> outputList, bool isHead, bool useRelaxationAlgorithm = true)
+        private void CalculateCircleLineDegreesForPartitionSets(ParticleCircuitData circuitData, List<float> outputList, bool isHead, bool useRelaxationAlgorithm = true)
         {
             outputList.Clear();
             for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
@@ -267,7 +268,23 @@ namespace AS2.Visuals
                     }
                 }
             }
-            if(useRelaxationAlgorithm) CircleDistribution.DistributePointsOnCircle(outputList, Mathf.Min(0.8f * (360f / outputList.Count), 60f));
+            if(useRelaxationAlgorithm) CircleDistributionCircleLine.DistributePointsOnCircle(outputList, Mathf.Min(0.8f * (360f / outputList.Count), 60f));
+        }
+
+        private void CalculateCircleVectorCoordinatesForPartitionSets(ParticleCircuitData circuitData, List<Vector2> outputList, bool isHead, bool useRelaxationAlgorithm = true)
+        {
+            outputList.Clear();
+            for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
+            {
+                ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                if (isHead && pSet.graphicalData.hasPinsInHead || isHead == false && pSet.graphicalData.hasPinsInTail)
+                {
+                    // Calc average partition set position
+                    Vector2 relPos = CalculateAverageRelativePinPosForPartitionSet(pSet, circuitData, isHead);
+                    outputList.Add(relPos);
+                }
+            }
+            if (useRelaxationAlgorithm) CircleDistributionCircleArea.DistributePointsInCircle(outputList, 0.2f, 0.05f, 0.2f, 0.25f);
         }
 
         /// <summary>
@@ -325,11 +342,13 @@ namespace AS2.Visuals
                         break;
                     case PartitionSetViewType.Auto:
                         break;
+                    case PartitionSetViewType.Auto_2DCircle:
+                        break;
                     case PartitionSetViewType.CodeOverride:
                         switch (circuitData.state.codeOverrideType1)
                         {
                             case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
-                                pSetViewType = PartitionSetViewType.Auto; // standard view type for this particle half
+                                pSetViewType = PartitionSetViewType.Auto_2DCircle; // standard view type for this particle half
                                 break;
                             case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
                                 pSetViewType = PartitionSetViewType.Line; // standard view type for this particle half
@@ -350,11 +369,12 @@ namespace AS2.Visuals
                 }
 
                 int numberOfPartitionSetPinsInNode = -1;
-                if (pSetViewType == PartitionSetViewType.Auto)
+                if (pSetViewType == PartitionSetViewType.Auto || pSetViewType == PartitionSetViewType.Auto_2DCircle)
                 {
                     // Auto Placement 1. Iteration (PSet Degrees)
                     // 1. Head Pins
-                    CalculateCircleDegreesForPartitionSets(circuitData, degreeList, true);
+                    if (pSetViewType == PartitionSetViewType.Auto) CalculateCircleLineDegreesForPartitionSets(circuitData, degreeList, true);
+                    else if (pSetViewType == PartitionSetViewType.Auto_2DCircle) CalculateCircleVectorCoordinatesForPartitionSets(circuitData, vectorList, true);
                     // Get number of PSets
                     numberOfPartitionSetPinsInNode = 0;
                     foreach (var pSet in circuitData.state.partitionSets) if (pSet.graphicalData.hasPinsInHead) numberOfPartitionSetPinsInNode++;
@@ -382,6 +402,21 @@ namespace AS2.Visuals
                                 float degree = degreeList[counter];
                                 counter++;
                                 Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
+                                // Save position
+                                pSet.graphicalData.active_position1 = posParticle + localPinPos;
+                            }
+                            break;
+                        case PartitionSetViewType.Auto_2DCircle:
+                            // Auto (2D Circle)
+                            // Auto Placement 2. Iteration (PSet Positions)
+                            if (pSet.graphicalData.hasPinsInHead)
+                            {
+                                // Convert degree to coordinate
+                                Vector2 vector = vectorList[counter];
+                                counter++;
+                                Vector2 localPinPos = (vectorList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : vector;
                                 // Calc partition set position on the circle
                                 Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
                                 // Save position
@@ -420,11 +455,13 @@ namespace AS2.Visuals
                         break;
                     case PartitionSetViewType.Auto:
                         break;
+                    case PartitionSetViewType.Auto_2DCircle:
+                        break;
                     case PartitionSetViewType.CodeOverride:
                         switch (circuitData.state.codeOverrideType2)
                         {
                             case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
-                                pSetViewType = PartitionSetViewType.Auto; // standard view type for this particle half
+                                pSetViewType = PartitionSetViewType.Auto_2DCircle; // standard view type for this particle half
                                 break;
                             case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
                                 pSetViewType = PartitionSetViewType.Line; // standard view type for this particle half
@@ -445,11 +482,12 @@ namespace AS2.Visuals
                 }
 
                 int numberOfPartitionSetPinsInNode = -1;
-                if (pSetViewType == PartitionSetViewType.Auto)
+                if (pSetViewType == PartitionSetViewType.Auto || pSetViewType == PartitionSetViewType.Auto_2DCircle)
                 {
                     // Auto Placement 1. Iteration (PSet Degrees)
                     // 2. Tail Pins
-                    CalculateCircleDegreesForPartitionSets(circuitData, degreeList, false);
+                    if (pSetViewType == PartitionSetViewType.Auto) CalculateCircleLineDegreesForPartitionSets(circuitData, degreeList, false);
+                    else if (pSetViewType == PartitionSetViewType.Auto_2DCircle) CalculateCircleVectorCoordinatesForPartitionSets(circuitData, vectorList, false);
                     // Get number of PSets
                     numberOfPartitionSetPinsInNode = 0;
                     foreach (var pSet in circuitData.state.partitionSets) if (pSet.graphicalData.hasPinsInTail) numberOfPartitionSetPinsInNode++;
@@ -476,6 +514,21 @@ namespace AS2.Visuals
                                 float degree = degreeList[counter];
                                 counter++;
                                 Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
+                                // Save position
+                                pSet.graphicalData.active_position2 = posParticle + localPinPos;
+                            }
+                            break;
+                        case PartitionSetViewType.Auto_2DCircle:
+                            // Auto (2D Circle)
+                            // Auto Placement 2. Iteration (PSet Positions)
+                            if (pSet.graphicalData.hasPinsInTail)
+                            {
+                                // Convert degree to coordinate
+                                Vector2 vector = vectorList[counter];
+                                counter++;
+                                Vector2 localPinPos = (vectorList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : vector;
                                 // Calc partition set position on the circle
                                 Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
                                 // Save position
@@ -1243,9 +1296,13 @@ namespace AS2.Visuals
         /// </summary>
         Line,
         /// <summary>
-        /// Automatic view type: Partition Sets oriented on a circle, automaticaly ordered by the median coordinates.
+        /// Automatic view type: Partition Sets oriented on a one-dimensional circle, automatically ordered by the median coordinates.
         /// </summary>
         Auto,
+        /// <summary>
+        /// Automatic view type: Partition Sets oriented on a virtual 2D circle, automatically ordered by the median coordinates.
+        /// </summary>
+        Auto_2DCircle,
         /// <summary>
         /// Default view type: Priorization of code positioning. If none has been set we use auto positioning.
         /// </summary>
