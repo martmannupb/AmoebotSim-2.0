@@ -982,6 +982,8 @@ namespace AS2.Sim
             CheckActive("Movement actions cannot be triggered for other particles.");
             if (!CheckMove("Cannot schedule expansion movement during beep phase.", true))
                 return;
+            if (!locDir.IsCardinal())
+                throw new AlgorithmException(particle, "Invalid expansion direction: " + locDir);
             particle.system.ExpandParticle(particle, locDir);
         }
 

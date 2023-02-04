@@ -83,7 +83,7 @@ namespace AS2
         // Orthographic Constants
         public float minOrthographicSize = 5f;
         public float maxOrthographicSize = 30f;
-        public float cameraMovSpeedKeyboard = 10f;
+        public float cameraMoveSpeedKeyboard = 1f;
         //public float cameraMovMaxSpeedMousewheelPerSec = 10f;
 
         // New System
@@ -99,13 +99,12 @@ namespace AS2
             if (movementLocked) return;
 
             // Keyboard WASD
-            //bool a = Input.GetKey(KeyCode.A);
-            //bool s = Input.GetKey(KeyCode.S);
-            //bool d = Input.GetKey(KeyCode.D);
-            //bool w = Input.GetKey(KeyCode.W);
-            //int xAxis = Convert.ToInt32(d) - Convert.ToInt32(a);
-            //int yAxis = Convert.ToInt32(w) - Convert.ToInt32(s);
-            //Camera = new Vector3(transform.position.x + xAxis * cameraMovSpeedKeyboard * Time.deltaTime, transform.position.y + yAxis * cameraMovSpeedKeyboard * Time.deltaTime, transform.position.z);
+            bool keyMovementActive = Input.GetKey(KeyCode.LeftControl) == false && Input.GetKey(KeyCode.RightControl);
+            bool arrowLeft = keyMovementActive && (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow));
+            bool arrowDown = keyMovementActive && (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow));
+            bool arrowRight = keyMovementActive && (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow));
+            bool arrowUp = keyMovementActive && (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow));
+            bool anyArrowKeyPressed = arrowLeft || arrowDown || arrowRight || arrowUp;
 
             // Handle screen dragging
             // 0 left 1 right 2 middle mouse button
@@ -122,20 +121,29 @@ namespace AS2
             }
             else
             {
-                // Check Speed Bounds
-                /*if (Mathf.Pow(cameraMovMaxSpeedMousewheelPerSec / 60f, 2) < diffSmoothNormalized60FPS.sqrMagnitude) {
-                    // Brake
-                    diffSmoothNormalized60FPS = ((cameraMovMaxSpeedMousewheelPerSec / 60f) / diffSmoothNormalized60FPS.magnitude) * diffSmoothNormalized60FPS;
-                }*/
-
-                if (diffSmoothNormalized60FPS.magnitude > 0.01f * Time.deltaTime)
+                // Not holding down a drag mouse button
+                if (anyArrowKeyPressed)
                 {
-                    cam.transform.Translate(diffSmoothNormalized60FPS * Time.deltaTime * 60f);
-                    diffSmoothNormalized60FPS *= Mathf.Pow(0.99f, Time.deltaTime * 60f);
+                    // Arrow key movement
+                    float leftRight = arrowLeft && arrowRight ? 0 : (arrowLeft ? -cameraMoveSpeedKeyboard : (arrowRight ? cameraMoveSpeedKeyboard : 0f));
+                    float upDown = arrowUp && arrowDown ? 0 : (arrowUp ? cameraMoveSpeedKeyboard : (arrowDown ? -cameraMoveSpeedKeyboard : 0f));
+                    diff = new Vector3(leftRight, upDown, 0);
+                    diffSmoothNormalized60FPS = (Time.deltaTime * 60f) * diff;
+                    cam.transform.Translate(diffSmoothNormalized60FPS);
                 }
                 else
                 {
-                    diffSmoothNormalized60FPS = Vector3.zero;
+                    // Camera movement lerp
+                    if (diffSmoothNormalized60FPS.magnitude > 0.01f * Time.deltaTime)
+                    {
+                        cam.transform.Translate(diffSmoothNormalized60FPS * Time.deltaTime * 60f);
+                        diffSmoothNormalized60FPS *= Mathf.Pow(0.90f, Time.deltaTime * 60f);
+                    }
+                    else
+                    {
+                        diffSmoothNormalized60FPS = Vector3.zero;
+                    }
+
                 }
             }
 

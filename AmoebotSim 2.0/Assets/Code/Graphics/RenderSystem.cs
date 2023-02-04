@@ -54,6 +54,7 @@ namespace AS2.Visuals
         // Dynamic Params _____
         public static bool flag_particleRoundOver = true;
         public static bool flag_showCircuitView = true;
+        public static PartitionSetViewType flag_partitionSetViewType = PartitionSetViewType.CodeOverride;
         public static bool flag_showBonds = true;
         public static bool flag_showCircuitViewOutterRing = true;
         public static bool flag_circuitBorderActive = false;
@@ -163,12 +164,14 @@ namespace AS2.Visuals
             {
                 case ViewType.Hexagonal:
                     setting_viewType = ViewType.HexagonalCirc;
+                    rendererP.circuitAndBondRenderer.GetCurrentInstance().Refresh(flag_partitionSetViewType);
                     break;
                 case ViewType.HexagonalCirc:
                     setting_viewType = ViewType.Circular;
                     break;
                 case ViewType.Circular:
                     setting_viewType = ViewType.Hexagonal;
+                    rendererP.circuitAndBondRenderer.GetCurrentInstance().Refresh(flag_partitionSetViewType);
                     break;
                 default:
                     break;
@@ -185,11 +188,45 @@ namespace AS2.Visuals
         }
 
         /// <summary>
+        /// Returns the partition set view type.
+        /// </summary>
+        /// <returns></returns>
+        public PartitionSetViewType GetPSetViewType()
+        {
+            return flag_partitionSetViewType;
+        }
+
+        /// <summary>
         /// Toggles the circuit view on and off.
         /// </summary>
         public void ToggleCircuits()
         {
             flag_showCircuitView = !flag_showCircuitView;
+        }
+
+        /// <summary>
+        /// Toggles the partition set positioning.
+        /// </summary>
+        public void TogglePSetPositioning()
+        {
+            switch (flag_partitionSetViewType)
+            {
+                case PartitionSetViewType.Line:
+                    flag_partitionSetViewType = PartitionSetViewType.CodeOverride;
+                    break;
+                case PartitionSetViewType.Auto:
+                    flag_partitionSetViewType = PartitionSetViewType.Line;
+                    break;
+                case PartitionSetViewType.Auto_2DCircle:
+                    flag_partitionSetViewType = PartitionSetViewType.Auto;
+                    break;
+                case PartitionSetViewType.CodeOverride:
+                    flag_partitionSetViewType = PartitionSetViewType.Auto_2DCircle;
+                    break;
+                default:
+                    break;
+            }
+            rendererP.circuitAndBondRenderer.GetCurrentInstance().Refresh(flag_partitionSetViewType);
         }
 
         /// <summary>

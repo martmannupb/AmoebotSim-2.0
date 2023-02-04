@@ -18,12 +18,11 @@ The file menu offers options like the starting of the init mode, the saving and 
 
 ### Selection Menu (Middle Left)
 
-The "Selection" tool opens the particle panel after a click on the particle (explained below). The other tools are currently planned to be only used in the init mode, so we might decide to hide them in simulation mode.
+The "Selection" tool opens the particle panel after a click on the particle (explained below). Additionally, you also have the possibility to manually change the placement of partition sets.
 
 ### View Menu (Middle Right)
 
-
-This menu is used to control the various views of the simulator. E.g you have the option to show/hide circuits in some of the views, you can toggle bonds on and off, show the background grid to see the coordinates of each particle or scroll through the different view modes. The "UI" button hides the world space UI overlay which shows particle attributes in the view and can be triggered in the particle panel by a click on an attribute. We recommend you just press the buttons and see what they do, you cannot really do something wrong here.
+This menu is used to control the various views of the simulator. E.g you have the option to show/hide circuits in some of the views, you can toggle bonds on and off, show the background grid to see the coordinates of each particle or scroll through the different view modes. The "UI" button hides the world space UI overlay which shows particle attributes in the view and can be triggered in the particle panel by a click on an attribute. Another button is used to switch through the different partition set view modes: The default mode priorizes code overrides of partition set positions that can be set via code, then there is automatic positioning of partition sets based on their local pin positions, finally you have the option to set the partition set positions in a straight (mostly horizontal) line. Also, there is another button to show the grid positions of particles. We recommend you just press the buttons and see what they do, you cannot really do something wrong here.
 
 ### Setting Menu (Right)
 
@@ -37,6 +36,10 @@ The particle panel is opened by pressing on a particle with the highlighted "Sel
 
 Currently we support several hotkeys, you can change the keys in the UIHandler class. Here is a short overview over the currently set hotkeys:
 
+- Arrow Keys : Camera Movement
+- Space : Play/Pause
+- PageUp OR LCtrl + Right Arrow Key : Step Forward
+- PageDown OR LCtrl + Left Arrow Key : Step Back
 - LCtrl + H : Hide UI
 - H : Show UI
 - LCtrl + C : Center Camera

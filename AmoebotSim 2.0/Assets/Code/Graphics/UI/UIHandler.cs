@@ -1,5 +1,6 @@
 using AS2.Visuals;
 using SFB;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -45,8 +46,13 @@ namespace AS2.UI
         public Button button_toolAdd;
         public Button button_toolRemove;
         public Button button_toolMove;
+        public Button button_toolPSetMove;
+        public TMP_Dropdown dropdown_chirality;
+        public TMP_Dropdown dropdown_compass;
         private Color toolColor_active;
         private Color toolColor_inactive;
+        private List<GameObject> tools_initMode = new List<GameObject>();
+        private List<GameObject> tools_playMode = new List<GameObject>();
         // Overlay Panel
         public Button button_viewType;
         public Image image_viewType;
@@ -55,9 +61,15 @@ namespace AS2.UI
         public Sprite sprite_viewTypeHexagonalCirc;
         public Button button_circuitViewType;
         public Image image_circuitViewType;
-        public Button button_bondsActive;
         public Sprite sprite_circuitViewTypeCircuitsEnabled;
         public Sprite sprite_circuitViewTypeCircuitsDisabled;
+        public Button button_pSetPositioning;
+        public Image image_pSetPositioning;
+        public Sprite sprite_pSetPositioning_def;
+        public Sprite sprite_pSetPositioning_auto;
+        public Sprite sprite_pSetPositioning_auto2D;
+        public Sprite sprite_pSetPositioning_line;
+        public Button button_bondsActive;
         public Button button_backgroundGridActive;
         private Color overlayColor_active;
         private Color overlayColor_inactive;
@@ -70,7 +82,7 @@ namespace AS2.UI
 
         public enum UITool
         {
-            Standard, Add, Remove, Move
+            Standard, Add, Remove, Move, PSetMove
         }
 
 
@@ -108,6 +120,14 @@ namespace AS2.UI
             if (button_toolAdd != null) toolColor_inactive = button_toolAdd.gameObject.GetComponent<Image>().color;
             if (button_viewType != null) overlayColor_active = button_circuitViewType.gameObject.GetComponent<Image>().color;
             overlayColor_inactive = toolColor_inactive;
+            // Init Tools
+            tools_initMode.Add(button_toolStandard.gameObject);
+            tools_initMode.Add(button_toolAdd.gameObject);
+            tools_initMode.Add(button_toolRemove.gameObject);
+            tools_initMode.Add(button_toolMove.gameObject);
+            tools_initMode.Add(dropdown_chirality.gameObject.transform.parent.gameObject);
+            tools_playMode.Add(button_toolStandard.gameObject);
+            tools_playMode.Add(button_toolPSetMove.gameObject);
         }
 
         /// <summary>
@@ -136,9 +156,29 @@ namespace AS2.UI
                 // Pause/Play
                 sim.TogglePlayPause();
             }
-            // Shift + ...
-            if (Input.GetKey(KeyCode.LeftControl))
+            if(Input.GetKeyDown(KeyCode.PageUp))
             {
+                // Forward
+                Button_StepForwardPressed();
+            }
+            if(Input.GetKeyDown(KeyCode.PageDown))
+            {
+                // Back
+                Button_StepBackPressed();
+            }
+            // Shift + ...
+            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+            {
+                if (Input.GetKeyDown(KeyCode.RightArrow))
+                {
+                    // Forward
+                    Button_StepForwardPressed();
+                }
+                if (Input.GetKeyDown(KeyCode.LeftArrow))
+                {
+                    // Backward
+                    Button_StepBackPressed();
+                }
                 if (Input.GetKeyDown(KeyCode.H))
                 {
                     // Hide UI
@@ -197,7 +237,9 @@ namespace AS2.UI
             if (initializationUI.IsOpen())
             {
                 // Init Mode
-
+                // Update Top Panel Buttons
+                foreach (var item in tools_playMode) item.SetActive(false);
+                foreach (var item in tools_initMode) item.SetActive(true);
                 // Disable Bottom Panel Buttons
                 button_stepBack.interactable = false;
                 button_stepForward.interactable = false;
@@ -217,6 +259,9 @@ namespace AS2.UI
                 int maxRound = sim.system.LatestRound;
                 int uiRound = (int)slider_round.value;
 
+                // Update Top Panel Buttons
+                foreach (var item in tools_initMode) item.SetActive(false);
+                foreach (var item in tools_playMode) item.SetActive(true);
                 // Play/Pause/Step
                 button_stepBack.interactable = uiRound > minRound && running == false;
                 button_stepForward.interactable = uiRound < maxRound && running == false;
@@ -267,6 +312,25 @@ namespace AS2.UI
                 default:
                     break;
             }
+            // PSet Button Images
+            // PSet Type
+            switch (sim.renderSystem.GetPSetViewType())
+            {
+                case PartitionSetViewType.Line:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_line) image_pSetPositioning.sprite = sprite_pSetPositioning_line;
+                    break;
+                case PartitionSetViewType.Auto:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_auto) image_pSetPositioning.sprite = sprite_pSetPositioning_auto;
+                    break;
+                case PartitionSetViewType.Auto_2DCircle:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_auto2D) image_pSetPositioning.sprite = sprite_pSetPositioning_auto2D;
+                    break;
+                case PartitionSetViewType.CodeOverride:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_def) image_pSetPositioning.sprite = sprite_pSetPositioning_def;
+                    break;
+                default:
+                    break;
+            }
             // Circuit View Type
             if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
@@ -307,6 +371,43 @@ namespace AS2.UI
             ui.SetActive(false);
         }
 
+        /// <summary>
+        /// Gets the chirality value from the corresponding dropdown UI element.
+        /// </summary>
+        /// <returns></returns>
+        public Initialization.Chirality GetDropdownValue_Chirality()
+        {
+            TMP_Dropdown dropdown = dropdown_chirality;
+            string value = dropdown.options[dropdown.value].text;
+            switch (value)
+            {
+                case "R":
+                    return Initialization.Chirality.Random;
+                case "C":
+                    return Initialization.Chirality.Clockwise;
+                case "CC":
+                    return Initialization.Chirality.CounterClockwise;
+                default:
+                    Log.Error("GetDropdownValue_Chirality: Value not found!");
+                    return Initialization.Chirality.Random;
+            }
+        }
+
+        /// <summary>
+        /// Gets the compass dir value from the corresponding dropdown UI element.
+        /// </summary>
+        /// <returns></returns>
+        public Initialization.Compass GetDropdownValue_Compass()
+        {
+            TMP_Dropdown dropdown = dropdown_compass;
+            string value = dropdown.options[dropdown.value].text;
+            if (value.Equals("R")) value = "Random";
+            object res;
+            if (Enum.TryParse(typeof(Initialization.Compass), value, out res)) return (Initialization.Compass)res;
+            else Log.Error("GetDropdownValue_Compass: Value not found!");
+            return Initialization.Compass.Random;
+        }
+
 
 
 
@@ -320,6 +421,8 @@ namespace AS2.UI
         /// </summary>
         public void Button_StepBackPressed()
         {
+            if (button_stepBack.interactable == false) return;
+
             // Check if valid
             if (sim.running)
             {
@@ -338,6 +441,8 @@ namespace AS2.UI
         /// </summary>
         public void Button_StepForwardPressed()
         {
+            if (button_stepForward.interactable == false) return;
+
             // Check if valid
             if (sim.running)
             {
@@ -577,6 +682,15 @@ namespace AS2.UI
         }
 
         /// <summary>
+        /// Selects the partition set move tool.
+        /// </summary>
+        public void Button_ToolPSetMovePressed()
+        {
+            activeTool = UITool.PSetMove;
+            UpdateTools();
+        }
+
+        /// <summary>
         /// Toggles the view type.
         /// </summary>
         public void Button_ToggleViewPressed()
@@ -590,6 +704,14 @@ namespace AS2.UI
         public void Button_ToggleCircuitViewPressed()
         {
             sim.renderSystem.ToggleCircuits();
+        }
+
+        /// <summary>
+        /// Toggles the positioning mode of the partition sets.
+        /// </summary>
+        public void Button_TogglePSetPositioningPressed()
+        {
+            sim.renderSystem.TogglePSetPositioning();
         }
 
         /// <summary>
@@ -610,6 +732,7 @@ namespace AS2.UI
             SetButtonColor(button_toolAdd, toolColor_inactive);
             SetButtonColor(button_toolRemove, toolColor_inactive);
             SetButtonColor(button_toolMove, toolColor_inactive);
+            SetButtonColor(button_toolPSetMove, toolColor_inactive);
             // Set Active Tool Color
             switch (activeTool)
             {
@@ -624,6 +747,9 @@ namespace AS2.UI
                     break;
                 case UITool.Move:
                     SetButtonColor(button_toolMove, toolColor_active);
+                    break;
+                case UITool.PSetMove:
+                    SetButtonColor(button_toolPSetMove, toolColor_active);
                     break;
                 default:
                     break;
@@ -681,77 +807,6 @@ namespace AS2.UI
         {
             button_settings.interactable = true;
             button_exit.interactable = true;
-        }
-
-        /// <summary>
-        /// Deprecated, belongs to the deprecated TemporaryButton_ResetAlgorithm method.
-        /// </summary>
-        public TMP_InputField temporaryBox;
-        /// <summary>
-        /// Deprecated. We might remove this if we are sure no button uses this.
-        /// </summary>
-        /// <param name="algoID"></param>
-        public void TemporaryButton_ResetAlgorithm(int algoID)
-        {
-            if (sim.running) sim.TogglePlayPause();
-
-            particleUI.Close();
-            if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.HideAll();
-            sim.system.Reset();
-            switch (algoID)
-            {
-                case 0:
-                    sim.system.InitializeBoundaryTest(100, 0.05f);
-                    break;
-                case 1:
-                    sim.system.InitializeLineFormation(50, 0.4f);
-                    break;
-                case 2:
-                    sim.system.InitializeLeaderElection(50, 0.35f);
-                    break;
-                case 3:
-                    sim.system.InitializeChiralityCompass(50, 0.2f);
-                    break;
-                case 4:
-                    sim.system.InitializeExpandedTest(10);
-                    break;
-                case 5:
-                    sim.system.InitializeJMTest(int.Parse(temporaryBox.text));
-                    break;
-                default:
-                    break;
-            }
-            UpdateUI(sim.running, true);
-            sim.RoundChanged();
-        }
-
-        /// <summary>
-        /// Deprecated. We might remove this if we are sure no button uses this.
-        /// </summary>
-        public void TemporarySaveBtn()
-        {
-            if (!sim.running)
-            {
-                SimulationStateSaveData data = sim.system.GenerateSaveData();
-                SaveStateUtility.Save(data);
-            }
-        }
-
-        /// <summary>
-        /// Deprecated. We might remove this if we are sure no button uses this.
-        /// </summary>
-        public void TemporaryLoadBtn()
-        {
-            if (!sim.running)
-            {
-                SimulationStateSaveData data = SaveStateUtility.Load();
-                if (data != null)
-                {
-                    sim.system.Reset();
-                    sim.system.InitializeFromSaveState(data);
-                    UpdateUI(sim.running, true);
-                }
-            }
         }
     }
 }

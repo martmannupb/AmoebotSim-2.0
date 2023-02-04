@@ -25,7 +25,27 @@ namespace AS2.UI
         public Button button_hideOverlay;
         // Fonts
         public TMP_FontAsset font_basic;
-        public TMP_FontAsset font_arrows; // must include the special ASCII arrow chars
+        public TMP_FontAsset font_circles; // must include the special ASCII circle arrow chars
+        public TMP_FontAsset font_arrows; // must include the special ASCII arrows chars
+        // Data
+        private float cameraRotation = 0f;
+        // Setting
+        public bool showCompassDirArrows = true;
+
+        private Dictionary<Direction, string> asciiDirectionArrows = new Dictionary<Direction, string>() {
+            { Direction.NONE, "\u005F" },
+            { Direction.N, "\uD83E\uDC71" },
+            { Direction.NNE, "\uD83E\uDC75"},
+            { Direction.ENE, "\uD83E\uDC75"},
+            { Direction.E, "\uD83E\uDC72"},
+            { Direction.ESE, "\uD83E\uDC76"},
+            { Direction.SSE, "\uD83E\uDC76"},
+            { Direction.S, "\uD83E\uDC73"},
+            { Direction.SSW, "\uD83E\uDC77"},
+            { Direction.WSW, "\uD83E\uDC77"},
+            { Direction.W, "\uD83E\uDC70"},
+            { Direction.WNW, "\uD83E\uDC74"},
+            { Direction.NNW, "\uD83E\uDC74"} };
 
         public struct ParticleTextUIData
         {
@@ -284,7 +304,7 @@ namespace AS2.UI
             data.go.GetComponent<Image>().color = color;
             // Set Text
             TextMeshProUGUI tmp = data.go.GetComponentInChildren<TextMeshProUGUI>();
-            tmp.font = font_arrows;
+            tmp.font = font_circles;
             tmp.text = counterClockwise ? "\u2B6F" : "\u2B6E";
         }
 
@@ -301,8 +321,21 @@ namespace AS2.UI
             data.go.GetComponent<Image>().color = color;
             // Set Text
             TextMeshProUGUI tmp = data.go.GetComponentInChildren<TextMeshProUGUI>();
-            tmp.font = font_basic;
-            tmp.text = compassDir.ToString();
+            if(showCompassDirArrows)
+            {
+                // Arrows
+                tmp.font = font_arrows;
+                int deg30rotAmount = (int)(((360f - cameraRotation) / 30f) % 360);
+                Direction displayDir = DirectionHelpers.Rotate30(compassDir, deg30rotAmount);
+                tmp.text = asciiDirectionArrows[displayDir];
+            }
+            else
+            {
+                // Text
+                tmp.font = font_basic;
+                tmp.text = compassDir.ToString();
+            }
+
         }
 
         /// <summary>
@@ -323,12 +356,14 @@ namespace AS2.UI
         /// <param name="cameraRotationDegrees"></param>
         public void SetCameraRotation(float cameraRotationDegrees)
         {
+            this.cameraRotation = cameraRotationDegrees;
             foreach (var item in particleTextUIData.Values)
             {
                 GameObject go = item.go;
                 RectTransform rt = go.GetComponent<RectTransform>();
                 rt.rotation = Quaternion.Euler(0f, 0f, cameraRotationDegrees);
             }
+            if (display_type == TextType.CompassDir) Refresh();
         }
 
         /// <summary>

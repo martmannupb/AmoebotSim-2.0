@@ -15,7 +15,7 @@ namespace AS2.UI
     {
 
         // Constants =====
-        private readonly static float ClickDragMinStraightWorldSpaceMovement = 0.4f; // the max movement during a click to be counted as click and not drag
+        private readonly static float ClickDragMinStraightWorldSpaceMovement = 0.1f; // the max movement during a click to be counted as click and not drag
 
         // Mouse Clicks =====
         // Left Mouse
@@ -56,7 +56,7 @@ namespace AS2.UI
                 // Update position data and check when mouse is released
                 mouseLeft_clickAction_timePassed += Time.deltaTime;
                 mouseLeft_clickAction_positionLatest = mouseState.mouse_positionWorld;
-                if (Mathf.Abs(mouseLeft_clickAction_positionInitial.x - mouseState.mouse_positionWorld.x) >= ClickDragMinStraightWorldSpaceMovement || Mathf.Abs(mouseLeft_clickAction_positionInitial.y - mouseState.mouse_positionWorld.y) >= ClickDragMinStraightWorldSpaceMovement)
+                if (Mathf.Abs(mouseLeft_clickAction_positionInitial.x - mouseState.mouse_positionWorld.x) >= ClickDragMinStraightWorldSpaceMovement || Mathf.Abs(mouseLeft_clickAction_positionInitial.y - mouseState.mouse_positionWorld.y) >= ClickDragMinStraightWorldSpaceMovement || mouseLeft_clickAction_timePassed >= 0.5f)
                 {
                     mouseLeft_clickActionType = ClickAction.ClickType.Drag;
                 }

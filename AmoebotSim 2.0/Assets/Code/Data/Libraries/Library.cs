@@ -511,4 +511,94 @@ namespace Engine.Library {
 
     }
 
+
+    public static class DegreeConstants
+    {
+        /// <summary>
+        /// Returns the coordinates for a given degree and radius.
+        /// 0 degrees are east, counterclockwise rotation.
+        /// </summary>
+        /// <param name="degree"></param>
+        /// <param name="radius"></param>
+        /// <returns></returns>
+        public static Vector2 DegreeToCoordinate(double degree, double radius)
+        {
+            // Convert degree to radian
+            double radian = degree * Math.PI / 180;
+
+            // Calculate the x and y coordinates using sine and cosine
+            double x = radius * Math.Cos(radian);
+            double y = radius * Math.Sin(radian);
+
+            // Return the calculated coordinates as a Vector2
+            return new Vector2((float)x, (float)y);
+        }
+
+        /// <summary>
+        /// Returns the coordinates for a given degree and radius.
+        /// 0 degrees are east, counterclockwise rotation.
+        /// 0 degrees can be offset by the degree offset (e.g. a degreeOffset of 90 makes 0 degrees point up).
+        /// </summary>
+        /// <param name="degree"></param>
+        /// <param name="radius"></param>
+        /// <param name="degreeOffset"></param>
+        /// <returns></returns>
+        public static Vector2 DegreeToCoordinate(double degree, double radius, float degreeOffset)
+        {
+            return DegreeToCoordinate(degree + degreeOffset, radius);
+        }
+
+        /// <summary>
+        /// Returns the degree and the radius of the given coordinate.
+        /// 0 degrees are east, counterclockwise rotation. Ranges from >180 to <=180;
+        /// </summary>
+        /// <param name="coordinate"></param>
+        /// <returns></returns>
+        public static Tuple<double, double> CoordinateToDegree(Vector2 coordinate)
+        {
+            // Calculate the radius of the circle using the Pythagorean theorem
+            double radius = Math.Sqrt(coordinate.x * coordinate.x + coordinate.y * coordinate.y);
+
+            // Calculate the angle in radians using the arctangent function
+            double radian = Math.Atan2(coordinate.y, coordinate.x);
+
+            // Convert radian to degree
+            double degree = radian * 180 / Math.PI;
+
+            // Return the calculated angle in degrees and radius as a tuple
+            return Tuple.Create(degree, radius);
+        }
+
+        /// <summary>
+        /// Returns the degree and the radius of the given coordinate.
+        /// 0 degrees are east, counterclockwise rotation. Ranges from >=0 to <360;
+        /// 0 degrees can be offset by the degree offset (e.g. a degreeOffset of 90 subtracts this offset from the resulting degree).
+        /// </summary>
+        /// <param name="coordinate"></param>
+        /// <param name="degreeOffset"></param>
+        /// <returns></returns>
+        public static Tuple<double, double> CoordinateToDegree(Vector2 coordinate, float degreeOffset)
+        {
+            Tuple<double, double> t = CoordinateToDegree(coordinate);
+            return Tuple.Create((t.Item1 - degreeOffset + 360f) % 360f, t.Item2);
+        }
+
+        /// <summary>
+        /// Calculates the signed orthogonal distance from a line to a point. Well, at least I hope the sign is correct.
+        /// </summary>
+        /// <param name="point">The point.</param>
+        /// <param name="linePoint1">First point of the line.</param>
+        /// <param name="linePoint2">Second point of the line that should not be the first point.</param>
+        /// <returns></returns>
+        public static float ManuallyImplementedSignedOrthogonalDistancesOfPointToLineFromAToB(Vector2 point, Vector2 linePoint1, Vector2 linePoint2)
+        {
+            Vector2 lineDirection = (linePoint2 - linePoint1).normalized;
+            Vector2 lineDirectionRot90Deg = Quaternion.Euler(0f, 0f, 90f) * lineDirection;
+            //Vector2 linePoint1ToPoint = point - linePoint1;
+            float distToC = ((point.x - linePoint1.x) * (-linePoint2.y + linePoint1.y) + (point.y - linePoint1.y) * (linePoint2.x - linePoint1.x)) / lineDirectionRot90Deg.magnitude;
+            return distToC;
+        }
+
+    }
+
 }

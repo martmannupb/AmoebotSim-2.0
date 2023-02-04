@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace AS2.Visuals
 {
@@ -17,36 +18,630 @@ namespace AS2.Visuals
         public Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch> propertiesToPinRenderBatchMap = new Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch>();
 
         // Data
+        private Dictionary<ParticleGraphicsAdapterImpl, ParticleCircuitData> circuitDataMap = new Dictionary<ParticleGraphicsAdapterImpl, ParticleCircuitData>();
+        private List<ParticleBondGraphicState> bondData = new List<ParticleBondGraphicState>();
+        // Flags
         public bool isRenderingActive = false;
         // Temporary
         private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
         private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
+        private List<float> degreeList = new List<float>(16);
+        private List<Vector2> vectorList = new List<Vector2>(16);
+        private PriorityQueue<ParticlePinGraphicState.PSetData> pSetSortingList = new PriorityQueue<ParticlePinGraphicState.PSetData>();
+        //private SortedList<float, ParticlePinGraphicState.PSetData> pSetSortingList = new SortedList<float, ParticlePinGraphicState.PSetData>();
+
+        public struct ParticleCircuitData
+        {
+            public RendererCircuits_Instance instance;
+            public ParticleGraphicsAdapterImpl particle;
+            public ParticlePinGraphicState state;
+            public ParticleGraphicsAdapterImpl.PositionSnap snap;
+
+            public ParticleCircuitData(RendererCircuits_Instance instance, ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
+            {
+                this.instance = instance;
+                this.particle = particle;
+                this.state = state;
+                this.snap = snap;
+            }
+
+            public struct PSetInnerPinRef
+            {
+                public enum PinType
+                {
+                    None, PSet1, PSet2, PConnector1, PConnector2
+                }
+
+                public ParticlePinGraphicState.PSetData pSet;
+                public PinType pinType;
+                public Vector2 pinPos;
+
+                public PSetInnerPinRef(ParticlePinGraphicState.PSetData pSet, PinType pinType, Vector2 pinPos)
+                {
+                    this.pSet = pSet;
+                    this.pinType = pinType;
+                    this.pinPos = pinPos;
+                }
+            }
+
+            public PSetInnerPinRef GetInnerPSetOrConnectorPinAtPosition(Vector2 worldPos)
+            {
+                float pinRadius = RenderSystem.const_circuitPinSize / 2f;
+                foreach (var pSet in this.state.partitionSets)
+                {
+                    if (Vector2.Distance(pSet.graphicalData.active_position1, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PSet1, pSet.graphicalData.active_position1);
+                    else if(snap.isExpanded)
+                    {
+                        if (Vector2.Distance(pSet.graphicalData.active_position2, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PSet2, pSet.graphicalData.active_position2);
+                        if (Vector2.Distance(pSet.graphicalData.active_connector_position1, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PConnector1, pSet.graphicalData.active_connector_position1);
+                        if (Vector2.Distance(pSet.graphicalData.active_connector_position2, worldPos) <= pinRadius) return new PSetInnerPinRef(pSet, PSetInnerPinRef.PinType.PConnector2, pSet.graphicalData.active_connector_position2);
+                    }
+                }
+                return new PSetInnerPinRef(null, PSetInnerPinRef.PinType.None, Vector2.zero);
+            }
+
+            public void UpdatePSetOrConnectorPinPosition(PSetInnerPinRef innerPin, Vector2 worldPos)
+            {
+                RendererCircuitPins_RenderBatch batch_pins;
+                RendererCircuits_RenderBatch batch_lines;
+                ParticlePinGraphicState.PSetData.GraphicalData gd = innerPin.pSet.graphicalData;
+                int offset = 0;
+                switch (innerPin.pinType)
+                {
+                    case PSetInnerPinRef.PinType.None:
+                        Log.Error("UpdatePSetOrConnectorPinPosition: PinType is None.");
+                        return;
+                    case PSetInnerPinRef.PinType.PSet1:
+                        // Lines to Pins (and Connector1, if expanded)
+                        // Save position
+                        gd.active_position1 = worldPos;
+                        // Pin
+                        batch_pins = instance.GetBatch_Pin(gd.properties_pin);
+                        batch_pins.UpdatePin(worldPos, false, gd.index_pSet1);
+                        // Line to connector
+                        offset = 0;
+                        if (state.isExpanded && innerPin.pSet.HasPinsInHeadAndTail())
+                        {
+                            // Connector
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            batch_lines.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lines1[0]);
+                            if(innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lines1_beep[0]);
+                            }
+                            offset = 1;
+                        }
+                        // Lines
+                        for (int i = 0; i < gd.pSet1_pins.Count; i++)
+                        {
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            Vector2 pinPos = instance.CalculateGlobalPinPosition(snap.position1, gd.pSet1_pins[i], state.pinsPerSide);
+                            batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines1[i + offset]);
+                            if (innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines1_beep[i + offset]);
+                            }
+                        }
+
+                        // Beep Origin
+                        if (innerPin.pSet.beepOrigin)
+                        {
+                            // Pin
+                            batch_pins = instance.GetBatch_Pin(gd.properties_pin_beep);
+                            batch_pins.UpdatePin(worldPos, false, gd.index_pSet1_beep);
+                        }
+                        break;
+                    case PSetInnerPinRef.PinType.PSet2:
+                        // Lines to Pins (and Connector2, if expanded)
+                        if(state.isExpanded == false)
+                        {
+                            Log.Error("UpdatePSetOrConnectorPinPosition: Trying to edit a partition set 2 for a particle that is contracted. This is not possible.");
+                            return;
+                        }
+                        // Save position
+                        gd.active_position2 = worldPos;
+                        // Pin
+                        batch_pins = instance.GetBatch_Pin(gd.properties_pin);
+                        batch_pins.UpdatePin(worldPos, false, gd.index_pSet2);
+                        // Connector
+                        offset = 0;
+                        if (innerPin.pSet.HasPinsInHeadAndTail())
+                        {
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2[0]);
+                            if (innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2_beep[0]);
+                            }
+                            offset = 1;
+                        }
+                        // Lines
+                        for (int i = 0; i < gd.pSet2_pins.Count; i++)
+                        {
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            Vector2 pinPos = instance.CalculateGlobalPinPosition(snap.position2, gd.pSet2_pins[i], state.pinsPerSide);
+                            batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines2[i + offset]);
+                            if (innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines2_beep[i + offset]);
+                            }
+                        }
+
+                        // Beeps
+                        if (innerPin.pSet.beepOrigin)
+                        {
+                            // Pin
+                            batch_pins = instance.GetBatch_Pin(gd.properties_pin_beep);
+                            batch_pins.UpdatePin(worldPos, false, gd.index_pSet2_beep);
+                        }
+                        break;
+                    case PSetInnerPinRef.PinType.PConnector1:
+                        // Lines to Connector2 and PSet1
+                        if(state.isExpanded)
+                        {
+                            // Save position
+                            gd.active_connector_position1 = worldPos;
+                            // Connector Pos
+                            batch_pins = instance.GetBatch_Pin(gd.properties_connectorPin);
+                            batch_pins.UpdateConnectorPin(worldPos, gd.index_pSetConnectorPin1);
+                            // Line to PSet
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            batch_lines.UpdateLine(worldPos, gd.active_position1, gd.index_lines1[0]);
+                            if (innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, gd.active_position1, gd.index_lines1_beep[0]);
+                            }
+                            // Other connector
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lineConnector);
+                            if(innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lineConnector_beep);
+                            }
+                        }
+                        else Log.Error("UpdatePSetOrConnectorPinPosition: Trying to edit connector 1 for a particle that is contracted. This is not possible.");
+                        break;
+                    case PSetInnerPinRef.PinType.PConnector2:
+                        // Lines to Connector1 and PSet2
+                        if (state.isExpanded)
+                        {
+                            // Save position
+                            gd.active_connector_position2 = worldPos;
+                            // Connector Pos
+                            batch_pins = instance.GetBatch_Pin(gd.properties_connectorPin);
+                            batch_pins.UpdateConnectorPin(worldPos, gd.index_pSetConnectorPin2);
+                            // Line to PSet
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            batch_lines.UpdateLine(worldPos, gd.active_position2, gd.index_lines2[0]);
+                            if (innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, gd.active_position2, gd.index_lines2_beep[0]);
+                            }
+                            // Other connector
+                            batch_lines = instance.GetBatch_Line(gd.properties_line);
+                            batch_lines.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lineConnector);
+                            if (innerPin.pSet.beepsThisRound)
+                            {
+                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
+                                batch_lines.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lineConnector_beep);
+                            }
+                        }
+                        else Log.Error("UpdatePSetOrConnectorPinPosition: Trying to edit connector 1 for a particle that is contracted. This is not possible.");
+                        break;
+                    default:
+                        break;
+                }
+            }
+            
+        }
+
+        /// <summary>
+        /// Calculates the degrees on which the partition sets are placed on a circle.
+        /// </summary>
+        /// <param name="circuitData">Contains the references to the data.</param>
+        /// <param name="outputList">A list that has been already initialized. It will be cleared in this method.</param>
+        /// <param name="isHead">If we are looking at head partition sets.</param>
+        /// <param name="useRelaxationAlgorithm">True to make sure there is sufficient space between partition sets.</param>
+        private void CalculateCircleLineDegreesForPartitionSets(ParticleCircuitData circuitData, List<float> outputList, bool isHead, bool useRelaxationAlgorithm = true)
+        {
+            outputList.Clear();
+            for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
+            {
+                ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                if (isHead && pSet.graphicalData.hasPinsInHead || isHead == false && pSet.graphicalData.hasPinsInTail)
+                {
+                    // Calc average partition set position
+                    Vector2 relPos = CalculateAverageRelativePinPosForPartitionSet(pSet, circuitData, isHead);
+                    if (relPos == Vector2.zero) outputList.Add(0f);
+                    else
+                    {
+                        // Convert relPos to degree
+                        float degree = ((Mathf.Atan2(relPos.y, relPos.x) * Mathf.Rad2Deg - 90f) + 360f) % 360f;
+                        outputList.Add(degree);
+                    }
+                }
+            }
+            if(useRelaxationAlgorithm) CircleDistributionCircleLine.DistributePointsOnCircle(outputList, Mathf.Min(0.8f * (360f / outputList.Count), 60f));
+        }
+
+        private void CalculateCircleVectorCoordinatesForPartitionSets(ParticleCircuitData circuitData, List<Vector2> outputList, bool isHead, bool useRelaxationAlgorithm = true)
+        {
+            outputList.Clear();
+            for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
+            {
+                ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                if (isHead && pSet.graphicalData.hasPinsInHead || isHead == false && pSet.graphicalData.hasPinsInTail)
+                {
+                    // Calc average partition set position
+                    Vector2 relPos = CalculateAverageRelativePinPosForPartitionSet(pSet, circuitData, isHead);
+                    outputList.Add(relPos);
+                }
+            }
+            if (useRelaxationAlgorithm) CircleDistributionCircleArea.DistributePointsInCircle(outputList, 0.2f, 0.05f, 0.2f, 0.25f);
+        }
+
+        /// <summary>
+        /// Calculates the average relative pin position of pins connected to a partition set.
+        /// </summary>
+        /// <param name="pSet">The given partition set.</param>
+        /// <param name="circuitData">Contains the references to the data.</param>
+        /// <param name="isHead">If we are looking at head pins.</param>
+        /// <returns></returns>
+        private Vector2 CalculateAverageRelativePinPosForPartitionSet(ParticlePinGraphicState.PSetData pSet, ParticleCircuitData circuitData, bool isHead)
+        {
+            if (isHead && pSet.graphicalData.hasPinsInHead || isHead == false && pSet.graphicalData.hasPinsInTail)
+            {
+                // Calc average partition set position 2
+                Vector2 relPos = Vector2.zero;
+                int virtualPinCount = 0;
+                foreach (var pinDef in pSet.pins)
+                {
+                    if (isHead && pinDef.isHead || isHead == false && pinDef.isHead == false)
+                    {
+                        relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, circuitData.state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+                        virtualPinCount++;
+                    }
+                }
+                Vector2 addVector = Vector2.zero;
+                if (isHead && pSet.graphicalData.hasPinsInTail || isHead == false && pSet.graphicalData.hasPinsInHead)
+                {
+                    // Add one additional virtual position in direction of the center of the expanded particle
+                    addVector = CalculateGlobalExpandedPartitionSetCenterNodePosition(isHead ? circuitData.snap.position1 : circuitData.snap.position2, 1, 1, isHead ? 60f * circuitData.state.neighbor1ToNeighbor2Direction : 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6), isHead ? false : true) - (isHead ? AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1) : AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2));
+                    relPos += addVector;
+                    virtualPinCount++;
+                }
+                relPos /= (float)virtualPinCount;
+                if(relPos == Vector2.zero && (isHead && pSet.graphicalData.hasPinsInTail || isHead == false && pSet.graphicalData.hasPinsInHead)) relPos = (relPos + addVector) / 2f;
+                return relPos;
+            }
+            else return Vector2.zero;
+        }
+
+        private void CalculatePartitionSetPositions(ParticleCircuitData circuitData, PartitionSetViewType pSetViewType_global)
+        {
+            // Precalculations
+            foreach (var pset in circuitData.state.partitionSets) pset.PrecalculatePinNumbersAndStoreInGD();
+
+            //Log.Debug("PartitionSetViewType: Head: " + circuitData.state.codeOverrideType1.ToString() + ", Tail: " + (circuitData.state.isExpanded == false ? "-" : circuitData.state.codeOverrideType2.ToString()));
+
+            // 1. Particle Head ====================
+            {
+                bool codeOverride_active = false;
+                PartitionSetViewType pSetViewType = pSetViewType_global;
+                // Get positioning type for both particle halves
+                switch (pSetViewType)
+                {
+                    case PartitionSetViewType.Line:
+                        break;
+                    case PartitionSetViewType.Auto:
+                        break;
+                    case PartitionSetViewType.Auto_2DCircle:
+                        break;
+                    case PartitionSetViewType.CodeOverride:
+                        switch (circuitData.state.codeOverrideType1)
+                        {
+                            case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
+                                pSetViewType = PartitionSetViewType.Auto_2DCircle; // standard view type for this particle half
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
+                                pSetViewType = PartitionSetViewType.Line; // standard view type for this particle half
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.LineRotated:
+                                pSetViewType = PartitionSetViewType.Line;
+                                codeOverride_active = true;
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.ManualPlacement:
+                                codeOverride_active = true;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                int numberOfPartitionSetPinsInNode = -1;
+                if (pSetViewType == PartitionSetViewType.Auto || pSetViewType == PartitionSetViewType.Auto_2DCircle)
+                {
+                    // Auto Placement 1. Iteration (PSet Degrees)
+                    // 1. Head Pins
+                    if (pSetViewType == PartitionSetViewType.Auto) CalculateCircleLineDegreesForPartitionSets(circuitData, degreeList, true);
+                    else if (pSetViewType == PartitionSetViewType.Auto_2DCircle) CalculateCircleVectorCoordinatesForPartitionSets(circuitData, vectorList, true);
+                    // Get number of PSets
+                    numberOfPartitionSetPinsInNode = 0;
+                    foreach (var pSet in circuitData.state.partitionSets) if (pSet.graphicalData.hasPinsInHead) numberOfPartitionSetPinsInNode++;
+                }
+                int counter = 0;
+                for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                    switch (pSetViewType)
+                    {
+                        case PartitionSetViewType.Line:
+                            // Default
+                            float rot1 = 0f;
+                            if(circuitData.state.isExpanded) rot1 = 60f * circuitData.state.neighbor1ToNeighbor2Direction;
+                            if (codeOverride_active) rot1 = circuitData.state.codeOverrideLineRotationDegrees1;
+                            pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(circuitData.snap.position1, i, circuitData.state.partitionSets.Count, rot1, false);
+                            pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position1, i, circuitData.state.partitionSets.Count, rot1, false);
+                            break;
+                        case PartitionSetViewType.Auto:
+                            // Auto
+                            // Auto Placement 2. Iteration (PSet Positions)
+                            if (pSet.graphicalData.hasPinsInHead)
+                            {
+                                // Convert degree to coordinate
+                                float degree = degreeList[counter];
+                                counter++;
+                                Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
+                                // Save position
+                                pSet.graphicalData.active_position1 = posParticle + localPinPos;
+                            }
+                            break;
+                        case PartitionSetViewType.Auto_2DCircle:
+                            // Auto (2D Circle)
+                            // Auto Placement 2. Iteration (PSet Positions)
+                            if (pSet.graphicalData.hasPinsInHead)
+                            {
+                                // Convert degree to coordinate
+                                Vector2 vector = vectorList[counter];
+                                counter++;
+                                Vector2 localPinPos = (vectorList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : vector;
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
+                                // Save position
+                                pSet.graphicalData.active_position1 = posParticle + localPinPos;
+                            }
+                            break;
+                        case PartitionSetViewType.CodeOverride:
+                            // Code Override
+                            // Manual Placement via Polar Coordinates
+                            if (pSet.graphicalData.hasPinsInHead)
+                            {
+                                // Convert degree and radius to coordinate
+                                counter++;
+                                Vector2 localPinPos = Engine.Library.DegreeConstants.DegreeToCoordinate(pSet.graphicalData.codeOverride_coordinate1.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate1.radiusPercentage, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
+                                // Save position
+                                pSet.graphicalData.active_position1 = posParticle + localPinPos;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            // 2. Particle Tail ====================
+            if (circuitData.state.isExpanded)
+            {
+                bool codeOverride_active = false;
+                PartitionSetViewType pSetViewType = pSetViewType_global;
+                // Get positioning type for both particle halves
+                switch (pSetViewType)
+                {
+                    case PartitionSetViewType.Line:
+                        break;
+                    case PartitionSetViewType.Auto:
+                        break;
+                    case PartitionSetViewType.Auto_2DCircle:
+                        break;
+                    case PartitionSetViewType.CodeOverride:
+                        switch (circuitData.state.codeOverrideType2)
+                        {
+                            case ParticlePinGraphicState.CodeOverrideType_Node.Automatic:
+                                pSetViewType = PartitionSetViewType.Auto_2DCircle; // standard view type for this particle half
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.AutomaticLine:
+                                pSetViewType = PartitionSetViewType.Line; // standard view type for this particle half
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.LineRotated:
+                                pSetViewType = PartitionSetViewType.Line;
+                                codeOverride_active = true;
+                                break;
+                            case ParticlePinGraphicState.CodeOverrideType_Node.ManualPlacement:
+                                codeOverride_active = true;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                int numberOfPartitionSetPinsInNode = -1;
+                if (pSetViewType == PartitionSetViewType.Auto || pSetViewType == PartitionSetViewType.Auto_2DCircle)
+                {
+                    // Auto Placement 1. Iteration (PSet Degrees)
+                    // 2. Tail Pins
+                    if (pSetViewType == PartitionSetViewType.Auto) CalculateCircleLineDegreesForPartitionSets(circuitData, degreeList, false);
+                    else if (pSetViewType == PartitionSetViewType.Auto_2DCircle) CalculateCircleVectorCoordinatesForPartitionSets(circuitData, vectorList, false);
+                    // Get number of PSets
+                    numberOfPartitionSetPinsInNode = 0;
+                    foreach (var pSet in circuitData.state.partitionSets) if (pSet.graphicalData.hasPinsInTail) numberOfPartitionSetPinsInNode++;
+                }
+                int counter = 0;
+                for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                    switch (pSetViewType)
+                    {
+                        case PartitionSetViewType.Line:
+                            // Default
+                            float rot2 = 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6);
+                            if (codeOverride_active) rot2 = circuitData.state.codeOverrideLineRotationDegrees2;
+                            pSet.graphicalData.active_position2 = CalculateGlobalPartitionSetPinPosition(circuitData.snap.position2, i, circuitData.state.partitionSets.Count, rot2, true);
+                            pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position2, i, circuitData.state.partitionSets.Count, rot2, true);
+                            break;
+                        case PartitionSetViewType.Auto:
+                            // Auto
+                            // Auto Placement 2. Iteration (PSet Positions)
+                            if (pSet.graphicalData.hasPinsInTail)
+                            {
+                                // Convert degree to coordinate
+                                float degree = degreeList[counter];
+                                counter++;
+                                Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Engine.Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
+                                // Save position
+                                pSet.graphicalData.active_position2 = posParticle + localPinPos;
+                            }
+                            break;
+                        case PartitionSetViewType.Auto_2DCircle:
+                            // Auto (2D Circle)
+                            // Auto Placement 2. Iteration (PSet Positions)
+                            if (pSet.graphicalData.hasPinsInTail)
+                            {
+                                // Convert degree to coordinate
+                                Vector2 vector = vectorList[counter];
+                                counter++;
+                                Vector2 localPinPos = (vectorList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : vector;
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
+                                // Save position
+                                pSet.graphicalData.active_position2 = posParticle + localPinPos;
+                            }
+                            break;
+                        case PartitionSetViewType.CodeOverride:
+                            // Code Override
+                            // Manual Placement via Polar Coordinates
+                            if (pSet.graphicalData.hasPinsInTail)
+                            {
+                                // Convert degree and radius to coordinate
+                                counter++;
+                                Vector2 localPinPos = Engine.Library.DegreeConstants.DegreeToCoordinate(pSet.graphicalData.codeOverride_coordinate2.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate2.radiusPercentage, 90f);
+                                // Calc partition set position on the circle
+                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
+                                // Save position
+                                pSet.graphicalData.active_position2 = posParticle + localPinPos;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            // 3. Pin Connector Placement ====================
+            if (circuitData.state.isExpanded)
+            {
+                pSetSortingList.Clear();
+                for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
+                    if(pSet.HasPinsInHeadAndTail(false))
+                    {
+                        // Calculate the average partition set positions
+                        Vector2 averageSetPosition = (pSet.graphicalData.active_position1 + pSet.graphicalData.active_position2) / 2f;
+                        // Distance to line through particles
+                        float distanceToLineThroughParticleHalves = Engine.Library.DegreeConstants.ManuallyImplementedSignedOrthogonalDistancesOfPointToLineFromAToB(averageSetPosition, AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1), AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2));
+                        pSetSortingList.Enqueue(distanceToLineThroughParticleHalves, pSet);
+                    }
+                }
+                List<Tuple<float, ParticlePinGraphicState.PSetData>> list = pSetSortingList.GetSortedList();
+                for (int i = 0; i < pSetSortingList.Count; i++)
+                {
+                    ParticlePinGraphicState.PSetData pSet = list[i].Item2;
+                    float rot1 = 60f * circuitData.state.neighbor1ToNeighbor2Direction;
+                    float rot2 = 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6);
+                    pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position1, pSetSortingList.Count - 1 - i, pSetSortingList.Count, rot1, false);
+                    pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position2, pSetSortingList.Count - 1 - i, pSetSortingList.Count, rot2, true);
+                }
+            }
+            // ================================================================================================================================================================
+        }
+
+        /// <summary>
+        /// Redraws the circuits with the given partition set view type.
+        /// </summary>
+        /// <param name="pSetViewType">The view type the circuits are drawn in.</param>
+        public void Refresh(PartitionSetViewType pSetViewType)
+        {
+            Clear(true, true);
+            foreach (var data in circuitDataMap.Values)
+            {
+                AddCircuits(data.particle, data.state, data.snap, pSetViewType, false);
+            }
+            foreach (var data in bondData)
+            {
+                AddBond(data, false);
+            }
+        }
 
         /// <summary>
         /// Adds the data of a particle's partition set to the system. Combines it with the position data of the particle itself to calculate all positions of the circuits and pins.
         /// </summary>
+        /// <param name="particle">The particle the data belongs to.</param>
         /// <param name="state">The particle's graphical pin and partition set data.</param>
         /// <param name="snap">The particle's position and movement data.</param>
-        public void AddCircuits(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
+        /// <param name="pSetViewType">The view type that the circuits should be drawn with.</param>
+        /// <param name="addToCircuitData">If the given input should be added to the circuit data. True by default, set to false when doing something like refreshing the circuits.</param>
+        public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType, bool addToCircuitData = true)
         {
-            //bool delayed = RenderSystem.animationsOn && (snap.jointMovementState.isJointMovement || (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
+            ParticleCircuitData circuitData;
+            if (addToCircuitData)
+            {
+                circuitData = new ParticleCircuitData(this, particle, state, snap);
+                circuitDataMap.Add(particle, circuitData);
+            }
+            else circuitData = circuitDataMap[particle];
+
+            //bool delayed = RenderSystem.animationsOn && (circuitData.snap.jointMovementState.isJointMovement || (circuitData.snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || circuitData.snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
             bool delayed = snap.noAnimation == false && RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
             bool movement = RenderSystem.animationsOn && snap.jointMovementState.isJointMovement && delayed == false;
             Vector2 movementOffset = movement ? -AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.jointMovementState.jointExpansionOffset) : Vector2.zero;
-            int amountPartitionSets = state.partitionSets.Count;
 
+            // 1. Calc PartitionSet Positions
+            CalculatePartitionSetPositions(circuitData, pSetViewType);
+            // 2. Generate Pins and Lines
             if (state.isExpanded == false)
             {
                 // Contracted
+                // Add Internal Pins and Lines
                 for (int i = 0; i < state.partitionSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                    Vector2 posPartitionSet = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, 0f, false);
+                    ParticlePinGraphicState.PSetData.GraphicalData gd = pSet.graphicalData;
                     // 1. Add Pin
-                    AddPin(posPartitionSet, pSet.color, delayed, pSet.beepOrigin, movementOffset);
+                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
                     // 2. Add Lines
-                    AddLines_PartitionSetContracted(state, snap, pSet, posPartitionSet, delayed, movementOffset);
+                    GDRef gdRef_lines = new GDRef(gd, true, true, false, 0);
+                    AddLines_PartitionSetContracted(state, snap, pSet, pSet.graphicalData.active_position1, delayed, movementOffset, gdRef_lines);
                 }
+                // Add Singleton Lines
                 for (int i = 0; i < state.singletonSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
@@ -64,7 +659,7 @@ namespace AS2.Visuals
                             ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
                             Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                             Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                            AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
+                            AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                         }
                     }
                 }
@@ -73,27 +668,31 @@ namespace AS2.Visuals
             else
             {
                 // Expanded
+                // Add Internal Pins and Lines
                 for (int i = 0; i < state.partitionSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
-                    float rot1 = 60f * state.neighbor1ToNeighbor2Direction;
-                    float rot2 = 60f * ((state.neighbor1ToNeighbor2Direction + 3) % 6);
-                    Vector2 posPartitionSet1 = CalculateGlobalPartitionSetPinPosition(snap.position1, i, amountPartitionSets, rot1, false);
-                    Vector2 posPartitionSet2 = CalculateGlobalPartitionSetPinPosition(snap.position2, i, amountPartitionSets, rot2, true);
-                    Vector2 posPartitionSetConnectorPin1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position1, i, amountPartitionSets, rot1, false);
-                    Vector2 posPartitionSetConnectorPin2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(snap.position2, i, amountPartitionSets, rot2, true);
+                    ParticlePinGraphicState.PSetData.GraphicalData gd = pSet.graphicalData;
+                    GDRef gdRef_lines1 = new GDRef(gd, true, true, false, 0);
+                    GDRef gdRef_lines2 = new GDRef(gd, true, false, false, 0);
                     // 1. Add Pins + Connectors + Internal Lines
-                    AddPin(posPartitionSet1, pSet.color, delayed, pSet.beepOrigin, movementOffset);
-                    AddPin(posPartitionSet2, pSet.color, delayed, pSet.beepOrigin, movementOffset);
-                    AddConnectorPin(posPartitionSetConnectorPin1, pSet.color, delayed, movementOffset);
-                    AddConnectorPin(posPartitionSetConnectorPin2, pSet.color, delayed, movementOffset);
-                    AddLine(posPartitionSet1, posPartitionSetConnectorPin1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
-                    AddLine(posPartitionSet2, posPartitionSetConnectorPin2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
-                    AddLine(posPartitionSetConnectorPin1, posPartitionSetConnectorPin2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                    if(pSet.graphicalData.hasPinsInHead) AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
+                    if(pSet.graphicalData.hasPinsInTail) AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
+                    if(pSet.HasPinsInHeadAndTail())
+                    {
+                        AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset, new GDRef(gd, false, true, true));
+                        AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset, new GDRef(gd, false, false, true));
+                        AddLine(pSet.graphicalData.active_position1, pSet.graphicalData.active_connector_position1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
+                        AddLine(pSet.graphicalData.active_position2, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines2);
+                        gdRef_lines1.lineIndex++;
+                        gdRef_lines2.lineIndex++;
+                        AddLine(pSet.graphicalData.active_connector_position1, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, new GDRef(gd, true, true, true), new GDRef(gd, true, true, true));
+                    }
                     // 2. Add Lines + Connector Lines
-                    AddLines_PartitionSetExpanded(state, snap, pSet, posPartitionSet1, posPartitionSet2, delayed, movementOffset);
+                    AddLines_PartitionSetExpanded(state, snap, pSet, pSet.graphicalData.active_position1, pSet.graphicalData.active_position2, delayed, movementOffset, gdRef_lines1, gdRef_lines2);
 
                 }
+                // Add Singleton Lines
                 for (int i = 0; i < state.singletonSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
@@ -109,19 +708,21 @@ namespace AS2.Visuals
             }
         }
 
-        private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool delayed, Vector2 movementOffset)
+        private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
             foreach (var pin in pSet.pins)
             {
                 // Inner Line
                 Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                AddLine(posPartitionSet, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                gdRef.gd.pSet1_pins.Add(pin);
+                AddLine(posPartitionSet, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef, gdRef);
+                gdRef.lineIndex++;
                 // Outter Line
                 if (state.hasNeighbor1[pin.globalDir])
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     globalDirLineSet1[pin.globalDir] = true;
                 }
             }
@@ -137,7 +738,7 @@ namespace AS2.Visuals
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     globalDirLineSet1[pin.globalDir] = true;
                 }
                 // Beep Origin
@@ -148,19 +749,35 @@ namespace AS2.Visuals
             }
         }
 
-        private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool delayed, Vector2 movementOffset)
+        private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool delayed, Vector2 movementOffset, GDRef gdRef_lines1, GDRef gdRef_lines2)
         {
             foreach (var pin in pSet.pins)
             {
                 // Inner Line
-                Vector2 posPin = CalculateGlobalPinPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
-                AddLine(pin.isHead ? posPartitionSet1 : posPartitionSet2, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset);
+                Vector2 posPin;
+                if (pin.isHead)
+                {
+                    posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
+                    gdRef_lines1.gd.pSet1_pins.Add(pin);
+                    AddLine(posPartitionSet1, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
+                    gdRef_lines1.lineIndex++;
+                    //gdRef_lines1_beep.lineIndex++;
+                }
+                else
+                {
+                    posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
+                    gdRef_lines2.gd.pSet2_pins.Add(pin);
+                    AddLine(posPartitionSet2, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines2);
+                    gdRef_lines2.lineIndex++;
+                    //gdRef_lines2_beep.lineIndex++;
+                }
+
                 // Outter Line
                 if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                     else globalDirLineSet2[pin.globalDir] = true;
                 }
@@ -177,7 +794,7 @@ namespace AS2.Visuals
                 {
                     Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset);
+                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                     else globalDirLineSet2[pin.globalDir] = true;
                 }
@@ -201,7 +818,7 @@ namespace AS2.Visuals
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                         Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                         bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
+                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                     }
                 }
                 if (state.hasNeighbor2[k] && globalDirLineSet2[k] == false && ((state.neighbor1ToNeighbor2Direction + 3) % 6) != k)
@@ -212,7 +829,7 @@ namespace AS2.Visuals
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
                         Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
                         bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection2[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset);
+                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                     }
                 }
             }
@@ -220,34 +837,56 @@ namespace AS2.Visuals
 
 
 
-        private void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping, Vector2 movementOffset)
+        private void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
         {
             // Normal Circuit
             RendererCircuits_RenderBatch batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, false, false, movementOffset);
-            batch.AddLine(globalLineStartPos, globalLineEndPos);
+            RenderBatchIndex index = batch.AddLine(globalLineStartPos, globalLineEndPos);
+            if(gdRef.valid)
+            {
+                StoreRenderBatchIndex(gdRef, index, true, false);
+                gdRef.gd.properties_line = batch.properties;
+            }
             // Beep
             if(beeping)
             {
                 // Play Mode
                 batch = GetBatch_Line(Color.white, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false, movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActive);
-                batch.AddLine(globalLineStartPos, globalLineEndPos);
+                index = batch.AddLine(globalLineStartPos, globalLineEndPos);
+                //StoreRenderBatchIndex(gdRef, index, true, true); // we only need to store the index for the paused mode
                 // Pause Mode
                 batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false, movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimPaused);
-                batch.AddLine(globalLineStartPos, globalLineEndPos);
+                index = batch.AddLine(globalLineStartPos, globalLineEndPos);
+                if(gdRef_beep.valid)
+                {
+                    StoreRenderBatchIndex(gdRef_beep, index, true, true);
+                    gdRef_beep.gd.properties_line_beep = batch.properties;
+                }
             }
         }
 
-        private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, Vector2 movementOffset)
+        private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
         {
             RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
-            batch.AddPin(pinPos, false);
+            RenderBatchIndex index = batch.AddPin(pinPos, false);
+            if(gdRef.valid)
+            {
+                StoreRenderBatchIndex(gdRef, index, false, false);
+                gdRef.gd.properties_pin = batch.properties;
+            }
             // Beep
             if (beeping)
             {
                 batch = GetBatch_Pin(color, delayed, true, movementOffset);
-                batch.AddPin(pinPos, false);
+                index = batch.AddPin(pinPos, false);
+                if(gdRef_beep.valid)
+                {
+                    StoreRenderBatchIndex(gdRef_beep, index, false, true);
+                    gdRef_beep.gd.properties_pin_beep = batch.properties;
+                }
             }
         }
+
 
         private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
         {
@@ -256,10 +895,121 @@ namespace AS2.Visuals
             batch.AddPin(pinPos, true);
         }
 
-        private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
+        private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
             RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
-            batch.AddConnectorPin(pinPos);
+            RenderBatchIndex index = batch.AddConnectorPin(pinPos);
+            if(gdRef.valid)
+            {
+                StoreRenderBatchIndex(gdRef, index, false, false);
+                gdRef.gd.properties_connectorPin = batch.properties;
+            }
+        }
+
+        public struct GDRef
+        {
+            // Defaults
+            public static GDRef Empty = new GDRef(); // valid = false
+
+            // Variables
+            public ParticlePinGraphicState.PSetData.GraphicalData gd;
+            public bool isLine;
+            public bool isHead;
+            public bool isConnector; // for both lines and pins
+            // Line
+            public int lineIndex;
+            // Pin
+            // -
+            // Validity
+            public bool valid;
+
+            public GDRef(ParticlePinGraphicState.PSetData.GraphicalData gd, bool isLine, bool isHead, bool isConnector, int lineIndex = -1)
+            {
+                this.gd = gd;
+                this.isLine = isLine;
+                this.isHead = isHead;
+                this.isConnector = isConnector;
+                this.lineIndex = lineIndex;
+                this.valid = true;
+            }
+        }
+
+        private void StoreRenderBatchIndex(GDRef gdRef, RenderBatchIndex index, bool isLine, bool isBeep)
+        {
+            if(gdRef.valid == false)
+            {
+                Log.Error("StoreRenderBatchIndex: GDRef is not valid.");
+                return;
+            }
+            if(isLine)
+            {
+                // Lines
+                if (gdRef.isLine == false)
+                {
+                    Log.Error("StoreRenderBatchIndex: isLine is set, but it is not set in GDRef");
+                    return;
+                }
+                if(isBeep == false)
+                {
+                    if(gdRef.isConnector)
+                    {
+                        gdRef.gd.index_lineConnector = index;
+                    }
+                    else
+                    {
+                        if(gdRef.isHead) gdRef.gd.index_lines1.Add(index);
+                        else gdRef.gd.index_lines2.Add(index);
+                    }
+                }
+                else
+                {
+                    if (gdRef.isConnector)
+                    {
+                        gdRef.gd.index_lineConnector_beep = index;
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_lines1_beep.Add(index);
+                        else gdRef.gd.index_lines2_beep.Add(index);
+                    }
+                }
+            }
+            else
+            {
+                // Pins
+                if(gdRef.isLine)
+                {
+                    Log.Error("StoreRenderBatchIndex: isLine is not set, but it is set in GDRef");
+                    return;
+                }
+                if (isBeep == false)
+                {
+                    if (gdRef.isConnector)
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSetConnectorPin1 = index;
+                        else gdRef.gd.index_pSetConnectorPin2 = index;
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSet1 = index;
+                        else gdRef.gd.index_pSet2 = index;
+                    }
+                }
+                else
+                {
+                    if (gdRef.isConnector)
+                    {
+                        // No beeps here
+                        //if (gdRef.isHead) gdRef.gd.index_pSetConnectorPin1 = index;
+                        //else gdRef.gd.index_pSetConnectorPin2 = index;
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSet1_beep = index;
+                        else gdRef.gd.index_pSet2_beep = index;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -274,7 +1024,16 @@ namespace AS2.Visuals
         /// <returns></returns>
         private RendererCircuits_RenderBatch GetBatch_Line(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated, Vector2 movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState activeState = RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActiveOrPaused)
         {
-            RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuits_RenderBatch.PropertyBlockData(color, lineType, delayed, beeping, animated, movementOffset, activeState);
+            return GetBatch_Line(new RendererCircuits_RenderBatch.PropertyBlockData(color, lineType, delayed, beeping, animated, movementOffset, activeState));
+        }
+
+        /// <summary>
+        /// Returns the fitting batch for rendering lines.
+        /// </summary>
+        /// <param name="propertyBlockData">The properties of the batch.</param>
+        /// <returns></returns>
+        private RendererCircuits_RenderBatch GetBatch_Line(RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData)
+        {
             RendererCircuits_RenderBatch batch;
             if (propertiesToRenderBatchMap.ContainsKey(propertyBlockData) == false)
             {
@@ -300,7 +1059,16 @@ namespace AS2.Visuals
         /// <returns></returns>
         private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping, Vector2 movementOffset)
         {
-            RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData = new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping, movementOffset);
+            return GetBatch_Pin(new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping, movementOffset));
+        }
+
+        /// <summary>
+        /// Returns the fitting batch for rendering pins.
+        /// </summary>
+        /// <param name="properties">The properties of the batch.</param>
+        /// <returns></returns>
+        private RendererCircuitPins_RenderBatch GetBatch_Pin(RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData)
+        {
             RendererCircuitPins_RenderBatch batch;
             if (propertiesToPinRenderBatchMap.ContainsKey(propertyBlockData) == false)
             {
@@ -320,8 +1088,11 @@ namespace AS2.Visuals
         /// Adds a single bond to the system.
         /// </summary>
         /// <param name="bondState"></param>
-        public void AddBond(ParticleBondGraphicState bondState)
+        public void AddBond(ParticleBondGraphicState bondState, bool addToBondData = true)
         {
+            // Store Data
+            if(addToBondData) bondData.Add(bondState);
+
             // Convert Grid to World Space
             Vector2 prevBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos1);
             Vector2 prevBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos2);
@@ -375,7 +1146,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Clears or nullifies the matrices to reset the data structures.
         /// </summary>
-        public void Clear()
+        public void Clear(bool keepCircuitData = false, bool keepBondData = false)
         {
             foreach (var batch in propertiesToRenderBatchMap.Values)
             {
@@ -385,6 +1156,23 @@ namespace AS2.Visuals
             {
                 batch.ClearMatrices();
             }
+            foreach (var data in circuitDataMap.Values)
+            {
+                ParticlePinGraphicState.PoolRelease(data.state);
+            }
+            if(keepCircuitData == false) circuitDataMap.Clear();
+            else
+            {
+                // We need to clear the indices
+                foreach (var data in circuitDataMap.Values)
+                {
+                    foreach (var pSet in data.state.partitionSets)
+                    {
+                        pSet.graphicalData.Clear(true);
+                    }
+                }
+            }
+            if(keepBondData == false) bondData.Clear();
             isRenderingActive = false;
         }
 
@@ -483,6 +1271,42 @@ namespace AS2.Visuals
                 return position;
             }
         }
+
+
+
+
+
+        // Functions __________________________________
+
+        public ParticleCircuitData GetParticleCircuitData(ParticleGraphicsAdapterImpl p)
+        {
+            ParticleCircuitData d;
+            circuitDataMap.TryGetValue(p, out d);
+            if (d.particle == null) Log.Error("RendererCircuits_Instance: GetParticleCircuitData for particle " + p.ToString() + " is not assigned!");
+            return d;
+        }
+
+
+    }
+
+    public enum PartitionSetViewType
+    {
+        /// <summary>
+        /// Standard view type: Partition Sets oriented in a row.
+        /// </summary>
+        Line,
+        /// <summary>
+        /// Automatic view type: Partition Sets oriented on a one-dimensional circle, automatically ordered by the median coordinates.
+        /// </summary>
+        Auto,
+        /// <summary>
+        /// Automatic view type: Partition Sets oriented on a virtual 2D circle, automatically ordered by the median coordinates.
+        /// </summary>
+        Auto_2DCircle,
+        /// <summary>
+        /// Default view type: Priorization of code positioning. If none has been set we use auto positioning.
+        /// </summary>
+        CodeOverride,
     }
 
 }

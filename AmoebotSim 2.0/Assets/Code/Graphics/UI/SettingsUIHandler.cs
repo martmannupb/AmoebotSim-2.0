@@ -22,6 +22,9 @@ namespace AS2.UI
         public GameObject settingsParent;
         private Vector2Int nonFullScreenResolution = new Vector2Int(-1, -1);
 
+        // References
+        private ParticleUIExtensionSmoothLerp uiLerpScript;
+
         public enum SettingType
         {
             Slider, TextInt, TextFloat
@@ -67,6 +70,9 @@ namespace AS2.UI
             // Camera Angle
             UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, "Camera Angle", 0f, 11f, 0f, true);
             setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
+            // Compass Dir Overlay Display
+            UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, "Compass Ov. Arrows", WorldSpaceUIHandler.instance.showCompassDirArrows);
+            setting_compassDirOverlayDisplayType.onValueChangedEvent += SettingChanged_Toggle;
             // Circuit Connections Look
             UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, "Circuit Border", RenderSystem.flag_circuitBorderActive);
             setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
@@ -76,6 +82,13 @@ namespace AS2.UI
             // Anti Aliasing
             UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(null, settingsParent.transform, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
             setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
+            // UI Lerp
+            uiLerpScript = FindObjectOfType<ParticleUIExtensionSmoothLerp>();
+            if(uiLerpScript != null)
+            {
+                UISetting_Toggle setting_uiLerp = new UISetting_Toggle(null, settingsParent.transform, "UI Animations", uiLerpScript.GetLerpEnabled());
+                setting_uiLerp.onValueChangedEvent += SettingChanged_Toggle;
+            }
         }
 
         /// <summary>
@@ -164,6 +177,10 @@ namespace AS2.UI
                     // Reinit RenderBatches to apply changes
                     uiHandler.sim.renderSystem.rendererP.circuitAndBondRenderer.ReinitBatches();
                     break;
+                case "Compass Ov. Arrows":
+                    WorldSpaceUIHandler.instance.showCompassDirArrows = isOn;
+                    WorldSpaceUIHandler.instance.Refresh();
+                    break;
                 case "Circular Ring":
                     RenderSystem.flag_showCircuitViewOutterRing = isOn;
                     break;
@@ -172,6 +189,9 @@ namespace AS2.UI
                     break;
                 case "Beep Repeat On/Off":
                     RenderSystem.data_circuitBeepRepeatOn = isOn;
+                    break;
+                case "UI Animations":
+                    uiLerpScript.SetLerpEnabled(isOn);
                     break;
                 default:
                     break;

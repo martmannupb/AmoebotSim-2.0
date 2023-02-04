@@ -405,13 +405,33 @@ namespace AS2.Sim
         /// Sets the partition set placement mode to the given value.
         /// </summary>
         /// <param name="mode">The new partition set placement mode.</param>
-        public abstract void SetPSPlacementMode(PSPlacementMode mode);
+        /// <param name="head">Indicates whether the placement mode for
+        /// the particle's head or tail will be set.</param>
+        public abstract void SetPSPlacementMode(PSPlacementMode mode, bool head = true);
 
         /// <summary>
-        /// Resets the positions of all partition sets and sets the
-        /// placement mode to <see cref="PSPlacementMode.NONE"/>.
+        /// Sets the rotation of the line on which the partition sets are
+        /// arranged in <see cref="PSPlacementMode.LINE"/> mode.
+        /// Multiples of 30 or 60 degrees will usually look best.
+        /// The placement mode is changed automatically.
         /// </summary>
-        public abstract void ResetAllPartitionSetPositions();
+        /// <param name="angle">The new angle of the line in degrees.
+        /// <c>0</c> means vertical (perpendicular to the local
+        /// <see cref="Direction.E"/> direction) and increasing angles
+        /// rotate the line in local counter-clockwise direction.</param>
+        /// <param name="head">Indicates whether the rotation for the
+        /// particle's head or tail part should be set. Must be
+        /// <c>true</c> for contracted particles.</param>
+        public abstract void SetLineRotation(float angle, bool head = true);
+
+        /// <summary>
+        /// Resets the positions of the partition sets and sets the
+        /// placement mode to <see cref="PSPlacementMode.NONE"/> in the
+        /// particle's head or tail.
+        /// </summary>
+        /// <param name="head">Indicates whether the partition sets
+        /// should be reset in the particle's head or tail.</param>
+        public abstract void ResetPartitionSetPlacement(bool head = true);
     }
 
 } // namespace AS2.Sim
