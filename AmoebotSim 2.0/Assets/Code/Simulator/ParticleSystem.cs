@@ -231,6 +231,19 @@ namespace AS2.Sim
             get { return InCollisionState; }
         }
 
+        /// <summary>
+        /// Indicates whether the collision check should be executed.
+        /// </summary>
+        private bool collisionCheckEnabled = true;
+        /// <summary>
+        /// Indicates whether the collision check should be executed.
+        /// Turn the collision check off for improved performance.
+        /// </summary>
+        public bool CollisionCheckEnabled
+        {
+            get { return collisionCheckEnabled; }
+        }
+
 
         /*
          * Initialization mode data structures
@@ -362,6 +375,19 @@ namespace AS2.Sim
         /*
          * General system control methods
          */
+
+        /// <summary>
+        /// Enables or disables the collision check.
+        /// </summary>
+        /// <param name="enabled">If <c>true</c>, the collision check
+        /// will be enabled, otherwise it will be disabled.</param>
+        public void SetCollisionCheck(bool enabled)
+        {
+            collisionCheckEnabled = enabled;
+            // Forget about collision if check is disabled
+            if (!enabled)
+                inCollisionState = false;
+        }
 
         /// <summary>
         /// Resets the entire system to a state from which it can be
@@ -563,7 +589,8 @@ namespace AS2.Sim
                 if (particlesMove)
                 {
                     SimulateJointMovements();
-                    bool foundCollision = CheckForCollision();
+                    // Only perform collision check if it is enabled
+                    bool foundCollision = collisionCheckEnabled && CheckForCollision();
 
                     // Clear after processing edges and checking for collisions
                     Log.Debug(edgeMovements.Count + " Edges:");
