@@ -31,6 +31,8 @@ namespace AS2.UI
         private float cameraRotation = 0f;
         // Setting
         public bool showCompassDirArrows = true;
+        // State
+        private bool isVisible = false;
 
         private Dictionary<Direction, string> asciiDirectionArrows = new Dictionary<Direction, string>() {
             { Direction.NONE, "\u005F" },
@@ -98,9 +100,6 @@ namespace AS2.UI
 
         private void Start()
         {
-            // Disable Hide Button
-            button_hideOverlay.interactable = false;
-
             // Test
             //DisplayText(TextType.Text, "Contract");
 
@@ -378,6 +377,8 @@ namespace AS2.UI
             }
             display_isVisible = true;
             button_hideOverlay.interactable = true;
+            StartCoroutine(PaintButtonActiveInactive(button_hideOverlay, true));
+            isVisible = true;
         }
 
         /// <summary>
@@ -392,6 +393,34 @@ namespace AS2.UI
             }
             display_isVisible = false;
             button_hideOverlay.interactable = false;
+            StartCoroutine(PaintButtonActiveInactive(button_hideOverlay, false));
+            isVisible = false;
+        }
+
+        /// <summary>
+        /// Updates the color of the button.
+        /// </summary>
+        /// <param name="button">The button to paint.</param>
+        /// <param name="active">If the button is active.</param>
+        /// <returns></returns>
+        private IEnumerator PaintButtonActiveInactive(Button button, bool active)
+        {
+            while (!(AmoebotSimulator.instance != null && AmoebotSimulator.instance.uiHandler != null
+                && AmoebotSimulator.instance.uiHandler.GetButtonColor_Active() != default(Color) && AmoebotSimulator.instance.uiHandler.GetButtonColor_Inactive() != default(Color)))
+            {
+                yield return new WaitForEndOfFrame();
+            }
+            if(active) button.gameObject.GetComponent<Image>().color = AmoebotSimulator.instance.uiHandler.GetButtonColor_Active();
+            else button.gameObject.GetComponent<Image>().color = AmoebotSimulator.instance.uiHandler.GetButtonColor_Inactive();
+        }
+
+        /// <summary>
+        /// Returns true if the UI is active.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsActive()
+        {
+            return isVisible;
         }
 
 

@@ -63,6 +63,7 @@ namespace AS2.UI
         public Image image_circuitViewType;
         public Sprite sprite_circuitViewTypeCircuitsEnabled;
         public Sprite sprite_circuitViewTypeCircuitsDisabled;
+        public Button button_collisionCheck;
         public Button button_pSetPositioning;
         public Image image_pSetPositioning;
         public Sprite sprite_pSetPositioning_def;
@@ -334,6 +335,9 @@ namespace AS2.UI
             // Circuit View Type
             if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
+            // Collision Check
+            //if (true) button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_active;
+            //else button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_inactive;
             // Bonds Active
             if (sim.renderSystem.AreBondsActive()) button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
@@ -369,6 +373,24 @@ namespace AS2.UI
         public void HideUI()
         {
             ui.SetActive(false);
+        }
+
+        /// <summary>
+        /// Returns the color use to display that the setting is active.
+        /// </summary>
+        /// <returns></returns>
+        public Color GetButtonColor_Active()
+        {
+            return overlayColor_active;
+        }
+
+        /// <summary>
+        /// Returns the color use to display that the setting is inactive.
+        /// </summary>
+        /// <returns></returns>
+        public Color GetButtonColor_Inactive()
+        {
+            return overlayColor_inactive;
         }
 
         /// <summary>
@@ -704,6 +726,14 @@ namespace AS2.UI
         public void Button_ToggleCircuitViewPressed()
         {
             sim.renderSystem.ToggleCircuits();
+        }
+
+        /// <summary>
+        /// Toggles the collision check on/off.
+        /// </summary>
+        public void Button_ToggleCollisionCheck()
+        {
+            Log.Debug("Collision Check Button Pressed. This is not connected yet.");
         }
 
         /// <summary>
