@@ -1,4 +1,5 @@
 using System;
+using AS2.Sim;
 
 namespace AS2
 {
@@ -28,6 +29,9 @@ namespace AS2
         /// Indicates whether the simulation is in a collision state or not.
         /// </summary>
         public bool inCollisionState;
+
+
+        public CollisionChecker.DebugLine[] collisionDebugLines;
 
         /// <summary>
         /// The history of the anchor particle indices.

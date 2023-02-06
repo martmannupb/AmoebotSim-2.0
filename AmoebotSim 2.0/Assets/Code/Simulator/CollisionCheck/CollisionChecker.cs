@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 namespace AS2.Sim
@@ -16,11 +18,51 @@ namespace AS2.Sim
     /// </summary>
     public static class CollisionChecker
     {
+
+        /// <summary>
+        /// Simple container for data required to draw lines that
+        /// show a collision in the system.
+        /// </summary>
+        [Serializable]
+        public struct DebugLine
+        {
+            /// <summary>
+            /// The start point of the line.
+            /// </summary>
+            public Vector2Int p;
+            /// <summary>
+            /// The end point of the line.
+            /// </summary>
+            public Vector2Int q;
+            /// <summary>
+            /// The color of the line.
+            /// </summary>
+            public Color color;
+            /// <summary>
+            /// Determines whether the line should end with
+            /// an arrow or not.
+            /// </summary>
+            public bool arrow;
+
+            public DebugLine(Vector2Int p, Vector2Int q, Color color, bool arrow = false)
+            {
+                this.p = p;
+                this.q = q;
+                this.color = color;
+                this.arrow = arrow;
+            }
+        }
+
         /// <summary>
         /// The number of seconds for which the collision visualization
         /// should be displayed.
         /// </summary>
         public static float debugDisplayTime = 20.0f;
+
+        /// <summary>
+        /// The debug lines drawn for the last detected collision.
+        /// </summary>
+        private static List<DebugLine> debugLines = new List<DebugLine>();
 
         /// <summary>
         /// Checks whether the two given edge movements share an end point
@@ -138,10 +180,12 @@ namespace AS2.Sim
 
             if (collision)
             {
-                DrawDebugLine(emStatic.start1, emStatic.end1, Color.red);
-                DrawDebugLine(emOther.start1, emOther.end1, Color.green);
-                DrawDebugLine(emOther.start1, emOther.start1 + otherMovement1, Color.blue, true);
-                DrawDebugLine(emOther.end1, emOther.end1 + otherMovement2, Color.blue, true);
+                debugLines.Clear();
+                debugLines.Add(new DebugLine(emStatic.start1, emStatic.end1, Color.red));
+                debugLines.Add(new DebugLine(emOther.start1, emOther.end1, Color.green));
+                debugLines.Add(new DebugLine(emOther.start1, emOther.start1 + otherMovement1, Color.blue, true));
+                debugLines.Add(new DebugLine(emOther.end1, emOther.end1 + otherMovement2, Color.blue, true));
+                DrawDebugLines(debugLines.ToArray());
                 Log.Debug("DETECTED COLLISION! (1 static)");
                 return true;
             }
@@ -204,17 +248,20 @@ namespace AS2.Sim
             // Found a collision if there is an intersection here
             if (collision2)
             {
+                debugLines.Clear();
+
                 // Current edge (in expanded state)
-                DrawDebugLine(em1.start1, em1.start1 + startToEnd, Color.red);
+                debugLines.Add(new DebugLine(em1.start1, em1.start1 + startToEnd, Color.red));
 
                 // Movement lines of the other edge relative to first edge's start
                 Vector2Int em2_moveStart = em2.start1 + em2.StartTranslation() - em1.StartTranslation();
                 Vector2Int em2_moveEnd = em2.end1 + em2.EndTranslation() - em1.StartTranslation();
 
-                DrawDebugLine(em2.start1, em2.end1, Color.green);
-                DrawDebugLine(em2_moveStart, em2_moveEnd, Color.green);
-                DrawDebugLine(em2.start1, em2_moveStart, Color.blue, true);
-                DrawDebugLine(em2.end1, em2_moveEnd, Color.blue, true);
+                debugLines.Add(new DebugLine(em2.start1, em2.end1, Color.green));
+                debugLines.Add(new DebugLine(em2_moveStart, em2_moveEnd, Color.green));
+                debugLines.Add(new DebugLine(em2.start1, em2_moveStart, Color.blue, true));
+                debugLines.Add(new DebugLine(em2.end1, em2_moveEnd, Color.blue, true));
+                DrawDebugLines(debugLines.ToArray());
 
                 Log.Debug("DETECTED COLLISION! (2 non-static)");
                 return true;
@@ -259,10 +306,12 @@ namespace AS2.Sim
                 if (LineSegmentsIntersect(em1.start1, em1.end1, em2.start1, em2.start1 + em2_rel) ||
                     LineSegmentsIntersect(em1.start1, em1.end1, em2.end1, em2.end1 + em2_rel))
                 {
-                    DrawDebugLine(em1.start1, em1.end1, Color.red);
-                    DrawDebugLine(em2.start1, em2.end1, Color.green);
-                    DrawDebugLine(em2.start1, em2.start1 + em2_rel, Color.blue, true);
-                    DrawDebugLine(em2.end1, em2.end1 + em2_rel, Color.blue, true);
+                    debugLines.Clear();
+                    debugLines.Add(new DebugLine(em1.start1, em1.end1, Color.red));
+                    debugLines.Add(new DebugLine(em2.start1, em2.end1, Color.green));
+                    debugLines.Add(new DebugLine(em2.start1, em2.start1 + em2_rel, Color.blue, true));
+                    debugLines.Add(new DebugLine(em2.end1, em2.end1 + em2_rel, Color.blue, true));
+                    DrawDebugLines(debugLines.ToArray());
 
                     Log.Debug("DETECTED COLLISION! (2 static)");
                     return true;
@@ -284,6 +333,37 @@ namespace AS2.Sim
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Returns the list of debug lines generated for the
+        /// last detected collision. These lines can be used to
+        /// display where the collision was detected.
+        /// </summary>
+        /// <returns>An array containing information for drawing
+        /// lines that show where the last collision was detected.</returns>
+        public static DebugLine[] GetDebugLines()
+        {
+            return debugLines.ToArray();
+        }
+
+        /// <summary>
+        /// Draws the given debug lines onto the screen.
+        /// <para>
+        /// Note that this only works in the Unity Editor and the
+        /// "Gizmos" toggle in the Game View must be activated for
+        /// the lines to be visible.
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The lines to be drawn. Should be
+        /// the return value of <see cref="GetDebugLines"/>.</param>
+        /// <param name="time">The time in seconds for which the
+        /// lines should be displayed. A negative value will lead to
+        /// <see cref="debugDisplayTime"/> being used.</param>
+        public static void DrawDebugLines(DebugLine[] lines, float time = -1)
+        {
+            foreach (DebugLine line in lines)
+                DrawDebugLine(line, time);
         }
 
         /// <summary>
@@ -312,6 +392,17 @@ namespace AS2.Sim
                 Debug.DrawLine(end, end + a1, color, time, false);
                 Debug.DrawLine(end, end + a2, color, time, false);
             }
+        }
+
+        /// <summary>
+        /// Helper for drawing debug lines.
+        /// </summary>
+        /// <param name="line">The line to be drawn.</param>
+        /// <param name="time">The time for which the line should be displayed.
+        /// Negative values lead to <see cref="debugDisplayTime"/> being used.</param>
+        private static void DrawDebugLine(DebugLine line, float time = -1)
+        {
+            DrawDebugLine(line.p, line.q, line.color, line.arrow, time);
         }
     }
 

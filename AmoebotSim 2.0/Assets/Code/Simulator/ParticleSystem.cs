@@ -244,6 +244,8 @@ namespace AS2.Sim
             get { return collisionCheckEnabled; }
         }
 
+        private CollisionChecker.DebugLine[] collisionDebugLines;
+
 
         /*
          * Initialization mode data structures
@@ -608,7 +610,10 @@ namespace AS2.Sim
                     edgeMovements.Clear();
 
                     if (foundCollision)
+                    {
                         inCollisionState = true;
+                        collisionDebugLines = CollisionChecker.GetDebugLines();
+                    }
                 }
                 else
                     // Compute bond information for the case with no movements
@@ -3306,6 +3311,10 @@ namespace AS2.Sim
                 isTracking = true;
                 anchorIdxHistory.ContinueTracking();
                 UpdateAfterStep(stepFromSecondLastRound, !stepFromSecondLastRound, !stepFromSecondLastRound);
+
+                // Draw collision debug lines
+                if (collisionCheckEnabled && inCollisionState)
+                    CollisionChecker.DrawDebugLines(collisionDebugLines);
             }
         }
 
@@ -3398,6 +3407,7 @@ namespace AS2.Sim
             data.latestRound = _latestRound;
             data.finishedRound = finishedRound;
             data.inCollisionState = inCollisionState;
+            data.collisionDebugLines = collisionDebugLines;
             data.anchorIdxHistory = anchorIdxHistory.GenerateSaveData();
 
             data.particles = new ParticleStateSaveData[particles.Count];
@@ -3435,6 +3445,7 @@ namespace AS2.Sim
                 finished = true;
 
             inCollisionState = data.inCollisionState;
+            collisionDebugLines = data.collisionDebugLines;
 
             foreach (ParticleStateSaveData pData in data.particles)
             {
