@@ -168,8 +168,8 @@ namespace AS2.Visuals
 
         public void RegenerateMeshes()
         {
-            circuitQuad = Engine.Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
-            if(RenderSystem.const_mesh_useManualBoundingBoxRadius) circuitQuad = Engine.Library.MeshConstants.AddManualBoundsToMesh(circuitQuad, Vector3.zero, RenderSystem.const_mesh_boundingBoxRadius, true);
+            circuitQuad = Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
+            if(RenderSystem.const_mesh_useManualBoundingBoxRadius) circuitQuad = Library.MeshConstants.AddManualBoundsToMesh(circuitQuad, Vector3.zero, RenderSystem.const_mesh_boundingBoxRadius, true);
         }
 
         /// <summary>
@@ -262,7 +262,7 @@ namespace AS2.Visuals
         private void CalculateAnimationFrame()
         {
             float interpolationPercentage;
-            if (properties.animationUpdatedManually && RenderSystem.animationsOn) interpolationPercentage = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
+            if (properties.animationUpdatedManually && RenderSystem.animationsOn) interpolationPercentage = Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
             else interpolationPercentage = 1f;
             for (int i = 0; i < currentIndex; i++)
             {

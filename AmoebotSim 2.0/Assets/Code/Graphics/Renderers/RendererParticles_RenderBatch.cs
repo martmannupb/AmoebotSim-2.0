@@ -127,18 +127,18 @@ namespace AS2.Visuals
             if ((particleToParticleGraphicalDataMap.Count % maxArraySize) == 0)
             {
                 // Create Matrix Arrays
-                particleMatricesCircle_Contracted.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesCircle_Expanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesCircle_Expanding.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesCircle_Contracting.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesPins_Contracted.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesPins_Expanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesPins_Expanding.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesPins_Contracting.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesCircle_ConnectionMatrices_Contracted.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesCircle_ConnectionMatrices_Expanded.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesCircle_ConnectionMatrices_Expanding.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
-                particleMatricesCircle_ConnectionMatrices_Contracting.Add(Engine.Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesCircle_Contracted.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesCircle_Expanded.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesCircle_Expanding.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesCircle_Contracting.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesPins_Contracted.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesPins_Expanded.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesPins_Expanding.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesPins_Contracting.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesCircle_ConnectionMatrices_Contracted.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesCircle_ConnectionMatrices_Expanded.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesCircle_ConnectionMatrices_Expanding.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
+                particleMatricesCircle_ConnectionMatrices_Contracting.Add(Library.MatrixConstants.GetMatrix4x4Array(maxArraySize, matrixTRS_zero));
                 particlePositionOffsets_jointMovementsInv.Add(new Vector3[maxArraySize]);
                 particleReferences.Add(new ParticleGraphicsAdapterImpl[maxArraySize]);
             }
@@ -391,7 +391,7 @@ namespace AS2.Visuals
 
             // 2. Update Joint Movement Positions
             // Update Interpolation Value
-            jmInterpolation = Engine.Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
+            jmInterpolation = Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
             // Update all JM Positions
             for (int i = 0; i < particlePositionOffsets_jointMovementsInv.Count; i++)
             {
@@ -437,18 +437,18 @@ namespace AS2.Visuals
 
                     // Particles (previous mat: MaterialDatabase.material_hexagonal_particleCombined)
                     Material mat = viewType == ViewType.Hexagonal ? hexagonWithPinsMaterial : hexagonCircWithPinsMaterial;
-                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-                    UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
                     // Pins
                     if (RenderSystem.flag_showCircuitView)
                     {
                         Material matCirc = viewType == ViewType.Hexagonal ? circuitHexPinMaterial : circuitHexCircPinMaterial;
-                        UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-                        UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-                        UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-                        UnityEngine.Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+                        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+                        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+                        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+                        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
                     }
                 }
             }
@@ -478,9 +478,9 @@ namespace AS2.Visuals
                 else listLength = maxArraySize;
 
                 // Particle Connectors
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanded[i], listLength, propertyBlock_circle_connector_expanded.propertyBlock);
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanding[i], listLength, propertyBlock_circle_connector_expanding.propertyBlock);
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Contracting[i], listLength, propertyBlock_circle_connector_contracting.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanded[i], listLength, propertyBlock_circle_connector_expanded.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanding[i], listLength, propertyBlock_circle_connector_expanding.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Contracting[i], listLength, propertyBlock_circle_connector_contracting.propertyBlock);
             }
 
             // Particles
@@ -492,10 +492,10 @@ namespace AS2.Visuals
                 else listLength = maxArraySize;
 
                 // Particles
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-                UnityEngine.Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
             }
         }
 

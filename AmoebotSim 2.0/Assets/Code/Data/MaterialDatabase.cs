@@ -10,6 +10,7 @@ namespace AS2
 
         // Base
         public static Material material_color = Resources.Load<Material>(FilePaths.path_materials + "Base/WhiteMat");
+        public static Material material_line = Resources.Load<Material>(FilePaths.path_materials + "Base/LineMat");
 
         // Circular View
         // deprecated

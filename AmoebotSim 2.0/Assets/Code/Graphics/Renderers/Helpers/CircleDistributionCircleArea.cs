@@ -71,9 +71,9 @@ namespace AS2.Visuals
                                 {
                                     Log.Warning("CircleDistribution: Somehow adjustments are made after the first interation. This should not happen.");
                                 }
-                                Tuple<double, double> degreeAndRadius = Engine.Library.DegreeConstants.CoordinateToDegree(cur);
+                                Tuple<double, double> degreeAndRadius = Library.DegreeConstants.CoordinateToDegree(cur);
                                 bool useCenterVector = maxCircleRadius - degreeAndRadius.Item2 <= maxCircleRadius * 0.1f;
-                                Vector2 offsetVector = Engine.Library.DegreeConstants.DegreeToCoordinate(useCenterVector ? ((degreeAndRadius.Item1 + 180f) % 360f) : rng.Range(0f, 360f), rng.Range(0.01f, 0.05f));
+                                Vector2 offsetVector = Library.DegreeConstants.DegreeToCoordinate(useCenterVector ? ((degreeAndRadius.Item1 + 180f) % 360f) : rng.Range(0f, 360f), rng.Range(0.01f, 0.05f));
                                 points[j] += offsetVector;
                                 newPoints.Clear();
                                 j = -1;

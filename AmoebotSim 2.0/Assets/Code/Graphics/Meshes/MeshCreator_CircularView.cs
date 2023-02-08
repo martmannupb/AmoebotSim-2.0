@@ -179,7 +179,7 @@ namespace AS2.Visuals
         public static Mesh GetMesh_Particle()
         {
             // Mesh Data
-            Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(3f, 0f, new Vector2(0.5f, 0.5f));
+            Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(3f, 0f, new Vector2(0.5f, 0.5f));
 
             return mesh;
         }
@@ -190,7 +190,7 @@ namespace AS2.Visuals
         /// <returns></returns>
         public static Mesh GetMesh_ParticleOptimized()
         {
-            Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(2f, 0f, new Vector2(0.25f, 0.5f));
+            Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(2f, 0f, new Vector2(0.25f, 0.5f));
             Vector3[] vertices = mesh.vertices;
             vertices[0] = new Vector3(vertices[0].x, vertices[0].y * 0.5f, vertices[0].z);
             vertices[1] = new Vector3(vertices[1].x, vertices[1].y * 0.5f, vertices[1].z);
@@ -208,7 +208,7 @@ namespace AS2.Visuals
         public static Mesh GetMesh_ParticleConnector()
         {
             // Mesh Data
-            Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0f, 0.5f));
+            Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0f, 0.5f));
             Vector2[] uv2 = new Vector2[4];
 
             // UV2.x = 0 means this vertex will move

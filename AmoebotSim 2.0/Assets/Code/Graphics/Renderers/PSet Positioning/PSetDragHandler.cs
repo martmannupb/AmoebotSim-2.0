@@ -24,7 +24,7 @@ namespace AS2.Visuals
         private RendererCircuits_Instance.ParticleCircuitData.PSetInnerPinRef drag_innerPin;
 
         // Graphics
-        private Mesh quad = Engine.Library.MeshConstants.getDefaultMeshQuad();
+        private Mesh quad = Library.MeshConstants.getDefaultMeshQuad();
         private float scale = 3f * 0.3f / 4f;
 
         public PSetDragHandler(AmoebotSimulator sim)

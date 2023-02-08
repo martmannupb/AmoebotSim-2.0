@@ -86,8 +86,8 @@ namespace AS2.Visuals
 
         public void RegenerateMeshes()
         {
-            pinQuad = Engine.Library.MeshConstants.getDefaultMeshQuad();
-            if (RenderSystem.const_mesh_useManualBoundingBoxRadius) pinQuad = Engine.Library.MeshConstants.AddManualBoundsToMesh(pinQuad, Vector3.zero, RenderSystem.const_mesh_boundingBoxRadius, true);
+            pinQuad = Library.MeshConstants.getDefaultMeshQuad();
+            if (RenderSystem.const_mesh_useManualBoundingBoxRadius) pinQuad = Library.MeshConstants.AddManualBoundsToMesh(pinQuad, Vector3.zero, RenderSystem.const_mesh_boundingBoxRadius, true);
         }
 
         /// <summary>
