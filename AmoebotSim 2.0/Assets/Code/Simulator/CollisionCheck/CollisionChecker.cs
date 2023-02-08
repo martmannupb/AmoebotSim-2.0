@@ -181,10 +181,8 @@ namespace AS2.Sim
             if (collision)
             {
                 debugLines.Clear();
-                debugLines.Add(new DebugLine(emStatic.start1, emStatic.end1, Color.red));
-                debugLines.Add(new DebugLine(emOther.start1, emOther.end1, Color.green));
-                debugLines.Add(new DebugLine(emOther.start1, emOther.start1 + otherMovement1, Color.blue, true));
-                debugLines.Add(new DebugLine(emOther.end1, emOther.end1 + otherMovement2, Color.blue, true));
+                GenerateDebugLines(emStatic, Color.blue);
+                GenerateDebugLines(emOther, Color.red);
                 DrawDebugLines(debugLines.ToArray());
                 Log.Debug("DETECTED COLLISION! (1 static)");
                 return true;
@@ -249,18 +247,8 @@ namespace AS2.Sim
             if (collision2)
             {
                 debugLines.Clear();
-
-                // Current edge (in expanded state)
-                debugLines.Add(new DebugLine(em1.start1, em1.start1 + startToEnd, Color.red));
-
-                // Movement lines of the other edge relative to first edge's start
-                Vector2Int em2_moveStart = em2.start1 + em2.StartTranslation() - em1.StartTranslation();
-                Vector2Int em2_moveEnd = em2.end1 + em2.EndTranslation() - em1.StartTranslation();
-
-                debugLines.Add(new DebugLine(em2.start1, em2.end1, Color.green));
-                debugLines.Add(new DebugLine(em2_moveStart, em2_moveEnd, Color.green));
-                debugLines.Add(new DebugLine(em2.start1, em2_moveStart, Color.blue, true));
-                debugLines.Add(new DebugLine(em2.end1, em2_moveEnd, Color.blue, true));
+                GenerateDebugLines(em1, Color.blue);
+                GenerateDebugLines(em2, Color.red);
                 DrawDebugLines(debugLines.ToArray());
 
                 Log.Debug("DETECTED COLLISION! (2 non-static)");
@@ -307,10 +295,8 @@ namespace AS2.Sim
                     LineSegmentsIntersect(em1.start1, em1.end1, em2.end1, em2.end1 + em2_rel))
                 {
                     debugLines.Clear();
-                    debugLines.Add(new DebugLine(em1.start1, em1.end1, Color.red));
-                    debugLines.Add(new DebugLine(em2.start1, em2.end1, Color.green));
-                    debugLines.Add(new DebugLine(em2.start1, em2.start1 + em2_rel, Color.blue, true));
-                    debugLines.Add(new DebugLine(em2.end1, em2.end1 + em2_rel, Color.blue, true));
+                    GenerateDebugLines(em1, Color.blue);
+                    GenerateDebugLines(em2, Color.red);
                     DrawDebugLines(debugLines.ToArray());
 
                     Log.Debug("DETECTED COLLISION! (2 static)");
@@ -403,6 +389,25 @@ namespace AS2.Sim
         private static void DrawDebugLine(DebugLine line, float time = -1)
         {
             DrawDebugLine(line.p, line.q, line.color, line.arrow, time);
+        }
+
+        /// <summary>
+        /// Helper that generates lines and arrows showing the absolute
+        /// trajectory of an <see cref="EdgeMovement"/>.
+        /// <para>
+        /// The generated movements are added to <see cref="debugLines"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="em">The movement to draw.</param>
+        /// <param name="color">The color in which to draw the movement.</param>
+        private static void GenerateDebugLines(EdgeMovement em, Color color)
+        {
+            debugLines.Add(new DebugLine(em.start1, em.end1, color));
+            debugLines.Add(new DebugLine(em.start2, em.end2, color));
+            if (em.start1 != em.start2)
+                debugLines.Add(new DebugLine(em.start1, em.start2, color, true));
+            if (em.end1 != em.end2)
+                debugLines.Add(new DebugLine(em.end1, em.end2, color, true));
         }
     }
 

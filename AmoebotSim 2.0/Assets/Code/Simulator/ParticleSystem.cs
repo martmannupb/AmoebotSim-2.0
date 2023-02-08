@@ -559,6 +559,8 @@ namespace AS2.Sim
             if (inCollisionState)
             {
                 Log.Error("A collision occurred! The simulation will not continue.");
+                CollisionChecker.DrawDebugLines(collisionDebugLines);
+                AmoebotSimulator.instance.PauseSim();
                 return;
             }
 
@@ -595,16 +597,8 @@ namespace AS2.Sim
                     bool foundCollision = collisionCheckEnabled && CheckForCollision();
 
                     // Clear after processing edges and checking for collisions
-                    Log.Debug(edgeMovements.Count + " Edges:");
-                    bool drawDebugLines = false;
                     foreach (EdgeMovement em in edgeMovements)
                     {
-                        if (drawDebugLines)
-                        {
-                            Vector3 start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em.start1);
-                            Vector3 end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(em.end1);
-                            Debug.DrawLine(start, end, Color.blue, 10f);
-                        }
                         EdgeMovement.Release(em);
                     }
                     edgeMovements.Clear();
@@ -613,6 +607,7 @@ namespace AS2.Sim
                     {
                         inCollisionState = true;
                         collisionDebugLines = CollisionChecker.GetDebugLines();
+                        AmoebotSimulator.instance.PauseSim();
                     }
                 }
                 else
