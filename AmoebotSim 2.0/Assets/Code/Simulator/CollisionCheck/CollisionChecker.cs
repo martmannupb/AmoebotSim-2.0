@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using UnityEngine;
+using AS2.UI;
 
 namespace AS2.Sim
 {
@@ -181,8 +182,8 @@ namespace AS2.Sim
             if (collision)
             {
                 debugLines.Clear();
-                GenerateDebugLines(emStatic, Color.blue);
-                GenerateDebugLines(emOther, Color.red);
+                GenerateDebugLines(emStatic, true);
+                GenerateDebugLines(emOther, false);
                 DrawDebugLines(debugLines.ToArray());
                 Log.Debug("DETECTED COLLISION! (1 static)");
                 return true;
@@ -247,8 +248,8 @@ namespace AS2.Sim
             if (collision2)
             {
                 debugLines.Clear();
-                GenerateDebugLines(em1, Color.blue);
-                GenerateDebugLines(em2, Color.red);
+                GenerateDebugLines(em1, true);
+                GenerateDebugLines(em2, false);
                 DrawDebugLines(debugLines.ToArray());
 
                 Log.Debug("DETECTED COLLISION! (2 non-static)");
@@ -295,8 +296,8 @@ namespace AS2.Sim
                     LineSegmentsIntersect(em1.start1, em1.end1, em2.end1, em2.end1 + em2_rel))
                 {
                     debugLines.Clear();
-                    GenerateDebugLines(em1, Color.blue);
-                    GenerateDebugLines(em2, Color.red);
+                    GenerateDebugLines(em1, true);
+                    GenerateDebugLines(em2, false);
                     DrawDebugLines(debugLines.ToArray());
 
                     Log.Debug("DETECTED COLLISION! (2 static)");
@@ -348,8 +349,12 @@ namespace AS2.Sim
         /// <see cref="debugDisplayTime"/> being used.</param>
         public static void DrawDebugLines(DebugLine[] lines, float time = -1)
         {
+            if (time < 0)
+                time = debugDisplayTime;
+            CollisionLineDrawer.Instance.Clear();
             foreach (DebugLine line in lines)
                 DrawDebugLine(line, time);
+            CollisionLineDrawer.Instance.SetTimer(time);
         }
 
         /// <summary>
@@ -363,21 +368,7 @@ namespace AS2.Sim
         /// Negative values lead to <see cref="debugDisplayTime"/> being used.</param>
         private static void DrawDebugLine(Vector2Int p, Vector2Int q, Color color, bool arrow = false, float time = -1)
         {
-            if (time < 0)
-                time = debugDisplayTime;
-            Vector3 start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(p);
-            Vector3 end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(q);
-            Debug.DrawLine(start, end, color, time, false);
-            if (arrow)
-            {
-                Vector3 endToStart = start - end;
-                Quaternion rot1 = Quaternion.Euler(0, 0, 15);
-                Quaternion rot2 = Quaternion.Euler(0, 0, -15);
-                Vector3 a1 = rot1 * endToStart * 0.1f;
-                Vector3 a2 = rot2 * endToStart * 0.1f;
-                Debug.DrawLine(end, end + a1, color, time, false);
-                Debug.DrawLine(end, end + a2, color, time, false);
-            }
+            CollisionLineDrawer.Instance.AddLine(p, q, color, arrow);
         }
 
         /// <summary>
@@ -400,14 +391,28 @@ namespace AS2.Sim
         /// </summary>
         /// <param name="em">The movement to draw.</param>
         /// <param name="color">The color in which to draw the movement.</param>
-        private static void GenerateDebugLines(EdgeMovement em, Color color)
+        private static void GenerateDebugLines(EdgeMovement em, bool pov)
         {
-            debugLines.Add(new DebugLine(em.start1, em.end1, color));
-            debugLines.Add(new DebugLine(em.start2, em.end2, color));
+            Color colorLine;
+            Color colorArrow;
+            if (pov)
+            {
+                colorLine = Color.blue;
+                colorArrow = new Color(0f, 0.5f, 1.0f);
+            }
+            else
+            {
+                colorLine = new Color(1.0f, 0.5f, 0f);
+                colorArrow = Color.red;
+            }
+            if (em.start1 != em.end1)
+                debugLines.Add(new DebugLine(em.start1, em.end1, colorLine));
+            if (em.start2 != em.end2)
+                debugLines.Add(new DebugLine(em.start2, em.end2, colorLine));
             if (em.start1 != em.start2)
-                debugLines.Add(new DebugLine(em.start1, em.start2, color, true));
+                debugLines.Add(new DebugLine(em.start1, em.start2, colorArrow, true));
             if (em.end1 != em.end2)
-                debugLines.Add(new DebugLine(em.end1, em.end2, color, true));
+                debugLines.Add(new DebugLine(em.end1, em.end2, colorArrow, true));
         }
     }
 

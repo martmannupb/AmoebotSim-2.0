@@ -42,9 +42,6 @@ namespace AS2
 
             // Open Init Mode (when initialized)
             StartCoroutine(OpenInitModeCoroutine());
-
-            LineDrawer.Instance.AddLine(new Vector2Int(0, 0), new Vector2Int(15, 7));
-            LineDrawer.Instance.AddLine(new Vector2Int(7, 1), new Vector2Int(-15, 7));
         }
 
         // Update is called once per frame

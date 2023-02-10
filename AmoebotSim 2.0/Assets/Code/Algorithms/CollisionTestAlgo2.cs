@@ -1,4 +1,5 @@
 using AS2.Sim;
+using AS2.UI;
 using UnityEngine;
 
 namespace AS2.Algos.CollisionTestAlgo2
@@ -128,7 +129,7 @@ namespace AS2.Algos.CollisionTestAlgo2
         public void Generate(int offsetX = 3, int offsetY = 3,
             Direction expansionDir1 = Direction.NNE, Direction expansionDir2 = Direction.SSW,
             bool expanding1 = true, bool expanding2 = true,
-            int movementX = 0, int movementY = 0,
+            int movementX = -4, int movementY = -2,
             bool handover1 = false, bool handover2 = false)
         {
             if (offsetY < 0)
@@ -258,21 +259,19 @@ namespace AS2.Algos.CollisionTestAlgo2
 
             // Visualization of the movement
             float displayTime = 5f;
+            CollisionLineDrawer.Instance.Clear();
             if (expansionDir1 != Direction.NONE)
             {
                 if (handover1)
                 {
-                    Vector3 pull1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(0, -2));
-                    Vector3 pull2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(0, -1));
-                    Vector3 part1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(p1.Head());
-                    Debug.DrawLine(pull1, pull2, Color.green, displayTime);
-                    Debug.DrawLine(pull2, part1, Color.green, displayTime);
+                    Vector2Int pull1 = new Vector2Int(0, -2);
+                    Vector2Int pull2 = new Vector2Int(0, -1);
+                    CollisionLineDrawer.Instance.AddLine(pull1, pull2, Color.green);
+                    CollisionLineDrawer.Instance.AddLine(pull2, p1.Head(), Color.green);
                 }
                 else
                 {
-                    Vector3 part1Start = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(Vector2Int.zero);
-                    Vector3 part1End = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(Vector2Int.zero + ParticleSystem_Utils.DirectionToVector(expansionDir1));
-                    Debug.DrawLine(part1Start, part1End, Color.green, displayTime);
+                    CollisionLineDrawer.Instance.AddLine(Vector2Int.zero, ParticleSystem_Utils.DirectionToVector(expansionDir1), Color.green);
                 }
             }
 
@@ -282,31 +281,27 @@ namespace AS2.Algos.CollisionTestAlgo2
                 Vector2Int pos2 = new Vector2Int(offsetX, offsetY + 1);
                 Vector2Int pos3 = new Vector2Int(offsetX, offsetY + 1) + ParticleSystem_Utils.DirectionToVector(expansionDir2.Opposite());
                 Vector2Int offset = new Vector2Int(movementX, movementY);
-                Vector3 pull1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos1);
-                Vector3 pull2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos2);
-                Vector3 part2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos3);
-                Vector3 pull1_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos1 + offset);
-                Vector3 pull2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos2 + offset);
-                Vector3 part2_end = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(pos3 + offset);
 
-                Debug.DrawLine(pull1, pull1_end, Color.blue, displayTime);
-                Debug.DrawLine(pull2, pull2_end, Color.blue, displayTime);
-                Debug.DrawLine(part2, part2_end, Color.blue, displayTime);
+                CollisionLineDrawer.Instance.AddLine(pos1, pos1 + offset, Color.blue, true);
+                CollisionLineDrawer.Instance.AddLine(pos2, pos2 + offset, Color.blue, true);
+                CollisionLineDrawer.Instance.AddLine(pos3, pos3 + offset, Color.blue, true);
             }
             else
             {
-                Vector3 part2Start1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX, offsetY));
-                Vector3 part2End1 = (!expanding2) && expansionDir2 != Direction.NONE ?
-                    AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX, offsetY) + ParticleSystem_Utils.DirectionToVector(expansionDir2))
+                Vector2Int part2Start1 = new Vector2Int(offsetX, offsetY);
+                Vector2Int part2End1 = (!expanding2) && expansionDir2 != Direction.NONE ?
+                    new Vector2Int(offsetX, offsetY) + ParticleSystem_Utils.DirectionToVector(expansionDir2)
                     : part2Start1;
-                Vector3 part2Start2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX + movementX, offsetY + movementY));
-                Vector3 part2End2 = expanding2 && expansionDir2 != Direction.NONE ?
-                    AmoebotFunctions.CalculateAmoebotCenterPositionVector3(new Vector2Int(offsetX + movementX, offsetY + movementY) + ParticleSystem_Utils.DirectionToVector(expansionDir2))
+                Vector2Int part2Start2 = new Vector2Int(offsetX + movementX, offsetY + movementY);
+                Vector2Int part2End2 = expanding2 && expansionDir2 != Direction.NONE ?
+                    new Vector2Int(offsetX + movementX, offsetY + movementY) + ParticleSystem_Utils.DirectionToVector(expansionDir2)
                     : part2Start2;
 
-                Debug.DrawLine(part2Start1, part2Start2, Color.blue, displayTime);
-                Debug.DrawLine(part2End1, part2End2, Color.blue, displayTime);
+                CollisionLineDrawer.Instance.AddLine(part2Start1, part2Start2, Color.blue, true);
+                CollisionLineDrawer.Instance.AddLine(part2End1, part2End2, Color.blue, true);
             }
+
+            CollisionLineDrawer.Instance.SetTimer(displayTime);
         }
     }
 
