@@ -59,7 +59,13 @@ Thus, the behavior of the Render System and the Simulator is mainly driven by th
 The various UI handlers are independent `MonoBehaviour`s that are attached to the UI GameObjects.
 The [`AmoebotSimulator`][2] only establishes a basic connection between the main UI handler and the other components.
 
+The [`AlgorithmGenerator`][3] is implemented as a `MonoBehaviour` script attached to an otherwise empty GameObject.
+However, because it should be run in the Unity Editor while the application is not running, it has the `ExecuteInEditMode` annotation.
+Additionally, the [`AlgorithmGeneratorEditor`][4] class, which inherits from Unity's `Editor` class, references the [`AlgorithmGenerator`][3] and defines its custom Inspector layout including the `Generate...` button and the input fields.
+
 
 
 [1]: xref:AS2.Sim.ParticleSystem
 [2]: xref:AS2.AmoebotSimulator
+[3]: xref:AS2.AlgorithmGenerator
+[4]: xref:AS2.AlgorithmGeneratorEditor
