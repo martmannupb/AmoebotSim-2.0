@@ -1,4 +1,4 @@
-- name: Simulation State
-  href: sim_state.md
+- name: History
+  href: history.md
 - name: Particles
   href: particles.md
