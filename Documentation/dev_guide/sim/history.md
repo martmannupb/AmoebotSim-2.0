@@ -15,24 +15,32 @@ The reason for this is that from one round to the next, many parts of the simula
 
 Every class of the simulator that needs to maintain a state history implements the [`IReplayHistory`][1] interface.
 This interface defines a state history as a sequence of states for a range of consecutive rounds.
-The history starts in some round with index $i$ and stores a state for each round $i,i+1,\ldots,i+l-1$, where $l$ is the number of recorded states.
+The history starts in some round with index $i$ and stores a state for each round $i,i+1,\ldots,i+l-1$, where $l$ is the current length of the state sequence.
 
 An object implementing the interface always has a *marker* that indicates the currently selected round.
 The marker can be moved to any round $\geq i$, which will change the object's state to the one recorded for that round.
-If the object's state changes while the marker is in any round $\geq i + l-1$, a new entry will be recorded and the history will be extended to the current location of the marker.
+If the object's state changes while the marker is in any round $\geq i + l-1$, a new entry will be recorded and the history will be extended to the current location of the marker, copying the previous state to fill the gap if there is one.
 
 The history can also be cut off at the marker, meaning that all recorded states after the marker are removed.
 
-**TODO**
+### Nesting Histories
 
+The history interface can also be implemented by more complex classes that have several sub-histories.
+To accomplish this, every call to a method from the [`IReplayHistory`][1] interface is passed to all sub-histories so that their states are synchronized.
+The [`ParticleSystem`][2] class is a good example for this:
+When the selected round changes in Simulation Mode (e.g. by calling [`SetMarkerToRound(int round)`][3]), the system will call the same method on all particles and all other histories that make up the system's state.
+In turn, the particles forward the calls to their own histories as part of updating their states.
 
 
 ## Storing value histories
 
 
+**TODO**
 
 
 [1]: xref:AS2.Sim.IReplayHistory
+[2]: xref:AS2.Sim.ParticleSystem
+[3]: xref:AS2.Sim.ParticleSystem.SetMarkerToRound(System.Int32)
 
 
 
