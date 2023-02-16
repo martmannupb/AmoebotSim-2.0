@@ -60,6 +60,9 @@ namespace AS2.Sim
         /// </summary>
         private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
+        private List<ParticleObject> objects = new List<ParticleObject>();
+        private Dictionary<Vector2Int, ParticleObject> objectMap = new Dictionary<Vector2Int, ParticleObject>();
+
 
         /*
          * Round indexing
@@ -362,6 +365,10 @@ namespace AS2.Sim
             particles.Clear();
             particleMap.Clear();
 
+            // Same for objects
+            objects.Clear();
+            objectMap.Clear();
+
             // Reset history state
             _earliestRound = 0;
             _latestRound = 0;
@@ -389,6 +396,9 @@ namespace AS2.Sim
             }
             particlesInit.Clear();
             particleMapInit.Clear();
+
+            objects.Clear();
+            objectMap.Clear();
             anchorInit = -1;
         }
 
@@ -3066,6 +3076,14 @@ namespace AS2.Sim
                         particleMap[p.Head()] = p;
                     }
                 }
+                // Do the same for objects
+                objectMap.Clear();
+                foreach (ParticleObject o in objects)
+                {
+                    o.SetMarkerToRound(round);
+                    foreach (Vector2Int v in o.GetOccupiedPositions())
+                        objectMap[v] = o;
+                }
                 isTracking = false;
                 anchorIdxHistory.SetMarkerToRound(round);
                 UpdateAfterStep();
@@ -3100,6 +3118,14 @@ namespace AS2.Sim
                         particleMap[p.Head()] = p;
                     }
                 }
+                // Do the same for objects
+                objectMap.Clear();
+                foreach (ParticleObject o in objects)
+                {
+                    o.StepBack();
+                    foreach (Vector2Int v in o.GetOccupiedPositions())
+                        objectMap[v] = o;
+                }
                 isTracking = false;
                 anchorIdxHistory.StepBack();
                 UpdateAfterStep();
@@ -3131,6 +3157,14 @@ namespace AS2.Sim
                         particleMap[p.Head()] = p;
                     }
                 }
+                // Do the same for objects
+                objectMap.Clear();
+                foreach (ParticleObject o in objects)
+                {
+                    o.StepForward();
+                    foreach (Vector2Int v in o.GetOccupiedPositions())
+                        objectMap[v] = o;
+                }
                 isTracking = false;
                 anchorIdxHistory.StepForward();
                 UpdateAfterStep(true, false, false);
@@ -3159,6 +3193,14 @@ namespace AS2.Sim
                         particleMap[p.Head()] = p;
                     }
                 }
+                // Do the same for objects
+                objectMap.Clear();
+                foreach (ParticleObject o in objects)
+                {
+                    o.ContinueTracking();
+                    foreach (Vector2Int v in o.GetOccupiedPositions())
+                        objectMap[v] = o;
+                }
                 isTracking = true;
                 anchorIdxHistory.ContinueTracking();
                 UpdateAfterStep(stepFromSecondLastRound, !stepFromSecondLastRound, !stepFromSecondLastRound);
@@ -3177,6 +3219,11 @@ namespace AS2.Sim
                     // We must reset the planned beeps and messages because they have
                     // been loaded for visualization
                     p.ResetPlannedBeepsAndMessages();
+                }
+                foreach (ParticleObject o in objects)
+                {
+                    o.CutOffAtMarker();
+                    o.ContinueTracking();
                 }
                 isTracking = true;
                 anchorIdxHistory.CutOffAtMarker();
@@ -3202,6 +3249,10 @@ namespace AS2.Sim
             foreach (Particle p in particles)
             {
                 p.ShiftTimescale(amount);
+            }
+            foreach (ParticleObject o in objects)
+            {
+                o.ShiftTimescale(amount);
             }
             anchorIdxHistory.ShiftTimescale(amount);
 
@@ -3259,6 +3310,11 @@ namespace AS2.Sim
             {
                 data.particles[i] = particles[i].GenerateSaveData();
             }
+            data.objects = new ParticleObjectSaveData[objects.Count];
+            for (int i = 0; i < objects.Count; i++)
+            {
+                data.objects[i] = objects[i].GenerateSaveData();
+            }
 
             return data;
         }
@@ -3297,6 +3353,14 @@ namespace AS2.Sim
                 {
                     particleMap.Add(p.Head(), p);
                 }
+            }
+
+            foreach (ParticleObjectSaveData oData in data.objects)
+            {
+                ParticleObject o = ParticleObject.CreateFromSaveData(this, oData);
+                objects.Add(o);
+                foreach (Vector2Int v in o.GetOccupiedPositions())
+                    objectMap[v] = o;
             }
 
             if (updateVisuals)

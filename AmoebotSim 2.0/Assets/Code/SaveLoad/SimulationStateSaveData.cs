@@ -33,6 +33,11 @@ namespace AS2
         /// The particles in the system (includes their state histories).
         /// </summary>
         public ParticleStateSaveData[] particles;
+
+        /// <summary>
+        /// The objects in the system (includes their state histories).
+        /// </summary>
+        public ParticleObjectSaveData[] objects;
     }
 
 } // namespace AS2
