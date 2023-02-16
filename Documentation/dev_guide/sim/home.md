@@ -128,3 +128,4 @@ However, most of it is related to more specific features and thus, it is explain
 [11]: xref:AS2.Sim.ParticleSystem.PreviousRound
 [12]: xref:AS2.Sim.Particle
 [13]: xref:AS2.Sim.InitializationParticle
+[14]: xref:AS2.Sim.OpenInitParticle

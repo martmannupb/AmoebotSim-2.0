@@ -20,6 +20,7 @@ The history starts in some round with index $i$ and stores a state for each roun
 An object implementing the interface always has a *marker* that indicates the currently selected round.
 The marker can be moved to any round $\geq i$, which will change the object's state to the one recorded for that round.
 If the object's state changes while the marker is in any round $\geq i + l-1$, a new entry will be recorded and the history will be extended to the current location of the marker, copying the previous state to fill the gap if there is one.
+If the object is in a *tracking* state, adding a new entry for some round $\geq i + l-1$ will automatically move the marker forward to that round.
 
 The history can also be cut off at the marker, meaning that all recorded states after the marker are removed.
 
@@ -34,79 +35,39 @@ In turn, the particles forward the calls to their own histories as part of updat
 
 ## Storing value histories
 
+To store a sequence of values for consecutive rounds efficiently, we only need to record the rounds in which the value *changes*.
+Consider the following example of a range of round indices and corresponding integer values:
+```csharp
+rounds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+values: [3, 3, 4, 1, 1, 1, 7, 7, 3, 5]
+```
+We can store this sequence in a more compact format as follows:
+```csharp
+changeRounds: [0, 2, 3, 6, 8, 9]
+values:       [3, 4, 1, 7, 3, 5]
+```
+This works under the conditions that the range of rounds is consecutive and the values are comparable.
+The value for a given round can be obtained by performing a binary search on the `changeRounds` to find the largest recorded round that is less than or equal to the requested round and returning the value with the same list index as that round.
+For example, when the round `5` is queried, the binary search will find the recorded round `3` at list index `2`, leading to the correct value `1`.
 
-**TODO**
+Note, however, that this system still allows a value to be stored multiple times, like the value `3` in the example.
+For very large data types, we can avoid this by keeping a record of all encountered values and only storing their indices, at the cost of additional runtime for inserting new records:
+```csharp
+rounds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+values: [A, A, B, B, B, C, B, B, A, C]
+=> compact format:
+changeRounds: [0, 2, 5, 6, 8, 9]
+indices:      [0, 1, 2, 1, 0, 2]
+encountered:  [A, B, C]
+```
+
+The generic [`ValueHistory<T>`][4] class implements this system for data types that provide an equality check.
+For an example of the system for more complex objects, see the [`ValueHistoryPinConfiguration`][5] class, which stores compressed versions of pin configurations.
+
 
 
 [1]: xref:AS2.Sim.IReplayHistory
 [2]: xref:AS2.Sim.ParticleSystem
 [3]: xref:AS2.Sim.ParticleSystem.SetMarkerToRound(System.Int32)
-
-
-
-
-**TODO**
-
-
-This page explains how the state of the simulator is defined, how it evolves over time and how it can be changed from the outside.
-
-- **Modes**
-	- The simulator has two modes:
-		- Initialization Mode
-		- Simulation Mode
-	- **Initialization Mode**
-		- Used to define the initial state of a simulation
-		- UI selects an algorithm with parameters for its generation method
-		- Generation method places particle placeholders that store particle parameters
-		- Particle placeholders can also be added, removed, modified manually by the user
-		- There is no movement: the system only has to store the position of each particle
-		- When switching to Simulation Mode, the particle placeholders are replaced by actual particles with attached algorithms
-			- Algorithms are initialized using the parameters stored in the placeholders
-	- **Simulation Mode**
-		- Starts in round 0 with a system of particles
-		- Simulating a round progresses the round counter by 1 and updates the system state
-			- Particle positions and states
-		- All previous states are stored in the history (implicitly)
-		- Previous states can be loaded arbitrarily
-		- Particles cannot be added, moved or removed manually
-			- But their states can be edited in the latest round
-	- Methods to change states are
-		- `InitializationModeStarted(string algorithmName)`
-		- `InitializationModeAborted()`
-		- `InitializationModeFinished(string algorithmName)`
-- **Data structures and other state variables**
-	- List of particles
-		- Simple list containing all particles currently in the system
-		- Separate lists for Init and Simulation Mode
-	- Particle maps
-		- Dictionary mapping grid coordinates to particles
-		- Expanded particles have two keys in the map
-		- Separate maps for Init and Simulation Mode
-	- Maps are updated when the round changes during simulation
-		- Lists need no updates during simulation because particles cannot be added or removed
-	- Round indices
-		- Two indices for the earliest and latest rounds
-			- Keeping track of the entire available range of rounds
-		- Current and previous round indices
-			- Between round simulations, these indices have the same value
-			- Before a round simulation starts, the current index is incremented by one
-			- At the end of a round simulation, the previous index is incremented
-	- Simple flag tracks whether we are in Init Mode or not
-	- `storedSimulationState` and `storedSimulationRound`
-		- When entering Init Mode from Simulation Mode, the current simulation state is stored
-		- `storedSimulationState` indicates whether this was the case
-		- `storedSimulationRound` stores the current round at the time when the state was stored
-	- `inMovePhase` and `inBeepPhase`
-		- Flags indicating the current phase of the round simulation
-		- They are both `false` while no round simulation is going on
-	- `finished` flag
-		- Indicates whether the simulation has finished or not
-		- Simulation has finished as soon as all particles are finished at the end of a round
-		- `finishedRound` stores the round in which the simulation finished
-	- `anchorIdxHistory`
-		- The anchor particle is simply identified by its index in the list of particles
-		- Because it is not used very often, we use its history directly (see history later)
-		- Need no history for Init Mode, so here we only use one int
-	- `selectedAlgorithm`
-		- The algorithm selected during Init Mode
-		- Changes when the user changes the algorithm in the dropdown
+[4]: xref:AS2.Sim.ValueHistory`1
+[5]: xref:AS2.Sim.ValueHistoryPinConfiguration
