@@ -93,7 +93,7 @@ namespace AS2.UI
         private void UpdateUI()
         {
             // Apply updates
-            float realPercentage = Engine.Library.InterpolationConstants.SmoothLerp(movement_expansionPercentage);
+            float realPercentage = Visuals.Library.InterpolationConstants.SmoothLerp(movement_expansionPercentage);
             movement_layoutGroup.padding.left = (int)Mathf.Lerp(movement_layoutGroupLeftPaddingContracted, movement_layoutGroupLeftPaddingExpanded, realPercentage);
             Vector2 rtSize = movement_panelTransform.sizeDelta;
             rtSize.x = Mathf.Lerp(movement_panelTransformWidthContracted, movement_panelTransformWidthExpanded, realPercentage);

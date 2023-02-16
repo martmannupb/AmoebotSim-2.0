@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using UnityEngine;
-using Engine;
 
 // Copyright ©
 // Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
 // Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
 
-namespace Engine.Library {
+namespace AS2.Visuals.Library {
 
 
     // Meshes
