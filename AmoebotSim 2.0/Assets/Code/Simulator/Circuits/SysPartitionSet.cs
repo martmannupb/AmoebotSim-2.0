@@ -423,7 +423,7 @@ namespace AS2.Sim
             else
                 positionTail = polarCoords;
 
-            pinConfig.SetPSPlacementMode(PSPlacementMode.MANUAL);
+            pinConfig.SetPSPlacementMode(PSPlacementMode.MANUAL, head);
 
             // If the pin configuration is marked as planned, apply the same change
             // to the particle's planned PC
