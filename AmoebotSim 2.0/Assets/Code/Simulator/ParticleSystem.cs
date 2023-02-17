@@ -3731,7 +3731,8 @@ namespace AS2.Sim
 
             OpenInitParticle ip = new OpenInitParticle(this, tailPos, chirality, compassDir, headDirection);
 
-            if (particleMapInit.ContainsKey(ip.Tail()) || ip.IsExpanded() && particleMapInit.ContainsKey(ip.Head()))
+            if (particleMapInit.ContainsKey(ip.Tail()) || objectMap.ContainsKey(ip.Tail())
+                || ip.IsExpanded() && (particleMapInit.ContainsKey(ip.Head()) || objectMap.ContainsKey(ip.Head())))
             {
                 Log.Error("Cannot add particle at " + ip.Tail() + ", " + ip.Head() + ", position is already occupied.");
                 return null;
@@ -3843,7 +3844,7 @@ namespace AS2.Sim
                 if (!ip.IsExpanded() || newHeadDir != ip.ExpansionDir)
                 {
                     Vector2Int newHeadPos = ParticleSystem_Utils.GetNbrInDir(ip.Tail(), newHeadDir);
-                    if (TryGetInitParticleAt(newHeadPos, out _))
+                    if (TryGetInitParticleAt(newHeadPos, out _) || objectMap.ContainsKey(newHeadPos))
                     {
                         Log.Warning("Cannot expand particle at " + ip.Tail() + " in direction " + newHeadDir + ", position is already occupied.");
                         return false;
@@ -3961,7 +3962,8 @@ namespace AS2.Sim
 
             OpenInitParticle ip = particlesInit[idx];
 
-            if (particleMapInit.TryGetValue(gridPos, out OpenInitParticle prt) && prt != ip)
+            if (particleMapInit.TryGetValue(gridPos, out OpenInitParticle prt) && prt != ip
+                || objectMap.ContainsKey(gridPos))
             {
                 Log.Error("Cannot move particle to grid position " + gridPos + ": Already occupied.");
                 return;
@@ -4013,7 +4015,9 @@ namespace AS2.Sim
 
             OpenInitParticle ip = particlesInit[idx];
 
-            if (particleMapInit.TryGetValue(gridPosHead, out OpenInitParticle prt1) && prt1 != ip || particleMapInit.TryGetValue(gridPosTail, out OpenInitParticle prt2) && prt2 != ip)
+            if (particleMapInit.TryGetValue(gridPosHead, out OpenInitParticle prt1) && prt1 != ip ||
+                particleMapInit.TryGetValue(gridPosTail, out OpenInitParticle prt2) && prt2 != ip ||
+                objectMap.ContainsKey(gridPosHead) || objectMap.ContainsKey(gridPosTail))
             {
                 Log.Error("Cannot move particle to grid positions " + gridPosHead + ", " + gridPosTail + ": Already occupied.");
                 return;
@@ -4030,6 +4034,33 @@ namespace AS2.Sim
             particleMapInit[gridPosTail] = ip;
             particleMapInit[gridPosHead] = ip;
             ip.graphics.UpdateReset();
+        }
+
+        // TODO: How to handle visualization and adding new parts?
+        // For now: Have to add completed objects
+        public void AddObject(ParticleObject o)
+        {
+            // Make sure that the position is not occupied
+            Vector2Int[] verts = o.GetOccupiedPositions();
+            foreach (Vector2Int v in verts)
+            {
+                if (particleMapInit.ContainsKey(v))
+                {
+                    Log.Error("Cannot add object: Grid node " + v + " is occupied by a particle.");
+                    return;
+                }
+                if (objectMap.ContainsKey(v))
+                {
+                    Log.Error("Cannot add object: Grid node " + v + " is already occupied by an object.");
+                    return;
+                }
+            }
+
+            // Add the object
+            o.CalculateBoundaries();
+            objects.Add(o);
+            foreach (Vector2Int v in verts)
+                objectMap[v] = o;
         }
     }
 

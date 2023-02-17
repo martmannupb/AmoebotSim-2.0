@@ -127,6 +127,16 @@ namespace AS2
             }
         }
 
+        public ParticleObject CreateObject(Vector2Int pos)
+        {
+            return new ParticleObject(pos, system);
+        }
+
+        public void AddObjectToSystem(ParticleObject o)
+        {
+            system.AddObject(o);
+        }
+
         /// <summary>
         /// Generates a system with a fixed number of particles using a
         /// randomized breadth-first-search algorithm that leaves out some
