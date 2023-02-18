@@ -76,6 +76,12 @@ namespace AS2.Algos.ObjectTest
             o.AddPosition(new Vector2Int(6, 3));
             o.AddPosition(new Vector2Int(3, 1));
             o.AddPosition(new Vector2Int(3, 2));
+            o.AddPosition(new Vector2Int(5, 2));
+            o.AddPosition(new Vector2Int(6, 2));
+            o.AddPosition(new Vector2Int(5, 0));
+            o.AddPosition(new Vector2Int(6, 0));
+            o.AddPosition(new Vector2Int(7, 0));
+            o.AddPosition(new Vector2Int(7, 1));
 
             AddObjectToSystem(o);
         }
