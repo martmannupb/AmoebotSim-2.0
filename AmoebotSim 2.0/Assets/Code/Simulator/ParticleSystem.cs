@@ -234,6 +234,10 @@ namespace AS2.Sim
         /// </summary>
         private Dictionary<Vector2Int, OpenInitParticle> particleMapInit = new Dictionary<Vector2Int, OpenInitParticle>();
 
+        private List<ParticleObject> objectsInit = new List<ParticleObject>();
+        private Dictionary<Vector2Int, ParticleObject> objectMapInit = new Dictionary<Vector2Int, ParticleObject>();
+
+
         /// <summary>
         /// The index of the anchor particle selected in initialization mode.
         /// <c>-1</c> means that no anchor has been selected, in which case the
@@ -397,8 +401,8 @@ namespace AS2.Sim
             particlesInit.Clear();
             particleMapInit.Clear();
 
-            objects.Clear();
-            objectMap.Clear();
+            objectsInit.Clear();
+            objectMapInit.Clear();
             anchorInit = -1;
         }
 
@@ -2672,6 +2676,23 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// System-side implementation of <see cref="ParticleAlgorithm.HasObjectAt(Direction, bool)"/>.
+        /// <para>See also <seealso cref="HasNeighborAt(Particle, Direction, bool)"/>.</para>
+        /// </summary>
+        /// <param name="p">The particle checking for a neighboring object.</param>
+        /// <param name="locDir">The local direction of the particle in which to check.</param>
+        /// <param name="fromHead">If <c>true</c>, check relative to <paramref name="p"/>'s head,
+        /// otherwise check relative to the tail.</param>
+        /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
+        /// relative to <paramref name="p"/>'s head or tail is occupied by an object.</returns>
+        public bool HasObjectAt(Particle p, Direction locDir, bool fromHead = true)
+        {
+            Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+            // Return true iff there is an object at that position
+            return objectMap.ContainsKey(pos);
+        }
+
+        /// <summary>
         /// System-side implementation of <see cref="ParticleAlgorithm.Expand(Direction)"/>.
         /// <para>
         /// Schedules a <see cref="ParticleAction"/> to expand the given particle in the
@@ -3530,6 +3551,11 @@ namespace AS2.Sim
             else
                 anchorIdxHistory.RecordValueAtMarker(0);
 
+            foreach (ParticleObject o in objectsInit)
+                objects.Add(o);
+            foreach (KeyValuePair<Vector2Int, ParticleObject> kv in objectMapInit)
+                objectMap[kv.Key] = kv.Value;
+
             ResetInit();
             storedSimulationState = false;
             inInitializationState = false;
@@ -3731,8 +3757,8 @@ namespace AS2.Sim
 
             OpenInitParticle ip = new OpenInitParticle(this, tailPos, chirality, compassDir, headDirection);
 
-            if (particleMapInit.ContainsKey(ip.Tail()) || objectMap.ContainsKey(ip.Tail())
-                || ip.IsExpanded() && (particleMapInit.ContainsKey(ip.Head()) || objectMap.ContainsKey(ip.Head())))
+            if (particleMapInit.ContainsKey(ip.Tail()) || objectMapInit.ContainsKey(ip.Tail())
+                || ip.IsExpanded() && (particleMapInit.ContainsKey(ip.Head()) || objectMapInit.ContainsKey(ip.Head())))
             {
                 Log.Error("Cannot add particle at " + ip.Tail() + ", " + ip.Head() + ", position is already occupied.");
                 return null;
@@ -3844,7 +3870,7 @@ namespace AS2.Sim
                 if (!ip.IsExpanded() || newHeadDir != ip.ExpansionDir)
                 {
                     Vector2Int newHeadPos = ParticleSystem_Utils.GetNbrInDir(ip.Tail(), newHeadDir);
-                    if (TryGetInitParticleAt(newHeadPos, out _) || objectMap.ContainsKey(newHeadPos))
+                    if (TryGetInitParticleAt(newHeadPos, out _) || objectMapInit.ContainsKey(newHeadPos))
                     {
                         Log.Warning("Cannot expand particle at " + ip.Tail() + " in direction " + newHeadDir + ", position is already occupied.");
                         return false;
@@ -3963,7 +3989,7 @@ namespace AS2.Sim
             OpenInitParticle ip = particlesInit[idx];
 
             if (particleMapInit.TryGetValue(gridPos, out OpenInitParticle prt) && prt != ip
-                || objectMap.ContainsKey(gridPos))
+                || objectMapInit.ContainsKey(gridPos))
             {
                 Log.Error("Cannot move particle to grid position " + gridPos + ": Already occupied.");
                 return;
@@ -4017,7 +4043,7 @@ namespace AS2.Sim
 
             if (particleMapInit.TryGetValue(gridPosHead, out OpenInitParticle prt1) && prt1 != ip ||
                 particleMapInit.TryGetValue(gridPosTail, out OpenInitParticle prt2) && prt2 != ip ||
-                objectMap.ContainsKey(gridPosHead) || objectMap.ContainsKey(gridPosTail))
+                objectMapInit.ContainsKey(gridPosHead) || objectMapInit.ContainsKey(gridPosTail))
             {
                 Log.Error("Cannot move particle to grid positions " + gridPosHead + ", " + gridPosTail + ": Already occupied.");
                 return;
@@ -4040,6 +4066,12 @@ namespace AS2.Sim
         // For now: Have to add completed objects
         public void AddObject(ParticleObject o)
         {
+            if (!inInitializationState)
+            {
+                Log.Warning("Cannot add objects in simulation mode.");
+                return;
+            }
+
             // Make sure that the position is not occupied
             Vector2Int[] verts = o.GetOccupiedPositions();
             foreach (Vector2Int v in verts)
@@ -4049,7 +4081,7 @@ namespace AS2.Sim
                     Log.Error("Cannot add object: Grid node " + v + " is occupied by a particle.");
                     return;
                 }
-                if (objectMap.ContainsKey(v))
+                if (objectMapInit.ContainsKey(v))
                 {
                     Log.Error("Cannot add object: Grid node " + v + " is already occupied by an object.");
                     return;
@@ -4058,9 +4090,9 @@ namespace AS2.Sim
 
             // Add the object
             o.CalculateBoundaries();
-            objects.Add(o);
+            objectsInit.Add(o);
             foreach (Vector2Int v in verts)
-                objectMap[v] = o;
+                objectMapInit[v] = o;
         }
     }
 

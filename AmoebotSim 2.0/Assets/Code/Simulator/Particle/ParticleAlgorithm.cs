@@ -847,6 +847,28 @@ namespace AS2.Sim
             return particle.system.FindNeighborsWithProperty<T>(particle, prop, startDir, startAtHead, withChirality, maxSearch, maxReturn);
         }
 
+        /// <summary>
+        /// Checks if this particle has a neighboring object in the given local direction.
+        /// For expanded particles, there are two different nodes in the same local direction,
+        /// one seen from the particle's head and one seen from its tail.
+        /// <para>See also <see cref="HasNeighborAt(Direction, bool)"/>.</para>
+        /// <para>
+        /// Note: This method returns information from the snapshot taken at the
+        /// beginning of the current round. Its return value will not change during
+        /// this activation.
+        /// </para>
+        /// </summary>
+        /// <param name="locDir">The local direction in which to search for a neighboring object.</param>
+        /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
+        /// the particle's tail (only relevant if this particle is expanded).</param>
+        /// <returns><c>true</c> if and only if there is a grid node occupied by an object in the
+        /// specified position.</returns>
+        public bool HasObjectAt(Direction locDir, bool fromHead = true)
+        {
+            CheckActive("Neighbor object information is not available for other particles.");
+            return particle.system.HasObjectAt(particle, locDir, fromHead);
+        }
+
 
         /*
          * Bond management

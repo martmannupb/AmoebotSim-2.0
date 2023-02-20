@@ -26,6 +26,18 @@ namespace AS2.Sim
         private ValueHistory<Vector2Int> positionHistory;
         private List<Vector2Int> occupiedRel;
 
+        /// <summary>
+        /// The absolute offset from the object's initial location,
+        /// accumulated by joint movements.
+        /// </summary>
+        public Vector2Int jmOffset;
+
+        /// <summary>
+        /// Indicates whether this object has already received a
+        /// joint movement offset from 
+        /// </summary>
+        public bool receivedJmOffset = false;
+
         public ParticleObject(Vector2Int position, ParticleSystem system)
         {
             this.position = position;
@@ -166,7 +178,7 @@ namespace AS2.Sim
             List<BoundaryVertex> vertices = ComputeBoundaryVertices(outerBoundary, successorDirs);
 
             // Draw the object as debug lines
-            DrawBoundaryVertices(vertices);
+            DrawBoundaryVertices(vertices, Color.black, 20.0f);
 
             // Now do the same for the inner boundaries
             for (int i = 0; i < occupiedRel.Count; i++)
@@ -185,7 +197,7 @@ namespace AS2.Sim
                             List<Direction> succDirs = new List<Direction>();
                             ComputeBoundary(node, d, boundaryNodes, succDirs, xMin, yMin, matrix, finishedDirections);
                             List<BoundaryVertex> verts = ComputeBoundaryVertices(boundaryNodes, succDirs);
-                            DrawBoundaryVertices(verts);
+                            DrawBoundaryVertices(verts, Color.blue, 20.0f);
                         }
                     }
 
@@ -282,7 +294,7 @@ namespace AS2.Sim
             return vertices;
         }
 
-        private void DrawBoundaryVertices(List<BoundaryVertex> vertices)
+        private void DrawBoundaryVertices(List<BoundaryVertex> vertices, Color color, float duration = 30.0f)
         {
             List<Vector3> points = new List<Vector3>();
             float dist = 0.5f;
@@ -296,7 +308,7 @@ namespace AS2.Sim
             }
             for (int i = 0; i < points.Count; i++)
             {
-                Debug.DrawLine(points[i], points[(i + 1) % points.Count], Color.black, 30.0f);
+                Debug.DrawLine(points[i], points[(i + 1) % points.Count], color, duration);
             }
         }
 
