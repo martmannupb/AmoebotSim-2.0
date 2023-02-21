@@ -20,11 +20,21 @@ namespace AS2.Sim
             }
         }
 
+        private static List<ParticleObject> allObjects = new List<ParticleObject>();
+
         private ParticleSystem system;
 
         private Vector2Int position;
         private ValueHistory<Vector2Int> positionHistory;
         private List<Vector2Int> occupiedRel;
+
+        private List<BoundaryVertex> tmpOuterBoundaryVerts = new List<BoundaryVertex>();
+        private List<List<BoundaryVertex>> tmpInnerBoundaryVerts = new List<List<BoundaryVertex>>();
+
+        public Vector2Int Position
+        {
+            get { return position; }
+        }
 
         /// <summary>
         /// The absolute offset from the object's initial location,
@@ -45,6 +55,19 @@ namespace AS2.Sim
             positionHistory = new ValueHistory<Vector2Int>(position, system.CurrentRound);
             occupiedRel = new List<Vector2Int>();
             occupiedRel.Add(Vector2Int.zero);
+
+            allObjects.Add(this);
+        }
+
+        public void Free()
+        {
+            allObjects.Remove(this);
+        }
+
+        public static void DrawObjects()
+        {
+            foreach (ParticleObject o in allObjects)
+                o.Draw();
         }
 
         public void AddPosition(Vector2Int pos)
@@ -71,8 +94,16 @@ namespace AS2.Sim
             return p;
         }
 
+        public void MovePosition(Vector2Int offset)
+        {
+            position += offset;
+            positionHistory.RecordValueInRound(position, system.CurrentRound);
+        }
+
         public void CalculateBoundaries()
         {
+            float tStart = Time.realtimeSinceStartup;
+
             // If we have only one part: Simple solution
             if (occupiedRel.Count == 1)
             {
@@ -177,10 +208,13 @@ namespace AS2.Sim
             // Determine vertices on the boundary
             List<BoundaryVertex> vertices = ComputeBoundaryVertices(outerBoundary, successorDirs);
 
+            tmpOuterBoundaryVerts = vertices;
+
             // Draw the object as debug lines
-            DrawBoundaryVertices(vertices, Color.black, 20.0f);
+            //DrawBoundaryVertices(vertices, Color.black, 20.0f);
 
             // Now do the same for the inner boundaries
+            tmpInnerBoundaryVerts.Clear();
             for (int i = 0; i < occupiedRel.Count; i++)
             {
                 Vector2Int node = occupiedRel[i];
@@ -197,12 +231,15 @@ namespace AS2.Sim
                             List<Direction> succDirs = new List<Direction>();
                             ComputeBoundary(node, d, boundaryNodes, succDirs, xMin, yMin, matrix, finishedDirections);
                             List<BoundaryVertex> verts = ComputeBoundaryVertices(boundaryNodes, succDirs);
-                            DrawBoundaryVertices(verts, Color.blue, 20.0f);
+                            tmpInnerBoundaryVerts.Add(verts);
+                            //DrawBoundaryVertices(verts, Color.blue, 20.0f);
                         }
                     }
 
                 }
             }
+
+            Log.Debug("Calculated boundaries in " + (Time.realtimeSinceStartup - tStart) + "s");
         }
 
         private void ComputeBoundary(Vector2Int start, Direction initialBoundaryDir,
@@ -310,6 +347,13 @@ namespace AS2.Sim
             {
                 Debug.DrawLine(points[i], points[(i + 1) % points.Count], color, duration);
             }
+        }
+
+        private void Draw()
+        {
+            DrawBoundaryVertices(tmpOuterBoundaryVerts, Color.black, 0.1f);
+            for (int i = 0; i < tmpInnerBoundaryVerts.Count; i++)
+                DrawBoundaryVertices(tmpInnerBoundaryVerts[i], Color.blue, 0.1f);
         }
 
 

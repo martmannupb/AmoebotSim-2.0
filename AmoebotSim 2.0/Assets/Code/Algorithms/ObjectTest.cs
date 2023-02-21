@@ -43,14 +43,33 @@ namespace AS2.Algos.ObjectTest
         // The movement activation method
         public override void ActivateMove()
         {
-            // Implement the movement code here
-            for (int i = 0; i < 6; i++)
+            if (IsContracted())
             {
-                Direction d = DirectionHelpers.Cardinal(i);
-                if (HasObjectAt(d))
-                    Log.Debug("Object in direction " + d);
-                else
-                    Log.Debug("No object in direction " + d);
+                // Find a direction into which we can expand
+                Direction objDir = Direction.NONE;
+                for (int i = 0; i < 6; i++)
+                {
+                    Direction d = DirectionHelpers.Cardinal(i);
+                    if (HasObjectAt(d))
+                    {
+                        Log.Debug("Object in direction " + d);
+                        if (!HasObjectAt(d.Opposite()))
+                        {
+                            // Can expand here!
+                            objDir = d;
+                        }
+                    }
+                    else
+                        Log.Debug("No object in direction " + d);
+                }
+
+                if (objDir != Direction.NONE)
+                {
+                    // Must mark all bonds for the movement to work
+                    foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                        MarkBond(d);
+                    Expand(objDir);
+                }
             }
         }
 
