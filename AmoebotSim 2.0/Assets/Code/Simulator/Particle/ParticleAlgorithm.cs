@@ -869,6 +869,24 @@ namespace AS2.Sim
             return particle.system.HasObjectAt(particle, locDir, fromHead);
         }
 
+        /// <summary>
+        /// Gets this particle's neighbor object in the given local direction. The position to
+        /// check is determined in the same way as in <see cref="HasObjectAt(Direction, bool)"/>.
+        /// <para>
+        /// Note: This method returns information from the snapshot taken at the
+        /// beginning of the current round. Its return value will not change during
+        /// this activation.
+        /// </para>
+        /// </summary>
+        /// <param name="locDir">The local direction from which to get the neighbor object.</param>
+        /// <param name="fromHead">If <c>true</c>, look from the particle's head, otherwise look from
+        /// the particle's tail (only relevant if this particle is expanded).</param>
+        /// <returns>The neighboring object in the specified position.</returns>
+        public IParticleObject GetObjectAt(Direction locDir, bool fromHead = true)
+        {
+            CheckActive("Neighbor object information is not available for other particles.");
+            return particle.system.GetObjectAt(particle, locDir, fromHead);
+        }
 
         /*
          * Bond management

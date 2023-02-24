@@ -127,9 +127,9 @@ namespace AS2
             }
         }
 
-        public ParticleObject CreateObject(Vector2Int pos)
+        public ParticleObject CreateObject(Vector2Int pos, int identifier = 0)
         {
-            return new ParticleObject(pos, system);
+            return new ParticleObject(pos, system, identifier);
         }
 
         public void AddObjectToSystem(ParticleObject o)
@@ -158,38 +158,105 @@ namespace AS2
             if (numParticles < 1)
                 return;
 
+            List<Vector2Int> positions = GenerateRandomConnectedPositions(Vector2Int.zero, numParticles, holeProb);
+            foreach (Vector2Int pos in positions)
+            {
+                AddParticle(pos, Direction.NONE, chirality, compassDir);
+            }
+
+            return;
+        }
+
+        public List<Vector2Int> GenerateRandomConnectedPositions(Vector2Int startPos, int numPositions, float holeProb = 0.3f,
+            bool fillHoles = false, System.Func<Vector2Int, bool> excludeFunc = null, bool allowExcludedHoles = true)
+        {
+            List<Vector2Int> positions = new List<Vector2Int>();
+
+            if (numPositions < 1)
+                return positions;
+
             int n = 1;
-            // Always start by adding a particle at position (0, 0)
+            // Always start by adding the start position
             List<Vector2Int> candidates = new List<Vector2Int>();
-            Vector2Int node = new Vector2Int(0, 0);
-            AddParticle(node, Direction.NONE, chirality, compassDir);
+            Vector2Int node = startPos;
+            positions.Add(node);
 
             for (int d = 0; d < 6; d++)
                 candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
 
             HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();       // Occupied by particles
-            HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Reserved for holes
+            HashSet<Vector2Int> holes = new HashSet<Vector2Int>();          // Reserved for holes
+            HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Excluded from available positions by exclude function
             occupied.Add(node);
 
-            int numExcludedChosen = 0;
+            // Mechanism for checking whether the placement is blocked
+            int numIterationsBeforeCheck = numPositions / 10 + 1;           // Number of iterations without placement until block is checked
+            int numIterationsWithoutChange = 0;
+            bool somethingChanged;
 
-            while (n < numParticles)
+            while (n < numPositions)
             {
-                // Find next position
+                somethingChanged = false;
                 Vector2Int newPos = Vector2Int.zero;
-                bool choseExcluded = false;
+                bool foundNewPos = false;
+                bool choseHole = false;
+
+                // If nothing has changed for too long: Check if any position is eligible at all
+                if (numIterationsWithoutChange >= numIterationsBeforeCheck)
+                {
+                    // First check candidates
+                    for (int i = 0; i < candidates.Count; i++)
+                    {
+                        Vector2Int pos = candidates[i];
+                        if (!IsPositionHoleOpening(pos, occupied, excludeFunc, allowExcludedHoles))
+                        {
+                            newPos = pos;
+                            foundNewPos = true;
+                            candidates.RemoveAt(i);
+                            break;
+                        }
+                    }
+
+                    // Then check hole positions if necessary
+                    if (!foundNewPos)
+                    {
+                        foreach (Vector2Int pos in holes)
+                        {
+                            if (!IsPositionHoleOpening(pos, occupied, excludeFunc, allowExcludedHoles))
+                            {
+                                newPos = pos;
+                                foundNewPos = true;
+                                choseHole = true;
+                            }
+                            if (foundNewPos)
+                                break;
+                        }
+                        if (foundNewPos)
+                            holes.Remove(newPos);
+                    }
+
+                    // If we still have not found a suitable position, abort
+                    if (!foundNewPos)
+                    {
+                        Log.Warning("Could not place " + numPositions + " positions due to placement restrictions. Only placed " + positions.Count);
+                        return positions;
+                    }
+                }
+
+                // Find next position
                 if (candidates.Count > 0)
                 {
                     int randIdx = Random.Range(0, candidates.Count);
                     newPos = candidates[randIdx];
                     candidates.RemoveAt(randIdx);
+                    foundNewPos = true;
                 }
-                else
+                else if (holes.Count > 0)
                 {
-                    // Choose random excluded position
-                    int randIdx = Random.Range(0, excluded.Count);
+                    // Choose random hole position
+                    int randIdx = Random.Range(0, holes.Count);
                     int i = 0;
-                    foreach (Vector2Int v in excluded)
+                    foreach (Vector2Int v in holes)
                     {
                         if (i == randIdx)
                         {
@@ -198,32 +265,135 @@ namespace AS2
                         }
                         i++;
                     }
-                    numExcludedChosen++;
-                    excluded.Remove(newPos);
-                    choseExcluded = true;
-                }
-
-                // Either use newPos to insert particle or to insert hole
-                if (choseExcluded || Random.Range(0.0f, 1.0f) >= holeProb)
-                {
-                    for (int d = 0; d < 6; d++)
-                    {
-                        Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
-                        if (!occupied.Contains(nbr) && !excluded.Contains(nbr) && !candidates.Contains(nbr))
-                            candidates.Add(nbr);
-                    }
-
-                    AddParticle(newPos, Direction.NONE, chirality, compassDir);
-
-                    occupied.Add(newPos);
-                    n++;
+                    holes.Remove(newPos);
+                    choseHole = true;
+                    foundNewPos = true;
                 }
                 else
                 {
-                    excluded.Add(newPos);
+                    // No holes or candidates to choose from, jump to next check
+                    foundNewPos = false;
+                    numIterationsWithoutChange = numIterationsBeforeCheck;
+                }
+
+                if (foundNewPos)
+                {
+                    // Either use newPos to insert position or to insert hole
+                    if (choseHole || Random.Range(0.0f, 1.0f) >= holeProb)
+                    {
+                        // Check whether this position is permissible if we do not allow holes
+                        if (fillHoles)
+                        {
+                            if (IsPositionHoleOpening(newPos, occupied, excludeFunc, allowExcludedHoles))
+                            {
+                                // Position is not allowed, return it to where it was before
+                                if (choseHole)
+                                    holes.Add(newPos);
+                                else
+                                    candidates.Add(newPos);
+                                continue;
+                            }
+                        }
+
+                        // Add available neighbors to candidates
+                        for (int d = 0; d < 6; d++)
+                        {
+                            Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
+                            if (!occupied.Contains(nbr) && !holes.Contains(nbr) && !candidates.Contains(nbr) && !excluded.Contains(nbr))
+                            {
+                                // First check if the position should be excluded
+                                if (excludeFunc != null && excludeFunc(nbr))
+                                    excluded.Add(nbr);
+                                else
+                                    candidates.Add(nbr);
+                            }
+                        }
+
+                        positions.Add(newPos);
+                        occupied.Add(newPos);
+                        n++;
+                        somethingChanged = true;
+                    }
+                    else
+                    {
+                        holes.Add(newPos);
+                        somethingChanged = true;
+                    }
+                }
+
+                if (!somethingChanged)
+                    numIterationsWithoutChange++;
+                else
+                    numIterationsWithoutChange = 0;
+            }
+
+            return positions;
+        }
+
+        private bool IsPositionHoleOpening(Vector2Int pos, HashSet<Vector2Int> occupied,
+            System.Func<Vector2Int, bool> excludeFunc, bool allowExcludedHoles)
+        {
+            // TODO: This does not work correctly yet
+
+            // Go around the position and count the number of switches between
+            // occupied and unoccupied neighbors
+            // If the number of switches is greater than 2, the position is a tunnel opening
+            // and occupying it would create a hole
+            // (The number of switches is always even, 0 and 2 switches are allowed,
+            // 4 or more are not allowed)
+            // If a neighbor position is excluded and excluded holes are allowed, the position
+            // inherits the state of its predecessor ()
+            Vector2Int[] nbrs = new Vector2Int[6];
+            bool[] nbrOccupied = new bool[6];
+            for (int d = 0; d < 6; d++)
+            {
+                Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(pos, DirectionHelpers.Cardinal(d));
+                nbrs[d] = nbr;
+                nbrOccupied[d] = occupied.Contains(nbr);
+            }
+            // Update for excluded holes
+            if (allowExcludedHoles && excludeFunc != null)
+            {
+                bool[] isExcluded = new bool[6];
+                int numExcluded = 0;
+                for (int i = 0; i < 6; i++)
+                {
+                    isExcluded[i] = excludeFunc(nbrs[i]);
+                    if (isExcluded[i])
+                        numExcluded++;
+                }
+                // Only have to do something if at least some but not all positions are excluded
+                if (numExcluded > 0 && numExcluded < 6)
+                {
+                    // Make sure the last position has a valid occupation state
+                    // by copying the state of the previous non-excluded position
+                    if (isExcluded[5])
+                    {
+                        int i = 4;
+                        while (isExcluded[i])
+                            i--;
+                        nbrOccupied[5] = nbrOccupied[i];
+                    }
+                    // For the rest of the excluded positions, copy the previous occupation state
+                    for (int i = 0; i < 5; i++)
+                    {
+                        if (isExcluded[i])
+                        {
+                            nbrOccupied[i] = nbrOccupied[(i + 5) % 6];
+                        }
+                    }
                 }
             }
-            Log.Debug("Created system with " + n + " particles, had to choose " + numExcludedChosen + " excluded positions");
+
+            // Now count the number of switches
+            int numSwitches = 0;
+            for (int i = 0; i < 6; i++)
+            {
+                if (nbrOccupied[i] != nbrOccupied[(i + 1) % 6])
+                    numSwitches++;
+            }
+
+            return numSwitches > 2;
         }
     }
 

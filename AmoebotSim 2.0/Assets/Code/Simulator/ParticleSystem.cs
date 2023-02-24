@@ -2791,6 +2791,25 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// System-side implementation of <see cref="ParticleAlgorithm.GetObjectAt(Direction, bool)"/>.
+        /// <para>See also <seealso cref="HasObjectAt(Particle, Direction, bool)"/>.</para>
+        /// </summary>
+        /// <param name="p">The particle trying to get its neighbor object.</param>
+        /// <param name="locDir">The local direction of the particle in which to check.</param>
+        /// <param name="fromHead">If <c>true</c>, check relative to <paramref name="p"/>'s head,
+        /// otherwise check relative to the tail.</param>
+        /// <returns>The neighboring object in the specified position, if it exists,
+        /// otherwise <c>null</c>.</returns>
+        public IParticleObject GetObjectAt(Particle p, Direction locDir, bool fromHead = true)
+        {
+            Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+            if (objectMap.TryGetValue(pos, out ParticleObject obj))
+                return obj;
+            else
+                return null;
+        }
+
+        /// <summary>
         /// System-side implementation of <see cref="ParticleAlgorithm.Expand(Direction)"/>.
         /// <para>
         /// Schedules a <see cref="ParticleAction"/> to expand the given particle in the
@@ -3635,6 +3654,13 @@ namespace AS2.Sim
             if (!inInitializationState)
                 return;
 
+            // Perform connectivity check
+            if (!IsInitSystemConnected())
+            {
+                throw new SimulatorStateException("System is not connected! Cannot start simulation.");
+            }
+
+            // Initialize the particles
             foreach (InitializationParticle ip in particlesInit)
             {
                 Particle p = ParticleFactory.CreateParticle(this, algorithmName, ip, true);
@@ -3649,15 +3675,18 @@ namespace AS2.Sim
             else
                 anchorIdxHistory.RecordValueAtMarker(0);
 
+            // Copy the objects
             foreach (ParticleObject o in objectsInit)
                 objects.Add(o);
             foreach (KeyValuePair<Vector2Int, ParticleObject> kv in objectMapInit)
                 objectMap[kv.Key] = kv.Value;
 
+            // Clean up Init Mode state
             ResetInit(false);
             storedSimulationState = false;
             inInitializationState = false;
 
+            // Prepare initial system state
             SetInitialParticleBonds();
             ComputeBondsStatic();
             FinishMovementInfo();
@@ -3666,6 +3695,65 @@ namespace AS2.Sim
             DiscoverCircuits(false);
             UpdateAllParticleVisuals(true);
             CleanupAfterRound();
+        }
+
+        /// <summary>
+        /// Checks whether the initialization system is connected such that
+        /// the particles form a connected component and each object neighbors
+        /// at least one particle.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the particle system is connected
+        /// and all objects are adjacent to the system.</returns>
+        private bool IsInitSystemConnected()
+        {
+            if (particlesInit.Count == 0)
+                return true;
+
+            // Perform simple BFS on particles, make sure that
+            // all objects are visited
+            Queue<InitializationParticle> queue = new Queue<InitializationParticle>();
+            HashSet<InitializationParticle> visitedParticles = new HashSet<InitializationParticle>();
+            HashSet<ParticleObject> visitedObjects = new HashSet<ParticleObject>();
+
+            queue.Enqueue(particlesInit[0]);
+            visitedParticles.Add(particlesInit[0]);
+
+            while (queue.Count > 0)
+            {
+                InitializationParticle ip = queue.Dequeue();
+                int numNbrs = ip.IsExpanded() ? 10 : 6;
+                for (int label = 0; label < numNbrs; label++)
+                {
+                    Vector2Int pos = ParticleSystem_Utils.GetNbrInDir(ParticleSystem_Utils.IsHeadLabel(label, ip.ExpansionDir) ? ip.Head() : ip.Tail(),
+                        ParticleSystem_Utils.GetDirOfLabel(label, ip.ExpansionDir));
+                    if (particleMapInit.TryGetValue(pos, out OpenInitParticle p))
+                    {
+                        if (!visitedParticles.Contains(p))
+                        {
+                            visitedParticles.Add(p);
+                            queue.Enqueue(p);
+                        }
+                    }
+                    else if (objectMapInit.TryGetValue(pos, out ParticleObject o))
+                    {
+                        visitedObjects.Add(o);
+                    }
+                }
+            }
+
+            // Not connected if we have not visited all particles and all objects
+            if (visitedParticles.Count < particlesInit.Count)
+            {
+                Log.Warning("Particle system is not connected!");
+                return false;
+            }
+            if (visitedObjects.Count < objectsInit.Count)
+            {
+                Log.Warning("Not all objects are connected to the system!");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>

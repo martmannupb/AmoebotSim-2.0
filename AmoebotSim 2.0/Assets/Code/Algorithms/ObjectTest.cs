@@ -52,7 +52,7 @@ namespace AS2.Algos.ObjectTest
                     Direction d = DirectionHelpers.Cardinal(i);
                     if (HasObjectAt(d))
                     {
-                        Log.Debug("Object in direction " + d);
+                        Log.Debug("Object in direction " + d + ", ID is " + GetObjectAt(d).Identifier);
                         if (!HasObjectAt(d.Opposite()))
                         {
                             // Can expand here!
@@ -88,7 +88,7 @@ namespace AS2.Algos.ObjectTest
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(int numPositions = 10, float holeProb = 0.3f)
+        public void Generate(int numPositions = 10, float holeProb = 0.3f, bool fillHoles = false)
         {
             // Must add at least one particle
             AddParticle(Vector2Int.zero);
@@ -114,76 +114,11 @@ namespace AS2.Algos.ObjectTest
             //AddObjectToSystem(o);
 
             // Create an object using the Random With Holes algorithm
-            int n = 1;
-            // Start the object at some root position
-            List<Vector2Int> candidates = new List<Vector2Int>();
-            Vector2Int node = new Vector2Int(10, 0);
-            ParticleObject o = CreateObject(node);
-
-            for (int d = 0; d < 6; d++)
-            {
-                Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d));
-                if (nbr != Vector2Int.zero)
-                    candidates.Add(nbr);
-            }
-
-            HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();       // Occupied by particles
-            HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Reserved for holes
-            occupied.Add(node);
-
-            int numExcludedChosen = 0;
-
-            while (n < numPositions)
-            {
-                // Find next position
-                Vector2Int newPos = Vector2Int.zero;
-                bool choseExcluded = false;
-                if (candidates.Count > 0)
-                {
-                    int randIdx = Random.Range(0, candidates.Count);
-                    newPos = candidates[randIdx];
-                    candidates.RemoveAt(randIdx);
-                }
-                else
-                {
-                    // Choose random excluded position
-                    int randIdx = Random.Range(0, excluded.Count);
-                    int i = 0;
-                    foreach (Vector2Int v in excluded)
-                    {
-                        if (i == randIdx)
-                        {
-                            newPos = v;
-                            break;
-                        }
-                        i++;
-                    }
-                    numExcludedChosen++;
-                    excluded.Remove(newPos);
-                    choseExcluded = true;
-                }
-
-                // Either use newPos to insert object or to insert hole
-                if (choseExcluded || Random.Range(0.0f, 1.0f) >= holeProb)
-                {
-                    for (int d = 0; d < 6; d++)
-                    {
-                        Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
-                        if (nbr != Vector2Int.zero && !occupied.Contains(nbr) && !excluded.Contains(nbr) && !candidates.Contains(nbr))
-                            candidates.Add(nbr);
-                    }
-
-                    o.AddPosition(newPos);
-
-                    occupied.Add(newPos);
-                    n++;
-                }
-                else
-                {
-                    excluded.Add(newPos);
-                }
-            }
-            Log.Debug("Created object with " + n + " nodes, had to choose " + numExcludedChosen + " excluded positions");
+            ParticleObject o = CreateObject(new Vector2Int(10, 0));
+            System.Func<Vector2Int, bool> excludeFunc = (Vector2Int v) => v == Vector2Int.zero;
+            List<Vector2Int> positions = GenerateRandomConnectedPositions(o.Position, numPositions, holeProb, fillHoles, excludeFunc, true);
+            foreach (Vector2Int p in positions)
+                o.AddPosition(p);
 
             AddObjectToSystem(o);
         }

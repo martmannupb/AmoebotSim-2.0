@@ -5,15 +5,37 @@ using UnityEngine;
 namespace AS2.Sim
 {
 
-    public class ParticleObject : IReplayHistory
+    /// <summary>
+    /// Represents objects in the particle system that the
+    /// particles can interact with.
+    /// <para>
+    /// An object is a structure occupying a connected set of
+    /// grid nodes. Particles can connect to objects through
+    /// bonds and move the objects using the joint movement
+    /// mechanisms. Objects do not form bonds to each other
+    /// since there would be no way of releasing the bonds.
+    /// </para>
+    /// </summary>
+    public class ParticleObject : IParticleObject, IReplayHistory
     {
 
-        public struct BoundaryVertex
+        /// <summary>
+        /// Represents a vertex used to draw the border of
+        /// an object or hexagon.
+        /// </summary>
+        public struct ObjectBorderVertex
         {
+            /// <summary>
+            /// The grid node to which the vertex belongs.
+            /// </summary>
             public Vector2Int node;
+            /// <summary>
+            /// The direction in which the vertex lies relative
+            /// to the node's center.
+            /// </summary>
             public Direction dir;
 
-            public BoundaryVertex(Vector2Int node, Direction dir)
+            public ObjectBorderVertex(Vector2Int node, Direction dir)
             {
                 this.node = node;
                 this.dir = dir;
@@ -24,16 +46,55 @@ namespace AS2.Sim
 
         private ParticleSystem system;
 
+        /// <summary>
+        /// The global root position of the object. This position
+        /// marks the origin of the local coordinate system and is
+        /// always occupied by a node.
+        /// </summary>
         private Vector2Int position;
+        /// <summary>
+        /// The history of root positions.
+        /// </summary>
         private ValueHistory<Vector2Int> positionHistory;
+        /// <summary>
+        /// The list of positions occupied by the object in
+        /// local coordinates, i.e., relative to the root position.
+        /// </summary>
         private List<Vector2Int> occupiedRel;
 
-        private List<BoundaryVertex> tmpOuterBoundaryVerts = new List<BoundaryVertex>();
-        private List<List<BoundaryVertex>> tmpInnerBoundaryVerts = new List<List<BoundaryVertex>>();
+        private List<ObjectBorderVertex> tmpOuterBoundaryVerts = new List<ObjectBorderVertex>();
+        private List<List<ObjectBorderVertex>> tmpInnerBoundaryVerts = new List<List<ObjectBorderVertex>>();
 
+        /// <summary>
+        /// The current root position of the object.
+        /// </summary>
         public Vector2Int Position
         {
             get { return position; }
+        }
+
+        /// <summary>
+        /// The object's int identifier. Does not have to be unique.
+        /// </summary>
+        private int identifier = 0;
+
+        public int Identifier
+        {
+            get { return identifier; }
+            set { identifier = value; }
+        }
+
+        /// <summary>
+        /// The display color of the object.
+        /// </summary>
+        private Color color = Color.black;
+        /// <summary>
+        /// The display color of the object.
+        /// </summary>
+        public Color Color
+        {
+            get { return color; }
+            set { color = value; }
         }
 
         /// <summary>
@@ -48,10 +109,11 @@ namespace AS2.Sim
         /// </summary>
         public bool receivedJmOffset = false;
 
-        public ParticleObject(Vector2Int position, ParticleSystem system)
+        public ParticleObject(Vector2Int position, ParticleSystem system, int identifier = 0)
         {
             this.position = position;
             this.system = system;
+            this.identifier = identifier;
             positionHistory = new ValueHistory<Vector2Int>(position, system.CurrentRound);
             occupiedRel = new List<Vector2Int>();
             occupiedRel.Add(Vector2Int.zero);
@@ -70,6 +132,14 @@ namespace AS2.Sim
                 o.Draw();
         }
 
+        /// <summary>
+        /// Adds a new position to the object. Does not
+        /// have to be connected to the other positions
+        /// as long as the object is connected when it is
+        /// inserted into the system.
+        /// </summary>
+        /// <param name="pos">The global position that should
+        /// be added to the object.</param>
         public void AddPosition(Vector2Int pos)
         {
             pos.x -= position.x;
@@ -77,12 +147,25 @@ namespace AS2.Sim
             AddPositionRel(pos);
         }
 
+        /// <summary>
+        /// Similar to <see cref="AddPosition(Vector2Int)"/>,
+        /// but specifies the new position in local coordinates,
+        /// relative to the object's root position.
+        /// </summary>
+        /// <param name="posRel">The local position that should
+        /// be added to the object.</param>
         public void AddPositionRel(Vector2Int posRel)
         {
             if (!occupiedRel.Contains(posRel))
                 occupiedRel.Add(posRel);
         }
 
+        /// <summary>
+        /// Computes the set of global positions occupied
+        /// by the object.
+        /// </summary>
+        /// <returns>An array containing the global grid
+        /// coordinates of all nodes occupied by the object.</returns>
         public Vector2Int[] GetOccupiedPositions()
         {
             Vector2Int[] p = occupiedRel.ToArray();
@@ -94,12 +177,22 @@ namespace AS2.Sim
             return p;
         }
 
+        /// <summary>
+        /// Moves the entire object by the given offset.
+        /// </summary>
+        /// <param name="offset">The offset vector by which
+        /// the object should be moved.</param>
         public void MovePosition(Vector2Int offset)
         {
             position += offset;
             positionHistory.RecordValueInRound(position, system.CurrentRound);
         }
 
+        /// <summary>
+        /// Calculates all boundaries of the object so that the object
+        /// can be rendered nicely. This should be called once when the
+        /// simulation starts and the object is complete.
+        /// </summary>
         public void CalculateBoundaries()
         {
             float tStart = Time.realtimeSinceStartup;
@@ -107,7 +200,14 @@ namespace AS2.Sim
             // If we have only one part: Simple solution
             if (occupiedRel.Count == 1)
             {
-                // TODO
+                // Boundary consists only of the 6 vertices of our origin node
+                Vector2Int node = occupiedRel[0];
+
+                tmpOuterBoundaryVerts.Clear();
+                tmpInnerBoundaryVerts.Clear();
+
+                foreach (Direction d in DirectionHelpers.Iterate60(Direction.ENE, 6, true))
+                    tmpOuterBoundaryVerts.Add(new ObjectBorderVertex(node, d));
                 return;
             }
 
@@ -163,16 +263,6 @@ namespace AS2.Sim
              */
             bool[,] finishedDirections = new bool[occupiedRel.Count, 6];
 
-            //Log.Debug("Matrix:");
-            //string s = "";
-            //for (int y = sizeY + 1; y >= 0; y--)
-            //{
-            //    for (int x = 0; x < sizeX + 2; x++)
-            //        s += matrix[x, y] != -1 ? "X" : "O";
-            //    s += "\n";
-            //}
-            //Log.Debug(s);
-
             /*
              * Start with outer boundary
              */
@@ -206,7 +296,7 @@ namespace AS2.Sim
             ComputeBoundary(top, boundaryDir, outerBoundary, successorDirs, xMin, yMin, matrix, finishedDirections);
 
             // Determine vertices on the boundary
-            List<BoundaryVertex> vertices = ComputeBoundaryVertices(outerBoundary, successorDirs);
+            List<ObjectBorderVertex> vertices = ComputeBoundaryVertices(outerBoundary, successorDirs);
 
             tmpOuterBoundaryVerts = vertices;
 
@@ -230,7 +320,7 @@ namespace AS2.Sim
                             List<Vector2Int> boundaryNodes = new List<Vector2Int>();
                             List<Direction> succDirs = new List<Direction>();
                             ComputeBoundary(node, d, boundaryNodes, succDirs, xMin, yMin, matrix, finishedDirections);
-                            List<BoundaryVertex> verts = ComputeBoundaryVertices(boundaryNodes, succDirs);
+                            List<ObjectBorderVertex> verts = ComputeBoundaryVertices(boundaryNodes, succDirs);
                             tmpInnerBoundaryVerts.Add(verts);
                             //DrawBoundaryVertices(verts, Color.blue, 20.0f);
                         }
@@ -242,6 +332,35 @@ namespace AS2.Sim
             Log.Debug("Calculated boundaries in " + (Time.realtimeSinceStartup - tStart) + "s");
         }
 
+        /// <summary>
+        /// Helper method that collects the boundary nodes and
+        /// direction vectors for the boundary to which the given
+        /// node belongs.
+        /// </summary>
+        /// <param name="start">The starting node whose boundary
+        /// should be computed.</param>
+        /// <param name="initialBoundaryDir">A cardinal direction that
+        /// points from <paramref name="start"/> towards the empty
+        /// space the boundary is adjacent to.</param>
+        /// <param name="boundaryNodes">The list of local grid
+        /// coordinates into which the boundary nodes should be written.
+        /// The list will start with the given start node and follow the
+        /// boundary in clockwise or counter-clockwise order, depending
+        /// on whether it is the outer or an inner boundary.</param>
+        /// <param name="successorDirs">The list of directions into which
+        /// the successor directions should be written. The element at
+        /// position <c>i</c> will contain the direction that points from
+        /// the boundary node at position <c>i</c> to its successor.</param>
+        /// <param name="xMin">The minimum x coordinate of the object's
+        /// bounding rectangle, used for indexing the object matrix.</param>
+        /// <param name="yMin">The minimum y coordinate of the object's
+        /// bounding rectangle, used for indexing the object matrix.</param>
+        /// <param name="matrix">The object matrix that maps relative
+        /// coordinates in the bounding rectangle to node indices.</param>
+        /// <param name="finishedDirections">A matrix indicating which
+        /// directions of which node have been considered for boundary
+        /// detection already. Will be updated with all nodes and
+        /// directions belonging to the new boundary.</param>
         private void ComputeBoundary(Vector2Int start, Direction initialBoundaryDir,
             List<Vector2Int> boundaryNodes, List<Direction> successorDirs,
             int xMin, int yMin,
@@ -306,9 +425,20 @@ namespace AS2.Sim
             successorDirs.Add(ParticleSystem_Utils.VectorToDirection(boundaryNodes[0] - boundaryNodes[boundaryNodes.Count - 1]));
         }
 
-        private List<BoundaryVertex> ComputeBoundaryVertices(List<Vector2Int> boundaryNodes, List<Direction> successorDirs)
+        /// <summary>
+        /// Turns the given list of boundary nodes and successor
+        /// directions into a list of vertices that can be used
+        /// for rendering the object.
+        /// </summary>
+        /// <param name="boundaryNodes">The list of local coordinates
+        /// of all nodes belonging to the boundary.</param>
+        /// <param name="successorDirs">The list of successor directions
+        /// belonging to the given boundary.</param>
+        /// <returns>A list of border vertices representing the given
+        /// boundary.</returns>
+        private List<ObjectBorderVertex> ComputeBoundaryVertices(List<Vector2Int> boundaryNodes, List<Direction> successorDirs)
         {
-            List<BoundaryVertex> vertices = new List<BoundaryVertex>();
+            List<ObjectBorderVertex> vertices = new List<ObjectBorderVertex>();
 
             for (int i = 0; i < boundaryNodes.Count; i++)
             {
@@ -323,7 +453,7 @@ namespace AS2.Sim
                 Direction vertexDir = incoming.Opposite().Rotate30(-1);
                 for (int j = 0; j < numTurns + 3; j++)
                 {
-                    vertices.Add(new BoundaryVertex(node, vertexDir));
+                    vertices.Add(new ObjectBorderVertex(node, vertexDir));
                     vertexDir = vertexDir.Rotate60(-1);
                 }
             }
@@ -331,11 +461,18 @@ namespace AS2.Sim
             return vertices;
         }
 
-        private void DrawBoundaryVertices(List<BoundaryVertex> vertices, Color color, float duration = 30.0f)
+        /// <summary>
+        /// Draws the given boundary using the simple
+        /// debug line function.
+        /// </summary>
+        /// <param name="vertices">The vertices of the boundary.</param>
+        /// <param name="color">The color in which the boundary should be drawn.</param>
+        /// <param name="duration">The duration for which the lines should be displayed.</param>
+        private void DrawBoundaryVertices(List<ObjectBorderVertex> vertices, Color color, float duration = 30.0f)
         {
             List<Vector3> points = new List<Vector3>();
             float dist = 0.5f;
-            foreach (BoundaryVertex bv in vertices)
+            foreach (ObjectBorderVertex bv in vertices)
             {
                 Vector3 pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(bv.node + position, -2);
                 float angle = (bv.dir.ToInt() * 60 + 30) * Mathf.Deg2Rad;
@@ -417,8 +554,10 @@ namespace AS2.Sim
         public ParticleObjectSaveData GenerateSaveData()
         {
             ParticleObjectSaveData data = new ParticleObjectSaveData();
+            data.identifier = identifier;
             data.positionHistory = positionHistory.GenerateSaveData();
             data.occupiedRel = occupiedRel.ToArray();
+            data.color = color;
             return data;
         }
 
@@ -429,10 +568,12 @@ namespace AS2.Sim
 
         private ParticleObject(ParticleSystem system, ParticleObjectSaveData data)
         {
+            identifier = data.identifier;
             positionHistory = new ValueHistory<Vector2Int>(data.positionHistory);
             position = positionHistory.GetMarkedValue();
             this.system = system;
             occupiedRel = new List<Vector2Int>(data.occupiedRel);
+            color = data.color;
         }
 
     }
