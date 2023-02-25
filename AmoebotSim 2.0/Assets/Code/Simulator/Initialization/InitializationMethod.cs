@@ -333,8 +333,6 @@ namespace AS2
         private bool IsPositionHoleOpening(Vector2Int pos, HashSet<Vector2Int> occupied,
             System.Func<Vector2Int, bool> excludeFunc, bool allowExcludedHoles)
         {
-            // TODO: This does not work correctly yet
-
             // Go around the position and count the number of switches between
             // occupied and unoccupied neighbors
             // If the number of switches is greater than 2, the position is a tunnel opening
@@ -351,37 +349,16 @@ namespace AS2
                 nbrs[d] = nbr;
                 nbrOccupied[d] = occupied.Contains(nbr);
             }
-            // Update for excluded holes
+            // Find excluded holes if applicable
+            bool[] isExcluded = new bool[6];
+            int numExcluded = 0;
             if (allowExcludedHoles && excludeFunc != null)
             {
-                bool[] isExcluded = new bool[6];
-                int numExcluded = 0;
                 for (int i = 0; i < 6; i++)
                 {
                     isExcluded[i] = excludeFunc(nbrs[i]);
                     if (isExcluded[i])
                         numExcluded++;
-                }
-                // Only have to do something if at least some but not all positions are excluded
-                if (numExcluded > 0 && numExcluded < 6)
-                {
-                    // Make sure the last position has a valid occupation state
-                    // by copying the state of the previous non-excluded position
-                    if (isExcluded[5])
-                    {
-                        int i = 4;
-                        while (isExcluded[i])
-                            i--;
-                        nbrOccupied[5] = nbrOccupied[i];
-                    }
-                    // For the rest of the excluded positions, copy the previous occupation state
-                    for (int i = 0; i < 5; i++)
-                    {
-                        if (isExcluded[i])
-                        {
-                            nbrOccupied[i] = nbrOccupied[(i + 5) % 6];
-                        }
-                    }
                 }
             }
 
@@ -393,7 +370,147 @@ namespace AS2
                     numSwitches++;
             }
 
+            // If we have a hole situation: Check whether closing the hole is
+            // allowed due to excluded positions
+            if (numSwitches > 2 && allowExcludedHoles && excludeFunc != null)
+            {
+                // First compute the bounding rect of the occupied shape
+                int xMin = pos.x;
+                int xMax = pos.x;
+                int yMin = pos.y;
+                int yMax = pos.y;
+                foreach (Vector2Int v in occupied)
+                {
+                    if (v.x < xMin)
+                        xMin = v.x;
+                    else if (v.x > xMax)
+                        xMax = v.x;
+                    if (v.y < yMin)
+                        yMin = v.y;
+                    else if (v.y > yMax)
+                        yMax = v.y;
+                }
+                xMin -= 2;
+                xMax += 2;
+                yMin -= 2;
+                yMax += 2;
+                Vector2Int topLeft = new Vector2Int(xMin, yMax);
+                Vector2Int topRight = new Vector2Int(xMax, yMax);
+                Vector2Int botLeft = new Vector2Int(xMin, yMin);
+                Vector2Int botRight = new Vector2Int(xMax, yMin);
+
+                // Find all openings that do not contain an excluded position and
+                // perform a search in each of them: If the search reaches an
+                // excluded position or a position outside of the occupied shape,
+                // the hole may be closed
+
+                // First find the start indices of the openings and determine whether or not they
+                // contain excluded positions
+                int startIdx = -1;
+                for (int i = 0; i < 6; i++)
+                {
+                    if (!nbrOccupied[i] && nbrOccupied[(i + 5) % 6])
+                    {
+                        startIdx = i;
+                        break;
+                    }
+                }
+                int holeIndex = -1;
+                int[] startIndices = new int[3];
+                bool[] hasExcluded = new bool[3];
+                for (int i = 0; i < 6; i++)
+                {
+                    int idx = (startIdx + i) % 6;
+                    if (!nbrOccupied[idx] && nbrOccupied[(idx + 5) % 6])
+                    {
+                        // A hole starts here
+                        holeIndex++;
+                        startIndices[holeIndex] = idx;
+                    }
+                    // This works because the first idx already starts a hole region
+                    if (isExcluded[idx])
+                        hasExcluded[holeIndex] = true;
+                }
+
+                // Now perform a search for each of the hole openings
+                for (int i = 0; i <= holeIndex; i++)
+                {
+                    if (!hasExcluded[i])
+                    {
+                        // Get the start node and find out which of the corner nodes is the closest
+                        Vector2Int startNode = nbrs[startIndices[i]];
+                        int distTL = Distance(startNode, topLeft);
+                        int distTR = Distance(startNode, topRight);
+                        int distBL = Distance(startNode, botLeft);
+                        int distBR = Distance(startNode, botRight);
+                        int minDist = Mathf.Min(distTL, distTR, distBL, distBR);
+                        Vector2Int goalNode;
+                        if (distTL == minDist)
+                            goalNode = topLeft;
+                        else if (distTR == minDist)
+                            goalNode = topRight;
+                        else if (distBL == minDist)
+                            goalNode = botLeft;
+                        else
+                            goalNode = botRight;
+
+                        if (!HoleValidSearch(startNode, goalNode, pos, occupied, excludeFunc))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                // If all openings are fine, the hole may be closed
+                return false;
+            }
+
             return numSwitches > 2;
+        }
+
+        private int Distance(Vector2Int p1, Vector2Int p2)
+        {
+            Vector2Int to = p2 - p1;
+            // If the signs of the two distance components are equal,
+            // we have to cover both of them
+            // If they have opposite signs, we can cover the smaller
+            // distance while moving toward the bigger one
+            if (to.x * to.y >= 0)
+                return Mathf.Abs(to.x + to.y);
+            else
+                return Mathf.Max(Mathf.Abs(to.x), Mathf.Abs(to.y));
+        }
+
+        private bool HoleValidSearch(Vector2Int startNode, Vector2Int goalNode, Vector2Int openingPos,
+            HashSet<Vector2Int> occupied, System.Func<Vector2Int, bool> excludeFunc)
+        {
+            // Start BFS at start node, searching for goal node or excluded position
+            // If no goal or excluded position is found, return false
+            Queue<Vector2Int> queue = new Queue<Vector2Int>();
+            HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+            queue.Enqueue(startNode);
+            visited.Add(startNode);
+            visited.Add(openingPos);
+
+            while (queue.Count > 0)
+            {
+                Vector2Int node = queue.Dequeue();
+                // Goal is reached if we are at the same x or y level as the goal node
+                // (goal is corner of the bounding rect) or the node is excluded
+                if (node.x == goalNode.x || node.y == goalNode.y || excludeFunc(node))
+                    return true;
+
+                for (int i = 0; i < 6; i++)
+                {
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(i));
+                    if (!visited.Contains(nbr) && !occupied.Contains(nbr))
+                    {
+                        visited.Add(nbr);
+                        queue.Enqueue(nbr);
+                    }
+                }
+            }
+
+            return false;
         }
     }
 
