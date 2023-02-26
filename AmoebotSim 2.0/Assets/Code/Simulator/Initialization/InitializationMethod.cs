@@ -23,6 +23,89 @@ namespace AS2
         /// </summary>
         private AS2.Sim.ParticleSystem system;
 
+        private class DistanceSortedVectorList
+        {
+            private List<Vector2Int> list;
+            private Vector2Int center;
+
+            public DistanceSortedVectorList(Vector2Int center)
+            {
+                list = new List<Vector2Int>();
+                this.center = center;
+            }
+
+            public Vector2Int this[int index]
+            {
+                get { return list[index]; }
+            }
+
+            public void Clear()
+            {
+                list.Clear();
+            }
+
+            public int Count
+            {
+                get { return list.Count; }
+            }
+
+            public void Remove(Vector2Int v)
+            {
+                list.Remove(v);
+            }
+
+            public void RemoveAt(int index)
+            {
+                list.RemoveAt(index);
+            }
+
+            public bool Contains(Vector2Int v)
+            {
+                return list.Contains(v);
+            }
+
+            public void Add(Vector2Int v)
+            {
+                // Empty list: Just add the new vector
+                if (list.Count == 0)
+                {
+                    list.Add(v);
+                    return;
+                }
+
+                // Check if new vector can be added at the front or the back
+                int distNew = ParticleSystem_Utils.GridDistance(v, center);
+                int distFirst = ParticleSystem_Utils.GridDistance(list[0], center);
+                int distLast = ParticleSystem_Utils.GridDistance(list[list.Count - 1], center);
+                if (distNew < distFirst)
+                {
+                    list.Insert(0, v);
+                    return;
+                }
+                else if (distNew >= distLast)
+                {
+                    list.Add(v);
+                    return;
+                }
+
+                // New vector cannot be added at front or back, use binary search to find correct location
+                int left = 0;
+                int right = list.Count - 1;
+                int middle;
+                int distMiddle;
+                while (left < right - 1)
+                {
+                    middle = (left + right) / 2;
+                    distMiddle = ParticleSystem_Utils.GridDistance(list[middle], center);
+                    if (distNew < distMiddle)
+                        right = middle;
+                    else
+                        left = middle;
+                }
+                list.Insert(right, v);
+            }
+        }
+
         public InitializationMethod(AS2.Sim.ParticleSystem system)
         {
             this.system = system;
@@ -168,7 +251,8 @@ namespace AS2
         }
 
         public List<Vector2Int> GenerateRandomConnectedPositions(Vector2Int startPos, int numPositions, float holeProb = 0.3f,
-            bool fillHoles = false, System.Func<Vector2Int, bool> excludeFunc = null, bool allowExcludedHoles = true)
+            bool fillHoles = false, System.Func<Vector2Int, bool> excludeFunc = null, bool allowExcludedHoles = true,
+            bool prioritizeInner = false, float lambda = 0.1f)
         {
             List<Vector2Int> positions = new List<Vector2Int>();
 
@@ -177,17 +261,24 @@ namespace AS2
 
             int n = 1;
             // Always start by adding the start position
-            List<Vector2Int> candidates = new List<Vector2Int>();
+            DistanceSortedVectorList candidates = new DistanceSortedVectorList(startPos);
             Vector2Int node = startPos;
             positions.Add(node);
-
-            for (int d = 0; d < 6; d++)
-                candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
 
             HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();       // Occupied by particles
             HashSet<Vector2Int> holes = new HashSet<Vector2Int>();          // Reserved for holes
             HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Excluded from available positions by exclude function
             occupied.Add(node);
+
+            // Collect the start position's neighbors
+            for (int d = 0; d < 6; d++)
+            {
+                Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d));
+                if (excludeFunc == null || !excludeFunc(nbr))
+                    candidates.Add(nbr);
+                else
+                    excluded.Add(nbr);
+            }
 
             // Mechanism for checking whether the placement is blocked
             int numIterationsBeforeCheck = numPositions / 10 + 1;           // Number of iterations without placement until block is checked
@@ -227,9 +318,8 @@ namespace AS2
                                 newPos = pos;
                                 foundNewPos = true;
                                 choseHole = true;
-                            }
-                            if (foundNewPos)
                                 break;
+                            }
                         }
                         if (foundNewPos)
                             holes.Remove(newPos);
@@ -244,36 +334,48 @@ namespace AS2
                 }
 
                 // Find next position
-                if (candidates.Count > 0)
+                if (!foundNewPos)
                 {
-                    int randIdx = Random.Range(0, candidates.Count);
-                    newPos = candidates[randIdx];
-                    candidates.RemoveAt(randIdx);
-                    foundNewPos = true;
-                }
-                else if (holes.Count > 0)
-                {
-                    // Choose random hole position
-                    int randIdx = Random.Range(0, holes.Count);
-                    int i = 0;
-                    foreach (Vector2Int v in holes)
+                    if (candidates.Count > 0)
                     {
-                        if (i == randIdx)
+                        // Choose a random candidate using uniform or exponential distribution
+                        int randIdx;
+                        if (prioritizeInner)
                         {
-                            newPos = v;
-                            break;
+                            randIdx = Mathf.RoundToInt(-Mathf.Log(Random.Range(0.00001f, 1f)) / lambda);
+                            randIdx = Mathf.Clamp(randIdx, 0, candidates.Count - 1);
                         }
-                        i++;
+                        else
+                            randIdx = Random.Range(0, candidates.Count);
+                        newPos = candidates[randIdx];
+                        candidates.RemoveAt(randIdx);
+                        foundNewPos = true;
                     }
-                    holes.Remove(newPos);
-                    choseHole = true;
-                    foundNewPos = true;
-                }
-                else
-                {
-                    // No holes or candidates to choose from, jump to next check
-                    foundNewPos = false;
-                    numIterationsWithoutChange = numIterationsBeforeCheck;
+                    else if (holes.Count > 0)
+                    {
+                        // Choose random hole position
+                        int randIdx = Random.Range(0, holes.Count);
+                        int i = 0;
+                        foreach (Vector2Int v in holes)
+                        {
+                            if (i == randIdx)
+                            {
+                                newPos = v;
+                                break;
+                            }
+                            i++;
+                        }
+                        holes.Remove(newPos);
+                        choseHole = true;
+                        foundNewPos = true;
+                    }
+                    else
+                    {
+                        // No holes or candidates to choose from, jump to next blockade check
+                        foundNewPos = false;
+                        numIterationsWithoutChange = numIterationsBeforeCheck;
+                        continue;
+                    }
                 }
 
                 if (foundNewPos)
@@ -282,37 +384,41 @@ namespace AS2
                     if (choseHole || Random.Range(0.0f, 1.0f) >= holeProb)
                     {
                         // Check whether this position is permissible if we do not allow holes
+                        bool permissible = true;
                         if (fillHoles)
                         {
                             if (IsPositionHoleOpening(newPos, occupied, excludeFunc, allowExcludedHoles))
                             {
+                                permissible = false;
                                 // Position is not allowed, return it to where it was before
                                 if (choseHole)
                                     holes.Add(newPos);
                                 else
                                     candidates.Add(newPos);
-                                continue;
                             }
                         }
 
-                        // Add available neighbors to candidates
-                        for (int d = 0; d < 6; d++)
+                        if (permissible)
                         {
-                            Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
-                            if (!occupied.Contains(nbr) && !holes.Contains(nbr) && !candidates.Contains(nbr) && !excluded.Contains(nbr))
+                            // Add available neighbors to candidates
+                            for (int d = 0; d < 6; d++)
                             {
-                                // First check if the position should be excluded
-                                if (excludeFunc != null && excludeFunc(nbr))
-                                    excluded.Add(nbr);
-                                else
-                                    candidates.Add(nbr);
+                                Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
+                                if (!occupied.Contains(nbr) && !holes.Contains(nbr) && !candidates.Contains(nbr) && !excluded.Contains(nbr))
+                                {
+                                    // First check if the position should be excluded
+                                    if (excludeFunc != null && excludeFunc(nbr))
+                                        excluded.Add(nbr);
+                                    else
+                                        candidates.Add(nbr);
+                                }
                             }
-                        }
 
-                        positions.Add(newPos);
-                        occupied.Add(newPos);
-                        n++;
-                        somethingChanged = true;
+                            positions.Add(newPos);
+                            occupied.Add(newPos);
+                            n++;
+                            somethingChanged = true;
+                        }
                     }
                     else
                     {
@@ -439,10 +545,10 @@ namespace AS2
                     {
                         // Get the start node and find out which of the corner nodes is the closest
                         Vector2Int startNode = nbrs[startIndices[i]];
-                        int distTL = Distance(startNode, topLeft);
-                        int distTR = Distance(startNode, topRight);
-                        int distBL = Distance(startNode, botLeft);
-                        int distBR = Distance(startNode, botRight);
+                        int distTL = ParticleSystem_Utils.GridDistance(startNode, topLeft);
+                        int distTR = ParticleSystem_Utils.GridDistance(startNode, topRight);
+                        int distBL = ParticleSystem_Utils.GridDistance(startNode, botLeft);
+                        int distBR = ParticleSystem_Utils.GridDistance(startNode, botRight);
                         int minDist = Mathf.Min(distTL, distTR, distBL, distBR);
                         Vector2Int goalNode;
                         if (distTL == minDist)
@@ -465,19 +571,6 @@ namespace AS2
             }
 
             return numSwitches > 2;
-        }
-
-        private int Distance(Vector2Int p1, Vector2Int p2)
-        {
-            Vector2Int to = p2 - p1;
-            // If the signs of the two distance components are equal,
-            // we have to cover both of them
-            // If they have opposite signs, we can cover the smaller
-            // distance while moving toward the bigger one
-            if (to.x * to.y >= 0)
-                return Mathf.Abs(to.x + to.y);
-            else
-                return Mathf.Max(Mathf.Abs(to.x), Mathf.Abs(to.y));
         }
 
         private bool HoleValidSearch(Vector2Int startNode, Vector2Int goalNode, Vector2Int openingPos,

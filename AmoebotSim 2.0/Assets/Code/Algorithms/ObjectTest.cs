@@ -88,7 +88,8 @@ namespace AS2.Algos.ObjectTest
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(int numPositions = 10, float holeProb = 0.3f, bool fillHoles = false)
+        public void Generate(int numPositions = 10, float holeProb = 0.3f, bool fillHoles = false,
+            bool allowExcludedHoles = false, bool prioritizeInner = false, float lambda = 0.1f)
         {
             // Must add at least one particle
             AddParticle(Vector2Int.zero);
@@ -117,28 +118,15 @@ namespace AS2.Algos.ObjectTest
             ParticleObject o = CreateObject(new Vector2Int(10, 0));
             //System.Func<Vector2Int, bool> excludeFunc = (Vector2Int v) => v == Vector2Int.zero;
             System.Func<Vector2Int, bool> excludeFunc = (Vector2Int v) => {
-                int dist = Distance(v, Vector2Int.zero);
+                int dist = ParticleSystem_Utils.GridDistance(v, Vector2Int.zero);
                 return dist <= 3 || dist >= 12 || v == new Vector2Int(3, 2) || v == new Vector2Int(4, 2)
                 || v == new Vector2Int(-6, -3);
             };
-            List<Vector2Int> positions = GenerateRandomConnectedPositions(o.Position, numPositions, holeProb, fillHoles, excludeFunc, true);
+            List<Vector2Int> positions = GenerateRandomConnectedPositions(o.Position, numPositions, holeProb, fillHoles, excludeFunc, allowExcludedHoles, prioritizeInner, lambda);
             foreach (Vector2Int p in positions)
                 o.AddPosition(p);
 
             AddObjectToSystem(o);
-        }
-
-        private int Distance(Vector2Int p1, Vector2Int p2)
-        {
-            Vector2Int to = p2 - p1;
-            // If the signs of the two distance components are equal,
-            // we have to cover both of them
-            // If they have opposite signs, we can cover the smaller
-            // distance while moving toward the bigger one
-            if (to.x * to.y >= 0)
-                return Mathf.Abs(to.x + to.y);
-            else
-                return Mathf.Max(Mathf.Abs(to.x), Mathf.Abs(to.y));
         }
     }
 
