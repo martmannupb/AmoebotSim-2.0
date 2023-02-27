@@ -250,6 +250,45 @@ namespace AS2
             return;
         }
 
+        /// <summary>
+        /// Randomly generates a set of connected grid positions
+        /// according to the given constraints.
+        /// <para>
+        /// The algorithm performs a breadth-first search starting at the
+        /// given <paramref name="startPos"/>. In each iteration, one of
+        /// the open neighbors is chosen randomly to place a position or
+        /// mark a position as a hole. If there are no more open neighbor
+        /// positions, one of the marked hole positions is chosen instead.
+        /// Before placing a new position, it is checked whether doing this
+        /// would close an inner boundary in case this is not allowed.
+        /// </para>
+        /// </summary>
+        /// <param name="startPos">The start position of the shape. This
+        /// position is always part of the resulting set, even if it should
+        /// be excluded.</param>
+        /// <param name="numPositions">The desired number of grid positions
+        /// in the generated set.</param>
+        /// <param name="holeProb">The probability of a random candidate position
+        /// selected to be kept unoccupied.</param>
+        /// <param name="fillHoles">If <c>true</c>, the system of positions
+        /// is not allowed to have inner boundaries.</param>
+        /// <param name="excludeFunc">A function that marks grid positions
+        /// as excluded such that no excluded position is contained in
+        /// the resulting set. Note that it is possible that the resulting set
+        /// is smaller than desired if there is not enough room for all positions.</param>
+        /// <param name="allowExcludedHoles">If <paramref name="fillHoles"/>
+        /// is <c>true</c>, this controls whether inner boundaries that
+        /// surround empty regions containing excluded positions are allowed.</param>
+        /// <param name="prioritizeInner">If <c>true</c>, new positions are not
+        /// selected uniformly at random from the set of candidate locations, but
+        /// using an exponential distribution that prioritizes positions close to
+        /// the <paramref name="startPos"/>.</param>
+        /// <param name="lambda">The lambda parameter of the exponential distribution
+        /// if <paramref name="prioritizeInner"/> is <c>true</c>. Larger values
+        /// lead to a stronger bias towards positions close to <paramref name="startPos"/>.
+        /// Very small values can lead to a bias towards positions further away.</param>
+        /// <returns>A list of grid positions forming a connected system according
+        /// to the specified constraints.</returns>
         public List<Vector2Int> GenerateRandomConnectedPositions(Vector2Int startPos, int numPositions, float holeProb = 0.3f,
             bool fillHoles = false, System.Func<Vector2Int, bool> excludeFunc = null, bool allowExcludedHoles = true,
             bool prioritizeInner = false, float lambda = 0.1f)
@@ -289,6 +328,7 @@ namespace AS2
             {
                 somethingChanged = false;
                 Vector2Int newPos = Vector2Int.zero;
+                bool bruteForcedPos = false;
                 bool foundNewPos = false;
                 bool choseHole = false;
 
@@ -331,100 +371,107 @@ namespace AS2
                         Log.Warning("Could not place " + numPositions + " positions due to placement restrictions. Only placed " + positions.Count);
                         return positions;
                     }
+                    bruteForcedPos = true;
                 }
 
-                // Find next position
-                if (!foundNewPos)
+                // Decide whether to place position or hole
+                bool placePosition = foundNewPos && choseHole
+                    || !foundNewPos && candidates.Count == 0 || Random.Range(0.0f, 1.0f) >= holeProb;
+
+                if (placePosition)
                 {
-                    if (candidates.Count > 0)
+                    // Select a random position if none has been selected yet
+                    if (!foundNewPos)
                     {
-                        // Choose a random candidate using uniform or exponential distribution
-                        int randIdx;
-                        if (prioritizeInner)
+                        if (candidates.Count > 0)
                         {
-                            randIdx = Mathf.RoundToInt(-Mathf.Log(Random.Range(0.00001f, 1f)) / lambda);
-                            randIdx = Mathf.Clamp(randIdx, 0, candidates.Count - 1);
+                            int randIdx;
+                            if (prioritizeInner)
+                            {
+                                randIdx = Mathf.RoundToInt(-Mathf.Log(Random.Range(0.00001f, 1f)) / lambda);
+                                randIdx = Mathf.Clamp(randIdx, 0, candidates.Count - 1);
+                            }
+                            else
+                                randIdx = Random.Range(0, candidates.Count);
+                            newPos = candidates[randIdx];
+                            candidates.RemoveAt(randIdx);
+                            foundNewPos = true;
+                        }
+                        else if (holes.Count > 0)
+                        {
+                            // Choose random hole position
+                            int randIdx = Random.Range(0, holes.Count);
+                            int i = 0;
+                            foreach (Vector2Int v in holes)
+                            {
+                                if (i == randIdx)
+                                {
+                                    newPos = v;
+                                    break;
+                                }
+                                i++;
+                            }
+                            holes.Remove(newPos);
+                            choseHole = true;
+                            foundNewPos = true;
                         }
                         else
-                            randIdx = Random.Range(0, candidates.Count);
-                        newPos = candidates[randIdx];
-                        candidates.RemoveAt(randIdx);
-                        foundNewPos = true;
-                    }
-                    else if (holes.Count > 0)
-                    {
-                        // Choose random hole position
-                        int randIdx = Random.Range(0, holes.Count);
-                        int i = 0;
-                        foreach (Vector2Int v in holes)
                         {
-                            if (i == randIdx)
-                            {
-                                newPos = v;
-                                break;
-                            }
-                            i++;
+                            // No holes or candidates to choose from, jump to next blockade check
+                            numIterationsWithoutChange = numIterationsBeforeCheck;
+                            continue;
                         }
-                        holes.Remove(newPos);
-                        choseHole = true;
-                        foundNewPos = true;
                     }
-                    else
-                    {
-                        // No holes or candidates to choose from, jump to next blockade check
-                        foundNewPos = false;
-                        numIterationsWithoutChange = numIterationsBeforeCheck;
-                        continue;
-                    }
-                }
 
-                if (foundNewPos)
-                {
-                    // Either use newPos to insert position or to insert hole
-                    if (choseHole || Random.Range(0.0f, 1.0f) >= holeProb)
+                    // Check if the position is allowed if it has not been brute forced anyway
+                    bool permissible = true;
+                    if (!bruteForcedPos && fillHoles)
                     {
-                        // Check whether this position is permissible if we do not allow holes
-                        bool permissible = true;
-                        if (fillHoles)
+                        if (IsPositionHoleOpening(newPos, occupied, excludeFunc, allowExcludedHoles))
                         {
-                            if (IsPositionHoleOpening(newPos, occupied, excludeFunc, allowExcludedHoles))
+                            permissible = false;
+                            // Position is not allowed, return it to where it was before
+                            if (choseHole)
+                                holes.Add(newPos);
+                            else
+                                candidates.Add(newPos);
+                        }
+                    }
+
+                    if (permissible)
+                    {
+                        // Add available neighbors to candidates
+                        for (int d = 0; d < 6; d++)
+                        {
+                            Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
+                            if (!occupied.Contains(nbr) && !holes.Contains(nbr) && !candidates.Contains(nbr) && !excluded.Contains(nbr))
                             {
-                                permissible = false;
-                                // Position is not allowed, return it to where it was before
-                                if (choseHole)
-                                    holes.Add(newPos);
+                                // First check if the position should be excluded
+                                if (excludeFunc != null && excludeFunc(nbr))
+                                    excluded.Add(nbr);
                                 else
-                                    candidates.Add(newPos);
+                                    candidates.Add(nbr);
                             }
                         }
 
-                        if (permissible)
-                        {
-                            // Add available neighbors to candidates
-                            for (int d = 0; d < 6; d++)
-                            {
-                                Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
-                                if (!occupied.Contains(nbr) && !holes.Contains(nbr) && !candidates.Contains(nbr) && !excluded.Contains(nbr))
-                                {
-                                    // First check if the position should be excluded
-                                    if (excludeFunc != null && excludeFunc(nbr))
-                                        excluded.Add(nbr);
-                                    else
-                                        candidates.Add(nbr);
-                                }
-                            }
-
-                            positions.Add(newPos);
-                            occupied.Add(newPos);
-                            n++;
-                            somethingChanged = true;
-                        }
-                    }
-                    else
-                    {
-                        holes.Add(newPos);
+                        positions.Add(newPos);
+                        occupied.Add(newPos);
+                        n++;
                         somethingChanged = true;
                     }
+                }
+                else
+                {
+                    // Want to place a hole, simply select random candidate position
+                    // if none has been chosen yet
+                    if (!foundNewPos)
+                    {
+                        int idx = Random.Range(0, candidates.Count);
+                        newPos = candidates[idx];
+                        candidates.RemoveAt(idx);
+                    }
+                    holes.Add(newPos);
+                    somethingChanged = true;
                 }
 
                 if (!somethingChanged)
@@ -436,6 +483,17 @@ namespace AS2
             return positions;
         }
 
+        /// <summary>
+        /// Random placement helper that checks whether placing a position
+        /// would close an inner boundary that should not be closed.
+        /// </summary>
+        /// <param name="pos">The new position to be placed.</param>
+        /// <param name="occupied">The set of already occupied positions.</param>
+        /// <param name="excludeFunc">A function marking some grid nodes as excluded.</param>
+        /// <param name="allowExcludedHoles">Determines whether inner boundaries around
+        /// empty regions that contain excluded positions are allowed.</param>
+        /// <returns><c>true</c> if and only if placing <paramref name="pos"/> would
+        /// close an inner boundary that should not be closed.</returns>
         private bool IsPositionHoleOpening(Vector2Int pos, HashSet<Vector2Int> occupied,
             System.Func<Vector2Int, bool> excludeFunc, bool allowExcludedHoles)
         {
@@ -573,6 +631,26 @@ namespace AS2
             return numSwitches > 2;
         }
 
+        /// <summary>
+        /// Random placement helper that checks whether a hole that
+        /// would be closed by placing a new position is allowed or not.
+        /// Uses a BFS to search for a goal node that is a corner of the
+        /// occupied system's bounding box or for any excluded position.
+        /// </summary>
+        /// <param name="startNode">The node from which the search
+        /// should be started.</param>
+        /// <param name="goalNode">The closest corner of the occupied
+        /// system's bounding rectangle. If the search ever visits this
+        /// position's x or y coordinate, the hole is considered to be
+        /// open to the outer boundary.</param>
+        /// <param name="openingPos">The grid node where the new position
+        /// should be placed, used to limit the search to this side of
+        /// the hole.</param>
+        /// <param name="occupied">The set of occupied positions.</param>
+        /// <param name="excludeFunc">The function that marks positions
+        /// as excluded. Must not be <c>null</c>.</param>
+        /// <returns><c>true</c> if and only if the search reaches the
+        /// bounding rectangle of the occupied system or an excluded node.</returns>
         private bool HoleValidSearch(Vector2Int startNode, Vector2Int goalNode, Vector2Int openingPos,
             HashSet<Vector2Int> occupied, System.Func<Vector2Int, bool> excludeFunc)
         {
