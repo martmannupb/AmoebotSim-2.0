@@ -6,6 +6,10 @@ using UnityEngine.UI;
 namespace AS2
 {
 
+    /// <summary>
+    /// Database of UI element prefabs used to
+    /// assemble UI content dynamically.
+    /// </summary>
     public static class UIDatabase
     {
         // Settings / Particles

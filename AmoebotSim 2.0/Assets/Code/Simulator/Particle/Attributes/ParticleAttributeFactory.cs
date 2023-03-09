@@ -17,6 +17,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Int"/>.</returns>
         public static ParticleAttribute_Int CreateParticleAttributeInt(Particle p, string name, int initialValue)
         {
+            CheckAttributeName(name);
             ParticleAttribute_Int attr = new ParticleAttribute_Int(p, name, initialValue);
             p.AddAttribute(attr);
             return attr;
@@ -32,6 +33,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Float"/>.</returns>
         public static ParticleAttribute_Float CreateParticleAttributeFloat(Particle p, string name, float initialValue)
         {
+            CheckAttributeName(name);
             ParticleAttribute_Float attr = new ParticleAttribute_Float(p, name, initialValue);
             p.AddAttribute(attr);
             return attr;
@@ -47,6 +49,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_String"/>.</returns>
         public static ParticleAttribute_String CreateParticleAttributeString(Particle p, string name, string initialValue)
         {
+            CheckAttributeName(name);
             ParticleAttribute_String attr = new ParticleAttribute_String(p, name, initialValue);
             p.AddAttribute(attr);
             return attr;
@@ -62,6 +65,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Bool"/>.</returns>
         public static ParticleAttribute_Bool CreateParticleAttributeBool(Particle p, string name, bool initialValue)
         {
+            CheckAttributeName(name);
             ParticleAttribute_Bool attr = new ParticleAttribute_Bool(p, name, initialValue);
             p.AddAttribute(attr);
             return attr;
@@ -77,6 +81,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Direction"/>.</returns>
         public static ParticleAttribute_Direction CreateParticleAttributeDirection(Particle p, string name, Direction initialValue)
         {
+            CheckAttributeName(name);
             ParticleAttribute_Direction attr = new ParticleAttribute_Direction(p, name, initialValue);
             p.AddAttribute(attr);
             return attr;
@@ -93,6 +98,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Enum{T}"/>.</returns>
         public static ParticleAttribute_Enum<EnumT> CreateParticleAttributeEnum<EnumT>(Particle p, string name, EnumT initialValue) where EnumT : System.Enum
         {
+            CheckAttributeName(name);
             ParticleAttribute_Enum<EnumT> attr = new ParticleAttribute_Enum<EnumT>(p, name, initialValue);
             p.AddAttribute(attr);
             return attr;
@@ -112,6 +118,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_PinConfiguration"/>.</returns>
         public static ParticleAttribute_PinConfiguration CreateParticleAttributePinConfiguration(Particle p, string name, PinConfiguration initialValue)
         {
+            CheckAttributeName(name);
             ParticleAttribute_PinConfiguration attr = new ParticleAttribute_PinConfiguration(p, name, initialValue);
             p.AddAttribute(attr);
             return attr;
@@ -131,6 +138,7 @@ namespace AS2.Sim
         /// otherwise <c>null</c>.</returns>
         public static IParticleAttribute CreateParticleAttribute(Particle p, System.Type type, string name, object initialValue)
         {
+            CheckAttributeName(name);
             if (type == typeof(bool))
             {
                 return new ParticleAttribute_Bool(p, name, initialValue != null ? (bool)initialValue : false);
@@ -169,6 +177,25 @@ namespace AS2.Sim
 
             Log.Error("Cannot create attribute: Unsupported type '" + type + "'.");
             return null;
+        }
+
+        /// <summary>
+        /// Checks whether the given attribute name is valid and
+        /// throws an exception if it is not.
+        /// <para>
+        /// Invalid attribute names are <c>"Chirality"</c> and
+        /// <c>"Compass Dir"</c> because these names are used by the
+        /// particle panel to represent a particle's chirality and
+        /// compass direction, which are not actually attributes.
+        /// </para>
+        /// </summary>
+        /// <param name="name">The attribute names to check.</param>
+        private static void CheckAttributeName(string name)
+        {
+            if (name.Equals("Chirality") || name.Equals("Compass Dir"))
+            {
+                throw new SimulationException("Particle attributes cannot have the name '" + name + "'");
+            }
         }
     }
 
