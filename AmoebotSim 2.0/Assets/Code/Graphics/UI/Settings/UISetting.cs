@@ -12,11 +12,16 @@ namespace AS2.UI
     /// <summary>
     /// Listener for the background button for each setting.
     /// </summary>
-    public class ButtonHoldTrigger : MonoBehaviour, IPointerDownHandler, IPointerUpHandler // Note: MonoBehavious + Interfaces replace EventTrigger (which prevented scrolling)
+    public class ButtonHoldTrigger : MonoBehaviour, IPointerDownHandler, IPointerUpHandler // Note: MonoBehaviours + Interfaces replace EventTrigger (which prevented scrolling)
     {
         private float timestampPointerDown = 0f;
         private bool pressed = false;
 
+        /// <summary>
+        /// Callback for when the button has been pressed and has
+        /// just been released. The float parameter specifies the
+        /// time in seconds for which the button was held down.
+        /// </summary>
         public Action<float> mouseClickEvent;
 
         public void OnPointerDown(PointerEventData eventData)
@@ -37,7 +42,7 @@ namespace AS2.UI
         /// <summary>
         /// Button press duration.
         /// </summary>
-        /// <returns>Returns the time the button is being held down. -1 if not pressed.</returns>
+        /// <returns>Returns the time the button is being held down. <c>-1</c> if not pressed.</returns>
         public float GetPressedTime()
         {
             if (pressed) return Time.timeSinceLevelLoad - timestampPointerDown;
@@ -132,9 +137,14 @@ namespace AS2.UI
         /// The inverse of GetValueString().
         /// If calling both methods after each other, nothing should change.
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="input">String representation of the setting's new value.</param>
         public abstract void SetValueString(string input);
 
+        /// <summary>
+        /// Locks the setting so that its value cannot be changed anymore.
+        /// </summary>
+        /// <param name="lockButton">Indicates whether the background button
+        /// should be locked as well.</param>
         public void Lock(bool lockButton = true)
         {
             LockSetting();
@@ -142,6 +152,11 @@ namespace AS2.UI
             locked = true;
         }
 
+        /// <summary>
+        /// Unlocks the setting so that its value can be changed again.
+        /// </summary>
+        /// <param name="unlockButton">Indicates whether the background
+        /// button should be unlocked as well.</param>
         public void Unlock(bool unlockButton = true)
         {
             UnlockSetting();
@@ -149,34 +164,65 @@ namespace AS2.UI
             locked = false;
         }
 
+        /// <summary>
+        /// Enables the background button hold feature.
+        /// </summary>
         public void EnableButtonHold()
         {
             buttonHoldEnabled = true;
         }
 
+        /// <summary>
+        /// Disables the background button hold feature.
+        /// </summary>
         public void DisableButtonHold()
         {
             buttonHoldEnabled = false;
         }
 
+        /// <summary>
+        /// Sets the interactable state of the setting and its background button.
+        /// </summary>
+        /// <param name="interactable">The new interactable state of the setting.</param>
+        /// <param name="backgroundInteractable">The new interactable state of the button.</param>
         public void SetInteractable(bool interactable, bool backgroundInteractable = true)
         {
             button.interactable = backgroundInteractable;
             SetInteractableState(interactable);
         }
 
+        /// <summary>
+        /// Locks the setting to prevent changes.
+        /// </summary>
         protected abstract void LockSetting();
+        /// <summary>
+        /// Unlocks the setting to allow changes again after locking.
+        /// </summary>
         protected abstract void UnlockSetting();
+        /// <summary>
+        /// Sets the setting's interactable state.
+        /// </summary>
+        /// <param name="interactable">The new interactable state.</param>
         protected abstract void SetInteractableState(bool interactable);
+        /// <summary>
+        /// Clears the callback events of the setting.
+        /// </summary>
         public void Clear()
         {
             backgroundButton_onButtonPressedEvent = null;
             backgroundButton_onButtonPressedLongEvent = null;
             ClearRefs();
         }
+        /// <summary>
+        /// Clears all subclass-specific callback events.
+        /// </summary>
         protected abstract void ClearRefs();
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass representing a simple text
+    /// to describe the following section of settings.
+    /// </summary>
     public class UISetting_Header : UISetting
     {
         /// <summary>
@@ -228,6 +274,11 @@ namespace AS2.UI
         }
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass that only serves as
+    /// spacing between other settings. Can be used to create
+    /// groups of settings that are visually separated.
+    /// </summary>
     public class UISetting_Spacing : UISetting
     {
         protected static int id = 0;
@@ -273,6 +324,11 @@ namespace AS2.UI
         }
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass representing a setting that has a
+    /// float or integer value with a lower and upper limit so that it can
+    /// be set using a slider.
+    /// </summary>
     public class UISetting_Slider : UISetting
     {
 
@@ -355,12 +411,20 @@ namespace AS2.UI
         }
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass representing a setting
+    /// with a string value using a simple text input field.
+    /// Can also be used to read in integer and float values as strings.
+    /// </summary>
     public class UISetting_Text : UISetting
     {
         private TMP_InputField input;
         private InputType inputType;
         private string prevText;
 
+        /// <summary>
+        /// Possible format types of the text field.
+        /// </summary>
         public enum InputType
         {
             Text, Int, Float
@@ -475,6 +539,10 @@ namespace AS2.UI
         }
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass for settings that have a fixed number of
+    /// possible values, like enums. The setting is represented as a dropdown menu.
+    /// </summary>
     public class UISetting_Dropdown : UISetting
     {
         private TMP_Dropdown dropdown;
@@ -603,6 +671,10 @@ namespace AS2.UI
         }
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass for simple Boolean settings.
+    /// The setting's value can be changed with a toggle button.
+    /// </summary>
     public class UISetting_Toggle : UISetting
     {
         private Toggle toggle;
@@ -671,6 +743,11 @@ namespace AS2.UI
         }
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass for settings that have a range of values
+    /// and should be selectable by a slider. The values can be float or integer
+    /// numbers or a list of strings for which the slider selects the index.
+    /// </summary>
     public class UISetting_ValueSlider : UISetting
     {
 
@@ -857,6 +934,11 @@ namespace AS2.UI
         }
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass for settings that are value
+    /// ranges. A value range simply defines a minimum and a maximum
+    /// value as either a float or an integer.
+    /// </summary>
     public class UISetting_MinMax : UISetting
     {
 
