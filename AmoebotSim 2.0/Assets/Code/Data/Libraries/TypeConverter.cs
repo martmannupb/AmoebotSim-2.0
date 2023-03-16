@@ -6,6 +6,9 @@ using System;
 namespace AS2
 {
 
+    /// <summary>
+    /// Utility class for converting strings to various types.
+    /// </summary>
     public static class TypeConverter
     {
 
@@ -13,10 +16,12 @@ namespace AS2
 
         /// <summary>
         /// Converts a string to an object of the given type.
+        /// Supported types are bool, int, float, string and enum.
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="text"></param>
-        /// <returns></returns>
+        /// <param name="type">The desired type.</param>
+        /// <param name="text">The string that should be converted.</param>
+        /// <returns>An object of the specified <paramref name="type"/>,
+        /// if possible, otherwise the original input string <paramref name="text"/>.</returns>
         public static object ConvertStringToObjectOfType(Type type, string text)
         {
             if (type == typeof(bool)) return bool.Parse(text);
@@ -32,7 +37,8 @@ namespace AS2
         }
 
         /// <summary>
-        /// Result of the conversion. Check conversionSuccessful to see if it worked.
+        /// Result of the conversion. Check
+        /// <see cref="conversionSuccessful"/> to see if it worked.
         /// </summary>
         public struct ConversionResult
         {
@@ -47,11 +53,13 @@ namespace AS2
         }
 
         /// <summary>
-        /// Depending on the local settings, there are multiple possibilities how to convert a string to float (, or . can be used).
+        /// Depending on the local settings, there are multiple possibilities how to convert
+        /// a string to float (, or . can be used).
         /// Here we try out all possible ways to convert until we find the right one. :)
         /// </summary>
         /// <param name="text">Text to convert to float.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="ConversionResult"/> that represents the outcome of
+        /// the conversion attempt.</returns>
         public static ConversionResult ConvertStringToFloat(string text)
         {
             float output;
@@ -63,10 +71,11 @@ namespace AS2
         }
 
         /// <summary>
-        /// We might want to deliver strings that are easily converted to floats by float.Parse(..) to other classes. This is the method for that.
+        /// We might want to deliver strings that are easily converted to floats by float.Parse(..)
+        /// to other classes. This is the method for that.
         /// </summary>
         /// <param name="text">Text to convert to convertible text.</param>
-        /// <returns></returns>
+        /// <returns>A modified string that can be parsed into a float value easily.</returns>
         public static string ConvertStringInStringThatCanBeConvertedToFloat(string text)
         {
             float output;
@@ -76,9 +85,11 @@ namespace AS2
         }
 
         /// <summary>
-        /// Detects if the local settings use a comma for the conversion of float to string and string to float.
+        /// Detects if the local settings use a comma for the conversion of float to string
+        /// and string to float.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the local settings use the comma
+        /// ',' instead of the period '.' as decimal point.</returns>
         public static bool FloatsUseCommaInsteadOfPoint()
         {
             return floatsUseComma;

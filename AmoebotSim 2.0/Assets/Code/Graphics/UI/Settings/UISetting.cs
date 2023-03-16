@@ -413,8 +413,8 @@ namespace AS2.UI
 
     /// <summary>
     /// <see cref="UISetting"/> subclass representing a setting
-    /// with a string value using a simple text input field.
-    /// Can also be used to read in integer and float values as strings.
+    /// with a numeric or string value using a simple text input field.
+    /// Can be used to read in integer and float values as strings.
     /// </summary>
     public class UISetting_Text : UISetting
     {
