@@ -43,7 +43,7 @@ namespace AS2.UI
         /// <summary>
         /// Updates the background grid camera rotation.
         /// </summary>
-        /// <param name="rotationDegrees"></param>
+        /// <param name="rotationDegrees">The camera rotation in degrees.</param>
         public void SetCameraRotation(float rotationDegrees)
         {
             if (activeCameraRotation != rotationDegrees)
@@ -143,6 +143,7 @@ namespace AS2.UI
 
         /// <summary>
         /// Toggles the background grid on/off.
+        /// Camera movements are disabled while the grid is toggled on.
         /// </summary>
         public void ToggleBackgroundGrid()
         {
@@ -165,9 +166,9 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Returns true if the grid is active.
+        /// Checks if the grid is active.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the grid is currently active.</returns>
         public bool IsActive()
         {
             return isActive;

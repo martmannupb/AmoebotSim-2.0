@@ -5,6 +5,9 @@ using System.Collections.Generic;
 namespace AS2
 {
 
+    /// <summary>
+    /// Static class providing various camera utility functions.
+    /// </summary>
     public static class CameraUtils
     {
 
@@ -13,7 +16,7 @@ namespace AS2
         /// <summary>
         /// Bottom left world position of the main camera. (Unity World Coordinates)
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The (x, y) world coordinates of the active camera's bottom left corner.</returns>
         public static Vector2 MainCamera_WorldPosition_BottomLeft()
         {
             Vector3 worldCoordinates = Camera.main.ScreenToWorldPoint(new Vector3(0f, 0f, 0f));
@@ -23,7 +26,7 @@ namespace AS2
         /// <summary>
         /// Bottom right world position of the main camera. (Unity World Coordinates)
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The (x, y) world coordinates of the active camera's bottom right corner.</returns>
         public static Vector2 MainCamera_WorldPosition_BottomRight()
         {
             Vector3 worldCoordinates = Camera.main.ScreenToWorldPoint(new Vector3(Camera.main.pixelWidth, 0f, 0f));
@@ -33,7 +36,7 @@ namespace AS2
         /// <summary>
         /// Top right world position of the main camera. (Unity World Coordinates)
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The (x, y) world coordinates of the active camera's top right corner.</returns>
         public static Vector2 MainCamera_WorldPosition_TopRight()
         {
             Vector3 worldCoordinates = Camera.main.ScreenToWorldPoint(new Vector3(Camera.main.pixelWidth, Camera.main.pixelHeight, 0));
@@ -43,13 +46,19 @@ namespace AS2
         /// <summary>
         /// Top left world position of the main camera. (Unity World Coordinates)
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The (x, y) world coordinates of the active camera's top left corner.</returns>
         public static Vector2 MainCamera_WorldPosition_TopLeft()
         {
             Vector3 worldCoordinates = Camera.main.ScreenToWorldPoint(new Vector3(0f, Camera.main.pixelHeight, 0));
             return worldCoordinates;
         }
 
+        /// <summary>
+        /// Computes the lower left corner of the active camera's bounding box
+        /// in world coordinates.
+        /// </summary>
+        /// <returns>The (x, y) coordinates of the active camera's bounding box's
+        /// lower left corner.</returns>
         public static Vector2 GetLowestXYCameraWorldPositions()
         {
             Vector2 camPosBL = MainCamera_WorldPosition_BottomLeft();
@@ -59,6 +68,12 @@ namespace AS2
             return new Vector2(Mathf.Min(camPosBL.x, camPosBR.x, camPosTL.x, camPosTR.x), Mathf.Min(camPosBL.y, camPosBR.y, camPosTL.y, camPosTR.y));
         }
 
+        /// <summary>
+        /// Computes the top right corner of the active camera's bounding box
+        /// in world coordinates.
+        /// </summary>
+        /// <returns>The (x, y) coordinates of the active camera's bounding box's
+        /// top right corner.</returns>
         public static Vector2 GetHightestXYCameraWorldPositions()
         {
             Vector2 camPosBL = MainCamera_WorldPosition_BottomLeft();
@@ -71,9 +86,9 @@ namespace AS2
         // Mouse Position -----
 
         /// <summary>
-        /// Mouse world position.
+        /// Computes the current world position of the mouse cursor.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The (x, y) world coordinates of the current mouse position.</returns>
         public static Vector2 MainCamera_Mouse_WorldPosition()
         {
             Vector3 worldCoordinates = Camera.main.ScreenToWorldPoint(Input.mousePosition);

@@ -110,9 +110,10 @@ namespace AS2.UI
         /// <summary>
         /// Displays the overlay over every particle that has the given attribute/value/text.
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="identifier"></param>
-        /// <param name="showOverlay"></param>
+        /// <param name="type">The type of data to display.</param>
+        /// <param name="identifier">Identifier of the field to be displayed, e.g.,
+        /// an attribute name.</param>
+        /// <param name="showOverlay">Determines whether the overlay should be shown.</param>
         public void DisplayText(TextType type, string identifier, bool showOverlay = true)
         {
             // Save what we display
@@ -210,7 +211,8 @@ namespace AS2.UI
         /// <summary>
         /// Called by every particle after their regular movement updates.
         /// </summary>
-        /// <param name="particle"></param>
+        /// <param name="particle">The particle that should be updated.</param>
+        /// <param name="curPos">The current world position of the particle.</param>
         public void ParticleUpdate(IParticleState particle, Vector3 curPos)
         {
             ParticleTextUIData data = particleTextUIData[particle];
@@ -226,7 +228,7 @@ namespace AS2.UI
         /// <param name="particle">The particle to add.</param>
         /// <param name="particlePosition">The initial position of the particle.</param>
         /// <param name="isVisible">If the particle overlay is initially visible.</param>
-        /// <returns></returns>
+        /// <returns>The GameObject holding the overlay text.</returns>
         public GameObject AddParticleTextUI(IParticleState particle, Vector2 particlePosition, bool isVisible = true)
         {
             GameObject go = PoolCreate_particleTextUI(particle, isVisible);
@@ -239,7 +241,8 @@ namespace AS2.UI
         /// Removes a particle from the overlay system.
         /// </summary>
         /// <param name="particle">The particle to remove.</param>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the given particle was
+        /// successfully removed.</returns>
         public bool RemoveParticleTextUI(IParticleState particle)
         {
             if (particleTextUIData.ContainsKey(particle) == false)
@@ -270,7 +273,8 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Updates the particle overlay for a single particle with a text. Also sets a color based on the true/false value.
+        /// Updates the particle overlay for a single particle with a "True" or "False" text.
+        /// Also sets a color based on the true/false value.
         /// </summary>
         /// <param name="particle">The particle for which the overlay should be updated.</param>
         /// <param name="isTrue">The truth value to display.</param>
@@ -289,7 +293,8 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Updates the particle overlay for a single particle with a text. The chirality is displayed visually.
+        /// Updates the particle overlay for a single particle with a text showing its chirality.
+        /// The chirality is displayed using an ASCII character that shows a circular arrow.
         /// </summary>
         /// <param name="particle">The particle for which the overlay should be updated.</param>
         /// <param name="counterClockwise">The chirality to set.</param>
@@ -308,7 +313,9 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Updates the particle overlay for a single particle with a text.
+        /// Updates the particle overlay for a single particle with a text showing its
+        /// compass direction. The direction is displayed using an ASCII character
+        /// that shows an arrow, if this is enabled.
         /// </summary>
         /// <param name="particle">The particle for which the overlay should be updated.</param>
         /// <param name="compassDir">The compass dir to display.</param>
@@ -352,7 +359,7 @@ namespace AS2.UI
         /// <summary>
         /// Sets the rotation of the particle overlay. Use this in combination with the global rotation of the main camera.
         /// </summary>
-        /// <param name="cameraRotationDegrees"></param>
+        /// <param name="cameraRotationDegrees">The main camera's current rotation in degrees.</param>
         public void SetCameraRotation(float cameraRotationDegrees)
         {
             this.cameraRotation = cameraRotationDegrees;
@@ -367,7 +374,7 @@ namespace AS2.UI
 
         /// <summary>
         /// Shows the world space UI (all elements that are flagged as visible). This is the default value.
-        /// Call Hide() to hide it.
+        /// Call <see cref="HideAll"/> to hide it.
         /// </summary>
         public void ShowVisible()
         {
@@ -383,7 +390,7 @@ namespace AS2.UI
 
         /// <summary>
         /// Hides the world space UI.
-        /// Call Show() to show it again.
+        /// Call <see cref="ShowVisible"/> to show it again.
         /// </summary>
         public void HideAll()
         {
@@ -399,6 +406,8 @@ namespace AS2.UI
 
         /// <summary>
         /// Updates the color of the button.
+        /// Called as coroutine to wait until the active and inactive button colors
+        /// have been set by the main UI handler.
         /// </summary>
         /// <param name="button">The button to paint.</param>
         /// <param name="active">If the button is active.</param>
@@ -415,9 +424,9 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Returns true if the UI is active.
+        /// Checks if the UI is active.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the UI overlay is currently active.</returns>
         public bool IsActive()
         {
             return isVisible;
@@ -429,7 +438,12 @@ namespace AS2.UI
 
 
         // Pooling ===================
-
+        /// <summary>
+        /// Makes a new text overlay GameObject available using the pooling mechanism.
+        /// </summary>
+        /// <param name="particle">The particle to which the text overlay should belong.</param>
+        /// <param name="isVisible">Determines whether the overlay element should be visible.</param>
+        /// <returns>The new text overlay GameObject.</returns>
         public GameObject PoolCreate_particleTextUI(IParticleState particle, bool isVisible)
         {
             GameObject go;
@@ -440,6 +454,11 @@ namespace AS2.UI
             return go;
         }
 
+        /// <summary>
+        /// Releases the text overlay element belonging to the given particle
+        /// and returns it to the pool.
+        /// </summary>
+        /// <param name="particle">The particle whose overlay should be released.</param>
         public void PoolRealease_particleTextUI(IParticleState particle)
         {
             // Hide
