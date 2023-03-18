@@ -46,7 +46,7 @@ namespace AS2.UI
         /// <summary>
         /// Receives information from the InputController and converts all inputs from the mouse and keyboard into ClickAction objects that are sent to the InputManager.
         /// </summary>
-        /// <param name="mouseState"></param>
+        /// <param name="mouseState">The mouse state information of the current frame.</param>
         public static void InputTick(MouseState mouseState)
         {
             // Left Mouse Button
@@ -160,8 +160,8 @@ namespace AS2.UI
 
 
         /// <summary>
-        /// Each frame one of these is sent to the InputHandler. It processes the data and converts it to a valid
-        /// InputState.
+        /// Each frame one of these is sent to the InputHandler. It processes the data and
+        /// converts it to a valid InputState.
         /// </summary>
         public struct MouseState
         {

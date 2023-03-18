@@ -7,7 +7,8 @@ namespace AS2.UI
 {
 
     /// <summary>
-    /// Receives the standardizes inputs from the InputHandler and passes them to the simulation environment.
+    /// Receives the standardized inputs from the <see cref="InputHandler"/>
+    /// and passes them to the simulation environment.
     /// </summary>
     public class InputManager
     {
@@ -38,9 +39,9 @@ namespace AS2.UI
 
 
         /// <summary>
-        /// Receives actions from the InputHandler and handles them accordingly.
+        /// Receives actions from the <see cref="InputHandler"/> and handles them accordingly.
         /// </summary>
-        /// <param name="inputAction"></param>
+        /// <param name="inputAction">The input action to be processed.</param>
         public void ProcessInput(InputAction inputAction)
         {
             switch (inputAction.inputType)
@@ -61,9 +62,10 @@ namespace AS2.UI
 
         /// <summary>
         /// Receives mouse actions and processes inputs.
-        /// Addition: A "clickActionEvent" is called that other classes can subscribe to in order to receive updates of the input.
+        /// Addition: A "clickActionEvent" is called that other classes can
+        /// subscribe to in order to receive updates of the input.
         /// </summary>
-        /// <param name="clickAction"></param>
+        /// <param name="clickAction">The mouse click action to be processed.</param>
         private void ProcessInput_Mouse(ClickAction clickAction)
         {
             switch (clickAction.clickButton)

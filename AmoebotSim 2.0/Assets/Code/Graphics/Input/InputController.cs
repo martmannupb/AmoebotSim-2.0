@@ -36,12 +36,6 @@ namespace AS2.UI
             // Debugging
             if (debugMode) DebugMouseInformation();
 
-            // Set Cursor Image
-            //if (References.graphicsFunctions != null)
-            //{
-            //    References.graphicsFunctions.cursorHandler.SetCursorType(CursorHandler.CursorType.GameDefault);
-            //}
-
             // Create Mouse Information
             // We pass all information to the InputHandler
             // Camera Data
