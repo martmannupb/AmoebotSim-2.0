@@ -88,35 +88,62 @@ To find the correct positions and avoid creating too many objects, the handler u
 Additionally, it disables all camera movements while the coordinates are being displayed because updating the coordinates is very resource intensive and can lead to freezes if too many coordinates are displayed at the same time.
 
 
+## Event Listeners
+
+A crucial part of UI development is connecting the visible UI elements like buttons and sliders to the code that should be executed when the user interacts with these elements.
+Additionally, some UI elements may have to be updated automatically when something changes elsewhere in the simulation environment.
+There are three main ways in which this is accomplished in the simulator.
+
+The easiest way to setup a connection between a UI element and code is to establish a reference directly in the Unity Editor.
+GameObjects that represent interactable UI elements have Components with Event properties which are displayed in the Inspector, where references to public methods of MonoBehaviour scripts can be added.
+For example, the Exit button in the top right corner of the UI is represented by a GameObject called `Exit`.
+The Inspector shows that this GameObject has a Component of type Button, which has an Event labeled "On Click ()".
+Below this Event, there is a list of references to methods that should be called when the Event is triggered.
+In our Scene, there is only a single entry in this list, referencing the [`Button_ExitPressed`][18] method of the [`UIHandler`][3] script, which is attached to the `UI` GameObject:
+
+<img src="~/images/button_on_click.png" alt="The Button Component and On Click () Event of the Exit Button" title="The Button Component and On Click () Event of the Exit Button" width="450"/>
+
+References like this can also be added directly from the code, which is necessary if the UI element is created at runtime.
+In this case, the referenced method also does not need to be a public method in a MonoBehaviour script.
+An example for this are the [`UISetting`][8] subclasses: They instantiate UI GameObjects from prefabs and then add private methods as listeners by calling `AddListener` and declaring an implicit `delegate` function.
+```csharp
+toggle.onValueChanged.AddListener(delegate { OnValueChanged(); });
+```
+In this example, `toggle` is a reference to the `Toggle` Component of a toggle button and `OnValueChanged` is a private method of the [`UISetting_Toggle`][19] class.
+
+The [`UISetting`][8] subclasses also demonstrate the third way of reacting to events, which is the C# [`Action<T>`][20] class.
+An object of type `Action<T>` represents a function that takes a single argument of type `T` and which does not return anything.
+There are also variants of actions with multiple parameters.
+Using the `+` operator, more than one function can be added to an action, effectively turning the list of functions assigned to the action into listeners.
+The [`UISetting`][8] subclasses use such actions to "expose" the listener of their control element.
+For example, the [`UISetting_Toggle`][19] class has a public action of type `Action<string, bool>`.
+This action is called with the name of the setting and the current value of the toggle button as parameters whenever the toggle button is pressed.
+This allows users of the [`UISetting_Toggle`][19] class to react to changes of the toggle button by simply adding a listener to the public action.
+The [`ParticleUIHandler`][4] uses this approach extensively for the particle attributes.
+
+Another use case of the `Action<T>` approach is the [`EventDatabase`][21].
+This is a static class containing several static actions that represent events which can trigger reactions in multiple places, like the simulation being started or stopped.
+The [`ButtonHoldTrigger`][22] class has a more specialized role:
+It helps implementing the feature that pressing and holding the name of a particle attribute for two seconds applies its value to all particles by providing the [`Action<float> mouseClickEvent`][23].
+This action is triggered when the button is released, with the float parameter getting the number of seconds for which the button was pressed.
+The [`UISetting`][8] subclasses, in turn, provide an action that is only triggered when the [`mouseClickEvent`][23] is triggered with a parameter value $\geq 2$, encapsulating the duration check.
+
+
+
+
+
 
 TODO
 
 
-- UI code uses Actions for reacting to changes
-	- Actions connected to button click events
-	- Actions triggered elsewhere in the simulator when something changes
-	- Special handlers for detecting when a button is being pressed for a time
-	- Use examples to show what this means
 
 - Input management
 	- Input handlers attached to the main camera
 		- Process mouse inputs that are not blocked by UI elements (like panning and zooming)
 	- MouseController
-	- ButtonHoldTrigger
 	- Main `UIHandler` processes keyboard shortcuts
+	- *Put this into a separate file*
 
-
-
-
-The User Interface has been created directly in the Unity editor.
-You see it in the hierarchy view where you can also find the MonoBehavior instances with the references to all the UI elements in the scene.
-The UI must be able to process inputs from the user, react to those display valid feedback at all times.
-Also the interactions between the systems have to be implemented in a way so that there cannot occur any exceptions that break the simulator.
-To avoid losing control over too many interwined systems, the UI has a modular structure.
-We have a system for the basic UI (UIHandler), the particle panel on the left (ParticleUIHandler), the init mode (InitializationUIHandler), the panel for the setting (SettingsUIHandler) and the log (LogUIHandler).
-The handlers themselves have many references to other parts of the simulator (mostly ParticleSystem and RenderSystem and the other handlers), since input needs to be processed and feedback from these systems is shown to the user.
-E.g. the WorldSpaceUIHandler registers every particle once the particle registers to the RendererParticles class over a call to the ParticleGraphicsAdapterImpl class, this reference is removed once the particle removes itself from the renderer.
-This way the WorldSpaceUIHandler can request data from the particle itself when it needs to draw or update the world space overlay used to show current particle attribute data.
 
 
 
@@ -138,3 +165,9 @@ This way the WorldSpaceUIHandler can request data from the particle itself when 
 [15]: xref:AS2.UI.WorldSpaceUIHandler
 [16]: xref:AS2.UI.WorldSpaceBackgroundUIHandler
 [17]: xref:AS2.CameraUtils
+[18]: xref:AS2.UI.UIHandler.Button_ExitPressed
+[19]: xref:AS2.UI.UISetting_Toggle
+[20]: https://learn.microsoft.com/en-us/dotnet/api/system.action-1?view=net-8.0
+[21]: xref:AS2.EventDatabase
+[22]: xref:AS2.UI.ButtonHoldTrigger
+[23]: xref:AS2.UI.ButtonHoldTrigger.mouseClickEvent
