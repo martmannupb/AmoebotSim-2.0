@@ -170,8 +170,8 @@ namespace AS2.UI
                 // Back
                 Button_StepBackPressed();
             }
-            // Ctrl + ...
-            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+            // Shift + ...
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
                 if (Input.GetKeyDown(KeyCode.RightArrow))
                 {

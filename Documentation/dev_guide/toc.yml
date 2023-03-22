@@ -3,7 +3,9 @@
 - name: Simulator
   href: sim/toc.yml
   topicHref: sim/home.md
-- name: Render System
-  href: render_system.md
 - name: User Interface
   href: ui.md
+- name: Input Handling
+  href: input.md
+- name: Render System
+  href: render_system.md

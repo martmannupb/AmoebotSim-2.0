@@ -36,14 +36,14 @@ The particle panel is opened by pressing on a particle with the highlighted "Sel
 
 Currently we support several hotkeys, you can change the keys in the UIHandler class. Here is a short overview over the currently set hotkeys:
 
-- Arrow Keys : Camera Movement
+- Right Ctrl + Arrow Keys : Camera Movement
 - Space : Play/Pause
-- PageUp OR LCtrl + Right Arrow Key : Step Forward
-- PageDown OR LCtrl + Left Arrow Key : Step Back
-- LCtrl + H : Hide UI
+- PageUp OR Shift + Right Arrow Key : Step Forward
+- PageDown OR Shift + Left Arrow Key : Step Back
+- Shift + H : Hide UI
 - H : Show UI
-- LCtrl + C : Center Camera
-- LCtrl + V : Screenshot
-- LCtrl + S : Save Sim State
-- LCtrl + O : Open Sim State
-- LCtrl + Q : Exit
+- Shift + C : Center Camera
+- Shift + V : Screenshot
+- Shift + S : Save Sim State
+- Shift + O : Open Sim State
+- Shift + Q : Exit
