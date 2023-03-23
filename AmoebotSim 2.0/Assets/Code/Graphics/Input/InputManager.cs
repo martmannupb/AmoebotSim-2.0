@@ -16,6 +16,9 @@ namespace AS2.UI
         private static InputManager instance;
 
         // Actions for Callbacks
+        /// <summary>
+        /// Action triggered when a mouse click or drag event is registered.
+        /// </summary>
         public Action<ClickAction> clickActionEvent;
         //public Action<InputAction> inputActionEvent;
 

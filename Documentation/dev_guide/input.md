@@ -43,20 +43,21 @@ A similar mechanism is used for the zoom level, which uses the scroll wheel inst
 As an alternative to dragging with the mouse, the [`MouseController`][5] also checks for the arrow keys and the WASD keys being pressed with Right Ctrl held down to allow moving the camera without using the mouse.
 
 
+## Mouse Input Handling
 
-TODO
+In addition to the camera control script, there is a separate system for processing general mouse inputs.
+This system runs mouse inputs through a series of classes to isolate specific input events and to provide an interface for reacting to these events.
 
-- InputController is also attached to camera
-	- Packages mouse state info and sends it to InputHandler
-	- InputHandler converts mouse state into mouse actions and forwards them to the InputManager
-	- InputManager does nothing except providing click action event to which listeners can be added from elsewhere
-		- RendererUI is the only subscriber
-		- Reacts to click and drag events, implementing the tools
+The first class in this series is the [`InputController`][6].
+It is a MonoBehaviour script attached to the `Main Camera` GameObject that uses Unity's [`Input`][4] system to capture the mouse state in each frame.
+This state is stored in a [`MouseState`][7] struct and sent to the static [`InputHandler`][8] class.
+The [`InputHandler`][8] then processes the current mouse state and some data from previous frames to create a [`ClickAction`][9] object in case some action like clicking and releasing or dragging the mouse is detected.
+Finally, the [`ClickAction`][9] is sent to the singleton [`InputManager`][10] class by calling its [`ProcessInput`][11] method.
+This method triggers the [`InputManager`][10]'s [`clickActionEvent`][12] action, which is exposed such that listeners can be added to the action (as described in the [UI Dev Guide][1]).
 
-
-
-## Selecting Particles
-
+Currently, the only class listening to this action is the [`RendererUI`][13] with its [`ClickActionCallback`][14] method.
+This method processes the mouse input based on the currently active tool and updates the [`RendererUI`][13]'s state to implement the tool's functionality.
+This allows the user to select, add, remove or move particles, placing expanded particles by clicking and dragging, and even moving around circuit partition sets.
 
 
 
@@ -65,3 +66,12 @@ TODO
 [3]: xref:AS2.UI.UIHandler
 [4]: https://docs.unity3d.com/ScriptReference/Input.html
 [5]: xref:AS2.MouseController
+[6]: xref:AS2.UI.InputController
+[7]: xref:AS2.UI.InputHandler.MouseState
+[8]: xref:AS2.UI.InputHandler
+[9]: xref:AS2.UI.ClickAction
+[10]: xref:AS2.UI.InputManager
+[11]: xref:AS2.UI.InputManager.ProcessInput(AS2.UI.InputAction)
+[12]: xref:AS2.UI.InputManager.clickActionEvent
+[13]: xref:AS2.Visuals.RendererUI
+[14]: xref:AS2.Visuals.RendererUI.ClickActionCallback(AS2.UI.ClickAction)
