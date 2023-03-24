@@ -130,24 +130,6 @@ The [`UISetting`][8] subclasses, in turn, provide an action that is only trigger
 
 
 
-
-
-
-TODO
-
-
-
-- Input management
-	- Input handlers attached to the main camera
-		- Process mouse inputs that are not blocked by UI elements (like panning and zooming)
-	- MouseController
-	- Main `UIHandler` processes keyboard shortcuts
-	- *Put this into a separate file*
-
-
-
-
-
 [1]: https://docs.unity3d.com/Packages/com.unity.ugui@1.0/manual/index.html
 [2]: https://docs.unity3d.com/Packages/com.unity.ugui@1.0/manual/UICanvas.html
 [3]: xref:AS2.UI.UIHandler
