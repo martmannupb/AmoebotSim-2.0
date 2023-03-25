@@ -19,7 +19,16 @@ The Central Area is usually the largest part of the UI.
 It shows the world grid and the particle system both in Init Mode and in Simulation Mode.
 In Init Mode, its background has a slight tint and all particles are gray.
 The viewport can be moved around by clicking and dragging with the right or middle mouse button and the zoom level can be changed with the scroll wheel.
+Alternatively, the viewport can also be moved by holding the Right Ctrl key and pressing the arrow keys or the WASD keys.
 Particles can be selected by left-clicking on a particle and deselected by left-clicking anywhere else in the Central Area.
+
+
+## Log Panel
+
+The Log Panel is at the bottom of the Central Area and displays log messages sent using the [`Log`][1] system.
+It disappears automatically after a short time unless the small triangle button was used to expand it.
+When it is expanded, the button in the top right corner of the Log Panel can be used to save the entire log in a text file.
+The Log Panel removes older log messages if the log grows too long, but all messages will still appear in the text file.
 
 
 ## Bottom Bar
@@ -97,61 +106,87 @@ To the right of each attribute, there are two randomization buttons in the Rando
 The first button randomizes the attribute's value for the selected particle, if the attribute type supports randomization (e.g., string attributes cannot be randomized).
 The second button randomizes the attribute value for *all particles*.
 
-TODO
+
+## Top Bar
+
+![Top Bar](~/images/top_bar.png "Top Bar")
+
+The Top Bar is a general tool bar that is visible both in Init and Simulation Mode, with slightly different content.
+It is organized into four blocks, roughly grouping together related functionality.
+
+<img src="~/images/top_bar_left.png" alt="Left Top Bar Group" title="Left Top Bar Group" width="150" align="right"/>
+
+### Left Group
+
+The first group, located on the far left side, contains four buttons.
+The leftmost button switches from Simulation Mode back to Init Mode.
+It has no effect while in Init Mode.
+The second and third buttons are for saving and loading simulation states, respectively.
+The load button works in Init and Simulation Mode and will open the selected simulation state directly in Simulation Mode.
+The save button only works in Simulation Mode.
+Both buttons open a file explorer expecting a file with the `.amalgo` ending.
+The fourth button is for taking screenshots of the simulation environment and will open a file explorer expecting a PNG file.
+
+<img src="~/images/top_bar_mid_left.png" alt="Middle-Left Top Bar Group" title="Middle-Left Top Bar Group" width="300" align="right"/>
+
+### Middle-Left Group
+
+The second group is the tool menu.
+It contains four tool buttons and two dropdown menus with additional options.
+A tool can be selected by clicking the button, which will highlight the button in red.
+
+The first tool is the Selection tool.
+It is selected by default and allows you to select particles by clicking on them, opening the Particle Panel.
+This tool works both in Init and Simulation Mode.
+
+The second tool is the Add tool.
+It can be used to manually add particles to the system while in Init Mode.
+With the Add tool selected, hovering over a grid cell will highlight that cell in green.
+Clicking the cell will place a new contracted particle in the cell.
+Clicking and dragging to one of the neighboring cells and then releasing will place a new expanded particle such that its Tail is in the first and its Head is in the second cell.
+The two dropdown menus to the right determine the new particle's chirality and compass direction.
+By default, both will be selected randomly.
+
+The third tool is the Remove tool.
+When the Remove tool is selected, hovering over a particle will highlight that particle in red and clicking a particle will remove it from the system.
+
+The fourth and last tool is the Move tool.
+With this tool selected, clicking a particle will highlight it in purple, after which it can be moved to a different, empty cell just like using the Add tool, but with blue cell highlighting.
+Moving a particle will not change any of its internal data, including its chirality and compass direction.
+
+Keep in mind that the particle system must be connected when starting the simulation.
+Apart from that, simply adding, removing or moving particles may cause an algorithm to behave in unexpected ways if it requires particles to be initialized in a specific way.
+You should only use these tools to fine-tune generated systems and if you know how the particles need to be initialized.
+
+<img src="~/images/top_bar_mid_right.png" alt="Middle-Right Top Bar Group" title="Middle-Right Top Bar Group" width="275" align="right"/>
+
+### Middle-Right Group
+
+The third group is the view menu.
+It contains several cycle and toggle buttons for modifying the visualization in the Central Area.
+The buttons are the same in Init and Simulation Mode, but some of their effects can only be seen in Simulation Mode.
+They will be explained on the [Simulation Mode page](sim.md).
+
+The first button cycles through the three general visualization modes.
+The default mode shows both the grid and the particles in a hexagonal style, the second mode renders the particles as circles in the hexagonal grid, and the third mode resembles the original AmoebotSim visualization, where the background shows the triangular grid graph and particles are displayed as solid black disks surrounded by colored circles.
+In the third view mode, circuits are not displayed.
+
+The "UI" button is only used to disable the overlay showing an attribute value for all particles, which is enabled by clicking an attribute's name in the Particle Panel.
+
+The "#" button toggles another overlay which displays the global grid coordinates of all visible empty grid nodes.
+While this overlay is active, all camera movements are disabled because updating the overlay takes too long for smooth movements.
+
+The other buttons only make a difference in Simulation Mode and will be explained later.
+
+<img src="~/images/top_bar_right.png" alt="Right Top Bar Group" title="Right Top Bar Group" width="100" align="right"/>
+
+### Right Group
+
+The fourth group, located on the far right side, contains more general utility functions.
+Its first button centers the viewport on the particle system using the center of the particle system's bounding rectangle.
+The second button only works in Simulation Mode and opens the Settings Panel.
+The last button closes the application and is available in Init and Simulation Mode.
 
 
-- Top Bar
-	- General tool bar visible in both modes (but with slightly different content)
-	- Organized into 4 blocks
-	- Left block
-		- First button enters Init Mode from Simulation Mode (no use in Init Mode)
-		- Second and third button are for saving and loading simulation states (saving only works in Simulation Mode)
-		- Fourth button is for taking screenshots
-	- Middle left block (tool menu)
-		- First 4 buttons are tool selection
-			- Selection tool: Select particles to open the Particle Panel
-			- Add tool: Add new particles by clicking or clicking and dragging (for expanded particles)
-			- Remove tool: Remove particles by clicking
-			- Move tool: Select a particle and then place it somewhere else
-		- Next 2 elements are dropdown menus
-			- Select chirality and compass direction for particles placed with the Add tool
-	- Middle right block (view menu)
-		- Several options for modifying the visualization
-		- First button cycles through particle visualization modes
-			- Hexagonal
-			- Hexagonal grid with round particles
-			- Graph view (legacy)
-		- Second button cycles through partition set visualization modes (more relevant in Simulation Mode)
-		- Third and fourth button toggle circuits and bonds (also only visible in Simulation Mode)
-		- "UI" button disables global overlay
-		- "#" button toggles grid coordinate overlay
-	- Right block
-		- Camera button centers the camera to the particles
-		- Gear button opens the Settings menu (only works in Simulation Mode)
-			- _Not sure why this only works in Sim Mode_
-				- Maybe because Init Panel would have to be disabled?
-		- "X" button closes the application
-- Log Panel
-	- Shows log messages
-	- Disappears after a few seconds
-	- Button in the top right corner allows saving the log as a text file
 
-
-
-
-
-
-
-(put image here when the init mode is finished)
-
-The initialization mode (init mode) is opened by pressed the button on the top left. It serves as panel to place and initialize the system's particles by the use of generation algorithms. The exact generation algorithm used for every particle algorithm is defined in the particle algorithm class. 
-
-## Usage
-
-1. Algorithm Selection: Firstly, you start at the top of the initialization panel and choose the particle algorithm you want to execute in the dropdown.
-
-2. Particle Generation: When the algorithm has been chosen, the parameters for the particle algorithm's generation algorithm are displayed below the dropdown. Additionally the system automatically generates a particle environment with the default settings you see there. If you want another setup, you can change the parameters and generate the system again. There are also options to load or save a system environment in this step or after step 3.
-
-3. Final Adjustments: You can make additional adjustments to the environment by using the selection modes in the top bar. By default the "Selection" tool is highlighted, it opens the overview over the parameters (particle panel) of each particle after a click on the particle. In the particle panel you can set the attributes of each particle manually and even set a value for all particles in the system by pressing and holding the button for a short amount of time. The "Add" tool lets you manually add particles to the system, the "Remove" tool does the inverse. The simulator also supports a "Move" tool which can be used to change the placement of each particle.
-
-4. Starting the Simulation: When you are happy with the environment, you can start the algorithm with the button below. This closes the initialization mode and starts the execution of the algorithm.
+[1]: xref:AS2.Log
