@@ -101,105 +101,88 @@ The third and fourth button simply toggle the circuit and bond visualization on 
 **No circuits and bonds**                                                                                        | **No circuits and no bonds**
 <img src="~/images/-circuits+bonds.png" alt="No circuits and bonds" title="No circuits and bonds" height="250"/> | <img src="~/images/-circuits-bonds.png" alt="No circuits and no bonds" title="No circuits and no bonds" height="250"/>
 
-TODO
+
+<img src="~/images/settings_panel.png" alt="Settings Panel" title="Settings Panel" width="200" align="right"/>
+
+## Settings Panel
+
+The Settings Panel is opened by pressing the Top Bar button with the gear icon, which is the second-last button in the Top Bar.
+It will appear on the right side of the UI, where the Initialization Panel is in Init Mode.
+The panel contains various general settings, mainly for modifying the visualization.
+
+**Animations On/Off**  
+This setting toggles the movement animations on and off.
+Animations make the particle movements much easier to understand, but the simulation might run faster with animations turned off.
+
+**Beep Repeat On/Off** and **Beep Repeat Time (s)**  
+*Deprecated*
+
+**Fullscreen**  
+When the application is built and run as a standalone outside the Unity Editor, this setting can be used to toggle between fullscreen and windowed mode.
+It is recommended to run the application in fullscreen mode.
+This setting has no effect when the simulator runs in the Unity Editor.
+
+**Camera Angle**  
+This slider controls the rotation angle of the viewport.
+Moving the slider to the right rotates the camera counter-clockwise in 30 degree steps.
+
+**Compass ov. Arrows**  
+This setting changes the visualization of compass directions in the particle overlay showing the compasses of all particles.
+When it is enabled, the compass directions are displayed as arrows.
+When it is disabled, the directions are represented by their textual names (like E, NNE, etc.) instead.
+
+**Circuit Border**  
+Toggles a thin black border for the circuit connections between particles.
+For some circuit colors, this makes the circuits much easier to see.
+The border is not visible if a beep is sent on the circuit.
+
+**Circular Ring**  
+This setting toggles the ring around the particles in graph view mode (see view modes above).
+Turning the rings off removes the color information from the particles but may be useful for creating screenshots with a particular style.
+
+**Anti Aliasing**  
+Controls the level of Multi-Sample Anti-aliasing performed by the GPU.
+*Does not seem to have a visible effect*
+
+**UI Animations**  
+Toggles the sliding animation of the Randomization bar in the Particle Panel on and off.
 
 
-
-
-
-
-
-- Parts that have changed
-	- Settings Panel
-		- Opened by clicking Settings button (gear icon)
-		- Animations On/Off:
-			- Toggles movement animations
-		- Beep Repeat On/Off:
-			- Toggles repeated beeps while simulation is paused
-			- _Deprecated_
-		- Beep Repeat Time (s):
-			- Time between beep repetitions
-			- _Deprecated_
-		- Fullscreen:
-			- Toggles between fullscreen and windowed mode
-			- Only works if application is built
-		- Camera Angle:
-			- Changes rotation angle of the viewport in 30° steps
-		- Compass Ov. Arrows:
-			- For particle overlay showing compass directions
-			- Toggles between arrows and text
-		- Circuit Border:
-			- Toggles black border of pin connections between particles
-		- Circular Ring:
-			- Toggles colored ring around particles in graph view mode
-		- Anti Aliasing:
-			- Changes anti-aliasing steps
-		- UI Animations:
-			- Toggles sliding animation of Randomization side bar
-- Parts that have not changed
-	- Particle Panel
-		- Available in both modes by selecting a particle using the Selection tool
-		- But shows attributes now instead of init parameters
-			- Same algorithm (Line Formation) but different content!
-		- Chirality and compass dir cannot be changed any more
-		- Attributes cannot be changed when not in the latest round
-	- Log Panel
-		- Exactly the same
-- Hotkeys
-
-
-
-
-
-
-
-
-
-
-(put image here when everything is implemented)
-
-The simulation mode is the inverse of the initialization mode. Here you can simulate a particle algorithm with the currenty instantiated particles.
-
-## Bottom Bar
-
-The bottom bar serves as the instance to control the simulation progress. You can play/pause the simulation, set the speed of the simulation and see the current round and even scroll back in time with the integrated simulation history slider on the right.
-
-## Top Bar
-
-The top bar offers various functions grouped into four sub-menus which are explained in this section.
-
-### File Menu (Left)
-
-The file menu offers options like the starting of the init mode, the saving and loading of simulation states or the ability to make screenshots of the simulator.
-
-### Selection Menu (Middle Left)
-
-The "Selection" tool opens the particle panel after a click on the particle (explained below). Additionally, you also have the possibility to manually change the placement of partition sets.
-
-### View Menu (Middle Right)
-
-This menu is used to control the various views of the simulator. E.g you have the option to show/hide circuits in some of the views, you can toggle bonds on and off, show the background grid to see the coordinates of each particle or scroll through the different view modes. The "UI" button hides the world space UI overlay which shows particle attributes in the view and can be triggered in the particle panel by a click on an attribute. Another button is used to switch through the different partition set view modes: The default mode priorizes code overrides of partition set positions that can be set via code, then there is automatic positioning of partition sets based on their local pin positions, finally you have the option to set the partition set positions in a straight (mostly horizontal) line. Also, there is another button to show the grid positions of particles. We recommend you just press the buttons and see what they do, you cannot really do something wrong here.
-
-### Setting Menu (Right)
-
-The setting menu supports the centering of the camera to the particles (which is helpful if you lost track of the particles because of funny camera movement behavior). There is a settings panel you can open to set various flags and parameters. You can exit the sim by the "X" button on the top right.
+<img src="~/images/particle_panel_sim.png" alt="Particle Panel (Simulation Mode)" title="Particle Panel (Simulation Mode)" width="200" align="right"/>
 
 ## Particle Panel
 
-The particle panel is opened by pressing on a particle with the highlighted "Selection" tool. It works both in simulation and in init mode and displayed the state of the particle with its position and attributes. An attribute can be clicked to display it in the world space UI overlay (opens a box over each particle that shows the attribute's state for this particle in the current round). If the attribute is clicked and held for some time, you can apply this attribute to all other particles. You can change the attribute for the currently selected particle in the dropdown/toggle/textfield/other.
+The Particle Panel is available by clicking a particle with the Selection tool activated, both in Simulation and Init Mode.
+The difference between the two modes is that the panel now displays the [*particle attributes*](~/model_ref/attrs.md) instead of the particle's initialization parameters.
+Note that although the same algorithm as in the Init Mode example is selected (Line Formation), the Particle Panel displays different content.
+
+The only content that is displayed in both modes are the chirality and compass direction, which are neither initialization parameters nor particle attributes.
+In Simulation Mode, their values cannot be changed anymore.
+The attribute values as well as the Anchor state (the little button left of the "Particle" text) can only be edited when the simulation state is in the latest round of the history.
+If you want to change a particle's state in an earlier round, you will need to cut off the rest of the history.
+
 
 ## Hotkeys
 
-Currently we support several hotkeys, you can change the keys in the UIHandler class. Here is a short overview over the currently set hotkeys:
+The simulation environment provides several hotkeys so that its functions can be accessed more easily.
+Here is a short overview of the currently set hotkeys:
 
-- Right Ctrl + Arrow Keys : Camera Movement
-- Space : Play/Pause
-- PageUp OR Shift + Right Arrow Key : Step Forward
-- PageDown OR Shift + Left Arrow Key : Step Back
-- Shift + H : Hide UI
-- H : Show UI
-- Shift + C : Center Camera
-- Shift + V : Screenshot
-- Shift + S : Save Sim State
-- Shift + O : Open Sim State
-- Shift + Q : Exit
+Hotkey                             | Function
+-----------------------------------|----------------------
+Right Ctrl + Arrow Keys or WASD    | Camera Movement
+Space                              | Play/Pause
+PageUp or Shift + Right Arrow Key  | Step Forward
+PageDown or Shift + Left Arrow Key | Step Back
+Shift + H                          | Hide UI
+H                                  | Show UI
+Shift + C                          | Center Camera
+Shift + V                          | Take Screenshot
+Shift + S                          | Save Simulation State
+Shift + O                          | Load Simulation State
+Shift + Q                          | Exit Simulator
+
+If you want to modify the hotkeys, this can be done in the [`UIHandler`][1] class found in `Assets/Code/Graphics/UI/UIHandler.cs`.
+You can read more about this class and the UI system implementation on the [Dev Guide pages](~/dev_guide/ui.md).
+
+
+[1]: xref:AS2.UI.UIHandler

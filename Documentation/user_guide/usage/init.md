@@ -113,6 +113,7 @@ The second button randomizes the attribute value for *all particles*.
 
 The Top Bar is a general tool bar that is visible both in Init and Simulation Mode, with slightly different content.
 It is organized into four blocks, roughly grouping together related functionality.
+Most of the buttons do not have permament effects, so you can also explore their functionality by simply clicking them.
 
 <img src="~/images/top_bar_left.png" alt="Left Top Bar Group" title="Left Top Bar Group" width="150" align="right"/>
 
