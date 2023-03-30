@@ -587,10 +587,10 @@ namespace AS2.Sim
             // Check if the simulation is over
             if (!finished && HasSimulationFinished())
             {
-                // TODO: Stop the simulation (?)
                 finished = true;
                 finishedRound = _currentRound;
                 Log.Debug("Simulation finished.");
+                AmoebotSimulator.instance.PauseSim();
             }
         }
 
