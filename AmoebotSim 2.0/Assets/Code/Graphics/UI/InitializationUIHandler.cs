@@ -90,6 +90,8 @@ namespace AS2.UI
             // Init UI
             // Algorithm selection
             List<string> algStrings = AlgorithmManager.Instance.GetAlgorithmNames();
+            // Sort names alphabetically
+            algStrings.Sort();
             alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algStrings.ToArray(), algStrings[0]);
             alg_setting_algo.onValueChangedEvent += ValueChanged_Text;
             // System generation
