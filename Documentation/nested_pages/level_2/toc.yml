@@ -1,7 +1,0 @@
-- name: "Nesting Level 2: 1"
-  href: level_2_1.md
-- name: "Nesting Level 2: 2"
-  href: level_2_2.md
-- name: "Nesting Level 3"
-  href: level_3/toc.yml
-  topicHref: level_3/homepage.md

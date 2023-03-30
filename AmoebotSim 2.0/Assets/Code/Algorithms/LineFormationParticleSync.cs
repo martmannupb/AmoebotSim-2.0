@@ -256,7 +256,7 @@ namespace AS2.Algos.LineFormation
 
         private void RootMove()
         {
-            Direction cd = constructionDir.GetValue_After();
+            Direction cd = constructionDir.GetCurrentValue();
 
             // ROOT handovers take precedence: Try performing handover with ROOT first
             if (IsContracted())
@@ -264,7 +264,7 @@ namespace AS2.Algos.LineFormation
                 // Always compute the move direction when contracted
                 // The result indicates whether we are about to enter the end position of the line
                 int moveDirResult = ComputeRootMoveDir();
-                Direction md = moveDir.GetValue_After();
+                Direction md = moveDir.GetCurrentValue();
 
                 // If we are contracted and we can expand freely or push into an expanded ROOT: Do it
                 // Contracted ROOTs can almost always expand
@@ -374,7 +374,7 @@ namespace AS2.Algos.LineFormation
 
         private void RootActivate()
         {
-            Direction cd = constructionDir.GetValue_After();
+            Direction cd = constructionDir.GetCurrentValue();
 
             // ROOT handovers take precedence: Try performing handover with ROOT first
             if (IsContracted())
@@ -388,7 +388,7 @@ namespace AS2.Algos.LineFormation
                 // Always compute the move direction when contracted
                 // The result indicates whether we are about to enter the end position of the line
                 int moveDirResult = ComputeRootMoveDir();
-                Direction md = moveDir.GetValue_After();
+                Direction md = moveDir.GetCurrentValue();
 
                 // If we are contracted and we can expand freely or push into an expanded ROOT: Do it
                 // Contracted ROOTs can almost always expand
@@ -614,7 +614,7 @@ namespace AS2.Algos.LineFormation
 
             // Safe to always set constructionDir because we have common chirality and compass orientation
             constructionDir.SetValue(cd);
-            if (constructionDir.GetValue_After() == nbr.localDir.Opposite())
+            if (constructionDir.GetCurrentValue() == nbr.localDir.Opposite())
             {
                 state.SetValue(LFState.INLINE);
                 SetMainColor(inlineColor);
@@ -672,7 +672,7 @@ namespace AS2.Algos.LineFormation
         {
             // We already know constructionDir, set moveDir relative to neighbor position
             // On the other end of the line => Move around the left side
-            Direction cd = constructionDir.GetValue_After();
+            Direction cd = constructionDir.GetCurrentValue();
             if (cd == nbr.localDir)
             {
                 moveDir.SetValue(cd.Rotate60(1));
@@ -819,7 +819,7 @@ namespace AS2.Algos.LineFormation
         /// particle.</returns>
         private bool SendBeepToWaitingRoot()
         {
-            Direction cd = constructionDir.GetValue_After();
+            Direction cd = constructionDir.GetCurrentValue();
 
             // First ensure that position in construction direction is free
             LineFormationParticleSync nbr = GetNeighborAt(cd) as LineFormationParticleSync;
@@ -853,7 +853,7 @@ namespace AS2.Algos.LineFormation
         /// of the construction direction.</returns>
         private bool CheckLocalCompleteness()
         {
-            Direction cd = constructionDir.GetValue_After();
+            Direction cd = constructionDir.GetCurrentValue();
             for (int d = 0; d < 6; d++)
             {
                 Direction direction = DirectionHelpers.Cardinal(d);

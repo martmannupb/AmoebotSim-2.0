@@ -172,14 +172,14 @@ namespace AS2.Algos.LeaderElection
                     // Then toss new coin and send beep if appropriate
                     if (round == 0)
                     {
-                        if (isCandidate.GetValue_After() && TossCoin())
+                        if (isCandidate.GetCurrentValue() && TossCoin())
                         {
                             SendBeep();
                         }
                     }
                     else
                     {
-                        if (phase2Candidate.GetValue_After() && TossCoin())
+                        if (phase2Candidate.GetCurrentValue() && TossCoin())
                         {
                             SendBeep();
                         }
@@ -213,11 +213,11 @@ namespace AS2.Algos.LeaderElection
             }
 
             // Set color
-            if (isCandidate.GetValue_After())
+            if (isCandidate.GetCurrentValue())
             {
                 SetMainColor(ColorData.Particle_Green);
             }
-            else if (phase2Candidate.GetValue_After())
+            else if (phase2Candidate.GetCurrentValue())
             {
                 SetMainColor(ColorData.Particle_Blue);
             }

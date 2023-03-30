@@ -490,7 +490,7 @@ namespace AS2.Algos.ChiralityCompass
                 }
 
                 // Candidates with TAILS withdraw candidacy if result is FAILED
-                if (isCandidate && !heads && coinTossResult.GetValue_After() == CoinTossResult.FAILED)
+                if (isCandidate && !heads && coinTossResult.GetCurrentValue() == CoinTossResult.FAILED)
                 {
                     SetMainColor(ColorData.Particle_Black);
                     isCandidate.SetValue(false);
@@ -527,7 +527,7 @@ namespace AS2.Algos.ChiralityCompass
                             if (!nbrs[i]) continue;
 
                             ChiralityAndCompassParticle nbr = GetNeighborAt(DirectionHelpers.Cardinal(i)) as ChiralityAndCompassParticle;
-                            if (nbr.coinTossResult != coinTossResult.GetValue_After())
+                            if (nbr.coinTossResult != coinTossResult.GetCurrentValue())
                             {
                                 SetPlannedPinConfiguration(pc);
                                 pc.SendBeepOnPartitionSet(0);
@@ -657,27 +657,27 @@ namespace AS2.Algos.ChiralityCompass
                 }
 
                 // Perform merge if merge offset is set
-                if (mergeOffset.GetValue_After() != -1)
+                if (mergeOffset.GetCurrentValue() != -1)
                 {
-                    int offset = mergeOffset.GetValue_After();
+                    int offset = mergeOffset.GetCurrentValue();
                     // Rotate compass direction by the offset
                     if (reverseChirality)
                     {
-                        compassOffset.SetValue(compassOffset.GetValue_After().Rotate60(offset));
+                        compassOffset.SetValue(compassOffset.GetCurrentValue().Rotate60(offset));
                     }
                     else
                     {
-                        compassOffset.SetValue(compassOffset.GetValue_After().Rotate60(-offset));
+                        compassOffset.SetValue(compassOffset.GetCurrentValue().Rotate60(-offset));
                     }
 
                     // Also update value of real compass direction
                     if (realChirality)
                     {
-                        realCompassDir.SetValue(realCompassDir.GetValue_After().Rotate60(-offset));
+                        realCompassDir.SetValue(realCompassDir.GetCurrentValue().Rotate60(-offset));
                     }
                     else
                     {
-                        realCompassDir.SetValue(realCompassDir.GetValue_After().Rotate60(offset));
+                        realCompassDir.SetValue(realCompassDir.GetCurrentValue().Rotate60(offset));
                     }
 
                     // Withdraw candidacy if we merge
@@ -720,7 +720,7 @@ namespace AS2.Algos.ChiralityCompass
         {
             PinConfiguration pc = GetCurrentPinConfiguration();
             // Read value from previous round if offset is large enough and no merge offset was selected yet
-            if (offset > 1 && mergeOffset.GetValue_After() == -1 && pc.ReceivedBeepOnPartitionSet(0))
+            if (offset > 1 && mergeOffset.GetCurrentValue() == -1 && pc.ReceivedBeepOnPartitionSet(0))
             {
                 mergeOffset.SetValue(offset - 1);
             }
@@ -752,12 +752,12 @@ namespace AS2.Algos.ChiralityCompass
                 pc = GetCurrentPinConfiguration();
                 SetPlannedPinConfiguration(pc);
             }
-            bool hasRegion = hasRegionalCircuit.GetValue_After();
-            if (chiralityAgreementPhase.GetValue_After())
+            bool hasRegion = hasRegionalCircuit.GetCurrentValue();
+            if (chiralityAgreementPhase.GetCurrentValue())
             {
-                if (realChirality.GetValue_After())
+                if (realChirality.GetCurrentValue())
                 {
-                    if (isCandidate.GetValue_After())
+                    if (isCandidate.GetCurrentValue())
                     {
                         SetMainColor(chir1CandColor);
                         if (hasRegion)
@@ -770,7 +770,7 @@ namespace AS2.Algos.ChiralityCompass
                 }
                 else
                 {
-                    if (isCandidate.GetValue_After())
+                    if (isCandidate.GetCurrentValue())
                     {
                         SetMainColor(chir0CandColor);
                         if (hasRegion)
@@ -784,16 +784,16 @@ namespace AS2.Algos.ChiralityCompass
             }
             else
             {
-                if (isCandidate.GetValue_After())
+                if (isCandidate.GetCurrentValue())
                 {
-                    Direction i = realCompassDir.GetValue_After();
+                    Direction i = realCompassDir.GetCurrentValue();
                     SetMainColor(compCandColors[i.ToInt()]);
                     if (hasRegion)
                         pc.SetPartitionSetColor(0, compCandColors[i.Opposite().ToInt()]);
                 }
                 else
                 {
-                    SetMainColor(compNoCandColor[realCompassDir.GetValue_After().ToInt()]);
+                    SetMainColor(compNoCandColor[realCompassDir.GetCurrentValue().ToInt()]);
                 }
             }
             //SetPlannedPinConfiguration(pc);

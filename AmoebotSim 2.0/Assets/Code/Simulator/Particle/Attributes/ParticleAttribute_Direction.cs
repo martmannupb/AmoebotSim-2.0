@@ -28,7 +28,7 @@ namespace AS2.Sim
             }
         }
 
-        public override Direction GetValue_After()
+        public override Direction GetCurrentValue()
         {
             if (particle == null)
                 return history.GetMarkedValue();

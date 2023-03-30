@@ -27,7 +27,7 @@ namespace AS2.Sim
             }
         }
 
-        public override bool GetValue_After()
+        public override bool GetCurrentValue()
         {
             if (particle == null)
                 return history.GetMarkedValue();
