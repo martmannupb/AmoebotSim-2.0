@@ -241,7 +241,13 @@ namespace AS2.Sim
             PinConfigurationHistorySaveData data = new PinConfigurationHistorySaveData();
 
             data.idxHistory = idxHistory.GenerateSaveData();
-            data.configs = configs;
+            // Convert list of configurations to array and replace null entries
+            // with special null instance to prevent JSON utility from
+            // initializing the null entries on its own
+            data.configs = configs.ToArray();
+            for (int i = 0; i < data.configs.Length; i++)
+                if (data.configs[i] is null)
+                    data.configs[i] = PinConfigurationSaveData.NullInstance;
 
             return data;
         }
@@ -255,7 +261,11 @@ namespace AS2.Sim
         public ValueHistoryPinConfiguration(PinConfigurationHistorySaveData data)
         {
             idxHistory = new ValueHistory<int>(data.idxHistory);
-            configs = data.configs;
+            configs = new List<PinConfigurationSaveData>(data.configs);
+            // Turn null instances back into proper null entries
+            for (int i = 0; i < configs.Count; i++)
+                if (configs[i].isNull)
+                    configs[i] = null;
         }
     }
 

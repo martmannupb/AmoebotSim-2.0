@@ -27,6 +27,13 @@ namespace AS2
     public class PinConfigurationSaveData
     {
         /// <summary>
+        /// Flag indicating that this instance represents <c>null</c>.
+        /// This is necessary because Unity's JSON utility will force
+        /// null instances of serializable classes to be initialized.
+        /// </summary>
+        public bool isNull;
+
+        /// <summary>
         /// The (local) head direction for which the pin configuration was created.
         /// </summary>
         public Direction headDirection;
@@ -78,6 +85,23 @@ namespace AS2
         /// Tail positions of all partition sets in polar coordinates.
         /// </summary>
         public Vector2[] partitionSetTailPositions;
+
+        public PinConfigurationSaveData() { }
+
+        private PinConfigurationSaveData(bool isNull)
+        {
+            this.isNull = isNull;
+        }
+
+        private static PinConfigurationSaveData nullInstance = new PinConfigurationSaveData(true);
+
+        /// <summary>
+        /// A special instance of this class representing <c>null</c>.
+        /// </summary>
+        public static PinConfigurationSaveData NullInstance
+        {
+            get { return nullInstance; }
+        }
 
         // Comparison operators to easily compare compressed pin configuration data by value
         public static bool operator ==(PinConfigurationSaveData d1, PinConfigurationSaveData d2)

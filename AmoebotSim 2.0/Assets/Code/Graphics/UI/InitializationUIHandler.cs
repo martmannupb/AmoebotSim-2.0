@@ -314,11 +314,11 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_Load()
         {
-            string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "aminit", false);
-            if (paths.Length != 0)
+            string path = FileBrowser.LoadInitFile();
+            if (!path.Equals(""))
             {
                 // Init particle system
-                InitModeSaveData initModeSaveData = AmoebotSimulator.instance.system.LoadInitSaveState(SaveStateUtility.LoadInit(paths[0]));
+                InitModeSaveData initModeSaveData = AmoebotSimulator.instance.system.LoadInitSaveState(SaveStateUtility.LoadInit(path));
                 // Update init mode
                 alg_setting_algo.SetValue(initModeSaveData.algString);
                 genAlg_setting_genAlg.SetValue(initModeSaveData.genAlgString);
@@ -328,7 +328,7 @@ namespace AS2.UI
                     setting.SetValueString(initModeSaveData.genAlg_parameters[i]);
                 }
                 // Log
-                Log.Entry("Loaded initialization state from path: " + paths[0] + ".");
+                Log.Entry("Loaded initialization state from path: " + path + ".");
             }
             //else Log.Debug("No file chosen.");
         }
@@ -338,7 +338,7 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_Save()
         {
-            string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "initState", "aminit");
+            string path = FileBrowser.SaveInitFile();
             if (path.Equals("") == false)
             {
                 // Generate general save data

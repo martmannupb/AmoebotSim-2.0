@@ -589,8 +589,8 @@ namespace AS2.UI
         {
             bool isSimRunning = sim.running;
             sim.PauseSim();
-            string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Algorithm State", "", "amalgo", false);
-            if (paths.Length != 0)
+            string path = FileBrowser.LoadSimFile();
+            if (!path.Equals(""))
             {
                 if (!sim.running)
                 {
@@ -603,7 +603,7 @@ namespace AS2.UI
                         return;
                     }
 
-                    SimulationStateSaveData data = SaveStateUtility.Load(paths[0]);
+                    SimulationStateSaveData data = SaveStateUtility.Load(path);
                     if (data != null)
                     {
                         sim.system.Reset();
@@ -632,7 +632,7 @@ namespace AS2.UI
             {
                 // Initialization Handler closed
                 // Save File
-                string path = StandaloneFileBrowser.SaveFilePanel("Save Algorithm State", "", "algorithm", "amalgo");
+                string path = FileBrowser.SaveSimFile();
                 if (path.Equals("") == false)
                 {
                     if (!sim.running)
@@ -661,7 +661,7 @@ namespace AS2.UI
         /// </summary>
         public void Button_ScreenshotPressed()
         {
-            string path = StandaloneFileBrowser.SaveFilePanel("Save Screenshot", "", "AmoebotScreenshot", "png");
+            string path = FileBrowser.SavePNGFile("Save Screenshot", "AmoebotScreenshot");
             if (path.Equals("") == false)
             {
                 ScreenCapture.CaptureScreenshot(path);
@@ -674,7 +674,7 @@ namespace AS2.UI
         /// </summary>
         public void Button_PrintLogToFilePressed()
         {
-            string path = StandaloneFileBrowser.SaveFilePanel("Save Log to File", "", "amsim_log", "txt");
+            string path = FileBrowser.SaveTextFile("Save Log to File", "amsim_log");
             if (path.Equals("") == false)
             {
                 Log.SaveLogToFile(path);
