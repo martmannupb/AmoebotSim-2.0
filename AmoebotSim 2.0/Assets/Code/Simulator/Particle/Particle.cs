@@ -1281,8 +1281,14 @@ namespace AS2.Sim
         /// </summary>
         /// <param name="idx">The ID of the planned partition set to
         /// send the beep.</param>
-        public void PlanBeep(int idx)
+        /// <param name="pc">The pin configuration on which the send
+        /// call was made. Must equal the currently planned pin configuration.</param>
+        public void PlanBeep(int idx, SysPinConfiguration pc)
         {
+            if (pc is null || !pc.isPlanned || pc != plannedPinConfiguration)
+            {
+                throw new AlgorithmException(this, "Cannot send beeps in non-planned pin configuration.");
+            }
             plannedBeeps[idx] = true;
             hasPlannedBeeps = true;
         }
@@ -1294,8 +1300,14 @@ namespace AS2.Sim
         /// <param name="idx">The ID of the planned partition set to
         /// send the message.</param>
         /// <param name="msg">The message to be sent.</param>
-        public void PlanMessage(int idx, Message msg)
+        /// <param name="pc">The pin configuration on which the send
+        /// call was made. Must equal the currently planned pin configuration.</param>
+        public void PlanMessage(int idx, Message msg, SysPinConfiguration pc)
         {
+            if (pc is null || !pc.isPlanned || pc != plannedPinConfiguration)
+            {
+                throw new AlgorithmException(this, "Cannot send messages in non-planned pin configuration.");
+            }
             plannedMessages[idx] = msg;
             hasPlannedMessages = true;
         }

@@ -236,8 +236,7 @@ namespace AS2.Algos.LeaderElection
 
         private void SendBeep()
         {
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            SetPlannedPinConfiguration(pc);
+            PinConfiguration pc = GetCurrentPCAsPlanned();
             pc.SendBeepOnPartitionSet(0);
         }
     }
