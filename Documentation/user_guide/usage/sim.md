@@ -173,8 +173,7 @@ Right Ctrl + Arrow Keys or WASD    | Camera Movement
 Space                              | Play/Pause
 PageUp or Shift + Right Arrow Key  | Step Forward
 PageDown or Shift + Left Arrow Key | Step Back
-Shift + H                          | Hide UI
-H                                  | Show UI
+H                                  | Hide/Show UI
 Shift + C                          | Center Camera
 Shift + V                          | Take Screenshot
 Shift + S                          | Save Simulation State

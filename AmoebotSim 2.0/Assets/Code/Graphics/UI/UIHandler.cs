@@ -170,6 +170,11 @@ namespace AS2.UI
                 // Back
                 Button_StepBackPressed();
             }
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                // Toggle UI visibility
+                ToggleUI();
+            }
             // Shift + ...
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
@@ -182,11 +187,6 @@ namespace AS2.UI
                 {
                     // Backward
                     Button_StepBackPressed();
-                }
-                if (Input.GetKeyDown(KeyCode.H))
-                {
-                    // Hide UI
-                    HideUI();
                 }
                 if (Input.GetKeyDown(KeyCode.C))
                 {
@@ -213,11 +213,6 @@ namespace AS2.UI
                     // Quit
                     Button_ExitPressed();
                 }
-            }
-            else if (Input.GetKeyDown(KeyCode.H))
-            {
-                // Show UI
-                ShowUI();
             }
         }
 
@@ -381,6 +376,17 @@ namespace AS2.UI
         public void HideUI()
         {
             ui.SetActive(false);
+        }
+
+        /// <summary>
+        /// Toggles the UI visibility.
+        /// </summary>
+        public void ToggleUI()
+        {
+            if (ui.activeSelf)
+                HideUI();
+            else
+                ShowUI();
         }
 
         /// <summary>
