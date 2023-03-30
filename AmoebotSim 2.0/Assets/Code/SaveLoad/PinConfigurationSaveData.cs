@@ -123,6 +123,9 @@ namespace AS2
             if (obj == null || GetType() != obj.GetType())
                 return false;
             PinConfigurationSaveData d = (PinConfigurationSaveData)obj;
+            // Compare null flag
+            if (isNull != d.isNull)
+                return false;
             // Compare pin assignments and head direction
             bool myArrayNull = pinPartitionSets == null;
             bool otherArrayNull = d.pinPartitionSets == null;
@@ -198,7 +201,7 @@ namespace AS2
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(headDirection, pinPartitionSets, placementModeHead, placementModeTail, lineRotationHead, lineRotationTail, HashCode.Combine(partitionSetColors, partitionSetColorOverrides, partitionSetHeadPositions, partitionSetTailPositions));
+            return HashCode.Combine(headDirection, pinPartitionSets, placementModeHead, placementModeTail, lineRotationHead, lineRotationTail, HashCode.Combine(partitionSetColors, partitionSetColorOverrides, partitionSetHeadPositions, partitionSetTailPositions, isNull));
         }
     }
 
