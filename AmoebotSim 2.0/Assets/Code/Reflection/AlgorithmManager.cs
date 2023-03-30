@@ -15,6 +15,16 @@ namespace AS2
     /// </summary>
     public class AlgorithmManager
     {
+        /// <summary>
+        /// A list of algorithm names that should be excluded from
+        /// the system. These algorithms will be skipped during
+        /// algorithm discovery and will not appear in the algorithm
+        /// selection dropdown menu.
+        /// </summary>
+        private readonly List<string> excludedAlgorithms = new List<string>(new string[] {
+            // Example: AS2.Algos.ExpandedCircuitTest.ExpandedCircuitTestParticle.Name
+        });
+
         // Property names
         private static readonly string Name_Property = "Name";
         private static readonly string Generator_Property = "GenerationMethod";
@@ -103,6 +113,10 @@ namespace AS2
                 {
                     name = (string)nameProp.GetValue(null);
                 }
+
+                // Check if excluded
+                if (excludedAlgorithms.Contains(name))
+                    continue;
 
                 // Check for duplicates
                 if (algorithms.ContainsKey(name))

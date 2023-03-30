@@ -50,6 +50,7 @@ Controls the Initialization Panel on the right side, which is shown while in Ini
 The Initialization Panel contains the dropdown menu in which the algorithm can be selected and the parameters of the associated system generation method.
 The UI elements for the parameters are created in a similar way to the attributes in the Particle Panel.
 The information which algorithms exist, what their generation methods are and which parameters they need is taken from the reflection interfaces [`AlgorithmManager`][10] and [`InitializationMethodManager`][11].
+The [`AlgorithmManager`][10] (found in `Assets/Code/Reflection/AlgorithmManager.cs`) contains a list of excluded algorithm names allowing you to exclude algorithms from being displayed in the algorithm selection dropdown.
 
 ### [`SettingsUIHandler`][6]
 
