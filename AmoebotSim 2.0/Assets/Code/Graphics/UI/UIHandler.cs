@@ -834,17 +834,17 @@ namespace AS2.UI
         /// </summary>
         public void Button_FrameSystemPressed()
         {
-            Rect r = sim.system.GetBoundingBox();
+            Vector4 bbox = sim.system.GetBoundingBox();
             Camera cam = Camera.main;
 
             // Center camera first
-            Vector2 center = r.center;
+            Vector2 center = new Vector2(bbox.x, bbox.y);
             cam.transform.position = new Vector3(center.x, center.y, cam.transform.position.z);
 
             // Set zoom level to fit whole system into view
             // Orthographic camera size is half the height of the viewport
-            float h = r.height / 2;                       // Minimum camera size required due to system height
-            float w = (r.width / 2) / Camera.main.aspect; // Minimum size required due to system width
+            float h = bbox.w / 2;                       // Minimum camera size required due to system height
+            float w = (bbox.z / 2) / Camera.main.aspect; // Minimum size required due to system width
             // Stretch size to fit top and bottom bar
             h *= (1 + topAndBottomBarFraction);
             w *= (1 + topAndBottomBarFraction);
@@ -856,9 +856,8 @@ namespace AS2.UI
         /// </summary>
         public void Button_CameraCenterPressed()
         {
-            Rect r = sim.system.GetBoundingBox();
-            Vector2 center = r.center;
-            Camera.main.transform.position = new Vector3(center.x, center.y, Camera.main.transform.position.z);
+            Vector4 bbox = sim.system.GetBoundingBox();
+            Camera.main.transform.position = new Vector3(bbox.x, bbox.y, Camera.main.transform.position.z);
         }
 
         /// <summary>

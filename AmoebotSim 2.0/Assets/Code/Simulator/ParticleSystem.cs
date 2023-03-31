@@ -2895,17 +2895,22 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Calculates the center position of the bounding box that encloses
-        /// the particle system.
+        /// Computes the bounding box of the current particle system
+        /// in world coordinates.
+        /// The bounding box is computed with respect to the current
+        /// camera rotation, but this rotation is not preserved in
+        /// the result.
         /// </summary>
-        /// <returns>The center of the bounding box of the system in world coordinates.
-        /// Will be <c>(0, 0)</c> if there are no particles.</returns>
-        public Vector2 BBoxCenterPosition()
+        /// <returns>A vector <c>(x, y, z, w)</c> where <c>(x, y)</c>
+        /// is the world position of the bounding box center and
+        /// <c>z</c> and <c>w</c> are the bounding box width and
+        /// height, respectively.</returns>
+        public Vector4 GetBoundingBox()
         {
             ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
 
             if (positions.Count == 0)
-                return Vector2.zero;
+                return new Vector4(0, 0, 0, 0);
 
             float xMin = float.PositiveInfinity;
             float xMax = float.NegativeInfinity;
@@ -2915,47 +2920,32 @@ namespace AS2.Sim
             foreach (Vector2Int pos in positions)
             {
                 Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
-                if (abs.x < xMin)
-                    xMin = abs.x;
-                if (abs.x > xMax)
-                    xMax = abs.x;
+                Vector2 rel = Camera.main.WorldToScreenPoint(abs);
+                if (rel.x < xMin)
+                    xMin = rel.x;
+                if (rel.x > xMax)
+                    xMax = rel.x;
 
-                if (abs.y < yMin)
-                    yMin = abs.y;
-                if (abs.y > yMax)
-                    yMax = abs.y;
+                if (rel.y < yMin)
+                    yMin = rel.y;
+                if (rel.y > yMax)
+                    yMax = rel.y;
             }
 
-            return new Vector2((xMin + xMax) / 2.0f, (yMin + yMax) / 2.0f);
-        }
+            Vector3 lowerLeft = new Vector3(xMin, yMin, 5);
+            Vector3 lowerRight = new Vector3(xMax, yMin, 5);
+            Vector3 upperLeft = new Vector3(xMin, yMax, 5);
+            Vector3 upperRight = new Vector3(xMax, yMax, 5);
+            lowerLeft = Camera.main.ScreenToWorldPoint(lowerLeft);
+            lowerRight = Camera.main.ScreenToWorldPoint(lowerRight);
+            upperLeft = Camera.main.ScreenToWorldPoint(upperLeft);
+            upperRight = Camera.main.ScreenToWorldPoint(upperRight);
 
-        public Rect GetBoundingBox()
-        {
-            ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+            Vector2 center = lowerLeft + (upperRight - lowerLeft) / 2;
+            float width = Vector3.Distance(lowerLeft, lowerRight);
+            float height = Vector3.Distance(lowerLeft, upperLeft);
 
-            if (positions.Count == 0)
-                return new Rect(0, 0, 0, 0);
-
-            float xMin = float.PositiveInfinity;
-            float xMax = float.NegativeInfinity;
-            float yMin = float.PositiveInfinity;
-            float yMax = float.NegativeInfinity;
-
-            foreach (Vector2Int pos in positions)
-            {
-                Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
-                if (abs.x < xMin)
-                    xMin = abs.x;
-                if (abs.x > xMax)
-                    xMax = abs.x;
-
-                if (abs.y < yMin)
-                    yMin = abs.y;
-                if (abs.y > yMax)
-                    yMax = abs.y;
-            }
-
-            return new Rect(xMin, yMin, xMax - xMin, yMax - yMin);
+            return new Vector4(center.x, center.y, width, height);
         }
 
         /// <summary>
