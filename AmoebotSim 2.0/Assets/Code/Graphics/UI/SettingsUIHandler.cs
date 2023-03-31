@@ -17,6 +17,10 @@ namespace AS2.UI
         // References
         private UIHandler uiHandler;
 
+        private UISetting_Text setting_cameraPosX;
+        private UISetting_Text setting_cameraPosY;
+        private UISetting_Text setting_cameraSize;
+
         // Data
         public GameObject settingsPanel;
         public GameObject settingsParent;
@@ -26,6 +30,9 @@ namespace AS2.UI
         private const string settingName_animationsOnOff = "Animations On/Off";
         private const string settingName_fullscreen = "Fullscreen";
         private const string settingName_cameraAngle = "Camera Angle";
+        private const string settingName_cameraPosX = "Camera Pos. X";
+        private const string settingName_cameraPosY = "Camera Pos. Y";
+        private const string settingName_cameraSize = "Camera Size";
         private const string settingName_compassOvArrows = "Compass Ov. Arrows";
         private const string settingName_circuitBorder = "Circuit Border";
         private const string settingName_circularRing = "Circular Ring";
@@ -57,6 +64,21 @@ namespace AS2.UI
             // Camera Angle
             UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, settingName_cameraAngle, 0f, 11f, 0f, true);
             setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
+            // Camera Position x and y
+            setting_cameraPosX = new UISetting_Text(null, settingsParent.transform, settingName_cameraPosX, Camera.main.transform.position.x.ToString(), UISetting_Text.InputType.Float);
+            //setting_cameraPosX.onValueChangedEvent += SettingChanged_Text;
+            setting_cameraPosY = new UISetting_Text(null, settingsParent.transform, settingName_cameraPosY, Camera.main.transform.position.y.ToString(), UISetting_Text.InputType.Float);
+            //setting_cameraPosY.onValueChangedEvent += SettingChanged_Text;
+            // Camera Size
+            setting_cameraSize = new UISetting_Text(null, settingsParent.transform, settingName_cameraSize, Camera.main.orthographicSize.ToString(), UISetting_Text.InputType.Float);
+            //setting_cameraSize.onValueChangedEvent += SettingChanged_Text;
+
+            // Button to apply camera settings
+            GameObject go_button_apply = Instantiate(UIDatabase.prefab_ui_button, settingsParent.transform);
+            TextMeshProUGUI tmpro = go_button_apply.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            tmpro.text = "Apply";
+            Button button_apply = go_button_apply.GetComponentInChildren<Button>();
+            button_apply.onClick.AddListener(delegate { Button_CameraApply(); });
 
             // Header: Visualization
             UISetting_Spacing setting_spacing = new UISetting_Spacing(null, settingsParent.transform, "Spacing");
@@ -195,6 +217,32 @@ namespace AS2.UI
             }
         }
 
+        /// <summary>
+        /// Reads the current position and size values from the
+        /// Settings Panel and applies them to the camera.
+        /// </summary>
+        private void Button_CameraApply()
+        {
+            float x = float.Parse(setting_cameraPosX.GetValueString());
+            float y = float.Parse(setting_cameraPosY.GetValueString());
+            float size = float.Parse(setting_cameraSize.GetValueString());
+            MouseController.instance.SetCameraPosition(x, y);
+            MouseController.instance.SetOrthographicSize(size);
+        }
+
+        /// <summary>
+        /// Updates the fields related to the camera position and
+        /// size in the Settings Panel.
+        /// </summary>
+        /// <param name="x">The x coordinate of the camera.</param>
+        /// <param name="y">The y coordinate of the camera.</param>
+        /// <param name="size">The orthographic size of the camera.</param>
+        public void UpdateCameraData(float x, float y, float size)
+        {
+            setting_cameraPosX.SetValueString(x.ToString());
+            setting_cameraPosY.SetValueString(y.ToString());
+            setting_cameraSize.SetValueString(size.ToString());
+        }
 
         /// <summary>
         /// Activates/Deactivates the settings panel depending on its active state.

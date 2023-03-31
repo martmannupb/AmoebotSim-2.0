@@ -849,6 +849,8 @@ namespace AS2.UI
             h *= (1 + topAndBottomBarFraction);
             w *= (1 + topAndBottomBarFraction);
             MouseController.instance.SetOrthographicSize(Mathf.Max(h, w) + frameMargin);
+
+            settingsUI.UpdateCameraData(cam.transform.position.x, cam.transform.position.y, cam.orthographicSize);
         }
 
         /// <summary>
@@ -857,7 +859,10 @@ namespace AS2.UI
         public void Button_CameraCenterPressed()
         {
             Vector4 bbox = sim.system.GetBoundingBox();
-            Camera.main.transform.position = new Vector3(bbox.x, bbox.y, Camera.main.transform.position.z);
+            Camera cam = Camera.main;
+            cam.transform.position = new Vector3(bbox.x, bbox.y, Camera.main.transform.position.z);
+
+            settingsUI.UpdateCameraData(cam.transform.position.x, cam.transform.position.y, cam.orthographicSize);
         }
 
         /// <summary>
