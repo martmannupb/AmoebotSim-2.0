@@ -22,20 +22,13 @@ namespace AS2.UI
         public GameObject settingsParent;
         private Vector2Int nonFullScreenResolution = new Vector2Int(-1, -1);
 
-        // References
-        private ParticleUIExtensionSmoothLerp uiLerpScript;
-
         // Setting names (used to identify which setting has changed)
         private const string settingName_animationsOnOff = "Animations On/Off";
-        private const string settingName_beepRepeatOnOff = "Beep Repeat On/Off";
-        private const string settingName_beepRepeatTime = "Beep Repeat Time (s)";
         private const string settingName_fullscreen = "Fullscreen";
         private const string settingName_cameraAngle = "Camera Angle";
         private const string settingName_compassOvArrows = "Compass Ov. Arrows";
         private const string settingName_circuitBorder = "Circuit Border";
         private const string settingName_circularRing = "Circular Ring";
-        private const string settingName_antiAliasing = "Anti Aliasing";
-        private const string settingName_uiAnimations = "UI Animations";
 
         private void Start()
         {
@@ -56,46 +49,34 @@ namespace AS2.UI
             uiHandler.sim.renderSystem.SetAntiAliasing(8);
             nonFullScreenResolution = new Vector2Int(Screen.width, Screen.height);
             Screen.SetResolution(nonFullScreenResolution.x, nonFullScreenResolution.y, false);
+
             // Settings _________________________
-            // Header
-            UISetting_Header setting_header_animationsBeeps = new UISetting_Header(null, settingsParent.transform, "Animations and Circuits");
-            // Animations On/Off
-            UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_animationsOnOff, RenderSystem.animationsOn);
-            setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
-            // Circuit Beep Repeating
-            UISetting_Toggle setting_beepRepeat = new UISetting_Toggle(null, settingsParent.transform, settingName_beepRepeatOnOff, RenderSystem.data_circuitBeepRepeatOn);
-            setting_beepRepeat.onValueChangedEvent += SettingChanged_Toggle;
-            // Circuit Beep Repeating Time
-            UISetting_ValueSlider setting_beepRepeatTime = new UISetting_ValueSlider(null, settingsParent.transform, settingName_beepRepeatTime, new string[] { "1", "2", "4", "8", "16" }, 2);
-            setting_beepRepeatTime.onValueChangedEventString += SettingChanged_Text;
-            // Header
-            UISetting_Spacing setting_spacing = new UISetting_Spacing(null, settingsParent.transform, "Spacing");
-            UISetting_Header setting_header_graphics = new UISetting_Header(null, settingsParent.transform, "Graphics");
-            // Fullscreen
-            UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, false);
-            setting_fullscreen.onValueChangedEvent += SettingChanged_Toggle;
+            // Header: Camera Controls
+            UISetting_Header setting_header_camera_ctrl = new UISetting_Header(null, settingsParent.transform, "Camera Controls");
+
             // Camera Angle
             UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, settingName_cameraAngle, 0f, 11f, 0f, true);
             setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
+
+            // Header: Visualization
+            UISetting_Spacing setting_spacing = new UISetting_Spacing(null, settingsParent.transform, "Spacing");
+            UISetting_Header setting_header_graphics = new UISetting_Header(null, settingsParent.transform, "Visualization");
+
+            // Animations On/Off
+            UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_animationsOnOff, RenderSystem.animationsOn);
+            setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
             // Compass Dir Overlay Display
             UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, settingName_compassOvArrows, WorldSpaceUIHandler.instance.showCompassDirArrows);
             setting_compassDirOverlayDisplayType.onValueChangedEvent += SettingChanged_Toggle;
-            // Circuit Connections Look
+            // Circuit Connections Border
             UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, settingName_circuitBorder, RenderSystem.flag_circuitBorderActive);
             setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
-            // Graph View Outter Ring
+            // Graph View Outer Ring
             UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, settingName_circularRing, RenderSystem.flag_showCircuitViewOutterRing);
             setting_graphViewOutterRing.onValueChangedEvent += SettingChanged_Toggle;
-            // Anti Aliasing
-            UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(null, settingsParent.transform, settingName_antiAliasing, new string[] { "0", "2", "4", "8" }, 3);
-            setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
-            // UI Lerp
-            uiLerpScript = FindObjectOfType<ParticleUIExtensionSmoothLerp>();
-            if(uiLerpScript != null)
-            {
-                UISetting_Toggle setting_uiLerp = new UISetting_Toggle(null, settingsParent.transform, settingName_uiAnimations, uiLerpScript.GetLerpEnabled());
-                setting_uiLerp.onValueChangedEvent += SettingChanged_Toggle;
-            }
+            // Fullscreen
+            UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, false);
+            setting_fullscreen.onValueChangedEvent += SettingChanged_Toggle;
         }
 
         /// <summary>
@@ -119,6 +100,7 @@ namespace AS2.UI
             }
         }
 
+        // Use this for handling ValueSlider settings with string values
         /// <summary>
         /// Called by a setting callback when a setting has been changed.
         /// </summary>
@@ -128,24 +110,24 @@ namespace AS2.UI
         {
             switch (name)
             {
-                case settingName_beepRepeatTime:
-                    float beepRepeatTime;
-                    if (float.TryParse(text, out beepRepeatTime))
-                    {
-                        RenderSystem.data_circuitBeepRepeatDelay = beepRepeatTime;
-                    }
-                    break;
-                case settingName_antiAliasing:
-                    if (text.Equals("0") || text.Equals("2") || text.Equals("4") || text.Equals("8"))
-                    {
-                        int aa = int.Parse(text);
-                        uiHandler.sim.renderSystem.SetAntiAliasing(aa);
-                    }
-                    else
-                    {
-                        Log.Error("Setting: AA: Wrong value for callback! (" + text + ")");
-                    }
-                    break;
+                //case settingName_beepRepeatTime:
+                //    float beepRepeatTime;
+                //    if (float.TryParse(text, out beepRepeatTime))
+                //    {
+                //        RenderSystem.data_circuitBeepRepeatDelay = beepRepeatTime;
+                //    }
+                //    break;
+                //case settingName_antiAliasing:
+                //    if (text.Equals("0") || text.Equals("2") || text.Equals("4") || text.Equals("8"))
+                //    {
+                //        int aa = int.Parse(text);
+                //        uiHandler.sim.renderSystem.SetAntiAliasing(aa);
+                //    }
+                //    else
+                //    {
+                //        Log.Error("Setting: AA: Wrong value for callback! (" + text + ")");
+                //    }
+                //    break;
                 default:
                     break;
             }
@@ -193,12 +175,6 @@ namespace AS2.UI
                     break;
                 case settingName_animationsOnOff:
                     RenderSystem.animationsOn = isOn;
-                    break;
-                case settingName_beepRepeatOnOff:
-                    RenderSystem.data_circuitBeepRepeatOn = isOn;
-                    break;
-                case settingName_uiAnimations:
-                    uiLerpScript.SetLerpEnabled(isOn);
                     break;
                 default:
                     break;

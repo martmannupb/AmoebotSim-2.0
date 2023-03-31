@@ -78,6 +78,18 @@ namespace AS2.UI
         public Button button_settings;
         public Button button_exit;
 
+        /// <summary>
+        /// Margin around the particle system when framing the
+        /// system in the viewport.
+        /// </summary>
+        public float frameMargin = 1.5f;
+        /// <summary>
+        /// Fraction of the viewport height taken up by the top
+        /// and bottom bar, used for framing the system in view.
+        /// </summary>
+        public float topAndBottomBarFraction = 0.15f;
+
+
         // State
         public UITool activeTool = UITool.Standard;
 
@@ -192,6 +204,11 @@ namespace AS2.UI
                 {
                     // Center Camera
                     Button_CameraCenterPressed();
+                }
+                if (Input.GetKeyDown(KeyCode.F))
+                {
+                    // Frame system
+                    Button_FrameSystemPressed();
                 }
                 if (Input.GetKeyDown(KeyCode.V))
                 {
@@ -812,12 +829,36 @@ namespace AS2.UI
         }
 
         /// <summary>
+        /// Changes the camera position and zoom level such that the whole
+        /// particle system is in frame.
+        /// </summary>
+        public void Button_FrameSystemPressed()
+        {
+            Rect r = sim.system.GetBoundingBox();
+            Camera cam = Camera.main;
+
+            // Center camera first
+            Vector2 center = r.center;
+            cam.transform.position = new Vector3(center.x, center.y, cam.transform.position.z);
+
+            // Set zoom level to fit whole system into view
+            // Orthographic camera size is half the height of the viewport
+            float h = r.height / 2;                       // Minimum camera size required due to system height
+            float w = (r.width / 2) / Camera.main.aspect; // Minimum size required due to system width
+            // Stretch size to fit top and bottom bar
+            h *= (1 + topAndBottomBarFraction);
+            w *= (1 + topAndBottomBarFraction);
+            MouseController.instance.SetOrthographicSize(Mathf.Max(h, w) + frameMargin);
+        }
+
+        /// <summary>
         /// Centers the camera to the particles. Sets the (0,0) position if there are no particles.
         /// </summary>
         public void Button_CameraCenterPressed()
         {
-            Vector2 pos = sim.system.BBoxCenterPosition();
-            Camera.main.transform.position = new Vector3(pos.x, pos.y, Camera.main.transform.position.z);
+            Rect r = sim.system.GetBoundingBox();
+            Vector2 center = r.center;
+            Camera.main.transform.position = new Vector3(center.x, center.y, Camera.main.transform.position.z);
         }
 
         /// <summary>

@@ -2929,6 +2929,35 @@ namespace AS2.Sim
             return new Vector2((xMin + xMax) / 2.0f, (yMin + yMax) / 2.0f);
         }
 
+        public Rect GetBoundingBox()
+        {
+            ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+
+            if (positions.Count == 0)
+                return new Rect(0, 0, 0, 0);
+
+            float xMin = float.PositiveInfinity;
+            float xMax = float.NegativeInfinity;
+            float yMin = float.PositiveInfinity;
+            float yMax = float.NegativeInfinity;
+
+            foreach (Vector2Int pos in positions)
+            {
+                Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
+                if (abs.x < xMin)
+                    xMin = abs.x;
+                if (abs.x > xMax)
+                    xMax = abs.x;
+
+                if (abs.y < yMin)
+                    yMin = abs.y;
+                if (abs.y > yMax)
+                    yMax = abs.y;
+            }
+
+            return new Rect(xMin, yMin, xMax - xMin, yMax - yMin);
+        }
+
         /// <summary>
         /// Returns the world coordinates of the system's current anchor particle.
         /// </summary>

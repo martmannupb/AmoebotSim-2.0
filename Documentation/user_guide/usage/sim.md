@@ -175,6 +175,7 @@ PageUp or Shift + Right Arrow Key  | Step Forward
 PageDown or Shift + Left Arrow Key | Step Back
 H                                  | Hide/Show UI
 Shift + C                          | Center Camera
+Shift + F                          | Frame whole system
 Shift + V                          | Take Screenshot
 Shift + S                          | Save Simulation State
 Shift + O                          | Load Simulation State

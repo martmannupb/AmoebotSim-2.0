@@ -147,7 +147,7 @@ namespace AS2.UI
             }
             // Show algorithm parameters
             AmoebotSimulator.instance.system.SetSelectedAlgorithm(algorithm);
-            AmoebotSimulator.instance.uiHandler.Button_CameraCenterPressed();
+            AmoebotSimulator.instance.uiHandler.Button_FrameSystemPressed();
         }
 
         /// <summary>
@@ -274,6 +274,8 @@ namespace AS2.UI
             AmoebotSimulator.instance.system.InitializationModeStarted(alg_setting_algo.GetValueString());
             // Generate (can be skipped)
             //ButtonPressed_Generate();
+            // Center camera
+            AmoebotSimulator.instance.uiHandler.Button_FrameSystemPressed();
             // Event
             EventDatabase.event_initializationUI_initModeOpenClose?.Invoke(true);
         }
@@ -387,8 +389,8 @@ namespace AS2.UI
             //uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
             AmoebotSimulator.instance.system.GenerateParticles(genAlgorithm, parameterObjects);
 
-            // Center Camera
-            AmoebotSimulator.instance.uiHandler.Button_CameraCenterPressed();
+            // Bring whole system into view
+            AmoebotSimulator.instance.uiHandler.Button_FrameSystemPressed();
         }
 
         /// <summary>
