@@ -47,7 +47,7 @@ This can be useful if some error only occurs when certain random decisions are m
 ![Top Bar](~/images/top_bar_sim.png "Top Bar")
 
 The Top Bar shows various changes compared to Init Mode.
-Minor changes include that the Save button (second button in the left group) now works and the Settings button (second button in the right group) is now enabled.
+Minor changes include that the Save button (second button in the left group) now works and the Settings button (third button in the right group) is now enabled.
 The Settings button is explained further below.
 
 ### Tool Menu
@@ -108,25 +108,37 @@ The third and fourth button simply toggle the circuit and bond visualization on 
 
 The Settings Panel is opened by pressing the Top Bar button with the gear icon, which is the second-last button in the Top Bar.
 It will appear on the right side of the UI, where the Initialization Panel is in Init Mode.
-The panel contains various general settings, mainly for modifying the visualization.
+The panel contains some advanced camera controls and visualization options.
 
-**Animations On/Off**  
-This setting toggles the movement animations on and off.
-Animations make the particle movements much easier to understand, but the simulation might run faster with animations turned off.
-
-**Beep Repeat On/Off** and **Beep Repeat Time (s)**  
-*Deprecated*
-
-**Fullscreen**  
-When the application is built and run as a standalone outside the Unity Editor, this setting can be used to toggle between fullscreen and windowed mode.
-It is recommended to run the application in fullscreen mode.
-This setting has no effect when the simulator runs in the Unity Editor.
+### Camera Controls
 
 **Camera Angle**  
 This slider controls the rotation angle of the viewport.
 Moving the slider to the right rotates the camera counter-clockwise in 30 degree steps.
 
-**Compass ov. Arrows**  
+**Camera Pos. X** and **Camera Pos. Y**  
+These fields can be used to specify the coordinates of the center of the camera.
+The position is only updated when the `Apply` button below is clicked.
+When the camera is centered or framed around the particle system, the content of these fields is updated.
+
+**Grid Coordinates**  
+If this toggle is enabled, the coordinates specified in the above fields are grid coordinates instead of world coordinates.
+
+**Camera Size**  
+This field is used to specify the camera's orthographic size, which corresponds to the zoom level.
+The value is applied to the camera when the `Apply` button is clicked.
+Its value is updated when the camera is framed around the particle system by pressing the button in the Top Bar.
+
+**Apply**  
+This button applies the currently set camera position and zoom level to the camera.
+
+### Visualization
+
+**Animations On/Off**  
+This setting toggles the movement animations on and off.
+Animations make the particle movements much easier to understand, but the simulation might run faster with animations turned off.
+
+**Compass Ov. Arrows**  
 This setting changes the visualization of compass directions in the particle overlay showing the compasses of all particles.
 When it is enabled, the compass directions are displayed as arrows.
 When it is disabled, the directions are represented by their textual names (like E, NNE, etc.) instead.
@@ -140,12 +152,10 @@ The border is not visible if a beep is sent on the circuit.
 This setting toggles the ring around the particles in graph view mode (see view modes above).
 Turning the rings off removes the color information from the particles but may be useful for creating screenshots with a particular style.
 
-**Anti Aliasing**  
-Controls the level of Multi-Sample Anti-aliasing performed by the GPU.
-*Does not seem to have a visible effect*
-
-**UI Animations**  
-Toggles the sliding animation of the Randomization bar in the Particle Panel on and off.
+**Fullscreen**  
+When the application is built and run as a standalone outside the Unity Editor, this setting can be used to toggle between fullscreen and windowed mode.
+It is recommended to run the application in fullscreen mode.
+This setting has no effect when the simulator runs in the Unity Editor.
 
 
 <img src="~/images/particle_panel_sim.png" alt="Particle Panel (Simulation Mode)" title="Particle Panel (Simulation Mode)" width="200" align="right"/>
@@ -167,19 +177,19 @@ If you want to change a particle's state in an earlier round, you will need to c
 The simulation environment provides several hotkeys so that its functions can be accessed more easily.
 Here is a short overview of the currently set hotkeys:
 
-Hotkey                             | Function
------------------------------------|----------------------
-Right Ctrl + Arrow Keys or WASD    | Camera Movement
-Space                              | Play/Pause
-PageUp or Shift + Right Arrow Key  | Step Forward
-PageDown or Shift + Left Arrow Key | Step Back
-H                                  | Hide/Show UI
-Shift + C                          | Center Camera
-Shift + F                          | Frame whole system
-Shift + V                          | Take Screenshot
-Shift + S                          | Save Simulation State
-Shift + O                          | Load Simulation State
-Shift + Q                          | Exit Simulator
+Hotkey                               | Function
+-------------------------------------|----------------------
+Right Ctrl + (Arrow Keys or WASD)    | Camera Movement
+Space                                | Play/Pause
+PageUp or (Shift + Right Arrow Key)  | Step Forward
+PageDown or (Shift + Left Arrow Key) | Step Back
+H                                    | Hide/Show UI
+Shift + C                            | Center Camera
+Shift + F                            | Frame whole system
+Shift + V                            | Take Screenshot
+Shift + S                            | Save Simulation State
+Shift + O                            | Load Simulation State
+Shift + Q                            | Exit Simulator
 
 If you want to modify the hotkeys, this can be done in the [`UIHandler`][1] class found in `Assets/Code/Graphics/UI/UIHandler.cs`.
 You can read more about this class and the UI system implementation on the [Dev Guide pages](~/dev_guide/ui.md).

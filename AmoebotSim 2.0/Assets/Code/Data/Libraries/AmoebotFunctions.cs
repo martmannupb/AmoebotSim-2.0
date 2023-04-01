@@ -72,6 +72,14 @@ namespace AS2
             return new Vector2Int(Mathf.RoundToInt(gridPosX), Mathf.RoundToInt(gridPosY));
         }
 
+        public static Vector2 GetGridCoordinatesFromWorldPosition(Vector2 worldPosition)
+        {
+            float sinVal = Mathf.Sin(Mathf.PI * 60f / 180f);
+            float gridPosY = worldPosition.y / sinVal;
+            float gridPosX = worldPosition.x - 0.5f * gridPosY;
+            return new Vector2(gridPosX, gridPosY);
+        }
+
         public static Vector2 NearestHexFieldWorldPositionFromWorldPosition(Vector2 worldPosition)
         {
             return CalculateAmoebotCenterPositionVector2(GetGridPositionFromWorldPosition(worldPosition));

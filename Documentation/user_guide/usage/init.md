@@ -179,13 +179,14 @@ While this overlay is active, all camera movements are disabled because updating
 
 The other buttons only make a difference in Simulation Mode and will be explained later.
 
-<img src="~/images/top_bar_right.png" alt="Right Top Bar Group" title="Right Top Bar Group" width="100" align="right"/>
+<img src="~/images/top_bar_right.png" alt="Right Top Bar Group" title="Right Top Bar Group" width="150" align="right"/>
 
 ### Right Group
 
 The fourth group, located on the far right side, contains more general utility functions.
-Its first button centers the viewport on the particle system using the center of the particle system's bounding rectangle.
-The second button only works in Simulation Mode and opens the Settings Panel.
+Its first button brings the whole particle system into view by setting the camera position and the zoom level appropriately.
+The second button just centers the viewport on the particle system using the center of its bounding rectangle, but it does not change the zoom level.
+The third button only works in Simulation Mode and opens the Settings Panel.
 The last button closes the application and is available in Init and Simulation Mode.
 
 

@@ -25,6 +25,7 @@ namespace AS2.UI
         public GameObject settingsPanel;
         public GameObject settingsParent;
         private Vector2Int nonFullScreenResolution = new Vector2Int(-1, -1);
+        private bool camPosInGridCoords = false;    // Stores whether camera coordinates are in grid or world system
 
         // Setting names (used to identify which setting has changed)
         private const string settingName_animationsOnOff = "Animations On/Off";
@@ -32,6 +33,7 @@ namespace AS2.UI
         private const string settingName_cameraAngle = "Camera Angle";
         private const string settingName_cameraPosX = "Camera Pos. X";
         private const string settingName_cameraPosY = "Camera Pos. Y";
+        private const string settingName_cameraPosWorldOrGrid = "Grid Coordinates";
         private const string settingName_cameraSize = "Camera Size";
         private const string settingName_compassOvArrows = "Compass Ov. Arrows";
         private const string settingName_circuitBorder = "Circuit Border";
@@ -66,12 +68,13 @@ namespace AS2.UI
             setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
             // Camera Position x and y
             setting_cameraPosX = new UISetting_Text(null, settingsParent.transform, settingName_cameraPosX, Camera.main.transform.position.x.ToString(), UISetting_Text.InputType.Float);
-            //setting_cameraPosX.onValueChangedEvent += SettingChanged_Text;
             setting_cameraPosY = new UISetting_Text(null, settingsParent.transform, settingName_cameraPosY, Camera.main.transform.position.y.ToString(), UISetting_Text.InputType.Float);
-            //setting_cameraPosY.onValueChangedEvent += SettingChanged_Text;
+            // Toggle between world and grid coordinates
+            UISetting_Toggle setting_cameraPosWorldOrGrid = new UISetting_Toggle(null, settingsParent.transform, settingName_cameraPosWorldOrGrid, false);
+            setting_cameraPosWorldOrGrid.onValueChangedEvent += SettingChanged_Toggle;
+            camPosInGridCoords = false;
             // Camera Size
             setting_cameraSize = new UISetting_Text(null, settingsParent.transform, settingName_cameraSize, Camera.main.orthographicSize.ToString(), UISetting_Text.InputType.Float);
-            //setting_cameraSize.onValueChangedEvent += SettingChanged_Text;
 
             // Button to apply camera settings
             GameObject go_button_apply = Instantiate(UIDatabase.prefab_ui_button, settingsParent.transform);
@@ -198,6 +201,9 @@ namespace AS2.UI
                 case settingName_animationsOnOff:
                     RenderSystem.animationsOn = isOn;
                     break;
+                case settingName_cameraPosWorldOrGrid:
+                    ToggleCamPositionWorldGrid(isOn);
+                    break;
                 default:
                     break;
             }
@@ -225,20 +231,66 @@ namespace AS2.UI
         {
             float x = float.Parse(setting_cameraPosX.GetValueString());
             float y = float.Parse(setting_cameraPosY.GetValueString());
+            // Convert to world coordinates if necessary
+            if (camPosInGridCoords)
+            {
+                Vector2 pos = new Vector2(x, y);
+                pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
+                x = pos.x;
+                y = pos.y;
+            }
             float size = float.Parse(setting_cameraSize.GetValueString());
             MouseController.instance.SetCameraPosition(x, y);
             MouseController.instance.SetOrthographicSize(size);
         }
 
         /// <summary>
+        /// Changes the displayed camera coordinates to be
+        /// world or grid coordinates.
+        /// </summary>
+        /// <param name="grid">If <c>true</c>, display grid
+        /// coordinates, otherwise display world coordinates.</param>
+        private void ToggleCamPositionWorldGrid(bool grid)
+        {
+            if (grid == camPosInGridCoords)
+                return;
+
+            if (grid)
+            {
+                // Convert world to grid coordinates
+                Vector2 worldPos = new Vector2(float.Parse(setting_cameraPosX.GetValueString()), float.Parse(setting_cameraPosY.GetValueString()));
+                Vector2 gridPos = AmoebotFunctions.GetGridCoordinatesFromWorldPosition(worldPos);
+                setting_cameraPosX.SetValueString(gridPos.x.ToString());
+                setting_cameraPosY.SetValueString(gridPos.y.ToString());
+            }
+            else
+            {
+                // Convert grid to world coordinates
+                Vector2 gridPos = new Vector2(float.Parse(setting_cameraPosX.GetValueString()), float.Parse(setting_cameraPosY.GetValueString()));
+                Vector2 worldPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPos);
+                setting_cameraPosX.SetValueString(worldPos.x.ToString());
+                setting_cameraPosY.SetValueString(worldPos.y.ToString());
+            }
+            camPosInGridCoords = grid;
+        }
+
+        /// <summary>
         /// Updates the fields related to the camera position and
         /// size in the Settings Panel.
         /// </summary>
-        /// <param name="x">The x coordinate of the camera.</param>
-        /// <param name="y">The y coordinate of the camera.</param>
+        /// <param name="x">The x world coordinate of the camera.</param>
+        /// <param name="y">The y world coordinate of the camera.</param>
         /// <param name="size">The orthographic size of the camera.</param>
         public void UpdateCameraData(float x, float y, float size)
         {
+            // Convert to grid coordinates if necessary
+            if (camPosInGridCoords)
+            {
+                Vector2 pos = new Vector2(x, y);
+                pos = AmoebotFunctions.GetGridCoordinatesFromWorldPosition(pos);
+                x = pos.x;
+                y = pos.y;
+            }
             setting_cameraPosX.SetValueString(x.ToString());
             setting_cameraPosY.SetValueString(y.ToString());
             setting_cameraSize.SetValueString(size.ToString());
