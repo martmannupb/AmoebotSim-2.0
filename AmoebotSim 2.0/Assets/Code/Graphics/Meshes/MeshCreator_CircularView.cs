@@ -14,7 +14,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the horizontal background lines.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="UnityEngine.Mesh"/> containing
+        /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> horizontal
+        /// lines for the background grid.</returns>
         public static Mesh GetMesh_BGLinesHorizontal()
         {
             // Mesh Data
@@ -66,7 +68,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the diagonal background lines from bottom right to top left.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="UnityEngine.Mesh"/> containing
+        /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> diagonal lines from
+        /// the top left to the bottom right for the background grid.</returns>
         public static Mesh GetMesh_BGLinesTopLeftBottomRight()
         {
             // Mesh Data
@@ -78,8 +82,6 @@ namespace AS2.Visuals
 
             // Variables
             float width = RenderSystem.const_circularViewBGLineWidth;
-            float widthHalf = width / 2f;
-            //float length = RenderSystem.const_circularViewBGLineLength;
             float dist = width / Mathf.Sin(60 * Mathf.Deg2Rad);
             float distHalf = dist / 2f;
 
@@ -120,7 +122,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the diagonal background lines from bottom left to top right.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="UnityEngine.Mesh"/> containing
+        /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> diagonal lines from
+        /// the top right to the bottom left for the background grid.</returns>
         public static Mesh GetMesh_BGLinesTopRightBottomLeft()
         {
             // Mesh Data

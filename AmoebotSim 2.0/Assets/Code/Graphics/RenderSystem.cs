@@ -26,11 +26,32 @@ namespace AS2.Visuals
 
         // Static Params _____
         // General
+        /// <summary>
+        /// Width of graph view background lines as fraction of row height.
+        /// </summary>
         public const float const_circularViewBGLineWidth = 0.06f;
+        /// <summary>
+        /// Length of graph view background lines in world units.
+        /// </summary>
         public const int const_circularViewBGLineLength = 1000000;
+        /// <summary>
+        /// Number of lines in each direction of the background mesh.
+        /// </summary>
         public const int const_amountOfLinesPerMesh = 100;
+        /// <summary>
+        /// Universal scale for hexagons.
+        /// </summary>
         public const float const_hexagonalScale = 1f;
+        /// <summary>
+        /// The thickness of hexagon borders at the corners.
+        /// Does not scale with <see cref="const_hexagonalScale"/>
+        /// (increasing the scale leads to relatively thinner
+        /// borders).
+        /// </summary>
         public const float const_hexagonalBorderWidth = 0.12f;
+        /// <summary>
+        /// Number of hexagons in one mesh for the hexagonal background.
+        /// </summary>
         public const int const_hexagonalBGHexLineAmount = 200;
         public const float const_circuitLineWidth = 0.02f;
         public const float const_circuitConnectorLineWidth = 0.06f;
@@ -41,6 +62,9 @@ namespace AS2.Visuals
         public const float const_bondsLineWidthHex = 0.4f;
         public const float const_bondsLineWidthCirc = 0.15f;
         // Layers
+        // The z layers of the objects determine how they are ordered
+        // Smaller z layers are in front of larger ones
+        // The camera is at z layer -10, everything below that will not be visible
         public const float zLayer_background = 10f;
         public const float ZLayer_bonds = 9f;
         public const float ZLayer_particlesBG = 5.1f;
@@ -89,9 +113,6 @@ namespace AS2.Visuals
         public RendererUI rendererUI;
 
 
-
-
-
         public RenderSystem(AmoebotSimulator sim, InputController inputController)
         {
             rendererBG = new RendererBackground();
@@ -117,7 +138,8 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Signalizes the Renderer that the last round of particle movements has been successfully calculated.
+        /// Signalizes the Renderer that the last round of particle movements
+        /// has been successfully calculated, triggering the movement animation.
         /// </summary>
         public void ParticleMovementOver()
         {
@@ -127,7 +149,8 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Signalizes the Renderer that the last round of circuit updates has been successfully calculated (all circuits have been updated).
+        /// Signalizes the Renderer that the last round of circuit updates has been
+        /// successfully calculated (all circuits have been updated).
         /// Updates that have not yet been shown will be displayed now.
         /// </summary>
         public void CircuitCalculationOver()
@@ -139,7 +162,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Updates the timing of the animations.
         /// </summary>
-        /// <param name="roundTime"></param>
+        /// <param name="roundTime">The new duration of a round.
+        /// Must not be 0.</param>
         public void SetRoundTime(float roundTime)
         {
             data_roundTime = roundTime;
@@ -156,7 +180,8 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Toggles through the several view types like hexagonal, circular and graph view.
+        /// Toggles through the available view types:
+        /// Hexagonal -> Circular -> Graph.
         /// </summary>
         public void ToggleViewType()
         {
@@ -181,7 +206,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Returns the current view type.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The <see cref="ViewType"/> currently used to
+        /// render the particle system.</returns>
         public ViewType GetCurrentViewType()
         {
             return setting_viewType;
@@ -190,7 +216,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Returns the partition set view type.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The <see cref="PartitionSetViewType"/> currently
+        /// used to place partition sets.</returns>
         public PartitionSetViewType GetPSetViewType()
         {
             return flag_partitionSetViewType;
@@ -206,6 +233,7 @@ namespace AS2.Visuals
 
         /// <summary>
         /// Toggles the partition set positioning.
+        /// Code override -> Auto disk -> Auto circle -> Line.
         /// </summary>
         public void TogglePSetPositioning()
         {
@@ -238,18 +266,20 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Tells you if the circuits are currently visible.
+        /// Checks if the circuits are currently visible.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the circuits
+        /// are visible.</returns>
         public bool IsCircuitViewActive()
         {
             return flag_showCircuitView;
         }
 
         /// <summary>
-        /// Returns true if the bonds are currently shown.
+        /// Checks if the bonds are currently shown.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the bonds
+        /// are visible.</returns>
         public bool AreBondsActive()
         {
             return flag_showBonds;
@@ -258,7 +288,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Updates the anti-aliasing setting of the graphical interface.
         /// </summary>
-        /// <param name="value">0 = off, 2,4,8 = Anti-Aliasing Setting</param>
+        /// <param name="value">0 = off, 2,4,8 = Anti-Aliasing samples.</param>
         public void SetAntiAliasing(int value)
         {
             if (value == 0 || value == 2 || value == 4 || value == 8) setting_antiAliasing = value;
@@ -266,7 +296,7 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Toggles through the anti-aliasing in the following order 0->2->4->8->0 ...
+        /// Toggles through the anti-aliasing in the following order: 0->2->4->8->0 ...
         /// </summary>
         public void ToggleAntiAliasing()
         {
@@ -291,14 +321,14 @@ namespace AS2.Visuals
         /// <summary>
         /// Returns the current anti-aliasing setting.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The current number of anti-aliasing samples.</returns>
         public int GetAntiAliasing()
         {
             return setting_antiAliasing;
         }
 
         /// <summary>
-        /// Increments the anti-aliasing.
+        /// Increments the anti-aliasing samples.
         /// </summary>
         public void AntiAliasing_Incr()
         {
@@ -321,7 +351,7 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Decrements the anti-aliasing.
+        /// Decrements the anti-aliasing samples.
         /// </summary>
         public void AntiAliasing_Decr()
         {

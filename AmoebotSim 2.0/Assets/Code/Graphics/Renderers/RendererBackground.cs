@@ -26,8 +26,11 @@ namespace AS2.Visuals
 
         /// <summary>
         /// Renders the background based on the current view.
+        /// Should be called in every frame.
         /// </summary>
-        /// <param name="viewType"></param>
+        /// <param name="viewType">The view type that is
+        /// used to render the particle system. Influences
+        /// which type of background is rendered.</param>
         public void Render(ViewType viewType)
         {
             switch (viewType)
@@ -87,7 +90,7 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Render a grid for circular particles.
+        /// Renders a grid for circular particles with instanced drawing.
         /// </summary>
         private void Render_Circular()
         {
@@ -100,7 +103,7 @@ namespace AS2.Visuals
             float widthHeightRatio = screenSize.y / screenSize.x;
 
             // 1. Background
-            // We need to adjust the bounds so the grid ist evenly placed on the screen
+            // We need to adjust the bounds so the grid is evenly placed on the screen
             Vector2 bgPosBL = camLowest + new Vector2(-10f - screenSize.y * widthHeightRatio * 1.5f, -10f);
             Vector2 bgPosTR = camHighest + new Vector2(10f + screenSize.y * widthHeightRatio * 1.5f, 10f);
             int amountDiagonalMeshes = Mathf.CeilToInt(bgPosTR.x - bgPosBL.x + 2) / RenderSystem.const_amountOfLinesPerMesh + 1;

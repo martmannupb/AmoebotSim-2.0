@@ -832,7 +832,9 @@ namespace AS2.Visuals
         /// A mesh that is a line of hexagons which form a grid.
         /// Put multiple next to each other to form the background for the hexagonal views.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="UnityEngine.Mesh"/> containing a line of
+        /// <see cref="RenderSystem.const_hexagonalBGHexLineAmount"/> hexagons
+        /// for the hexagonal background grid.</returns>
         public static Mesh GetMesh_HexagonGridLine()
         {
             Mesh mesh = new Mesh();
@@ -906,39 +908,6 @@ namespace AS2.Visuals
                 vertices[21 + i * 24] = bottomI;
                 vertices[22 + i * 24] = bottomLeftO;
                 vertices[23 + i * 24] = bottomLeftI;
-
-                // TEST ZERO -------------------------------------------------------
-                //// Left
-                //vertices[0 + i * 24] = Vector3.zero;
-                //vertices[1 + i * 24] = Vector3.zero;
-                //vertices[2 + i * 24] = Vector3.zero;
-                //vertices[3 + i * 24] = Vector3.zero;
-                //// Top Left
-                //vertices[4 + i * 24] = Vector3.zero;
-                //vertices[5 + i * 24] = Vector3.zero;
-                //vertices[6 + i * 24] = Vector3.zero;
-                //vertices[7 + i * 24] = Vector3.zero;
-                //// Top Right
-                //vertices[8 + i * 24] = Vector3.zero;
-                //vertices[9 + i * 24] = Vector3.zero;
-                //vertices[10 + i * 24] = Vector3.zero;
-                //vertices[11 + i * 24] = Vector3.zero;
-                //// Right
-                //vertices[12 + i * 24] = Vector3.zero;
-                //vertices[13 + i * 24] = Vector3.zero;
-                //vertices[14 + i * 24] = Vector3.zero;
-                //vertices[15 + i * 24] = Vector3.zero;
-                //// Bottom Right
-                //vertices[16 + i * 24] = Vector3.zero;
-                //vertices[17 + i * 24] = Vector3.zero;
-                //vertices[18 + i * 24] = Vector3.zero;
-                //vertices[19 + i * 24] = Vector3.zero;
-                //// Bottom Left
-                //vertices[20 + i * 24] = Vector3.zero;
-                //vertices[21 + i * 24] = Vector3.zero;
-                //vertices[22 + i * 24] = Vector3.zero;
-                //vertices[23 + i * 24] = Vector3.zero;
-                // -------------------------------------------------------
 
                 // Triangles _____
                 for (int j = 0; j < 6; j++)
