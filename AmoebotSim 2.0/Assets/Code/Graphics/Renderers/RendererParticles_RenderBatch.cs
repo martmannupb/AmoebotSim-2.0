@@ -278,8 +278,8 @@ namespace AS2.Visuals
         /// (this might seem a little odd, but the system was added later and seemed to be easily implementable it this way)</param>
         public void UpdateMatrix(ParticleGraphicsAdapterImpl gd, bool executeJointMovement)
         {
-            Vector3 particle_position1world = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles);
-            Vector3 particle_position2world = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles);
+            Vector3 particle_position1world = AmoebotFunctions.GridToWorldPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles);
+            Vector3 particle_position2world = AmoebotFunctions.GridToWorldPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles);
             Vector3 pin_position1world = new Vector3(particle_position1world.x, particle_position1world.y, RenderSystem.zLayer_pins);
             Vector3 pin_position2world = new Vector3(particle_position2world.x, particle_position2world.y, RenderSystem.zLayer_pins);
 
@@ -307,7 +307,7 @@ namespace AS2.Visuals
                     //Vector2Int jointMovementPositionOffsetInv = gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding ? gd.state_prev.position2 - gd.state_cur.position2 : gd.state_prev.position1 - gd.state_cur.position1;
                     Vector2Int jointMovementPositionOffsetInv = new Vector2Int(-gd.state_cur.jointMovementState.jointExpansionOffset.x, -gd.state_cur.jointMovementState.jointExpansionOffset.y);
                     // Set World Offset
-                    Vector3 absPositionOffsetInv = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(jointMovementPositionOffsetInv);
+                    Vector3 absPositionOffsetInv = AmoebotFunctions.GridToWorldPositionVector2(jointMovementPositionOffsetInv);
                     particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID] = absPositionOffsetInv;
                 }
                 else

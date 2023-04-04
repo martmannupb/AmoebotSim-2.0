@@ -2891,7 +2891,7 @@ namespace AS2.Sim
             if (positions.Count > 0)
                 avg /= positions.Count;
 
-            return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(avg.x, avg.y);
+            return AmoebotFunctions.GridToWorldPositionVector2(avg.x, avg.y);
         }
 
         /// <summary>
@@ -2919,7 +2919,7 @@ namespace AS2.Sim
 
             foreach (Vector2Int pos in positions)
             {
-                Vector2 abs = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
+                Vector2 abs = AmoebotFunctions.GridToWorldPositionVector2(pos);
                 Vector2 rel = Camera.main.WorldToScreenPoint(abs);
                 if (rel.x < xMin)
                     xMin = rel.x;
@@ -2976,7 +2976,7 @@ namespace AS2.Sim
             else
                 result = Vector2.zero;
 
-            return AmoebotFunctions.CalculateAmoebotCenterPositionVector2(result.x, result.y);
+            return AmoebotFunctions.GridToWorldPositionVector2(result.x, result.y);
         }
 
         /// <summary>

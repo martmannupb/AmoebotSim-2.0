@@ -44,8 +44,8 @@ namespace AS2.Visuals
                 {
                     // Sim paused in simulation mode
                     // Check if partition set is at the given position
-                    drag_originNodeWorldPos = AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(originWorldPos);
-                    drag_originGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(drag_originNodeWorldPos);
+                    drag_originNodeWorldPos = AmoebotFunctions.WorldPositionToNearestNodePosition(originWorldPos);
+                    drag_originGridPos = AmoebotFunctions.WorldToGridPosition(drag_originNodeWorldPos);
                     IParticleState particle;
                     sim.system.TryGetParticleAt(drag_originGridPos, out particle);
                     if(particle != null)
@@ -72,7 +72,7 @@ namespace AS2.Visuals
                 if (sim.uiHandler.initializationUI.IsOpen() == false && sim.running == false)
                 {
                     // Sim paused in simulation mode
-                    Vector2Int curGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(curWorldPos));
+                    Vector2Int curGridPos = AmoebotFunctions.WorldToGridPosition(AmoebotFunctions.WorldPositionToNearestNodePosition(curWorldPos));
                     if(curGridPos == drag_originGridPos || (drag_circuitData.snap.isExpanded && (curGridPos == drag_circuitData.snap.position1 || curGridPos == drag_circuitData.snap.position2)))
                     {
                         // Current position is at the same node(s) as the particle
@@ -123,8 +123,8 @@ namespace AS2.Visuals
                 {
                     // Sim paused in simulation mode
                     // Check if partition set is at the given position
-                    drag_originNodeWorldPos = AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(curMouseWorldPosition);
-                    drag_originGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(drag_originNodeWorldPos);
+                    drag_originNodeWorldPos = AmoebotFunctions.WorldPositionToNearestNodePosition(curMouseWorldPosition);
+                    drag_originGridPos = AmoebotFunctions.WorldToGridPosition(drag_originNodeWorldPos);
                     IParticleState particle;
                     sim.system.TryGetParticleAt(drag_originGridPos, out particle);
                     if (particle != null)

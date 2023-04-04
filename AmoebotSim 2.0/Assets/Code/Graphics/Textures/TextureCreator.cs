@@ -167,8 +167,8 @@ namespace AS2.Visuals
             for (int i = 0; i < pinsPerSide; i++)
             {
                 // Calc center pos of this pin relative from texture center
-                Vector2 relPosTopRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides());
-                Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides());
+                Vector2 relPosTopRight = new Vector2(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2);
+                Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2);
                 for (int j = 0; j < pinsPerSide; j++)
                 {
                     Vector2 relPosPinRight = Vector2.zero;
@@ -186,7 +186,7 @@ namespace AS2.Visuals
                     else if (viewType == ViewType.HexagonalCirc)
                     {
                         // Circular Particles with Circuits (we have a circle and work with angles and the distance to the center)
-                        float distanceToCenter = AmoebotFunctions.HexVertex_XValue();
+                        float distanceToCenter = AmoebotFunctions.hexRadiusMinor;
                         relPosPinRight = new Vector2(distanceToCenter, 0f);
                         if (pinsPerSide > 1)
                         {
@@ -303,8 +303,8 @@ namespace AS2.Visuals
             for (int i = 0; i < pinsPerSide; i++)
             {
                 // Calc center pos of this pin relative from texture center
-                Vector2 relPosTopRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides());
-                Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides());
+                Vector2 relPosTopRight = new Vector2(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2);
+                Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2);
                 for (int j = 0; j < pinsPerSide; j++)
                 {
                     Vector2 relPosPinRight = Vector2.zero;
@@ -322,7 +322,7 @@ namespace AS2.Visuals
                     else if (viewType == ViewType.HexagonalCirc)
                     {
                         // Circular Particles with Circuits (we have a circle and work with angles and the distance to the center)
-                        float distanceToCenter = AmoebotFunctions.HexVertex_XValue();
+                        float distanceToCenter = AmoebotFunctions.hexRadiusMinor;
                         relPosPinRight = new Vector2(distanceToCenter, 0f);
                         if (pinsPerSide > 1)
                         {

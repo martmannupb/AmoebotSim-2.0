@@ -313,7 +313,7 @@ namespace AS2.Visuals
                 if (isHead && pSet.graphicalData.hasPinsInTail || isHead == false && pSet.graphicalData.hasPinsInHead)
                 {
                     // Add one additional virtual position in direction of the center of the expanded particle
-                    addVector = CalculateGlobalExpandedPartitionSetCenterNodePosition(isHead ? circuitData.snap.position1 : circuitData.snap.position2, 1, 1, isHead ? 60f * circuitData.state.neighbor1ToNeighbor2Direction : 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6), isHead ? false : true) - (isHead ? AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1) : AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2));
+                    addVector = CalculateGlobalExpandedPartitionSetCenterNodePosition(isHead ? circuitData.snap.position1 : circuitData.snap.position2, 1, 1, isHead ? 60f * circuitData.state.neighbor1ToNeighbor2Direction : 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6), isHead ? false : true) - (isHead ? AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position1) : AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position2));
                     relPos += addVector;
                     virtualPinCount++;
                 }
@@ -403,7 +403,7 @@ namespace AS2.Visuals
                                 counter++;
                                 Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                                 // Calc partition set position on the circle
-                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
+                                Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position1);
                                 // Save position
                                 pSet.graphicalData.active_position1 = posParticle + localPinPos;
                             }
@@ -418,7 +418,7 @@ namespace AS2.Visuals
                                 counter++;
                                 Vector2 localPinPos = (vectorList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : vector;
                                 // Calc partition set position on the circle
-                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
+                                Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position1);
                                 // Save position
                                 pSet.graphicalData.active_position1 = posParticle + localPinPos;
                             }
@@ -432,7 +432,7 @@ namespace AS2.Visuals
                                 counter++;
                                 Vector2 localPinPos = Library.DegreeConstants.DegreeToCoordinate(pSet.graphicalData.codeOverride_coordinate1.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate1.radiusPercentage, 90f);
                                 // Calc partition set position on the circle
-                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1);
+                                Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position1);
                                 // Save position
                                 pSet.graphicalData.active_position1 = posParticle + localPinPos;
                             }
@@ -515,7 +515,7 @@ namespace AS2.Visuals
                                 counter++;
                                 Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                                 // Calc partition set position on the circle
-                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
+                                Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position2);
                                 // Save position
                                 pSet.graphicalData.active_position2 = posParticle + localPinPos;
                             }
@@ -530,7 +530,7 @@ namespace AS2.Visuals
                                 counter++;
                                 Vector2 localPinPos = (vectorList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : vector;
                                 // Calc partition set position on the circle
-                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
+                                Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position2);
                                 // Save position
                                 pSet.graphicalData.active_position2 = posParticle + localPinPos;
                             }
@@ -544,7 +544,7 @@ namespace AS2.Visuals
                                 counter++;
                                 Vector2 localPinPos = Library.DegreeConstants.DegreeToCoordinate(pSet.graphicalData.codeOverride_coordinate2.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate2.radiusPercentage, 90f);
                                 // Calc partition set position on the circle
-                                Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2);
+                                Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position2);
                                 // Save position
                                 pSet.graphicalData.active_position2 = posParticle + localPinPos;
                             }
@@ -567,7 +567,7 @@ namespace AS2.Visuals
                         // Calculate the average partition set positions
                         Vector2 averageSetPosition = (pSet.graphicalData.active_position1 + pSet.graphicalData.active_position2) / 2f;
                         // Distance to line through particles
-                        float distanceToLineThroughParticleHalves = Library.DegreeConstants.ManuallyImplementedSignedOrthogonalDistancesOfPointToLineFromAToB(averageSetPosition, AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position1), AmoebotFunctions.CalculateAmoebotCenterPositionVector2(circuitData.snap.position2));
+                        float distanceToLineThroughParticleHalves = Library.DegreeConstants.ManuallyImplementedSignedOrthogonalDistancesOfPointToLineFromAToB(averageSetPosition, AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position1), AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position2));
                         pSetSortingList.Enqueue(distanceToLineThroughParticleHalves, pSet);
                     }
                 }
@@ -622,7 +622,7 @@ namespace AS2.Visuals
             //bool delayed = RenderSystem.animationsOn && (circuitData.snap.jointMovementState.isJointMovement || (circuitData.snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || circuitData.snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
             bool delayed = snap.noAnimation == false && RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
             bool movement = RenderSystem.animationsOn && snap.jointMovementState.isJointMovement && delayed == false;
-            Vector2 movementOffset = movement ? -AmoebotFunctions.CalculateAmoebotCenterPositionVector2(snap.jointMovementState.jointExpansionOffset) : Vector2.zero;
+            Vector2 movementOffset = movement ? -AmoebotFunctions.GridToWorldPositionVector2(snap.jointMovementState.jointExpansionOffset) : Vector2.zero;
 
             // 1. Calc PartitionSet Positions
             CalculatePartitionSetPositions(circuitData, pSetViewType);
@@ -1094,10 +1094,10 @@ namespace AS2.Visuals
             if(addToBondData) bondData.Add(bondState);
 
             // Convert Grid to World Space
-            Vector2 prevBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos1);
-            Vector2 prevBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.prevBondPos2);
-            Vector2 curBondPosWorld1 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos1);
-            Vector2 curBondPosWorld2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(bondState.curBondPos2);
+            Vector2 prevBondPosWorld1 = AmoebotFunctions.GridToWorldPositionVector2(bondState.prevBondPos1);
+            Vector2 prevBondPosWorld2 = AmoebotFunctions.GridToWorldPositionVector2(bondState.prevBondPos2);
+            Vector2 curBondPosWorld1 = AmoebotFunctions.GridToWorldPositionVector2(bondState.curBondPos1);
+            Vector2 curBondPosWorld2 = AmoebotFunctions.GridToWorldPositionVector2(bondState.curBondPos2);
             // Hexagonal
             RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondHexagonal, false, false, bondState.IsAnimated(), Vector2.zero);
             if (bondState.IsAnimated()) batch.AddManuallyUpdatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
@@ -1186,20 +1186,20 @@ namespace AS2.Visuals
 
         private Vector2 CalculateGlobalPinPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
         {
-            Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPosParticle);
+            Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(gridPosParticle);
             Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
             return posParticle + relPinPos;
         }
 
         private Vector2 CalculateGlobalPartitionSetPinPosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
         {
-            Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPosParticle);
+            Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(gridPosParticle);
             return posParticle + CalculateRelativePartitionSetPinPosition(partitionSetID, amountOfPartitionSetsAtNode, rotationDegrees, invertPositions);
         }
 
         private Vector2 CalculateGlobalExpandedPartitionSetCenterNodePosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
         {
-            Vector2 posParticle = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPosParticle);
+            Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(gridPosParticle);
             return posParticle + CalculateRelativeExpandedPartitionSetCenterNodePosition(partitionSetID, amountOfPartitionSetsAtNode, rotationDegrees, invertPositions);
         }
 

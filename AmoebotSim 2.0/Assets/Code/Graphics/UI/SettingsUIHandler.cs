@@ -235,7 +235,7 @@ namespace AS2.UI
             if (camPosInGridCoords)
             {
                 Vector2 pos = new Vector2(x, y);
-                pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
+                pos = AmoebotFunctions.GridToWorldPositionVector2(pos);
                 x = pos.x;
                 y = pos.y;
             }
@@ -259,7 +259,7 @@ namespace AS2.UI
             {
                 // Convert world to grid coordinates
                 Vector2 worldPos = new Vector2(float.Parse(setting_cameraPosX.GetValueString()), float.Parse(setting_cameraPosY.GetValueString()));
-                Vector2 gridPos = AmoebotFunctions.GetGridCoordinatesFromWorldPosition(worldPos);
+                Vector2 gridPos = AmoebotFunctions.WorldToGridPositionF(worldPos);
                 setting_cameraPosX.SetValueString(gridPos.x.ToString());
                 setting_cameraPosY.SetValueString(gridPos.y.ToString());
             }
@@ -267,7 +267,7 @@ namespace AS2.UI
             {
                 // Convert grid to world coordinates
                 Vector2 gridPos = new Vector2(float.Parse(setting_cameraPosX.GetValueString()), float.Parse(setting_cameraPosY.GetValueString()));
-                Vector2 worldPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPos);
+                Vector2 worldPos = AmoebotFunctions.GridToWorldPositionVector2(gridPos);
                 setting_cameraPosX.SetValueString(worldPos.x.ToString());
                 setting_cameraPosY.SetValueString(worldPos.y.ToString());
             }
@@ -287,7 +287,7 @@ namespace AS2.UI
             if (camPosInGridCoords)
             {
                 Vector2 pos = new Vector2(x, y);
-                pos = AmoebotFunctions.GetGridCoordinatesFromWorldPosition(pos);
+                pos = AmoebotFunctions.WorldToGridPositionF(pos);
                 x = pos.x;
                 y = pos.y;
             }

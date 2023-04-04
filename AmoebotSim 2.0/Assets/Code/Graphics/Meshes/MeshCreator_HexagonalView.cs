@@ -20,12 +20,12 @@ namespace AS2.Visuals
             Mesh mesh = new Mesh();
 
             // Hexagon Coordinates (we scale these for the vertices of the 6 quads)
-            Vector3 topLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 top = new Vector3(0f, AmoebotFunctions.HexVertex_YValueTop(), 0f);
-            Vector3 topRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottomLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.HexVertex_YValueTop(), 0f);
-            Vector3 bottomRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
+            Vector3 topLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 top = new Vector3(0f, AmoebotFunctions.hexRadiusMajor, 0f);
+            Vector3 topRight = new Vector3(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 bottomLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.hexRadiusMajor, 0f);
+            Vector3 bottomRight = new Vector3(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
 
             // Parameters
             float scale = RenderSystem.const_hexagonalScale;
@@ -96,12 +96,12 @@ namespace AS2.Visuals
             Mesh mesh = new Mesh();
 
             // Hexagon Coordinates (we scale these for the vertices of the 6 quads)
-            Vector3 topLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 top = new Vector3(0f, AmoebotFunctions.HexVertex_YValueTop(), 0f);
-            Vector3 topRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottomLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.HexVertex_YValueTop(), 0f);
-            Vector3 bottomRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
+            Vector3 topLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 top = new Vector3(0f, AmoebotFunctions.hexRadiusMajor, 0f);
+            Vector3 topRight = new Vector3(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 bottomLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.hexRadiusMajor, 0f);
+            Vector3 bottomRight = new Vector3(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
 
             // Parameters
             float scale = RenderSystem.const_hexagonalScale;
@@ -332,12 +332,12 @@ namespace AS2.Visuals
             Mesh mesh = new Mesh();
 
             // Hexagon Coordinates (we scale these for the vertices of the 6 quads)
-            Vector3 topLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 top = new Vector3(0f, AmoebotFunctions.HexVertex_YValueTop(), 0f);
-            Vector3 topRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottomLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.HexVertex_YValueTop(), 0f);
-            Vector3 bottomRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
+            Vector3 topLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 top = new Vector3(0f, AmoebotFunctions.hexRadiusMajor, 0f);
+            Vector3 topRight = new Vector3(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 bottomLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.hexRadiusMajor, 0f);
+            Vector3 bottomRight = new Vector3(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
 
             // Parameters
             float scale = RenderSystem.const_hexagonalScale;
@@ -618,12 +618,12 @@ namespace AS2.Visuals
             Mesh mesh = new Mesh();
 
             // Hexagon Coordinates (we scale these for the vertices of the 6 quads)
-            Vector3 topLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 top = new Vector3(0f, AmoebotFunctions.HexVertex_YValueTop(), 0f);
-            Vector3 topRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottomLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
-            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.HexVertex_YValueTop(), 0f);
-            Vector3 bottomRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
+            Vector3 topLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 top = new Vector3(0f, AmoebotFunctions.hexRadiusMajor, 0f);
+            Vector3 topRight = new Vector3(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 bottomLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
+            Vector3 bottom = new Vector3(0f, -AmoebotFunctions.hexRadiusMajor, 0f);
+            Vector3 bottomRight = new Vector3(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
 
             // Parameters
             float scale = RenderSystem.const_hexagonalScale;
@@ -853,12 +853,12 @@ namespace AS2.Visuals
             for (int i = 0; i < hexAmount; i++)
             {
                 // Hexagon Coordinates (we scale these for the vertices of the 6 quads)
-                Vector3 topLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-                Vector3 top = new Vector3(0f, AmoebotFunctions.HexVertex_YValueTop(), 0f);
-                Vector3 topRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), AmoebotFunctions.HexVertex_YValueSides(), 0f);
-                Vector3 bottomLeft = new Vector3(-AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
-                Vector3 bottom = new Vector3(0f, -AmoebotFunctions.HexVertex_YValueTop(), 0f);
-                Vector3 bottomRight = new Vector3(AmoebotFunctions.HexVertex_XValue(), -AmoebotFunctions.HexVertex_YValueSides(), 0f);
+                Vector3 topLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+                Vector3 top = new Vector3(0f, AmoebotFunctions.hexRadiusMajor, 0f);
+                Vector3 topRight = new Vector3(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2, 0f);
+                Vector3 bottomLeft = new Vector3(-AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
+                Vector3 bottom = new Vector3(0f, -AmoebotFunctions.hexRadiusMajor, 0f);
+                Vector3 bottomRight = new Vector3(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2, 0f);
 
                 // Displacement
                 Vector3 displacement = new Vector3(i, 0f, 0f);

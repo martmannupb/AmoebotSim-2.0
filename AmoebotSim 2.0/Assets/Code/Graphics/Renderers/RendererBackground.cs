@@ -65,20 +65,20 @@ namespace AS2.Visuals
             Vector2 bgPosBL = camLowest + new Vector2(-3f, -10f);
             Vector2 bgPosTR = camHighest + new Vector2(3f, 10f);
             Vector2Int screenSizeForBGAdjusted = new Vector2Int((int)(bgPosTR.x - bgPosBL.x), (int)(bgPosTR.y - bgPosBL.y));
-            int amountLines = Mathf.CeilToInt(screenSizeForBGAdjusted.y / AmoebotFunctions.HeightDifferenceBetweenRows());
+            int amountLines = Mathf.CeilToInt(screenSizeForBGAdjusted.y / AmoebotFunctions.rowDistVert);
 
             // Calc pos of first mesh
-            Vector2Int firstBgGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
+            Vector2Int firstBgGridPos = AmoebotFunctions.WorldToGridPosition(bgPosBL);
             Vector2Int secondBgGridPos = firstBgGridPos + new Vector2Int(0, 1);
-            Vector3 firstBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(firstBgGridPos);
-            Vector3 secondBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(secondBgGridPos);
+            Vector3 firstBgMeshPos = AmoebotFunctions.GridToWorldPositionVector2(firstBgGridPos);
+            Vector3 secondBgMeshPos = AmoebotFunctions.GridToWorldPositionVector2(secondBgGridPos);
             firstBgMeshPos.z = RenderSystem.zLayer_background;
             secondBgMeshPos.z = RenderSystem.zLayer_background;
             // Add hex line meshes
             instancedDrawer_hexGrid.ClearMatrices();
             // Update Matrices
             Vector3 pos;
-            float heightDiff = AmoebotFunctions.HeightDifferenceBetweenRows();
+            float heightDiff = AmoebotFunctions.rowDistVert;
             for (int i = 0; i < amountLines; i++)
             {
                 if (i % 2 == 0) pos = firstBgMeshPos + new Vector3(0f, heightDiff * i, 0f);
@@ -109,8 +109,8 @@ namespace AS2.Visuals
             int amountDiagonalMeshes = Mathf.CeilToInt(bgPosTR.x - bgPosBL.x + 2) / RenderSystem.const_amountOfLinesPerMesh + 1;
             int amountHorizontalMeshes = (int)(camHighest.y - camLowest.y + 4) / RenderSystem.const_amountOfLinesPerMesh + 1;
             // Calc pos of first mesh
-            Vector2Int firstBgGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(bgPosBL);
-            Vector3 firstBgMeshPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(firstBgGridPos);
+            Vector2Int firstBgGridPos = AmoebotFunctions.WorldToGridPosition(bgPosBL);
+            Vector3 firstBgMeshPos = AmoebotFunctions.GridToWorldPositionVector2(firstBgGridPos);
             firstBgMeshPos.z = RenderSystem.zLayer_background;
             // Build matrices
             instancedDrawer_circGrid_horLines.ClearMatrices();

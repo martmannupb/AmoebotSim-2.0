@@ -78,7 +78,7 @@ namespace AS2.Visuals
         {
             // Get Selection Data
             Vector2 mouseWorldPos = CameraUtils.MainCamera_Mouse_WorldPosition();
-            Vector2Int mouseWorldField = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(mouseWorldPos));
+            Vector2Int mouseWorldField = AmoebotFunctions.WorldToGridPosition(AmoebotFunctions.WorldPositionToNearestNodePosition(mouseWorldPos));
             UIHandler.UITool activeTool = sim.uiHandler.activeTool;
             IParticleState state_particleUnderPointer = null;
             bool state_pointerOverMap = EventSystem.current.IsPointerOverGameObject() == false;
@@ -191,8 +191,8 @@ namespace AS2.Visuals
                                 break;
                             case ClickAction.ClickType.Drag:
                                 // Drag has been executed
-                                Vector2Int node1 = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(action.positionStart));
-                                Vector2Int node2 = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(action.positionTarget));
+                                Vector2Int node1 = AmoebotFunctions.WorldToGridPosition(AmoebotFunctions.WorldPositionToNearestNodePosition(action.positionStart));
+                                Vector2Int node2 = AmoebotFunctions.WorldToGridPosition(AmoebotFunctions.WorldPositionToNearestNodePosition(action.positionTarget));
                                 IParticleState p1 = null;
                                 IParticleState p2 = null;
                                 sim.system.TryGetParticleAt(node1, out p1);
@@ -212,14 +212,14 @@ namespace AS2.Visuals
                                                 if (node1 == node2 && p1 == null)
                                                 {
                                                     // Show Add Overlay (for single particle)
-                                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
+                                                    Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
                                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
                                                 }
                                                 else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
                                                 {
                                                     // Show Add Overlay (for extended particle)
-                                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
-                                                    Vector3 worldAbsPos2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node2);
+                                                    Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
+                                                    Vector3 worldAbsPos2 = AmoebotFunctions.GridToWorldPositionVector3(node2);
                                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
                                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos2 + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
                                                 }
@@ -239,14 +239,14 @@ namespace AS2.Visuals
                                                 if (node1 == node2 && p1 == null)
                                                 {
                                                     // Show Move Overlay (for single particle)
-                                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
+                                                    Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
                                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
                                                 }
                                                 else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
                                                 {
                                                     // Show Move Overlay (for extended particle)
-                                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node1);
-                                                    Vector3 worldAbsPos2 = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(node2);
+                                                    Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
+                                                    Vector3 worldAbsPos2 = AmoebotFunctions.GridToWorldPositionVector3(node2);
                                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
                                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos2 + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
                                                 }
@@ -377,7 +377,7 @@ namespace AS2.Visuals
         {
             // Get Selection Data
             Vector2 mouseWorldPos = CameraUtils.MainCamera_Mouse_WorldPosition();
-            Vector2Int mouseWorldField = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(mouseWorldPos));
+            Vector2Int mouseWorldField = AmoebotFunctions.WorldToGridPosition(AmoebotFunctions.WorldPositionToNearestNodePosition(mouseWorldPos));
             UIHandler.UITool activeTool = sim.uiHandler.activeTool;
             IParticleState state_particleUnderPointer = null;
             bool state_pointerOverMap = EventSystem.current.IsPointerOverGameObject() == false;
@@ -409,12 +409,12 @@ namespace AS2.Visuals
                             if (state_particleUnderPointer != null)
                             {
                                 // Render Head Overlay
-                                Vector3 worldPos_head = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(state_particleUnderPointer.Head());
+                                Vector3 worldPos_head = AmoebotFunctions.GridToWorldPositionVector3(state_particleUnderPointer.Head());
                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_head + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
                                 // Render Tail Overlay
                                 if (state_particleUnderPointer.IsExpanded())
                                 {
-                                    Vector3 worldPos_tail = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(state_particleUnderPointer.Tail());
+                                    Vector3 worldPos_tail = AmoebotFunctions.GridToWorldPositionVector3(state_particleUnderPointer.Tail());
                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
                                 }
                             }
@@ -424,12 +424,12 @@ namespace AS2.Visuals
                             IParticleState activeParticle = sim.uiHandler.particleUI.GetShownParticle();
                             if (activeParticle != null)
                             {
-                                Vector3 worldPos_head = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(activeParticle.Head());
+                                Vector3 worldPos_head = AmoebotFunctions.GridToWorldPositionVector3(activeParticle.Head());
                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_head + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
                                 // Render Tail Overlay
                                 if (activeParticle.IsExpanded())
                                 {
-                                    Vector3 worldPos_tail = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(activeParticle.Tail());
+                                    Vector3 worldPos_tail = AmoebotFunctions.GridToWorldPositionVector3(activeParticle.Tail());
                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
                                 }
                             }
@@ -445,7 +445,7 @@ namespace AS2.Visuals
                                 {
                                     // Empty Field Selected + Not dragging
                                     // Show Add Overlay (for single particle)
-                                    Vector3 worldAbsPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(mouseWorldField);
+                                    Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(mouseWorldField);
                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
                                 }
                             }
@@ -458,12 +458,12 @@ namespace AS2.Visuals
                             if (state_particleUnderPointer != null)
                             {
                                 // Render Head Overlay
-                                Vector3 worldPos_head = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(state_particleUnderPointer.Head());
+                                Vector3 worldPos_head = AmoebotFunctions.GridToWorldPositionVector3(state_particleUnderPointer.Head());
                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_head + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonRemoveOverlay, 0);
                                 // Render Tail Overlay
                                 if (state_particleUnderPointer.IsExpanded())
                                 {
-                                    Vector3 worldPos_tail = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(state_particleUnderPointer.Tail());
+                                    Vector3 worldPos_tail = AmoebotFunctions.GridToWorldPositionVector3(state_particleUnderPointer.Tail());
                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonRemoveOverlay, 0);
                                 }
                             }
@@ -478,12 +478,12 @@ namespace AS2.Visuals
                             else selectedParticle = state_particleUnderPointer;
                             if (selectedParticle != null)
                             {
-                                Vector3 worldPos_head = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(selectedParticle.Head());
+                                Vector3 worldPos_head = AmoebotFunctions.GridToWorldPositionVector3(selectedParticle.Head());
                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_head + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveSelectionOverlay, 0);
                                 // Render Tail Overlay
                                 if (selectedParticle.IsExpanded())
                                 {
-                                    Vector3 worldPos_tail = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(selectedParticle.Tail());
+                                    Vector3 worldPos_tail = AmoebotFunctions.GridToWorldPositionVector3(selectedParticle.Tail());
                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveSelectionOverlay, 0);
                                 }
                             }
@@ -498,7 +498,7 @@ namespace AS2.Visuals
                         {
                             if (state_pointerOverMap && state_particleUnderPointer == null)
                             {
-                                Vector3 worldPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(mouseWorldField);
+                                Vector3 worldPos = AmoebotFunctions.GridToWorldPositionVector3(mouseWorldField);
                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
                             }
                         }
