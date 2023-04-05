@@ -310,7 +310,7 @@ namespace AS2.Algos.BoundaryTest
                     // The next neighbor is our boundary successor
                     boundaryNbrs[regionIdx, 1].SetValue((curDir + 1) % 6);
                     // Compute the angle as number of 60° counter-clockwise turns mod 5
-                    int oppositePredDir = (boundaryNbrs[regionIdx, 0].GetValue_After() + 3) % 6;
+                    int oppositePredDir = (boundaryNbrs[regionIdx, 0].GetCurrentValue() + 3) % 6;
                     int numTurns = ((curDir + 1) + 6 - oppositePredDir) % 6;
                     // 0, 1, 2, 3 turns means positive angle, 4 means negative angle (-1 = 4 mod 5)
                     boundaryAngles[regionIdx].SetValue(numTurns < 4 ? numTurns : 4);
@@ -341,7 +341,7 @@ namespace AS2.Algos.BoundaryTest
             SetPlannedPinConfiguration(pc);
 
             // Initialize and start first phase of leader election
-            for (int boundary = 0; boundary < numBoundaries.GetValue_After(); boundary++)
+            for (int boundary = 0; boundary < numBoundaries.GetCurrentValue(); boundary++)
             {
                 // Start as candidate
                 isCandidate[boundary].SetValue(true);
@@ -411,7 +411,7 @@ namespace AS2.Algos.BoundaryTest
             if (!rcvGlobalBeep)
             {
                 phase2Count.SetValue(phase2Count + 1);
-                nextIteration = phase2Count.GetValue_After() < kappa;
+                nextIteration = phase2Count.GetCurrentValue() < kappa;
             }
 
             // Proceed to Sum Computation phase if the leader election is over
@@ -803,16 +803,16 @@ namespace AS2.Algos.BoundaryTest
         // particles that have no boundaries
         private void SetupBoundaryCircuit(ref PinConfiguration pc)
         {
-            if (numBoundaries.GetValue_After() == 0)
+            if (numBoundaries.GetCurrentValue() == 0)
                 return;
 
             PinConfiguration loadedPC = boundaryPC;
             if (loadedPC is null)
             {
-                for (int boundary = 0; boundary < numBoundaries.GetValue_After(); boundary++)
+                for (int boundary = 0; boundary < numBoundaries.GetCurrentValue(); boundary++)
                 {
-                    Direction predDir = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0].GetValue_After());
-                    Direction succDir = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1].GetValue_After());
+                    Direction predDir = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 0].GetCurrentValue());
+                    Direction succDir = DirectionHelpers.Cardinal(boundaryNbrs[boundary, 1].GetCurrentValue());
                     pc.MakePartitionSet(new Pin[] {
                         pc.GetPinAt(predDir, 2),
                         pc.GetPinAt(predDir, 3),
@@ -865,7 +865,7 @@ namespace AS2.Algos.BoundaryTest
                     Pin sSucc = pc.GetPinAt(ds, 1);
                     Pin pPred = pc.GetPinAt(dp, 3);
                     Pin sPred = pc.GetPinAt(dp, 2);
-                    if (isActive[boundary].GetValue_After())
+                    if (isActive[boundary].GetCurrentValue())
                     {
                         // Active particles cross their connections
                         pc.MakePartitionSet(new Pin[] { pSucc, sPred }, boundary * 2);
@@ -890,7 +890,7 @@ namespace AS2.Algos.BoundaryTest
                 // circuits cross: Put the partition sets next to each other
                 if (dp == ds)
                 {
-                    if (isActive[boundary].GetValue_After())
+                    if (isActive[boundary].GetCurrentValue())
                     {
                         angleP -= 15;
                         angleS += 15;
@@ -936,10 +936,10 @@ namespace AS2.Algos.BoundaryTest
 
         private void SetColor()
         {
-            if (numBoundaries.GetValue_After() == 0)
+            if (numBoundaries.GetCurrentValue() == 0)
                 return;
             
-            if (terminated.GetValue_After())
+            if (terminated.GetCurrentValue())
             {
                 // Set final color
                 // Find boundary and leader status
@@ -967,18 +967,18 @@ namespace AS2.Algos.BoundaryTest
                 return;
             }
 
-            if (phase.GetValue_After() == Phase.LE1 || phase.GetValue_After() == Phase.LE2)
+            if (phase.GetCurrentValue() == Phase.LE1 || phase.GetCurrentValue() == Phase.LE2)
             {
                 // Candidate color if we are a candidate on 1-3 boundaries
                 // P2 candidate color if we are only a Phase 2 candidate on any boundary
                 // Retired color otherwise
                 int numCandidacies = 0;
                 bool isAP2Candidate = false;
-                for (int b = 0; b < numBoundaries.GetValue_After(); b++)
+                for (int b = 0; b < numBoundaries.GetCurrentValue(); b++)
                 {
-                    if (isCandidate[b].GetValue_After())
+                    if (isCandidate[b].GetCurrentValue())
                         numCandidacies++;
-                    if (isPhase2Candidate[b].GetValue_After())
+                    if (isPhase2Candidate[b].GetCurrentValue())
                         isAP2Candidate = true;
                 }
                 if (numCandidacies > 0)
@@ -1011,7 +1011,7 @@ namespace AS2.Algos.BoundaryTest
                     bool active = false;
                     for (int i = 0; i < numBoundaries; i++)
                     {
-                        if (isActive[i].GetValue_After())
+                        if (isActive[i].GetCurrentValue())
                         {
                             active = true;
                             break;

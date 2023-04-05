@@ -63,11 +63,13 @@ namespace AS2.UI
         public Image image_circuitViewType;
         public Sprite sprite_circuitViewTypeCircuitsEnabled;
         public Sprite sprite_circuitViewTypeCircuitsDisabled;
+        public Button button_collisionCheck;
         public Button button_pSetPositioning;
         public Image image_pSetPositioning;
-        public Sprite sprite_pSetPositining_def;
-        public Sprite sprite_pSetPositining_auto;
-        public Sprite sprite_pSetPositining_line;
+        public Sprite sprite_pSetPositioning_def;
+        public Sprite sprite_pSetPositioning_auto;
+        public Sprite sprite_pSetPositioning_auto2D;
+        public Sprite sprite_pSetPositioning_line;
         public Button button_bondsActive;
         public Button button_backgroundGridActive;
         private Color overlayColor_active;
@@ -76,9 +78,24 @@ namespace AS2.UI
         public Button button_settings;
         public Button button_exit;
 
+        /// <summary>
+        /// Margin around the particle system when framing the
+        /// system in the viewport.
+        /// </summary>
+        public float frameMargin = 1.5f;
+        /// <summary>
+        /// Fraction of the viewport height taken up by the top
+        /// and bottom bar, used for framing the system in view.
+        /// </summary>
+        public float topAndBottomBarFraction = 0.15f;
+
+
         // State
         public UITool activeTool = UITool.Standard;
 
+        /// <summary>
+        /// The set of tools selectable in the top bar.
+        /// </summary>
         public enum UITool
         {
             Standard, Add, Remove, Move, PSetMove
@@ -94,7 +111,7 @@ namespace AS2.UI
         /// <summary>
         /// Registers the simulator at this object.
         /// </summary>
-        /// <param name="sim"></param>
+        /// <param name="sim">The simulator instance.</param>
         public void RegisterSim(AmoebotSimulator sim)
         {
             this.sim = sim;
@@ -165,8 +182,13 @@ namespace AS2.UI
                 // Back
                 Button_StepBackPressed();
             }
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                // Toggle UI visibility
+                ToggleUI();
+            }
             // Shift + ...
-            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
                 if (Input.GetKeyDown(KeyCode.RightArrow))
                 {
@@ -178,15 +200,15 @@ namespace AS2.UI
                     // Backward
                     Button_StepBackPressed();
                 }
-                if (Input.GetKeyDown(KeyCode.H))
-                {
-                    // Hide UI
-                    HideUI();
-                }
                 if (Input.GetKeyDown(KeyCode.C))
                 {
                     // Center Camera
                     Button_CameraCenterPressed();
+                }
+                if (Input.GetKeyDown(KeyCode.F))
+                {
+                    // Frame system
+                    Button_FrameSystemPressed();
                 }
                 if (Input.GetKeyDown(KeyCode.V))
                 {
@@ -206,20 +228,16 @@ namespace AS2.UI
                 if (Input.GetKeyDown(KeyCode.Q))
                 {
                     // Quit
-                    Botton_ExitPressed();
+                    Button_ExitPressed();
                 }
-            }
-            else if (Input.GetKeyDown(KeyCode.H))
-            {
-                // Show UI
-                ShowUI();
             }
         }
 
         /// <summary>
         /// Updates the UI without a forced round slider update.
         /// </summary>
-        /// <param name="running"></param>
+        /// <param name="running">Indicates whether or not the simulation
+        /// is currently running.</param>
         private void UpdateUI(bool running)
         {
             UpdateUI(running, false);
@@ -228,8 +246,11 @@ namespace AS2.UI
         /// <summary>
         /// Updates the UI (things like enable/disable buttons, set sliders, update rounds, set button colors, etc.).
         /// </summary>
-        /// <param name="running"></param>
-        /// <param name="forceRoundSliderUpdate"></param>
+        /// <param name="running">Indicates whether or not the simulation
+        /// is currently running.</param>
+        /// <param name="forceRoundSliderUpdate">Indicates whether the round slider must be
+        /// updated for a reason other than the simulation running (like pressing the
+        /// step forward or step back button).</param>
         public void UpdateUI(bool running, bool forceRoundSliderUpdate)
         {
             // UI State
@@ -316,13 +337,16 @@ namespace AS2.UI
             switch (sim.renderSystem.GetPSetViewType())
             {
                 case PartitionSetViewType.Line:
-                    if (image_pSetPositioning.sprite != sprite_pSetPositining_line) image_pSetPositioning.sprite = sprite_pSetPositining_line;
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_line) image_pSetPositioning.sprite = sprite_pSetPositioning_line;
                     break;
                 case PartitionSetViewType.Auto:
-                    if (image_pSetPositioning.sprite != sprite_pSetPositining_auto) image_pSetPositioning.sprite = sprite_pSetPositining_auto;
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_auto) image_pSetPositioning.sprite = sprite_pSetPositioning_auto;
+                    break;
+                case PartitionSetViewType.Auto_2DCircle:
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_auto2D) image_pSetPositioning.sprite = sprite_pSetPositioning_auto2D;
                     break;
                 case PartitionSetViewType.CodeOverride:
-                    if (image_pSetPositioning.sprite != sprite_pSetPositining_def) image_pSetPositioning.sprite = sprite_pSetPositining_def;
+                    if (image_pSetPositioning.sprite != sprite_pSetPositioning_def) image_pSetPositioning.sprite = sprite_pSetPositioning_def;
                     break;
                 default:
                     break;
@@ -330,6 +354,9 @@ namespace AS2.UI
             // Circuit View Type
             if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
+            // Collision Check
+            //if (true) button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_active;
+            //else button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_inactive;
             // Bonds Active
             if (sim.renderSystem.AreBondsActive()) button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
@@ -344,7 +371,8 @@ namespace AS2.UI
         /// <summary>
         /// Notifies the UI handler that the play/pause has been toggled.
         /// </summary>
-        /// <param name="running">The currently active running state. True if it is running.</param>
+        /// <param name="running">The currently active running state. True if
+        /// the simulation is running.</param>
         public void NotifyPlayPause(bool running)
         {
             image_playPauseButton.sprite = running ? sprite_pause : sprite_play;
@@ -368,9 +396,39 @@ namespace AS2.UI
         }
 
         /// <summary>
+        /// Toggles the UI visibility.
+        /// </summary>
+        public void ToggleUI()
+        {
+            if (ui.activeSelf)
+                HideUI();
+            else
+                ShowUI();
+        }
+
+        /// <summary>
+        /// Returns the color used to display that the setting is active.
+        /// </summary>
+        /// <returns>The active overlay color.</returns>
+        public Color GetButtonColor_Active()
+        {
+            return overlayColor_active;
+        }
+
+        /// <summary>
+        /// Returns the color used to display that the setting is inactive.
+        /// </summary>
+        /// <returns>The inactive overlay color.</returns>
+        public Color GetButtonColor_Inactive()
+        {
+            return overlayColor_inactive;
+        }
+
+        /// <summary>
         /// Gets the chirality value from the corresponding dropdown UI element.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The selected chirality value. Can be Random, Clockwise or
+        /// Counterclockwise.</returns>
         public Initialization.Chirality GetDropdownValue_Chirality()
         {
             TMP_Dropdown dropdown = dropdown_chirality;
@@ -392,7 +450,8 @@ namespace AS2.UI
         /// <summary>
         /// Gets the compass dir value from the corresponding dropdown UI element.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The selected compass direction. Can be any cardinal direction
+        /// or Random.</returns>
         public Initialization.Compass GetDropdownValue_Compass()
         {
             TMP_Dropdown dropdown = dropdown_compass;
@@ -403,9 +462,6 @@ namespace AS2.UI
             else Log.Error("GetDropdownValue_Compass: Value not found!");
             return Initialization.Compass.Random;
         }
-
-
-
 
 
 
@@ -496,7 +552,7 @@ namespace AS2.UI
         /// Called when the cut rounds button has been pressed.
         /// Deletes the history of later rounds than the currently active round.
         /// </summary>
-        public void Botton_CutPressed()
+        public void Button_CutPressed()
         {
             // Check if valid
             int uiRound = (int)slider_round.value;
@@ -519,9 +575,10 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Jumps the a certain round. The UI is updated afterwards.
+        /// Jumps to a certain round. The UI is updated afterwards.
         /// </summary>
-        /// <param name="newRound"></param>
+        /// <param name="newRound">The round to jump to. Must be in the
+        /// range of valid rounds.</param>
         private void JumpToRound(int newRound)
         {
             // Null Check
@@ -549,8 +606,8 @@ namespace AS2.UI
         {
             bool isSimRunning = sim.running;
             sim.PauseSim();
-            string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Algorithm State", "", "amalgo", false);
-            if (paths.Length != 0)
+            string path = FileBrowser.LoadSimFile();
+            if (!path.Equals(""))
             {
                 if (!sim.running)
                 {
@@ -563,7 +620,7 @@ namespace AS2.UI
                         return;
                     }
 
-                    SimulationStateSaveData data = SaveStateUtility.Load(paths[0]);
+                    SimulationStateSaveData data = SaveStateUtility.Load(path);
                     if (data != null)
                     {
                         sim.system.Reset();
@@ -592,7 +649,7 @@ namespace AS2.UI
             {
                 // Initialization Handler closed
                 // Save File
-                string path = StandaloneFileBrowser.SaveFilePanel("Save Algorithm State", "", "algorithm", "amalgo");
+                string path = FileBrowser.SaveSimFile();
                 if (path.Equals("") == false)
                 {
                     if (!sim.running)
@@ -616,11 +673,12 @@ namespace AS2.UI
 
         /// <summary>
         /// Called when the screenshot button has been pressed.
-        /// Makes a screenshot of the simulation and saves it to the a file.
+        /// Makes a screenshot of the simulation and saves it to a file
+        /// selected via a file browser.
         /// </summary>
         public void Button_ScreenshotPressed()
         {
-            string path = StandaloneFileBrowser.SaveFilePanel("Save Screenshot", "", "AmoebotScreenshot", "png");
+            string path = FileBrowser.SavePNGFile("Save Screenshot", "AmoebotScreenshot");
             if (path.Equals("") == false)
             {
                 ScreenCapture.CaptureScreenshot(path);
@@ -633,7 +691,7 @@ namespace AS2.UI
         /// </summary>
         public void Button_PrintLogToFilePressed()
         {
-            string path = StandaloneFileBrowser.SaveFilePanel("Save Log to File", "", "amsim_log", "txt");
+            string path = FileBrowser.SaveTextFile("Save Log to File", "amsim_log");
             if (path.Equals("") == false)
             {
                 Log.SaveLogToFile(path);
@@ -687,7 +745,7 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Toggles the view type.
+        /// Toggles the view type (hexagon, circle, graph, ...).
         /// </summary>
         public void Button_ToggleViewPressed()
         {
@@ -700,6 +758,14 @@ namespace AS2.UI
         public void Button_ToggleCircuitViewPressed()
         {
             sim.renderSystem.ToggleCircuits();
+        }
+
+        /// <summary>
+        /// Toggles the collision check on/off.
+        /// </summary>
+        public void Button_ToggleCollisionCheck()
+        {
+            Log.Debug("Collision Check Button Pressed. This is not connected yet.");
         }
 
         /// <summary>
@@ -763,46 +829,74 @@ namespace AS2.UI
         }
 
         /// <summary>
+        /// Changes the camera position and zoom level such that the whole
+        /// particle system is in frame.
+        /// </summary>
+        public void Button_FrameSystemPressed()
+        {
+            Vector4 bbox = sim.system.GetBoundingBox();
+            Camera cam = Camera.main;
+
+            // Center camera first
+            Vector2 center = new Vector2(bbox.x, bbox.y);
+            cam.transform.position = new Vector3(center.x, center.y, cam.transform.position.z);
+
+            // Set zoom level to fit whole system into view
+            // Orthographic camera size is half the height of the viewport
+            float h = bbox.w / 2;                       // Minimum camera size required due to system height
+            float w = (bbox.z / 2) / Camera.main.aspect; // Minimum size required due to system width
+            // Stretch size to fit top and bottom bar
+            h *= (1 + topAndBottomBarFraction);
+            w *= (1 + topAndBottomBarFraction);
+            MouseController.instance.SetOrthographicSize(Mathf.Max(h, w) + frameMargin);
+
+            settingsUI.UpdateCameraData(cam.transform.position.x, cam.transform.position.y, cam.orthographicSize);
+        }
+
+        /// <summary>
         /// Centers the camera to the particles. Sets the (0,0) position if there are no particles.
         /// </summary>
         public void Button_CameraCenterPressed()
         {
-            Vector2 pos;
-            if (sim.system.particles.Count <= 1000) pos = sim.system.BBoxCenterPosition();
-            else pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(sim.system.AnchorPosition());
-            Camera.main.transform.position = new Vector3(pos.x, pos.y, Camera.main.transform.position.z);
+            Vector4 bbox = sim.system.GetBoundingBox();
+            Camera cam = Camera.main;
+            cam.transform.position = new Vector3(bbox.x, bbox.y, Camera.main.transform.position.z);
+
+            settingsUI.UpdateCameraData(cam.transform.position.x, cam.transform.position.y, cam.orthographicSize);
         }
 
         /// <summary>
         /// Exits the simulator.
         /// </summary>
-        public void Botton_ExitPressed()
+        public void Button_ExitPressed()
         {
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
+            UnityEditor.EditorApplication.ExitPlaymode();
 #else
-        Application.Quit();
+            Application.Quit();
 #endif
         }
 
         /// <summary>
-        /// Makes the setting and exit buttons not interactable.
-        /// (Originally this method has hidden the buttons.)
+        /// Makes the top right buttons that should not be used
+        /// during Init Mode not interactable.
+        /// (Originally this method has hidden the button.)
         /// </summary>
         public void HideTopRightButtons()
         {
             button_settings.interactable = false;
-            button_exit.interactable = false;
+            //button_exit.interactable = false;
         }
 
         /// <summary>
-        /// Makes the top right buttons interactable.
+        /// Makes the top right buttons that should not be used
+        /// during Init Mode interactable.
         /// (Originally this method has shown the buttons.)
         /// </summary>
         public void ShowTopRightButtons()
         {
             button_settings.interactable = true;
-            button_exit.interactable = true;
+            //button_exit.interactable = true;
         }
     }
 }

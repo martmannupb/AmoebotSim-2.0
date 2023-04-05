@@ -181,6 +181,37 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Sets the position of the camera.
+        /// </summary>
+        /// <param name="x">The world x coordinate.</param>
+        /// <param name="y">The world y coordinate.</param>
+        public void SetCameraPosition(float x, float y)
+        {
+            if (movementLocked)
+                return;
+            if (cam == null)
+                cam = Camera.main;
+            cam.transform.position = new Vector3(x, y, cam.transform.position.z);
+        }
+
+        /// <summary>
+        /// Sets the orthographic size of the camera.
+        /// </summary>
+        /// <param name="targetSize">The new size of the camera,
+        /// measured in world space units as half of the viewport's height.
+        /// Will be clamped between <see cref="minOrthographicSize"/> and
+        /// <see cref="maxOrthographicSize"/>.</param>
+        public void SetOrthographicSize(float targetSize)
+        {
+            if (movementLocked)
+                return;
+            if (cam == null)
+                cam = Camera.main;
+            cam.orthographicSize = Mathf.Clamp(targetSize, minOrthographicSize, maxOrthographicSize);
+            orthographicSizeTarget = cam.orthographicSize;
+        }
+
         public void LockCameraMovement()
         {
             movementLocked = true;

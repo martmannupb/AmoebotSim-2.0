@@ -494,35 +494,35 @@ namespace AS2.Visuals
 
             // UV2s _____
             // Left
-            uv3[0] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftO - bottomLeftO);
-            uv3[1] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftI - bottomLeftI);
-            uv3[2] = Engine.Library.VectorConstants.Combine2Vector2s(bottomLeftO - topLeftO, Vector2.zero);
-            uv3[3] = Engine.Library.VectorConstants.Combine2Vector2s(bottomLeftI - topLeftI, Vector2.zero);
+            uv3[0] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftO - bottomLeftO);
+            uv3[1] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftI - bottomLeftI);
+            uv3[2] = Library.VectorConstants.Combine2Vector2s(bottomLeftO - topLeftO, Vector2.zero);
+            uv3[3] = Library.VectorConstants.Combine2Vector2s(bottomLeftI - topLeftI, Vector2.zero);
             // Top Left
-            uv3[4] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topO - topLeftO);
-            uv3[5] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topI - topLeftI);
-            uv3[6] = Engine.Library.VectorConstants.Combine2Vector2s(topLeftO - topO, Vector2.zero);
-            uv3[7] = Engine.Library.VectorConstants.Combine2Vector2s(topLeftI - topI, Vector2.zero);
+            uv3[4] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topO - topLeftO);
+            uv3[5] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topI - topLeftI);
+            uv3[6] = Library.VectorConstants.Combine2Vector2s(topLeftO - topO, Vector2.zero);
+            uv3[7] = Library.VectorConstants.Combine2Vector2s(topLeftI - topI, Vector2.zero);
             // Top Right
-            uv3[8] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topRightO - topO);
-            uv3[9] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topRightI - topI);
-            uv3[10] = Engine.Library.VectorConstants.Combine2Vector2s(topO - topRightO, Vector2.zero);
-            uv3[11] = Engine.Library.VectorConstants.Combine2Vector2s(topI - topRightI, Vector2.zero);
+            uv3[8] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topRightO - topO);
+            uv3[9] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topRightI - topI);
+            uv3[10] = Library.VectorConstants.Combine2Vector2s(topO - topRightO, Vector2.zero);
+            uv3[11] = Library.VectorConstants.Combine2Vector2s(topI - topRightI, Vector2.zero);
             // Right
-            uv3[12] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomRightO - topRightO);
-            uv3[13] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomRightI - topRightI);
-            uv3[14] = Engine.Library.VectorConstants.Combine2Vector2s(topRightO - bottomRightO, Vector2.zero);
-            uv3[15] = Engine.Library.VectorConstants.Combine2Vector2s(topRightI - bottomRightI, Vector2.zero);
+            uv3[12] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomRightO - topRightO);
+            uv3[13] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomRightI - topRightI);
+            uv3[14] = Library.VectorConstants.Combine2Vector2s(topRightO - bottomRightO, Vector2.zero);
+            uv3[15] = Library.VectorConstants.Combine2Vector2s(topRightI - bottomRightI, Vector2.zero);
             // Bottom Right
-            uv3[16] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomO - bottomRightO);
-            uv3[17] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomI - bottomRightI);
-            uv3[18] = Engine.Library.VectorConstants.Combine2Vector2s(bottomRightO - bottomO, Vector2.zero);
-            uv3[19] = Engine.Library.VectorConstants.Combine2Vector2s(bottomRightI - bottomI, Vector2.zero);
+            uv3[16] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomO - bottomRightO);
+            uv3[17] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomI - bottomRightI);
+            uv3[18] = Library.VectorConstants.Combine2Vector2s(bottomRightO - bottomO, Vector2.zero);
+            uv3[19] = Library.VectorConstants.Combine2Vector2s(bottomRightI - bottomI, Vector2.zero);
             // Bottom Left
-            uv3[20] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftO - bottomO);
-            uv3[21] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftI - bottomI);
-            uv3[22] = Engine.Library.VectorConstants.Combine2Vector2s(bottomO - bottomLeftO, Vector2.zero);
-            uv3[23] = Engine.Library.VectorConstants.Combine2Vector2s(bottomI - bottomLeftI, Vector2.zero);
+            uv3[20] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftO - bottomO);
+            uv3[21] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftI - bottomI);
+            uv3[22] = Library.VectorConstants.Combine2Vector2s(bottomO - bottomLeftO, Vector2.zero);
+            uv3[23] = Library.VectorConstants.Combine2Vector2s(bottomI - bottomLeftI, Vector2.zero);
             // Corner Triangles
             uv3[24] = Vector4.zero;
             uv3[25] = Vector4.zero;
@@ -533,12 +533,12 @@ namespace AS2.Visuals
             // Background (here the clockwise contraction offsets are defined)
             Vector2 conVector1cl = topLeft - bottomLeft;
             Vector2 conVector2cl = top - topLeft;
-            uv3[30] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 0f), Engine.Library.VectorConstants.Rotate(conVector2cl, 0f));
-            uv3[31] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 300f), Engine.Library.VectorConstants.Rotate(conVector2cl, 300f));
-            uv3[32] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 240f), Engine.Library.VectorConstants.Rotate(conVector2cl, 240f));
-            uv3[33] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 180f), Engine.Library.VectorConstants.Rotate(conVector2cl, 180f));
-            uv3[34] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 120f), Engine.Library.VectorConstants.Rotate(conVector2cl, 120f));
-            uv3[35] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 60f), Engine.Library.VectorConstants.Rotate(conVector2cl, 60f));
+            uv3[30] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 0f), Library.VectorConstants.Rotate(conVector2cl, 0f));
+            uv3[31] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 300f), Library.VectorConstants.Rotate(conVector2cl, 300f));
+            uv3[32] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 240f), Library.VectorConstants.Rotate(conVector2cl, 240f));
+            uv3[33] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 180f), Library.VectorConstants.Rotate(conVector2cl, 180f));
+            uv3[34] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 120f), Library.VectorConstants.Rotate(conVector2cl, 120f));
+            uv3[35] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 60f), Library.VectorConstants.Rotate(conVector2cl, 60f));
 
             // UV3s _____
             // Left (Left to Right)
@@ -546,35 +546,35 @@ namespace AS2.Visuals
             Vector2 expVector2bot = (bottomRight - bottomLeft) - (bottomO - bottomLeftO);
             Vector2 expVector1top = topO - topLeftO;
             Vector2 expVector2top = (topRight - topLeft) - (topO - topLeftO);
-            uv4[0] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 0f), Engine.Library.VectorConstants.Rotate(expVector2bot, 0f));
-            uv4[1] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 0f), Engine.Library.VectorConstants.Rotate(expVector2bot, 0f));
-            uv4[2] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 0f), Engine.Library.VectorConstants.Rotate(expVector2top, 0f));
-            uv4[3] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 0f), Engine.Library.VectorConstants.Rotate(expVector2top, 0f));
+            uv4[0] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 0f), Library.VectorConstants.Rotate(expVector2bot, 0f));
+            uv4[1] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 0f), Library.VectorConstants.Rotate(expVector2bot, 0f));
+            uv4[2] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 0f), Library.VectorConstants.Rotate(expVector2top, 0f));
+            uv4[3] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 0f), Library.VectorConstants.Rotate(expVector2top, 0f));
             // Top Left
-            uv4[4] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 300f), Engine.Library.VectorConstants.Rotate(expVector2bot, 300f));
-            uv4[5] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 300f), Engine.Library.VectorConstants.Rotate(expVector2bot, 300f));
-            uv4[6] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 300f), Engine.Library.VectorConstants.Rotate(expVector2top, 300f));
-            uv4[7] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 300f), Engine.Library.VectorConstants.Rotate(expVector2top, 300f));
+            uv4[4] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 300f), Library.VectorConstants.Rotate(expVector2bot, 300f));
+            uv4[5] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 300f), Library.VectorConstants.Rotate(expVector2bot, 300f));
+            uv4[6] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 300f), Library.VectorConstants.Rotate(expVector2top, 300f));
+            uv4[7] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 300f), Library.VectorConstants.Rotate(expVector2top, 300f));
             // Top Right
-            uv4[8] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 240f), Engine.Library.VectorConstants.Rotate(expVector2bot, 240f));
-            uv4[9] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 240f), Engine.Library.VectorConstants.Rotate(expVector2bot, 240f));
-            uv4[10] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 240f), Engine.Library.VectorConstants.Rotate(expVector2top, 240f));
-            uv4[11] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 240f), Engine.Library.VectorConstants.Rotate(expVector2top, 240f));
+            uv4[8] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 240f), Library.VectorConstants.Rotate(expVector2bot, 240f));
+            uv4[9] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 240f), Library.VectorConstants.Rotate(expVector2bot, 240f));
+            uv4[10] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 240f), Library.VectorConstants.Rotate(expVector2top, 240f));
+            uv4[11] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 240f), Library.VectorConstants.Rotate(expVector2top, 240f));
             // Right (Right to Left)
-            uv4[12] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 180f), Engine.Library.VectorConstants.Rotate(expVector2bot, 180f));
-            uv4[13] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 180f), Engine.Library.VectorConstants.Rotate(expVector2bot, 180f));
-            uv4[14] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 180f), Engine.Library.VectorConstants.Rotate(expVector2top, 180f));
-            uv4[15] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 180f), Engine.Library.VectorConstants.Rotate(expVector2top, 180f));
+            uv4[12] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 180f), Library.VectorConstants.Rotate(expVector2bot, 180f));
+            uv4[13] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 180f), Library.VectorConstants.Rotate(expVector2bot, 180f));
+            uv4[14] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 180f), Library.VectorConstants.Rotate(expVector2top, 180f));
+            uv4[15] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 180f), Library.VectorConstants.Rotate(expVector2top, 180f));
             // Bottom Right
-            uv4[16] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 120f), Engine.Library.VectorConstants.Rotate(expVector2bot, 120f));
-            uv4[17] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 120f), Engine.Library.VectorConstants.Rotate(expVector2bot, 120f));
-            uv4[18] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 120f), Engine.Library.VectorConstants.Rotate(expVector2top, 120f));
-            uv4[19] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 120f), Engine.Library.VectorConstants.Rotate(expVector2top, 120f));
+            uv4[16] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 120f), Library.VectorConstants.Rotate(expVector2bot, 120f));
+            uv4[17] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 120f), Library.VectorConstants.Rotate(expVector2bot, 120f));
+            uv4[18] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 120f), Library.VectorConstants.Rotate(expVector2top, 120f));
+            uv4[19] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 120f), Library.VectorConstants.Rotate(expVector2top, 120f));
             // Bottom Left
-            uv4[20] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
-            uv4[21] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
-            uv4[22] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
-            uv4[23] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
+            uv4[20] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 60f), Library.VectorConstants.Rotate(expVector2bot, 60f));
+            uv4[21] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 60f), Library.VectorConstants.Rotate(expVector2bot, 60f));
+            uv4[22] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 60f), Library.VectorConstants.Rotate(expVector2top, 60f));
+            uv4[23] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 60f), Library.VectorConstants.Rotate(expVector2top, 60f));
             // Corner Triangles
             uv4[24] = Vector4.zero;
             uv4[25] = Vector4.zero;
@@ -585,12 +585,12 @@ namespace AS2.Visuals
             // Background (here the counterclockwise contraction offsets are defined)
             Vector2 conVector1cc = bottom - bottomLeft;
             Vector2 conVector2cc = bottomRight - bottom;
-            uv4[30] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 0f), Engine.Library.VectorConstants.Rotate(conVector2cc, 0f));
-            uv4[31] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 300f), Engine.Library.VectorConstants.Rotate(conVector2cc, 300f));
-            uv4[32] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 240f), Engine.Library.VectorConstants.Rotate(conVector2cc, 240f));
-            uv4[33] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 180f), Engine.Library.VectorConstants.Rotate(conVector2cc, 180f));
-            uv4[34] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 120f), Engine.Library.VectorConstants.Rotate(conVector2cc, 120f));
-            uv4[35] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 60f), Engine.Library.VectorConstants.Rotate(conVector2cc, 60f));
+            uv4[30] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 0f), Library.VectorConstants.Rotate(conVector2cc, 0f));
+            uv4[31] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 300f), Library.VectorConstants.Rotate(conVector2cc, 300f));
+            uv4[32] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 240f), Library.VectorConstants.Rotate(conVector2cc, 240f));
+            uv4[33] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 180f), Library.VectorConstants.Rotate(conVector2cc, 180f));
+            uv4[34] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 120f), Library.VectorConstants.Rotate(conVector2cc, 120f));
+            uv4[35] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 60f), Library.VectorConstants.Rotate(conVector2cc, 60f));
 
             // Normals _____
             for (int i = 0; i < vertices.Length; i++)
@@ -701,35 +701,35 @@ namespace AS2.Visuals
 
             // UV2s _____
             // Left
-            uv3[0] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftO - bottomLeftO);
-            uv3[1] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftI - bottomLeftI);
-            uv3[2] = Engine.Library.VectorConstants.Combine2Vector2s(bottomLeftO - topLeftO, Vector2.zero);
-            uv3[3] = Engine.Library.VectorConstants.Combine2Vector2s(bottomLeftI - topLeftI, Vector2.zero);
+            uv3[0] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftO - bottomLeftO);
+            uv3[1] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topLeftI - bottomLeftI);
+            uv3[2] = Library.VectorConstants.Combine2Vector2s(bottomLeftO - topLeftO, Vector2.zero);
+            uv3[3] = Library.VectorConstants.Combine2Vector2s(bottomLeftI - topLeftI, Vector2.zero);
             // Top Left
-            uv3[4] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topO - topLeftO);
-            uv3[5] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topI - topLeftI);
-            uv3[6] = Engine.Library.VectorConstants.Combine2Vector2s(topLeftO - topO, Vector2.zero);
-            uv3[7] = Engine.Library.VectorConstants.Combine2Vector2s(topLeftI - topI, Vector2.zero);
+            uv3[4] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topO - topLeftO);
+            uv3[5] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topI - topLeftI);
+            uv3[6] = Library.VectorConstants.Combine2Vector2s(topLeftO - topO, Vector2.zero);
+            uv3[7] = Library.VectorConstants.Combine2Vector2s(topLeftI - topI, Vector2.zero);
             // Top Right
-            uv3[8] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topRightO - topO);
-            uv3[9] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, topRightI - topI);
-            uv3[10] = Engine.Library.VectorConstants.Combine2Vector2s(topO - topRightO, Vector2.zero);
-            uv3[11] = Engine.Library.VectorConstants.Combine2Vector2s(topI - topRightI, Vector2.zero);
+            uv3[8] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topRightO - topO);
+            uv3[9] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, topRightI - topI);
+            uv3[10] = Library.VectorConstants.Combine2Vector2s(topO - topRightO, Vector2.zero);
+            uv3[11] = Library.VectorConstants.Combine2Vector2s(topI - topRightI, Vector2.zero);
             // Right
-            uv3[12] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomRightO - topRightO);
-            uv3[13] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomRightI - topRightI);
-            uv3[14] = Engine.Library.VectorConstants.Combine2Vector2s(topRightO - bottomRightO, Vector2.zero);
-            uv3[15] = Engine.Library.VectorConstants.Combine2Vector2s(topRightI - bottomRightI, Vector2.zero);
+            uv3[12] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomRightO - topRightO);
+            uv3[13] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomRightI - topRightI);
+            uv3[14] = Library.VectorConstants.Combine2Vector2s(topRightO - bottomRightO, Vector2.zero);
+            uv3[15] = Library.VectorConstants.Combine2Vector2s(topRightI - bottomRightI, Vector2.zero);
             // Bottom Right
-            uv3[16] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomO - bottomRightO);
-            uv3[17] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomI - bottomRightI);
-            uv3[18] = Engine.Library.VectorConstants.Combine2Vector2s(bottomRightO - bottomO, Vector2.zero);
-            uv3[19] = Engine.Library.VectorConstants.Combine2Vector2s(bottomRightI - bottomI, Vector2.zero);
+            uv3[16] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomO - bottomRightO);
+            uv3[17] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomI - bottomRightI);
+            uv3[18] = Library.VectorConstants.Combine2Vector2s(bottomRightO - bottomO, Vector2.zero);
+            uv3[19] = Library.VectorConstants.Combine2Vector2s(bottomRightI - bottomI, Vector2.zero);
             // Bottom Left
-            uv3[20] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftO - bottomO);
-            uv3[21] = Engine.Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftI - bottomI);
-            uv3[22] = Engine.Library.VectorConstants.Combine2Vector2s(bottomO - bottomLeftO, Vector2.zero);
-            uv3[23] = Engine.Library.VectorConstants.Combine2Vector2s(bottomI - bottomLeftI, Vector2.zero);
+            uv3[20] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftO - bottomO);
+            uv3[21] = Library.VectorConstants.Combine2Vector2s(Vector2.zero, bottomLeftI - bottomI);
+            uv3[22] = Library.VectorConstants.Combine2Vector2s(bottomO - bottomLeftO, Vector2.zero);
+            uv3[23] = Library.VectorConstants.Combine2Vector2s(bottomI - bottomLeftI, Vector2.zero);
             // Corner Triangles
             uv3[24] = Vector4.zero;
             uv3[25] = Vector4.zero;
@@ -740,12 +740,12 @@ namespace AS2.Visuals
             // Background (here the clockwise contraction offsets are defined)
             Vector2 conVector1cl = topLeft - bottomLeft;
             Vector2 conVector2cl = top - topLeft;
-            uv3[30] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 0f), Engine.Library.VectorConstants.Rotate(conVector2cl, 0f));
-            uv3[31] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 300f), Engine.Library.VectorConstants.Rotate(conVector2cl, 300f));
-            uv3[32] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 240f), Engine.Library.VectorConstants.Rotate(conVector2cl, 240f));
-            uv3[33] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 180f), Engine.Library.VectorConstants.Rotate(conVector2cl, 180f));
-            uv3[34] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 120f), Engine.Library.VectorConstants.Rotate(conVector2cl, 120f));
-            uv3[35] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cl, 60f), Engine.Library.VectorConstants.Rotate(conVector2cl, 60f));
+            uv3[30] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 0f), Library.VectorConstants.Rotate(conVector2cl, 0f));
+            uv3[31] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 300f), Library.VectorConstants.Rotate(conVector2cl, 300f));
+            uv3[32] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 240f), Library.VectorConstants.Rotate(conVector2cl, 240f));
+            uv3[33] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 180f), Library.VectorConstants.Rotate(conVector2cl, 180f));
+            uv3[34] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 120f), Library.VectorConstants.Rotate(conVector2cl, 120f));
+            uv3[35] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cl, 60f), Library.VectorConstants.Rotate(conVector2cl, 60f));
 
             // UV3s _____
             // Left (Left to Right)
@@ -753,35 +753,35 @@ namespace AS2.Visuals
             Vector2 expVector2bot = (bottomRight - bottomLeft) - (bottomO - bottomLeftO);
             Vector2 expVector1top = topO - topLeftO;
             Vector2 expVector2top = (topRight - topLeft) - (topO - topLeftO);
-            uv4[0] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 0f), Engine.Library.VectorConstants.Rotate(expVector2bot, 0f));
-            uv4[1] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 0f), Engine.Library.VectorConstants.Rotate(expVector2bot, 0f));
-            uv4[2] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 0f), Engine.Library.VectorConstants.Rotate(expVector2top, 0f));
-            uv4[3] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 0f), Engine.Library.VectorConstants.Rotate(expVector2top, 0f));
+            uv4[0] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 0f), Library.VectorConstants.Rotate(expVector2bot, 0f));
+            uv4[1] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 0f), Library.VectorConstants.Rotate(expVector2bot, 0f));
+            uv4[2] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 0f), Library.VectorConstants.Rotate(expVector2top, 0f));
+            uv4[3] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 0f), Library.VectorConstants.Rotate(expVector2top, 0f));
             // Top Left
-            uv4[4] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 300f), Engine.Library.VectorConstants.Rotate(expVector2bot, 300f));
-            uv4[5] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 300f), Engine.Library.VectorConstants.Rotate(expVector2bot, 300f));
-            uv4[6] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 300f), Engine.Library.VectorConstants.Rotate(expVector2top, 300f));
-            uv4[7] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 300f), Engine.Library.VectorConstants.Rotate(expVector2top, 300f));
+            uv4[4] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 300f), Library.VectorConstants.Rotate(expVector2bot, 300f));
+            uv4[5] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 300f), Library.VectorConstants.Rotate(expVector2bot, 300f));
+            uv4[6] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 300f), Library.VectorConstants.Rotate(expVector2top, 300f));
+            uv4[7] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 300f), Library.VectorConstants.Rotate(expVector2top, 300f));
             // Top Right
-            uv4[8] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 240f), Engine.Library.VectorConstants.Rotate(expVector2bot, 240f));
-            uv4[9] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 240f), Engine.Library.VectorConstants.Rotate(expVector2bot, 240f));
-            uv4[10] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 240f), Engine.Library.VectorConstants.Rotate(expVector2top, 240f));
-            uv4[11] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 240f), Engine.Library.VectorConstants.Rotate(expVector2top, 240f));
+            uv4[8] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 240f), Library.VectorConstants.Rotate(expVector2bot, 240f));
+            uv4[9] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 240f), Library.VectorConstants.Rotate(expVector2bot, 240f));
+            uv4[10] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 240f), Library.VectorConstants.Rotate(expVector2top, 240f));
+            uv4[11] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 240f), Library.VectorConstants.Rotate(expVector2top, 240f));
             // Right (Right to Left)
-            uv4[12] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 180f), Engine.Library.VectorConstants.Rotate(expVector2bot, 180f));
-            uv4[13] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 180f), Engine.Library.VectorConstants.Rotate(expVector2bot, 180f));
-            uv4[14] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 180f), Engine.Library.VectorConstants.Rotate(expVector2top, 180f));
-            uv4[15] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 180f), Engine.Library.VectorConstants.Rotate(expVector2top, 180f));
+            uv4[12] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 180f), Library.VectorConstants.Rotate(expVector2bot, 180f));
+            uv4[13] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 180f), Library.VectorConstants.Rotate(expVector2bot, 180f));
+            uv4[14] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 180f), Library.VectorConstants.Rotate(expVector2top, 180f));
+            uv4[15] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 180f), Library.VectorConstants.Rotate(expVector2top, 180f));
             // Bottom Right
-            uv4[16] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 120f), Engine.Library.VectorConstants.Rotate(expVector2bot, 120f));
-            uv4[17] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 120f), Engine.Library.VectorConstants.Rotate(expVector2bot, 120f));
-            uv4[18] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 120f), Engine.Library.VectorConstants.Rotate(expVector2top, 120f));
-            uv4[19] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 120f), Engine.Library.VectorConstants.Rotate(expVector2top, 120f));
+            uv4[16] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 120f), Library.VectorConstants.Rotate(expVector2bot, 120f));
+            uv4[17] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 120f), Library.VectorConstants.Rotate(expVector2bot, 120f));
+            uv4[18] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 120f), Library.VectorConstants.Rotate(expVector2top, 120f));
+            uv4[19] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 120f), Library.VectorConstants.Rotate(expVector2top, 120f));
             // Bottom Left
-            uv4[20] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
-            uv4[21] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1bot, 60f), Engine.Library.VectorConstants.Rotate(expVector2bot, 60f));
-            uv4[22] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
-            uv4[23] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(expVector1top, 60f), Engine.Library.VectorConstants.Rotate(expVector2top, 60f));
+            uv4[20] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 60f), Library.VectorConstants.Rotate(expVector2bot, 60f));
+            uv4[21] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1bot, 60f), Library.VectorConstants.Rotate(expVector2bot, 60f));
+            uv4[22] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 60f), Library.VectorConstants.Rotate(expVector2top, 60f));
+            uv4[23] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(expVector1top, 60f), Library.VectorConstants.Rotate(expVector2top, 60f));
             // Corner Triangles
             uv4[24] = Vector4.zero;
             uv4[25] = Vector4.zero;
@@ -792,12 +792,12 @@ namespace AS2.Visuals
             // Background (here the counterclockwise contraction offsets are defined)
             Vector2 conVector1cc = bottom - bottomLeft;
             Vector2 conVector2cc = bottomRight - bottom;
-            uv4[30] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 0f), Engine.Library.VectorConstants.Rotate(conVector2cc, 0f));
-            uv4[31] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 300f), Engine.Library.VectorConstants.Rotate(conVector2cc, 300f));
-            uv4[32] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 240f), Engine.Library.VectorConstants.Rotate(conVector2cc, 240f));
-            uv4[33] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 180f), Engine.Library.VectorConstants.Rotate(conVector2cc, 180f));
-            uv4[34] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 120f), Engine.Library.VectorConstants.Rotate(conVector2cc, 120f));
-            uv4[35] = Engine.Library.VectorConstants.Combine2Vector2s(Engine.Library.VectorConstants.Rotate(conVector1cc, 60f), Engine.Library.VectorConstants.Rotate(conVector2cc, 60f));
+            uv4[30] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 0f), Library.VectorConstants.Rotate(conVector2cc, 0f));
+            uv4[31] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 300f), Library.VectorConstants.Rotate(conVector2cc, 300f));
+            uv4[32] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 240f), Library.VectorConstants.Rotate(conVector2cc, 240f));
+            uv4[33] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 180f), Library.VectorConstants.Rotate(conVector2cc, 180f));
+            uv4[34] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 120f), Library.VectorConstants.Rotate(conVector2cc, 120f));
+            uv4[35] = Library.VectorConstants.Combine2Vector2s(Library.VectorConstants.Rotate(conVector1cc, 60f), Library.VectorConstants.Rotate(conVector2cc, 60f));
 
             // Normals _____
             for (int i = 0; i < vertices.Length; i++)
@@ -822,9 +822,9 @@ namespace AS2.Visuals
         /// <returns></returns>
         public static Mesh GetMesh_MergingExpansionHexagon()
         {
-            Mesh mesh = Engine.Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0.5f, 0.5f));
-            mesh = Engine.Library.MeshConstants.scaleMeshAroundPivot(mesh, new Vector3(3f, 2f, 1f));
-            mesh = Engine.Library.MeshConstants.offsetMeshVertices(mesh, new Vector3(0.5f, 0f, 0f));
+            Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0.5f, 0.5f));
+            mesh = Library.MeshConstants.scaleMeshAroundPivot(mesh, new Vector3(3f, 2f, 1f));
+            mesh = Library.MeshConstants.offsetMeshVertices(mesh, new Vector3(0.5f, 0f, 0f));
             return mesh;
         }
 

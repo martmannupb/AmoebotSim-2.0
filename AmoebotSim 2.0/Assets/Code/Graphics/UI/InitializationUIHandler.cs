@@ -88,11 +88,13 @@ namespace AS2.UI
             }
 
             // Init UI
-            // Algorithm Generation
+            // Algorithm selection
             List<string> algStrings = AlgorithmManager.Instance.GetAlgorithmNames();
+            // Sort names alphabetically
+            algStrings.Sort();
             alg_setting_algo = new UISetting_Dropdown(alg_go_algo, null, "Algorithm", algStrings.ToArray(), algStrings[0]);
             alg_setting_algo.onValueChangedEvent += ValueChanged_Text;
-            // Particle Generation
+            // System generation
             List<string> genAlgStrings = InitializationMethodManager.Instance.GetAlgorithmNames();
             genAlg_setting_genAlg = new UISetting_Dropdown(genAlg_go_genAlg, null, "Gen. Alg.", genAlgStrings.ToArray(), genAlgStrings[0]);
             genAlg_setting_genAlg.onValueChangedEvent += ValueChanged_Text;
@@ -102,9 +104,9 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// True, if the class has been initialized already.
+        /// Checks if the class has been initialized already.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the class has been initialized.</returns>
         public bool IsInitialized()
         {
             return initialized;
@@ -121,9 +123,11 @@ namespace AS2.UI
 
         /// <summary>
         /// Sets up the UI for the given algorithm.
-        /// Checks if the given algorithm exists and then loads a default generation algorithm UI, if one has been defined. In the end, the system is generated once.
+        /// Checks if the given algorithm exists and then loads a default generation
+        /// algorithm UI, if one has been defined.
+        /// At the end, the system is generated once.
         /// </summary>
-        /// <param name="algorithm"></param>
+        /// <param name="algorithm">The unique name of the new selected algorithm.</param>
         private void SetUpAlgUI(string algorithm)
         {
             // Null Check (should never trigger)
@@ -143,14 +147,17 @@ namespace AS2.UI
             }
             // Show algorithm parameters
             AmoebotSimulator.instance.system.SetSelectedAlgorithm(algorithm);
-            AmoebotSimulator.instance.uiHandler.Button_CameraCenterPressed();
+            AmoebotSimulator.instance.uiHandler.Button_FrameSystemPressed();
         }
 
         /// <summary>
         /// Sets up the UI for the given generation algorithm.
-        /// Here the parameters of the generation algorithm are loaded via reflection, packed into a list of UI settings and shown to the user. Default values defined in the code are also set.
+        /// Here the parameters of the generation algorithm are loaded via reflection,
+        /// packed into a list of UI settings and shown to the user. Default values
+        /// defined in the code are also set.
         /// </summary>
-        /// <param name="algorithm"></param>
+        /// <param name="algorithm">The unique name of the new selected
+        /// generation method.</param>
         private void SetUpGenAlgUI(string algorithm)
         {
             // Set Value
@@ -217,8 +224,8 @@ namespace AS2.UI
         /// <summary>
         /// Called when the user changes some values in certain dropdowns.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="text"></param>
+        /// <param name="name">The name of the changed setting.</param>
+        /// <param name="text">The new string value of the setting.</param>
         public void ValueChanged_Text(string name, string text)
         {
             switch (name)
@@ -235,7 +242,7 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// So far, this does absolutely nothing.
+        /// Callback for changed float settings. Does not do anything yet.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="number"></param>
@@ -267,6 +274,8 @@ namespace AS2.UI
             AmoebotSimulator.instance.system.InitializationModeStarted(alg_setting_algo.GetValueString());
             // Generate (can be skipped)
             //ButtonPressed_Generate();
+            // Center camera
+            AmoebotSimulator.instance.uiHandler.Button_FrameSystemPressed();
             // Event
             EventDatabase.event_initializationUI_initModeOpenClose?.Invoke(true);
         }
@@ -274,7 +283,8 @@ namespace AS2.UI
         /// <summary>
         /// Closes the initialization panel.
         /// </summary>
-        /// <param name="aborted">True if the init mode has been aborted. False if execution is successful.</param>
+        /// <param name="aborted">True if the init mode has been aborted.
+        /// False if execution is successful.</param>
         public void Close(bool aborted)
         {
             // Update UI
@@ -295,7 +305,7 @@ namespace AS2.UI
         /// <summary>
         /// True if init mode is open.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the Initialization Panel is currently active.</returns>
         public bool IsOpen()
         {
             return initModePanel.activeSelf;
@@ -306,11 +316,11 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_Load()
         {
-            string[] paths = StandaloneFileBrowser.OpenFilePanel("Load Particle Setup", "", "aminit", false);
-            if (paths.Length != 0)
+            string path = FileBrowser.LoadInitFile();
+            if (!path.Equals(""))
             {
                 // Init particle system
-                InitModeSaveData initModeSaveData = AmoebotSimulator.instance.system.LoadInitSaveState(SaveStateUtility.LoadInit(paths[0]));
+                InitModeSaveData initModeSaveData = AmoebotSimulator.instance.system.LoadInitSaveState(SaveStateUtility.LoadInit(path));
                 // Update init mode
                 alg_setting_algo.SetValue(initModeSaveData.algString);
                 genAlg_setting_genAlg.SetValue(initModeSaveData.genAlgString);
@@ -320,7 +330,7 @@ namespace AS2.UI
                     setting.SetValueString(initModeSaveData.genAlg_parameters[i]);
                 }
                 // Log
-                Log.Entry("Loaded initialization state from path: " + paths[0] + ".");
+                Log.Entry("Loaded initialization state from path: " + path + ".");
             }
             //else Log.Debug("No file chosen.");
         }
@@ -330,7 +340,7 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_Save()
         {
-            string path = StandaloneFileBrowser.SaveFilePanel("Save Particle Setup", "", "initState", "aminit");
+            string path = FileBrowser.SaveInitFile();
             if (path.Equals("") == false)
             {
                 // Generate general save data
@@ -375,19 +385,21 @@ namespace AS2.UI
             }
 
             // Call Generation Method
-            AmoebotSimulator.instance.system.Reset();
+            //AmoebotSimulator.instance.system.Reset();
             //uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
             AmoebotSimulator.instance.system.GenerateParticles(genAlgorithm, parameterObjects);
 
-            // Center Camera
-            AmoebotSimulator.instance.uiHandler.Button_CameraCenterPressed();
+            // Bring whole system into view
+            AmoebotSimulator.instance.uiHandler.Button_FrameSystemPressed();
         }
 
         /// <summary>
+        /// Handler for the event that a setting has been pressed for
+        /// an extended time.
         /// Applies the chirality/compass dir if the corresponding button has been clicked long enough.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="duration"></param>
+        /// <param name="name">The name of the setting that was pressed.</param>
+        /// <param name="duration">The duration for which the button has been pressed.</param>
         public void SettingBarPressedLong(string name, float duration)
         {
             switch (name)

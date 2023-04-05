@@ -44,7 +44,7 @@ namespace AS2.Sim
             }
         }
 
-        public override PinConfiguration GetValue_After()
+        public override PinConfiguration GetCurrentValue()
         {
             if (!particle.isActive)
             {

@@ -73,7 +73,7 @@ The explicit way of reading this value is the [`GetValue`][5] method.
 Whenever another particle reads the attribute, this value will be returned.
 
 However, it may sometimes be convenient to update the value of an attribute and then read the updated value in the same round, i.e., in the same activation method.
-To access the *latest* value of an attribute, the [`GetValue_After`][6] method must be used.
+To access the *latest* value of an attribute, the [`GetCurrentValue`][6] method must be used.
 This method can only be called by the particle to which the attribute belongs.
 
 To write a new attribute value, the [`SetValue`][7] method must be used.
@@ -90,10 +90,10 @@ public override void ActivateMove()
 {
     // First activation
     int i0 = myIntAttr;                   // i0 = 42
-    int i1 = myIntAttr.GetValue_After();  // i1 = 42 (Value not updated yet)
+    int i1 = myIntAttr.GetCurrentValue(); // i1 = 42 (Value not updated yet)
     myIntAttr.SetValue(17);               // Update attribute value
     int i2 = myIntAttr;                   // i2 = 42 (value from the beginning of the round)
-    int i3 = myIntAttr.GetValue_After();  // i3 = 17 (updated value)
+    int i3 = myIntAttr.GetCurrentValue(); // i3 = 17 (updated value)
 }
 ```
 
@@ -104,5 +104,5 @@ public override void ActivateMove()
 [3]: xref:AS2.Sim.PinConfiguration
 [4]: xref:AS2.Sim.ParticleAlgorithm.CreateAttributeInt(System.String,System.Int32)
 [5]: xref:AS2.Sim.ParticleAttribute`1.GetValue
-[6]: xref:AS2.Sim.ParticleAttribute`1.GetValue_After
+[6]: xref:AS2.Sim.ParticleAttribute`1.GetCurrentValue
 [7]: xref:AS2.Sim.ParticleAttribute`1.SetValue(`0)

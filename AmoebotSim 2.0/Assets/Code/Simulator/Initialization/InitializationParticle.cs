@@ -10,6 +10,10 @@ namespace AS2.Sim
     /// system initialization. The data stored in this class
     /// is used to instantiate the proper particles and the
     /// associated algorithms when simulation mode is entered.
+    /// <para>
+    /// The attributes of these particles represent the parameters
+    /// of the associated algorithm's <c>Init(...)</c> method.
+    /// </para>
     /// </summary>
     public abstract class InitializationParticle : IParticleState
     {
@@ -214,6 +218,13 @@ namespace AS2.Sim
             return null;
         }
 
+        /// <summary>
+        /// Sets the specified <c>Init()</c> parameter attribute to the given value.
+        /// </summary>
+        /// <param name="attrName">The name of the init parameter attribute.
+        /// Must be the name of a parameter of the algorithm's <c>Init(...)</c> method.</param>
+        /// <param name="value">The value to be assigned to the specified attribute.
+        /// Must match the attribute's type.</param>
         public void SetAttribute(string attrName, object value)
         {
             foreach (IParticleAttribute attr in attributes)
@@ -227,6 +238,14 @@ namespace AS2.Sim
             Log.Warning("Tried to set value of attribute '" + attrName + "' but could not find this attribute.");
         }
 
+        /// <summary>
+        /// Sets the values of the first <c>n</c> <c>Init</c> parameter attributes.
+        /// </summary>
+        /// <param name="values">The new values to be assigned to the
+        /// particle's <c>Init</c> parameter attributes. The order of the
+        /// values must match the order of the algorithm's <c>Init(...)</c> method's
+        /// parameters and the length of the array must not exceed the number
+        /// of parameters.</param>
         public void SetAttributes(object[] values)
         {
             int n = Mathf.Min(values.Length, attributes.Count);
@@ -236,6 +255,11 @@ namespace AS2.Sim
             }
         }
 
+        /// <summary>
+        /// Gets the current values of all <c>Init</c> parameter attributes.
+        /// </summary>
+        /// <returns>The current values of all <c>Init</c> parameter attributes
+        /// in the order of the parameters in the algorithm's <c>Init(...)</c> method.</returns>
         public object[] GetParameterValues()
         {
             object[] vals = new object[attributes.Count];

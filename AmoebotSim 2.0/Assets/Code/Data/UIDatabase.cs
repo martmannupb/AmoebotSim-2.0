@@ -6,8 +6,14 @@ using UnityEngine.UI;
 namespace AS2
 {
 
+    /// <summary>
+    /// Database of UI element prefabs used to
+    /// assemble UI content dynamically.
+    /// </summary>
     public static class UIDatabase
     {
+        public static GameObject prefab_ui_button = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Button");
+
         // Settings / Particles
         public static GameObject prefab_setting_header = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/Header");
         public static GameObject prefab_setting_spacing = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/Spacing");
@@ -17,6 +23,7 @@ namespace AS2
         public static GameObject prefab_setting_dropdown = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/Dropdown");
         public static GameObject prefab_setting_valueSlider = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/ValueSlider");
         public static GameObject prefab_setting_minMax = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Settings/MinMax");
+
         // Randomization
         public static GameObject prefab_randomization_dices = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Randomization/Randomization Dices");
         public static GameObject prefab_randomization_placeholder = Resources.Load<GameObject>(FilePaths.path_ui + "Prefabs/Randomization/Randomization Placeholder");

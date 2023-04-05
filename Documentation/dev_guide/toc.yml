@@ -1,2 +1,11 @@
-- name: Home
-  href: home.md
+- name: Architecture Overview
+  href: architecture.md
+- name: Simulator
+  href: sim/toc.yml
+  topicHref: sim/home.md
+- name: User Interface
+  href: ui.md
+- name: Input Handling
+  href: input.md
+- name: Render System
+  href: render_system.md

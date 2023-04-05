@@ -1,6 +1,6 @@
 - name: Unity Editor
   href: editor.md
-- name: Simulation Mode
-  href: sim.md
 - name: Initialization Mode
   href: init.md
+- name: Simulation Mode
+  href: sim.md

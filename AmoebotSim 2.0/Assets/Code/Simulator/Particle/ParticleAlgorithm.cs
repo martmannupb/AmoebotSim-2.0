@@ -552,6 +552,21 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Same as <see cref="GetPlannedPinConfiguration"/> but also
+        /// sets the current pin configuration to be the planned one
+        /// such that it can immediately be used to send beeps and messages.
+        /// </summary>
+        /// <returns>The current pin configuration, already planned
+        /// for the next round.</returns>
+        public PinConfiguration GetCurrentPCAsPlanned()
+        {
+            CheckActive("Pin configurations cannot be obtained from other particles.");
+            SysPinConfiguration pc = particle.GetCurrentPinConfiguration();
+            SetPlannedPinConfiguration(pc);
+            return pc;
+        }
+
+        /// <summary>
         /// Creates a pin configuration for the contracted state
         /// with the default singleton pattern.
         /// <para>

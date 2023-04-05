@@ -33,7 +33,7 @@ namespace AS2.Sim
     /// </para>
     /// <para>
     /// Note the difference between the <see cref="GetValue"/> and
-    /// <see cref="GetValue_After"/> methods. Reading a <see cref="ParticleAttribute{T}"/>
+    /// <see cref="GetCurrentValue"/> methods. Reading a <see cref="ParticleAttribute{T}"/>
     /// like a variable of type <typeparamref name="T"/> will return the same value as
     /// <see cref="GetValue"/>. Depending on the desired semantics, it may be helpful to
     /// wrap attributes in properties when writing a particle algorithm.
@@ -49,7 +49,7 @@ namespace AS2.Sim
         /// beginning of the current round.
         /// <para>
         /// The return value is not changed by assigning new values to this attribute!
-        /// To get the latest assigned value, use <see cref="GetValue_After"/>.
+        /// To get the latest assigned value, use <see cref="GetCurrentValue"/>.
         /// </para>
         /// </summary>
         /// <returns>The attribute value at the beginning of the current round.</returns>
@@ -64,7 +64,7 @@ namespace AS2.Sim
         /// </para>
         /// </summary>
         /// <returns>The latest value of this attribute.</returns>
-        public abstract T GetValue_After();
+        public abstract T GetCurrentValue();
 
         /// <summary>
         /// Assigns the given value to this attribute.

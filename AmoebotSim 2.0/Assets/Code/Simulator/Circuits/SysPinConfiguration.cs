@@ -580,8 +580,7 @@ namespace AS2.Sim
             {
                 throw new InvalidOperationException("Cannot send beeps in non-planned pin configuration.");
             }
-            // TODO: Mask these things better
-            particle.PlanBeep(partitionSetIndex);
+            particle.PlanBeep(partitionSetIndex, this);
         }
 
         public override bool ReceivedMessageOnPartitionSet(int partitionSetIndex)
@@ -608,8 +607,7 @@ namespace AS2.Sim
             {
                 throw new InvalidOperationException("Cannot send messages in non-planned pin configuration.");
             }
-            // TODO: Mask these things better
-            particle.PlanMessage(partitionSetIndex, msg != null ? msg.Copy() : null);
+            particle.PlanMessage(partitionSetIndex, msg != null ? msg.Copy() : null, this);
         }
 
         public override void SetPartitionSetColor(int partitionSetIndex, Color color)

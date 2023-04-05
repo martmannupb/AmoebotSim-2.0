@@ -17,18 +17,27 @@ namespace AS2.UI
         // References
         private UIHandler uiHandler;
 
+        private UISetting_Text setting_cameraPosX;
+        private UISetting_Text setting_cameraPosY;
+        private UISetting_Text setting_cameraSize;
+
         // Data
         public GameObject settingsPanel;
         public GameObject settingsParent;
         private Vector2Int nonFullScreenResolution = new Vector2Int(-1, -1);
+        private bool camPosInGridCoords = false;    // Stores whether camera coordinates are in grid or world system
 
-        // References
-        private ParticleUIExtensionSmoothLerp uiLerpScript;
-
-        public enum SettingType
-        {
-            Slider, TextInt, TextFloat
-        }
+        // Setting names (used to identify which setting has changed)
+        private const string settingName_animationsOnOff = "Animations On/Off";
+        private const string settingName_fullscreen = "Fullscreen";
+        private const string settingName_cameraAngle = "Camera Angle";
+        private const string settingName_cameraPosX = "Camera Pos. X";
+        private const string settingName_cameraPosY = "Camera Pos. Y";
+        private const string settingName_cameraPosWorldOrGrid = "Grid Coordinates";
+        private const string settingName_cameraSize = "Camera Size";
+        private const string settingName_compassOvArrows = "Compass Ov. Arrows";
+        private const string settingName_circuitBorder = "Circuit Border";
+        private const string settingName_circularRing = "Circular Ring";
 
         private void Start()
         {
@@ -49,58 +58,62 @@ namespace AS2.UI
             uiHandler.sim.renderSystem.SetAntiAliasing(8);
             nonFullScreenResolution = new Vector2Int(Screen.width, Screen.height);
             Screen.SetResolution(nonFullScreenResolution.x, nonFullScreenResolution.y, false);
+
             // Settings _________________________
-            // Header
-            UISetting_Header setting_header_animationsBeeps = new UISetting_Header(null, settingsParent.transform, "Animations and Circuits");
-            // Animations On/Off
-            UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(null, settingsParent.transform, "Animations On/Off", RenderSystem.animationsOn);
-            setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
-            // Circuit Beep Repeating
-            UISetting_Toggle setting_beepRepeat = new UISetting_Toggle(null, settingsParent.transform, "Beep Repeat On/Off", RenderSystem.data_circuitBeepRepeatOn);
-            setting_beepRepeat.onValueChangedEvent += SettingChanged_Toggle;
-            // Circuit Beep Repeating Time
-            UISetting_ValueSlider setting_beepRepeatTime = new UISetting_ValueSlider(null, settingsParent.transform, "Beep Repeat Time (s)", new string[] { "1", "2", "4", "8", "16" }, 2);
-            setting_beepRepeatTime.onValueChangedEventString += SettingChanged_Text;
-            // Header
-            UISetting_Spacing setting_spacing = new UISetting_Spacing(null, settingsParent.transform, "Spacing");
-            UISetting_Header setting_header_graphics = new UISetting_Header(null, settingsParent.transform, "Graphics");
-            // Fullscreen
-            UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, "Fullscreen", false);
-            setting_fullscreen.onValueChangedEvent += SettingChanged_Toggle;
+            // Header: Camera Controls
+            UISetting_Header setting_header_camera_ctrl = new UISetting_Header(null, settingsParent.transform, "Camera Controls");
+
             // Camera Angle
-            UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, "Camera Angle", 0f, 11f, 0f, true);
+            UISetting_Slider setting_cameraAngle = new UISetting_Slider(null, settingsParent.transform, settingName_cameraAngle, 0f, 11f, 0f, true);
             setting_cameraAngle.onValueChangedEvent += SettingChanged_Value;
+            // Camera Position x and y
+            setting_cameraPosX = new UISetting_Text(null, settingsParent.transform, settingName_cameraPosX, Camera.main.transform.position.x.ToString(), UISetting_Text.InputType.Float);
+            setting_cameraPosY = new UISetting_Text(null, settingsParent.transform, settingName_cameraPosY, Camera.main.transform.position.y.ToString(), UISetting_Text.InputType.Float);
+            // Toggle between world and grid coordinates
+            UISetting_Toggle setting_cameraPosWorldOrGrid = new UISetting_Toggle(null, settingsParent.transform, settingName_cameraPosWorldOrGrid, false);
+            setting_cameraPosWorldOrGrid.onValueChangedEvent += SettingChanged_Toggle;
+            camPosInGridCoords = false;
+            // Camera Size
+            setting_cameraSize = new UISetting_Text(null, settingsParent.transform, settingName_cameraSize, Camera.main.orthographicSize.ToString(), UISetting_Text.InputType.Float);
+
+            // Button to apply camera settings
+            GameObject go_button_apply = Instantiate(UIDatabase.prefab_ui_button, settingsParent.transform);
+            TextMeshProUGUI tmpro = go_button_apply.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            tmpro.text = "Apply";
+            Button button_apply = go_button_apply.GetComponentInChildren<Button>();
+            button_apply.onClick.AddListener(delegate { Button_CameraApply(); });
+
+            // Header: Visualization
+            UISetting_Spacing setting_spacing = new UISetting_Spacing(null, settingsParent.transform, "Spacing");
+            UISetting_Header setting_header_graphics = new UISetting_Header(null, settingsParent.transform, "Visualization");
+
+            // Animations On/Off
+            UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_animationsOnOff, RenderSystem.animationsOn);
+            setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
             // Compass Dir Overlay Display
-            UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, "Compass Ov. Arrows", WorldSpaceUIHandler.instance.showCompassDirArrows);
+            UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, settingName_compassOvArrows, WorldSpaceUIHandler.instance.showCompassDirArrows);
             setting_compassDirOverlayDisplayType.onValueChangedEvent += SettingChanged_Toggle;
-            // Circuit Connections Look
-            UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, "Circuit Border", RenderSystem.flag_circuitBorderActive);
+            // Circuit Connections Border
+            UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, settingName_circuitBorder, RenderSystem.flag_circuitBorderActive);
             setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
-            // Graph View Outter Ring
-            UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, "Circular Ring", RenderSystem.flag_showCircuitViewOutterRing);
+            // Graph View Outer Ring
+            UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, settingName_circularRing, RenderSystem.flag_showCircuitViewOutterRing);
             setting_graphViewOutterRing.onValueChangedEvent += SettingChanged_Toggle;
-            // Anti Aliasing
-            UISetting_ValueSlider setting_antiAliasing = new UISetting_ValueSlider(null, settingsParent.transform, "Anti Aliasing", new string[] { "0", "2", "4", "8" }, 3);
-            setting_antiAliasing.onValueChangedEventString += SettingChanged_Text;
-            // UI Lerp
-            uiLerpScript = FindObjectOfType<ParticleUIExtensionSmoothLerp>();
-            if(uiLerpScript != null)
-            {
-                UISetting_Toggle setting_uiLerp = new UISetting_Toggle(null, settingsParent.transform, "UI Animations", uiLerpScript.GetLerpEnabled());
-                setting_uiLerp.onValueChangedEvent += SettingChanged_Toggle;
-            }
+            // Fullscreen
+            UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, false);
+            setting_fullscreen.onValueChangedEvent += SettingChanged_Toggle;
         }
 
         /// <summary>
         /// Called by a setting callback when a setting has been changed.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="value"></param>
+        /// <param name="name">The name of the changed setting.</param>
+        /// <param name="value">The setting's new float value.</param>
         private void SettingChanged_Value(string name, float value)
         {
             switch (name)
             {
-                case "Camera Angle":
+                case settingName_cameraAngle:
                     float cameraRotationDegrees = 30f * value;
                     Camera.main.transform.rotation = Quaternion.Euler(0, 0, cameraRotationDegrees);
                     // Notify Systems
@@ -112,33 +125,34 @@ namespace AS2.UI
             }
         }
 
+        // Use this for handling ValueSlider settings with string values
         /// <summary>
         /// Called by a setting callback when a setting has been changed.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="text"></param>
+        /// <param name="name">The name of the changed setting.</param>
+        /// <param name="text">The setting's new string value.</param>
         private void SettingChanged_Text(string name, string text)
         {
             switch (name)
             {
-                case "Beep Repeat Time (s)":
-                    float beepRepeatTime;
-                    if (float.TryParse(text, out beepRepeatTime))
-                    {
-                        RenderSystem.data_circuitBeepRepeatDelay = beepRepeatTime;
-                    }
-                    break;
-                case "Anti Aliasing":
-                    if (text.Equals("0") || text.Equals("2") || text.Equals("4") || text.Equals("8"))
-                    {
-                        int aa = int.Parse(text);
-                        uiHandler.sim.renderSystem.SetAntiAliasing(aa);
-                    }
-                    else
-                    {
-                        Log.Error("Setting: AA: Wrong Value for callback!");
-                    }
-                    break;
+                //case settingName_beepRepeatTime:
+                //    float beepRepeatTime;
+                //    if (float.TryParse(text, out beepRepeatTime))
+                //    {
+                //        RenderSystem.data_circuitBeepRepeatDelay = beepRepeatTime;
+                //    }
+                //    break;
+                //case settingName_antiAliasing:
+                //    if (text.Equals("0") || text.Equals("2") || text.Equals("4") || text.Equals("8"))
+                //    {
+                //        int aa = int.Parse(text);
+                //        uiHandler.sim.renderSystem.SetAntiAliasing(aa);
+                //    }
+                //    else
+                //    {
+                //        Log.Error("Setting: AA: Wrong value for callback! (" + text + ")");
+                //    }
+                //    break;
                 default:
                     break;
             }
@@ -147,13 +161,13 @@ namespace AS2.UI
         /// <summary>
         /// Called by a setting callback when a setting has been changed.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="isOn"></param>
+        /// <param name="name">The name of the changed setting.</param>
+        /// <param name="isOn">The setting's new bool value.</param>
         private void SettingChanged_Toggle(string name, bool isOn)
         {
             switch (name)
             {
-                case "Fullscreen":
+                case settingName_fullscreen:
                     if (isOn)
                     {
                         // Enable Fullscreen
@@ -172,26 +186,23 @@ namespace AS2.UI
                         }
                     }
                     break;
-                case "Circuit Border":
+                case settingName_circuitBorder:
                     RenderSystem.flag_circuitBorderActive = isOn;
                     // Reinit RenderBatches to apply changes
                     uiHandler.sim.renderSystem.rendererP.circuitAndBondRenderer.ReinitBatches();
                     break;
-                case "Compass Ov. Arrows":
+                case settingName_compassOvArrows:
                     WorldSpaceUIHandler.instance.showCompassDirArrows = isOn;
                     WorldSpaceUIHandler.instance.Refresh();
                     break;
-                case "Circular Ring":
+                case settingName_circularRing:
                     RenderSystem.flag_showCircuitViewOutterRing = isOn;
                     break;
-                case "Animations On/Off":
+                case settingName_animationsOnOff:
                     RenderSystem.animationsOn = isOn;
                     break;
-                case "Beep Repeat On/Off":
-                    RenderSystem.data_circuitBeepRepeatOn = isOn;
-                    break;
-                case "UI Animations":
-                    uiLerpScript.SetLerpEnabled(isOn);
+                case settingName_cameraPosWorldOrGrid:
+                    ToggleCamPositionWorldGrid(isOn);
                     break;
                 default:
                     break;
@@ -201,8 +212,8 @@ namespace AS2.UI
         /// <summary>
         /// Called by a setting callback when a setting has been changed.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="value"></param>
+        /// <param name="name">The name of the changed setting.</param>
+        /// <param name="value">The setting's new string value.</param>
         private void SettingChanged_Dropdown(string name, string value)
         {
             switch (name)
@@ -212,9 +223,82 @@ namespace AS2.UI
             }
         }
 
+        /// <summary>
+        /// Reads the current position and size values from the
+        /// Settings Panel and applies them to the camera.
+        /// </summary>
+        private void Button_CameraApply()
+        {
+            float x = float.Parse(setting_cameraPosX.GetValueString());
+            float y = float.Parse(setting_cameraPosY.GetValueString());
+            // Convert to world coordinates if necessary
+            if (camPosInGridCoords)
+            {
+                Vector2 pos = new Vector2(x, y);
+                pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(pos);
+                x = pos.x;
+                y = pos.y;
+            }
+            float size = float.Parse(setting_cameraSize.GetValueString());
+            MouseController.instance.SetCameraPosition(x, y);
+            MouseController.instance.SetOrthographicSize(size);
+        }
+
+        /// <summary>
+        /// Changes the displayed camera coordinates to be
+        /// world or grid coordinates.
+        /// </summary>
+        /// <param name="grid">If <c>true</c>, display grid
+        /// coordinates, otherwise display world coordinates.</param>
+        private void ToggleCamPositionWorldGrid(bool grid)
+        {
+            if (grid == camPosInGridCoords)
+                return;
+
+            if (grid)
+            {
+                // Convert world to grid coordinates
+                Vector2 worldPos = new Vector2(float.Parse(setting_cameraPosX.GetValueString()), float.Parse(setting_cameraPosY.GetValueString()));
+                Vector2 gridPos = AmoebotFunctions.GetGridCoordinatesFromWorldPosition(worldPos);
+                setting_cameraPosX.SetValueString(gridPos.x.ToString());
+                setting_cameraPosY.SetValueString(gridPos.y.ToString());
+            }
+            else
+            {
+                // Convert grid to world coordinates
+                Vector2 gridPos = new Vector2(float.Parse(setting_cameraPosX.GetValueString()), float.Parse(setting_cameraPosY.GetValueString()));
+                Vector2 worldPos = AmoebotFunctions.CalculateAmoebotCenterPositionVector2(gridPos);
+                setting_cameraPosX.SetValueString(worldPos.x.ToString());
+                setting_cameraPosY.SetValueString(worldPos.y.ToString());
+            }
+            camPosInGridCoords = grid;
+        }
+
+        /// <summary>
+        /// Updates the fields related to the camera position and
+        /// size in the Settings Panel.
+        /// </summary>
+        /// <param name="x">The x world coordinate of the camera.</param>
+        /// <param name="y">The y world coordinate of the camera.</param>
+        /// <param name="size">The orthographic size of the camera.</param>
+        public void UpdateCameraData(float x, float y, float size)
+        {
+            // Convert to grid coordinates if necessary
+            if (camPosInGridCoords)
+            {
+                Vector2 pos = new Vector2(x, y);
+                pos = AmoebotFunctions.GetGridCoordinatesFromWorldPosition(pos);
+                x = pos.x;
+                y = pos.y;
+            }
+            setting_cameraPosX.SetValueString(x.ToString());
+            setting_cameraPosY.SetValueString(y.ToString());
+            setting_cameraSize.SetValueString(size.ToString());
+        }
 
         /// <summary>
         /// Activates/Deactivates the settings panel depending on its active state.
+        /// Connected to the Settings button in the Scene.
         /// </summary>
         public void Button_SettingsPressed()
         {

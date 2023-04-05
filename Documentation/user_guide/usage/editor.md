@@ -6,7 +6,7 @@ There are much more in-depth tutorials on the [official Unity tutorial websites]
 
 ## The Editor Interface
 
-After opening the simulator project through Unity Hub, you should see the following window:
+After opening the simulator project through Unity Hub and opening the *Simulator* Scene, you should see the following window:
 
 ![Editor Window Overview](~/images/editor_overview.png "The Unity Editor with Default layout")
 
@@ -65,4 +65,4 @@ For users, the Inspector is only relevant for algorithm creation and for preview
 
 ### Next Steps
 
-Read the [Simulation Mode guide](sim.md) to learn about the simulator's UI and run your first simulations.
+Read the [Initialization Mode](init.md) and the [Simulation Mode guide](sim.md) to learn about the simulator's UI and run your first simulations.

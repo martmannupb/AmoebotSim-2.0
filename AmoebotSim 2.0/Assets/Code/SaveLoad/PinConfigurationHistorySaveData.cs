@@ -15,9 +15,9 @@ namespace AS2
         /// </summary>
         public ValueHistorySaveData<int> idxHistory;
         /// <summary>
-        /// A list containing the compressed pin configurations stored in the history.
+        /// An array containing the compressed pin configurations stored in the history.
         /// </summary>
-        public List<PinConfigurationSaveData> configs;
+        public PinConfigurationSaveData[] configs;
     }
 
 } // namespace AS2
