@@ -118,21 +118,40 @@ namespace AS2
         /// <summary>
         /// Translates Cartesian (world) coordinates into the
         /// nearest integer grid coordinates.
+        /// <para>
+        /// Uses the cube coordinate transformation explained in
+        /// https://www.redblobgames.com/grids/hexagons/#rounding.
+        /// </para>
         /// </summary>
         /// <param name="worldPosition">The world coordinates.</param>
         /// <returns>The grid coordinates corresponding to
         /// <paramref name="worldPosition"/>, rounded to the
-        /// nearest integer.</returns>
+        /// nearest grid cell.</returns>
         public static Vector2Int WorldToGridPosition(Vector2 worldPosition)
         {
-            float gridPosY = worldPosition.y / rowDistVert;
-            float gridPosX = worldPosition.x - 0.5f * gridPosY;
-            return new Vector2Int(Mathf.RoundToInt(gridPosX), Mathf.RoundToInt(gridPosY));
+            // First convert to float grid coordinates and add one more coordinate
+            Vector3 gridPosF = WorldToGridPositionF(worldPosition);
+            // Third coordinate is the negative sum of the first two, such that x + y + z = 0
+            // (cube coordinates)
+            gridPosF.z = -gridPosF.x - gridPosF.y;
+            // Round each coordinate to the nearest int
+            Vector3Int rounded = new Vector3Int(Mathf.RoundToInt(gridPosF.x), Mathf.RoundToInt(gridPosF.y), Mathf.RoundToInt(gridPosF.z));
+            // Compute absolute differences between float and rounded values
+            float diffX = Mathf.Abs(gridPosF.x - rounded.x);
+            float diffY = Mathf.Abs(gridPosF.y - rounded.y);
+            float diffZ = Mathf.Abs(gridPosF.z - rounded.z);
+            // Coordinates may have to be changed depending on which difference is the largest
+            if (diffX > diffY && diffX > diffZ)
+                rounded.x = -rounded.y - rounded.z;
+            else if (diffY > diffZ)
+                rounded.y = -rounded.x - rounded.z;
+
+            return new Vector2Int(rounded.x, rounded.y);
         }
 
         /// <summary>
         /// Same as <see cref="WorldToGridPosition(Vector2)"/> but without
-        /// rounding the result to the nearest integer.
+        /// rounding the result to the nearest grid cell.
         /// </summary>
         /// <param name="worldPosition">The world coordinates.</param>
         /// <returns>The grid coordinates corresponding to
