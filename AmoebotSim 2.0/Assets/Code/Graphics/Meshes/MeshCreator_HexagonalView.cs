@@ -14,7 +14,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Returns a mesh for a base hexagon in the standard size.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A simple mesh with 6 vertices and 4 triangles
+        /// forming a hexagon. The origin is at the center of
+        /// the hexagon.</returns>
         public static Mesh GetMesh_BaseHexagonBackground()
         {
             Mesh mesh = new Mesh();
