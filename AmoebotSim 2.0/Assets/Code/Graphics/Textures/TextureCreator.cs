@@ -78,11 +78,16 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Creates the material with the generated texture for the pins with the visible hexagon. Read the method doc to GetHexagonBaseTextureWithPins to gain more info.
+        /// Creates the material with the generated texture for the pins
+        /// with the visible hexagon. Read the method doc of
+        /// <see cref="GetHexagonBaseTextureWithPins(int, ViewType)"/>
+        /// to gain more info.
         /// </summary>
         /// <param name="pinsPerSide">The amount of pins per side.</param>
         /// <param name="viewType">The view type, Hexagonal or HexagonalCirc, not Circular!</param>
-        /// <returns></returns>
+        /// <returns>The material used to draw particles with
+        /// <paramref name="pinsPerSide"/> pins in the hexagonal view type
+        /// <paramref name="viewType"/>.</returns>
         public static Material GetHexagonWithPinsMaterial(int pinsPerSide, ViewType viewType)
         {
             if (viewType == ViewType.Hexagonal && hexagonMaterials.ContainsKey(pinsPerSide)) return hexagonMaterials[pinsPerSide];
@@ -164,8 +169,8 @@ namespace AS2.Visuals
             }
 
             // Add Pins to Texture
-            for (int i = 0; i < pinsPerSide; i++)
-            {
+            //for (int i = 0; i < pinsPerSide; i++)
+            //{
                 // Calc center pos of this pin relative from texture center
                 Vector2 relPosTopRight = new Vector2(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2);
                 Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2);
@@ -217,7 +222,7 @@ namespace AS2.Visuals
                         }
                     }
                 }
-            }
+            //}
 
             // Apply
             tex.Apply();
@@ -271,88 +276,89 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// This thing creates a texture from one of the base hexagon textures and dots which represent the pins.
+        /// Creates a texture from one of the base hexagon textures
+        /// and dots which represent the pins.
         /// The pins are merged on top of the original hexagon to get a figure with pins.
         /// </summary>
         /// <param name="pinsPerSide">The amount of pins per side.</param>
         /// <param name="viewType">The view type, e.g. the standard hexagon or the circular view.
-        /// Please only use Hexagonal and HexagonalCirc here (the hexagonal base grid view), Circular (the graph view) is not meant to work.</param>
-        /// <returns></returns>
+        /// Please only use Hexagonal and HexagonalCirc here (the hexagonal base grid view),
+        /// Circular (the graph view) is not meant to work.</param>
+        /// <returns>A texture containing a hexagon or circle based on
+        /// <paramref name="viewType"/> with <paramref name="pinsPerSide"/> pins
+        /// on each of its six edges.</returns>
         private static Texture2D GetHexagonBaseTextureWithPins(int pinsPerSide, ViewType viewType)
         {
             // Create Texture
             Texture2D tex = new Texture2D(1024, 1024);
             tex.wrapMode = TextureWrapMode.Clamp;
+
             //tex.filterMode = ;
 
             // Metadata
             Vector2Int texCenterPixel = new Vector2Int(tex.width / 2, tex.height / 2);
 
             // Fill Tex with Hexagon/HexagonCirc Tex
-            Color colorTransparent = new Color(0f, 0f, 0f, 0f);
             for (int x = 0; x < tex.width; x++)
             {
                 for (int y = 0; y < tex.height; y++)
                 {
-                    if(viewType == ViewType.Hexagonal) tex.SetPixel(x, y, hexagonTexture.GetPixel(x, y));
-                    else if(viewType == ViewType.HexagonalCirc) tex.SetPixel(x, y, hexagonCircTexture.GetPixel(x, y));
+                    if (viewType == ViewType.Hexagonal) tex.SetPixel(x, y, hexagonTexture.GetPixel(x, y));
+                    else if (viewType == ViewType.HexagonalCirc) tex.SetPixel(x, y, hexagonCircTexture.GetPixel(x, y));
                 }
             }
 
             // Add Pins to Texture
-            for (int i = 0; i < pinsPerSide; i++)
+            // Calc center pos of right pin relative from texture center
+            Vector2 relPosTopRight = new Vector2(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2);
+            Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2);
+            for (int j = 0; j < pinsPerSide; j++)
             {
-                // Calc center pos of this pin relative from texture center
-                Vector2 relPosTopRight = new Vector2(AmoebotFunctions.hexRadiusMinor, AmoebotFunctions.hexRadiusMajor2);
-                Vector2 relPosBottomRight = new Vector2(AmoebotFunctions.hexRadiusMinor, -AmoebotFunctions.hexRadiusMajor2);
-                for (int j = 0; j < pinsPerSide; j++)
+                Vector2 relPosPinRight = Vector2.zero;
+                if (viewType == ViewType.Hexagonal)
                 {
-                    Vector2 relPosPinRight = Vector2.zero;
-                    if (viewType == ViewType.Hexagonal)
+                    // Hexagonal Particles (we take the right side as reference)
+                    Vector2 relDistBottomToTop = relPosTopRight - relPosBottomRight;
+                    if (pinsPerSide == 1) relPosPinRight = relPosBottomRight + 0.5f * relDistBottomToTop;
+                    else
                     {
-                        // Hexagonal Particles (we take the right side as reference)
-                        Vector2 relDistBottomToTop = relPosTopRight - relPosBottomRight;
-                        if (pinsPerSide == 1) relPosPinRight = relPosBottomRight + 0.5f * relDistBottomToTop;
-                        else
-                        {
-                            Vector2 relStep = relDistBottomToTop / (pinsPerSide + 1);
-                            relPosPinRight = relPosBottomRight + (j + 1) * relStep;
-                        }
+                        Vector2 relStep = relDistBottomToTop / (pinsPerSide + 1);
+                        relPosPinRight = relPosBottomRight + (j + 1) * relStep;
                     }
-                    else if (viewType == ViewType.HexagonalCirc)
+                }
+                else if (viewType == ViewType.HexagonalCirc)
+                {
+                    // Circular Particles with Circuits (we have a circle and work with angles and the distance to the center)
+                    float distanceToCenter = AmoebotFunctions.hexRadiusMinor;
+                    relPosPinRight = new Vector2(distanceToCenter, 0f);
+                    if (pinsPerSide > 1)
                     {
-                        // Circular Particles with Circuits (we have a circle and work with angles and the distance to the center)
-                        float distanceToCenter = AmoebotFunctions.hexRadiusMinor;
-                        relPosPinRight = new Vector2(distanceToCenter, 0f);
-                        if (pinsPerSide > 1)
-                        {
-                            float angleStep = 60f / (pinsPerSide + 1);
-                            float angle = -30f + (j + 1) * angleStep;
-                            relPosPinRight = Quaternion.Euler(new Vector3(0f, 0f, angle)) * relPosPinRight;
-                        }
+                        float angleStep = 60f / (pinsPerSide + 1);
+                        float angle = -30f + (j + 1) * angleStep;
+                        relPosPinRight = Quaternion.Euler(new Vector3(0f, 0f, angle)) * relPosPinRight;
                     }
-                    // Use relPosPinRight to calculate absolute positions
-                    for (int k = 0; k < 6; k++)
+                }
+                // Use relPosPinRight to calculate absolute positions
+                for (int k = 0; k < 6; k++)
+                {
+                    Vector2 relPosRotated = Quaternion.Euler(new Vector3(0f, 0f, 60f * k)) * relPosPinRight;
+                    Vector2Int absPosRotated = texCenterPixel + new Vector2Int((int)(0.5f * relPosRotated.x * tex.width), (int)(0.5f * relPosRotated.y * tex.height));
+                    Vector2Int startPos = absPosRotated - new Vector2Int(pinTexture.width / 2, pinTexture.height / 2);
+                    for (int x = 0; x < pinTexture.width; x++)
                     {
-                        Vector2 relPosRotated = Quaternion.Euler(new Vector3(0f, 0f, 60f * k)) * relPosPinRight;
-                        Vector2Int absPosRotated = texCenterPixel + new Vector2Int((int)(0.5f * relPosRotated.x * tex.width), (int)(0.5f * relPosRotated.y * tex.height));
-                        Vector2Int startPos = absPosRotated - new Vector2Int(pinTexture.width / 2, pinTexture.height / 2);
-                        for (int x = 0; x < pinTexture.width; x++)
+                        for (int y = 0; y < pinTexture.height; y++)
                         {
-                            for (int y = 0; y < pinTexture.height; y++)
+                            Vector2Int texPos = new Vector2Int(startPos.x + x, startPos.y + y);
+                            if (texPos.x >= 0 && texPos.x < tex.width && texPos.y >= 0 && texPos.y < tex.height)
                             {
-                                Vector2Int texPos = new Vector2Int(startPos.x + x, startPos.y + y);
-                                if (texPos.x >= 0 && texPos.x < tex.width && texPos.y >= 0 && texPos.y < tex.height)
-                                {
-                                    // Merge Textures (based on overlay alpha)
-                                    // Get colors to merge
-                                    Color colorBase = tex.GetPixel(texPos.x, texPos.y);
-                                    Color colorOver = pinTexture.GetPixel(x, y);
-                                    // Calculate final color (interpolate between colors)
-                                    Color colorNew = new Color(Mathf.Lerp(colorBase.r, colorOver.r, colorOver.a), Mathf.Lerp(colorBase.g, colorOver.g, colorOver.a), Mathf.Lerp(colorBase.b, colorOver.b, colorOver.a), colorBase.a + (1f - colorBase.a) * colorOver.a);
-                                    // Set color
-                                    tex.SetPixel(texPos.x, texPos.y, colorNew);
-                                }
+                                // Merge Textures (based on overlay alpha)
+                                // Get colors to merge
+                                Color colorBase = tex.GetPixel(texPos.x, texPos.y);
+                                Color colorOver = pinTexture.GetPixel(x, y);
+                                // Calculate final color (interpolate between colors)
+                                Color colorNew = new Color(Mathf.Lerp(colorBase.r, colorOver.r, colorOver.a), Mathf.Lerp(colorBase.g, colorOver.g, colorOver.a), Mathf.Lerp(colorBase.b, colorOver.b, colorOver.a), colorBase.a + (1f - colorBase.a) * colorOver.a);
+                                // Set color
+                                tex.SetPixel(texPos.x, texPos.y, colorNew);
                             }
                         }
                     }

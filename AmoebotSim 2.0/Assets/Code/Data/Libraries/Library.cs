@@ -464,9 +464,20 @@ namespace AS2.Visuals.Library {
     }
 
 
+    /// <summary>
+    /// Utility methods for creating matrices.
+    /// </summary>
     public static class MatrixConstants
     {
-        
+        /// <summary>
+        /// Creates an array of 4x4 matrices which are
+        /// all initialized to the same matrix.
+        /// </summary>
+        /// <param name="size">The size of the array.</param>
+        /// <param name="initialValue">The initial value for
+        /// all matrices.</param>
+        /// <returns>An array of 4x4 matrices containing
+        /// <paramref name="size"/> copies of <paramref name="initialValue"/>.</returns>
         public static Matrix4x4[] GetMatrix4x4Array(int size, Matrix4x4 initialValue)
         {
             Matrix4x4[] matrix = new Matrix4x4[size];
@@ -476,33 +487,85 @@ namespace AS2.Visuals.Library {
             }
             return matrix;
         }
-
     }
 
-
+    /// <summary>
+    /// Utility methods for interpolating between values.
+    /// </summary>
     public static class InterpolationConstants
     {
 
+        /// <summary>
+        /// Returns <c>1 - </c> <paramref name="percentage"/>.
+        /// </summary>
+        /// <param name="percentage">A float value (usually
+        /// representing a percentage).</param>
+        /// <returns><c>1 - </c> <paramref name="percentage"/>.</returns>
         public static float OneMinus(float percentage)
         {
             return 1.0f - percentage;
         }
 
+        /// <summary>
+        /// Returns a value from a smooth curve
+        /// between 0 and 1 that also starts at 0
+        /// and ends at 1. If visualized, this movement
+        /// will appear to accelerate smoothly and end
+        /// abruptly at its maximum speed.
+        /// </summary>
+        /// <param name="percentage">The percentage
+        /// of the movement. Should be between
+        /// 0 and 1.</param>
+        /// <returns>The smooth curve value at
+        /// <paramref name="percentage"/>.</returns>
         public static float EaseIn(float percentage)
         {
             return percentage * percentage;
         }
 
+        /// <summary>
+        /// Returns a value from a smooth curve
+        /// between 0 and 1 that also starts at 0
+        /// and ends at 1. If visualized, this movement
+        /// will appear to start at its maximum speed and
+        /// then decelerate smoothly until it comes to
+        /// a halt at 1.
+        /// </summary>
+        /// <param name="percentage">The percentage
+        /// of the movement. Should be between
+        /// 0 and 1.</param>
+        /// <returns>The smooth curve value at
+        /// <paramref name="percentage"/>.</returns>
         public static float EaseOut(float percentage)
         {
             return OneMinus(EaseIn(OneMinus(percentage)));
         }
 
+        /// <summary>
+        /// Linear interpolation between two floats.
+        /// </summary>
+        /// <param name="s1">The start value.</param>
+        /// <param name="s2">The end value.</param>
+        /// <param name="percentage">The percentage of
+        /// the way between <paramref name="s1"/> and <paramref name="s2"/>.</param>
+        /// <returns>The float value at <paramref name="percentage"/>
+        /// between <paramref name="s1"/> and <paramref name="s2"/>.</returns>
         public static float Lerp(float s1, float s2, float percentage)
         {
             return (s1 + (s2 - s1) * percentage);
         }
 
+        /// <summary>
+        /// Smoothed interpolation between 0 and 1.
+        /// If visualized, the movement would appear to start
+        /// and end in resting positions, accelerating in the
+        /// first half and decelerating in the second half
+        /// of the movement.
+        /// </summary>
+        /// <param name="percentage">The percentage of the
+        /// way between 0 and 1.</param>
+        /// <returns>A smoothly interpolated value at position
+        /// <paramref name="percentage"/> between 0 and 1.</returns>
         public static float SmoothLerp(float percentage)
         {
             return Lerp(EaseIn(percentage), EaseOut(percentage), percentage);

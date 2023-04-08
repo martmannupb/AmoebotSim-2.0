@@ -819,9 +819,11 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// The base mesh for the rendering of the hexagonal particles (Quad that is scaled and offset so that the pivot is at one grid position).
+        /// The base mesh for the rendering of the hexagonal particles
+        /// (Quad that is scaled and offset so that the pivot is at one grid position).
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A quad mesh large enough to contain an expanded hexagonal
+        /// particle if its origin is placed on a grid node.</returns>
         public static Mesh GetMesh_MergingExpansionHexagon()
         {
             Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0.5f, 0.5f));

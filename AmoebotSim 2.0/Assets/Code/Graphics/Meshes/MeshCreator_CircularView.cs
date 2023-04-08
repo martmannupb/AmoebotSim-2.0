@@ -191,7 +191,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates the mesh for the particles in the circular graph view.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A quad mesh of width 2 and height 1, with the origin
+        /// being in the center of the left half.</returns>
         public static Mesh GetMesh_ParticleOptimized()
         {
             Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(2f, 0f, new Vector2(0.25f, 0.5f));
@@ -206,15 +207,23 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Creates a mesh for particle connector.
+        /// Creates a mesh for particle connectors.
+        /// <para>
+        /// The x coordinates in UV channel 2 are
+        /// set to 1 for the first and third vertex and
+        /// set to 0 for the second and fourth vertex.
+        /// </para>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A quad mesh of size 1 for the connection
+        /// between hexagonal or round hexagonal particles.</returns>
         public static Mesh GetMesh_ParticleConnector()
         {
             // Mesh Data
             Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0f, 0.5f));
             Vector2[] uv2 = new Vector2[4];
 
+            // Second UV channel is used by the shader to
+            // create the animation (not interpreted as UV coordinates)
             // UV2.x = 0 means this vertex will move
             uv2[0] = new Vector2(1f, 0f);
             uv2[1] = new Vector2(0f, 0f);
