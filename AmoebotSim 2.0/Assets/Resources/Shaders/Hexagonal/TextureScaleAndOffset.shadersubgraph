@@ -1324,7 +1324,7 @@
     "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
     "m_ObjectId": "4c7fed56e1b44e03a72e330eddb0f0e2",
     "m_Title": "",
-    "m_Content": "UV_New = (UV_Orig - Pivot_Offset) / Scale + Pivot_Offset",
+    "m_Content": "UV_New = (UV_Orig - Pivot_Offset) / Scale + Pivot_Offset\nMove by pivot offset, then scale around origin, then move back",
     "m_TextSize": 0,
     "m_Theme": 1,
     "m_Position": {
@@ -2176,7 +2176,7 @@
     "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
     "m_ObjectId": "9352d0f74ba04a1ab2ece264d53b772a",
     "m_Title": "TextureScaleAndOffset",
-    "m_Content": "Modifies UV coordinates based on pivot\noffset, relative offset and scale",
+    "m_Content": "Modifies UV coordinates by scaling around the given pivot offset and moving by the given relative offset",
     "m_TextSize": 2,
     "m_Theme": 0,
     "m_Position": {
@@ -2617,14 +2617,14 @@
     "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
     "m_ObjectId": "c32a9beb661b4040accbc76d56a891e5",
     "m_Title": "",
-    "m_Content": "-Rel_Offset / Scale",
+    "m_Content": "-Rel_Offset / Scale\nSubtract scaled relative offset",
     "m_TextSize": 0,
     "m_Theme": 1,
     "m_Position": {
         "serializedVersion": "2",
-        "x": -1177.5999755859375,
-        "y": 469.6000061035156,
-        "width": 132.7999267578125,
+        "x": -1203.199951171875,
+        "y": 466.3999938964844,
+        "width": 183.99993896484376,
         "height": 100.0
     },
     "m_Group": {

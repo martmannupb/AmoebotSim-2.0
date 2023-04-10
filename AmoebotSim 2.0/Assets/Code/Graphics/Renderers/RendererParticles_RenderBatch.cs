@@ -483,43 +483,42 @@ namespace AS2.Visuals
         private void Render_Circular()
         {
             // Outer Ring visible?
-            if(RenderSystem.flag_showCircuitViewOutterRing && propertyBlock_circle_contracted.GetCurrentOutterCircleWidthPercentage() != 1f
-                || RenderSystem.flag_showCircuitViewOutterRing == false && propertyBlock_circle_contracted.GetCurrentOutterCircleWidthPercentage() != 0f)
+            if(RenderSystem.flag_showCircuitViewOutterRing && propertyBlock_circle_contracted.GetCurrentOuterCircleWidthPercentage() != 1f
+                || RenderSystem.flag_showCircuitViewOutterRing == false && propertyBlock_circle_contracted.GetCurrentOuterCircleWidthPercentage() != 0f)
             {
                 float val = RenderSystem.flag_showCircuitViewOutterRing ? 1f : 0f;
-                propertyBlock_circle_contracted.ApplyOutterCircleWidthPercentage(val);
-                propertyBlock_circle_expanded.ApplyOutterCircleWidthPercentage(val);
-                propertyBlock_circle_expanding.ApplyOutterCircleWidthPercentage(val);
-                propertyBlock_circle_contracting.ApplyOutterCircleWidthPercentage(val);
+                propertyBlock_circle_contracted.ApplyOuterCircleWidthPercentage(val);
+                propertyBlock_circle_expanded.ApplyOuterCircleWidthPercentage(val);
+                propertyBlock_circle_expanding.ApplyOuterCircleWidthPercentage(val);
+                propertyBlock_circle_contracting.ApplyOuterCircleWidthPercentage(val);
             }
 
             // Connectors
             for (int i = 0; i < particleMatricesCircle_Contracted.Count; i++)
             {
-                // List Length
-                int listLength;
-                if (i == particleMatricesCircle_Contracted.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
-                else listLength = maxArraySize;
+                // Find out how many matrices are used in the array
+                int arrayLength;
+                if (i == particleMatricesCircle_Contracted.Count - 1) arrayLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
+                else arrayLength = maxArraySize;
 
                 // Particle Connectors
-                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanded[i], listLength, propertyBlock_circle_connector_expanded.propertyBlock);
-                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanding[i], listLength, propertyBlock_circle_connector_expanding.propertyBlock);
-                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Contracting[i], listLength, propertyBlock_circle_connector_contracting.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanded[i], arrayLength, propertyBlock_circle_connector_expanded.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Expanding[i], arrayLength, propertyBlock_circle_connector_expanding.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particleConnector, 0, MaterialDatabase.material_circular_particleCompleteConnector, particleMatricesCircle_ConnectionMatrices_Contracting[i], arrayLength, propertyBlock_circle_connector_contracting.propertyBlock);
             }
 
             // Particles
             for (int i = 0; i < particleMatricesCircle_Contracted.Count; i++)
             {
-                // List Length
-                int listLength;
-                if (i == particleMatricesCircle_Contracted.Count - 1) listLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
-                else listLength = maxArraySize;
+                int arrayLength;
+                if (i == particleMatricesCircle_Contracted.Count - 1) arrayLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
+                else arrayLength = maxArraySize;
 
                 // Particles
-                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracted[i], listLength, propertyBlock_circle_contracted.propertyBlock);
-                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanded[i], listLength, propertyBlock_circle_expanded.propertyBlock);
-                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanding[i], listLength, propertyBlock_circle_expanding.propertyBlock);
-                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracting[i], listLength, propertyBlock_circle_contracting.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracted[i], arrayLength, propertyBlock_circle_contracted.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanded[i], arrayLength, propertyBlock_circle_expanded.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanding[i], arrayLength, propertyBlock_circle_expanding.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracting[i], arrayLength, propertyBlock_circle_contracting.propertyBlock);
             }
         }
 

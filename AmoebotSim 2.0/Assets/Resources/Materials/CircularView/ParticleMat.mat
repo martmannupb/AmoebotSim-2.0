@@ -68,6 +68,9 @@ Material:
     - _InnerRingScale: 0.47
     - _InnerRingWidth: 0.93
     - _InnerScale: 1
+    - _OuterRingAliasingDist: 0.025
+    - _OuterRingScale: 0.87
+    - _OuterRingWidth: 0.27
     - _OutterRingAliasingDist: 0.025
     - _OutterRingScale: 0.87
     - _OutterRingWidth: 0.27

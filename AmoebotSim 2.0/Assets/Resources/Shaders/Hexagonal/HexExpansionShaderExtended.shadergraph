@@ -2574,7 +2574,7 @@
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.GroupData",
     "m_ObjectId": "27c5c62cb8e44128be5cd81d2986ab05",
-    "m_Title": "Load hexagon 2 texture",
+    "m_Title": "Load hexagon 2 textures",
     "m_Position": {
         "x": -1801.5999755859375,
         "y": -24.799991607666017
@@ -2593,7 +2593,7 @@
         "serializedVersion": "2",
         "x": 840.0,
         "y": -246.39999389648438,
-        "width": 308.0,
+        "width": 374.7000732421875,
         "height": 100.0
     },
     "m_Group": {
@@ -3658,8 +3658,8 @@
     "m_Theme": 1,
     "m_Position": {
         "serializedVersion": "2",
-        "x": -1804.0,
-        "y": 3.200000762939453,
+        "x": -1776.0,
+        "y": 50.400001525878909,
         "width": 527.199951171875,
         "height": 100.0
     },
@@ -4169,10 +4169,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1433.5999755859375,
-            "y": 120.0000228881836,
-            "width": 164.7999267578125,
-            "height": 33.600013732910159
+            "x": -1365.5999755859375,
+            "y": 175.2000274658203,
+            "width": 164.0,
+            "height": 33.5999755859375
         }
     },
     "m_Slots": [

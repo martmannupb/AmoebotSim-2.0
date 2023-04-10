@@ -389,7 +389,7 @@
     "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
     "m_ObjectId": "0e42865cb1664e98b548e388d7b2122b",
     "m_Title": "ExpansionMergeSubgraph",
-    "m_Content": "Outputs the maximum of the two colors in each channel",
+    "m_Content": "Outputs the maximum of the two colors in each channel\n(Basically does the same as a Blend node set to Lighten mode)",
     "m_TextSize": 1,
     "m_Theme": 0,
     "m_Position": {
@@ -397,7 +397,7 @@
         "x": -1843.199951171875,
         "y": 339.1999816894531,
         "width": 552.0,
-        "height": 160.0
+        "height": 183.80499267578126
     },
     "m_Group": {
         "m_Id": ""
