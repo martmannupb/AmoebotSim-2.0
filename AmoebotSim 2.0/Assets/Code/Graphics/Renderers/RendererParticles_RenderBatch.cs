@@ -459,23 +459,23 @@ namespace AS2.Visuals
                 if (i == particleMatricesCircle_Contracted.Count - 1) arrayLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
                 else arrayLength = maxArraySize;
 
-                    // Particles (previous mat: MaterialDatabase.material_hexagonal_particleCombined)
-                    Material mat = viewType == ViewType.Hexagonal ? hexagonWithPinsMaterial : hexagonCircWithPinsMaterial;
-                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracted[i], arrayLength, propertyBlock_circle_contracted.propertyBlock);
-                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanded[i], arrayLength, propertyBlock_circle_expanded.propertyBlock);
-                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanding[i], arrayLength, propertyBlock_circle_expanding.propertyBlock);
-                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracting[i], arrayLength, propertyBlock_circle_contracting.propertyBlock);
-                    // Pins
-                    if (RenderSystem.flag_showCircuitView)
-                    {
-                        Material matCirc = viewType == ViewType.Hexagonal ? circuitHexPinMaterial : circuitHexCircPinMaterial;
-                        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracted[i], arrayLength, propertyBlock_circle_contracted.propertyBlock);
-                        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanded[i], arrayLength, propertyBlock_circle_expanded.propertyBlock);
-                        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanding[i], arrayLength, propertyBlock_circle_expanding.propertyBlock);
-                        Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracting[i], arrayLength, propertyBlock_circle_contracting.propertyBlock);
-                    }
+                // Particles (previous mat: MaterialDatabase.material_hexagonal_particleCombined)
+                Material mat = viewType == ViewType.Hexagonal ? hexagonWithPinsMaterial : hexagonCircWithPinsMaterial;
+                Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracted[i], arrayLength, propertyBlock_circle_contracted.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanded[i], arrayLength, propertyBlock_circle_expanded.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Expanding[i], arrayLength, propertyBlock_circle_expanding.propertyBlock);
+                Graphics.DrawMeshInstanced(mesh_hex_particle, 0, mat, particleMatricesCircle_Contracting[i], arrayLength, propertyBlock_circle_contracting.propertyBlock);
+                // Pins
+                if (RenderSystem.flag_showCircuitView)
+                {
+                    Material matCirc = viewType == ViewType.Hexagonal ? circuitHexPinMaterial : circuitHexCircPinMaterial;
+                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracted[i], arrayLength, propertyBlock_circle_contracted.propertyBlock);
+                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanded[i], arrayLength, propertyBlock_circle_expanded.propertyBlock);
+                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Expanding[i], arrayLength, propertyBlock_circle_expanding.propertyBlock);
+                    Graphics.DrawMeshInstanced(mesh_hex_particle, 0, matCirc, particleMatricesPins_Contracting[i], arrayLength, propertyBlock_circle_contracting.propertyBlock);
                 }
             }
+        }
 
         /// <summary>
         /// Circular particle drawing. Part of the render loop.
