@@ -6,8 +6,9 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// This monstrosity dynamically creates textures at runtime. For example, we take textures like hexagons as input and print a generic number of pins onto it.
-    /// The class wants to confuse you. Don't let it confuse you!
+    /// This class dynamically creates textures at runtime. For example, we take
+    /// textures like hexagons as input and print a variable number of pins onto it.
+    /// The class also uses the generated textures to create materials.
     /// </summary>
     public static class TextureCreator
     {
@@ -41,11 +42,15 @@ namespace AS2.Visuals
         private static Texture2D hexagonCircTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ Soft/HexagonCircleSoft");
 
         /// <summary>
-        /// Creates the material with the generated texture for the pins with the invisible hexagon. Read the method doc to GetPinBorderTexture to gain more info.
+        /// Creates the material with the generated texture for the pins
+        /// with the invisible hexagon. Read the method doc to
+        /// <see cref="GetPinBorderTexture(int, bool, bool, int, bool, ViewType)"/>
+        /// to gain more info.
         /// </summary>
         /// <param name="pinsPerSide">The amount of pins per side.</param>
         /// <param name="viewType">The view type, Hexagonal or HexagonalCirc, not Circular!</param>
-        /// <returns></returns>
+        /// <returns>A material that only renders pins, only while the
+        /// particle is not moving.</returns>
         public static Material GetPinBorderMaterial(int pinsPerSide, ViewType viewType)
         {
             if (viewType == ViewType.Hexagonal && pinBorderHexMaterials.ContainsKey(pinsPerSide)) return pinBorderHexMaterials[pinsPerSide];

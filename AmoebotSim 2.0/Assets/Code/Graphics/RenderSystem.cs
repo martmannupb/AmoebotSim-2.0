@@ -229,6 +229,8 @@ namespace AS2.Visuals
         public void ToggleCircuits()
         {
             flag_showCircuitView = !flag_showCircuitView;
+            // Update particle materials to show or hide pins
+            rendererP.SetPinsVisible(flag_showCircuitView);
         }
 
         /// <summary>

@@ -116,8 +116,10 @@ namespace AS2.Visuals
             // Generate Material
             circuitHexPinMaterial = TextureCreator.GetPinBorderMaterial(properties.pinsPerSide, ViewType.Hexagonal);
             circuitHexCircPinMaterial = TextureCreator.GetPinBorderMaterial(properties.pinsPerSide, ViewType.HexagonalCirc);
-            hexagonWithPinsMaterial = TextureCreator.GetHexagonWithPinsMaterial(properties.pinsPerSide, ViewType.Hexagonal);
-            hexagonCircWithPinsMaterial = TextureCreator.GetHexagonWithPinsMaterial(properties.pinsPerSide, ViewType.HexagonalCirc);
+            // If circuits are currently not visible, get material for 0 pins
+            int numPins = RenderSystem.flag_showCircuitView ? properties.pinsPerSide : 0;
+            hexagonWithPinsMaterial = TextureCreator.GetHexagonWithPinsMaterial(numPins, ViewType.Hexagonal);
+            hexagonCircWithPinsMaterial = TextureCreator.GetHexagonWithPinsMaterial(numPins, ViewType.HexagonalCirc);
         }
 
         /// <summary>
@@ -520,6 +522,22 @@ namespace AS2.Visuals
                 Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Expanding[i], arrayLength, propertyBlock_circle_expanding.propertyBlock);
                 Graphics.DrawMeshInstanced(mesh_circle_particle, 0, MaterialDatabase.material_circular_particleComplete, particleMatricesCircle_Contracting[i], arrayLength, propertyBlock_circle_contracting.propertyBlock);
             }
+        }
+
+        /// <summary>
+        /// Changes the visibility setting of pins in the base
+        /// hexagon or round hexagon view mode.
+        /// </summary>
+        /// <param name="visible">Whether the pins should be
+        /// visible.</param>
+        public void SetPinsVisible(bool visible)
+        {
+            // If pins should not be shown, simply use a material for 0 pins
+            int numPins = visible ? properties.pinsPerSide : 0;
+
+            hexagonWithPinsMaterial = TextureCreator.GetHexagonWithPinsMaterial(numPins, ViewType.Hexagonal);
+            hexagonCircWithPinsMaterial = TextureCreator.GetHexagonWithPinsMaterial(numPins, ViewType.HexagonalCirc);
+            
         }
 
     }

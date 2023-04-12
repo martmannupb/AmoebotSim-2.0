@@ -134,6 +134,18 @@ namespace AS2.Visuals
             circuitAndBondRenderer.Render(viewType);
         }
 
+        /// <summary>
+        /// Changes the visibility setting of pins in the base
+        /// hexagon or round hexagon view mode.
+        /// </summary>
+        /// <param name="visible">Whether the pins should be
+        /// visible.</param>
+        public void SetPinsVisible(bool visible)
+        {
+            foreach (var item in propertiesToRenderBatchMap.Values)
+                item.SetPinsVisible(visible);
+        }
+
     }
 
 }
