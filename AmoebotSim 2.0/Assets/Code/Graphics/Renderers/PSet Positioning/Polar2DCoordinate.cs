@@ -6,7 +6,8 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// A polar coordinate that can be used to define positins relative to the center of a circle/quad.
+    /// A polar coordinate that can be used to define positions
+    /// relative to the center of a circle/quad.
     /// </summary>
     public struct Polar2DCoordinate
     {
@@ -16,7 +17,7 @@ namespace AS2.Visuals
         /// </summary>
         public float angleDegrees;
         /// <summary>
-        /// The radius of the coordinate. Max: 1.0f (outter border), min 0.0f.
+        /// The radius of the coordinate. Max: <c>1.0f</c> (outer border), min <c>0.0f</c> (center).
         /// </summary>
         public float radiusPercentage;
 

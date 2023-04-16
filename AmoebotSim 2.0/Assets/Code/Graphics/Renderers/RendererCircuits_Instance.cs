@@ -7,8 +7,11 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// The circuit and bond renderer instance that handles all the data that is added in a round.
-    /// Has render batches for circuits (colorized lines) and pins (colorized dots) grouped by data with the same properties (like type, color, etc.).
+    /// The circuit and bond renderer instance that handles all the
+    /// data that is added in a round.
+    /// Has render batches for circuits (colorized lines) and pins
+    /// (colorized dots) grouped by data with the same properties (like
+    /// type, color, etc.).
     /// These batches are all rendered when the draw loop is called.
     /// </summary>
     public class RendererCircuits_Instance
@@ -47,9 +50,32 @@ namespace AS2.Visuals
 
             public struct PSetInnerPinRef
             {
+                /// <summary>
+                /// Types of "pins" representing partition sets
+                /// inside of a particle.
+                /// </summary>
                 public enum PinType
                 {
-                    None, PSet1, PSet2, PConnector1, PConnector2
+                    /// <summary>
+                    /// No role determined.
+                    /// </summary>
+                    None,
+                    /// <summary>
+                    /// Partition set handle in the particle's head.
+                    /// </summary>
+                    PSet1,
+                    /// <summary>
+                    /// Partition set handle in the particle's tail.
+                    /// </summary>
+                    PSet2,
+                    /// <summary>
+                    /// Line connector in the expanded particle's head.
+                    /// </summary>
+                    PConnector1,
+                    /// <summary>
+                    /// Line connector in the expanded particle's tail.
+                    /// </summary>
+                    PConnector2
                 }
 
                 public ParticlePinGraphicState.PSetData pSet;
@@ -64,6 +90,15 @@ namespace AS2.Visuals
                 }
             }
 
+            /// <summary>
+            /// Tries to get the partition set handle or connector at the
+            /// given world position.
+            /// </summary>
+            /// <param name="worldPos">The world position at which to
+            /// look for the handle.</param>
+            /// <returns>A <see cref="PSetInnerPinRef"/> referencing a partition
+            /// set handle or connector close to the given position, if one
+            /// is found, otherwise a null instance.</returns>
             public PSetInnerPinRef GetInnerPSetOrConnectorPinAtPosition(Vector2 worldPos)
             {
                 float pinRadius = RenderSystem.const_circuitPinSize / 2f;
@@ -80,6 +115,19 @@ namespace AS2.Visuals
                 return new PSetInnerPinRef(null, PSetInnerPinRef.PinType.None, Vector2.zero);
             }
 
+            /// <summary>
+            /// Changes the position of a partition set handle or
+            /// connector. Used for dragging the handles with the mouse.
+            /// <para>
+            /// This method accesses the render batches rendering the
+            /// lines that connect the given handle to its pins and/or
+            /// connector and updates all the line positions according
+            /// to the new handle position.
+            /// </para>
+            /// </summary>
+            /// <param name="innerPin">A reference to the pin that
+            /// should be moved.</param>
+            /// <param name="worldPos">The new world position of the pin.</param>
             public void UpdatePSetOrConnectorPinPosition(PSetInnerPinRef innerPin, Vector2 worldPos)
             {
                 RendererCircuitPins_RenderBatch batch_pins;
@@ -239,16 +287,18 @@ namespace AS2.Visuals
                         break;
                 }
             }
-            
+        
         }
 
         /// <summary>
         /// Calculates the degrees on which the partition sets are placed on a circle.
         /// </summary>
         /// <param name="circuitData">Contains the references to the data.</param>
-        /// <param name="outputList">A list that has been already initialized. It will be cleared in this method.</param>
-        /// <param name="isHead">If we are looking at head partition sets.</param>
-        /// <param name="useRelaxationAlgorithm">True to make sure there is sufficient space between partition sets.</param>
+        /// <param name="outputList">A list that has already been initialized.
+        /// It will be cleared in this method.</param>
+        /// <param name="isHead">Whether we are looking at head partition sets.</param>
+        /// <param name="useRelaxationAlgorithm"><c>true</c> to make sure there is
+        /// sufficient space between partition sets.</param>
         private void CalculateCircleLineDegreesForPartitionSets(ParticleCircuitData circuitData, List<float> outputList, bool isHead, bool useRelaxationAlgorithm = true)
         {
             outputList.Clear();
@@ -271,6 +321,15 @@ namespace AS2.Visuals
             if(useRelaxationAlgorithm) CircleDistributionCircleLine.DistributePointsOnCircle(outputList, Mathf.Min(0.8f * (360f / outputList.Count), 60f));
         }
 
+        /// <summary>
+        /// Calculates the positions at which the partition sets are placed in a circle.
+        /// </summary>
+        /// <param name="circuitData">Contains the references to the data.</param>
+        /// <param name="outputList">A list that has already been initialized.
+        /// It will be cleared in this method.</param>
+        /// <param name="isHead">Whether we are looking at head partition sets.</param>
+        /// <param name="useRelaxationAlgorithm"><c>true</c> to make sure there is
+        /// sufficient space between partition sets.</param>
         private void CalculateCircleVectorCoordinatesForPartitionSets(ParticleCircuitData circuitData, List<Vector2> outputList, bool isHead, bool useRelaxationAlgorithm = true)
         {
             outputList.Clear();
@@ -289,11 +348,15 @@ namespace AS2.Visuals
 
         /// <summary>
         /// Calculates the average relative pin position of pins connected to a partition set.
+        /// If the particle is expanded and there are pins belonging to the partition set that
+        /// are in the other part of the particle, one extra virtual pin is added in direction
+        /// of the other pins.
         /// </summary>
         /// <param name="pSet">The given partition set.</param>
         /// <param name="circuitData">Contains the references to the data.</param>
         /// <param name="isHead">If we are looking at head pins.</param>
-        /// <returns></returns>
+        /// <returns>The average position of the pins belonging to <paramref name="pSet"/>,
+        /// relative to the particle's head or tail.</returns>
         private Vector2 CalculateAverageRelativePinPosForPartitionSet(ParticlePinGraphicState.PSetData pSet, ParticleCircuitData circuitData, bool isHead)
         {
             if (isHead && pSet.graphicalData.hasPinsInHead || isHead == false && pSet.graphicalData.hasPinsInTail)
@@ -303,7 +366,7 @@ namespace AS2.Visuals
                 int virtualPinCount = 0;
                 foreach (var pinDef in pSet.pins)
                 {
-                    if (isHead && pinDef.isHead || isHead == false && pinDef.isHead == false)
+                    if (isHead == pinDef.isHead)
                     {
                         relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, circuitData.state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
                         virtualPinCount++;
@@ -313,21 +376,35 @@ namespace AS2.Visuals
                 if (isHead && pSet.graphicalData.hasPinsInTail || isHead == false && pSet.graphicalData.hasPinsInHead)
                 {
                     // Add one additional virtual position in direction of the center of the expanded particle
-                    addVector = CalculateGlobalExpandedPartitionSetCenterNodePosition(isHead ? circuitData.snap.position1 : circuitData.snap.position2, 1, 1, isHead ? 60f * circuitData.state.neighbor1ToNeighbor2Direction : 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6), isHead ? false : true) - (isHead ? AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position1) : AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position2));
+                    addVector = CalculateGlobalExpandedPartitionSetCenterNodePosition(
+                        isHead ? circuitData.snap.position1 : circuitData.snap.position2,
+                        1, 1,
+                        isHead ? 60f * circuitData.state.neighbor1ToNeighbor2Direction : 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6),
+                        !isHead);
+                    addVector -= AmoebotFunctions.GridToWorldPositionVector2(isHead ? circuitData.snap.position1 : circuitData.snap.position2);
+                    
                     relPos += addVector;
                     virtualPinCount++;
                 }
                 relPos /= (float)virtualPinCount;
-                if(relPos == Vector2.zero && (isHead && pSet.graphicalData.hasPinsInTail || isHead == false && pSet.graphicalData.hasPinsInHead)) relPos = (relPos + addVector) / 2f;
+                if (relPos == Vector2.zero && (isHead && pSet.graphicalData.hasPinsInTail || isHead == false && pSet.graphicalData.hasPinsInHead))
+                    relPos = (relPos + addVector) / 2f;
                 return relPos;
             }
-            else return Vector2.zero;
+            else
+                return Vector2.zero;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="circuitData"></param>
+        /// <param name="pSetViewType_global"></param>
         private void CalculatePartitionSetPositions(ParticleCircuitData circuitData, PartitionSetViewType pSetViewType_global)
         {
             // Precalculations
-            foreach (var pset in circuitData.state.partitionSets) pset.PrecalculatePinNumbersAndStoreInGD();
+            foreach (var pset in circuitData.state.partitionSets)
+                pset.PrecalculatePinNumbersAndStoreInGD();
 
             //Log.Debug("PartitionSetViewType: Head: " + circuitData.state.codeOverrideType1.ToString() + ", Tail: " + (circuitData.state.isExpanded == false ? "-" : circuitData.state.codeOverrideType2.ToString()));
 
@@ -373,11 +450,15 @@ namespace AS2.Visuals
                 {
                     // Auto Placement 1. Iteration (PSet Degrees)
                     // 1. Head Pins
-                    if (pSetViewType == PartitionSetViewType.Auto) CalculateCircleLineDegreesForPartitionSets(circuitData, degreeList, true);
-                    else if (pSetViewType == PartitionSetViewType.Auto_2DCircle) CalculateCircleVectorCoordinatesForPartitionSets(circuitData, vectorList, true);
+                    if (pSetViewType == PartitionSetViewType.Auto)
+                        CalculateCircleLineDegreesForPartitionSets(circuitData, degreeList, true);
+                    else if (pSetViewType == PartitionSetViewType.Auto_2DCircle)
+                        CalculateCircleVectorCoordinatesForPartitionSets(circuitData, vectorList, true);
                     // Get number of PSets
                     numberOfPartitionSetPinsInNode = 0;
-                    foreach (var pSet in circuitData.state.partitionSets) if (pSet.graphicalData.hasPinsInHead) numberOfPartitionSetPinsInNode++;
+                    foreach (var pSet in circuitData.state.partitionSets)
+                        if (pSet.graphicalData.hasPinsInHead)
+                            numberOfPartitionSetPinsInNode++;
                 }
                 int counter = 0;
                 for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
@@ -388,8 +469,10 @@ namespace AS2.Visuals
                         case PartitionSetViewType.Line:
                             // Default
                             float rot1 = 0f;
-                            if(circuitData.state.isExpanded) rot1 = 60f * circuitData.state.neighbor1ToNeighbor2Direction;
-                            if (codeOverride_active) rot1 = circuitData.state.codeOverrideLineRotationDegrees1;
+                            if (circuitData.state.isExpanded)
+                                rot1 = 60f * circuitData.state.neighbor1ToNeighbor2Direction;
+                            if (codeOverride_active)
+                                rot1 = circuitData.state.codeOverrideLineRotationDegrees1;
                             pSet.graphicalData.active_position1 = CalculateGlobalPartitionSetPinPosition(circuitData.snap.position1, i, circuitData.state.partitionSets.Count, rot1, false);
                             pSet.graphicalData.active_connector_position1 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position1, i, circuitData.state.partitionSets.Count, rot1, false);
                             break;
@@ -486,11 +569,15 @@ namespace AS2.Visuals
                 {
                     // Auto Placement 1. Iteration (PSet Degrees)
                     // 2. Tail Pins
-                    if (pSetViewType == PartitionSetViewType.Auto) CalculateCircleLineDegreesForPartitionSets(circuitData, degreeList, false);
-                    else if (pSetViewType == PartitionSetViewType.Auto_2DCircle) CalculateCircleVectorCoordinatesForPartitionSets(circuitData, vectorList, false);
+                    if (pSetViewType == PartitionSetViewType.Auto)
+                        CalculateCircleLineDegreesForPartitionSets(circuitData, degreeList, false);
+                    else if (pSetViewType == PartitionSetViewType.Auto_2DCircle)
+                        CalculateCircleVectorCoordinatesForPartitionSets(circuitData, vectorList, false);
                     // Get number of PSets
                     numberOfPartitionSetPinsInNode = 0;
-                    foreach (var pSet in circuitData.state.partitionSets) if (pSet.graphicalData.hasPinsInTail) numberOfPartitionSetPinsInNode++;
+                    foreach (var pSet in circuitData.state.partitionSets)
+                        if (pSet.graphicalData.hasPinsInTail)
+                            numberOfPartitionSetPinsInNode++;
                 }
                 int counter = 0;
                 for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
@@ -501,7 +588,8 @@ namespace AS2.Visuals
                         case PartitionSetViewType.Line:
                             // Default
                             float rot2 = 60f * ((circuitData.state.neighbor1ToNeighbor2Direction + 3) % 6);
-                            if (codeOverride_active) rot2 = circuitData.state.codeOverrideLineRotationDegrees2;
+                            if (codeOverride_active)
+                                rot2 = circuitData.state.codeOverrideLineRotationDegrees2;
                             pSet.graphicalData.active_position2 = CalculateGlobalPartitionSetPinPosition(circuitData.snap.position2, i, circuitData.state.partitionSets.Count, rot2, true);
                             pSet.graphicalData.active_connector_position2 = CalculateGlobalExpandedPartitionSetCenterNodePosition(circuitData.snap.position2, i, circuitData.state.partitionSets.Count, rot2, true);
                             break;
@@ -562,7 +650,7 @@ namespace AS2.Visuals
                 for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = circuitData.state.partitionSets[i];
-                    if(pSet.HasPinsInHeadAndTail(false))
+                    if (pSet.HasPinsInHeadAndTail(false))
                     {
                         // Calculate the average partition set positions
                         Vector2 averageSetPosition = (pSet.graphicalData.active_position1 + pSet.graphicalData.active_position2) / 2f;
@@ -602,13 +690,17 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Adds the data of a particle's partition set to the system. Combines it with the position data of the particle itself to calculate all positions of the circuits and pins.
+        /// Adds the data of a particle's pin configuration to the system.
+        /// Combines it with the position data of the particle itself to
+        /// calculate all positions of the circuits and pins.
         /// </summary>
         /// <param name="particle">The particle the data belongs to.</param>
         /// <param name="state">The particle's graphical pin and partition set data.</param>
         /// <param name="snap">The particle's position and movement data.</param>
         /// <param name="pSetViewType">The view type that the circuits should be drawn with.</param>
-        /// <param name="addToCircuitData">If the given input should be added to the circuit data. True by default, set to false when doing something like refreshing the circuits.</param>
+        /// <param name="addToCircuitData">Whether the given input should be added to the
+        /// circuit data. True by default, set to <c>false</c> when doing something like
+        /// refreshing the circuits.</param>
         public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType, bool addToCircuitData = true)
         {
             ParticleCircuitData circuitData;
@@ -617,12 +709,13 @@ namespace AS2.Visuals
                 circuitData = new ParticleCircuitData(this, particle, state, snap);
                 circuitDataMap.Add(particle, circuitData);
             }
-            else circuitData = circuitDataMap[particle];
+            else
+                circuitData = circuitDataMap[particle];
 
             //bool delayed = RenderSystem.animationsOn && (circuitData.snap.jointMovementState.isJointMovement || (circuitData.snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || circuitData.snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting));
             bool delayed = snap.noAnimation == false && RenderSystem.animationsOn && (snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding || snap.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting);
             bool movement = RenderSystem.animationsOn && snap.jointMovementState.isJointMovement && delayed == false;
-            Vector2 movementOffset = movement ? -AmoebotFunctions.GridToWorldPositionVector2(snap.jointMovementState.jointExpansionOffset) : Vector2.zero;
+            Vector2 movementOffset = movement ? -AmoebotFunctions.GridToWorldPositionVector2(snap.jointMovementState.jointMovementOffset) : Vector2.zero;
 
             // 1. Calc PartitionSet Positions
             CalculatePartitionSetPositions(circuitData, pSetViewType);
@@ -1289,22 +1382,28 @@ namespace AS2.Visuals
 
     }
 
+    /// <summary>
+    /// The various placement types for partition sets inside a particle.
+    /// </summary>
     public enum PartitionSetViewType
     {
         /// <summary>
-        /// Standard view type: Partition Sets oriented in a row.
+        /// Standard view type: Partition sets oriented in a vertical line.
         /// </summary>
         Line,
         /// <summary>
-        /// Automatic view type: Partition Sets oriented on a one-dimensional circle, automatically ordered by the median coordinates.
+        /// Automatic view type: Partition sets oriented on a circle, automatically
+        /// ordered by the average positions of their pins.
         /// </summary>
         Auto,
         /// <summary>
-        /// Automatic view type: Partition Sets oriented on a virtual 2D circle, automatically ordered by the median coordinates.
+        /// Automatic view type: Partition sets oriented inside of a circle,
+        /// automatically ordered by the average positions of their pins.
         /// </summary>
         Auto_2DCircle,
         /// <summary>
-        /// Default view type: Priorization of code positioning. If none has been set we use auto positioning.
+        /// Default view type: Prioritization of code positioning. If none has been
+        /// set, we use auto positioning.
         /// </summary>
         CodeOverride,
     }

@@ -53,13 +53,25 @@ namespace AS2.Visuals
         /// Number of hexagons in one mesh for the hexagonal background.
         /// </summary>
         public const int const_hexagonalBGHexLineAmount = 200;
+        /// <summary>
+        /// Width of circuit lines in the particles.
+        /// </summary>
         public const float const_circuitLineWidth = 0.02f;
+        /// <summary>
+        /// Width of circuit lines outside of the particles.
+        /// </summary>
         public const float const_circuitConnectorLineWidth = 0.06f;
         public const float const_circuitPinSize = 0.1f;
         public const float const_circuitSingletonPinSize = 0.085f;
         public const float const_circuitPinConnectorSize = 0.02f;
         public const float const_circuitPinBeepSizePercentage = 0.5f;
+        /// <summary>
+        /// Width of bond lines in hexagonal view modes.
+        /// </summary>
         public const float const_bondsLineWidthHex = 0.4f;
+        /// <summary>
+        /// Width of bond lines in graph view mode.
+        /// </summary>
         public const float const_bondsLineWidthCirc = 0.15f;
         // Layers
         // The z layers of the objects determine how they are ordered

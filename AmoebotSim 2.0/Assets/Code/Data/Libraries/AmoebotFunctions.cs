@@ -315,22 +315,29 @@ namespace AS2
         // Circuits ===============
 
         /// <summary>
-        /// Calculates the relativ pin position in world space relativ to the particle center based on the abstract pin position definition,
-        /// the number of particles, the scale and the viewType.
+        /// Calculates the relative pin position in world space
+        /// relative to the particle center based on the abstract
+        /// pin position definition, the number of particles, the
+        /// scale and the viewType.
         /// </summary>
-        /// <param name="pinDef"></param>
-        /// <param name="pinsPerSide"></param>
-        /// <param name="particleScale"></param>
-        /// <param name="viewType"></param>
-        /// <returns></returns>
+        /// <param name="pinDef">The pin whose position to calculate.</param>
+        /// <param name="pinsPerSide">The number of pins per side.</param>
+        /// <param name="particleScale">The global scale factor for particles.</param>
+        /// <param name="viewType">The view type used to place the pins.</param>
+        /// <returns>A vector representing the pin's coordinates relative
+        /// to the particle's center. Will be <c>(0, 0)</c> if the
+        /// <paramref name="viewType"/> is not <see cref="ViewType.Hexagonal"/>
+        /// or <see cref="ViewType.HexagonalCirc"/>.</returns>
         public static Vector2 CalculateRelativePinPosition(ParticlePinGraphicState.PinDef pinDef, int pinsPerSide, float particleScale, ViewType viewType)
         {
             float linePos = (pinDef.dirID + 1) / (float)(pinsPerSide + 1);
             Vector2 topRight = new Vector2(hexRadiusMinor, hexRadiusMajor2);
             Vector2 bottomRight = new Vector2(hexRadiusMinor, -hexRadiusMajor2);
             Vector2 pinPosNonRotated = Vector2.zero;
-            if (viewType == ViewType.Hexagonal) pinPosNonRotated = bottomRight + linePos * (topRight - bottomRight);
-            else if (viewType == ViewType.HexagonalCirc) pinPosNonRotated = Quaternion.Euler(0f, 0f, -30f + linePos * 60f) * new Vector2(hexRadiusMinor, 0f);
+            if (viewType == ViewType.Hexagonal)
+                pinPosNonRotated = bottomRight + linePos * (topRight - bottomRight);
+            else if (viewType == ViewType.HexagonalCirc)
+                pinPosNonRotated = Quaternion.Euler(0f, 0f, -30f + linePos * 60f) * new Vector2(hexRadiusMinor, 0f);
             pinPosNonRotated *= particleScale;
             Vector2 pinPos = Quaternion.Euler(0f, 0f, 60f * pinDef.globalDir) * pinPosNonRotated;
             return pinPos;
