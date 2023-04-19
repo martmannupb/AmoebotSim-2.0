@@ -38,8 +38,8 @@ namespace AS2.Visuals
 
         private static Texture2D pinTexture = Resources.Load<Texture2D>(FilePaths.path_textures + "PinTex");
         private static Texture2D transTexture = Resources.Load<Texture2D>(FilePaths.path_textures + "TransparentPixel");
-        private static Texture2D hexagonTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ Soft/HexagonSoft1_1024");
-        private static Texture2D hexagonCircTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ Soft/HexagonCircleSoft");
+        private static Texture2D hexagonTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ/Hexagon1_1024");
+        private static Texture2D hexagonCircTexture = Resources.Load<Texture2D>("Images/Hexagons/HQ Soft/HexagonCircle");
 
         /// <summary>
         /// Creates the material with the generated texture for the pins

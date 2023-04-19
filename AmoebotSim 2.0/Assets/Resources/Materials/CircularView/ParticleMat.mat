@@ -64,11 +64,11 @@ Material:
     - _AnimPercentage2: 1
     - _AnimTriggerTime: 0
     - _EnableExternalAlpha: 0
-    - _InnerRingAliasingDist: 0.025
+    - _InnerRingAliasingDist: 0.01
     - _InnerRingScale: 0.47
     - _InnerRingWidth: 0.93
     - _InnerScale: 1
-    - _OuterRingAliasingDist: 0.025
+    - _OuterRingAliasingDist: 0.01
     - _OuterRingScale: 0.87
     - _OuterRingWidth: 0.27
     - _OutterRingAliasingDist: 0.025
