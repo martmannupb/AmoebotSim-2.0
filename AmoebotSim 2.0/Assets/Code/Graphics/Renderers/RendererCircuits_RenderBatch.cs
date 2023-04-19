@@ -9,7 +9,9 @@ namespace AS2.Visuals
     /// <summary>
     /// Renderer for the circuits. Each instance of this class renders circuit
     /// lines with the same properties (like color, type, etc.) with Unity's
-    /// instanced drawing.
+    /// instanced drawing. The class handles circuit lines inside of particles,
+    /// circuit connections between the particles and bonds. Each instance only
+    /// renders one type of line.
     /// </summary>
     public class RendererCircuits_RenderBatch : IGenerateDynamicMesh
     {
@@ -277,7 +279,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Calculates the line matrix from the positional information about the line.
         /// We basically take a standard quad and transform it so that it forms a line.
-        /// The pivot of the quad must be in the center of the quad's left side.
+        /// The pivot of the quad must be at the center of the quad's left side.
         /// </summary>
         /// <param name="posInitial">The start position of the line.</param>
         /// <param name="posEnd">The end position of the line.</param>
@@ -347,6 +349,8 @@ namespace AS2.Visuals
             {
                 // Beeping Animation
                 float halfAnimationDuration = RenderSystem.data_circuitBeepDuration * 0.5f;
+                // The shader will animate from alpha 0 to 1 and back to 0, starting half
+                // the duration before the animation trigger time
                 propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f);
                 propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(beepStartTime + halfAnimationDuration, halfAnimationDuration);
                 lastBeepStartTime = beepStartTime;

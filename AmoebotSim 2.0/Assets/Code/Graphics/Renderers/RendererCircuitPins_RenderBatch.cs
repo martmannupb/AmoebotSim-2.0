@@ -6,7 +6,8 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Renderer for the circuit pins. Each instance of this class renders pins with the same properties (like color, type, etc.) with Unity's instanced drawing.
+    /// Renderer for the circuit pins. Each instance of this class renders pins
+    /// with the same properties (like color, type, etc.) with Unity's instanced drawing.
     /// </summary>
     public class RendererCircuitPins_RenderBatch : IGenerateDynamicMesh
     {
@@ -30,7 +31,8 @@ namespace AS2.Visuals
         public PropertyBlockData properties;
 
         /// <summary>
-        /// An extendable struct that functions as the key for the mapping of particles to their render class.
+        /// An extendable struct that functions as the key for
+        /// the mapping of particles to their render class.
         /// </summary>
         public struct PropertyBlockData
         {
@@ -62,8 +64,10 @@ namespace AS2.Visuals
         public void Init()
         {
             // Set Material
-            if (properties.beeping) pinMaterial = MaterialDatabase.material_circuit_pin_movement;
-            else pinMaterial = MaterialDatabase.material_circuit_pin_movement;
+            if (properties.beeping)
+                pinMaterial = MaterialDatabase.material_circuit_pin_movement;
+            else
+                pinMaterial = MaterialDatabase.material_circuit_pin_movement;
 
             // PropertyBlocks
             if (properties.beeping)
@@ -87,14 +91,17 @@ namespace AS2.Visuals
         public void RegenerateMeshes()
         {
             pinQuad = Library.MeshConstants.getDefaultMeshQuad();
-            if (RenderSystem.const_mesh_useManualBoundingBoxRadius) pinQuad = Library.MeshConstants.AddManualBoundsToMesh(pinQuad, Vector3.zero, RenderSystem.const_mesh_boundingBoxRadius, true);
+            if (RenderSystem.const_mesh_useManualBoundingBoxRadius)
+                pinQuad = Library.MeshConstants.AddManualBoundsToMesh(pinQuad, Vector3.zero, RenderSystem.const_mesh_boundingBoxRadius, true);
         }
 
         /// <summary>
         /// Adds a pin.
         /// </summary>
         /// <param name="pinPos">The global pin center position.</param>
-        /// <param name="singletonPin">If this is a singleton pin. Singleton pins have their own pin size.</param>
+        /// <param name="singletonPin">Whether this is a singleton pin.
+        /// Singleton pins have their own pin size.</param>
+        /// <returns>The index of the new pin's matrix in this batch.</returns>
         public RenderBatchIndex AddPin(Vector2 pinPos, bool singletonPin)
         {
             if (currentIndex >= maxArraySize * circuitMatrices_Pins.Count)
@@ -114,8 +121,9 @@ namespace AS2.Visuals
         /// Updates a pin.
         /// </summary>
         /// <param name="pinPos">The global pin center position.</param>
-        /// <param name="singletonPin">If this is a singleton pin. Singleton pins have their own pin size.</param>
-        /// <param name="index">The index of the update.</param>
+        /// <param name="singletonPin">Whether this is a singleton pin.
+        /// Singleton pins have their own pin size.</param>
+        /// <param name="index">The index of the pin to update.</param>
         public void UpdatePin(Vector2 pinPos, bool singletonPin, RenderBatchIndex index)
         {
             if(index.isValid == false || index.listNumber < 0 || index.listNumber >= circuitMatrices_Pins.Count || index.listIndex < 0 || index.listIndex >= circuitMatrices_Pins[index.listNumber].Length)
@@ -129,11 +137,12 @@ namespace AS2.Visuals
 
         /// <summary>
         /// Adds a connector pin.
-        /// A connector pin is a internal pin in expanded particles that connects the two sides of the particle.
-        /// It has the width and color of the circuit lines, so that two lines that go to the same point do not have visibly sharp edges and seem like a connected structure.
+        /// A connector pin is an internal pin in expanded particles that
+        /// connects the two sides of the particle. It has the width and color
+        /// of the circuit lines, so that two lines that go to the same point
+        /// do not have visibly sharp edges and seem like a connected structure.
         /// </summary>
-        /// <param name="pinPos"></param>
-        /// <param name="index">The index of the update.</param>
+        /// <param name="pinPos">The global pin center position.</param>
         public RenderBatchIndex AddConnectorPin(Vector2 pinPos)
         {
             if (currentIndex_connectors >= maxArraySize * circuitMatrices_PinConnectors.Count)
@@ -152,7 +161,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Updates a connector pin.
         /// </summary>
-        /// <param name="pinPos"></param>
+        /// <param name="pinPos">The new global pin center position.</param>
+        /// <param name="index">The batch index of the pin to update.</param>
         public void UpdateConnectorPin(Vector2 pinPos, RenderBatchIndex index)
         {
             if (index.isValid == false || index.listNumber < 0 || index.listNumber >= circuitMatrices_PinConnectors.Count || index.listIndex < 0 || index.listIndex >= circuitMatrices_PinConnectors[index.listNumber].Length)
@@ -166,34 +176,42 @@ namespace AS2.Visuals
 
         /// <summary>
         /// Calculates the pin matrix from the positional information about the pin.
-        /// We basically take a standard quad with a pin texture and transform it, so that it forms a pin of the right size.
+        /// We basically take a standard quad with a pin texture and transform it so
+        /// that it forms a pin of the right size.
         /// </summary>
         /// <param name="pinPos">The global position of the pin.</param>
-        /// <param name="isSingletonPin">If this is a singleton pin. Singleton pins have their own pin size.</param>
-        /// <returns></returns>
+        /// <param name="isSingletonPin">Whether this is a singleton pin. Singleton
+        /// pins have their own pin size.</param>
+        /// <returns>A translation, rotation and scaling matrix for a pin mesh
+        /// with the given properties.</returns>
         private Matrix4x4 CalculatePinMatrix(Vector2 pinPos, bool isSingletonPin)
         {
             // Calc Pin Size
             float pinSize = isSingletonPin ? RenderSystem.const_circuitSingletonPinSize : RenderSystem.const_circuitPinSize;
-            if (properties.beeping) pinSize *= RenderSystem.const_circuitPinBeepSizePercentage;
+            if (properties.beeping)
+                pinSize *= RenderSystem.const_circuitPinBeepSizePercentage;
             // Calc Matrix
             return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins + zOffset), Quaternion.identity, new Vector3(pinSize, pinSize, 1f));
         }
 
         /// <summary>
-        /// Calculates the pin connector matrix from the positional information about the pin connector.
-        /// We basically take a standard quad with a pin texture and transform it, so that it forms a pin of the right size.
+        /// Calculates the pin connector matrix from the positional information
+        /// about the pin connector. We basically take a standard quad with a pin
+        /// texture and transform it so that it forms a pin of the right size.
         /// </summary>
-        /// <param name="pinPos"></param>
-        /// <returns></returns>
+        /// <param name="pinPos">The global position of the pin center.</param>
+        /// <returns>A translation, rotation and scaling matrix for a pin mesh
+        /// with the given properties.</returns>
         private Matrix4x4 CalculatePinConnectorMatrix(Vector2 pinPos)
         {
             return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
         }
 
         /// <summary>
-        /// Clears the matrices, so nothing gets rendered anymore. The lists can be filled with new data now.
-        /// (Actually just sets the index to 0, so we dont draw anything anymore.)
+        /// Clears the matrices, so nothing gets rendered anymore.
+        /// The lists can be filled with new data now.
+        /// (Actually just sets the index to 0, so we don't draw
+        /// anything anymore.)
         /// </summary>
         public void ClearMatrices()
         {
@@ -260,8 +278,10 @@ namespace AS2.Visuals
                 for (int i = 0; i < listDrawAmount; i++)
                 {
                     int count;
-                    if (i < listDrawAmount - 1) count = maxArraySize;
-                    else count = currentIndex % maxArraySize;
+                    if (i < listDrawAmount - 1)
+                        count = maxArraySize;
+                    else
+                        count = currentIndex % maxArraySize;
                     UnityEngine.Graphics.DrawMeshInstanced(pinQuad, 0, pinMaterial, circuitMatrices_Pins[i], count, propertyBlock_circuitMatrices_Pins.propertyBlock);
                 }
             }
@@ -273,9 +293,10 @@ namespace AS2.Visuals
                 for (int i = 0; i < listDrawAmount_connectors; i++)
                 {
                     int count;
-                    if (i < listDrawAmount_connectors - 1) count = maxArraySize;
-                    else count = currentIndex_connectors % maxArraySize;
-
+                    if (i < listDrawAmount_connectors - 1)
+                        count = maxArraySize;
+                    else
+                        count = currentIndex_connectors % maxArraySize;
                     UnityEngine.Graphics.DrawMeshInstanced(pinQuad, 0, pinMaterial, circuitMatrices_PinConnectors[i], count, propertyBlock_circuitMatrices_PinConnectors.propertyBlock);
                 }
             }

@@ -58,12 +58,30 @@ namespace AS2.Visuals
         /// </summary>
         public const float const_circuitLineWidth = 0.02f;
         /// <summary>
-        /// Width of circuit lines outside of the particles.
+        /// Width of circuit lines outside of the particles and beeping
+        /// circuit lines.
         /// </summary>
         public const float const_circuitConnectorLineWidth = 0.06f;
+        /// <summary>
+        /// Default scaling factor of internal pins representing
+        /// partition sets.
+        /// </summary>
         public const float const_circuitPinSize = 0.1f;
+        /// <summary>
+        /// Default scaling factor of internal pins representing
+        /// singleton partition sets.
+        /// </summary>
         public const float const_circuitSingletonPinSize = 0.085f;
+        /// <summary>
+        /// Default size of "pins" used to fill the gaps at the
+        /// vertices of circuit connector lines. Should usually
+        /// be equal to <see cref="const_circuitLineWidth"/>.
+        /// </summary>
         public const float const_circuitPinConnectorSize = 0.02f;
+        /// <summary>
+        /// Fraction of the partition set pin that should be colored
+        /// when the partition set is a beep or message origin.
+        /// </summary>
         public const float const_circuitPinBeepSizePercentage = 0.5f;
         /// <summary>
         /// Width of bond lines in hexagonal view modes.
@@ -101,7 +119,12 @@ namespace AS2.Visuals
         public static float data_roundTime;
         public static float data_hexagonalAnimationDuration = 0.5f;     // particle animation duration
         public const float const_maxHexagonalAnimationDuration = 1f;
-        public static float data_circuitAnimationDuration = 0.0f;       // pin/circuit fade in time after movement
+        /// <summary>
+        /// Circuit connection fade in time after movement.
+        /// (Decided to disable this feature by setting the
+        /// duration to 0.)
+        /// </summary>
+        public static float data_circuitAnimationDuration = 0.0f;
         public const float const_maxCircuitAnimationDuration = 0.0f;
         public static float data_circuitBeepDuration = 0.5f;            // circuit beep duration
         public const float const_maxCircuitBeepDuration = 0.5f;
