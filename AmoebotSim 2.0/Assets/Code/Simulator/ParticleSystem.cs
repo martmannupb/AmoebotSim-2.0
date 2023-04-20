@@ -712,6 +712,13 @@ namespace AS2.Sim
                     }
                 }
 
+                // Also get bond visibility settings
+                for (int label = 0; label < numLabels; label++)
+                {
+                    int localLabel = ParticleSystem_Utils.GlobalToLocalLabel(label, p.GlobalHeadDirection(), p.comDir, p.chirality);
+                    p.visibleBondsGlobal[label] = p.BondVisible(localLabel);
+                }
+
                 p.movementOffset = Vector2Int.zero;
                 p.jmOffset = Vector2Int.zero;
 
@@ -895,6 +902,7 @@ namespace AS2.Sim
 
                     // Easy case: Both particles are contracted
                     // There is only a single bond between the two particles
+                    // ================================================================================
                     if (p.IsContracted() && nbr.IsContracted())
                     {
                         bool weMove = movementAction != null;
@@ -921,9 +929,12 @@ namespace AS2.Sim
                         if (nbrMove && nbrMarked)
                             nbrOffset -= nbr.movementOffset;
 
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1,
+                            !(p.visibleBondsGlobal[label] && nbr.visibleBondsGlobal[nbrLabels[label]])));
                     }
+
                     // We are contracted and the neighbor is expanded
+                    // ================================================================================
                     else if (p.IsContracted() && nbr.IsExpanded())
                     {
                         Direction bondDir = ParticleSystem_Utils.GetDirOfLabel(label);
@@ -948,7 +959,9 @@ namespace AS2.Sim
                             label, secondLabel, nbrLabels[label], secondLabel != -1 ? nbrLabels[secondLabel] : -1,
                             nbrHead[label], secondLabel != -1 && nbrHead[secondLabel]);
                     }
+
                     // We are expanded and the neighbor is contracted
+                    // ================================================================================
                     else if (p.IsExpanded() && nbr.IsContracted())
                     {
                         // This is the inverse of the previous case and we can handle it with the same logic
@@ -983,7 +996,9 @@ namespace AS2.Sim
                             // Associate bond with us, not with the neighbor
                             false);
                     }
+
                     // We and the neighbor are both expanded
+                    // ================================================================================
                     else if (p.IsExpanded() && nbr.IsExpanded())
                     {
                         // First find all bonds connecting the two neighbors
@@ -1017,6 +1032,8 @@ namespace AS2.Sim
                         Vector2Int nbrBond1_1 = bondNbrHead[0] ? nbr.Head() : nbr.Tail();
                         Vector2Int ourBond1_2 = ourBond1_1 + p.jmOffset;
                         Vector2Int nbrBond1_2 = nbrBond1_1 + p.jmOffset;
+
+                        bool hidden1 = !(p.visibleBondsGlobal[bondLabels[0]] && nbr.visibleBondsGlobal[nbrLabels[0]]);
 
                         // Exactly one bond:
                         //      Apply our movement and the inverted neighbor movement
@@ -1065,7 +1082,7 @@ namespace AS2.Sim
                             }
 
                             // Store the bond info
-                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
+                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, hidden1));
                         }
                         else if (numBonds == 2)
                         {
@@ -1074,6 +1091,8 @@ namespace AS2.Sim
                             Vector2Int nbrBond2_1 = bondNbrHead[1] ? nbr.Head() : nbr.Tail();
                             Vector2Int ourBond2_2 = ourBond2_1 + p.jmOffset;
                             Vector2Int nbrBond2_2 = nbrBond2_1 + p.jmOffset;
+
+                            bool hidden2 = !(p.visibleBondsGlobal[bondLabels[1]] && nbr.visibleBondsGlobal[nbrLabels[1]]);
 
                             // Case distinction: Either the two bonds share one end or they do not
                             // They share an end iff the two bond labels are consecutive
@@ -1189,8 +1208,8 @@ namespace AS2.Sim
                             }
 
                             // Store the bond info
-                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
-                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
+                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, hidden1));
+                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, hidden2));
                         }
                         else
                         {
@@ -1247,9 +1266,11 @@ namespace AS2.Sim
                             Vector2Int nbrBond3_1 = bondNbrHead[2] ? nbr.Head() : nbr.Tail();
                             Vector2Int ourBond3_2 = ourBond3_1 + p.jmOffset;
                             Vector2Int nbrBond3_2 = nbrBond3_1 + p.jmOffset;
-                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1));
-                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1));
-                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1));
+                            bool hidden2 = !(p.visibleBondsGlobal[bondLabels[1]] && nbr.visibleBondsGlobal[nbrLabels[1]]);
+                            bool hidden3 = !(p.visibleBondsGlobal[bondLabels[2]] && nbr.visibleBondsGlobal[nbrLabels[2]]);
+                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, hidden1));
+                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, hidden2));
+                            p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1, hidden3));
                         }
                     }
 
@@ -1528,13 +1549,14 @@ namespace AS2.Sim
                 }
 
                 // Store the bond info
+                bool hidden = !(c.visibleBondsGlobal[cLabel1] && e.visibleBondsGlobal[eLabel1]);
                 if (bondForContracted)
                 {
-                    c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
+                    c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, hidden));
                 }
                 else
                 {
-                    e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
+                    e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, hidden));
                 }
             }
             else
@@ -1639,15 +1661,17 @@ namespace AS2.Sim
                 }
 
                 // Store the bond info
+                bool hidden1 = !(c.visibleBondsGlobal[cLabel1] && e.visibleBondsGlobal[eLabel1]);
+                bool hidden2 = !(c.visibleBondsGlobal[cLabel2] && e.visibleBondsGlobal[eLabel2]);
                 if (bondForContracted)
                 {
-                    c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1));
-                    c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1_2));
+                    c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, hidden1));
+                    c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1_2, hidden2));
                 }
                 else
                 {
-                    e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1));
-                    e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1_2, cBond1));
+                    e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, hidden1));
+                    e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1_2, cBond1, hidden2));
                 }
             }
             return eOffset;
@@ -1811,7 +1835,8 @@ namespace AS2.Sim
                     {
                         Vector2Int start = bondOwnHead[i] ? p.Head() : p.Tail();
                         Vector2Int end = bondNbrHead[i] ? nbr.Head() : nbr.Tail();
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(start, end, start, end));
+                        bool hidden = !(p.visibleBondsGlobal[bondLabels[i]] && nbr.visibleBondsGlobal[nbrBondLabels[i]]);
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(start, end, start, end, hidden));
                     }
 
                     // Enqueue the neighbor if necessary
@@ -1835,7 +1860,10 @@ namespace AS2.Sim
             foreach (Particle p in particles)
             {
                 for (int i = 0; i < 10; i++)
+                {
                     p.activeBondsGlobal[i] = true;
+                    p.visibleBondsGlobal[i] = true;
+                }
             }
         }
 
@@ -1861,9 +1889,9 @@ namespace AS2.Sim
                 foreach (BondMovementInfo bmi in bondInfo.bondMovements)
                 {
                     if (withAnimation)
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start1 + beforeOffset, bmi.end1 + beforeOffset));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start1 + beforeOffset, bmi.end1 + beforeOffset, bmi.hidden));
                     else
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start2 + afterOffset, bmi.end2 + afterOffset));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.start2 + afterOffset, bmi.end2 + afterOffset, bmi.hidden));
                 }
                 // Also load joint movement info if required
                 if (withAnimation)
@@ -3320,11 +3348,12 @@ namespace AS2.Sim
 
             if (updateVisuals)
             {
+                LoadMovementGraphicsInfo(false);
                 UpdateNeighborCaches();
                 SetupPinGraphicState(true);
                 DiscoverCircuits(false);
-                CleanupAfterRound();
                 UpdateAllParticleVisuals(true);
+                CleanupAfterRound();
             }
         }
 
@@ -3525,9 +3554,7 @@ namespace AS2.Sim
                 }
                 InitializeFromSaveState(saveData, false);
                 SetMarkerToRound(storedSimulationRound);
-                SetInitialParticleBonds();
-                ComputeBondsStatic();
-                FinishMovementInfo();
+                LoadMovementGraphicsInfo(false);
                 UpdateNeighborCaches();
                 SetupPinGraphicState(true);
                 DiscoverCircuits(false);

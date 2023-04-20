@@ -16,13 +16,16 @@ namespace AS2.Visuals
         public Vector2Int curBondPos2;
         public Vector2Int prevBondPos1;
         public Vector2Int prevBondPos2;
+        // Hidden flag
+        public bool hidden;
 
-        public ParticleBondGraphicState(Vector2Int curBondPos1, Vector2Int curBondPos2, Vector2Int prevBondPos1, Vector2Int prevBondPos2)
+        public ParticleBondGraphicState(Vector2Int curBondPos1, Vector2Int curBondPos2, Vector2Int prevBondPos1, Vector2Int prevBondPos2, bool hidden = false)
         {
             this.curBondPos1 = curBondPos1;
             this.curBondPos2 = curBondPos2;
             this.prevBondPos1 = prevBondPos1;
             this.prevBondPos2 = prevBondPos2;
+            this.hidden = hidden;
         }
 
         /// <summary>

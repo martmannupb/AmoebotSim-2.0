@@ -58,12 +58,14 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Adds the graphical data of a single bond.
+        /// Adds the graphical data of a single bond if the bond is
+        /// not hidden.
         /// </summary>
         /// <param name="bondState">Visual information of the bond.</param>
         public void AddBond(ParticleBondGraphicState bondState)
         {
-            renderInstances[updateInstance].AddBond(bondState);
+            if (!bondState.hidden)
+                renderInstances[updateInstance].AddBond(bondState);
         }
 
         /// <summary>
