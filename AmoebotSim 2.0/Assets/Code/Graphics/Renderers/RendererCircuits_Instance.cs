@@ -484,7 +484,7 @@ namespace AS2.Visuals
                                 // Convert degree to coordinate
                                 float degree = degreeList[counter];
                                 counter++;
-                                Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Library.DegreeConstants.PolarToCartesian(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                                 // Calc partition set position on the circle
                                 Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position1);
                                 // Save position
@@ -513,7 +513,7 @@ namespace AS2.Visuals
                             {
                                 // Convert degree and radius to coordinate
                                 counter++;
-                                Vector2 localPinPos = Library.DegreeConstants.DegreeToCoordinate(pSet.graphicalData.codeOverride_coordinate1.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate1.radiusPercentage, 90f);
+                                Vector2 localPinPos = Library.DegreeConstants.PolarToCartesian(pSet.graphicalData.codeOverride_coordinate1.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate1.radiusPercentage, 90f);
                                 // Calc partition set position on the circle
                                 Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position1);
                                 // Save position
@@ -601,7 +601,7 @@ namespace AS2.Visuals
                                 // Convert degree to coordinate
                                 float degree = degreeList[counter];
                                 counter++;
-                                Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Library.DegreeConstants.DegreeToCoordinate(degree, RenderSystem.global_particleScale * 0.3f, 90f);
+                                Vector2 localPinPos = (degreeList.Count == 1 || numberOfPartitionSetPinsInNode == 1) ? Vector2.zero : Library.DegreeConstants.PolarToCartesian(degree, RenderSystem.global_particleScale * 0.3f, 90f);
                                 // Calc partition set position on the circle
                                 Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position2);
                                 // Save position
@@ -630,7 +630,7 @@ namespace AS2.Visuals
                             {
                                 // Convert degree and radius to coordinate
                                 counter++;
-                                Vector2 localPinPos = Library.DegreeConstants.DegreeToCoordinate(pSet.graphicalData.codeOverride_coordinate2.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate2.radiusPercentage, 90f);
+                                Vector2 localPinPos = Library.DegreeConstants.PolarToCartesian(pSet.graphicalData.codeOverride_coordinate2.angleDegrees, RenderSystem.global_particleScale * 0.5f * pSet.graphicalData.codeOverride_coordinate2.radiusPercentage, 90f);
                                 // Calc partition set position on the circle
                                 Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(circuitData.snap.position2);
                                 // Save position

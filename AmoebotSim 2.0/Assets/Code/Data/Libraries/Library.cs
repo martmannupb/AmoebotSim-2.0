@@ -573,19 +573,30 @@ namespace AS2.Visuals.Library {
 
     }
 
-
+    /// <summary>
+    /// Utility methods for geometric calculations involving degrees
+    /// or polar coordinates.
+    /// </summary>
     public static class DegreeConstants
     {
         /// <summary>
-        /// Returns the coordinates for a given degree and radius.
-        /// 0 degrees are east, counterclockwise rotation.
+        /// Converts the given polar coordinates to Cartesian
+        /// coordinates. 0 degrees are east, counterclockwise
+        /// rotation is positive. The given <paramref name="degreeOffset"/>
+        /// is added to the coordinate angle before the conversion,
+        /// e.g., an offset of 90 makes a 0 degree angle point up.
         /// </summary>
-        /// <param name="degree"></param>
-        /// <param name="radius"></param>
-        /// <returns></returns>
-        public static Vector2 DegreeToCoordinate(double degree, double radius)
+        /// <param name="degree">The angle of the polar coordinate
+        /// in degrees.</param>
+        /// <param name="radius">The radius of the polar coordinate.</param>
+        /// <param name="degreeOffset">The angle to be added to
+        /// <paramref name="degree"/> before the conversion.</param>
+        /// <returns>The Cartesian coordinates corresponding to
+        /// the given polar coordinates.</returns>
+        public static Vector2 PolarToCartesian(double degree, double radius, float degreeOffset = 0)
         {
             // Convert degree to radian
+            degree += degreeOffset;
             double radian = degree * Math.PI / 180;
 
             // Calculate the x and y coordinates using sine and cosine
@@ -597,26 +608,18 @@ namespace AS2.Visuals.Library {
         }
 
         /// <summary>
-        /// Returns the coordinates for a given degree and radius.
-        /// 0 degrees are east, counterclockwise rotation.
-        /// 0 degrees can be offset by the degree offset (e.g. a degreeOffset of 90 makes 0 degrees point up).
+        /// Converts the given Cartesian coordinates to polar coordinates.
+        /// 0 degrees are east, counterclockwise rotation is positive.
+        /// The absolute value of the angle will never be greater than
+        /// <c>180</c>. Coordinates with a negative Y component will have
+        /// a negative angle instead.
         /// </summary>
-        /// <param name="degree"></param>
-        /// <param name="radius"></param>
-        /// <param name="degreeOffset"></param>
-        /// <returns></returns>
-        public static Vector2 DegreeToCoordinate(double degree, double radius, float degreeOffset)
-        {
-            return DegreeToCoordinate(degree + degreeOffset, radius);
-        }
-
-        /// <summary>
-        /// Returns the degree and the radius of the given coordinate.
-        /// 0 degrees are east, counterclockwise rotation. Ranges from >180 to <=180;
-        /// </summary>
-        /// <param name="coordinate"></param>
-        /// <returns></returns>
-        public static Tuple<double, double> CoordinateToDegree(Vector2 coordinate)
+        /// <param name="coordinate">The Cartesian coordinates to be converted.</param>
+        /// <param name="degreeOffset">The angle in degrees that should be subtracted from
+        /// the resulting polar angle.</param>
+        /// <returns>The polar coordinates corresponding to the given
+        /// Cartesian coordinates and offset.</returns>
+        public static Tuple<double, double> CartesianToPolar(Vector2 coordinate, float degreeOffset = 0)
         {
             // Calculate the radius of the circle using the Pythagorean theorem
             double radius = Math.Sqrt(coordinate.x * coordinate.x + coordinate.y * coordinate.y);
@@ -627,38 +630,54 @@ namespace AS2.Visuals.Library {
             // Convert radian to degree
             double degree = radian * 180 / Math.PI;
 
-            // Return the calculated angle in degrees and radius as a tuple
-            return Tuple.Create(degree, radius);
+            return Tuple.Create((degree - degreeOffset + 360f) % 360f, radius);
         }
 
         /// <summary>
-        /// Returns the degree and the radius of the given coordinate.
-        /// 0 degrees are east, counterclockwise rotation. Ranges from >=0 to <360;
-        /// 0 degrees can be offset by the degree offset (e.g. a degreeOffset of 90 subtracts this offset from the resulting degree).
-        /// </summary>
-        /// <param name="coordinate"></param>
-        /// <param name="degreeOffset"></param>
-        /// <returns></returns>
-        public static Tuple<double, double> CoordinateToDegree(Vector2 coordinate, float degreeOffset)
-        {
-            Tuple<double, double> t = CoordinateToDegree(coordinate);
-            return Tuple.Create((t.Item1 - degreeOffset + 360f) % 360f, t.Item2);
-        }
-
-        /// <summary>
-        /// Calculates the signed orthogonal distance from a line to a point. Well, at least I hope the sign is correct.
+        /// Calculates the signed orthogonal distance from a line to a point.
         /// </summary>
         /// <param name="point">The point.</param>
         /// <param name="linePoint1">First point of the line.</param>
-        /// <param name="linePoint2">Second point of the line that should not be the first point.</param>
+        /// <param name="linePoint2">Second point of the line. Should not be
+        /// equal to the first point.</param>
         /// <returns></returns>
         public static float ManuallyImplementedSignedOrthogonalDistancesOfPointToLineFromAToB(Vector2 point, Vector2 linePoint1, Vector2 linePoint2)
         {
             Vector2 lineDirection = (linePoint2 - linePoint1).normalized;
             Vector2 lineDirectionRot90Deg = Quaternion.Euler(0f, 0f, 90f) * lineDirection;
-            //Vector2 linePoint1ToPoint = point - linePoint1;
             float distToC = ((point.x - linePoint1.x) * (-linePoint2.y + linePoint1.y) + (point.y - linePoint1.y) * (linePoint2.x - linePoint1.x)) / lineDirectionRot90Deg.magnitude;
             return distToC;
+
+
+            // This code is the "correct" implementation of this method.
+            // It computes the minimum distance between the given point
+            // and line segment and gives it a sign which is positive
+            // when the point is above the extended line and negative
+            // when it is below the extended line, where "above" means
+            // "on the left" when looking from the first segment point
+            // to the second.
+            // If this method is ever used for anything else, this code
+            // should probably be used. However, it might not lead to
+            // the same partition set placement results.
+
+            //// Direction vector of the line segment
+            //Vector2 v = linePoint2 - linePoint1;
+            //// Vector from line start to the point
+            //Vector2 w = point - linePoint1;
+            //// v rotated by 90 degrees for sign computation
+            //Vector2 vOrth = Quaternion.Euler(0f, 0f, 90f) * v;
+            //float lengthSqrd = v.sqrMagnitude;
+            //// Use distance to point if line length is 0
+            //if (Mathf.Approximately(lengthSqrd, 0f))
+            //    return Vector2.Distance(point, linePoint1);
+            //// We extend the line segment and parameterize it as linePoint1 + t * v
+            //// Then we project point to this line and clamp the value between 0 and 1
+            //float t = Mathf.Clamp01(Vector2.Dot(w, linePoint2 - linePoint1) / lengthSqrd);
+            //Vector2 projected = linePoint1 + t * v;
+            //// The final result is the distance between point and the projected point
+            //// with the sign determined using w and vOrth
+            //float s = Vector2.Dot(w, vOrth);
+            //return Vector2.Distance(point, projected) * Mathf.Sign(s);
         }
 
     }

@@ -6,7 +6,7 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Wrapper for a <see cref="UnityEngine.MaterialPropertyBlock"/>.
+    /// Wrapper for a <c>UnityEngine.MaterialPropertyBlock</c>.
     /// Can contain methods that dynamically set its values.
     /// </summary>
     public abstract class MaterialPropertyBlockData

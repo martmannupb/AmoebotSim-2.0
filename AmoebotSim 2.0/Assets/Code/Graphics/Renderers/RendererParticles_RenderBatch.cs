@@ -10,7 +10,7 @@ namespace AS2.Visuals
     /// The renderer for the base particles and pins.
     /// Stores many matrices in which the data for the
     /// mesh instancing is stored and rendered with
-    /// <see cref="UnityEngine.Graphics.DrawMeshInstanced(Mesh, int, Material, List{Matrix4x4})"/>.
+    /// <c>UnityEngine.Graphics.DrawMeshInstanced(Mesh, int, Material, List{Matrix4x4})</c>.
     /// </summary>
     public class RendererParticles_RenderBatch
     {
@@ -171,7 +171,7 @@ namespace AS2.Visuals
         /// Removes a particle from the render batch. The last element
         /// in the last array takes its position afterwards, so that we
         /// still have valid arrays for the
-        /// <see cref="UnityEngine.Graphics.DrawMeshInstanced(Mesh, int, Material, List{Matrix4x4})"/>
+        /// <c>UnityEngine.Graphics.DrawMeshInstanced(Mesh, int, Material, List{Matrix4x4})</c>
         /// method.
         /// </summary>
         /// <param name="graphicalData">The graphics adapter belonging to

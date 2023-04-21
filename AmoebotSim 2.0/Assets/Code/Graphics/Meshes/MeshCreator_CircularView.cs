@@ -14,7 +14,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the horizontal background lines.
         /// </summary>
-        /// <returns>A <see cref="UnityEngine.Mesh"/> containing
+        /// <returns>A <c>UnityEngine.Mesh</c> containing
         /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> horizontal
         /// lines for the background grid.</returns>
         public static Mesh GetMesh_BGLinesHorizontal()
@@ -68,7 +68,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the diagonal background lines from bottom right to top left.
         /// </summary>
-        /// <returns>A <see cref="UnityEngine.Mesh"/> containing
+        /// <returns>A <c>UnityEngine.Mesh</c> containing
         /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> diagonal lines from
         /// the top left to the bottom right for the background grid.</returns>
         public static Mesh GetMesh_BGLinesTopLeftBottomRight()
@@ -122,7 +122,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the diagonal background lines from bottom left to top right.
         /// </summary>
-        /// <returns>A <see cref="UnityEngine.Mesh"/> containing
+        /// <returns>A <c>UnityEngine.Mesh</c> containing
         /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> diagonal lines from
         /// the top right to the bottom left for the background grid.</returns>
         public static Mesh GetMesh_BGLinesTopRightBottomLeft()

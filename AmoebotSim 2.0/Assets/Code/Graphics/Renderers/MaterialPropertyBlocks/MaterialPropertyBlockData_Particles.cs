@@ -6,7 +6,7 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Contains a <see cref="UnityEngine.MaterialPropertyBlock"/> instance
+    /// Contains a <c>UnityEngine.MaterialPropertyBlock</c> instance
     /// for the particle renderer. Used for updating the block.
     /// </summary>
     public class MaterialPropertyBlockData_Particles : MaterialPropertyBlockData

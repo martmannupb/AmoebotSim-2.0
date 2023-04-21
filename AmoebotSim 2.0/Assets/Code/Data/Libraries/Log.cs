@@ -11,7 +11,7 @@ namespace AS2
     /// <summary>
     /// Custom logging utility that displays log messages in
     /// Unity's debug log and in the simulator's log panel.
-    /// Should be preferred over <see cref="UnityEngine.Debug"/>.
+    /// Should be preferred over <c>UnityEngine.Debug</c>.
     /// </summary>
     public static class Log
     {

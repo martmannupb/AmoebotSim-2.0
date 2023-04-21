@@ -6,7 +6,7 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Contains a <see cref="MaterialPropertyBlock"/> instance for
+    /// Contains a <c>MaterialPropertyBlock</c> instance for
     /// the circuit system. Used for updating the block.
     /// </summary>
     public class MaterialPropertyBlockData_Circuits : MaterialPropertyBlockData

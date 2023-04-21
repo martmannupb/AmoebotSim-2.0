@@ -836,7 +836,7 @@ namespace AS2.Visuals
         /// A mesh that is a line of hexagons which form a grid.
         /// Put multiple next to each other to form the background for the hexagonal views.
         /// </summary>
-        /// <returns>A <see cref="UnityEngine.Mesh"/> containing a line of
+        /// <returns>A <c>UnityEngine.Mesh</c> containing a line of
         /// <see cref="RenderSystem.const_hexagonalBGHexLineAmount"/> hexagons
         /// for the hexagonal background grid.</returns>
         public static Mesh GetMesh_HexagonGridLine()
