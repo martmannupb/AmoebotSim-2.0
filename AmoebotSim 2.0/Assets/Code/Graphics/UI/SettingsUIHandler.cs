@@ -97,7 +97,7 @@ namespace AS2.UI
             UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, settingName_circuitBorder, RenderSystem.flag_circuitBorderActive);
             setting_circuitConnectionBorders.onValueChangedEvent += SettingChanged_Toggle;
             // Graph View Outer Ring
-            UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, settingName_circularRing, RenderSystem.flag_showCircuitViewOutterRing);
+            UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, settingName_circularRing, RenderSystem.flag_showCircuitViewOuterRing);
             setting_graphViewOutterRing.onValueChangedEvent += SettingChanged_Toggle;
             // Fullscreen
             UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, false);
@@ -196,7 +196,7 @@ namespace AS2.UI
                     WorldSpaceUIHandler.instance.Refresh();
                     break;
                 case settingName_circularRing:
-                    RenderSystem.flag_showCircuitViewOutterRing = isOn;
+                    RenderSystem.flag_showCircuitViewOuterRing = isOn;
                     break;
                 case settingName_animationsOnOff:
                     RenderSystem.animationsOn = isOn;

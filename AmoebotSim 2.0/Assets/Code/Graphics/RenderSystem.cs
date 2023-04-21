@@ -103,48 +103,146 @@ namespace AS2.Visuals
         public const float zLayer_pins = 3f;
         public const float zLayer_ui = -5f;
         // Global Data
+        /// <summary>
+        /// The global scaling factor for particles.
+        /// </summary>
         public static float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");
 
         // Dynamic Params _____
+        /// <summary>
+        /// Flag that should be set in the first frame after the
+        /// particle visuals have been updated by a round simulation.
+        /// Will be reset immediately after rendering the frame.
+        /// </summary>
         public static bool flag_particleRoundOver = true;
+        /// <summary>
+        /// Determines whether or not pins and circuits should
+        /// be rendered. Can be modified through the UI.
+        /// </summary>
         public static bool flag_showCircuitView = true;
+        /// <summary>
+        /// Determines the partition set placement mode. Can be
+        /// modified in the UI.
+        /// </summary>
         public static PartitionSetViewType flag_partitionSetViewType = PartitionSetViewType.CodeOverride;
+        /// <summary>
+        /// Determines whether or not bonds should be rendered.
+        /// Can be modified through the UI.
+        /// </summary>
         public static bool flag_showBonds = true;
-        public static bool flag_showCircuitViewOutterRing = true;
+        /// <summary>
+        /// Determines whether the outer ring should be drawn
+        /// around particles in the graph view mode. Can be
+        /// set in the Settings Panel.
+        /// </summary>
+        public static bool flag_showCircuitViewOuterRing = true;
+        /// <summary>
+        /// Determines whether circuit lines between particles
+        /// should have a border. Can be set in the Settings Panel.
+        /// </summary>
         public static bool flag_circuitBorderActive = false;
 
         // Dynamic Data _____
+        /// <summary>
+        /// The predicted time at which the current movement animation
+        /// will be finished.
+        /// </summary>
         public static float data_particleMovementFinishedTimestamp;
         // Animation + Beep Timing
+        /// <summary>
+        /// The time between two round simulations.
+        /// </summary>
         public static float data_roundTime;
-        public static float data_hexagonalAnimationDuration = 0.5f;     // particle animation duration
-        public const float const_maxHexagonalAnimationDuration = 1f;
+        /// <summary>
+        /// Duration of each movement animation in seconds.
+        /// </summary>
+        public static float data_hexagonalAnimationDuration = 0.5f;
+        /// <summary>
+        /// The maximal duration of the movement animation in seconds.
+        /// </summary>
+        public const float const_maxHexagonalAnimationDuration = 2f;
         /// <summary>
         /// Circuit connection fade in time after movement.
         /// (Decided to disable this feature by setting the
         /// duration to 0.)
         /// </summary>
         public static float data_circuitAnimationDuration = 0.0f;
-        public const float const_maxCircuitAnimationDuration = 0.0f;
-        public static float data_circuitBeepDuration = 0.5f;            // circuit beep duration
-        public const float const_maxCircuitBeepDuration = 0.5f;
-        public const float const_animationTimePercentage = 0.6f;        // percentages: animation/beeps (sequentially)
-        public const float const_beepTimePercentage = 0.2f;             // percentages: animation/beeps (sequentially)
+        /// <summary>
+        /// Duration of a beep animation in seconds.
+        /// </summary>
+        public static float data_circuitBeepDuration = 0.5f;
+        /// <summary>
+        /// The maximal duration of the beep animation in seconds.
+        /// </summary>
+        public const float const_maxCircuitBeepDuration = 0.75f;
+        /// <summary>
+        /// The fraction of the round duration that should be used
+        /// for the movement animation.
+        /// </summary>
+        public const float const_animationTimePercentage = 0.6f;
+        /// <summary>
+        /// The fraction of the round duration that should be used
+        /// for the beep animation.
+        /// </summary>
+        public const float const_beepTimePercentage = 0.2f;
+        /// <summary>
+        /// DEPRECATED.
+        /// <para>The delay between beep repetitions when the
+        /// simulation is paused.</para>
+        /// </summary>
         public static float data_circuitBeepRepeatDelay = 4f;
-        public static bool data_circuitBeepRepeatOn = true;
-        // Animation Toggle
+        /// <summary>
+        /// DEPRECATED.
+        /// <para>Determines whether the beep animation should
+        /// be played repeatedly while the simulation is paused.
+        /// Can be set in the Settings Panel.</para>
+        /// </summary>
+        public static bool data_circuitBeepRepeatOn = false;
+        /// <summary>
+        /// Determines whether the movement animations should
+        /// be played. Can be set in the Settings Panel.
+        /// </summary>
         public static bool animationsOn = true;
-        // Trigger Times
+
+        /// <summary>
+        /// The time at which the current movement animation
+        /// was triggered.
+        /// </summary>
         public static float animation_animationTriggerTimestamp;
+        /// <summary>
+        /// The fraction of the current movement animation time
+        /// that has already passed.
+        /// </summary>
         public static float animation_curAnimationPercentage;
+
         // Mesh Bounding Boxes
+        /// <summary>
+        /// Determines whether the bounding boxes of meshes should
+        /// be enlarged to avoid objects being culled while they
+        /// are still visible. This is especially helpful for
+        /// animations that are implemented using shaders that
+        /// apply vertex offsets.
+        /// </summary>
         public static bool const_mesh_useManualBoundingBoxRadius = true;
+        /// <summary>
+        /// The radius used for calculating manual mesh bounding
+        /// boxes.
+        /// </summary>
         public static float const_mesh_boundingBoxRadius = float.MaxValue / 4;
 
 
         // Renderers _____
+        /// <summary>
+        /// The background renderer.
+        /// </summary>
         public RendererBackground rendererBG;
+        /// <summary>
+        /// The particle and circuit renderer.
+        /// </summary>
         public RendererParticles rendererP;
+        /// <summary>
+        /// The UI overlay renderer.
+        /// </summary>
         public RendererUI rendererUI;
 
 

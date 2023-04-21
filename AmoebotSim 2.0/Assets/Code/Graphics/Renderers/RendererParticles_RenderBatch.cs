@@ -485,10 +485,10 @@ namespace AS2.Visuals
         private void Render_Circular()
         {
             // Outer Ring visible?
-            if(RenderSystem.flag_showCircuitViewOutterRing && propertyBlock_circle_contracted.GetCurrentOuterCircleWidthPercentage() != 1f
-                || RenderSystem.flag_showCircuitViewOutterRing == false && propertyBlock_circle_contracted.GetCurrentOuterCircleWidthPercentage() != 0f)
+            if(RenderSystem.flag_showCircuitViewOuterRing && propertyBlock_circle_contracted.GetCurrentOuterCircleWidthPercentage() != 1f
+                || RenderSystem.flag_showCircuitViewOuterRing == false && propertyBlock_circle_contracted.GetCurrentOuterCircleWidthPercentage() != 0f)
             {
-                float val = RenderSystem.flag_showCircuitViewOutterRing ? 1f : 0f;
+                float val = RenderSystem.flag_showCircuitViewOuterRing ? 1f : 0f;
                 propertyBlock_circle_contracted.ApplyOuterCircleWidthPercentage(val);
                 propertyBlock_circle_expanded.ApplyOuterCircleWidthPercentage(val);
                 propertyBlock_circle_expanding.ApplyOuterCircleWidthPercentage(val);

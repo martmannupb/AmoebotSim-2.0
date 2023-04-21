@@ -1,5 +1,75 @@
 # Dev Guide: The Render System
 
+## WIP: Structure
+
+### Purpose of the render system and this guide
+
+- Render system renders the background grid, the particles, circuits, pins and bonds to the screen
+	- Also some additional UI overlays
+- This must be done efficiently, which requires some effort
+	- Code is therefore quite complex
+- This guide gives an overview of the system's structure, roughly explains the most important concepts and points to the places where the visualization could be changed or extended
+	- Main purpose is providing some info for people who want to change the visualization such that they do not have to read through the entire rendering code
+
+### General structure
+
+- Class [`RenderSystem`][1] is the root of a tree structure
+	- The application's main class, [`AmoebotSimulator`][2], creates one instance of this class
+	- In every `Update` call, the [`AmoebotSimulator`][2] calls its [`Render()`][3] method, which triggers a cascade of similar calls through the entire hierarchy
+	- Contains references to the 3 render classes
+		- [`RendererUI`][4]
+		- [`RendererBackground`][5]
+		- [`RendererParticles`][6]
+	- [`Render()`][3] is simply forwarded to these classes
+	- Also contains lots of visualization parameters and constants
+		- View type (hexagonal, round, graph)
+		- Line widths, radii, scale values, animation times
+		- Z layers of all components
+			- These define the layering of the rendered objects (which object appears in front of which others)
+		- The class stores most of these parameters as public static fields, making them accessible everywhere
+
+
+
+
+
+
+[1]: xref:AS2.Visuals.RenderSystem
+[2]: xref:AS2.AmoebotSimulator
+[3]: xref:AS2.Visuals.RenderSystem.Render
+[4]: xref:AS2.Visuals.RendererUI
+[5]: xref:AS2.Visuals.RendererBackground
+[6]: xref:AS2.Visuals.RendererParticles
+
+
+
+
+
+
+
+
+
+----------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 The Render System for the simulator consists of a system to render the elements in the view (class RenderSystem) and the User Interface (which is shown on top of the view). For the UI there are multiple MonoBehavior implementations which handle all of the interface functions. The RenderSystem class holds instances of RendererBackground (rendering of the circular/hexagonal background grid), RendererUI (display of integrated overlays for the selection panel), and RendererParticles (rendering of the particles, circuits and bonds). While RendererBackground and RendererUI are simply an instance of one class, RendererParticles has a more complex structure.
 
 ## Rendering of Particles

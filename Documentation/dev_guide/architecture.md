@@ -20,7 +20,7 @@ The class also provides the interface for the other components to access and mod
 
 ## The Render System
 
-The [Render System](render_system.md) is responsible for displaying the simulation state on the screen.
+The [Render System](render/home.md) is responsible for displaying the simulation state on the screen.
 It stores the graphical data of the things that need to be visualized in a complex system of data structures which allows Unity to render a large number of animated particles efficiently.
 
 In general, most of the objects handled by the Simulator have a counterpart that represents them in the Render System.
