@@ -176,23 +176,10 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Creates a mesh for a particle.
-        /// This mesh has bigger boundaries to not get frustrum culled. The positions of the circles are calculated in the shader.
-        /// </summary>
-        /// <returns></returns>
-        public static Mesh GetMesh_Particle()
-        {
-            // Mesh Data
-            Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(3f, 0f, new Vector2(0.5f, 0.5f));
-
-            return mesh;
-        }
-
-        /// <summary>
         /// Creates the mesh for the particles in the circular graph view.
         /// </summary>
         /// <returns>A quad mesh of width 2 and height 1, with the origin
-        /// being in the center of the left half.</returns>
+        /// placed in the center of the left half.</returns>
         public static Mesh GetMesh_ParticleOptimized()
         {
             Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(2f, 0f, new Vector2(0.25f, 0.5f));
@@ -212,6 +199,8 @@ namespace AS2.Visuals
         /// The x coordinates in UV channel 2 are
         /// set to 1 for the first and third vertex and
         /// set to 0 for the second and fourth vertex.
+        /// This information can be used by shaders to treat
+        /// the left and right side of the mesh differently.
         /// </para>
         /// </summary>
         /// <returns>A quad mesh of size 1 for the connection

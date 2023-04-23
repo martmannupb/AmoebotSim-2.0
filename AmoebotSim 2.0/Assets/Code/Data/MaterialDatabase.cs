@@ -5,6 +5,11 @@ using UnityEngine;
 namespace AS2
 {
 
+    /// <summary>
+    /// Contains references to all of the materials used in the
+    /// simulation environment. All of the materials are loaded
+    /// when the application starts.
+    /// </summary>
     public static class MaterialDatabase
     {
 

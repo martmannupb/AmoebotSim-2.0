@@ -27,6 +27,8 @@
 		- Z layers of all components
 			- These define the layering of the rendered objects (which object appears in front of which others)
 		- The class stores most of these parameters as public static fields, making them accessible everywhere
+	- The render classes are mostly independent
+		- Go through each separately
 
 
 

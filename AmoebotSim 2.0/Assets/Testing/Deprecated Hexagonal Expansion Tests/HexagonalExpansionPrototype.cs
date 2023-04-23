@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using AS2.Visuals;
 using UnityEngine;
 
+/// <summary>
+/// DEPRECATED. Used for testing hexagon expansion mechanism.
+/// </summary>
 public class HexagonalExpansionPrototype : MonoBehaviour
 {
     public float hexScale = 1f;

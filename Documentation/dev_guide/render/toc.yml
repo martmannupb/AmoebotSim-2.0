@@ -1,2 +1,6 @@
-- name: Shaders and Materials
-  href: shaders_and_materials.md
+- name: Unity Rendering Basics
+  href: rendering_basics.md
+- name: Background Renderer
+  href: background_renderer.md
+- name: UI Renderer
+  href: ui_renderer.md
