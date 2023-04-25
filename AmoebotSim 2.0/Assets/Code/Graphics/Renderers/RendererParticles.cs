@@ -8,7 +8,7 @@ namespace AS2.Visuals
 
     /// <summary>
     /// The base class of all particle rendering.
-    /// Particles that are added to the system give continouus updates
+    /// Particles that are added to the system give continuous updates
     /// on their state over the <see cref="ParticleGraphicsAdapterImpl"/>
     /// class, while the system handles the necessary updates of the 
     /// visual data to perform the display on the screen.
@@ -26,6 +26,7 @@ namespace AS2.Visuals
         /// and pins happens).
         /// </summary>
         public Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererParticles_RenderBatch.PropertyBlockData, RendererParticles_RenderBatch>();
+        
         // Circuits + Bonds ===============
         /// <summary>
         /// Renderer for the circuits and bonds.
@@ -119,7 +120,8 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Renders all <see cref="RendererParticles_RenderBatch"/>es.
+        /// Renders all <see cref="RendererParticles_RenderBatch"/>es
+        /// as well as the circuits and bonds.
         /// </summary>
         /// <param name="viewType">The view type that should be used
         /// to render the particles.</param>

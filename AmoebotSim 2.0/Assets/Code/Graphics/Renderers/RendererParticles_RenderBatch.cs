@@ -298,17 +298,24 @@ namespace AS2.Visuals
         /// (this might seem a little odd, but the system was added later and seemed to be easily implementable it this way)</param>
         public void UpdateMatrix(ParticleGraphicsAdapterImpl gd, bool executeJointMovement)
         {
+            // World positions of the particle's head and tail
             Vector3 particle_position1world = AmoebotFunctions.GridToWorldPositionVector3(gd.state_cur.position1.x, gd.state_cur.position1.y, RenderSystem.zLayer_particles);
             Vector3 particle_position2world = AmoebotFunctions.GridToWorldPositionVector3(gd.state_cur.position2.x, gd.state_cur.position2.y, RenderSystem.zLayer_particles);
+            // Pin positions are the same but with different Z layer
             Vector3 pin_position1world = new Vector3(particle_position1world.x, particle_position1world.y, RenderSystem.zLayer_pins);
             Vector3 pin_position2world = new Vector3(particle_position2world.x, particle_position2world.y, RenderSystem.zLayer_pins);
 
+            // Determine joint movement offset vector
             if (executeJointMovement)
             {
-                // Interpolate
+                // Compute joint movement offset by interpolation (if animation is on)
+                // Stored offset points from end position to start position
                 Vector3 interpolatedOffset;
-                if (RenderSystem.animationsOn) interpolatedOffset = (1f - jmInterpolation) * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
-                else interpolatedOffset = 0f * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
+                if (RenderSystem.animationsOn)
+                    interpolatedOffset = (1f - jmInterpolation) * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
+                else
+                    interpolatedOffset = 0f * particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID];
+                // Add offset to particle and pin positions
                 particle_position1world += interpolatedOffset;
                 particle_position2world += interpolatedOffset;
                 pin_position1world = new Vector3(particle_position1world.x, particle_position1world.y, RenderSystem.zLayer_pins);
@@ -323,10 +330,10 @@ namespace AS2.Visuals
                 // Joint Movements
                 if (gd.state_cur.jointMovementState.isJointMovement)
                 {
-                    // Calc Joint Movement Position Offset
-                    //Vector2Int jointMovementPositionOffsetInv = gd.state_cur.movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding ? gd.state_prev.position2 - gd.state_cur.position2 : gd.state_prev.position1 - gd.state_cur.position1;
+                    // Calculate joint movement position offset
+                    // Points from end position to start position
                     Vector2Int jointMovementPositionOffsetInv = new Vector2Int(-gd.state_cur.jointMovementState.jointMovementOffset.x, -gd.state_cur.jointMovementState.jointMovementOffset.y);
-                    // Set World Offset
+                    // Convert to world coordinates and store the offset
                     Vector3 absPositionOffsetInv = AmoebotFunctions.GridToWorldPositionVector2(jointMovementPositionOffsetInv);
                     particlePositionOffsets_jointMovementsInv[gd.graphics_listNumber][gd.graphics_listID] = absPositionOffsetInv;
                 }
@@ -347,13 +354,18 @@ namespace AS2.Visuals
                 // Apply Rotation
                 rotation = Quaternion.Euler(0f, 0f, (60f * gd.state_cur.globalExpansionOrContractionDir) % 360f) * Quaternion.identity;
             }
-            // Update Matrices
+
+            // Ignore contracting and expanding movement if animations are off
             ParticleGraphicsAdapterImpl.ParticleMovement movement = gd.state_cur.movement;
-            if(RenderSystem.animationsOn == false)
+            if (RenderSystem.animationsOn == false)
             {
-                if (movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting) movement = ParticleGraphicsAdapterImpl.ParticleMovement.Contracted;
-                else if (movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding) movement = ParticleGraphicsAdapterImpl.ParticleMovement.Expanded;
+                if (movement == ParticleGraphicsAdapterImpl.ParticleMovement.Contracting)
+                    movement = ParticleGraphicsAdapterImpl.ParticleMovement.Contracted;
+                else if (movement == ParticleGraphicsAdapterImpl.ParticleMovement.Expanding)
+                    movement = ParticleGraphicsAdapterImpl.ParticleMovement.Expanded;
             }
+
+            // Update Matrices
             switch (movement)
             {
                 case ParticleGraphicsAdapterImpl.ParticleMovement.Contracted:
@@ -382,8 +394,6 @@ namespace AS2.Visuals
                 default:
                     break;
             }
-
-
         }
 
         /// <summary>
@@ -394,12 +404,12 @@ namespace AS2.Visuals
         /// to visualize the particles.</param>
         public void Render(ViewType viewType)
         {
-            // 1. Update Properties
+            // 1. Update properties
             curAnimationLength = Mathf.Clamp(RenderSystem.data_hexagonalAnimationDuration, 0f, Time.fixedDeltaTime);
             if (RenderSystem.flag_particleRoundOver)
             {
                 RenderSystem.animation_animationTriggerTimestamp = Time.timeSinceLevelLoad;
-                // Update PropertyBlocks Timestamps (for Animations)
+                // Update PropertyBlocks timestamps (for animations)
                 propertyBlock_circle_contracted.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
                 propertyBlock_circle_expanded.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
                 propertyBlock_circle_expanding.ApplyAnimationTimestamp(RenderSystem.animation_animationTriggerTimestamp, curAnimationLength);
@@ -411,10 +421,10 @@ namespace AS2.Visuals
                 RenderSystem.data_particleMovementFinishedTimestamp = RenderSystem.animation_animationTriggerTimestamp + curAnimationLength;
             }
 
-            // 2. Update Joint Movement Positions
-            // Update Interpolation Value
+            // 2. Update joint movement positions
+            // Update interpolation value
             jmInterpolation = Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
-            // Update all JM Positions
+            // Update all JM positions
             for (int i = 0; i < particlePositionOffsets_jointMovementsInv.Count; i++)
             {
                 Vector3[] offsets = particlePositionOffsets_jointMovementsInv[i];
@@ -458,8 +468,10 @@ namespace AS2.Visuals
             {
                 // Find out how many matrices are used in the array
                 int arrayLength;
-                if (i == particleMatricesCircle_Contracted.Count - 1) arrayLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
-                else arrayLength = maxArraySize;
+                if (i == particleMatricesCircle_Contracted.Count - 1)
+                    arrayLength = particleToParticleGraphicalDataMap.Count % maxArraySize;
+                else
+                    arrayLength = maxArraySize;
 
                 // Particles (previous mat: MaterialDatabase.material_hexagonal_particleCombined)
                 Material mat = viewType == ViewType.Hexagonal ? hexagonWithPinsMaterial : hexagonCircWithPinsMaterial;

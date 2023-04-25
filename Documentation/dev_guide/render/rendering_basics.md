@@ -14,6 +14,9 @@
 	- The axis along which the rays are cast is the global Z axis
 	- Every object is orthogonal to the Z axis
 	- An object's Z position (Z layer) determines which objects are drawn in front of it and which are drawn behind it
+	- Our camera is on Z layer $-10$ and points in the positive Z direction
+		- Objects on smaller Z layers are drawn further in the foreground
+		- Objects on a Z layer less than $-10$ are behind the camera and will not be visible
 - Meshes also contain additional data
 	- UV coordinates
 		- UV coordinates are simply vectors that are associated with each vertex of the mesh
@@ -52,9 +55,15 @@
 	- A shader is run once every time a ray hits a face of a mesh
 		- The resulting "Fragment" data is used to color the corresponding pixel
 		- If the alpha value is less than 1, the ray is cast further and the resulting color is mixed with the first color to create a transparency effect
-	- Inputs to the shader can come from the object itself (like its position in the world), mesh data (like the UV coordinates of the currently shaded point) or custom shader parameters like colors, floats, textures, etc.
 	- Nodes represent operations that can be applied to data
 		- Nodes have input and output sockets with associated data types (similar to parameters and return values of methods)
+		- Connecting an output socket of one node with an input socket of another node causes data to be transferred from the first node to the second
+		- The output nodes only have input sockets and there are input nodes that only have output sockets
+			- Some input nodes may also have input sockets for parameters
+		- Inputs to the shader can come from the object itself (like its position in the world), mesh data (like the UV coordinates of the currently shaded point) or custom shader parameters like colors, floats, textures, etc.
+	- The "Vertex" component of a shader can be used to modify the visible geometry of the object
+		- The mesh data is not changed but the vectors returned by the shader are used to displace vertices and change their normals and tangents (affecting how light is reflected on the surface)
+		- We use the displacement feature to implement animations in some cases
 	- *Maybe create a page explaining some of the shaders (like hexagon expansion)*
 
 
@@ -67,13 +76,14 @@
 	- Materials are also assets that only exist once
 	- But multiple materials can use the same shader with different parameters
 	- Materials are assigned to objects, not the shaders themselves
+	- Example: All materials for the tool overlays use the same shader, just with different colors
 - Unity can render many copies of a mesh in different positions efficiently if they all share the same material
 - There is an extra mechanism that allows rendering meshes with the same base material but different parameters
 	- A MaterialPropertyBlock is a collection of parameters without an associated shader
 	- It can be passed to a render call to temporarily overwrite the shader parameters stored in a material
 		- This only affects the meshes rendered in that call
 - A lot of optimization work aims at grouping objects that use the same mesh and material together to draw them in parallel using the GPU
-
+	- The [`DrawMeshInstanced`](https://docs.unity3d.com/ScriptReference/Graphics.DrawMeshInstanced.html) method allows up to 1023 instances to be drawn simultaneously
 
 
 

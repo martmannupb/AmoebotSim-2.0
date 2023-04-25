@@ -33,6 +33,17 @@ namespace AS2.Visuals
         public Color graphics_color;
 
         /// <summary>
+        /// Possible movement phases of a particle.
+        /// </summary>
+        public enum ParticleMovement
+        {
+            Contracted,
+            Expanded,
+            Expanding,
+            Contracting
+        }
+
+        /// <summary>
         /// A snap of a position that is used to determine the current state of the particle.
         /// </summary>
         public struct PositionSnap
@@ -287,17 +298,6 @@ namespace AS2.Visuals
             throw new System.NotImplementedException();
         }
 
-
-        /// <summary>
-        /// Possible movement phases of a particle.
-        /// </summary>
-        public enum ParticleMovement
-        {
-            Contracted,
-            Expanded,
-            Expanding,
-            Contracting
-        }
     }
 
 }
