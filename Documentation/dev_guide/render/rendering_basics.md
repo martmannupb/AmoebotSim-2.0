@@ -83,9 +83,35 @@
 	- It can be passed to a render call to temporarily overwrite the shader parameters stored in a material
 		- This only affects the meshes rendered in that call
 - A lot of optimization work aims at grouping objects that use the same mesh and material together to draw them in parallel using the GPU
-	- The [`DrawMeshInstanced`](https://docs.unity3d.com/ScriptReference/Graphics.DrawMeshInstanced.html) method allows up to 1023 instances to be drawn simultaneously
+	- The [`DrawMeshInstanced`][2] method allows up to 1023 instances to be drawn simultaneously
+
+
+## Matrices and Instanced Drawing
+
+- Usually, rendering is handled implicitly because rendered objects are GameObjects with attached Mesh and Material components that are rendered automatically
+- But rendering hundreds or thousands of GameObjects quickly becomes inefficient and does not offer the flexibility we need, so we issue the render calls manually
+- The basic method call used to submit an object to the render engine programmatically is [`Graphics.DrawMesh(Mesh mesh, Matrix4x4 matrix, Material material, ..., MaterialPropertyBlock properties, ...)`][1].
+	- `mesh` is the mesh to be rendered
+	- `matrix` is a 4x4 matrix containing translation, rotation and scaling data
+		- It defines where the `mesh` is located, how it is oriented and how it is scaled
+		- This is usually the information that needs to be updated and/or animated most often
+	- `material` is the material used for shading the `mesh`
+	- `properties` is an optional block of material properties overriding the `material`'s default parameters
+- Unity is able to process multiple render calls in parallel using the GPU, if they use the same mesh and material
+	- For this, we call [`Graphics.DrawMeshInstanced(Mesh mesh, ..., Material material, Matrix4x4[] matrices, ..., MaterialPropertyBlock properties, ...)`][2] instead
+		- `mesh`, `material` and `properties` have the same purpose as before
+		- Instead of one matrix, we supply an array of matrices
+		- Up to 1023 instances of a mesh can be drawn this way
+	- This is much more efficient than calling [`DrawMesh(...)`][1] multiple times
+- In the rendering code, we try to submit render calls in _batches_ as often as possible
+	- I.e., used instanced draw calls for as many matrices at once as possible
+	- Need some complex structures to accomplish this
 
 
 
 
 TODO
+
+[1]: https://docs.unity3d.com/ScriptReference/Graphics.DrawMesh.html
+[2]: https://docs.unity3d.com/ScriptReference/Graphics.DrawMeshInstanced.html
+

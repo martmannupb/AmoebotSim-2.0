@@ -1,2 +1,4 @@
 - name: Particles
   href: particles.md
+- name: Shader Example
+  href: shader_example.md

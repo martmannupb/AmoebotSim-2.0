@@ -19,9 +19,6 @@
             "m_Id": "e3aa0de0f7144b04b5bc0a810b3f79ed"
         },
         {
-            "m_Id": "8646d95a95b244a297d67b6ef98b296d"
-        },
-        {
             "m_Id": "6662b58c6c2b4787a12b9d4b84d1d26f"
         },
         {
@@ -1996,9 +1993,6 @@
     "m_ChildObjectList": [
         {
             "m_Id": "ce785067c9f5128fa74b176db31821fd"
-        },
-        {
-            "m_Id": "8646d95a95b244a297d67b6ef98b296d"
         },
         {
             "m_Id": "6662b58c6c2b4787a12b9d4b84d1d26f"
@@ -5019,35 +5013,6 @@
 }
 
 {
-    "m_SGVersion": 3,
-    "m_Type": "UnityEditor.ShaderGraph.Internal.ColorShaderProperty",
-    "m_ObjectId": "8646d95a95b244a297d67b6ef98b296d",
-    "m_Guid": {
-        "m_GuidSerialized": "c459ec64-548b-45e4-8a41-67b44141c2b2"
-    },
-    "m_Name": "InnerColor",
-    "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "InnerColor",
-    "m_DefaultReferenceName": "_InnerColor",
-    "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
-    "m_UseCustomSlotLabel": false,
-    "m_CustomSlotLabel": "",
-    "m_Precision": 0,
-    "overrideHLSLDeclaration": false,
-    "hlslDeclarationOverride": 0,
-    "m_Hidden": false,
-    "m_Value": {
-        "r": 0.0,
-        "g": 0.0,
-        "b": 0.0,
-        "a": 0.0
-    },
-    "isMainColor": false,
-    "m_ColorMode": 0
-}
-
-{
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "87da5a83d7784dae9b964707e553220e",
@@ -5082,15 +5047,15 @@
     "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
     "m_ObjectId": "8a910a094ea845a2a62005f6dd4585aa",
     "m_Title": "HexExpansionShaderExtended",
-    "m_Content": "Renders a hexagonal particle before, after or during a movement.\nThe particle's head and tail have separate textures, the moving texture is indicated by the \"2\" suffix.\nEach part also has a separate texture for the fully contracted and fully expanded states, indicated by the \"100P\".\nThe animation percentage is interpolated between AnimPercentage1 and AnimPercentage2 based on AnimTriggerTime and AnimDuration.\nInputColor determines the fill color of the particle.\n",
+    "m_Content": "Renders a hexagonal particle before, after or during a movement.\nThe particle's head and tail have separate textures, the moving texture is indicated by the \"2\" suffix.\nEach part also has a separate texture for the fully contracted and fully expanded states, indicated by the \"100P\".\nThe animation percentage is interpolated between AnimPercentage1 and AnimPercentage2 based on AnimTriggerTime and AnimDuration.\nInputColor determines the fill color of the particle.\n\nInputs:\nInputColor: The fill color of the particle body. Will replace the white parts of the input textures\nTextureHexagon: Texture for the hexagon body's non-moving part during the movement\nTextureHexagon2: Texture for the hexagon body's moving part during the movement\nTextureHexagon100P: Texture for the hexagon body's non-moving part when fully expanded or contracted\nTextureHexagon100P2: Texture for the hexagon body's moving part when fully expanded or contracted\nTextureHexagonConnector: Texture for the connection piece between the two parts of the body. White parts will be replaced by InputColor\nTilingScale: Local scaling factors for the two hexagon parts of the body. Should be used to match the scaling of the hexagon texture to the mesh size/UV coordinates. Example: The particles are drawn onto a quad mesh of width 1.5 and height 1, the UV coordinates of the vertices are the corners of the unit square. Then, a square texture would be stretched to fit the whole mesh. A tiling scale of (1.5, 1) will counteract this stretching\nScale: Global scaling factor, applied to the two hexagons and the connector individually\nScalePivotOffset: Relative position of the scaling pivot, used individually for each texture. Use (0.5,0.5) to scale each texture around its center\nMeshRelativeUVOffset: UV coordinate offset applied to each hexagon texture individually. This has the same effect as moving the content of a texture inside of the texture's bounds\nBridgeScalePivotOffset: Same as ScalePivotOffset, but for the connector piece\nBridgeRelativeUVOffset: Same as MeshRelativeUVOffset, but for the connector piece\nAnimTriggerTime: The time at which the animation was triggered\nAnimDuration: The duration of an animation\nAnimPercentage1: The start expansion percentage of the animation\nAnimPercentage2: The end expansion percentage of the animation\nThe UV offset that should be applied to the moving part of the hexagon when it is expanded. This determines how far apart the two pieces of a fully expanded particle are",
     "m_TextSize": 2,
     "m_Theme": 0,
     "m_Position": {
         "serializedVersion": "2",
-        "x": -3116.800048828125,
+        "x": -4064.800048828125,
         "y": -124.0,
-        "width": 1029.60009765625,
-        "height": 1040.800048828125
+        "width": 1977.2880859375,
+        "height": 1609.08154296875
     },
     "m_Group": {
         "m_Id": ""
