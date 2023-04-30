@@ -129,6 +129,7 @@
 		- The `ExpansionMergeSubgraph` is another custom subgraph that simply takes the maximum value in each channel of the two given colors
 		<img src="~/images/shader_merge.png" alt="ExpansionMergeSubgraph" title="ExpansionMergeSubgraph" width="600"/>
 		- This last step achieves the smooth expansion and contraction effect that would otherwise be very difficult to achieve
+			- The white color of the textures overrides their black borders, which results in a combined shape with a white fill color and a continuous black border
 
 
 

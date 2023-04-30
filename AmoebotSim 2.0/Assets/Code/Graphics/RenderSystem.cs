@@ -97,10 +97,9 @@ namespace AS2.Visuals
         // The camera is at z layer -10, everything below that will not be visible
         public const float zLayer_background = 10f;
         public const float ZLayer_bonds = 9f;
-        public const float ZLayer_particlesBG = 5.1f;
-        public const float zLayer_particles = 5f;
-        public const float zLayer_circuits = 4f;
-        public const float zLayer_pins = 3f;
+        public const float zLayer_particles = 8f;
+        public const float zLayer_circuits = 7f;
+        public const float zLayer_pins = 6f;
         public const float zLayer_ui = -5f;
         // Global Data
         /// <summary>

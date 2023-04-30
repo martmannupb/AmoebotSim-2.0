@@ -1218,23 +1218,23 @@ namespace AS2.Visuals
             }
         }
 
-    /// <summary>
-    /// Renders everything stored in the render batches.
-    /// </summary>
-    /// <param name="type"></param>
-    public void Render(ViewType type)
-    {
-        bool firstRenderFrame = isRenderingActive == false;
-        foreach (var batch in propertiesToRenderBatchMap.Values)
+        /// <summary>
+        /// Renders everything stored in the render batches.
+        /// </summary>
+        /// <param name="type"></param>
+        public void Render(ViewType type)
         {
-            batch.Render(type, firstRenderFrame);
+            bool firstRenderFrame = isRenderingActive == false;
+            foreach (var batch in propertiesToRenderBatchMap.Values)
+            {
+                batch.Render(type, firstRenderFrame);
+            }
+            foreach (var batch in propertiesToPinRenderBatchMap.Values)
+            {
+                batch.Render(type, firstRenderFrame);
+            }
+            isRenderingActive = true;
         }
-        foreach (var batch in propertiesToPinRenderBatchMap.Values)
-        {
-            batch.Render(type, firstRenderFrame);
-        }
-        isRenderingActive = true;
-    }
 
         /// <summary>
         /// Clears or nullifies the matrices to reset the data structures.
