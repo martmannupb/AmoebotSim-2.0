@@ -17,7 +17,16 @@ namespace AS2.Visuals
     public class RendererCircuits_Instance
     {
 
+        /// <summary>
+        /// Map of render batches for all line-like elements: Circuit lines
+        /// inside and outside of particles, their beep highlights, and bonds.
+        /// </summary>
         public Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch>();
+        /// <summary>
+        /// Map of render batches for all circle-like elements: Partition set
+        /// handles, their beep highlights, and circles at circuit line
+        /// junctions covering the sharp edges.
+        /// </summary>
         public Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch> propertiesToPinRenderBatchMap = new Dictionary<RendererCircuitPins_RenderBatch.PropertyBlockData, RendererCircuitPins_RenderBatch>();
 
         // Data
@@ -31,13 +40,32 @@ namespace AS2.Visuals
         private List<float> degreeList = new List<float>(16);
         private List<Vector2> vectorList = new List<Vector2>(16);
         private PriorityQueue<ParticlePinGraphicState.PSetData> pSetSortingList = new PriorityQueue<ParticlePinGraphicState.PSetData>();
-        //private SortedList<float, ParticlePinGraphicState.PSetData> pSetSortingList = new SortedList<float, ParticlePinGraphicState.PSetData>();
 
+        /// <summary>
+        /// Represents the graphical data related to the circuit
+        /// information of a single particle. Provides methods to
+        /// check whether a partition set of the particle is near a
+        /// given position and to update the partition set and
+        /// circuit connector positions (used for the partition set
+        /// dragging feature).
+        /// </summary>
         public struct ParticleCircuitData
         {
+            /// <summary>
+            /// The render instance to which the data belongs.
+            /// </summary>
             public RendererCircuits_Instance instance;
+            /// <summary>
+            /// The particle's graphical data.
+            /// </summary>
             public ParticleGraphicsAdapterImpl particle;
+            /// <summary>
+            /// The particle's graphical circuit data.
+            /// </summary>
             public ParticlePinGraphicState state;
+            /// <summary>
+            /// The particle's current position and movement snapshot.
+            /// </summary>
             public ParticleGraphicsAdapterImpl.PositionSnap snap;
 
             public ParticleCircuitData(RendererCircuits_Instance instance, ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap)
@@ -48,6 +76,12 @@ namespace AS2.Visuals
                 this.snap = snap;
             }
 
+            /// <summary>
+            /// Represents a single inner "pin", which can be a
+            /// partition set handle or a circuit line connector.
+            /// Stores the pin's position and a reference to the
+            /// partition set data.
+            /// </summary>
             public struct PSetInnerPinRef
             {
                 /// <summary>
@@ -78,8 +112,18 @@ namespace AS2.Visuals
                     PConnector2
                 }
 
+                /// <summary>
+                /// The graphical data of the partition set to which
+                /// the pin/handle belongs.
+                /// </summary>
                 public ParticlePinGraphicState.PSetData pSet;
+                /// <summary>
+                /// The type of the handle.
+                /// </summary>
                 public PinType pinType;
+                /// <summary>
+                /// The absolute world position of the handle.
+                /// </summary>
                 public Vector2 pinPos;
 
                 public PSetInnerPinRef(ParticlePinGraphicState.PSetData pSet, PinType pinType, Vector2 pinPos)
@@ -287,7 +331,39 @@ namespace AS2.Visuals
                         break;
                 }
             }
-        
+        }
+
+        /// <summary>
+        /// A reference to graphical data belongig to a single
+        /// partition set, combined with information on a line
+        /// or partition set handle.
+        /// </summary>
+        public struct GDRef
+        {
+            // Defaults
+            public static GDRef Empty = new GDRef(); // valid = false
+
+            // Variables
+            public ParticlePinGraphicState.PSetData.GraphicalData gd;
+            public bool isLine;
+            public bool isHead;
+            public bool isConnector; // for both lines and pins
+            // Line
+            public int lineIndex;
+            // Pin
+            // -
+            // Validity
+            public bool valid;
+
+            public GDRef(ParticlePinGraphicState.PSetData.GraphicalData gd, bool isLine, bool isHead, bool isConnector, int lineIndex = -1)
+            {
+                this.gd = gd;
+                this.isLine = isLine;
+                this.isHead = isHead;
+                this.isConnector = isConnector;
+                this.lineIndex = lineIndex;
+                this.valid = true;
+            }
         }
 
         /// <summary>
@@ -396,10 +472,12 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// 
+        /// Sets the positions of all partition set handles in the given
+        /// particle according to the positioning settings and placement type.
         /// </summary>
-        /// <param name="circuitData"></param>
-        /// <param name="pSetViewType_global"></param>
+        /// <param name="circuitData">The circuit data belonging to a single particle.</param>
+        /// <param name="pSetViewType_global">The current partition set view type
+        /// set by the user.</param>
         private void CalculatePartitionSetPositions(ParticleCircuitData circuitData, PartitionSetViewType pSetViewType_global)
         {
             // Precalculations
@@ -769,9 +847,9 @@ namespace AS2.Visuals
                     GDRef gdRef_lines1 = new GDRef(gd, true, true, false, 0);
                     GDRef gdRef_lines2 = new GDRef(gd, true, false, false, 0);
                     // 1. Add Pins + Connectors + Internal Lines
-                    if(pSet.graphicalData.hasPinsInHead) AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
-                    if(pSet.graphicalData.hasPinsInTail) AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
-                    if(pSet.HasPinsInHeadAndTail())
+                    if (pSet.graphicalData.hasPinsInHead) AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
+                    if (pSet.graphicalData.hasPinsInTail) AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
+                    if (pSet.HasPinsInHeadAndTail())
                     {
                         AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset, new GDRef(gd, false, true, true));
                         AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset, new GDRef(gd, false, false, true));
@@ -996,34 +1074,6 @@ namespace AS2.Visuals
             {
                 StoreRenderBatchIndex(gdRef, index, false, false);
                 gdRef.gd.properties_connectorPin = batch.properties;
-            }
-        }
-
-        public struct GDRef
-        {
-            // Defaults
-            public static GDRef Empty = new GDRef(); // valid = false
-
-            // Variables
-            public ParticlePinGraphicState.PSetData.GraphicalData gd;
-            public bool isLine;
-            public bool isHead;
-            public bool isConnector; // for both lines and pins
-            // Line
-            public int lineIndex;
-            // Pin
-            // -
-            // Validity
-            public bool valid;
-
-            public GDRef(ParticlePinGraphicState.PSetData.GraphicalData gd, bool isLine, bool isHead, bool isConnector, int lineIndex = -1)
-            {
-                this.gd = gd;
-                this.isLine = isLine;
-                this.isHead = isHead;
-                this.isConnector = isConnector;
-                this.lineIndex = lineIndex;
-                this.valid = true;
             }
         }
 
