@@ -829,7 +829,7 @@ namespace AS2.Visuals
                         {
                             ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
                             Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                            Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                            Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                             AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                         }
                     }
@@ -891,7 +891,7 @@ namespace AS2.Visuals
                 // Outter Line
                 if (state.hasNeighbor1[pin.globalDir])
                 {
-                    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                    Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
                     AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     globalDirLineSet1[pin.globalDir] = true;
@@ -907,7 +907,7 @@ namespace AS2.Visuals
                 // Outter Line
                 if (state.hasNeighbor1[pin.globalDir])
                 {
-                    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                    Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
                     AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     globalDirLineSet1[pin.globalDir] = true;
@@ -946,7 +946,7 @@ namespace AS2.Visuals
                 // Outter Line
                 if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
                 {
-                    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
+                    Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
                     AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
@@ -963,7 +963,7 @@ namespace AS2.Visuals
                 // Outter Line
                 if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
                 {
-                    Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
+                    Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
                     AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
@@ -987,7 +987,7 @@ namespace AS2.Visuals
                     {
                         ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, true);
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                        Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                         bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
                         AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                     }
@@ -998,7 +998,7 @@ namespace AS2.Visuals
                     {
                         ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, false);
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
-                        Vector2 posOutterLineCenter = CalculateGlobalOutterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
+                        Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
                         bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection2[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
                         AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                     }
@@ -1008,6 +1008,23 @@ namespace AS2.Visuals
 
 
 
+        /// <summary>
+        /// Adds a line to the render system, using the corresponding render
+        /// batch or creating a new one.
+        /// </summary>
+        /// <param name="globalLineStartPos">The global start position of the line.</param>
+        /// <param name="globalLineEndPos">The global end position of the line.</param>
+        /// <param name="color">The color in which the line should be rendered.</param>
+        /// <param name="isConnectorLine">Whether this line is a connection between
+        /// two neighboring particles.</param>
+        /// <param name="delayed">Whether this line should be displayed with a delay
+        /// so that it only appears after any movement animations are finished.</param>
+        /// <param name="beeping">Whether a beep should be displayed on this line.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from the
+        /// line's end position after its movement to its start position.</param>
+        /// <param name="gdRef">Graphical data belonging to the line.</param>
+        /// <param name="gdRef_beep">Graphical data belonging to the beep. Should usually
+        /// be the same as <paramref name="gdRef"/>.</param>
         private void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
         {
             // Normal Circuit
@@ -1036,6 +1053,20 @@ namespace AS2.Visuals
             }
         }
 
+        /// <summary>
+        /// Adds a pin/partition set handle to the render system, using the corresponding
+        /// render batch or creating a new one.
+        /// </summary>
+        /// <param name="pinPos">The global position of the pin.</param>
+        /// <param name="color">The color in which the pin should be rendered.</param>
+        /// <param name="delayed">Whether this pin should be displayed with a delay
+        /// so that it only appears after any movement animations are finished.</param>
+        /// <param name="beeping">Whether a beep should be displayed on this pin.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from the
+        /// pin's end position after its movement to its start position.</param>
+        /// <param name="gdRef">Graphical data belonging to the pin.</param>
+        /// <param name="gdRef_beep">Graphical data belonging to the beep. Should usually
+        /// be the same as <paramref name="gdRef"/>.</param>
         private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
         {
             RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
@@ -1059,6 +1090,16 @@ namespace AS2.Visuals
         }
 
 
+        /// <summary>
+        /// Adds a beep highlight to the pin of a singleton partition set.
+        /// </summary>
+        /// <param name="pinPos">The global position of the pin.</param>
+        /// <param name="color">The color of the partition set (will
+        /// not be rendered; the beep highlight is always light gray).</param>
+        /// <param name="delayed">Whether the pin and beep should appear delayed
+        /// because the particle is performing a movement.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the pin's end position after its movement to its start position.</param>
         private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
         {
             // Beep
@@ -1066,6 +1107,19 @@ namespace AS2.Visuals
             batch.AddPin(pinPos, true);
         }
 
+        /// <summary>
+        /// Adds a colored circle at the position where two internal
+        /// circuit lines meet to cover the sharp edges.
+        /// </summary>
+        /// <param name="pinPos">The global position where the circle
+        /// should be drawn.</param>
+        /// <param name="color">The color of the circuit to which the
+        /// circle belongs.</param>
+        /// <param name="delayed">Whether the circle should appear delayed
+        /// because the particle is performing a movement.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from the
+        /// pin's end position after its movement to its start position.</param>
+        /// <param name="gdRef">Graphical data belonging to the partition set.</param>
         private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
             RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
@@ -1077,6 +1131,17 @@ namespace AS2.Visuals
             }
         }
 
+        /// <summary>
+        /// Stores the given batch index in the corresponding
+        /// field of the graphical data struct.
+        /// </summary>
+        /// <param name="gdRef">The graphical data struct in which the
+        /// batch index should be stored.</param>
+        /// <param name="index">The render batch index to be stored.</param>
+        /// <param name="isLine">Whether the index belongs to a
+        /// circuit line.</param>
+        /// <param name="isBeep">Whether the index belongs to an
+        /// object that is currently beeping.</param>
         private void StoreRenderBatchIndex(GDRef gdRef, RenderBatchIndex index, bool isLine, bool isBeep)
         {
             if(gdRef.valid == false)
@@ -1160,11 +1225,14 @@ namespace AS2.Visuals
         /// </summary>
         /// <param name="color">The color of the line.</param>
         /// <param name="lineType">The type of the line.</param>
-        /// <param name="delayed">If the line should be shown delayed.</param>
-        /// <param name="beeping">If the line should beep.</param>
-        /// <param name="animated">If this batch is updated manually each frame.</param>
-        /// <param name="movementOffset">The offset for the joint movement. Set to Vector2.zero if no jm is present.</param>
-        /// <returns></returns>
+        /// <param name="delayed">Whether the line should be shown delayed.</param>
+        /// <param name="beeping">Whether the line should beep.</param>
+        /// <param name="animated">Whether  this batch is updated manually each frame.</param>
+        /// <param name="movementOffset">The offset for the joint movement. Set to
+        /// <c>Vector2.zero</c> if no joint movement is present.</param>
+        /// <param name="activeState">The state of the simulator for which the
+        /// line should be drawn.</param>
+        /// <returns>A render batch that renders all lines with the given properties.</returns>
         private RendererCircuits_RenderBatch GetBatch_Line(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated, Vector2 movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState activeState = RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActiveOrPaused)
         {
             return GetBatch_Line(new RendererCircuits_RenderBatch.PropertyBlockData(color, lineType, delayed, beeping, animated, movementOffset, activeState));
@@ -1174,7 +1242,7 @@ namespace AS2.Visuals
         /// Returns the fitting batch for rendering lines.
         /// </summary>
         /// <param name="propertyBlockData">The properties of the batch.</param>
-        /// <returns></returns>
+        /// <returns>A render batch that renders all lines with the given properties.</returns>
         private RendererCircuits_RenderBatch GetBatch_Line(RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData)
         {
             RendererCircuits_RenderBatch batch;
@@ -1195,11 +1263,12 @@ namespace AS2.Visuals
         /// <summary>
         /// Returns the fitting batch for rendering pins.
         /// </summary>
-        /// <param name="color"></param>
-        /// <param name="delayed"></param>
-        /// <param name="beeping"></param>
-        /// <param name="movementOffset">The offset for the joint movement. Set to Vector2.zero if no jm is present.</param>
-        /// <returns></returns>
+        /// <param name="color">The color of the pin.</param>
+        /// <param name="delayed">Whether the pin should be shown delayed.</param>
+        /// <param name="beeping">Whether the pin should beep.</param>
+        /// <param name="movementOffset">The offset for the joint movement. Set to
+        /// <c>Vector2.zero</c> if no joint movement is present.</param>
+        /// <returns>A render batch that renders all pins with the given properties.</returns>
         private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping, Vector2 movementOffset)
         {
             return GetBatch_Pin(new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping, movementOffset));
@@ -1209,7 +1278,7 @@ namespace AS2.Visuals
         /// Returns the fitting batch for rendering pins.
         /// </summary>
         /// <param name="properties">The properties of the batch.</param>
-        /// <returns></returns>
+        /// <returns>A render batch that renders all pins with the given properties.</returns>
         private RendererCircuitPins_RenderBatch GetBatch_Pin(RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData)
         {
             RendererCircuitPins_RenderBatch batch;
@@ -1230,7 +1299,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Adds a single bond to the system.
         /// </summary>
-        /// <param name="bondState"></param>
+        /// <param name="bondState">Graphical information belonging to the bond.</param>
+        /// <param name="addToBondData">Whether this is a new bond that should be
+        /// stored (set to <c>false</c> if this is just a refresh).</param>
         public void AddBond(ParticleBondGraphicState bondState, bool addToBondData = true)
         {
             // Store Data
@@ -1254,7 +1325,7 @@ namespace AS2.Visuals
 
 
         /// <summary>
-        /// Reinitializes the Batches. Helpful in case settings have been changed.
+        /// Reinitializes all batches. Helpful in case settings have been changed.
         /// </summary>
         public void ReinitBatches()
         {
@@ -1271,7 +1342,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Renders everything stored in the render batches.
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="type">The visualization mode that should
+        /// be used to render the system. Determines what shape
+        /// the particles have and whether circuits should be drawn.</param>
         public void Render(ViewType type)
         {
             bool firstRenderFrame = isRenderingActive == false;
@@ -1289,6 +1362,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Clears or nullifies the matrices to reset the data structures.
         /// </summary>
+        /// <param name="keepCircuitData">Whether circuit data should be kept in the system.</param>
+        /// <param name="keepBondData">Whether bond data should be kept in the system.</param>
         public void Clear(bool keepCircuitData = false, bool keepBondData = false)
         {
             foreach (var batch in propertiesToRenderBatchMap.Values)
@@ -1320,13 +1395,17 @@ namespace AS2.Visuals
         }
 
 
+        // Helper methods
 
-
-
-
-
-
-
+        /// <summary>
+        /// Calculates the global position of a specific pin belonging
+        /// to a particle.
+        /// </summary>
+        /// <param name="gridPosParticle">The grid coordinates of the particle
+        /// that contains the pin.</param>
+        /// <param name="pinDef">The pin whose position should be calculated.</param>
+        /// <param name="pinsPerSide">The number of pins on each edge of the particle.</param>
+        /// <returns>The absolute world coordinates of the pin.</returns>
         private Vector2 CalculateGlobalPinPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
         {
             Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(gridPosParticle);
@@ -1334,37 +1413,97 @@ namespace AS2.Visuals
             return posParticle + relPinPos;
         }
 
+        /// <summary>
+        /// Calculates the global position of a partition set handle
+        /// inside of a particle by distributing the sets along a
+        /// rotated line.
+        /// </summary>
+        /// <param name="gridPosParticle">The grid coordinates of the particle that
+        /// contains the partition set.</param>
+        /// <param name="partitionSetID">The index of the partition set in
+        /// the considered part of the particle (head/tail).</param>
+        /// <param name="amountOfPartitionSetsAtNode">The number of partition
+        /// sets that should be distributed in this part of the particle.</param>
+        /// <param name="rotationDegrees">The rotation of the line in degrees.
+        /// 0 means the line is vertical, increasing degrees rotate the line
+        /// counter-clockwise.</param>
+        /// <param name="invertPositions">Whether the partition set indices
+        /// should increase from bottom to top instead of top to bottom.</param>
+        /// <returns>The absolute world coordinates of the partition set hanlde.</returns>
         private Vector2 CalculateGlobalPartitionSetPinPosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
         {
             Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(gridPosParticle);
             return posParticle + CalculateRelativePartitionSetPinPosition(partitionSetID, amountOfPartitionSetsAtNode, rotationDegrees, invertPositions);
         }
 
+        /// <summary>
+        /// Calculates the global position of a circuit connector
+        /// inside of an expanded particle by distributing the sets
+        /// along a rotated and offset line.
+        /// </summary>
+        /// <param name="gridPosParticle">The grid coordinates of the particle
+        /// containing the connector.</param>
+        /// <param name="partitionSetID">The index of the partition set in
+        /// the considered part of the particle (head/tail).</param>
+        /// <param name="amountOfPartitionSetsAtNode">The number of partition
+        /// set connectors that should be distributed in this part of the particle.</param>
+        /// <param name="rotationDegrees">The rotation of the line in degrees.
+        /// 0 means the line is vertical, increasing degrees rotate the line
+        /// counter-clockwise.</param>
+        /// <param name="invertPositions">Whether the partition set indices
+        /// should increase from bottom to top instead of top to bottom.</param>
+        /// <returns>The absolute world coordinates of the circuit connector.</returns>
         private Vector2 CalculateGlobalExpandedPartitionSetCenterNodePosition(Vector2Int gridPosParticle, int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
         {
             Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(gridPosParticle);
             return posParticle + CalculateRelativeExpandedPartitionSetCenterNodePosition(partitionSetID, amountOfPartitionSetsAtNode, rotationDegrees, invertPositions);
         }
 
-        private Vector2 CalculateGlobalOutterPinLineCenterPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
+        /// <summary>
+        /// Calculates the global position of the center of a
+        /// pin connection between two particles.
+        /// </summary>
+        /// <param name="gridPosParticle">The grid coordinates of
+        /// one of the particles.</param>
+        /// <param name="pinDef">The pin belonging to the first particle.</param>
+        /// <param name="pinsPerSide">The number of pins each particle
+        /// has on each edge.</param>
+        /// <returns>The absolute world coordinates of the position exactly
+        /// between the specified pin and its neighboring counterpart.</returns>
+        private Vector2 CalculateGlobalOuterPinLineCenterPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
         {
             Vector2 pinPos = CalculateGlobalPinPosition(gridPosParticle, pinDef, pinsPerSide);
-            //Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(new ParticlePinGraphicState.PinDef(pinDef.globalDir, pinDef.dirID, pinDef.isHead), pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
 
             // Calculate neighbor pin position
             ParticlePinGraphicState.PinDef pinDefNeighbor = new ParticlePinGraphicState.PinDef((pinDef.globalDir + 3) % 6, pinsPerSide - 1 - pinDef.dirID, pinDef.isHead);
             Vector2Int gridPosNeighbor = AmoebotFunctions.GetNeighborPosition(gridPosParticle, pinDef.globalDir);
             Vector2 pinPosNeighbor = CalculateGlobalPinPosition(gridPosNeighbor, pinDefNeighbor, pinsPerSide);
-            //Vector2 relNeighborPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDefNeighbor, pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
             return pinPos + ((pinPosNeighbor - pinPos) / 2f);
         }
 
+        /// <summary>
+        /// Calculates the relative position of a partition set handle
+        /// inside of a particle by distributing the sets along a
+        /// rotated line.
+        /// </summary>
+        /// <param name="partitionSetID">The index of the partition set in
+        /// the considered part of the particle (head/tail).</param>
+        /// <param name="amountOfPartitionSetsAtNode">The number of partition
+        /// sets that should be distributed in this part of the particle.</param>
+        /// <param name="rotationDegrees">The rotation of the line in degrees.
+        /// 0 means the line is vertical, increasing degrees rotate the line
+        /// counter-clockwise.</param>
+        /// <param name="invertPositions">Whether the partition set indices
+        /// should increase from bottom to top instead of top to bottom.</param>
+        /// <returns>The world coordinates of the partition set hanlde relative
+        /// to the particle center.</returns>
         private Vector2 CalculateRelativePartitionSetPinPosition(int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
         {
             if (amountOfPartitionSetsAtNode == 1) return Vector2.zero;
             else
             {
                 float lineLength;
+                // Use a longer line if there are more partition sets
                 switch (amountOfPartitionSetsAtNode)
                 {
                     case 2:
@@ -1378,14 +1517,32 @@ namespace AS2.Visuals
                         break;
                 }
                 float height;
-                if (invertPositions) height = (lineLength / 2f) - (amountOfPartitionSetsAtNode - partitionSetID - 1) * (lineLength / (amountOfPartitionSetsAtNode - 1));
-                else height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
+                if (invertPositions)
+                    height = (lineLength / 2f) - (amountOfPartitionSetsAtNode - partitionSetID - 1) * (lineLength / (amountOfPartitionSetsAtNode - 1));
+                else
+                    height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
                 Vector2 position = new Vector2(0f, height);
                 position = Quaternion.Euler(0f, 0f, rotationDegrees) * position;
                 return position;
             }
         }
 
+        /// <summary>
+        /// Calculates the relative position of a circuit connector
+        /// inside of an expanded particle by distributing the sets
+        /// along a rotated and offset line.
+        /// </summary>
+        /// <param name="partitionSetID">The index of the partition set in
+        /// the considered part of the particle (head/tail).</param>
+        /// <param name="amountOfPartitionSetsAtNode">The number of partition
+        /// set connectors that should be distributed in this part of the particle.</param>
+        /// <param name="rotationDegrees">The rotation of the line in degrees.
+        /// 0 means the line is vertical, increasing degrees rotate the line
+        /// counter-clockwise.</param>
+        /// <param name="invertPositions">Whether the partition set indices
+        /// should increase from bottom to top instead of top to bottom.</param>
+        /// <returns>The world coordinates of the circuit connector relative
+        /// to the particle center.</returns>
         private Vector2 CalculateRelativeExpandedPartitionSetCenterNodePosition(int partitionSetID, int amountOfPartitionSetsAtNode, float rotationDegrees, bool invertPositions)
         {
             float relXPos = RenderSystem.global_particleScale * 0.5f * 0.85f;
@@ -1407,8 +1564,10 @@ namespace AS2.Visuals
                         break;
                 }
                 float height;
-                if (invertPositions) height = (lineLength / 2f) - (amountOfPartitionSetsAtNode - partitionSetID - 1) * (lineLength / (amountOfPartitionSetsAtNode - 1));
-                else height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
+                if (invertPositions)
+                    height = (lineLength / 2f) - (amountOfPartitionSetsAtNode - partitionSetID - 1) * (lineLength / (amountOfPartitionSetsAtNode - 1));
+                else
+                    height = (lineLength / 2f) - partitionSetID * (lineLength / (amountOfPartitionSetsAtNode - 1));
                 Vector2 position = new Vector2(relXPos, height);
                 position = Quaternion.Euler(0f, 0f, rotationDegrees) * position;
                 return position;
@@ -1421,6 +1580,11 @@ namespace AS2.Visuals
 
         // Functions __________________________________
 
+        /// <summary>
+        /// Gets the circuit data belonging to the given particle.
+        /// </summary>
+        /// <param name="p">The particle whose circuit data to return.</param>
+        /// <returns>The circuit data belonging to <paramref name="p"/>.</returns>
         public ParticleCircuitData GetParticleCircuitData(ParticleGraphicsAdapterImpl p)
         {
             ParticleCircuitData d;

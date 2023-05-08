@@ -317,8 +317,8 @@ namespace AS2
         /// <summary>
         /// Calculates the relative pin position in world space
         /// relative to the particle center based on the abstract
-        /// pin position definition, the number of particles, the
-        /// scale and the viewType.
+        /// pin position definition, the number of pins, the
+        /// scale and the view type.
         /// </summary>
         /// <param name="pinDef">The pin whose position to calculate.</param>
         /// <param name="pinsPerSide">The number of pins per side.</param>
