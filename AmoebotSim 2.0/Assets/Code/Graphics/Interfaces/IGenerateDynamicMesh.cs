@@ -17,7 +17,6 @@ namespace AS2.Visuals
         /// Regenerates the meshes of this class.
         /// </summary>
         void RegenerateMeshes();
-
     }
 
 }

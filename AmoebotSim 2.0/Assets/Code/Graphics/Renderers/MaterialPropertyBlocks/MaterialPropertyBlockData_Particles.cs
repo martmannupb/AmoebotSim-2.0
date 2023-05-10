@@ -109,7 +109,6 @@ namespace AS2.Visuals
             property_expansionPercentage2 = animation_expansionPercentage2;
             property_animationOffset = animation_offset;
             property_animationStaticOffset = animation_staticOffset;
-            //property_width = width;
             // Apply
             ApplyToBlock();
         }

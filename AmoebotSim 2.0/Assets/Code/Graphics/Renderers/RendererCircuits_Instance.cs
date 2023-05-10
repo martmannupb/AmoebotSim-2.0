@@ -777,7 +777,7 @@ namespace AS2.Visuals
         /// <param name="snap">The particle's position and movement data.</param>
         /// <param name="pSetViewType">The view type that the circuits should be drawn with.</param>
         /// <param name="addToCircuitData">Whether the given input should be added to the
-        /// circuit data. True by default, set to <c>false</c> when doing something like
+        /// circuit data. <c>true</c> by default, set to <c>false</c> when doing something like
         /// refreshing the circuits.</param>
         public void AddCircuits(ParticleGraphicsAdapterImpl particle, ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, PartitionSetViewType pSetViewType, bool addToCircuitData = true)
         {
@@ -829,8 +829,8 @@ namespace AS2.Visuals
                         {
                             ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
                             Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                            Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                            AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
+                            Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                            AddLine(posPin, posOuterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                         }
                     }
                 }
@@ -879,6 +879,22 @@ namespace AS2.Visuals
             }
         }
 
+        /// <summary>
+        /// Adds the internal and external circuit lines belonging to a
+        /// partition set of a contracted particle.
+        /// </summary>
+        /// <param name="state">The graphical circuit information belonging
+        /// to the particle.</param>
+        /// <param name="snap">The position snapshot of the particle.</param>
+        /// <param name="pSet">The partition set whose lines should be added.</param>
+        /// <param name="posPartitionSet">The global position of the
+        /// partition set handle.</param>
+        /// <param name="delayed">Whether the partition set and its lines should
+        /// be displayed after a delay.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the particle's end position after its movement to its start position.</param>
+        /// <param name="gdRef">The graphical data struct in which the new graphical
+        /// information should be stored.</param>
         private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
             foreach (var pin in pSet.pins)
@@ -888,28 +904,41 @@ namespace AS2.Visuals
                 gdRef.gd.pSet1_pins.Add(pin);
                 AddLine(posPartitionSet, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef, gdRef);
                 gdRef.lineIndex++;
-                // Outter Line
+                // Outer Line
                 if (state.hasNeighbor1[pin.globalDir])
                 {
-                    Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                    Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
+                    AddLine(posPin, posOuterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     globalDirLineSet1[pin.globalDir] = true;
                 }
             }
         }
 
+        /// <summary>
+        /// Adds the external circuit lines belonging to a singleton
+        /// partition set of a contracted particle. Also adds a beep
+        /// highlight if the partition set is a beep origin.
+        /// </summary>
+        /// <param name="state">The graphical circuit information belonging
+        /// to the particle.</param>
+        /// <param name="snap">The position snapshot of the particle.</param>
+        /// <param name="pSet">The partition set whose lines should be added.</param>
+        /// <param name="delayed">Whether the partition set and its lines should
+        /// be displayed after a delay.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the particle's end position after its movement to its start position.</param>
         private void AddLines_SingletonSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool delayed, Vector2 movementOffset)
         {
             foreach (var pin in pSet.pins)
             {
                 Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                // Outter Line
+                // Outer Line
                 if (state.hasNeighbor1[pin.globalDir])
                 {
-                    Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                    Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
+                    AddLine(posPin, posOuterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     globalDirLineSet1[pin.globalDir] = true;
                 }
                 // Beep Origin
@@ -920,6 +949,26 @@ namespace AS2.Visuals
             }
         }
 
+        /// <summary>
+        /// Adds the internal and external circuit lines belonging to a
+        /// partition set of an expanded particle.
+        /// </summary>
+        /// <param name="state">The graphical circuit information belonging
+        /// to the particle.</param>
+        /// <param name="snap">The position snapshot of the particle.</param>
+        /// <param name="pSet">The partition set whose lines should be added.</param>
+        /// <param name="posPartitionSet1">The global position of the
+        /// partition set handle in the particle's head.</param>
+        /// <param name="posPartitionSet1">The global position of the
+        /// partition set handle in the particle's tail.</param>
+        /// <param name="delayed">Whether the partition set and its lines should
+        /// be displayed after a delay.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the particle's end position after its movement to its start position.</param>
+        /// <param name="gdRef_lines1">The graphical data struct in which the new graphical
+        /// information for the head lines should be stored.</param>
+        /// <param name="gdRef_lines2">The graphical data struct in which the new graphical
+        /// information for the tail lines should be stored.</param>
         private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool delayed, Vector2 movementOffset, GDRef gdRef_lines1, GDRef gdRef_lines2)
         {
             foreach (var pin in pSet.pins)
@@ -932,7 +981,6 @@ namespace AS2.Visuals
                     gdRef_lines1.gd.pSet1_pins.Add(pin);
                     AddLine(posPartitionSet1, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
                     gdRef_lines1.lineIndex++;
-                    //gdRef_lines1_beep.lineIndex++;
                 }
                 else
                 {
@@ -940,32 +988,46 @@ namespace AS2.Visuals
                     gdRef_lines2.gd.pSet2_pins.Add(pin);
                     AddLine(posPartitionSet2, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines2);
                     gdRef_lines2.lineIndex++;
-                    //gdRef_lines2_beep.lineIndex++;
                 }
 
-                // Outter Line
+                // Outer Line
                 if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
                 {
-                    Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
+                    Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
-                    if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
-                    else globalDirLineSet2[pin.globalDir] = true;
+                    AddLine(posPin, posOuterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
+                    if (pin.isHead)
+                        globalDirLineSet1[pin.globalDir] = true;
+                    else
+                        globalDirLineSet2[pin.globalDir] = true;
                 }
             }
         }
 
+        /// <summary>
+        /// Adds the internal and external circuit lines belonging to a
+        /// singleton partition set of an expanded particle. Also adds a
+        /// beep highlight if the partition set is a beep origin.
+        /// </summary>
+        /// <param name="state">The graphical circuit information belonging
+        /// to the particle.</param>
+        /// <param name="snap">The position snapshot of the particle.</param>
+        /// <param name="pSet">The partition set whose lines should be added.</param>
+        /// <param name="delayed">Whether the partition set and its lines should
+        /// be displayed after a delay.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the particle's end position after its movement to its start position.</param>
         private void AddLines_SingletonSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool delayed, Vector2 movementOffset)
         {
             foreach (var pin in pSet.pins)
             {
                 Vector2 posPin = CalculateGlobalPinPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
-                // Outter Line
+                // Outer Line
                 if (pin.isHead ? state.hasNeighbor1[pin.globalDir] : state.hasNeighbor2[pin.globalDir])
                 {
-                    Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
+                    Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
-                    AddLine(posPin, posOutterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
+                    AddLine(posPin, posOuterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
                     if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
                     else globalDirLineSet2[pin.globalDir] = true;
                 }
@@ -977,6 +1039,18 @@ namespace AS2.Visuals
             }
         }
 
+        /// <summary>
+        /// Adds the external circuit lines that have not been
+        /// added yet (typically the ones that do not belong
+        /// to a partition set).
+        /// </summary>
+        /// <param name="state">The graphical circuit information belonging
+        /// to the particle.</param>
+        /// <param name="snap">The position snapshot of the particle.</param>
+        /// <param name="delayed">Whether the lines should be
+        /// displayed after a delay.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the particle's end position after its movement to its start position.</param>
         private void AddLines_ExternalWithoutPartitionSet(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, bool delayed, Vector2 movementOffset)
         {
             for (int k = 0; k < 6; k++)
@@ -987,9 +1061,9 @@ namespace AS2.Visuals
                     {
                         ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, true);
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                        Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
+                        Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                         bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
+                        AddLine(posPin, posOuterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                     }
                 }
                 if (state.hasNeighbor2[k] && globalDirLineSet2[k] == false && ((state.neighbor1ToNeighbor2Direction + 3) % 6) != k)
@@ -998,9 +1072,9 @@ namespace AS2.Visuals
                     {
                         ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, false);
                         Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
-                        Vector2 posOutterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
+                        Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
                         bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection2[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        AddLine(posPin, posOutterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
+                        AddLine(posPin, posOuterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
                     }
                 }
             }
