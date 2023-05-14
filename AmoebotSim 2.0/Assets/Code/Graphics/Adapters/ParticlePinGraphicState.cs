@@ -34,20 +34,57 @@ namespace AS2.Visuals
         }
 
         // General Data
+        /// <summary>
+        /// The number of pins on each edge of a particle.
+        /// </summary>
         public int pinsPerSide;
 
         // State
         // INTERFACE ADDITION
-        public NeighborPinConnection[] neighborPinConnection1 = new NeighborPinConnection[6]; // should replace/expand hasNeighbor1
-        public NeighborPinConnection[] neighborPinConnection2 = new NeighborPinConnection[6]; // should replace/expand hasNeighbor2
+        /// <summary>
+        /// Types of pins connected to the particle's head.
+        /// Indices are global directions.
+        /// </summary>
+        public NeighborPinConnection[] neighborPinConnection1 = new NeighborPinConnection[6];
+        /// <summary>
+        /// Types of pins connected to the particle's tail.
+        /// Only relevant if the particle is expanded.
+        /// Indices are global directions.
+        /// </summary>
+        public NeighborPinConnection[] neighborPinConnection2 = new NeighborPinConnection[6];
+
         // Neighbors
-        public bool[] hasNeighbor1 = new bool[6]; // like pins1 and pins2 (hasNeighbor2 is only relevant if particle is expanded), return true if there is a particle in that direction
+        /// <summary>
+        /// Neighbor flags for the particle's head. Indices are
+        /// global directions.
+        /// </summary>
+        public bool[] hasNeighbor1 = new bool[6];
+        /// <summary>
+        /// Neighbor flags for the particle's tail.
+        /// Only relevant if the particle is expanded.
+        /// Indices are global directions.
+        /// </summary>
         public bool[] hasNeighbor2 = new bool[6];
-        public int neighbor1ToNeighbor2Direction = -1; // global direction from the neighbor1 to the neighbor2 (range 0 to 5), only set if particle is expanded (default -1)
+        /// <summary>
+        /// Global direction from the particle's head to its tail. Is
+        /// <c>-1</c> if the particle is contracted.
+        /// </summary>
+        public int neighbor1ToNeighbor2Direction = -1;
+
         // Sets
+        /// <summary>
+        /// Non-singleton and non-empty partition sets in the pin configuration.
+        /// </summary>
         public List<PSetData> partitionSets;
+        /// <summary>
+        /// Singleton partition sets in the pin configuration.
+        /// </summary>
         public List<PSetData> singletonSets;
-        public bool isExpanded
+
+        /// <summary>
+        /// Checks whether the pin configuration belongs to an expanded particle.
+        /// </summary>
+        public bool IsExpanded
         {
             get
             {
@@ -100,15 +137,25 @@ namespace AS2.Visuals
         // Structs ====================
 
         /// <summary>
-        /// Stores the references to pins in a single partition set.
+        /// Stores information belonging to a single partition set.
         /// </summary>
         public class PSetData
         {
+            /// <summary>
+            /// The partition set's color.
+            /// </summary>
             public Color color;
-            // Data
-            public List<PinDef> pins; // all pins that belong to this partition set
-            // Beeping
+            /// <summary>
+            /// The pins belonging to the partition set.
+            /// </summary>
+            public List<PinDef> pins;
+            /// <summary>
+            /// Whether the partition set receives a beep in the current round.
+            /// </summary>
             public bool beepsThisRound;
+            /// <summary>
+            /// Whether the partition set sends a beep in the current round.
+            /// </summary>
             public bool beepOrigin;
 
             // Graphics
@@ -151,26 +198,102 @@ namespace AS2.Visuals
                 // Idea: We store the positions of the pins and connector pins, so we can
                 // update each position if it is grabbed by the partition set move tool
                 // and override the matrices
+                // We need to store beeping lines separately because they are rendered
+                // by different batches
+                /// <summary>
+                /// Batch index of the head partition set handle.
+                /// </summary>
                 public RenderBatchIndex index_pSet1;
+                /// <summary>
+                /// Batch index of the head partition set handle's beep highlight.
+                /// </summary>
                 public RenderBatchIndex index_pSet1_beep;
+                /// <summary>
+                /// Batch index of the tail partition set handle.
+                /// Only used for expanded particles.
+                /// </summary>
                 public RenderBatchIndex index_pSet2;
+                /// <summary>
+                /// Batch index of the tail partition set handle's beep highlight.
+                /// Only used for expanded particles.
+                /// </summary>
                 public RenderBatchIndex index_pSet2_beep;
-                public List<RenderBatchIndex> index_lines1 = new List<RenderBatchIndex>(); // first values are pin lines, last value connector pin line (if expanded)
-                public List<RenderBatchIndex> index_lines1_beep = new List<RenderBatchIndex>(); // first values are pin lines, last value connector pin line (if expanded)
-                public List<RenderBatchIndex> index_lines2 = new List<RenderBatchIndex>(); // first values are pin lines, last value connector pin line (if expanded)
-                public List<RenderBatchIndex> index_lines2_beep = new List<RenderBatchIndex>(); // first values are pin lines, last value connector pin line (if expanded)
+                /// <summary>
+                /// Batch indices for circuit lines belonging to the head partition
+                /// set handle. The last entry belongs to the line between the handle
+                /// and the connector if the particle is expanded.
+                /// </summary>
+                public List<RenderBatchIndex> index_lines1 = new List<RenderBatchIndex>();
+                /// <summary>
+                /// Batch indices for beeping circuit lines belonging to the head
+                /// partition set handle. The last entry belongs to the line between
+                /// the handle and the connector if the particle is expanded.
+                /// </summary>
+                public List<RenderBatchIndex> index_lines1_beep = new List<RenderBatchIndex>();
+                /// <summary>
+                /// Batch indices for circuit lines belonging to the tail partition
+                /// set handle, if the particle is expanded. The last entry belongs to
+                /// the line between the handle and the connector.
+                /// </summary>
+                public List<RenderBatchIndex> index_lines2 = new List<RenderBatchIndex>();
+                /// <summary>
+                /// Batch indices for beeping circuit lines belonging to the tail partition
+                /// set handle, if the particle is expanded. The last entry belongs to
+                /// the line between the handle and the connector.
+                /// </summary>
+                public List<RenderBatchIndex> index_lines2_beep = new List<RenderBatchIndex>();
+                /// <summary>
+                /// Batch index of the head connector position if the particle
+                /// is expanded.
+                /// </summary>
                 public RenderBatchIndex index_pSetConnectorPin1;
-                //public RenderBatchIndex index_pSetConnectorPin1_beep;
+                /// <summary>
+                /// Batch index of the tail connector position if the particle
+                /// is expanded.
+                /// </summary>
                 public RenderBatchIndex index_pSetConnectorPin2;
-                //public RenderBatchIndex index_pSetConnectorPin2_beep;
+                /// <summary>
+                /// Batch index of the connector line if the particle is expanded.
+                /// </summary>
                 public RenderBatchIndex index_lineConnector;
+                /// <summary>
+                /// Batch index of the beeping connector line if the particle
+                /// is expanded.
+                /// </summary>
                 public RenderBatchIndex index_lineConnector_beep;
+
+                // Material properties
+                /// <summary>
+                /// Material properties for circuit lines.
+                /// </summary>
                 public RendererCircuits_RenderBatch.PropertyBlockData properties_line;
+                /// <summary>
+                /// Material properties for beeping circuit lines.
+                /// </summary>
                 public RendererCircuits_RenderBatch.PropertyBlockData properties_line_beep;
+                /// <summary>
+                /// Material properties for partition set handles.
+                /// </summary>
                 public RendererCircuitPins_RenderBatch.PropertyBlockData properties_pin;
+                /// <summary>
+                /// Material properties for beeping partition set handles.
+                /// </summary>
                 public RendererCircuitPins_RenderBatch.PropertyBlockData properties_pin_beep;
+                /// <summary>
+                /// Material properties for circuit line connectors.
+                /// </summary>
                 public RendererCircuitPins_RenderBatch.PropertyBlockData properties_connectorPin;
+
+                // Pins
+                /// <summary>
+                /// Pins belonging to the partition set that are at
+                /// the particle's head.
+                /// </summary>
                 public List<PinDef> pSet1_pins = new List<PinDef>(10);
+                /// <summary>
+                /// Pins belonging to the partition set that are at
+                /// the particle's tail if it is expanded.
+                /// </summary>
                 public List<PinDef> pSet2_pins = new List<PinDef>(10);
 
                 /// <summary>
@@ -187,7 +310,14 @@ namespace AS2.Visuals
                     /// </summary>
                     Coordinate
                 }
+                /// <summary>
+                /// Type of partition set placement override in the particle's head.
+                /// </summary>
                 public CodeOverrideType_PSet codeOverrideType1 = CodeOverrideType_PSet.NotSet;
+                /// <summary>
+                /// Type of partition set placement override in the particle's tail
+                /// if the particle is expanded.
+                /// </summary>
                 public CodeOverrideType_PSet codeOverrideType2 = CodeOverrideType_PSet.NotSet;
                 /// <summary>
                 /// A coordinate used to override the default position of
@@ -223,11 +353,6 @@ namespace AS2.Visuals
                 /// Number of pins in the tail.
                 /// </summary>
                 public int pinsInTail = -1;
-
-                public bool HasExpandedActivePosition()
-                {
-                    return active_position2 != new Vector2(float.MinValue, float.MinValue);
-                }
 
                 /// <summary>
                 /// Clears the graphical data by resetting all batch indices
@@ -416,7 +541,7 @@ namespace AS2.Visuals
             /// <summary>
             /// Instantiates an object or uses pooling to recycle an old object.
             /// </summary>
-            /// <returns></returns>
+            /// <returns>A fresh <see cref="PSetData"/> instance.</returns>
             public static PSetData PoolCreate()
             {
                 if (pool.Count > 0) return pool.Pop();
@@ -429,7 +554,7 @@ namespace AS2.Visuals
             /// <summary>
             /// Clears and adds the object instance to the pool.
             /// </summary>
-            /// <param name="obj"></param>
+            /// <param name="obj">The instance to be recycled.</param>
             public static void PoolRelease(PSetData obj)
             {
                 obj.Clear();
@@ -513,7 +638,7 @@ namespace AS2.Visuals
         /// is expanded.</returns>
         public int CalculateAmountOfPSetsWithPinsInHeadAndTail(bool recalcPinNumbers = true)
         {
-            if (isExpanded == false) return 0;
+            if (IsExpanded == false) return 0;
             else
             {
                 int counter = 0;

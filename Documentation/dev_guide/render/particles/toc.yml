@@ -4,3 +4,5 @@
   href: shader_example.md
 - name: Circuits and Bonds
   href: circuits.md
+- name: Data Structures and Interface
+  href: data_structures_interface.md

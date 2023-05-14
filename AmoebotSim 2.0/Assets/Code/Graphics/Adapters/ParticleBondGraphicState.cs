@@ -12,11 +12,25 @@ namespace AS2.Visuals
     {
 
         // Variables (positions before and after the movement)
+        /// <summary>
+        /// First endpoint of the bond after the animation.
+        /// </summary>
         public Vector2Int curBondPos1;
+        /// <summary>
+        /// Second endpoint of the bond after the animation.
+        /// </summary>
         public Vector2Int curBondPos2;
+        /// <summary>
+        /// First endpoint of the bond before the animation.
+        /// </summary>
         public Vector2Int prevBondPos1;
+        /// <summary>
+        /// Second endpoint of the bond before the animation.
+        /// </summary>
         public Vector2Int prevBondPos2;
-        // Hidden flag
+        /// <summary>
+        /// Flag indicating whether the bond should be hidden.
+        /// </summary>
         public bool hidden;
 
         public ParticleBondGraphicState(Vector2Int curBondPos1, Vector2Int curBondPos2, Vector2Int prevBondPos1, Vector2Int prevBondPos2, bool hidden = false)
@@ -31,7 +45,8 @@ namespace AS2.Visuals
         /// <summary>
         /// The bond is animated if previous and current positions differ.
         /// </summary>
-        /// <returns></returns>
+        /// <returns><c>true</c> if and only if the the previous and
+        /// current bond positions are not the same.</returns>
         public bool IsAnimated()
         {
             return prevBondPos1 != curBondPos1 || prevBondPos2 != curBondPos2;

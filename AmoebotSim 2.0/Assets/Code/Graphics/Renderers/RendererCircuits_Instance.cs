@@ -192,7 +192,7 @@ namespace AS2.Visuals
                         batch_pins.UpdatePin(worldPos, false, gd.index_pSet1);
                         // Line to connector
                         offset = 0;
-                        if (state.isExpanded && innerPin.pSet.HasPinsInHeadAndTail())
+                        if (state.IsExpanded && innerPin.pSet.HasPinsInHeadAndTail())
                         {
                             // Connector
                             batch_lines = instance.GetBatch_Line(gd.properties_line);
@@ -227,7 +227,7 @@ namespace AS2.Visuals
                         break;
                     case PSetInnerPinRef.PinType.PSet2:
                         // Lines to Pins (and Connector2, if expanded)
-                        if(state.isExpanded == false)
+                        if(state.IsExpanded == false)
                         {
                             Log.Error("UpdatePSetOrConnectorPinPosition: Trying to edit a partition set 2 for a particle that is contracted. This is not possible.");
                             return;
@@ -273,7 +273,7 @@ namespace AS2.Visuals
                         break;
                     case PSetInnerPinRef.PinType.PConnector1:
                         // Lines to Connector2 and PSet1
-                        if(state.isExpanded)
+                        if(state.IsExpanded)
                         {
                             // Save position
                             gd.active_connector_position1 = worldPos;
@@ -301,7 +301,7 @@ namespace AS2.Visuals
                         break;
                     case PSetInnerPinRef.PinType.PConnector2:
                         // Lines to Connector1 and PSet2
-                        if (state.isExpanded)
+                        if (state.IsExpanded)
                         {
                             // Save position
                             gd.active_connector_position2 = worldPos;
@@ -547,7 +547,7 @@ namespace AS2.Visuals
                         case PartitionSetViewType.Line:
                             // Default
                             float rot1 = 0f;
-                            if (circuitData.state.isExpanded)
+                            if (circuitData.state.IsExpanded)
                                 rot1 = 60f * circuitData.state.neighbor1ToNeighbor2Direction;
                             if (codeOverride_active)
                                 rot1 = circuitData.state.codeOverrideLineRotationDegrees1;
@@ -605,7 +605,7 @@ namespace AS2.Visuals
             }
 
             // 2. Particle Tail ====================
-            if (circuitData.state.isExpanded)
+            if (circuitData.state.IsExpanded)
             {
                 bool codeOverride_active = false;
                 PartitionSetViewType pSetViewType = pSetViewType_global;
@@ -722,7 +722,7 @@ namespace AS2.Visuals
             }
 
             // 3. Pin Connector Placement ====================
-            if (circuitData.state.isExpanded)
+            if (circuitData.state.IsExpanded)
             {
                 pSetSortingList.Clear();
                 for (int i = 0; i < circuitData.state.partitionSets.Count; i++)
@@ -798,7 +798,7 @@ namespace AS2.Visuals
             // 1. Calc PartitionSet Positions
             CalculatePartitionSetPositions(circuitData, pSetViewType);
             // 2. Generate Pins and Lines
-            if (state.isExpanded == false)
+            if (state.IsExpanded == false)
             {
                 // Contracted
                 // Add Internal Pins and Lines

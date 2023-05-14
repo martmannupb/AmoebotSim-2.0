@@ -404,4 +404,4 @@ namespace AS2.Visuals
 
     }
 
-}
+} // namespace AS2.Visuals

@@ -32,7 +32,7 @@
 		- [`GDRef`][11] struct is used to bundle references to graphical data with indexing information for a single object (line or pin/handle)
 	- When circuit or bond data is added to the instance, it creates the corresponding line and circle objects and moves them to the correct render batch
 		- New batches are created if necessary
-		- The placement of partition set handles is computed here, using the [`DistributionCircleLine`][12] and [`DistributionCircleArea`][13] classes
+		- The placement of partition set handles is computed here, using the [`CircleDistributionCircleLine`][12] and [`CircleDistributionCircleArea`][13] classes
 
 
 - The render batch classes are [`RendererCircuits_RenderBatch`][6] (for lines) and [`RendererCircuitPins_RenderBatch`][7] (for partition set handles and pin beep highlights)
@@ -66,6 +66,6 @@ TODO
 [9]: xref:AS2.Visuals.RendererCircuits_Instance.ParticleCircuitData
 [10]: xref:AS2.Visuals.RendererCircuits_Instance.ParticleCircuitData.PSetInnerPinRef
 [11]: xref:AS2.Visuals.RendererCircuits_Instance.GDRef
-[12]: xref:AS2.Visuals.DistributionCircleLine
-[13]: xref:AS2.Visuals.DistributionCircleArea
+[12]: xref:AS2.Visuals.CircleDistributionCircleLine
+[13]: xref:AS2.Visuals.CircleDistributionCircleArea
 [14]: xref:AS2.Visuals.IGenerateDynamicMesh

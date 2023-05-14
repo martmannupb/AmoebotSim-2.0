@@ -30,6 +30,8 @@
 	- The render classes are mostly independent
 		- Go through each separately
 
+<img src="~/images/render_system_overview.png" alt="Render System Overview" title="Render System Overview" width="600"/>
+
 
 
 
