@@ -1,36 +1,34 @@
 # Dev Guide: The Render System
 
-## WIP: Structure
+The render system renders the background grid, the particles, their circuits and bonds, and some additional UI overlays to the screen.
+This must be done efficiently to keep the application responsive even while simulating large particle systems.
+Achieving this requires some effort and the render system's code is therefore quite complex.
+This part of the Developer Guide gives an overview of the render system's structure, roughly explains the most important high-level concepts and points to the places where the visualization could be changed or extended.
+Its main purpose is to provide some information for users who want to change the visualization so that they do not have to read through the entire rendering code.
 
-### Purpose of the render system and this guide
+This page gives an outline of the render system's structure.
+The individual parts of the system are explained in more detail on their own pages.
 
-- Render system renders the background grid, the particles, circuits, pins and bonds to the screen
-	- Also some additional UI overlays
-- This must be done efficiently, which requires some effort
-	- Code is therefore quite complex
-- This guide gives an overview of the system's structure, roughly explains the most important concepts and points to the places where the visualization could be changed or extended
-	- Main purpose is providing some info for people who want to change the visualization such that they do not have to read through the entire rendering code
 
-### General structure
+## General structure
 
-- Class [`RenderSystem`][1] is the root of a tree structure
-	- The application's main class, [`AmoebotSimulator`][2], creates one instance of this class
-	- In every `Update` call, the [`AmoebotSimulator`][2] calls its [`Render()`][3] method, which triggers a cascade of similar calls through the entire hierarchy
-	- Contains references to the 3 render classes
-		- [`RendererUI`][4]
-		- [`RendererBackground`][5]
-		- [`RendererParticles`][6]
-	- [`Render()`][3] is simply forwarded to these classes
-	- Also contains lots of visualization parameters and constants
-		- View type (hexagonal, round, graph)
-		- Line widths, radii, scale values, animation times
-		- Z layers of all components
-			- These define the layering of the rendered objects (which object appears in front of which others)
-		- The class stores most of these parameters as public static fields, making them accessible everywhere
-	- The render classes are mostly independent
-		- Go through each separately
+<img src="~/images/render_system_overview.png" alt="Render System Overview" title="Render System Overview" width="600" align="center"/>
 
-<img src="~/images/render_system_overview.png" alt="Render System Overview" title="Render System Overview" width="600"/>
+The [`RenderSystem`][1] class is the main container of the render system and forms the root of a tree structure.
+One instance of this class is created by the application's main class, [`AmoebotSimulator`][2], when the application starts.
+In every `Update` call, the [`AmoebotSimulator`][2] calls the [`RenderSystem`][1]'s [`Render()`][3] method, which triggers a cascade of similar method calls through the entire render system hierarchy (represented by the arrows in the image above).
+The [`RenderSystem`][1] creates and manages one instance of each of the three render classes, the [`RendererUI`][4], [`RendererBackground`][5] and [`RendererParticles`][6].
+These classes receive the [`Render()`][3] call of the [`RenderSystem`][1] and handle the rendering or pass the call to subordinate classes.
+
+Apart from that, the [`RenderSystem`][1] class contains most of the render parameters and constants.
+These include the current visualization type (hexagonal, round hexagonal or graph), animation times, line widths, radii and scale values, and Z layers of all components.
+The Z layers define the order in which the rendered objects are drawn on top of each other (more about this can be found on the [rendering basics page](rendering_basics.md)).
+Some of these values can be modified to easily change the visualization, like the animation times, for example.
+The class stores most of these parameters as public static fields, which makes them accessible from everywhere.
+Almost all of the render system's classes use these values to influence the render result.
+
+The next page explains the [basics of rendering in Unity](rendering_basics.md).
+The concepts explained on that page are relevant to all of the following pages, which explain the three render classes in more detail.
 
 
 

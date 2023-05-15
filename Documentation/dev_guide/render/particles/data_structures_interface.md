@@ -43,7 +43,7 @@ TODO
 
 [1]: xref:AS2.Visuals.IParticleState
 [2]: xref:AS2.Visuals.IParticleGraphicsAdapter
-[3]: xref:AS2.Visuals.IParticleGraphicsAdapterImpl
+[3]: xref:AS2.Visuals.ParticleGraphicsAdapterImpl
 [4]: xref:AS2.Visuals.ParticleGraphicsAdapterImpl.AddParticle(AS2.Visuals.ParticleMovementState)
 [5]: xref:AS2.Visuals.ParticleGraphicsAdapterImpl.RemoveParticle
 [6]: xref:AS2.Visuals.ParticleGraphicsAdapterImpl.Update(AS2.Visuals.ParticleMovementState)
