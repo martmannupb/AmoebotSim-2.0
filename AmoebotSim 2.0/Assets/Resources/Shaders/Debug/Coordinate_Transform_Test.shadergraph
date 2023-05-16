@@ -286,8 +286,8 @@
     ],
     "m_VertexContext": {
         "m_Position": {
-            "x": 417.6000061035156,
-            "y": 241.60000610351563
+            "x": 172.80001831054688,
+            "y": 151.1999969482422
         },
         "m_Blocks": [
             {
@@ -303,8 +303,8 @@
     },
     "m_FragmentContext": {
         "m_Position": {
-            "x": 417.6000061035156,
-            "y": 441.6000061035156
+            "x": 172.80001831054688,
+            "y": 351.1999816894531
         },
         "m_Blocks": [
             {
@@ -476,10 +476,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1585.60009765625,
-            "y": 215.19985961914063,
-            "width": 119.199951171875,
-            "height": 148.80007934570313
+            "x": -1560.7999267578125,
+            "y": 180.79998779296876,
+            "width": 119.2000732421875,
+            "height": 148.80001831054688
         }
     },
     "m_Slots": [
@@ -667,10 +667,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -317.5999450683594,
-            "y": 312.0,
-            "width": 207.99996948242188,
-            "height": 325.5999755859375
+            "x": -466.3999328613281,
+            "y": 322.3999938964844,
+            "width": 208.0,
+            "height": 325.5999450683594
         }
     },
     "m_Slots": [
@@ -742,7 +742,7 @@
     "m_Title": "Compute x grid coordinate",
     "m_Content": "x_grid = int(x - y_grid/2)",
     "m_TextSize": 0,
-    "m_Theme": 0,
+    "m_Theme": 1,
     "m_Position": {
         "serializedVersion": "2",
         "x": -1234.4000244140625,
@@ -788,9 +788,9 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -529.5999145507813,
-            "y": 312.0,
-            "width": 127.199951171875,
+            "x": -678.3999633789063,
+            "y": 322.3999938964844,
+            "width": 127.20001220703125,
             "height": 100.79998779296875
         }
     },
@@ -835,10 +835,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -35.19997787475586,
-            "y": 312.0,
-            "width": 207.9999542236328,
-            "height": 349.5999755859375
+            "x": -183.99990844726563,
+            "y": 322.3999938964844,
+            "width": 207.99989318847657,
+            "height": 349.6000061035156
         }
     },
     "m_Slots": [
@@ -921,13 +921,13 @@
     "m_Title": "Map grid coordinates to random color",
     "m_Content": "Use coordinates as seed\nResult is greyscale",
     "m_TextSize": 0,
-    "m_Theme": 0,
+    "m_Theme": 1,
     "m_Position": {
         "serializedVersion": "2",
-        "x": -548.0,
-        "y": 240.0,
-        "width": 739.7881469726563,
-        "height": 430.71575927734377
+        "x": -696.7999877929688,
+        "y": 250.39999389648438,
+        "width": 740.0,
+        "height": 431.20001220703127
     },
     "m_Group": {
         "m_Id": ""
@@ -941,12 +941,12 @@
     "m_Title": "Row distance vert",
     "m_Content": "",
     "m_TextSize": 0,
-    "m_Theme": 0,
+    "m_Theme": 1,
     "m_Position": {
         "serializedVersion": "2",
-        "x": -1748.800048828125,
-        "y": 646.4000244140625,
-        "width": 193.60009765625,
+        "x": -1729.5999755859375,
+        "y": 508.8000183105469,
+        "width": 193.5999755859375,
         "height": 100.0
     },
     "m_Group": {
@@ -1110,7 +1110,7 @@
     "m_Title": "Compute y grid coordinate",
     "m_Content": "y_grid = y / h",
     "m_TextSize": 0,
-    "m_Theme": 0,
+    "m_Theme": 1,
     "m_Position": {
         "serializedVersion": "2",
         "x": -1376.800048828125,
@@ -1183,10 +1183,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1793.5999755859375,
-            "y": 215.19985961914063,
-            "width": 207.9998779296875,
-            "height": 312.8001403808594
+            "x": -1768.7999267578125,
+            "y": 180.79998779296876,
+            "width": 208.0,
+            "height": 312.79998779296877
         }
     },
     "m_Slots": [
@@ -1599,10 +1599,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1713.60009765625,
-            "y": 672.0,
+            "x": -1694.39990234375,
+            "y": 534.4000244140625,
             "width": 128.0,
-            "height": 93.5999755859375
+            "height": 93.59991455078125
         }
     },
     "m_Slots": [

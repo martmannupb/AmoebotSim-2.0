@@ -1,5 +1,34 @@
 # Dev Guide: Particle Shader Example
 
+
+(From rendering basics page)
+- When the ray cast by the render engine hits a face, a color value must be calculated
+- The program that calculates this color is called a *shader*
+	- Shaders can often be highly optimized to run on GPUs
+- There is a way to program shaders with code but the most common way to implement a shader is *shadergraph*
+	- This is a node-based visual environment for editing shaders without having to write complex code
+	- The output of the shaders used in the simulator has two components
+		- The "Vertex" component returns 3 3D vectors (explained later)
+		- The "Fragment" component returns an RGB color and an alpha value
+	- A shader is run once every time a ray hits a face of a mesh
+		- The resulting "Fragment" data is used to color the corresponding pixel
+		- If the alpha value is less than 1, the ray is cast further and the resulting color is mixed with the first color to create a transparency effect
+	- Nodes represent operations that can be applied to data
+		- Nodes have input and output sockets with associated data types (similar to parameters and return values of methods)
+		- Connecting an output socket of one node with an input socket of another node causes data to be transferred from the first node to the second
+		- The output nodes only have input sockets and there are input nodes that only have output sockets
+			- Some input nodes may also have input sockets for parameters
+		- Inputs to the shader can come from the object itself (like its position in the world), mesh data (like the UV coordinates of the currently shaded point) or custom shader parameters like colors, floats, textures, etc.
+	- The "Vertex" component of a shader can be used to modify the visible geometry of the object
+		- The mesh data is not changed but the vectors returned by the shader are used to displace vertices and change their normals and tangents (affecting how light is reflected on the surface)
+		- We use the displacement feature to implement animations in some cases
+	- *Maybe create a page explaining some of the shaders (like hexagon expansion)*
+
+
+
+-----
+
+
 - This page explains how a shader is defined using shadergraph
 	- We use the hexagonal particle shader as an example
 	- This is one of the more complex shaders

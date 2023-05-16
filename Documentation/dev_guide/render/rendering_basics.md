@@ -1,70 +1,78 @@
 # Dev Guide: Unity Rendering Basics
 
-- Need to explain the fundamentals of how rendering in Unity works
-	- Or at least how it is used in the simulation environment
+To understand how the render system works and why it is necessary to put so much effort into optimizing its structure, we must first get a basic understanding of how rendering works in Unity (and computer graphics in general).
+This page goes through the basic concepts that are most relevant to the simulation environment's render system.
+
 
 ## Meshes
 
-- The shape of an object is defined by a [mesh](https://docs.unity3d.com/Manual/mesh-introduction.html).
-- A mesh is geometrical data consisting of a set of vertices in 3D space and a set of triangles between the vertices
-	- Triangles are also called faces
-- When an image is rendered, the render engine casts a ray through each pixel of the screen and checks which face it hits first (extremely simplified)
-	- The position of the objects determines which is rendered in front
-	- Because we use an orthographic camera to achieve a 2D effect, all of our objects are flat, which simplifies things
-	- The axis along which the rays are cast is the global Z axis
-	- Every object is orthogonal to the Z axis
-	- An object's Z position (Z layer) determines which objects are drawn in front of it and which are drawn behind it
-	- Our camera is on Z layer $-10$ and points in the positive Z direction
-		- Objects on smaller Z layers are drawn further in the foreground
-		- Objects on a Z layer less than $-10$ are behind the camera and will not be visible
-- Meshes also contain additional data
-	- UV coordinates
-		- UV coordinates are simply vectors that are associated with each vertex of the mesh
-		- There are multiple UV channels, i.e., multiple vectors associated with each vertex
-		- UV channel 0 is most commonly used
-			- UV data is usually a 2D vector for each vertex, but higher dimensional vectors can be used as well
-		- The main application of UV coordinates is the mapping of 2D textures to a mesh
-			- The 2D vectors in a UV channel are interpreted as coordinates on (or around) the unit square
-			- We then have a "UV map" that projects the mesh to a flat surface
-				- Note that the triangles are thereby mapped to the surface as well
-			- If the unit square now contains color data (a texture), every vertex and every point on each face has some associated color data
-			- This information can be used to give colors to a mesh
-			- The concept of UV maps is easier for 2D objects
-				- For 3D objects, a common way to explain it is to think of the mesh as a paper model that is cut and pressed onto a flat surface (although this does not account for potential scaling or shearing of the triangles)
-	- Normals
-		- Each vertex of a mesh also has a 3D normal vector
-		- The normal vector of a vertex points away from the object's surface at the vertex position
-		- This data is used to calculate how light is reflected off the object
-			- Example: Perfectly round surfaces cannot be created with meshes (the mesh would need to have infinitely many vertices)
-			- But if the normal vectors are interpolated between the vertices, light bouncing off the object behaves as if the object was perfectly round, giving the illusion of a smooth surface even though the mesh has sharp edges
-		- Explained in more detail [here](https://docs.unity3d.com/Manual/StandardShaderMaterialParameterNormalMap.html)
-		- *This is not relevant for the simulator but interesting to know*
-			- *And it could help understanding the rest of the rendering system*
+<img src="~/images/cube_mesh.png" alt="Cube Mesh" title="Cube Mesh" width="450" align="center"/>
+
+The *shape* of an object that should be rendered is defined by a [*mesh*](https://docs.unity3d.com/Manual/mesh-introduction.html).
+A mesh is geometrical data consisting of a set of vertices in 3D space and a set of triangles between these vertices.
+The triangles are also called *faces*.
+In very simple terms, when an image is rendered, the render engine casts rays from a camera object into the 3D world and determines which face is hit first by each ray.
+Every ray starts at the location of a pixel and the first face hit by the ray is used to determine the color of the pixel.
+Thus, the positions of the objects in the scene determine whether an object is rendered in front of another.
+If a ray does not hit any faces, the pixel will get a default background color, which is white in the simulation environment (in many 3D applications, the default background is a "skybox").
+
+### 2D World and Camera
+
+Since the Amoebot model is two-dimensional, we do not need to use all of Unity's 3D rendering capabilities.
+Instead, we use an *orthographic* camera, which means that the rays cast by this camera are parallel, causing objects to appear in the same size no matter how far away they are from the camera.
+Additionally, all meshes used by the simulator are perfectly flat, making the dynamic generation of meshes and the creation of shaders relatively simple.
+
+The camera is oriented such that its rays are cast along the global Z axis.
+The rendered objects in the scene are all aligned to the X-Y-plane, meaning that they are orthogonal to the Z axis.
+Thus, an object's Z coordinate (or *Z layer*) determines whether it is rendered in front of or behind other objects.
+The camera has a default Z coordinate of $-10$ and points in the positive Z direction.
+This means that objects on larger Z layers are drawn further in the background.
+Objects on Z layers less than $-10$ are behind the camera and are thus not in view.
+
+### Additional Mesh Data
+
+Meshes usually contain more data than just vertices and triangles.
+One kind of additional data that is often used are so-called *UV coordinates*.
+UV coordinates are simply vectors that are associated with each vertex of the mesh.
+There can be multiple UV channels, i.e., multiple vectors associated with each vertex, and each channel can have a different dimension.
+The first UV channel (channel 0) is most commonly used.
+It usually stores two-dimensional vectors that are used to map 2D textures to a mesh.
+For this, the 2D vectors are interpreted as coordinates on (or around) the unit square.
+We then have a [*UV map*](https://en.wikipedia.org/wiki/UV_mapping) that projects the mesh to a flat surface: Each vertex and, by extension, each triangle has a position on the 2D plane.
+If we now add color data (a *texture*) to the plane, every vertex and every point on each face has some associated color data.
+Usually, image textures are mapped onto the unit square and then repeated infinitely to fill the plane.
+This color information can then be used to color the mesh.
+For 2D objects, the mapping is straightforward since the vertices are already on a plane - it usually suffices to scale the mesh so that it fits into the unit square.
+For 3D objects, a common way to explain UV mapping is to think of the mesh as a paper model that is cut and then pressed onto a flat surface.
+Oftentimes, however, a UV mapping results in scaling and shearing of some triangles, which is not covered by the paper analogy.
+
+UV data does not have to be used for UV mapping, though.
+It can be used for any purpose that suits the application.
+For example, one dimension of a UV channel can be used as a "weight" associated with each vertex to determine how much a vertex is affected by some operation.
+This is very useful for custom shaders that can access the UV data directly (see below).
 
 
 ## Shaders
 
-- When the ray cast by the render engine hits a face, a color value must be calculated
-- The program that calculates this color is called a *shader*
-	- Shaders can often be highly optimized to run on GPUs
-- There is a way to program shaders with code but the most common way to implement a shader is *shadergraph*
-	- This is a node-based visual environment for editing shaders without having to write complex code
-	- The output of the shaders used in the simulator has two components
-		- The "Vertex" component returns 3 3D vectors (explained later)
-		- The "Fragment" component returns an RGB color and an alpha value
-	- A shader is run once every time a ray hits a face of a mesh
-		- The resulting "Fragment" data is used to color the corresponding pixel
-		- If the alpha value is less than 1, the ray is cast further and the resulting color is mixed with the first color to create a transparency effect
-	- Nodes represent operations that can be applied to data
-		- Nodes have input and output sockets with associated data types (similar to parameters and return values of methods)
-		- Connecting an output socket of one node with an input socket of another node causes data to be transferred from the first node to the second
-		- The output nodes only have input sockets and there are input nodes that only have output sockets
-			- Some input nodes may also have input sockets for parameters
-		- Inputs to the shader can come from the object itself (like its position in the world), mesh data (like the UV coordinates of the currently shaded point) or custom shader parameters like colors, floats, textures, etc.
-	- The "Vertex" component of a shader can be used to modify the visible geometry of the object
-		- The mesh data is not changed but the vectors returned by the shader are used to displace vertices and change their normals and tangents (affecting how light is reflected on the surface)
-		- We use the displacement feature to implement animations in some cases
-	- *Maybe create a page explaining some of the shaders (like hexagon expansion)*
+<img src="~/images/shadergraph_example.png" alt="A shader defined using shadergraph" title="A shader defined using shadergraph" width="450"/>
+
+When a ray cast by the render engine hits a face, a color value must be calculated.
+The program that calculates this color is called a [*shader*](https://en.wikipedia.org/wiki/Shader).
+Shaders are often highly optimized to run on GPUs, allowing the colors of many pixels to be calculated in parallel.
+Every time a ray hits a face of a mesh, the shader associated with the mesh is called to calculate an RGBA color, using the position of the ray cast hit on the mesh as an input.
+If the alpha value of the resulting color is less than 1, the ray is cast further and the resulting color is mixed with the first color, creating a transparency effect.
+This way, an object can be seen "through" another object even if the object's mesh is completely occluded by the other's.
+Shaders can even change the visible position of vertices without changing the object's position or its mesh, enabling more complex effects like simple animations.
+
+Shaders in Unity (and in most other 3D applications) can be defined using a visual node-based language that is much easier to use than writing code.
+Unity's version of this is called Shadergraph (see image above).
+This system is explained on a [separate page](particles/shader_example.md), using the main particle shader of the simulator as example.
+
+
+
+TODO
+
+
 
 
 ## Materials
