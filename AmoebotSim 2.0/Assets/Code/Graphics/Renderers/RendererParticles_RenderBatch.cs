@@ -58,7 +58,8 @@ namespace AS2.Visuals
         private Mesh mesh_circle_particleConnector = MeshCreator_CircularView.GetMesh_ParticleConnector();
         private Mesh mesh_hex_particle = MeshCreator_HexagonalView.GetMesh_MergingExpansionHexagon();
         // Defaults
-        Matrix4x4 matrixTRS_zero = Matrix4x4.TRS(new Vector3(float.MaxValue / 2f, float.MaxValue / 2f, 0f), Quaternion.identity, Vector3.zero);
+        //Matrix4x4 matrixTRS_zero = Matrix4x4.TRS(new Vector3(float.MaxValue / 2f, float.MaxValue / 2f, 0f), Quaternion.identity, Vector3.zero);
+        Matrix4x4 matrixTRS_zero = Matrix4x4.TRS(new Vector3(0f, 0f, -100f), Quaternion.identity, Vector3.zero);
         const int maxArraySize = 1023;
 
         // Dynamic Data _____

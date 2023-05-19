@@ -71,6 +71,8 @@ namespace AS2.Visuals
             mat.SetTexture("_TextureHexagon100P", borderTex100P);
             mat.SetTexture("_TextureHexagon100P2", borderTex100P2);
             mat.SetTexture("_TextureHexagonConnector", transTexture);
+            // Update render queue to be the same as for pins
+            mat.renderQueue = RenderSystem.renderQueue_pins;
 
             // Add Material to Data
             if (viewType == ViewType.Hexagonal) pinBorderHexMaterials.Add(pinsPerSide, mat);

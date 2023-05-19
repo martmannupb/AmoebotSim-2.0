@@ -74,7 +74,9 @@ namespace AS2.Visuals
             {
                 propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.beepOrigin);
                 propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
+                // Render the beep origin in front of the pin / partition set handle
                 zOffset = -0.1f;
+                pinMaterial.renderQueue = RenderSystem.renderQueue_pinBeeps;
             }
             else
             {

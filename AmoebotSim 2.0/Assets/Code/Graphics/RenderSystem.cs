@@ -101,6 +101,24 @@ namespace AS2.Visuals
         public const float zLayer_circuits = 7f;
         public const float zLayer_pins = 6f;
         public const float zLayer_ui = -5f;
+
+        // Render queue priorities
+        // These specify in which order objects are rendered (lower values are
+        // rendered first)
+        // This fixes layering issues that cannot be resolved by Z layers alone
+        // All values are set in the material assets already. Only the hexagon
+        // pin material with the invisible hexagon and the pin beep origin
+        // highlights are updated via code to have the same / a lower render
+        // queue priority as pins
+        public static readonly int renderQueue_background = 2800;
+        public static readonly int renderQueue_bonds = 2900;
+        public static readonly int renderQueue_particles = 3000;
+        public static readonly int renderQueue_circuits = 3100;
+        public static readonly int renderQueue_circuitBeeps = 3150;
+        public static readonly int renderQueue_pins = 3200;
+        public static readonly int renderQueue_pinBeeps = 3250;
+        public static readonly int renderQueue_overlays = 3300;
+
         // Global Data
         /// <summary>
         /// The global scaling factor for particles.
