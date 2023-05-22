@@ -54,7 +54,7 @@ This is very useful for custom shaders that can access the UV data directly (see
 
 ## Shaders
 
-<img src="~/images/shadergraph_example.png" alt="A shader defined using shadergraph" title="A shader defined using shadergraph" width="450"/>
+<img src="~/images/shadergraph_example.png" alt="A shader defined using shadergraph" title="A shader defined using shadergraph" width="500"/>
 
 When a ray cast by the render engine hits a face, a color value must be calculated.
 The program that calculates this color is called a [*shader*](https://en.wikipedia.org/wiki/Shader).
@@ -69,57 +69,52 @@ Unity's version of this is called Shadergraph (see image above).
 This system is explained on a [separate page](particles/shader_example.md), using the main particle shader of the simulator as example.
 
 
-
-TODO
-
-
-
-
 ## Materials
 
-- Shaders are assets that only exist once in the project
-	- Changing the parameters of a shader would change the result for all objects using this shader
-- We want to be able to reuse a shader with different parameters
-- A *material* is basically a collection of parameters associated with a shader
-	- Materials are also assets that only exist once
-	- But multiple materials can use the same shader with different parameters
-	- Materials are assigned to objects, not the shaders themselves
-	- Example: All materials for the tool overlays use the same shader, just with different colors
-- Unity can render many copies of a mesh in different positions efficiently if they all share the same material
-- There is an extra mechanism that allows rendering meshes with the same base material but different parameters
-	- A MaterialPropertyBlock is a collection of parameters without an associated shader
-	- It can be passed to a render call to temporarily overwrite the shader parameters stored in a material
-		- This only affects the meshes rendered in that call
-- A lot of optimization work aims at grouping objects that use the same mesh and material together to draw them in parallel using the GPU
-	- The [`DrawMeshInstanced`][2] method allows up to 1023 instances to be drawn simultaneously
+Oftentimes, an application has multiple objects that should look very similar but not exactly the same, like the particles in the simulator that should all have similar shapes but can have different colors.
+Unfortunately, we cannot simply give each object a copy of the same shader and change the copy's parameters since this would have a significant performance impact.
+Every time the render engine encounters an object with a different shader than the previous object, it has to issue a new render call to the GPU, which is a very expensive operation.
+Additionally, we want to be able to modify the original shader and have those changes affect all other users of the shader as well.
+The solution to this are so-called *materials*.
+
+Shaders are assets that only exist once in the project but that can be used by multiple objects.
+Changing the shader asset affects the appearance of all objects using this shader.
+A shader can also define parameters that change the shader's behavior and output.
+For example, a shader could have a color parameter that controls the base color of the rendered object.
+A *material* is essentially a collection of parameters associated with a shader.
+Instead of assigning shaders to objects, we assign materials to objects, allowing us to use the same shader to render multiple objects with different shader parameters.
+A good example for this are the tool overlays marking positions in Init Mode: They use materials with the same shader but different color parameters.
+Changing the opacity in the shader would affect the opacity of all tool overlays.
+
+<img src="~/images/shader_tool_add.png" alt="Add tool is green" title="Add tool is green" width="200"/> <img src="~/images/shader_tool_remove.png" alt="Remove tool is red" title="Remove tool is red" width="200"/> <img src="~/images/shader_tool_move.png" alt="Move tool is purple" title="Move tool is purple" width="200"/>
+
+A very useful feature of materials in Unity is that objects that share the same material can be batched together and rendered with much fewer render calls to the GPU than if all objects had their own materials.
+Thus, a lot of optimization work aims at grouping objects with the same material and, in many cases, even the same mesh, so that they can be rendered together (see below for more details).
+
+There is also a mechanism that allows rendering objects with the same base material but different parameters for cases where material parameters need to be modified dynamically or creating separate materials would not be feasible.
+A `MaterialPropertyBlock` is a collection of parameter values that can override a material's parameters for a single render call.
+Using property blocks is much more efficient than creating new materials at runtime
 
 
 ## Matrices and Instanced Drawing
 
-- Usually, rendering is handled implicitly because rendered objects are GameObjects with attached Mesh and Material components that are rendered automatically
-- But rendering hundreds or thousands of GameObjects quickly becomes inefficient and does not offer the flexibility we need, so we issue the render calls manually
-- The basic method call used to submit an object to the render engine programmatically is [`Graphics.DrawMesh(Mesh mesh, Matrix4x4 matrix, Material material, ..., MaterialPropertyBlock properties, ...)`][1].
-	- `mesh` is the mesh to be rendered
-	- `matrix` is a 4x4 matrix containing translation, rotation and scaling data
-		- It defines where the `mesh` is located, how it is oriented and how it is scaled
-		- This is usually the information that needs to be updated and/or animated most often
-	- `material` is the material used for shading the `mesh`
-	- `properties` is an optional block of material properties overriding the `material`'s default parameters
-- Unity is able to process multiple render calls in parallel using the GPU, if they use the same mesh and material
-	- For this, we call [`Graphics.DrawMeshInstanced(Mesh mesh, ..., Material material, Matrix4x4[] matrices, ..., MaterialPropertyBlock properties, ...)`][2] instead
-		- `mesh`, `material` and `properties` have the same purpose as before
-		- Instead of one matrix, we supply an array of matrices
-		- Up to 1023 instances of a mesh can be drawn this way
-	- This is much more efficient than calling [`DrawMesh(...)`][1] multiple times
-- In the rendering code, we try to submit render calls in _batches_ as often as possible
-	- I.e., used instanced draw calls for as many matrices at once as possible
-	- Need some complex structures to accomplish this
+In many Unity applications, rendering is handled implicitly because rendered objects are GameObjects with attached Mesh and Material components that are rendered automatically.
+But rendering hundreds or thousands of GameObjects quickly becomes inefficient and difficult to organize, especially when only a few distinct shapes have to be drawn with slightly different properties.
+Thus, most of the rendering in the simulator is handled manually.
+
+The basic method call used to submit an object to the render engine programmatically is [`Graphics.DrawMesh(Mesh mesh, Matrix4x4 matrix, Material material, ..., MaterialPropertyBlock properties, ...)`][1].
+Here, `mesh` is the mesh defining the shape to be rendered, `material` is the material defining the shader and its parameters, and `properties` is a property block that can temporarily override some of these parameters.
+The `matrix` parameter is a $4 \times 4$ matrix that contains translation, rotation and scaling data (also called a TRS matrix).
+This matrix corresponds to the `Transform` component that every GameObject has and it defines where the `mesh` is located in 3D space, how it is rotated, and its scale.
+
+If we want to draw multiple copies of a mesh with the same material and property block but different TRS matrices, Unity offers a method that can submit many of these render calls simultaneously using *instancing*.
+Instancing means that the GPU only requires one copy of the mesh and material data to draw many copies of the same mesh in different places efficiently.
+For this, we call [`Graphics.DrawMeshInstanced(Mesh mesh, ..., Material material, Matrix4x4[] matrices, ..., MaterialPropertyBlock properties, ...)`][2], which takes a whole array of TRS matrices instead of just a single one.
+This method can draw up to 1023 instances of a mesh in a single call, which is much more efficient than calling [`DrawMesh(...)`][1] multiple times.
+In the rendering code, we try to submit render calls in such *batches* as often as possible by grouping objects with the same mesh and material.
+To accomplish this, we use the classes described in the rest of this Dev Guide section.
 
 
-
-
-TODO
 
 [1]: https://docs.unity3d.com/ScriptReference/Graphics.DrawMesh.html
 [2]: https://docs.unity3d.com/ScriptReference/Graphics.DrawMeshInstanced.html
-
