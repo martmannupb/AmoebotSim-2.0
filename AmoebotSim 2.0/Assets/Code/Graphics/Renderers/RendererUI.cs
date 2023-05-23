@@ -9,7 +9,8 @@ namespace AS2.Visuals
 
     /// <summary>
     /// Renderer for the UI.
-    /// Basically draws the overlay for the currently selected tool over the particles.
+    /// Basically draws the overlay for the currently selected tool over the particles
+    /// and forwards the current tool input to the corresponding handler.
     /// </summary>
     public class RendererUI
     {
