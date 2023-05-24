@@ -19,7 +19,7 @@ The hexagonal overlay materials use the simple `Resources/Shaders/Basic/ColorTra
 Since the Partition Set Move tool requires other shapes to be drawn and other parts of the simulator to be accessed, the [`RendererUI`][1] class delegates this functionality to the [`PSetDragHandler`][4] class.
 Its structure is very similar to that of the [`RendererUI`][1], but it uses a simple quad mesh instead of a hexagon to render the overlay.
 The associated material uses the `Resources/Shaders/Basic/TextureColorizationGraph` shader, which takes an RGBA texture and an input color and multiplies the color into the texture.
-Because the material uses a texture with a white circle in the middle and a transparent background, the final shape that is drawn to the screen is a circle instead of a rectangle, even though the mesh is rectangular.
+Because the material uses a texture with a white circle in the middle and a transparent background (which can be found in `Resources/Images/Icons`), the final shape that is drawn to the screen is a circle instead of a rectangle, even though the mesh is rectangular.
 The [`PSetDragHandler`][4] uses some data coming from deep within the particle and circuit rendering system in order to apply the partition set position changes.
 
 

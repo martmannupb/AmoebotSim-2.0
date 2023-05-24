@@ -77,7 +77,13 @@ namespace AS2.Visuals
         /// </summary>
         public struct PropertyBlockData
         {
+            /// <summary>
+            /// The color of the rendered particle.
+            /// </summary>
             public Color color;
+            /// <summary>
+            /// The number of pins on each side of the particle.
+            /// </summary>
             public int pinsPerSide;
 
             public PropertyBlockData(Color color, int pinsPerMesh)
