@@ -228,12 +228,15 @@ namespace AS2.Visuals
                 for (int y = 0; y < pin_tex_height; y++)
                 {
                     Color pinTexturePixel = pinTexture.GetPixel(x, y);
-                    foreach (Vector2Int startPos in pinStartPositions)
+                    if (pinTexturePixel.a > 0.1f)
                     {
-                        int texPos_x = startPos.x + x;
-                        int texPos_y = startPos.y + y;
-                        if (texPos_x >= 0 && texPos_x < tex_width && texPos_y >= 0 && texPos_y < tex_height)
-                            tex.SetPixel(texPos_x, texPos_y, pinTexturePixel);
+                        foreach (Vector2Int startPos in pinStartPositions)
+                        {
+                            int texPos_x = startPos.x + x;
+                            int texPos_y = startPos.y + y;
+                            if (texPos_x >= 0 && texPos_x < tex_width && texPos_y >= 0 && texPos_y < tex_height)
+                                tex.SetPixel(texPos_x, texPos_y, pinTexturePixel);
+                        }
                     }
                 }
             }
