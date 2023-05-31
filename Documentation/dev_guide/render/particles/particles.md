@@ -1,7 +1,7 @@
 # Dev Guide: Particle Render Batches
 
 As outlined before, the [`RendererParticles`][1] class manages one [`RendererParticles_RenderBatch`][2] instance for each occurring combination of particle color and number of pins per side.
-The render batch class is responsible for rendering all particles with a specific color and number of pins.
+The render batch class itself is then responsible for rendering all particles with a specific color and number of pins.
 For this purpose, it stores a list of all registered particles matching these properties as well as a number of TRS matrices for each particle.
 The matrices are stored in lists of arrays of size 1023 so that each array can be submitted to a single instanced draw call.
 New arrays are added to the lists if necessary.
@@ -22,12 +22,12 @@ In graph view mode, this connection is not created by the shader:
 
 <img src="~/images/render_particle_body_exp_hex.png" alt="Expanded particle body (hexagonal)" title="Expanded particle body (hexagonal)" height="125"/> <img src="~/images/render_particle_body_exp_round.png" alt="Expanded particle body (hexagonal, roung)" title="Expanded particle body (hexagonal, round)" height="125"/> <img src="~/images/render_particle_body_exp_graph.png" alt="Expanded particle body (triangular graph)" title="Expanded particle body (triangular graph)" height="125"/>
 
-That is why the second component is the connector of expanded, expanding or contracting particles in the graph view mode.
+That is why the second component is the *connector* of expanded, expanding or contracting particles in the graph view mode.
 It is simply a black rectangle that is drawn on a Z layer beneath the particle body:
 
 <img src="~/images/render_particle_exp_connector.png" alt="Expanded particle connector (triangular graph)" title="Expanded particle connector (triangular graph)" width="200"/>
 
-The third and final component is only required in the hexagonal view modes and when the circuit visualization is enabled.
+The third and final component is the *pin overlay*, which is only required in the hexagonal view modes and when the circuit visualization is enabled.
 It is the same as the particle body, except that it only contains the pins, not the particle outline and not the colored internal area.
 Its purpose is to be rendered on a Z layer on top of the circuits (which are rendered on top of the particle body by a different rendering class) so that the pins remain visible on top of the lines.
 
@@ -72,6 +72,7 @@ The vertices that should be moving are marked in UV channel 1 by the [`MeshCreat
 As mentioned above, the [`RendererParticles_RenderBatch`][2] stores 12 TRS matrices per particle.
 This is because there are 3 components (body, pin overlay, graph view connector) and each component has 4 versions, one for each possible movement phase (contracted, expanded, contracting and expanding).
 Each of the used materials has parameters controlling its animation state: The start time of the animation, the duration, and the expansion percentages at the start and the end of the animation.
+The shader will interpolate between the start and end percentages within the given time frame.
 Setting the start and end percentage to the same value disables the animation, i.e., setting both to 0 represents the contracted state and setting both to 1 represents the expanded state.
 
 Recall that a [`RendererParticles_RenderBatch`][2] instance renders all particles with the same color and number of pins.
