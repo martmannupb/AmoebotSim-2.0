@@ -11,7 +11,7 @@ This is a node-based visual environment for editing shaders without having to wr
 The nodes in this environment represent operations that can be applied to data.
 Nodes have input and output sockets with associated data types, similar to parameters and return values of methods in code.
 Connecting an output socket of one node with an input socket of another node by simply dragging a line causes data to flow from the first node to the second.
-There are output nodes that only have input sockets and input nodes that only have output sockets (apart from optional input sockets for parameters).
+There are shader output nodes that only have input sockets and shader input nodes that only have output sockets (apart from optional input sockets for parameters).
 
 A shader is run once every time a ray hits a face of a mesh.
 The data flow starts at the input nodes and travels from node to node until it reaches the output nodes.
@@ -39,7 +39,7 @@ Selecting the material in the Project window will reveal both the shader and its
 Clicking the `Edit...` button in the top right corner (or double-clicking the `.shadergraph` file) opens the Shader Graph Editor window.
 You can detach the window from the Unity Editor by dragging the tab away, then it can be maximized.
 
-<img src="~/images/shader_editor.png" alt="Shadergraph Editor" title="Shadergraph Editor"/>
+<img src="~/images/shader_editor.png" alt="Shader Graph Editor" title="Shader Graph Editor"/>
 
 In the Shader Graph Editor window, you can pan around by clicking and dragging with the middle mouse button or Alt + left mouse button, and you can zoom using the scroll wheel.
 Most shader graphs in this project will have a big note containing a documentation text just like in the image above.
@@ -52,7 +52,7 @@ To start with, the mesh that we will be working with is a simple quad which is 3
 
 <img src="~/images/hex_particle_mesh.png" alt="Hexagon Particle Mesh" title="Hexagon Particle Mesh" width="350"/>
 
-It has been created by the [`MeshCreator_HexagonalView`][1] in such a way that its pivot is exactly $0.5$ units left of the center, i.e., between the left third and the middle third.
+It is created by the [`MeshCreator_HexagonalView`][1] in such a way that its pivot is exactly $0.5$ units left of the center, i.e., between the left third and the middle third.
 In this position, the center of the particle's body should be drawn.
 When the particle is expanded, the other part of its body should be drawn one unit to the right, i.e., between the middle third and the right third.
 The quad mesh rotates around its pivot, so if it is rotated by a multiple of 60 degrees, the right part of the expanded particle will line up exactly with the corresponding neighbor node because the edge length of the background is also one unit.
@@ -92,6 +92,8 @@ This part has to be offset to the right according to the current animation perce
 Third, we draw the connection piece between the two particles.
 We will have to control the scale of this piece such that its left side is in the non-moving part and its right side is in the moving part.
 
+<img src="~/images/shader_example_body1.png" alt="Non-moving body part" title="Non-moving body part" height="100"/> <img src="~/images/shader_example_body2.png" alt="Moving body part" title="Moving body part" height="100"/> <img src="~/images/shader_example_body3.png" alt="Connector part" title="Connector part" height="100"/>
+
 Finally, the three parts have to be mixed somehow.
 For this, to calculate the color value at a given pixel, we take the *maximum color value* of the three rendered parts.
 This means that the combined color has the maximum R, G, B and alpha values of the three calculated colors.
@@ -120,16 +122,23 @@ Next, we "load" (or rather "sample") the textures for the non-moving part of the
 
 The `Sample Texture 2D` node returns the color value of the texture connected to its `Texture` input socket, sampled at the given UV coordinates.
 As mentioned above, if we plug in the UV coordinates returned by the `UV` node, the texture will be stretched to match the whole quad mesh.
+
+<img src="~/images/shader_example_unscaled.png" alt="Body texture with default UV coordinates" title="Body texture with default UV coordinates" width="300"/>
+
 To counteract this, we use our scaling vector $(s_x, s_y)$ to scale the UV coordinates, which is equivalent to scaling the texture on the mesh.
 First, the `TilingScale` input is set to $(1.5, 1)$, which matches the aspect ratio of the mesh (recall that the quad is 3 units wide and 2 units high).
 This means that the square hexagon texture will not be stretched by the UV projection if we multiply the UV coordinates by these values.
 However, since the scaling pivot is in the bottom left of the texture by default, we also set the `ScalePivotOffset` input to $(0.5, 0.5)$, moving the scaling pivot to the texture's center.
 Thus, the texture will be placed in the middle of the quad and its top and bottom sides will touch the quad's top and bottom (note that the texture was not scaled on the Y axis).
 
+<img src="~/images/shader_example_scaled.png" alt="Body texture with scaled UV coordinates" title="Body texture with scaled UV coordinates" width="300"/>
+
 We also want to move the texture to the left, so that it does not appear in the center of the mesh but at its origin position.
 The `MeshRelativeUVOffset` input is used to define this offset.
 Its value is $(-1/6, 0)$, which makes sense because we want to move the hexagon half a unit to the left.
 Since we are moving it in the quad's UV space, where one unit on the X axis equals 3 world units, we have to divide the half world unit by $3$.
+
+<img src="~/images/shader_example_scaled_offset.png" alt="Body texture with scaled UV coordinates and offset" title="Body texture with scaled UV coordinates and offset" width="300"/>
 
 All of these values are plugged into the `TextureScaleAndOffset` node, which is a custom shader subgraph (a shader graph that can be reused in other shader graphs).
 Subgraphs can be opened in the Shader Graph Editor by double-clicking their node.
@@ -189,9 +198,9 @@ Using a logical `Or` node, we combine the comparison results, obtaining a `True`
 This result is used as the predicate of two `Branch` nodes to decide which texture sample should be used.
 If the animation percentage is $1$ or $0$, we use the textures with the `100P` suffix, otherwise, we use the normal textures, allowing us to use different textures during the animation than when the particle is static.
 
-	> [!NOTE]
-	> Originally, this feature was used to hide the pins during the movement animations, but it was decided later that the pins should also be visible during the animation.
-	> The feature was kept in the shader to allow changing this later on, if necessary.
+> [!NOTE]
+> Originally, this feature was used to hide the pins during the movement animations, but it was decided later that the pins should also be visible during the animation.
+> The feature was kept in the shader to allow changing this later on, if necessary.
 
 
 #### Combining the Colors
