@@ -1,43 +1,55 @@
-# Dev Guide: Particle Rendering Data Structures and Interface
+# Dev Guide: Particle Rendering Interface and Data Structures
 
-- Still need to explain how visualization data gets from simulator/particles to the render system
-- Various data structures are used to group information that is needed together somewhere
-- The particle class used by the simulator implements the [`IParticleState`][1] interface
-	- Provides basic state information (like position and expansion state), but also graphical information (like color)
-	- And gives access to an [`IParticleGraphicsAdapter`][2] instance
-	- Every particle has a [`ParticleGraphicsAdapterImpl`][3] object that serves as an interface to the render system
-		- The simulator can push graphics updates using this object
-			- [`AddParticle`][4] and [`RemoveParticle`][5] methods are used to add or remove particles to/from the render system
-			- Registered particles must be updated using the [`Update(ParticleMovementState)`][6] method after each round
-				- The [`ParticleMovementState`][7] and [`ParticleJointMovementState`][8] structs store information on a particle's movement between two rounds
-				- These are converted into [`PositionSnap`][9] structs, which contain the same data with additional rendering-specific info like a timestamp and animation flag
-			- Bonds and circuits are updated separately by calling the [`BondUpdate(ParticleBondGraphicState)`][10] and [`CircuitUpdate(ParticlePinGraphicState)`][11] methods
-			- [`ParticleBondGraphicState`][12] is a simple struct that contains visual information on a single bond
-				- Particle system must make sure that bonds are not added twice (adding bond from one side is enough)
-			- [`ParticlePinGraphicState`][13] is more complex since it represents a particle's entire pin configuration
-				- Data belonging to individual partition sets is stored in [`PSetData`][14] instances
-					- Each instance has its own [`GraphicalData`][15] instance which stores all of the relevant material properties and render batch indices so that changes made to a partition set can be forwarded directly to the corresponding render batch
-				- Individual pins are identified using the [`PinDef`][16] struct
-
-- Additional helpers and data structures
-	- The [`RendererCircuits_Instance`][17] class manages the partition set placement
-		- It calculates the relaxed partition set positions using the [`CircleDistributionCircleLine`][18] and [`CircleDistributionCircleArea`][19] classes
-		- They use the custom [`RandomNumberGenerator`][20] as a source for pseudo-randomness
-			- Resetting it before each execution of the relaxation algorithm ensures deterministic results (otherwise the partition set positions can move randomly)
-	- The class also defines its own helper data structures like [`ParticleCircuitData`][21]
-		- It groups information on the circuits of one particle that is needed by the instance in particular
-		- Uses the [`PSetInnerPinRef`][22] struct to refer to partition set handles and circuit line connectors
-		- The [`GDRef`][23] struct groups information belonging to a single rendered element (line or circle) that is often needed together
-	- [`RenderBatchIndex`][24] struct stores a combination of indices identifying a render batch
-		- Used when a reference from the rendered object to its render batch is needed (e.g., to apply changes directly)
-	- The [`MaterialDatabase`][25] is a static class that provides references to all materials used by the render system
-	- The static [`TextureCreator`][26] class provides methods for generating textures and materials for particles
-		- This allows generating textures for an arbitrary number of pins per edge
-		- It also stores the generated textures and materials to avoid regenerating them (which takes a lot of time)
+The previous pages have covered the structure of the particle rendering system and the purpose and function of the most important classes.
+There are still many aspects of the render system that have not been explained but which could be useful to know when extending the system.
+This page mentions a few of these, focusing on data structures and how visualization data gets from the particles in the simulator to the render system.
 
 
+## Interface
 
-TODO
+The particle class used by the simulator implements the [`IParticleState`][1] interface.
+This provides basic state information like the particle's position and expansion state, but also graphical information like its current color.
+Its most important function for the render system, however, is giving access to an object implementing the [`IParticleGraphicsAdapter`][2] interface.
+More precisely, every particle in the simulator has an instance of the [`ParticleGraphicsAdapterImpl`][3] class, which implements this interface.
+This instance is the particle's representation in the render system and it allows the simulator to push graphics updates without directly accessing the render system.
+The class has [`AddParticle`][4] and [`RemoveParticle`][5] methods that are used to register or deregister a particle in the render system.
+Registered particles must be updated by calling the [`Update(ParticleMovementState)`][6] method when all changes have been applied, which is usually after each round.
+Most of the methods available to the simulator use the [`ParticleMovementState`][7] and [`ParticleJointMovementState`][8] structs to transfer information on the particle's movement from the current round to the next.
+Internally, this information is packed into [`PositionSnap`][9] structs, which contain additional rendering-specific information like a timestamp and animation flag (whether or not the movement should be animated).
+
+The bonds and circuits of a particle are updated separately by calling the [`BondUpdate(ParticleBondGraphicState`][10] and [`CircuitUpdate(ParticlePinGraphicState`][11] methods.
+Here, [`ParticleBondGraphicState`][12] is a simple struct that contains visual information on a single bond.
+The bond update method must be called once for every bond in the whole system.
+It is up to the simulator to ensure that every bond is accounted for and no bond is registered twice.
+Due to the way the bonds are computed, the simulator can assign each bond to one of the two particles it connects, making this relatively easy to achieve.
+
+The [`ParticlePinGraphicState`][13] class has a similar purpose but is more complex because it represents the entire pin configuration of a particle.
+It defines several helper data structures to organize the information it stores.
+Data belonging to individual partition sets is stored in instances of the [`PSetData`][14] class.
+Each of these instances has a [`GraphicalData`][15] instance which stores all of the relevant material properties and render batch indices so that changes made to a partition set can be forwarded directly to the render batch responsible for rendering this partition set.
+Similarly, individual pins are identified using the [`PinDef`][16] struct, which is a small helper containing positional information of a single pin.
+
+
+## Additional Helpers and Data Structures
+
+As mentioned before, the [`RendererCircuits_Instance`][17] class manages the partition set placement.
+It calculates the relaxed partition set positions using the [`CircleDistributionCircleLine`][18] and [`CircleDistributionCircleArea`][19] helper classes.
+To ensure that their results are deterministic and reproducable, these classes internally use the custom [`RandomNumberGenerator`][20] class as a source for pseudo-randomness.
+By resetting the generator before each execution of the relaxation algorithm, they prevent the partition sets from jumping around randomly from one round to the next.
+
+The [`RenderBatchIndex`][24] struct is used throughout the lower levels of the render system to identify specific objects belonging to a render batch.
+The struct stores a combination of list and array index, matching the way TRS matrices are stored in the render batch classes (as lists of arrays).
+It is particularly useful when an object needs to be changed after it has been assigned to a render batch, like partition set handles that can be dragged around by the user, for example.
+
+Another class that is used by many parts of the render system is the [`MaterialDatabase`][25].
+It is a static class that provides references to all materials used by the render system.
+
+Whenever rendering assets need to be generated at runtime, the [`TextureCreator`][26], [`MeshCreator_CircularView`][27] and [`MeshCreator_HexagonalView`][28] classes are used.
+The [`TextureCreator`][26] provides methods for generating textures and materials for particles.
+Its main purpose is creating textures for the hexagonal and round hexagonal particle bodies by combining the base body textures with the pin texture.
+The class also stores the generated textures and materials to avoid regenerating them multiple times, since this is a very expensive operation.
+The mesh creator classes are used to generate meshes for the background grid as well as quad meshes for particles and circuit lines.
+These meshes are generated at runtime because many of them can be modified by changing the scale constants in the [`RenderSystem`][29].
 
 
 
@@ -67,3 +79,6 @@ TODO
 [24]: xref:AS2.Visuals.RenderBatchIndex
 [25]: xref:AS2.MaterialDatabase
 [26]: xref:AS2.Visuals.TextureCreator
+[27]: xref:AS2.Visuals.MeshCreator_CircularView
+[28]: xref:AS2.Visuals.MeshCreator_HexagonalView
+[29]: xref:AS2.Visuals.RenderSystem
