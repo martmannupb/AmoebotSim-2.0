@@ -67,6 +67,20 @@ namespace AS2
         }
 
         /// <summary>
+        /// Removes the <see cref="InitializationParticle"/> at the given position.
+        /// </summary>
+        /// <param name="position">The grid position from which a particle should
+        /// be removed. If an expanded particle occupies this position, its other
+        /// occupied position will be free as well.</param>
+        public void RemoveParticleAt(Vector2Int position)
+        {
+            if (system.TryGetInitParticleAt(position, out InitializationParticle ip))
+            {
+                system.RemoveParticle(ip);
+            }
+        }
+
+        /// <summary>
         /// Returns an array of all currently placed particles. This is useful
         /// for cases where particle parameters have to be set after the
         /// particles were placed and where chirality and compass directions
