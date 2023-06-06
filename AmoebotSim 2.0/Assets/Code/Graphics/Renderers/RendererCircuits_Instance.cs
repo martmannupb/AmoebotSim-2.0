@@ -1448,11 +1448,15 @@ namespace AS2.Visuals
             {
                 batch.ClearMatrices();
             }
-            foreach (var data in circuitDataMap.Values)
+            
+            if (keepCircuitData == false)
             {
-                ParticlePinGraphicState.PoolRelease(data.state);
+                foreach (var data in circuitDataMap.Values)
+                {
+                    ParticlePinGraphicState.PoolRelease(data.state);
+                }
+                circuitDataMap.Clear();
             }
-            if(keepCircuitData == false) circuitDataMap.Clear();
             else
             {
                 // We need to clear the indices
