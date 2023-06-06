@@ -2227,7 +2227,7 @@ namespace AS2.Sim
                     }
 
                     // Singleton sets must be created independently
-                    if (ps.NumStoredPins == 1)
+                    if (ps.NumStoredPins == 1 && !ps.drawSingletonHandle)
                     {
                         SysPin pin = ps.GetPins()[0] as SysPin;
                         Direction pinDir = ParticleSystem_Utils.GetDirOfLabel(pin.globalLabel, p.GlobalHeadDirection());
