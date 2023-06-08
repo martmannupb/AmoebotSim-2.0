@@ -14,7 +14,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 3000
   stringTagMap: {}
   disabledShaderPasses: []
   m_SavedProperties:
@@ -41,23 +41,23 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureHexagon:
-        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
+        m_Texture: {fileID: 2800000, guid: a818acab622b1194ebac76b0b767b9b0, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureHexagon100P:
-        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
+        m_Texture: {fileID: 2800000, guid: a818acab622b1194ebac76b0b767b9b0, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureHexagon100P2:
-        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
+        m_Texture: {fileID: 2800000, guid: a818acab622b1194ebac76b0b767b9b0, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureHexagon2:
-        m_Texture: {fileID: 2800000, guid: 01af326cdfbe7e64e8e3e48c0fed5961, type: 3}
+        m_Texture: {fileID: 2800000, guid: a818acab622b1194ebac76b0b767b9b0, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TextureHexagonConnector:
-        m_Texture: {fileID: 2800000, guid: 309420024968d1b499c8cc9961f4d3a0, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3e00bffc8e9bd8649a2f4da42266ee66, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -79,7 +79,7 @@ Material:
     - _AnimPercentage2: 0
     - _AnimTriggerTime: 0
     - _EnableExternalAlpha: 0
-    - _QueueControl: 0
+    - _QueueControl: 1
     - _QueueOffset: 0
     - _Scale: 0.81
     m_Colors:

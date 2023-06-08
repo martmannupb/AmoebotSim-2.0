@@ -295,6 +295,14 @@ namespace AS2
             return directions;
         }
 
+        /// <summary>
+        /// Translates the <see cref="Initialization.Compass"/> enum
+        /// into the <see cref="Direction"/> enum.
+        /// </summary>
+        /// <param name="initDir">A compass direction specified in the
+        /// <see cref="Initialization.Compass"/> enum.</param>
+        /// <returns>The <see cref="Direction"/> corresponding
+        /// to <paramref name="initDir"/>.</returns>
         public static Direction FromInitDir(Initialization.Compass initDir)
         {
             int dirInt = initDir == Initialization.Compass.Random ? Random.Range(0, 6) : (int)initDir;

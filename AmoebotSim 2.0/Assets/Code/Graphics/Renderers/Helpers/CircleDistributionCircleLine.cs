@@ -6,7 +6,14 @@ using UnityEngine;
 
 namespace AS2.Visuals
 {
-    class CircleDistributionCircleLine
+
+    /// <summary>
+    /// Helper class for distributing points evenly on a circle.
+    /// Uses a modified version of Lloyd's algorithm. The random
+    /// number generator used by the algorithm is reset on every
+    /// call so that the results are deterministic.
+    /// </summary>
+    public static class CircleDistributionCircleLine
     {
 
         // RNG
@@ -16,6 +23,24 @@ namespace AS2.Visuals
         private static List<float> points = new List<float>();
         private static List<float> newPoints = new List<float>();
 
+        /// <summary>
+        /// Spreads the given points on a circle such that they have a minimum
+        /// distance to each other while staying close to their original position.
+        /// Uses a modified version of Lloyd's algorithm.
+        /// </summary>
+        /// <param name="inputOutputDegreeList">A list of angles describing the points.
+        /// The final result will be stored in this list as well.</param>
+        /// <param name="minDistanceBetweenPoints">The minimum angular distance between
+        /// any two points that should be achieved.</param>
+        /// <param name="interationMovementTowardsCenterPercentage">Factor controlling
+        /// how far a point should move away from its closest neighbor in one interaction.
+        /// Smaller values are generally more stable but may require more iterations.</param>
+        /// <param name="maxMovementPerInteraction">The maximum angular distance a point can
+        /// move in one interaction.</param>
+        /// <returns><c>true</c> if and only if the algorithm has converged, i.e., no
+        /// more points have moved in the last iteration. If the algorithm has not
+        /// converged, <c>false</c> is returned and the unfinished list of points
+        /// is written into <paramref name="inputOutputDegreeList"/>.</returns>
         public static bool DistributePointsOnCircle(List<float> inputOutputDegreeList, float minDistanceBetweenPoints, float interationMovementTowardsCenterPercentage = 0.1f, float maxMovementPerInteraction = 360f)
         {
             // Null check
@@ -32,7 +57,8 @@ namespace AS2.Visuals
 
             // Define settings
             int maxIterations = 100;
-            if (minDistanceBetweenPoints * 1.1f >= 360f / points.Count) minDistanceBetweenPoints = (360f / 1.1f) / points.Count; // adjust if min distance is set too large
+            if (minDistanceBetweenPoints * 1.1f >= 360f / points.Count)
+                minDistanceBetweenPoints = (360f / 1.1f) / points.Count; // adjust if min distance is set too large
 
             // Perform edited version of the Lloyd relaxation algorithm
             for (int i = 0; i < maxIterations; i++)
@@ -109,46 +135,62 @@ namespace AS2.Visuals
             return false;
         }
 
-        public static float DistanceBetweenPoints(float point1, float point2)
-        {
-            // Function to calculate distance between two points on a circle
-            // taking into account that the circle wraps around at 360 degrees
-            float dist = Math.Abs(point1 - point2);
-            if (dist > 180)
-            {
-                dist = 360 - dist;
-            }
-            return dist;
-        }
-
-        public static float RelativeDistanceBetweenPoints(float point1, float point2)
+        /// <summary>
+        /// Computes the negative counter-clockwise angle from
+        /// <paramref name="point2"/> to <paramref name="point1"/>.
+        /// </summary>
+        /// <param name="point1">The angle of the first point.</param>
+        /// <param name="point2">The angle of the second point.</param>
+        /// <returns>The counter-clockwise angle from <paramref name="point2"/>
+        /// to <paramref name="point1"/> with a negative sign.</returns>
+        private static float RelativeDistanceBetweenPoints(float point1, float point2)
         {
             point1 = NormalizeDegree0To360(point1) + 360f;
             point2 = NormalizeDegree0To360(point2);
-            float distCounterclockwise = (point2 - point1) % 360f;
-            float distClockwise = 360f - distCounterclockwise;
-            if (distCounterclockwise <= distClockwise) return distCounterclockwise;
-            else return -distClockwise;
+            return (point2 - point1) % 360f;
         }
 
-        public static float RelativeDistanceBetweenPoints_Clockwise(float point1, float point2)
+        /// <summary>
+        /// Computes the clockwise distance from <paramref name="point1"/>
+        /// to <paramref name="point2"/>.
+        /// </summary>
+        /// <param name="point1">The angle of the first point.</param>
+        /// <param name="point2">The angle of the second point.</param>
+        /// <returns>The clockwise angle from <paramref name="point1"/>
+        /// to <paramref name="point2"/>. Is always in the range between
+        /// 0 and 360.</returns>
+        private static float RelativeDistanceBetweenPoints_Clockwise(float point1, float point2)
         {
-            float relDist = RelativeDistanceBetweenPoints(point1, point2);
-            if (relDist < 0) return -relDist;
-            else return 360f - relDist;
+            return -RelativeDistanceBetweenPoints(point1, point2);
         }
 
-        public static float RelativeDistanceBetweenPoints_CounterClockwise(float point1, float point2)
+        /// <summary>
+        /// Computes the counter-clockwise distance from <paramref name="point1"/>
+        /// to <paramref name="point2"/>.
+        /// </summary>
+        /// <param name="point1">The angle of the first point.</param>
+        /// <param name="point2">The angle of the second point.</param>
+        /// <returns>The counter-clockwise angle from <paramref name="point1"/>
+        /// to <paramref name="point2"/>. Is always in the range between
+        /// 0 and 360.</returns>
+        private static float RelativeDistanceBetweenPoints_CounterClockwise(float point1, float point2)
         {
-            float relDist = RelativeDistanceBetweenPoints(point1, point2);
-            if (relDist < 0) return 360f + relDist;
-            else return relDist;
+            return 360 + RelativeDistanceBetweenPoints(point1, point2);
         }
 
+        /// <summary>
+        /// Shifts the given angle to the range between
+        /// 0 and 360 degrees.
+        /// </summary>
+        /// <param name="degree">The angle to be normalized in degrees.</param>
+        /// <returns>The angle described by <paramref name="degree"/>,
+        /// shifted to the range from 0 to 360.</returns>
         private static float NormalizeDegree0To360(float degree)
         {
-            if (degree < 0) return degree += ((((int)-degree) / 360) + 1) * 360f;
-            else return degree % 360f;
+            if (degree < 0)
+                return degree += ((((int)-degree) / 360) + 1) * 360f;
+            else
+                return degree % 360f;
         }
     }
 }

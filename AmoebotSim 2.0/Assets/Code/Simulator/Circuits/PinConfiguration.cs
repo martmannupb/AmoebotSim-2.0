@@ -432,6 +432,25 @@ namespace AS2.Sim
         /// <param name="head">Indicates whether the partition sets
         /// should be reset in the particle's head or tail.</param>
         public abstract void ResetPartitionSetPlacement(bool head = true);
+
+        /// <summary>
+        /// Specifies whether the given partition set should always be drawn
+        /// with a handle, even if it is a singleton set (but not if it
+        /// is empty).
+        /// </summary>
+        /// <param name="partitionSetIndex">The ID of the partition set
+        /// whose handle draw setting to override.</param>
+        /// <param name="drawHandle">Whether the handle should always
+        /// be drawn.</param>
+        public abstract void SetPartitionSetDrawHandle(int partitionSetIndex, bool drawHandle);
+
+        /// <summary>
+        /// Resets the handle draw flags of all partition sets in the given
+        /// part of the particle to <c>false</c>.
+        /// </summary>
+        /// <param name="head">Whether the flag should be reset in the
+        /// particle's head or tail.</param>
+        public abstract void ResetPartitionSetDrawHandle(bool head = true);
     }
 
 } // namespace AS2.Sim

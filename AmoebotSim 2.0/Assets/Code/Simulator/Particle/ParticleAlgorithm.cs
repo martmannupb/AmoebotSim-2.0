@@ -951,6 +951,65 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Hides the bond at the given label without releasing it.
+        /// <para>See <see cref="ShowBond(Direction, bool)"/>,
+        /// <see cref="IsBondVisible(Direction, bool)"/>.</para>
+        /// </summary>
+        /// <param name="locDir">The local direction into which the bond
+        /// is pointing.</param>
+        /// <param name="head">If the particle is expanded, this flag
+        /// indicates whether the bond is located at the head or the tail</param>
+        public void HideBond(Direction locDir, bool head = true)
+        {
+            CheckActive("Particles cannot hide bonds of neighbors.");
+            if (!CheckMove(null))
+                return;
+            int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
+            particle.SetBondVisible(label, false);
+        }
+
+        /// <summary>
+        /// Shows the bond at the given label if it has previously
+        /// been hidden.
+        /// <para>See <see cref="HideBond(Direction, bool)"/>,
+        /// <see cref="IsBondVisible(Direction, bool)"/>.</para>
+        /// </summary>
+        /// <param name="locDir">The local direction into which the bond
+        /// is pointing.</param>
+        /// <param name="head">If the particle is expanded, this flag
+        /// indicates whether the bond is located at the head or the tail</param>
+        public void ShowBond(Direction locDir, bool head = true)
+        {
+            CheckActive("Particles cannot show bonds of neighbors.");
+            if (!CheckMove(null))
+                return;
+            int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
+            particle.SetBondVisible(label, true);
+        }
+
+        /// <summary>
+        /// Checks if the bond at the given label is visible.
+        /// Always returns <c>false</c> when called in
+        /// <see cref="ActivateBeep"/>.
+        /// <para>See <see cref="HideBond(Direction, bool)"/>,
+        /// <see cref="ShowBond(Direction, bool)"/>.</para>
+        /// </summary>
+        /// <param name="locDir">The local direction into which the bond
+        /// is pointing.</param>
+        /// <param name="head">If the particle is expanded, this flag
+        /// indicates whether the bond is located at the head or the tail</param>
+        /// <returns><c>true</c> if and only if the bond at the given position
+        /// is currently visible.</returns>
+        public bool IsBondVisible(Direction locDir, bool head = true)
+        {
+            CheckActive("Particles cannot check bond visibility of neighbors.");
+            if (!CheckMove(null))
+                return false;
+            int label = ParticleSystem_Utils.GetLabelInDir(locDir, particle.HeadDirection(), head);
+            return particle.BondVisible(label);
+        }
+
+        /// <summary>
         /// Switches to automatic bond mode, causing the movements of the
         /// particle to behave like in the original model without joint
         /// movements.

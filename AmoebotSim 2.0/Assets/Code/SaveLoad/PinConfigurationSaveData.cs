@@ -85,6 +85,10 @@ namespace AS2
         /// Tail positions of all partition sets in polar coordinates.
         /// </summary>
         public Vector2[] partitionSetTailPositions;
+        /// <summary>
+        /// Draw handle flags of all partition sets.
+        /// </summary>
+        public bool[] partitionSetDrawHandleFlags;
 
         public PinConfigurationSaveData() { }
 
@@ -141,7 +145,7 @@ namespace AS2
                         return false;
                 }
             }
-            // Compare colors and positions
+            // Compare graphical data
             if (placementModeHead != d.placementModeHead || placementModeTail != d.placementModeTail || lineRotationHead != d.lineRotationHead || lineRotationTail != d.lineRotationTail)
                 return false;
             // Colors
@@ -196,12 +200,25 @@ namespace AS2
                         return false;
                 }
             }
+            // Handle draw flags
+            myArrayNull = partitionSetDrawHandleFlags == null;
+            otherArrayNull = d.partitionSetDrawHandleFlags == null;
+            if (myArrayNull != otherArrayNull)
+                return false;
+            if (!myArrayNull)
+            {
+                for (int i = 0; i < partitionSetTailPositions.Length; i++)
+                {
+                    if (partitionSetDrawHandleFlags[i] != d.partitionSetDrawHandleFlags[i])
+                        return false;
+                }
+            }
             return true;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(headDirection, pinPartitionSets, placementModeHead, placementModeTail, lineRotationHead, lineRotationTail, HashCode.Combine(partitionSetColors, partitionSetColorOverrides, partitionSetHeadPositions, partitionSetTailPositions, isNull));
+            return HashCode.Combine(headDirection, pinPartitionSets, placementModeHead, placementModeTail, lineRotationHead, lineRotationTail, HashCode.Combine(partitionSetColors, partitionSetColorOverrides, partitionSetHeadPositions, partitionSetTailPositions, partitionSetDrawHandleFlags, isNull));
         }
     }
 

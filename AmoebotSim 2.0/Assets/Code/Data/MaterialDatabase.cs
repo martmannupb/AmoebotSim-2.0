@@ -1,50 +1,96 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using AS2.Visuals;
 
 namespace AS2
 {
 
+    /// <summary>
+    /// Contains references to all of the materials used in the
+    /// simulation environment. All of the materials are loaded
+    /// when the application starts.
+    /// </summary>
     public static class MaterialDatabase
     {
 
-        // Base
-        public static Material material_color = Resources.Load<Material>(FilePaths.path_materials + "Base/WhiteMat");
-        public static Material material_line = Resources.Load<Material>(FilePaths.path_materials + "Base/LineMat");
+        /// <summary>
+        /// Sets the render queue values of all materials to fix render
+        /// layering issues.
+        /// <para>
+        /// Note that this does not actually work because Unity resets
+        /// copied materials sometimes (we could not find a way to
+        /// circumvent this). Instead, these render queue values are
+        /// also set manually in the material assets. The only materials
+        /// that require an update of the render queue in the code are
+        /// the hexagon pin material with the invisible hexagon, as
+        /// created by <see cref="TextureCreator.GetPinBorderMaterial(int, ViewType)"/>,
+        /// and the pin beep origin highlights.
+        /// </para>
+        /// </summary>
+        public static void SetRenderQueues()
+        {
+            int q_background = RenderSystem.renderQueue_background;
+            int q_bonds = RenderSystem.renderQueue_bonds;
+            int q_particles = RenderSystem.renderQueue_particles;
+            int q_circuits = RenderSystem.renderQueue_circuits;
+            int q_circuitBeeps = RenderSystem.renderQueue_circuitBeeps;
+            int q_pins = RenderSystem.renderQueue_pins;
+            int q_overlays = RenderSystem.renderQueue_overlays;
+
+            // Background materials
+            material_circular_bgLines.renderQueue = q_background;
+            material_hexagonal_bgHex.renderQueue = q_background;
+
+            // Bond materials
+            material_bond_lineCircular_movement.renderQueue = q_bonds;
+            material_bond_lineHexagonal_movement.renderQueue = q_bonds;
+
+            // Particle materials
+            material_circular_particleComplete.renderQueue = q_particles;
+            material_hexagonal_particleCombined.renderQueue = q_particles;
+            material_circular_particleCompleteConnector.renderQueue = q_particles;
+
+            // Circuit materials
+            material_circuit_line_movement.renderQueue = q_circuits;
+            material_circuit_lineConnector_movement.renderQueue = q_circuits;
+
+            material_circuit_beep.renderQueue = q_circuitBeeps;
+            material_circuit_beepPaused.renderQueue = q_circuitBeeps;
+
+            // Pin materials
+            material_circuit_pin_movement.renderQueue = q_pins;
+
+            // UI overlay materials
+            material_hexagonal_ui_baseHexagonSelectionMaterial.renderQueue = q_overlays;
+            material_hexagonal_ui_baseHexagonAddMaterial.renderQueue = q_overlays;
+            material_hexagonal_ui_baseHexagonRemoveMaterial.renderQueue = q_overlays;
+            material_hexagonal_ui_baseHexagonMoveMaterial.renderQueue = q_overlays;
+            material_hexagonal_ui_baseHexagonMoveSelectionMaterial.renderQueue = q_overlays;
+            material_circuit_ui_pSetHoverMaterial.renderQueue = q_overlays;
+            material_circuit_ui_pSetDragMaterial.renderQueue = q_overlays;
+        }
 
         // Circular View
-        // deprecated
         public static Material material_circular_bgLines = Resources.Load<Material>(FilePaths.path_materials + "CircularView/BGMaterial");
         public static Material material_circular_particleComplete = Resources.Load<Material>(FilePaths.path_materials + "CircularView/ParticleMat");
         public static Material material_circular_particleCompleteConnector = Resources.Load<Material>(FilePaths.path_materials + "CircularView/ConnectorMat");
-        // Old System
-        //public static Material material_circular_particle = Resources.Load<Material>(FilePaths.path_materials + "CircularView/ParticleColorMat");
-        //public static Material material_circular_particleCenter = Resources.Load<Material>(FilePaths.path_materials + "CircularView/ParticleCenterMat");
-        //public static Material material_circular_particleConnector = Resources.Load<Material>(FilePaths.path_materials + "CircularView/ParticleConnectorMat");
 
         // Hexagonal View
         public static Material material_hexagonal_bgHex = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonGridMat");
         public static Material material_hexagonal_particleCombined = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonCombinedMat");
-        // Old System
-        //public static Material material_hexagonal_particle = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonDefaultMat");
-        //public static Material material_hexagonal_particleExpansion = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonExpansionMat");
-        //public static Material material_hexagonal_particleCenter = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/HexagonCenterDefaultMat");
 
         // Circuits
-        public static Material material_circuit_line = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitMat");
         public static Material material_circuit_line_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitMatWithMovement");
-        public static Material material_circuit_lineConnector = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitConnectorMat");
         public static Material material_circuit_lineConnector_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitConnectorMatWithMovement");
-        public static Material material_circuit_pin = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMat");
         public static Material material_circuit_pin_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMatWithMovement");
+        
         // Beeps
         public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");
         public static Material material_circuit_beepPaused = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepPausedMat");
-        public static Material material_circuit_pin_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinBeepMat"); // not used
+        
         // Bonds
-        public static Material material_bond_lineHexagonal = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondHexMat");
         public static Material material_bond_lineHexagonal_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondHexMatWithMovement");
-        public static Material material_bond_lineCircular = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondCircMat");
         public static Material material_bond_lineCircular_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondCircMatWithMovement");
 
         // UI
