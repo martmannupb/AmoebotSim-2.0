@@ -338,6 +338,15 @@ namespace AS2.Sim
         /// the particle's head or tail should be placed. For
         /// contracted particles, this should be <c>true</c>.</param>
         public abstract void SetPosition(Vector2 polarCoords, bool head = true);
+
+        /// <summary>
+        /// Specifies whether this partition set should always be drawn
+        /// with a handle, even if it is a singleton set (but not if it
+        /// is empty).
+        /// </summary>
+        /// <param name="drawHandle">Whether the handle should always
+        /// be drawn.</param>
+        public abstract void SetDrawHandle(bool drawHandle);
     }
 
 } // namespace AS2.Sim

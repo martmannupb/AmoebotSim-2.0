@@ -13,35 +13,42 @@ namespace AS2.Visuals
     {
 
         // Variables
+        /// <summary>
+        /// Whether or not this is actually a joint movement.
+        /// if <c>false</c>, the <see cref="jointMovementOffset"/>
+        /// is invalid unless it is <c>(0, 0)</c>.
+        /// </summary>
         public bool isJointMovement;
-        public Vector2Int jointExpansionOffset;
+        /// <summary>
+        /// The global offset by which the particle's position
+        /// has shifted. This is relative to the particle's own
+        /// non-moving part if it performs a movement itself.
+        /// </summary>
+        public Vector2Int jointMovementOffset;
 
+        /// <summary>
+        /// Constant neutral version of the struct, representing
+        /// no joint movement.
+        /// </summary>
         public static ParticleJointMovementState None = new ParticleJointMovementState(false, new Vector2Int(0, 0));
 
         public ParticleJointMovementState(bool isJointMovement, Vector2Int jointExpansionOffset)
         {
             this.isJointMovement = isJointMovement;
-            this.jointExpansionOffset = jointExpansionOffset;
+            this.jointMovementOffset = jointExpansionOffset;
         }
-
-
-
-
-
-
 
 
         // Overrides
 
         public bool Equals(ParticleJointMovementState other)
         {
-            return this.isJointMovement == other.isJointMovement && this.jointExpansionOffset == other.jointExpansionOffset;
+            return this.isJointMovement == other.isJointMovement && this.jointMovementOffset == other.jointMovementOffset;
         }
-
 
         public static bool operator ==(ParticleJointMovementState state1, ParticleJointMovementState state2)
         {
-            return state1.isJointMovement == state2.isJointMovement && state1.jointExpansionOffset == state2.jointExpansionOffset;
+            return state1.isJointMovement == state2.isJointMovement && state1.jointMovementOffset == state2.jointMovementOffset;
         }
 
         public static bool operator !=(ParticleJointMovementState lhs, ParticleJointMovementState rhs) => !(lhs == rhs);
@@ -53,12 +60,12 @@ namespace AS2.Visuals
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(isJointMovement, jointExpansionOffset);
+            return HashCode.Combine(isJointMovement, jointMovementOffset);
         }
 
         public string Description()
         {
-            return "JM: " + isJointMovement + "\nJEO:" + jointExpansionOffset;
+            return "JM: " + isJointMovement + "\nOffset:" + jointMovementOffset;
         }
     }
 

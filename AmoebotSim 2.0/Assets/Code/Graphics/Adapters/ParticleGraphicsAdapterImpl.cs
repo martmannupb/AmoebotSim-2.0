@@ -7,8 +7,7 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Serves as the bridge between the particles of the system and the render system. Particles have an instance of this class.
-    /// Used to pass visual information to the graphical system and draw the particle with circuits and bonds to the screen.
+    /// Implementation of <see cref="IParticleGraphicsAdapter"/>.
     /// </summary>
     public class ParticleGraphicsAdapterImpl : IParticleGraphicsAdapter
     {
@@ -34,12 +33,23 @@ namespace AS2.Visuals
         public Color graphics_color;
 
         /// <summary>
+        /// Possible movement phases of a particle.
+        /// </summary>
+        public enum ParticleMovement
+        {
+            Contracted,
+            Expanded,
+            Expanding,
+            Contracting
+        }
+
+        /// <summary>
         /// A snap of a position that is used to determine the current state of the particle.
         /// </summary>
         public struct PositionSnap
         {
-            public Vector2Int position1;
-            public Vector2Int position2;
+            public Vector2Int position1;        // Head
+            public Vector2Int position2;        // Tail
             public bool isExpanded;
             public int globalExpansionOrContractionDir;
             public bool noAnimation;
@@ -88,6 +98,16 @@ namespace AS2.Visuals
                 return s is PositionSnap && (PositionSnap)s == this;
             }
 
+            /// <summary>
+            /// Compares the positions and expansion states of
+            /// the two given snapshots.
+            /// </summary>
+            /// <param name="s1">The first snapshot to compare.</param>
+            /// <param name="s2">The second snapshot to compare.</param>
+            /// <returns><c>true</c> if and only if the position and
+            /// expansion state of the two given snapshots are equal.
+            /// Note that if the snapshots are contracted, their tail
+            /// positions might still differ.</returns>
             public static bool IsPositionEqual(PositionSnap s1, PositionSnap s2)
             {
                 return s1.position1 == s2.position1 && s1.position2 == s2.position2 && s1.isExpanded == true && s2.isExpanded == true ||
@@ -95,8 +115,7 @@ namespace AS2.Visuals
             }
 
             /// <summary>
-            /// 42, the answer to everything.
-            /// Dummy value to avoid warnings.. Please do not use!
+            /// Dummy value to avoid warnings. Please do not use!
             /// </summary>
             /// <returns></returns>
             public override int GetHashCode()
@@ -105,7 +124,7 @@ namespace AS2.Visuals
             }
 
             /// <summary>
-            /// Dummy value to avoid warnings.. Please do not use!
+            /// Dummy value to avoid warnings. Please do not use!
             /// </summary>
             /// <returns></returns>
             public override string ToString()
@@ -124,6 +143,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Adds the particle to the renderer. Only needs to be called once to register a particle.
         /// </summary>
+        /// <param name="movementState">The current movement state of the new particle.</param>
         public void AddParticle(ParticleMovementState movementState)
         {
             // Check if already added to the system
@@ -136,14 +156,17 @@ namespace AS2.Visuals
             WorldSpaceUIHandler.instance.AddParticleTextUI(particle, state_cur.position1);
             // Register Particle
             graphics_isRegistered = true;
-            if (particle.IsParticleColorSet()) graphics_color = particle.GetParticleColor();
-            else graphics_color = defColor;
+            if (particle.IsParticleColorSet())
+                graphics_color = particle.GetParticleColor();
+            else
+                graphics_color = defColor;
             renderer.Particle_Add(this);
             Update(true, movementState, true);
         }
 
         /// <summary>
-        /// Removes a particle from the renderer. Only needs to be called once when the particle is removed from the system.
+        /// Removes a particle from the renderer. Only needs to be called once
+        /// when the particle is removed from the system.
         /// </summary>
         public void RemoveParticle()
         {
@@ -168,8 +191,10 @@ namespace AS2.Visuals
             if (state_cur.isExpanded)
             {
                 // Expanded
-                if (state_prev.isExpanded || noAnimation) state_cur.movement = ParticleMovement.Expanded;
-                else state_cur.movement = ParticleMovement.Expanding;
+                if (state_prev.isExpanded || noAnimation)
+                    state_cur.movement = ParticleMovement.Expanded;
+                else
+                    state_cur.movement = ParticleMovement.Expanding;
             }
             else
             {
@@ -205,8 +230,10 @@ namespace AS2.Visuals
             if (state_cur.isExpanded)
             {
                 // Expanded
-                if (state_prev.isExpanded || noAnimation) state_cur.movement = ParticleMovement.Expanded;
-                else state_cur.movement = ParticleMovement.Expanding;
+                if (state_prev.isExpanded || noAnimation)
+                    state_cur.movement = ParticleMovement.Expanded;
+                else
+                    state_cur.movement = ParticleMovement.Expanding;
             }
             else
             {
@@ -271,15 +298,6 @@ namespace AS2.Visuals
             throw new System.NotImplementedException();
         }
 
-
-
-        public enum ParticleMovement
-        {
-            Contracted,
-            Expanded,
-            Expanding,
-            Contracting
-        }
     }
 
 }

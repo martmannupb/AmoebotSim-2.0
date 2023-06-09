@@ -7,7 +7,11 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Renderer for the circuits. Each instance of this class renders circuit lines with the same properties (like color, type, etc.) with Unity's instanced drawing.
+    /// Renderer for the circuits. Each instance of this class renders circuit
+    /// lines with the same properties (like color, type, etc.) with Unity's
+    /// instanced drawing. The class handles circuit lines inside of particles,
+    /// circuit connections between the particles and bonds. Each instance only
+    /// renders one type of line.
     /// </summary>
     public class RendererCircuits_RenderBatch : IGenerateDynamicMesh
     {
@@ -35,22 +39,51 @@ namespace AS2.Visuals
         public PropertyBlockData properties;
 
         /// <summary>
-        /// An extendable struct that functions as the key for the mapping of particles to their render class.
+        /// An extendable struct that functions as the key for the
+        /// mapping of particles to their render class.
         /// </summary>
         public struct PropertyBlockData
         {
+            /// <summary>
+            /// The type of line that is being drawn.
+            /// </summary>
             public enum LineType
             {
+                /// <summary>
+                /// Circuit connection lines inside of a particle.
+                /// </summary>
                 InternalLine,
+                /// <summary>
+                /// Circuit lines connecting particles.
+                /// </summary>
                 ExternalLine,
+                /// <summary>
+                /// Bonds in the hexagonal view mode.
+                /// </summary>
                 BondHexagonal,
+                /// <summary>
+                /// Bonds in the graph view mode.
+                /// </summary>
                 BondCircular
             }
 
+            /// <summary>
+            /// Simulation state for which the lines should be drawn.
+            /// </summary>
             public enum ActiveState
             {
+                /// <summary>
+                /// Simulation is running.
+                /// </summary>
                 SimActive,
+                /// <summary>
+                /// Simulation is paused.
+                /// </summary>
                 SimPaused,
+                /// <summary>
+                /// Simulation is running or paused
+                /// (used when both are rendered the same).
+                /// </summary>
                 SimActiveOrPaused
             }
 
@@ -83,7 +116,9 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Initializes the materials based on the circuit render batch type. Also sets certain parameters for the property blocks and general settings of this class.
+        /// Initializes the materials based on the circuit render batch type.
+        /// Also sets certain parameters for the property blocks and general
+        /// settings of this class.
         /// </summary>
         public void Init()
         {
@@ -115,7 +150,8 @@ namespace AS2.Visuals
                     propertyBlock_circuitMatrices_Lines.ApplyColor(Color.white);
                     propertyBlock_circuitMatrices_Lines.ApplyColorSecondary(properties.color);
                 }
-                else propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Bond Color stays
+                else
+                    propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Circuit Color stays
             }
             // Beeping Properties
             if (properties.beeping)
@@ -160,7 +196,9 @@ namespace AS2.Visuals
                 default:
                     break;
             }
-            if (properties.beeping && properties.activeState == PropertyBlockData.ActiveState.SimPaused) lineWidth = RenderSystem.const_circuitConnectorLineWidth; // Special Case
+            // Special case: Use wider lines for beeping circuits when the simulation is paused
+            if (properties.beeping && properties.activeState == PropertyBlockData.ActiveState.SimPaused)
+                lineWidth = RenderSystem.const_circuitConnectorLineWidth;
 
             // Generate Mesh
             RegenerateMeshes();
@@ -169,17 +207,19 @@ namespace AS2.Visuals
         public void RegenerateMeshes()
         {
             circuitQuad = Library.MeshConstants.getDefaultMeshQuad(new Vector2(0f, 0.5f));
-            if(RenderSystem.const_mesh_useManualBoundingBoxRadius) circuitQuad = Library.MeshConstants.AddManualBoundsToMesh(circuitQuad, Vector3.zero, RenderSystem.const_mesh_boundingBoxRadius, true);
+            if (RenderSystem.const_mesh_useManualBoundingBoxRadius)
+                circuitQuad = Library.MeshConstants.AddManualBoundsToMesh(circuitQuad, Vector3.zero, RenderSystem.const_mesh_boundingBoxRadius, true);
         }
 
         /// <summary>
         /// Adds a line from A to B.
         /// </summary>
-        /// <param name="globalLineStartPos">The start position of the line.</param>
-        /// <param name="globalLineEndPos">The end position of the line.</param>
+        /// <param name="globalLineStartPos">The global start position A of the line.</param>
+        /// <param name="globalLineEndPos">The global end position B of the line.</param>
+        /// <returns>The batch index of the new line in this batch.</returns>
         public RenderBatchIndex AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos)
         {
-            if(currentIndex >= maxArraySize * circuitMatrices_Lines.Count)
+            if (currentIndex >= maxArraySize * circuitMatrices_Lines.Count)
             {
                 // Add an Array
                 circuitMatrices_Lines.Add(new Matrix4x4[maxArraySize]);
@@ -194,9 +234,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Updates a line from A to B.
         /// </summary>
-        /// <param name="globalLineStartPos">The start position of the line.</param>
-        /// <param name="globalLineEndPos">The end position of the line.</param>
-        /// <param name="index">The index of the update.</param>
+        /// <param name="globalLineStartPos">The start position A of the line.</param>
+        /// <param name="globalLineEndPos">The end position B of the line.</param>
+        /// <param name="index">The index of the line to update.</param>
         public void UpdateLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, RenderBatchIndex index)
         {
             if (index.isValid == false || index.listNumber < 0 || index.listNumber >= circuitMatrices_Lines.Count || index.listIndex < 0 || index.listIndex >= circuitMatrices_Lines[index.listNumber].Length)
@@ -208,12 +248,13 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Adds a animated line from A to B which can move.
+        /// Adds a animated line from A to B which can move to the
+        /// line from A' to B'.
         /// </summary>
-        /// <param name="globalLineStartPos">The start position of the line at the beginning of the animation.</param>
-        /// <param name="globalLineEndPos">The end position of the line at the beginning of the animation.</param>
-        /// <param name="globalLineStartPos2">The start position of the line at the end of the animation.</param>
-        /// <param name="globalLineEndPos2">The end position of the line at the end of the animation.</param>
+        /// <param name="globalLineStartPos">The start position A of the line at the beginning of the animation.</param>
+        /// <param name="globalLineEndPos">The end position B of the line at the beginning of the animation.</param>
+        /// <param name="globalLineStartPos2">The start position A' of the line at the end of the animation.</param>
+        /// <param name="globalLineEndPos2">The end position B' of the line at the end of the animation.</param>
         public void AddManuallyUpdatedLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Vector2 globalLineStartPos2, Vector2 globalLineEndPos2)
         {
             if (currentIndex >= maxArraySize * circuitMatrices_Lines.Count)
@@ -237,33 +278,41 @@ namespace AS2.Visuals
 
         /// <summary>
         /// Calculates the line matrix from the positional information about the line.
-        /// We basically take a standard quad and transform it, so that it forms a line.
+        /// We basically take a standard quad and transform it so that it forms a line.
+        /// The pivot of the quad must be at the center of the quad's left side.
         /// </summary>
         /// <param name="posInitial">The start position of the line.</param>
         /// <param name="posEnd">The end position of the line.</param>
-        /// <returns></returns>
+        /// <returns>A transformation, rotation, scaling matrix for the new line.</returns>
         private Matrix4x4 CalculateLineMatrix(Vector2 posInitial, Vector2 posEnd)
         {
             Vector2 vec = posEnd - posInitial;
             float length = vec.magnitude;
             float z;
-            if(properties.lineType == PropertyBlockData.LineType.BondHexagonal || properties.lineType == PropertyBlockData.LineType.BondCircular) z = RenderSystem.ZLayer_bonds;
-            else z = RenderSystem.zLayer_circuits + zOffset;
-            Quaternion q;
-            q = Quaternion.FromToRotation(Vector2.right, vec);
-            if (q.eulerAngles.y >= 179.999) q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
+            if (properties.lineType == PropertyBlockData.LineType.BondHexagonal || properties.lineType == PropertyBlockData.LineType.BondCircular)
+                z = RenderSystem.ZLayer_bonds;
+            else
+                z = RenderSystem.zLayer_circuits + zOffset;
+            Quaternion q = Quaternion.FromToRotation(Vector2.right, vec);
+            if (q.eulerAngles.y >= 179.999)
+                q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
             return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, z), q, new Vector3(length, lineWidth, 1f));
         }
 
         /// <summary>
-        /// Calculates the interpolated line matrices for a point in time of an animation. This should done every frame if the animations are running.
+        /// Calculates the interpolated line matrices for a point in time of an animation.
+        /// This should done every frame if the animations are running.
+        /// <para>
         /// DEPRECATED: Try to replace this with the new shader animations. This is more performant and straightforward.
+        /// </para>
         /// </summary>
         private void CalculateAnimationFrame()
         {
             float interpolationPercentage;
-            if (properties.animationUpdatedManually && RenderSystem.animationsOn) interpolationPercentage = Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
-            else interpolationPercentage = 1f;
+            if (properties.animationUpdatedManually && RenderSystem.animationsOn)
+                interpolationPercentage = Library.InterpolationConstants.SmoothLerp(RenderSystem.animation_curAnimationPercentage);
+            else
+                interpolationPercentage = 1f;
             for (int i = 0; i < currentIndex; i++)
             {
                 int listNumber = i / maxArraySize;
@@ -277,10 +326,10 @@ namespace AS2.Visuals
         }
 
 
-
         /// <summary>
-        /// Clears the matrices, so nothing gets rendered anymore. The lists can be filled with new data now.
-        /// (Actually just sets the index to 0, so we dont draw anything anymore.)
+        /// Clears the matrices, so nothing gets rendered anymore.
+        /// The lists can be filled with new data now.
+        /// (Actually just sets the index to 0, so we don't draw anything anymore.)
         /// </summary>
         public void ClearMatrices()
         {
@@ -296,13 +345,14 @@ namespace AS2.Visuals
         /// <param name="beepStartTime">Start time of the beeps.</param>
         public void ApplyUpdates(float animationStartTime, float beepStartTime)
         {
-            if(properties.beeping && properties.activeState != PropertyBlockData.ActiveState.SimPaused)
+            if (properties.beeping && properties.activeState != PropertyBlockData.ActiveState.SimPaused)
             {
                 // Beeping Animation
                 float halfAnimationDuration = RenderSystem.data_circuitBeepDuration * 0.5f;
+                // The shader will animate from alpha 0 to 1 and back to 0, starting half
+                // the duration before the animation trigger time
                 propertyBlock_circuitMatrices_Lines.ApplyAlphaPercentagesToBlock(0f, 1f);
                 propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(beepStartTime + halfAnimationDuration, halfAnimationDuration);
-                //propertyBlock_circuitMatrices_Lines.ApplyAnimationTimestamp(animationStartTime, halfAnimationDuration);
                 lastBeepStartTime = beepStartTime;
             }
             else
@@ -336,8 +386,10 @@ namespace AS2.Visuals
         /// <summary>
         /// Draws the circuits to the screen based on current settings.
         /// </summary>
-        /// <param name="type">The view type of the system. Useful for deciding what should be shown.</param>
-        /// <param name="firstRenderFrame">Set to true if a new round has just begun, so that the new timing settings can be applied.</param>
+        /// <param name="type">The view type of the system. Useful for deciding
+        /// what should be shown.</param>
+        /// <param name="firstRenderFrame">Set to <c>true</c> if a new round has
+        /// just begun, so that the new timing settings can be applied.</param>
         public void Render(ViewType type, bool firstRenderFrame)
         {
             // Visibility Check

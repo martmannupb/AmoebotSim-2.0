@@ -55,6 +55,7 @@ namespace AS2
         // Bond data
         public ValueHistorySaveData<int> activeBondHistory;
         public ValueHistorySaveData<int> markedBondHistory;
+        public ValueHistorySaveData<int> visibleBondHistory;
 
         // Circuit data
         public PinConfigurationHistorySaveData pinConfigurationHistory;

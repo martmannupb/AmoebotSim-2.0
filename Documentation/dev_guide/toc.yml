@@ -8,4 +8,5 @@
 - name: Input Handling
   href: input.md
 - name: Render System
-  href: render_system.md
+  href: render/toc.yml
+  topicHref: render/home.md

@@ -7,7 +7,8 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Contains the movement information for a single particle in a single round.
+    /// Contains the position and movement information for
+    /// a single particle in a single round.
     /// </summary>
     public struct ParticleMovementState
     {
@@ -27,14 +28,17 @@ namespace AS2.Visuals
         /// </summary>
         public bool isExpanded;
         /// <summary>
-        /// The expansion direction of the particle. For contractions just use the direction of the particle that has previously been expanded.
+        /// The expansion direction of the particle. For contractions
+        /// just use the expansion direction of the particle before
+        /// the contraction.
         /// </summary>
         public int expansionOrContractionDir;
 
 
         /// <summary>
         /// Data for the joint movements.
-        /// Set ParticleJointMovementState.None if there is no joint movement.
+        /// Set <see cref="ParticleJointMovementState.None"/>
+        /// if there is no joint movement.
         /// </summary>
         public ParticleJointMovementState jointMovement;
 

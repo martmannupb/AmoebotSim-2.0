@@ -8,13 +8,14 @@ namespace AS2.Visuals
     /// Helper for instanced drawing of matrices.
     /// Contains a dynamically extendable list of matrices and lets you add matrices that should be drawn.
     /// Automatically adds new matrix arrays if the max. count of instanced drawing is reached.
-    /// Once the structure is build, created list stay in the system, so no new objects are created and the system works with maximal efficiency.
+    /// Once the structure is built, created lists stay in the system, so no new objects are created and the
+    /// system works with maximal efficiency.
     /// </summary>
     public class InstancedDrawer
     {
 
         private List<Matrix4x4[]> matricesList = new List<Matrix4x4[]>();
-        private int count = 0;
+        private int count = 0;      // The total number of managed matrices
         private int Capacity {
             get {
                 return matricesList.Count * 1024;
@@ -24,7 +25,7 @@ namespace AS2.Visuals
         /// <summary>
         /// Adds a matrix to the system.
         /// </summary>
-        /// <param name="matrix"></param>
+        /// <param name="matrix">The matrix to be added.</param>
         public void AddMatrix(Matrix4x4 matrix)
         {
             if (Capacity < count + 1) matricesList.Add(new Matrix4x4[1024]);
@@ -51,7 +52,7 @@ namespace AS2.Visuals
         /// </summary>
         /// <param name="mesh">The mesh to use.</param>
         /// <param name="mat">The material to use.</param>
-        /// <param name="matPropBlock">A matrial property block. Can be omitted.</param>
+        /// <param name="matPropBlock">A material property block. Can be omitted.</param>
         public void Draw(Mesh mesh, Material mat, MaterialPropertyBlock matPropBlock = null)
         {
             int listDrawAmount = count / 1024 + 1;

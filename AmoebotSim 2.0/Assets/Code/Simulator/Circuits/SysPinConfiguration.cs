@@ -302,6 +302,7 @@ namespace AS2.Sim
                 spCopy.colorOverride = spMine.colorOverride;
                 spCopy.positionHead = spMine.positionHead;
                 spCopy.positionTail = spMine.positionTail;
+                spCopy.drawSingletonHandle = spMine.drawSingletonHandle;
             }
             copy.isCurrent = isCurrent;
             copy.isPlanned = isPlanned;
@@ -732,6 +733,17 @@ namespace AS2.Sim
             }
         }
 
+        public override void SetPartitionSetDrawHandle(int partitionSetIndex, bool drawHandle)
+        {
+            partitionSets[partitionSetIndex].drawSingletonHandle = drawHandle;
+        }
+
+        public override void ResetPartitionSetDrawHandle(bool head = true)
+        {
+            foreach (SysPartitionSet ps in partitionSets)
+                ps.drawSingletonHandle = false;
+        }
+
         /*
          * Saving and loading functionality, also used for histories.
          */
@@ -756,6 +768,7 @@ namespace AS2.Sim
             data.partitionSetColorOverrides = new bool[numPins];
             data.partitionSetHeadPositions = new Vector2[numPins];
             data.partitionSetTailPositions = new Vector2[numPins];
+            data.partitionSetDrawHandleFlags = new bool[numPins];
             for (int i = 0; i < numPins; i++)
             {
                 data.pinPartitionSets[i] = pins[i].partitionSet.id;
@@ -764,6 +777,7 @@ namespace AS2.Sim
                 data.partitionSetColorOverrides[i] = ps.colorOverride;
                 data.partitionSetHeadPositions[i] = ps.positionHead;
                 data.partitionSetTailPositions[i] = ps.positionTail;
+                data.partitionSetDrawHandleFlags[i] = ps.drawSingletonHandle;
             }
 
             return data;
@@ -853,6 +867,7 @@ namespace AS2.Sim
                 ps.colorOverride = data.partitionSetColorOverrides[i];
                 ps.positionHead = data.partitionSetHeadPositions[i];
                 ps.positionTail = data.partitionSetTailPositions[i];
+                ps.drawSingletonHandle = data.partitionSetDrawHandleFlags[i];
             }
             // Set placement mode
             placementModeHead = data.placementModeHead;

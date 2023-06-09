@@ -186,7 +186,6 @@ namespace AS2.UI
             }
             Log.AddToLogHistory(text);
             if (go.GetComponent<SizeFitter>() != null) go.GetComponent<SizeFitter>().ResizeCentralizedInFrameAmount(1);
-            timestampLastInteraction = Time.timeSinceLevelLoad;
 
             // Check if list is too long
             while (logElementList.Count > maxLogEntries)
@@ -195,8 +194,12 @@ namespace AS2.UI
                 logElementList.RemoveAt(0);
             }
 
-            // Show
-            Show(true, this.keepVisible);
+            // Show entry if log level is warning or higher
+            if (type == EntryType.Warning || type == EntryType.Error)
+            {
+                timestampLastInteraction = Time.timeSinceLevelLoad;
+                Show(true, this.keepVisible);
+            }
         }
 
         /// <summary>

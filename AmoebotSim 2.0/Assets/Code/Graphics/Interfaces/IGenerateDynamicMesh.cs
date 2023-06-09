@@ -7,7 +7,8 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Interface that is implemented by classes that need to regenerate meshes when certain parameters change.
+    /// Interface that is implemented by classes that need to
+    /// regenerate meshes when certain parameters change.
     /// </summary>
     public interface IGenerateDynamicMesh
     {
@@ -16,7 +17,6 @@ namespace AS2.Visuals
         /// Regenerates the meshes of this class.
         /// </summary>
         void RegenerateMeshes();
-
     }
 
 }

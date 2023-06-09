@@ -14,7 +14,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 3000
   stringTagMap: {}
   disabledShaderPasses: []
   m_SavedProperties:
@@ -64,14 +64,17 @@ Material:
     - _AnimPercentage2: 1
     - _AnimTriggerTime: 0
     - _EnableExternalAlpha: 0
-    - _InnerRingAliasingDist: 0.025
+    - _InnerRingAliasingDist: 0.01
     - _InnerRingScale: 0.47
     - _InnerRingWidth: 0.93
     - _InnerScale: 1
+    - _OuterRingAliasingDist: 0.01
+    - _OuterRingScale: 0.87
+    - _OuterRingWidth: 0.27
     - _OutterRingAliasingDist: 0.025
     - _OutterRingScale: 0.87
     - _OutterRingWidth: 0.27
-    - _QueueControl: 0
+    - _QueueControl: 1
     - _QueueOffset: 0
     - _Scale: 0.85
     - _Width: 0.25

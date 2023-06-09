@@ -7,7 +7,8 @@ namespace AS2.Visuals
 {
 
     /// <summary>
-    /// Implemented by the particles. Contains helpful methods for the view to access standardized data from particles.
+    /// Implemented by the particles. Contains helpful methods for
+    /// the view to access standardized data from particles.
     /// </summary>
     public interface IParticleState
     {
@@ -38,7 +39,8 @@ namespace AS2.Visuals
         Vector2Int Head();
 
         /// <summary>
-        /// Tail position of the particle. Same as Head() if particle is not expanded.
+        /// Tail position of the particle. Same as <see cref="Head"/>
+        /// if the particle is not expanded.
         /// </summary>
         /// <returns></returns>
         Vector2Int Tail();
@@ -124,17 +126,6 @@ namespace AS2.Visuals
         bool MakeAnchor();
 
         // Circuits and Partition Sets _________________________
-
-        /**
-         * List of methods we need:
-         * - Access to list of partition sets
-         * - 
-         * 
-         * What connections we need:
-         * - Partition sets need to have a connection to the circuits
-         * - Circuits should have a color set
-         * - 
-         **/
 
         /// <summary>
         /// Returns the number of pins per side at the particle.

@@ -143,6 +143,15 @@ namespace AS2.Sim
         /// </summary>
         private ValueHistory<int> markedBondHistory;
 
+        /// <summary>
+        /// Flags indicating which bonds should be visible.
+        /// </summary>
+        private BitVector32 visibleBonds;
+        /// <summary>
+        /// The history of all bond visibility settings.
+        /// </summary>
+        private ValueHistory<int> visibleBondHistory;
+
         // Pin Configuration
 
         /// <summary>
@@ -366,6 +375,10 @@ namespace AS2.Sim
         /// Marked bonds indexed by global labels.
         /// </summary>
         public bool[] markedBondsGlobal = new bool[10];
+        /// <summary>
+        /// Visible bonds indexed by global labels.
+        /// </summary>
+        public bool[] visibleBondsGlobal = new bool[10];
 
         /// <summary>
         /// Flag indicating whether the pin configuration of the particle has
@@ -455,8 +468,10 @@ namespace AS2.Sim
 
             activeBonds = new BitVector32(1023);    // All flags set to true
             activeBondHistory = new ValueHistory<int>(activeBonds.Data, currentRound);
-            markedBonds = new BitVector32(0);       // All flags are set to false
+            markedBonds = new BitVector32(0);       // All flags set to false
             markedBondHistory = new ValueHistory<int>(markedBonds.Data, currentRound);
+            visibleBonds = new BitVector32(1023);   // All flags set to true
+            visibleBondHistory = new ValueHistory<int>(visibleBonds.Data, currentRound);
 
             // Graphics
             // Initialize color
@@ -691,6 +706,29 @@ namespace AS2.Sim
         public bool BondMarked(int label)
         {
             return markedBonds[1 << label];
+        }
+
+        /// <summary>
+        /// Sets the visibility of the bond at the given label.
+        /// <para>See <see cref="BondVisible(int)"/>.</para>
+        /// </summary>
+        /// <param name="label">The local label of the bond.</param>
+        /// <param name="visible">Whether the bond should be visible.</param>
+        public void SetBondVisible(int label, bool visible)
+        {
+            visibleBonds[1 << label] = visible;
+        }
+
+        /// <summary>
+        /// Checks if the bond at the given label is currently visible.
+        /// <para>See <see cref="SetBondVisible(int, bool)"/>.</para>
+        /// </summary>
+        /// <param name="label">The local label of the bond to be checked.</param>
+        /// <returns><c>true</c> if and only if the bond at the given label
+        /// is currently visible.</returns>
+        public bool BondVisible(int label)
+        {
+            return visibleBonds[1 << label];
         }
 
 
@@ -1129,8 +1167,10 @@ namespace AS2.Sim
         {
             activeBondHistory.RecordValueInRound(activeBonds.Data, system.CurrentRound);
             markedBondHistory.RecordValueInRound(markedBonds.Data, system.CurrentRound);
+            visibleBondHistory.RecordValueInRound(visibleBonds.Data, system.CurrentRound);
             activeBonds = new BitVector32(1023);    // All flags set to true
             markedBonds = new BitVector32(0);       // All flags set to false
+            visibleBonds = new BitVector32(1023);   // All flags set to true
 
             // Also record finished joint movement visualization info
             BondMovementInfo[] bondMovements = new BondMovementInfo[bondGraphicInfo.Count];
@@ -1140,7 +1180,7 @@ namespace AS2.Sim
             for (int i = 0; i < bondGraphicInfo.Count; i++)
             {
                 ParticleBondGraphicState s = bondGraphicInfo[i];
-                bondMovements[i] = new BondMovementInfo(s.prevBondPos1 - beforeOffset, s.prevBondPos2 - beforeOffset, s.curBondPos1 - afterOffset, s.curBondPos2 - afterOffset);
+                bondMovements[i] = new BondMovementInfo(s.prevBondPos1 - beforeOffset, s.prevBondPos2 - beforeOffset, s.curBondPos1 - afterOffset, s.curBondPos2 - afterOffset, s.hidden);
             }
             JointMovementInfo movementInfo = new JointMovementInfo(jmOffset, movementOffset, scheduledMovement != null ? scheduledMovement.type : ActionType.NULL);
             BondMovementInfoList bondInfoList = new BondMovementInfoList(bondMovements);
@@ -1504,6 +1544,7 @@ namespace AS2.Sim
             // Reset bonds
             activeBondHistory.SetMarkerToRound(round);
             markedBondHistory.SetMarkerToRound(round);
+            visibleBondHistory.SetMarkerToRound(round);
 
             // Reset pin configuration
             pinConfigurationHistory.SetMarkerToRound(round);
@@ -1543,6 +1584,7 @@ namespace AS2.Sim
 
             activeBondHistory.StepBack();
             markedBondHistory.StepBack();
+            visibleBondHistory.StepBack();
 
             pinConfigurationHistory.StepBack();
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
@@ -1574,6 +1616,7 @@ namespace AS2.Sim
 
             activeBondHistory.StepForward();
             markedBondHistory.StepForward();
+            visibleBondHistory.StepForward();
 
             pinConfigurationHistory.StepForward();
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
@@ -1620,6 +1663,7 @@ namespace AS2.Sim
 
             activeBondHistory.ContinueTracking();
             markedBondHistory.ContinueTracking();
+            visibleBondHistory.ContinueTracking();
 
             pinConfigurationHistory.ContinueTracking();
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
@@ -1659,6 +1703,7 @@ namespace AS2.Sim
 
             activeBondHistory.CutOffAtMarker();
             markedBondHistory.CutOffAtMarker();
+            visibleBondHistory.CutOffAtMarker();
 
             pinConfigurationHistory.CutOffAtMarker();
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
@@ -1691,6 +1736,7 @@ namespace AS2.Sim
 
             activeBondHistory.ShiftTimescale(amount);
             markedBondHistory.ShiftTimescale(amount);
+            visibleBondHistory.ShiftTimescale(amount);
 
             pinConfigurationHistory.ShiftTimescale(amount);
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
@@ -1828,6 +1874,7 @@ namespace AS2.Sim
 
             data.activeBondHistory = activeBondHistory.GenerateSaveData();
             data.markedBondHistory = markedBondHistory.GenerateSaveData();
+            data.visibleBondHistory = visibleBondHistory.GenerateSaveData();
 
             data.pinConfigurationHistory = pinConfigurationHistory.GeneratePCSaveData();
             data.receivedBeepsHistory = new ValueHistorySaveData<bool>[receivedBeepsHistory.Length];
@@ -1913,11 +1960,11 @@ namespace AS2.Sim
 
             activeBondHistory = new ValueHistory<int>(data.activeBondHistory);
             markedBondHistory = new ValueHistory<int>(data.markedBondHistory);
-            activeBonds = new BitVector32(1023);    // All flags set to true
-            markedBonds = new BitVector32(0);       // All flags are set to false
+            visibleBondHistory = new ValueHistory<int>(data.visibleBondHistory);
 
             activeBonds = new BitVector32(1023);    // All flags set to true
             markedBonds = new BitVector32(0);       // All flags set to false
+            visibleBonds = new BitVector32(1023);   // All flags set to true
 
             mainColorHistory = new ValueHistory<Color>(data.mainColorHistory);
             mainColorSetHistory = new ValueHistory<bool>(data.mainColorSetHistory);

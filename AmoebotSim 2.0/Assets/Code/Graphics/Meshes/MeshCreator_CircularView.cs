@@ -14,7 +14,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the horizontal background lines.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <c>UnityEngine.Mesh</c> containing
+        /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> horizontal
+        /// lines for the background grid.</returns>
         public static Mesh GetMesh_BGLinesHorizontal()
         {
             // Mesh Data
@@ -31,10 +33,10 @@ namespace AS2.Visuals
 
             for (int i = 0; i < RenderSystem.const_amountOfLinesPerMesh; i++)
             {
-                vertices[0 + 4 * i] = new Vector3(0f, widthHalf + i * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
-                vertices[1 + 4 * i] = new Vector3(0f, -widthHalf + i * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
-                vertices[2 + 4 * i] = new Vector3(length, widthHalf + i * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
-                vertices[3 + 4 * i] = new Vector3(length, -widthHalf + i * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
+                vertices[0 + 4 * i] = new Vector3(0f, widthHalf + i * AmoebotFunctions.rowDistVert, 0f);
+                vertices[1 + 4 * i] = new Vector3(0f, -widthHalf + i * AmoebotFunctions.rowDistVert, 0f);
+                vertices[2 + 4 * i] = new Vector3(length, widthHalf + i * AmoebotFunctions.rowDistVert, 0f);
+                vertices[3 + 4 * i] = new Vector3(length, -widthHalf + i * AmoebotFunctions.rowDistVert, 0f);
                 uv[0 + 4 * i] = new Vector2(0f, 0f);
                 uv[1 + 4 * i] = new Vector2(1f, 0f);
                 uv[2 + 4 * i] = new Vector2(0f, 1f);
@@ -66,7 +68,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the diagonal background lines from bottom right to top left.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <c>UnityEngine.Mesh</c> containing
+        /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> diagonal lines from
+        /// the top left to the bottom right for the background grid.</returns>
         public static Mesh GetMesh_BGLinesTopLeftBottomRight()
         {
             // Mesh Data
@@ -78,8 +82,6 @@ namespace AS2.Visuals
 
             // Variables
             float width = RenderSystem.const_circularViewBGLineWidth;
-            float widthHalf = width / 2f;
-            //float length = RenderSystem.const_circularViewBGLineLength;
             float dist = width / Mathf.Sin(60 * Mathf.Deg2Rad);
             float distHalf = dist / 2f;
 
@@ -87,8 +89,8 @@ namespace AS2.Visuals
             {
                 vertices[0 + 4 * i] = new Vector3(-distHalf + i, 0f, 0f);
                 vertices[1 + 4 * i] = new Vector3(distHalf + i, 0f, 0f);
-                vertices[2 + 4 * i] = new Vector3(-distHalf - RenderSystem.const_circularViewBGLineLength * 0.5f + i, RenderSystem.const_circularViewBGLineLength * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
-                vertices[3 + 4 * i] = new Vector3(distHalf - RenderSystem.const_circularViewBGLineLength * 0.5f + i, RenderSystem.const_circularViewBGLineLength * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
+                vertices[2 + 4 * i] = new Vector3(-distHalf - RenderSystem.const_circularViewBGLineLength * 0.5f + i, RenderSystem.const_circularViewBGLineLength * AmoebotFunctions.rowDistVert, 0f);
+                vertices[3 + 4 * i] = new Vector3(distHalf - RenderSystem.const_circularViewBGLineLength * 0.5f + i, RenderSystem.const_circularViewBGLineLength * AmoebotFunctions.rowDistVert, 0f);
                 uv[0 + 4 * i] = new Vector2(0f, 0f);
                 uv[1 + 4 * i] = new Vector2(1f, 0f);
                 uv[2 + 4 * i] = new Vector2(0f, 1f);
@@ -120,7 +122,9 @@ namespace AS2.Visuals
         /// <summary>
         /// Creates a mesh for the diagonal background lines from bottom left to top right.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <c>UnityEngine.Mesh</c> containing
+        /// <see cref="RenderSystem.const_amountOfLinesPerMesh"/> diagonal lines from
+        /// the top right to the bottom left for the background grid.</returns>
         public static Mesh GetMesh_BGLinesTopRightBottomLeft()
         {
             // Mesh Data
@@ -141,8 +145,8 @@ namespace AS2.Visuals
             {
                 vertices[0 + 4 * i] = new Vector3(-distHalf + i, 0f, 0f);
                 vertices[1 + 4 * i] = new Vector3(distHalf + i, 0f, 0f);
-                vertices[2 + 4 * i] = new Vector3(-distHalf + RenderSystem.const_circularViewBGLineLength * 0.5f + i, RenderSystem.const_circularViewBGLineLength * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
-                vertices[3 + 4 * i] = new Vector3(distHalf + RenderSystem.const_circularViewBGLineLength * 0.5f + i, RenderSystem.const_circularViewBGLineLength * AmoebotFunctions.HeightDifferenceBetweenRows(), 0f);
+                vertices[2 + 4 * i] = new Vector3(-distHalf + RenderSystem.const_circularViewBGLineLength * 0.5f + i, RenderSystem.const_circularViewBGLineLength * AmoebotFunctions.rowDistVert, 0f);
+                vertices[3 + 4 * i] = new Vector3(distHalf + RenderSystem.const_circularViewBGLineLength * 0.5f + i, RenderSystem.const_circularViewBGLineLength * AmoebotFunctions.rowDistVert, 0f);
                 uv[0 + 4 * i] = new Vector2(0f, 0f);
                 uv[1 + 4 * i] = new Vector2(1f, 0f);
                 uv[2 + 4 * i] = new Vector2(0f, 1f);
@@ -172,22 +176,10 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Creates a mesh for a particle.
-        /// This mesh has bigger boundaries to not get frustrum culled. The positions of the circles are calculated in the shader.
-        /// </summary>
-        /// <returns></returns>
-        public static Mesh GetMesh_Particle()
-        {
-            // Mesh Data
-            Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(3f, 0f, new Vector2(0.5f, 0.5f));
-
-            return mesh;
-        }
-
-        /// <summary>
         /// Creates the mesh for the particles in the circular graph view.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A quad mesh of width 2 and height 1, with the origin
+        /// placed in the center of the left half.</returns>
         public static Mesh GetMesh_ParticleOptimized()
         {
             Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(2f, 0f, new Vector2(0.25f, 0.5f));
@@ -202,15 +194,25 @@ namespace AS2.Visuals
         }
 
         /// <summary>
-        /// Creates a mesh for particle connector.
+        /// Creates a mesh for particle connectors.
+        /// <para>
+        /// The x coordinates in UV channel 2 are
+        /// set to 1 for the first and third vertex and
+        /// set to 0 for the second and fourth vertex.
+        /// This information can be used by shaders to treat
+        /// the left and right side of the mesh differently.
+        /// </para>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A quad mesh of size 1 for the connection
+        /// between hexagonal or round hexagonal particles.</returns>
         public static Mesh GetMesh_ParticleConnector()
         {
             // Mesh Data
             Mesh mesh = Library.MeshConstants.getDefaultMeshQuad(1f, 0f, new Vector2(0f, 0.5f));
             Vector2[] uv2 = new Vector2[4];
 
+            // Second UV channel is used by the shader to
+            // create the animation (not interpreted as UV coordinates)
             // UV2.x = 0 means this vertex will move
             uv2[0] = new Vector2(1f, 0f);
             uv2[1] = new Vector2(0f, 0f);

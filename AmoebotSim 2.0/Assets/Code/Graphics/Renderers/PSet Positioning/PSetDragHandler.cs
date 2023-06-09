@@ -32,6 +32,14 @@ namespace AS2.Visuals
             this.sim = sim;
         }
 
+        /// <summary>
+        /// Updates UI overlay and partition set positions according
+        /// to the current ongoing mouse drag.
+        /// </summary>
+        /// <param name="originWorldPos">The world coordinates of the
+        /// drag start position.</param>
+        /// <param name="curWorldPos">The world coordinates of the
+        /// current drag position.</param>
         public void DragEvent_Ongoing(Vector2 originWorldPos, Vector2 curWorldPos)
         {
             //Log.Debug("Dragging");
@@ -44,8 +52,8 @@ namespace AS2.Visuals
                 {
                     // Sim paused in simulation mode
                     // Check if partition set is at the given position
-                    drag_originNodeWorldPos = AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(originWorldPos);
-                    drag_originGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(drag_originNodeWorldPos);
+                    drag_originNodeWorldPos = AmoebotFunctions.WorldPositionToNearestNodePosition(originWorldPos);
+                    drag_originGridPos = AmoebotFunctions.WorldToGridPosition(drag_originNodeWorldPos);
                     IParticleState particle;
                     sim.system.TryGetParticleAt(drag_originGridPos, out particle);
                     if(particle != null)
@@ -72,7 +80,7 @@ namespace AS2.Visuals
                 if (sim.uiHandler.initializationUI.IsOpen() == false && sim.running == false)
                 {
                     // Sim paused in simulation mode
-                    Vector2Int curGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(curWorldPos));
+                    Vector2Int curGridPos = AmoebotFunctions.WorldToGridPosition(curWorldPos);
                     if(curGridPos == drag_originGridPos || (drag_circuitData.snap.isExpanded && (curGridPos == drag_circuitData.snap.position1 || curGridPos == drag_circuitData.snap.position2)))
                     {
                         // Current position is at the same node(s) as the particle
@@ -91,6 +99,16 @@ namespace AS2.Visuals
             }
         }
 
+        /// <summary>
+        /// Updates UI overlay and partition set positions according
+        /// to the currently finished mouse drag.
+        /// Does the same as <see cref="DragEvent_Ongoing(Vector2, Vector2)"/>
+        /// but ends the current drag event afterwards.
+        /// </summary>
+        /// <param name="originWorldPos">The world coordinates of the
+        /// drag start position.</param>
+        /// <param name="curWorldPos">The world coordinates of the
+        /// current drag position.</param>
         public void DragEvent_Finished(Vector2 originWorldPos, Vector2 finalWorldPos)
         {
             DragEvent_Ongoing(originWorldPos, finalWorldPos);
@@ -98,15 +116,22 @@ namespace AS2.Visuals
             //Log.Debug("Drag finished");
         }
 
+        /// <summary>
+        /// Instantly cancels the current drag event.
+        /// </summary>
         public void AbortDrag()
         {
             drag_active = false;
         }
 
         /// <summary>
-        /// Call this each frame with the current mouse world position and field if the partition set move tool is active.
+        /// Call this each frame with the current mouse world position
+        /// and field if the partition set move tool is active.
         /// </summary>
-        /// <param name="curMousePosition"></param>
+        /// <param name="curMouseWorldPosition">The world coordinates of
+        /// the current mouse position.</param>
+        /// <param name="curMouseWorldField">The grid coordinates of the
+        /// node the mouse is currently over.</param>
         public void Update(Vector2 curMouseWorldPosition, Vector2Int curMouseWorldField)
         {
             if(drag_active)
@@ -123,8 +148,8 @@ namespace AS2.Visuals
                 {
                     // Sim paused in simulation mode
                     // Check if partition set is at the given position
-                    drag_originNodeWorldPos = AmoebotFunctions.NearestHexFieldWorldPositionFromWorldPosition(curMouseWorldPosition);
-                    drag_originGridPos = AmoebotFunctions.GetGridPositionFromWorldPosition(drag_originNodeWorldPos);
+                    drag_originNodeWorldPos = AmoebotFunctions.WorldPositionToNearestNodePosition(curMouseWorldPosition);
+                    drag_originGridPos = AmoebotFunctions.WorldToGridPosition(drag_originNodeWorldPos);
                     IParticleState particle;
                     sim.system.TryGetParticleAt(drag_originGridPos, out particle);
                     if (particle != null)

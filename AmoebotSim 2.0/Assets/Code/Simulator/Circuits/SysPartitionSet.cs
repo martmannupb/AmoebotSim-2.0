@@ -55,6 +55,11 @@ namespace AS2.Sim
         /// Global polar coordinates of this partition set in the particle's tail.
         /// </summary>
         public Vector2 positionTail = Vector2.zero;
+        /// <summary>
+        /// Indicates whether the partition set should always be drawn with a
+        /// handle, even if it is a singleton set (but not if it is empty).
+        /// </summary>
+        public bool drawSingletonHandle = false;
 
         /// <summary>
         /// The ID of the circuit this partition set currently belongs to.
@@ -146,8 +151,8 @@ namespace AS2.Sim
                     return false;
                 }
             }
-            // Unequal if color or position is different
-            if (p1.color != p2.color || p1.colorOverride != p2.colorOverride || p1.positionHead != p2.positionHead || p1.positionTail != p2.positionTail)
+            // Unequal if visualization data is different
+            if (p1.color != p2.color || p1.colorOverride != p2.colorOverride || p1.positionHead != p2.positionHead || p1.positionTail != p2.positionTail || p1.drawSingletonHandle != p2.drawSingletonHandle)
                 return false;
             return true;
         }
@@ -170,7 +175,7 @@ namespace AS2.Sim
                     return true;
                 }
             }
-            if (p1.color != p2.color || p1.colorOverride != p2.colorOverride || p1.positionHead != p2.positionHead || p1.positionTail != p2.positionTail)
+            if (p1.color != p2.color || p1.colorOverride != p2.colorOverride || p1.positionHead != p2.positionHead || p1.positionTail != p2.positionTail || p1.drawSingletonHandle != p2.drawSingletonHandle)
                 return true;
             return false;
         }
@@ -188,7 +193,7 @@ namespace AS2.Sim
         // TODO: Make sure this is correct if it is ever used
         public override int GetHashCode()
         {
-            return HashCode.Combine(id, pins, numStoredPins, color, colorOverride, positionHead, positionTail);
+            return HashCode.Combine(id, pins, numStoredPins, color, colorOverride, positionHead, positionTail, drawSingletonHandle);
         }
 
 
@@ -435,6 +440,11 @@ namespace AS2.Sim
                 else
                     planned.partitionSets[id].positionTail = polarCoords;
             }
+        }
+
+        public override void SetDrawHandle(bool drawHandle)
+        {
+            drawSingletonHandle = drawHandle;
         }
 
 

@@ -74,10 +74,10 @@ namespace AS2.UI
                 Vector2 camTR = CameraUtils.MainCamera_WorldPosition_TopRight() + (Vector2)(Quaternion.Euler(0f, 0f, activeCameraRotation) * ((Vector3)new Vector2(3f, 3f)));
                 //Vector2 camMinCoordinates = new Vector2(Mathf.Min(camBL.x, camBR.x, camTL.x, camTR.x), Mathf.Min(camBL.y, camBR.y, camTL.y, camTR.y));
                 //Vector2 camMaxCoordinates = new Vector2(Mathf.Max(camBL.x, camBR.x, camTL.x, camTR.x), Mathf.Max(camBL.y, camBR.y, camTL.y, camTR.y));
-                Vector2Int amoebotBL = AmoebotFunctions.GetGridPositionFromWorldPosition(camBL);
-                Vector2Int amoebotBR = AmoebotFunctions.GetGridPositionFromWorldPosition(camBR);
-                Vector2Int amoebotTL = AmoebotFunctions.GetGridPositionFromWorldPosition(camTL);
-                Vector2Int amoebotTR = AmoebotFunctions.GetGridPositionFromWorldPosition(camTR);
+                Vector2Int amoebotBL = AmoebotFunctions.WorldToGridPosition(camBL);
+                Vector2Int amoebotBR = AmoebotFunctions.WorldToGridPosition(camBR);
+                Vector2Int amoebotTL = AmoebotFunctions.WorldToGridPosition(camTL);
+                Vector2Int amoebotTR = AmoebotFunctions.WorldToGridPosition(camTR);
                 // Convert to Min/Max (check all because of unknown rotation)
                 Vector2Int amoebotMinCoordinates = new Vector2Int(Mathf.Min(amoebotBL.x, amoebotBR.x, amoebotTL.x, amoebotTR.x), Mathf.Min(amoebotBL.y, amoebotBR.y, amoebotTL.y, amoebotTR.y));
                 Vector2Int amoebotMaxCoordinates = new Vector2Int(Mathf.Max(amoebotBL.x, amoebotBR.x, amoebotTL.x, amoebotTR.x), Mathf.Max(amoebotBL.y, amoebotBR.y, amoebotTL.y, amoebotTR.y));
@@ -94,7 +94,7 @@ namespace AS2.UI
                         int x = i % activeRect.Width;
                         int y = i / activeRect.Width;
                         Vector2Int amoebotPosition = new Vector2Int(activeRect.minX + x, activeRect.minY + y);
-                        Vector3 amoebotWorldPosition = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(amoebotPosition.x, amoebotPosition.y);
+                        Vector3 amoebotWorldPosition = AmoebotFunctions.GridToWorldPositionVector3(amoebotPosition.x, amoebotPosition.y);
                         amoebotWorldPosition.z = RenderSystem.zLayer_background - 0.1f;
                         if (i < uiElements.Count)
                         {

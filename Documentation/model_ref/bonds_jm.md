@@ -100,6 +100,9 @@ Calling this method will automatically set the bonds such that neighbors are not
 This can be used to perform movements like in the original Amoebot model without the joint movement extension.
 However, the system must still remain connected by bonds at all times.
 
+Bonds can also be hidden from the visualization without releasing them by calling the [`HideBond(Direction d, bool head)`][11] method.
+This will hide the selected bond for the next round, even if the bonded neighbor particle does not hide the bond as well.
+
 
 
 [1]: xref:AS2.Sim.ParticleAlgorithm.Expand(AS2.Direction)
@@ -112,3 +115,4 @@ However, the system must still remain connected by bonds at all times.
 [8]: xref:AS2.Sim.ParticleAlgorithm.MarkBond(AS2.Direction,System.Boolean)
 [9]: xref:AS2.Sim.ParticleAlgorithm.ActivateMove
 [10]: xref:AS2.Sim.ParticleAlgorithm.UseAutomaticBonds
+[11]: xref:AS2.Sim.ParticleAlgorithm.HideBond(AS2.Direction,System.Boolean)

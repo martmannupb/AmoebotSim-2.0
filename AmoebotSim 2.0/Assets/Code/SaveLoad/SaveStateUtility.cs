@@ -12,7 +12,7 @@ namespace AS2
     /// A simulation state comprises the entire history of all particles in
     /// the system. It is stored in a <see cref="SimulationStateSaveData"/>
     /// object, which can be serialized and deserialized by Unity's
-    /// <see cref="JsonUtility"/>.
+    /// <c>JsonUtility</c>.
     /// </para>
     /// <para>
     /// Similarly, <see cref="InitModeSaveData"/> objects represent the

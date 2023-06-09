@@ -62,7 +62,20 @@
         }
     ],
     "m_GroupDatas": [],
-    "m_StickyNoteDatas": [],
+    "m_StickyNoteDatas": [
+        {
+            "m_Id": "f65de734748246d3afb42c34ca8a6dc6"
+        },
+        {
+            "m_Id": "b76e63a15714462babe2d624ecf7f663"
+        },
+        {
+            "m_Id": "deea0db2859b4f47ad1e6a61a5efecfb"
+        },
+        {
+            "m_Id": "bbebc8cb407b4b6881a3a05b635c794e"
+        }
+    ],
     "m_Edges": [
         {
             "m_OutputSlot": {
@@ -157,23 +170,23 @@
             },
             "m_InputSlot": {
                 "m_Node": {
-                    "m_Id": "679846e6b7f8410e88b58cb1e6fbf137"
+                    "m_Id": "10da0580d65443409bd908c734a0121f"
                 },
-                "m_SlotId": 1
+                "m_SlotId": 2
             }
         },
         {
             "m_OutputSlot": {
                 "m_Node": {
-                    "m_Id": "c7df60589db64dccb6c5719170346dbe"
+                    "m_Id": "8b2bf3446018422595c7d8ea05e3797c"
                 },
-                "m_SlotId": 0
+                "m_SlotId": 2
             },
             "m_InputSlot": {
                 "m_Node": {
-                    "m_Id": "10da0580d65443409bd908c734a0121f"
+                    "m_Id": "679846e6b7f8410e88b58cb1e6fbf137"
                 },
-                "m_SlotId": 2
+                "m_SlotId": 1
             }
         },
         {
@@ -612,10 +625,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -775.0,
-            "y": -138.0,
-            "width": 168.0,
-            "height": 34.0
+            "x": -605.5999145507813,
+            "y": -102.39999389648438,
+            "width": 168.00003051757813,
+            "height": 33.600013732910159
         }
     },
     "m_Slots": [
@@ -907,10 +920,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1178.0,
-            "y": -38.0,
-            "width": 126.0,
-            "height": 118.0
+            "x": -1396.0001220703125,
+            "y": -55.19999313354492,
+            "width": 125.60009765625,
+            "height": 117.60003662109375
         }
     },
     "m_Slots": [
@@ -1019,6 +1032,26 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
+    "m_ObjectId": "b76e63a15714462babe2d624ecf7f663",
+    "m_Title": "Elapsed time must be in valid range",
+    "m_Content": "",
+    "m_TextSize": 0,
+    "m_Theme": 0,
+    "m_Position": {
+        "serializedVersion": "2",
+        "x": -1223.199951171875,
+        "y": -288.0,
+        "width": 212.904296875,
+        "height": 100.0
+    },
+    "m_Group": {
+        "m_Id": ""
+    }
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "b7abba6ded00460e94acf4095675a07d",
     "m_Id": 0,
@@ -1053,6 +1086,26 @@
         "y": 0.0,
         "z": 0.0,
         "w": 0.0
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
+    "m_ObjectId": "bbebc8cb407b4b6881a3a05b635c794e",
+    "m_Title": "AnimationPercentage",
+    "m_Content": "Calculates smooth percentage p based on animation trigger time and duration, then interpolates between the two given percentages using p",
+    "m_TextSize": 2,
+    "m_Theme": 0,
+    "m_Position": {
+        "serializedVersion": "2",
+        "x": -2307.199951171875,
+        "y": -304.0,
+        "width": 659.199951171875,
+        "height": 299.1999816894531
+    },
+    "m_Group": {
+        "m_Id": ""
     }
 }
 
@@ -1146,10 +1199,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -420.99993896484377,
-            "y": -210.00001525878907,
-            "width": 164.99993896484376,
-            "height": 77.00001525878906
+            "x": -251.1998748779297,
+            "y": -174.39999389648438,
+            "width": 164.7999267578125,
+            "height": 76.79999542236328
         }
     },
     "m_Slots": [
@@ -1203,10 +1256,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1433.0,
-            "y": -35.0,
-            "width": 146.0,
-            "height": 34.0
+            "x": -1570.400146484375,
+            "y": -32.79998016357422,
+            "width": 146.400146484375,
+            "height": 33.5999870300293
         }
     },
     "m_Slots": [
@@ -1262,10 +1315,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -586.0,
-            "y": -210.0,
-            "width": 126.0,
-            "height": 142.0
+            "x": -415.9999694824219,
+            "y": -174.39999389648438,
+            "width": 125.60003662109375,
+            "height": 141.59999084472657
         }
     },
     "m_Slots": [
@@ -1321,6 +1374,26 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
+    "m_ObjectId": "deea0db2859b4f47ad1e6a61a5efecfb",
+    "m_Title": "Use smoothed time-based percentage to interpolate between given percentages",
+    "m_Content": "",
+    "m_TextSize": 0,
+    "m_Theme": 0,
+    "m_Position": {
+        "serializedVersion": "2",
+        "x": -588.7999877929688,
+        "y": -283.20001220703127,
+        "width": 294.4000244140625,
+        "height": 100.0
+    },
+    "m_Group": {
+        "m_Id": ""
+    }
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.DynamicVectorMaterialSlot",
     "m_ObjectId": "eaf3297641604278a69bd6b851fb2c30",
     "m_Id": 2,
@@ -1355,10 +1428,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -773.0,
-            "y": -178.0,
-            "width": 166.0,
-            "height": 34.0
+            "x": -603.2000122070313,
+            "y": -142.40000915527345,
+            "width": 167.20013427734376,
+            "height": 33.600013732910159
         }
     },
     "m_Slots": [
@@ -1419,6 +1492,26 @@
     "m_PreviewMode": 0,
     "m_CustomColors": {
         "m_SerializableColors": []
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
+    "m_ObjectId": "f65de734748246d3afb42c34ca8a6dc6",
+    "m_Title": "Animation duration must be at least 0.01",
+    "m_Content": "",
+    "m_TextSize": 0,
+    "m_Theme": 0,
+    "m_Position": {
+        "serializedVersion": "2",
+        "x": -1500.800048828125,
+        "y": 64.80000305175781,
+        "width": 227.2000732421875,
+        "height": 99.99999237060547
+    },
+    "m_Group": {
+        "m_Id": ""
     }
 }
 
