@@ -111,13 +111,13 @@ namespace AS2.Visuals
         // highlights are updated via code to have the same / a lower render
         // queue priority as pins
         public static readonly int renderQueue_background = 2800;
-        public static readonly int renderQueue_bonds = 2900;
-        public static readonly int renderQueue_particles = 3000;
-        public static readonly int renderQueue_circuits = 3100;
-        public static readonly int renderQueue_circuitBeeps = 3150;
-        public static readonly int renderQueue_pins = 3200;
-        public static readonly int renderQueue_pinBeeps = 3250;
-        public static readonly int renderQueue_overlays = 3300;
+        public static readonly int renderQueue_bonds = 2820;
+        public static readonly int renderQueue_particles = 2840;
+        public static readonly int renderQueue_circuits = 2860;
+        public static readonly int renderQueue_circuitBeeps = 2870;
+        public static readonly int renderQueue_pins = 2880;
+        public static readonly int renderQueue_pinBeeps = 2890;
+        public static readonly int renderQueue_overlays = 2900;
 
         // Global Data
         /// <summary>
