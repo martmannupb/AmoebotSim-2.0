@@ -105,6 +105,9 @@ namespace AS2.UI
 
             // Hide
             HideAll();
+
+            // Ensure that switching between Sim and Init Mode turns off the overlay
+            EventDatabase.event_initializationUI_initModeOpenClose += SwitchInitSimMode;
         }
 
         /// <summary>
@@ -402,6 +405,17 @@ namespace AS2.UI
             button_hideOverlay.interactable = false;
             StartCoroutine(PaintButtonActiveInactive(button_hideOverlay, false));
             isVisible = false;
+        }
+
+        /// <summary>
+        /// Listener for the Init/Simulation Mode switch event.
+        /// Disables the attribute overlay when the Mode is changed.
+        /// </summary>
+        /// <param name="initMode">Whether Init Mode was opened
+        /// (the value is ignored).</param>
+        private void SwitchInitSimMode(bool initMode)
+        {
+            HideAll();
         }
 
         /// <summary>
