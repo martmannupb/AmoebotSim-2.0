@@ -66,10 +66,6 @@ However, most of it is related to more specific features and thus, it is explain
 
 
 **TODO**:
-- History feature
-	- Idea for value histories
-	- `IReplayHistory` interface
-	- Decentralized approach
 - Save/Load feature
 	- Serializable objects can be translated to and from JSON using Unity's JSON utility
 	- Implement combination of `GenerateSaveData` and `InitializeFromSaveData` methods

@@ -19,8 +19,8 @@ The history starts in some round with index $i$ and stores a state for each roun
 
 An object implementing the interface always has a *marker* that indicates the currently selected round.
 The marker can be moved to any round $\geq i$, which will change the object's state to the one recorded for that round.
-If the object's state changes while the marker is in any round $\geq i + l-1$, a new entry will be recorded and the history will be extended to the current location of the marker, copying the previous state to fill the gap if there is one.
-If the object is in a *tracking* state, adding a new entry for some round $\geq i + l-1$ will automatically move the marker forward to that round.
+If the object's state changes while the marker is in any round $j \geq i + l-1$, a new entry will be recorded and the history will be extended to the current location $j$ of the marker, copying the previous state to fill the gap if there is one.
+If the object is in a *tracking* state, adding a new entry for some round $j \geq i + l-1$ will automatically move the marker forward to round $j$.
 
 The history can also be cut off at the marker, meaning that all recorded states after the marker are removed.
 
@@ -33,7 +33,7 @@ When the selected round changes in Simulation Mode (e.g. by calling [`SetMarkerT
 In turn, the particles forward the calls to their own histories as part of updating their states.
 
 
-## Storing value histories
+## Storing Value Histories
 
 To store a sequence of values for consecutive rounds efficiently, we only need to record the rounds in which the value *changes*.
 Consider the following example of a range of round indices and corresponding integer values:
