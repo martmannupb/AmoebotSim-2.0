@@ -17,6 +17,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Int"/>.</returns>
         public static ParticleAttribute_Int CreateParticleAttributeInt(Particle p, string name, int initialValue)
         {
+            CheckParticleInConstruction(p);
             CheckAttributeName(name);
             ParticleAttribute_Int attr = new ParticleAttribute_Int(p, name, initialValue);
             p.AddAttribute(attr);
@@ -33,6 +34,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Float"/>.</returns>
         public static ParticleAttribute_Float CreateParticleAttributeFloat(Particle p, string name, float initialValue)
         {
+            CheckParticleInConstruction(p);
             CheckAttributeName(name);
             ParticleAttribute_Float attr = new ParticleAttribute_Float(p, name, initialValue);
             p.AddAttribute(attr);
@@ -49,6 +51,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_String"/>.</returns>
         public static ParticleAttribute_String CreateParticleAttributeString(Particle p, string name, string initialValue)
         {
+            CheckParticleInConstruction(p);
             CheckAttributeName(name);
             ParticleAttribute_String attr = new ParticleAttribute_String(p, name, initialValue);
             p.AddAttribute(attr);
@@ -65,6 +68,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Bool"/>.</returns>
         public static ParticleAttribute_Bool CreateParticleAttributeBool(Particle p, string name, bool initialValue)
         {
+            CheckParticleInConstruction(p);
             CheckAttributeName(name);
             ParticleAttribute_Bool attr = new ParticleAttribute_Bool(p, name, initialValue);
             p.AddAttribute(attr);
@@ -81,6 +85,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Direction"/>.</returns>
         public static ParticleAttribute_Direction CreateParticleAttributeDirection(Particle p, string name, Direction initialValue)
         {
+            CheckParticleInConstruction(p);
             CheckAttributeName(name);
             ParticleAttribute_Direction attr = new ParticleAttribute_Direction(p, name, initialValue);
             p.AddAttribute(attr);
@@ -98,6 +103,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_Enum{T}"/>.</returns>
         public static ParticleAttribute_Enum<EnumT> CreateParticleAttributeEnum<EnumT>(Particle p, string name, EnumT initialValue) where EnumT : System.Enum
         {
+            CheckParticleInConstruction(p);
             CheckAttributeName(name);
             ParticleAttribute_Enum<EnumT> attr = new ParticleAttribute_Enum<EnumT>(p, name, initialValue);
             p.AddAttribute(attr);
@@ -118,6 +124,7 @@ namespace AS2.Sim
         /// <returns>A newly initialized <see cref="ParticleAttribute_PinConfiguration"/>.</returns>
         public static ParticleAttribute_PinConfiguration CreateParticleAttributePinConfiguration(Particle p, string name, PinConfiguration initialValue)
         {
+            CheckParticleInConstruction(p);
             CheckAttributeName(name);
             ParticleAttribute_PinConfiguration attr = new ParticleAttribute_PinConfiguration(p, name, initialValue);
             p.AddAttribute(attr);
@@ -138,6 +145,7 @@ namespace AS2.Sim
         /// otherwise <c>null</c>.</returns>
         public static IParticleAttribute CreateParticleAttribute(Particle p, System.Type type, string name, object initialValue)
         {
+            CheckParticleInConstruction(p);
             CheckAttributeName(name);
             if (type == typeof(bool))
             {
@@ -177,6 +185,20 @@ namespace AS2.Sim
 
             Log.Error("Cannot create attribute: Unsupported type '" + type + "'.");
             return null;
+        }
+
+        /// <summary>
+        /// Checks whether the given particle is currently in construction or
+        /// <c>null</c> and throws an exception otherwise. This is done to
+        /// prevent attributes from being created outside of the constructor.
+        /// </summary>
+        /// <param name="p">The particle to check.</param>
+        private static void CheckParticleInConstruction(Particle p)
+        {
+            if (p != null && !p.inConstructor)
+            {
+                throw new SimulationException("Particle attributes can only be created in the constructor.");
+            }
         }
 
         /// <summary>

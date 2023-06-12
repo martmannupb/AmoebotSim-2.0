@@ -49,7 +49,9 @@ namespace AS2.Sim
             }
             Particle p = new Particle(system, position, compassDir, chirality, headDir);
             p.isActive = true;
+            p.inConstructor = true;
             AlgorithmManager.Instance.Instantiate(algorithmId, p);
+            p.inConstructor = false;
             p.isActive = false;
             p.InitWithAlgorithm();
             p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
