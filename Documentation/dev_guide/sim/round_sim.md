@@ -6,10 +6,12 @@ In the theoretical model, these phases are mostly treated as separate rounds, ea
 Since this separation was a late addition to the model, the simulator runs the *look-compute-move* cycle (called *movement phase*) and the *look-compute-beep* cycle (called *beep phase*) sequentially within a single round.
 However, to the particle algorithm, the two phases appear like separate rounds so that the system matches the theoretical model from an algorithm developer's point of view.
 
+![Simulation phases](~/images/round_sim_phases.png "Simulation phases")
+
 Each of the two phases has roughly the same structure:
 We first activate all particles and store their actions, then we apply the effects of their scheduled actions, checking whether they are valid, and finally, we store the final validated result and perform a cleanup for the next round.
 After both phases are finished, we push the collected graphical information to the render system.
-If a conflict occurs during this whole process, we reset the simulation state to the previous round.
+If a conflict occurs somewhere in this process, we reset the simulation state to the previous round.
 A conflict is a situation in which the actions performed by a particle are invalid or conflict with another particle's actions.
 Not all errors can be handled in this way, some will still lead to an exception being thrown.
 
@@ -93,6 +95,10 @@ Because we only process each bond from one particle's point of view, no bonds ar
 After the BFS, we iterate over all particles in the system to apply the movements locally and to check for connectivity.
 For each particle, we update its internal state by applying its movement offset and expansion state change according to the movement it has performed.
 Additionally, the pin configuration of a particle is reset if it has performed a movement because its current pin configuration does not match its expansion state anymore.
+> [!NOTE]
+> This also means that if a particle does not perform a movement in the movement phase, it can still read its received beeps and messages in the following beep phase.
+> Although this does not exactly match the theoretical model, it is kept like this because it may be useful for algorithms that don't use any movements and it does not violate the theoretical restrictions because the beeps and messages could simply be stored manually by the particle.
+
 If we encounter any particle that has not been processed in the BFS, then there exists no bond path from the anchor particle to that particle, so we have to throw an exception because the bond structure is disconnected, which is not allowed.
 The exception handling code will revert the simulation state to the previous round, undoing the state changes that were applied so far.
 If no disconnected particle is encountered, we finally replace the particle map with the updated positions.
@@ -117,7 +123,7 @@ All of this information is computed in `SetupPinGraphicState()` between the move
 ### Beep Activation
 
 Like the movement phase, the beep phase starts with the particle activations.
-The `ActivateParticlesBeep()` method simply calls [`ActivateBeep()`][12] on all particles and handles some exceptions that might occur by turning them into the appropriate exception types.
+The `ActivateParticlesBeep()` method simply calls [`ActivateBeep()`][12] on all particles and handles some exceptions that might occur by turning them into the appropriate exception types and rethrowing them.
 In their activations, particles can set a new planned pin configuration and schedule beeps and messages.
 Processing these scheduled actions is the main task of the beep phase simulation.
 
@@ -161,6 +167,7 @@ For each partition set $s$, we iterate through its pins and find the neighboring
 At the first processed neighbor that is found for $s$, we add $s$ to the circuit to which the neighbor's partition set belongs.
 If we encounter another neighboring partition set while processing the remaining pins, we merge that partition set's circuit with the first circuit because $s$ connects the two circuits.
 If we do not encounter any neighboring partition sets that have already been processed, we create a new circuit that only contains $s$ (this is the case when the first particle is processed, for example).
+In essence, we collect all partition sets $s$ is connected to and merge their circuits.
 
 After this BFS procedure, every non-empty partition set of every particle has been assigned to a circuit (note that the particle structure is connected because the movement phase enforces this, which means that every particle is reached by the BFS).
 We then assign a color to each circuit without a color override.
@@ -176,86 +183,59 @@ Due to the way the circuits were constructed, the root parent is always the comp
 During this iteration, we also complete the graphical circuit information stored in each particle's [`ParticlePinGraphicState`][11].
 This information includes the partition set placement mode in the particle's head and tail and the individual partition set data like the pins it contains, its color and its beep and message status.
 
+The final step of the beep phase is the `FinishBeepAndMessageInfo()` method.
+In this method, we call [`StoreBeepsAndMessages()`][20] and [`ResetPlannedBeepsAndMessages`][21] on all particles, causing them to record their sent and received beeps and messages in their internal histories and reset their planned beeps and messages in preparation for the next round.
+
+
+### Round Finalization
+
+After the actual simulation of the two phases, only a few steps are left to finish the round.
+The first step is pushing visualization updates to the render system.
+This is done by the `UpdateAllParticleVisuals(...)` method, which calls the various graphics update methods for all particles in the right order and notifies the render system about the finished updates.
+The same method is also called to push updates after changing the current round.
+
+Next, the `CleanupAfterRound()` method is called to reset all helper data in the particles, like flags, scheduled actions and temporary graphics info.
+This is important because it ensures that before each round simulation or similar simulation state udpate, all of this helper data is in the same default state and ready to be used.
+
+The last step of a round simulation is checking whether the algorithm has finished.
+This is checked by the `HasSimulationFinished()` method, which calls [`IsFinished()`][22] on all particles and returns `true` if every particle in the system returns `true`.
+If this is the case, we record the round in which the algorithm finished and cause the simulation to pause.
+It can still be resumed afterwards, but in most cases, the algorithm will not do anything in the following rounds.
 
 
 
+## Snapshot Illusion
 
-**TODO**
+There is one aspect of the round simulation that should be addressed in particular.
+In the theoretical model, all particles are activated simultaneously in each of the two phases:
+They all run their *look* procedure at the same time, taking a snapshot of the current system state on which their subsequent computations are based.
+This means that their actions only take effect after all activations are finished and that no particle can detect another particle's actions until the next phase.
+We need to simulate this behavior even though we activate the particles sequentially.
 
+Two of the systems used to achieve this have already been explained above:
+For the movement simulation, we store each particle's planned movement and apply the movement actions after all activations are finished.
+Thus, during the activations, all particles keep their positions, regardless of what movement they scheduled or how they defined their bonds.
+Similarly, the pin configurations are updated after the activations and the beeps and messages are delivered at the end of the round simulation.
 
+What has not been mentioned yet is the internal state of the particles, i.e., the particle attributes.
+In each of the two activation methods, the particles are able to modify their own state by changing their attribute values.
+Moreover, they can even use the updated attribute values for further calculations in the same round, making it easier to write the algorithm code.
+At the same time, other particles should not be able to read the updated values until the next round.
+These two features become even more complicated to combine when we simulate two phases within a single round.
 
+The [`ParticleAttribute`][23] class defines a simple [`GetValue`][24] method returning the attribute's "snapshot value", i.e., its value at the beginning of the current phase.
+It also defines a [`GetCurrentValue`][25] method which returns the attribute's latest value.
+This method is only available to the particle owning the attribute so that other particles cannot read this value.
+The [`Particle`][10] class's [`isActive`][26] flag is used to check whether the attribute's owner is the particle that is currently being activated.
 
-
-- Whole procedure is handled by the particle system
-    - `SimulateRound()` is called regularly by the main class
-    - Movement activation
-    - Joint movement simulation
-    - Joint movement cleanup
-    - Between phases
-    - Beep phase
-        - Run beep activation method on all particles
-        - Apply new pin configuration to each particle
-        - Compute circuits and send beeps and messages
-            - Again perform a BFS on particle system
-            - For each unprocessed particle:
-                - For each non-empty partition set:
-                    - Go through all already processed neighbors
-                    - If the PS is connected to a PS of a processed neighbor: Add the PS to the related circuit
-                    - If this occurs multiple times: Merge all encountered circuits
-                    - If this does not occur at all: Create a new circuit
-            - Circuits are identified by IDs
-                - Merging works with a tree structure
-                - Each circuit has a number of children
-                - When a circuit is merged with another, the children are transferred to the larger circuit
-                    - All circuits have a reference to their root
-                - If a beep is sent on one of the merged circuits, the resulting circuit will send a beep
-                - Similar for messages (but highest priority message is taken)
-            - Give colors to circuits (round-robin color selection)
-            - Distribute beeps and messages to all particles on each circuit
-                - Go through all particles and their partition sets again
-                - Also set graphical info while doing this
-        - Finally store beeps and messages in history and reset data for next round
-    - After both phases, push graphical updates and reset internal data for next round
-    - Also check if the simulation has finished
-- Snapshot illusion
-    - In the model, all particles are activated simultaneously
-        - They all operate on the same snapshot of the system
-        - Their actions take effect after the activations
-        - No particle can see what another particle has done in that round
-    - We need to simulate this behavior somehow
-    - Movement actions
-        - Movements are stored as actions
-        - Movement results are only applied at the end of the phase, after they were checked for validity
-        - Particle map is also only updated at the end, so neighbors stay the same throughout the round
-    - Beeps and messages
-        - Only delivered at the end of the round
-        - Similar to movement actions
-        - They are kept throughout the movement phase for simplicity
-            - They are not reset after the movements (it is another round so they *should* technically be reset)
-            - No reason not to keep them
-    - Attributes
-        - Attributes are more difficult
-        - Particles may want to include their attributes in calculations, which means they need to use the updated value immediately
-            - But other particles should not see these updated values
-        - Provide `GetValue` and `GetCurrentValue` methods
-        - Only available to the particle itself (must be active to access current value)
-        - One more problem: History
-            - We simulate two rounds at once, only the last value should be kept
-            - Want to access value from the snapshot and updated value
-            - Cannot revert to previous round's value in beep phase because previous round was actually the move phase
-            - Need an intermediate variable
-
-
-
-
-
-
-
-
-
-
-
-
+However, there is one more problem that has to be solved:
+Let an attribute $a$ start with value $x$ in round $i$.
+If $a$'s value is updated to $x'$ during the movement activation, the value $x$ is still available because it is stored in the history for round $i-1$.
+Thus, the "snapshot value" $x$ is readily available if a neighboring particle wants to read $a$.
+But since we also simulate the beep phase in the same round $i$, we run into a problem:
+If $a$'s value is updated again in the beep phase, say to value $x''$, this new value overwrites the previous value $x'$ because it takes the same spot in the attribute's history (round $i$).
+Thus, the new "snapshot value" $x'$ would be lost without a measure to keep it.
+For this purpose, the particle attribute classes have an [`intermediateVal`][27] field which they use to store the value $x'$.
 
 
 
@@ -278,6 +258,11 @@ This information includes the partition set placement mode in the particle's hea
 [17]: xref:AS2.Sim.Message.GreaterThan(AS2.Sim.Message)
 [18]: xref:AS2.Sim.Message
 [19]: xref:AS2.ColorData.Circuit_Colors
-
-
-
+[20]: xref:AS2.Sim.Particle.StoreBeepsAndMessages
+[21]: xref:AS2.Sim.Particle.ResetPlannedBeepsAndMessages
+[22]: xref:AS2.Sim.ParticleAlgorithm.IsFinished
+[23]: xref:AS2.Sim.ParticleAttribute`1
+[24]: xref:AS2.Sim.ParticleAttribute`1.GetValue
+[25]: xref:AS2.Sim.ParticleAttribute`1.GetCurrentValue
+[26]: xref:AS2.Sim.Particle.isActive
+[27]: xref:AS2.Sim.ParticleAttributeWithHistory`1.intermediateVal
