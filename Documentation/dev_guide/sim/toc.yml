@@ -8,3 +8,5 @@
   href: round_sim.md
 - name: Reflection
   href: reflection.md
+- name: Error Handling
+  href: error_handling.md

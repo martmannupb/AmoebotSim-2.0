@@ -197,7 +197,7 @@ namespace AS2.Sim
         {
             if (p != null && !p.inConstructor)
             {
-                throw new SimulationException("Particle attributes can only be created in the constructor.");
+                throw new SimulatorStateException("Particle attributes can only be created in the constructor.");
             }
         }
 
@@ -216,7 +216,7 @@ namespace AS2.Sim
         {
             if (name.Equals("Chirality") || name.Equals("Compass Dir"))
             {
-                throw new SimulationException("Particle attributes cannot have the name '" + name + "'");
+                throw new SimulatorStateException("Particle attributes cannot have the name '" + name + "'");
             }
         }
     }
