@@ -26,8 +26,7 @@ Similarly, the system's [`InMovePhase`][5] and [`InBeepPhase`][6] flags are used
 
 Many of the method calls do not immediately take effect in the particle's state but only *schedule* an action that should be carried out *after* all particles have been activated.
 For example, any movement scheduled by a particle must be delayed until all movement activations have been simulated because the particle's neighbors should not see the changed position until the next round.
-This feature is explained in more detail on the round simulation page.
-**TODO**
+This feature is explained in more detail on the [round simulation page](round_sim.md).
 
 
 ### Attributes
@@ -59,7 +58,7 @@ When the algorithm calls an attribute creation method, the static [`ParticleAttr
 The class also ensures that attributes are only created in the algorithm's constructor (using the [`Particle`][2]'s [`inConstructor`][14] flag) and their names do not collide with the reserved attribute names `Chirality` and `Compass Dir`.
 These names are reserved so that the particle's chirality and compass direction can be accessed like regular attributes, even though they have a different internal representation.
 
-The attribute classes additionally have some special features implementing simulation-specific functionality, which is discussed on the round simulation page **TODO**.
+The attribute classes additionally have some special features implementing simulation-specific functionality, which is discussed on the [round simulation page](round_sim.md).
 
 
 
@@ -81,7 +80,7 @@ The [`InitializationParticle`][18] class uses its own list of attributes to repr
 They are initialized to match the parameters of the selected algorithm's `Init(...)` method and they can be updated using the particle's [`SetAttribute(string name, object value)`][20] and [`SetAttributes(object[] values)`][21] methods in the custom initialization code.
 When the simulation starts, the values of these attributes are passed to the `Init(...)` method's parameters of each new particle.
 This task is performed by the [`ParticleFactory`][22] class.
-Many of the features in this system, like creating attributes according to the `Init(...)` method's parameters, are handled by the reflection helper methods, which are explained on their own page **TODO**.
+Many of the features in this system, like creating attributes according to the `Init(...)` method's parameters, are handled by the reflection helper methods, which are explained on [their own page](reflection.md).
 
 
 

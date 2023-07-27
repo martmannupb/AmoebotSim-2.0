@@ -65,51 +65,6 @@ The particle classes contain much more information than what is listed here.
 However, most of it is related to more specific features and thus, it is explained elsewhere.
 
 
-**TODO**:
-- Save/Load feature
-	- Serializable objects can be translated to and from JSON using Unity's JSON utility
-	- Implement combination of `GenerateSaveData` and `InitializeFromSaveData` methods
-	- Make the entire particle system serializable
-	- Standalone File Browser to select files
-- Algorithm API
-	- Attributes
-	- Method calls handled by simulator
-	- Scheduling actions and storing them temporarily until the round simulation
-	- Initialization API
-		- Methods provided by abstract generator class
-	- System initialization
-		- Particle placeholders
-		- Particle factory
-		- Link between particle and algorithm
-- Round simulation
-	- Only rough overview
-	- Start each phase by activating all particles
-	- Illusion of simultaneous activation and working on a snapshot
-	- Perform movements first, then activate again and find circuits, finally send beeps and messages
-- Circuits
-	- Each particle has a PinConfiguration
-		- Use local labels, int IDs
-		- Hierarchy of small classes
-		- History uses compressed version
-	- Flags for current and planned PC
-	- Data structures for planned and received beeps and Messages
-	- Circuit discovery
-		- BFS
-		- Merging circuits
-		- Messages
-- Joint Movements
-	- Bond representation and detection
-	- Movement types
-	- BFS and JM offset propagation
-- Reflection
-	- Singleton classes for finding all existing algorithms
-- Error handling
-	- Several custom exception types
-	- Some of them can be handled by the simulator
-	- If an error occurs that can be handled: Undo the current simulation progress and reset to the previous round
-
-
-
 
 [1]: xref:AS2.Sim.ParticleSystem
 [2]: xref:AS2.AmoebotSimulator

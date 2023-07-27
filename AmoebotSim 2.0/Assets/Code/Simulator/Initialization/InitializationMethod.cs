@@ -67,7 +67,7 @@ namespace AS2
         }
 
         /// <summary>
-        /// Removes the <see cref="InitializationParticle"/> at the given position.
+        /// Removes the <see cref="AS2.Sim.InitializationParticle"/> at the given position.
         /// </summary>
         /// <param name="position">The grid position from which a particle should
         /// be removed. If an expanded particle occupies this position, its other
