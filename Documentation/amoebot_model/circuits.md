@@ -48,15 +48,17 @@ As a function of its previous state and the beeps received in the previous round
 The beeps are propagated on the updated pin configurations.
 
 
+
 ## Messages
 
 The simulator implements a feature addressing the fact that a sequence of beeps can be used to transmit arbitrary messages of constant size.
 In addition to sending simple beeps, it allows sending custom structs via circuits in a single round.
 This feature is added to avoid having to manually encode and decode information in a binary format and transmitting it over several rounds.
 It should be easy to see that this is possible for any finite-size struct and allowing the transmission of such data in a single round does not change the complexity of any problem or algorithm.
+Please refer to the [Model Reference page](~/model_ref/pin_cfgs.md) on pin configurations for more information on how the reconfigurable circuits extension is implemented and used in the simulator.
 
 
-Continue by reading the second extension of the Amoebot model, [*joint movements*](jm.md)
+Continue by reading about the second extension of the Amoebot model, [*joint movements*](jm.md)
 
 
 

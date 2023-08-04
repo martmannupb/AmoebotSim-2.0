@@ -93,6 +93,8 @@ Continue reading about the model's extensions implemented in the simulator:
 1. [Reconfigurable Circuits](circuits.md)
 2. [Joint Movements](jm.md)
 
+Refer to the [Model Reference pages](~/model_ref/home.md) for more information on how the model is implemented and used in the simulator.
+
 
 
 [1]: https://doi.org/10.1145/2612669.2612712

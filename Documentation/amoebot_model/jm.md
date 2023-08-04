@@ -2,9 +2,6 @@
 
 ![Here we see the configuration of some connected Amoebots performing a joint expansion.](~/images/joint_movement.gif "Joint Movements")
 
-In the original amoebot model, expansions and contractions could only happen into empty space resp. left an empty node. One exception was the common 'handover', where one contracted particle expanded into one expanded particle, forcing it to contract. Still, these handovers were not different from contraction and expansion in two consecutive rounds. With the joint movement extension, we can define a connection between two amoebots as a 'bond', marking it as more or less static. This way, the amoebot can be able to expand or contract into some direction and push or pull the connected structure into the direction of its own movement.
-
-
 In the basic Amoebot model, the maximum distance an Amoebot can move per round is a small constant:
 An Amoebot can expand in one round and contract in the next, after which it has moved at most one grid node in any direction.
 This restriction might limit the speed at which movement or shape formation problems can be solved, especially for larger systems.
@@ -21,7 +18,7 @@ The idea behind the extension is to allow Amoebots to push and pull other Amoebo
 The necessary coordination of such movements can be provided by the reconfigurable circuit extension (see the [previous page](circuits.md) for details).
 
 In the following, we formalize and extend the joint movement extension.
-Let $S$ denote the set of all Amoebots and $G_S = (S, E_S)$ denote the subgraph of $G_\Delta$ induced by $S$).
+Let $S$ denote the set of all Amoebots and $G_S = (S, E_S)$ denote the subgraph of $G_\Delta$ induced by $S$.
 Joint movements are performed in two steps.
 
 In the first step, the Amoebots remove *bonds* from $G_S$ as follows.
@@ -97,12 +94,35 @@ In the *move phase*, each Amoebot may release an arbitrary subset of its inciden
 
 
 
+## Adaptation in the Simulator
+
 <img src="~/images/jm_expansion.gif" alt="Expansion animation" title="Expansion animation" height="125"/> <img src="~/images/jm_contraction.gif" alt="Contraction animation" title="Contraction animation" height="125"/> <img src="~/images/jm_handover.gif" alt="Handover animation" title="Handover animation" height="125"/>
+The animations above show the example movements from Figure 2 a, b, and d as they are animated by the simulator.
 
+The joint movements extension is implemented by AmoebotSim 2.0, but some changes were made to make it easier to work with.
+First, we introduced an *anchor particle*:
+One Amoebot is marked as the anchor of the system so that the mapping of the final system $G_M$ to the grid $G_\Delta$ is unique.
+We choose the mapping that corresponds to no translation relative to the anchor.
 
-- Animations of the movements in the simulator
-- Anchor particle
-- Refer to Model Reference pages
+Next, we added a mechanism so that expanding particles can explicitly define their assignment of bonds.
+In the model description above, it says "(...) the Amoebot splits its single node into two nodes, adds a bond between them, and assigns each of its other incident bonds to one of the resulting nodes."
+We define that the head of the expanding Amoebot is the part that moves onto the new node.
+Similar to releasing bonds, an expanding Amoebot is now able to *mark* bonds that should be assigned to its head.
+All remaining incident bonds are automatically assigned to its tail.
+Note that of the two bonds that coincide with the expansion axis, one is always marked and one can never be marked.
+
+Finally, perhaps the most significant change regards the structure of Amoebot activations.
+The model description above does not state how exactly the construction of circuits and the transmission of beeps are incorporated into the activation model.
+For the simulator, we decided to split the movement and the communication into two distinct phases.
+The first phase is a look-compute-move cycle as explained above:
+The Amoebots can alter their own state and schedule movements based on a snapshot of the current system state.
+We call this the *movement phase*.
+After the movements comes the second phase, which is a look-compute-beep cycle.
+This phase is identical to the movement phase except that instead of scheduling movements, the Amoebots alter their pin configurations and send beeps and messages.
+We call this the *beep phase*.
+
+All of these changes are explained in more detail on the [Model Reference pages](~/model_ref/home.md), in particular, the [Round Simulation](~/model_ref/rounds.md) and the [Bonds and Joint Movements](~/model_ref/bonds_jm.md) pages.
+
 
 
 [1]: https://doi.org/10.48550/arXiv.2305.06146
