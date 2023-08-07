@@ -5,7 +5,10 @@ On this plane, there are infinitely many directions, but due to the triangular g
 This page explains what these directions are and how the particles perceive them in their local perspective.
 
 
+
 ## Directions
+
+![The regular triangular grid graph](~/images/graph_eqt_arrows_sec.png "The regular triangular grid graph with its directions and coordinate axes")
 
 In the triangular grid graph, every node has six neighbors that are evenly spaced out at $60^\circ$ angles around the node.
 Due to this structure, we have three axes, at $60^\circ$ to each other, such that every edge in the grid graph is parallel to one of the axes.
@@ -20,6 +23,10 @@ Additionally, we define a second set of directions by rotating the cardinal dire
 These *secondary directions* lie exactly between the cardinal directions and are named *East-North East*, *North*, *West-North West*, *West-South West*, *South* and *East-South East*, abbreviated ENE, N, WNW, WSW, S, ESE, and also identified by $0,\ldots,5$ in that order.
 The secondary directions are useful for some algorithms because each secondary direction lies not only directly between two cardinal directions, it is also perpendicular to two of them and its axis runs through infinitely many nodes of the grid, which means that the secondary directions can be used to define certain particle structures.
 
+We use the E-W axis and the NNE-SSW axis to define a global coordinate system, placing its origin with the coordinates $(0, 0)$ at some arbitrary node.
+However, the particles have no way of finding out their global coordinates unless they are given to them as parameters.
+
+
 ### API Representation
 
 In the simulator code, directions are represented by the [`Direction`][1] enum.
@@ -27,6 +34,7 @@ It contains constants for all cardinal and secondary directions plus the special
 All [`Direction`][1] values can be converted to their integer representation using the [`ToInt`][3] extension method, the [`NONE`][2] value is represented by $-1$.
 The static [`DirectionHelpers`][4] class provides various methods for working with directions, like rotating and reversing them or calculating the angle between two directions.
 Operations with the [`NONE`][2] value will result in [`NONE`][2] or $-1$, depending on the return type.
+
 
 
 ## Compass
@@ -39,7 +47,10 @@ If a particle's compass direction is East (and its chirality matches the global 
 In any other case, there is an offset between the local and global directions (and even different offsets if the chirality is inverted).
 For example, if a particle's compass direction is NNW, its local East direction will be the global NNW direction, and its local West direction will be SSE in the global view.
 
+![Particles with different compass directions](~/images/compass.png "Particles with different compass directions")
+
 A particle *does not know* its compass direction and has no way to determine it.
+
 
 ### Compass Alignment
 
@@ -51,6 +62,7 @@ Note that the particles are not able to change their actual compass direction, b
 The "Chirality & Compass Alignment" algorithm that is part of the simulator project demonstrates this technique after establishing a common chirality in the system.
 Note that the algorithm relies on randomness due to the coin tosses, which means that it is not guaranteed to terminate.
 However, in practice, this generally does not cause any problems.
+
 
 
 ## Setting the Compass Direction

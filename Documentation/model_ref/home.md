@@ -1,6 +1,7 @@
 # Model Reference
 
 These pages provide detailed explanations of the most important concepts in AmoebotSim 2.0.
+They extend the [Amoebot model descriptions](~/amoebot_model/home.md), focusing on how the model is implemented in the simulator and how its features can be accessed through the API.
 You should be familiar with these concepts in order to develop Amoebot algorithms for the simulator.
 
 1. [Round Simulation](rounds.md)
