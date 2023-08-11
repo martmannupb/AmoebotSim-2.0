@@ -79,7 +79,7 @@
         "dest": "_site",
         "globalMetadata": {
             "_appTitle": "AmoebotSim 2.0",
-            "_appFooter": "WORK IN PROGRESS",
+            "_appFooter": "AmoebotSim 2.0 Documentation v1.0",
             "_enableSearch": true
         },
         "globalMetadataFiles": [],

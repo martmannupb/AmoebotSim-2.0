@@ -190,5 +190,10 @@ The third button only works in Simulation Mode and opens the Settings Panel.
 The last button closes the application and is available in Init and Simulation Mode.
 
 
+### Next Steps
+
+Continue by reading the [Simulation Mode guide](sim.md) to learn how simulations are controlled.
+
+
 
 [1]: xref:AS2.Log

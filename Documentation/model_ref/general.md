@@ -28,6 +28,9 @@ Because all particles are activated in each round, every particle will have the 
 Some aspects of the simulator that might be difficult to get used to are the orientation of expanded particles and the way neighbor positions are identified.
 For an expanded particle, one of its two occupied nodes is called the *head* and the other one is called the *tail*.
 When a particle expands in some direction $d$, the node that lies in direction $d$ will be occupied by the head while the node that was already occupied becomes the tail.
+After that, $d$ is called the *head direction* or *expansion direction* of the particle.
+Note that there might be a difference between the *global* and the *local* head direction, depending on the particle's compass direction.
+
 It is important to keep track of the orientation of an expanded particle because its two parts have different neighbors and are also perceived differently by their neighboring particles.
 In addition to that, the distinction between head and tail is crucial for identifying neighbor positions and pins.
 While a simple direction is enough to identify a neighbor position of a contracted particle, expanded particles additionally require the information whether the neighbor is at the particle's head or its tail.

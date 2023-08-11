@@ -195,4 +195,10 @@ If you want to modify the hotkeys, this can be done in the [`UIHandler`][1] clas
 You can read more about this class and the UI system implementation on the [Dev Guide pages](~/dev_guide/ui.md).
 
 
+### Next Steps
+
+Continue by reading the [Algorithm Development](~/user_guide/dev/home.md) if you want to learn how Amoebot algorithms are implemented.
+
+
+
 [1]: xref:AS2.UI.UIHandler
