@@ -3049,43 +3049,57 @@ namespace AS2.Sim
          */
 
         /// <summary>
-        /// Calculates the average world position of all particles in the system.
+        /// Calculates the average world position of all particles and
+        /// objects in the system.
         /// </summary>
+        /// <param name="includeObjects">Whether positions occupied by objects
+        /// should be included.</param>
         /// <returns>The average world of all particles. Will be
         /// <c>(0, 0)</c> if there are no particles.</returns>
-        public Vector2 CenterPosition()
+        public Vector2 CenterPosition(bool includeObjects = true)
         {
             Vector2 avg = Vector2.zero;
 
             ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+            ICollection<Vector2Int> objPositions = includeObjects ? (inInitializationState ? objectMapInit.Keys : objectMap.Keys) : new List<Vector2Int>();
 
-            foreach (Vector2Int pos in positions)
+            foreach (ICollection<Vector2Int> coll in new ICollection<Vector2Int>[] { positions, objPositions })
             {
-                avg += pos;
+                foreach (Vector2Int pos in coll)
+                {
+                    avg += pos;
+                }
             }
 
-            if (positions.Count > 0)
-                avg /= positions.Count;
+            int count = positions.Count + objPositions.Count;
+
+            if (count > 0)
+                avg /= count;
 
             return AmoebotFunctions.GridToWorldPositionVector2(avg.x, avg.y);
         }
 
         /// <summary>
         /// Computes the bounding box of the current particle system
-        /// in world coordinates.
+        /// (including objects) in world coordinates.
         /// The bounding box is computed with respect to the current
         /// camera rotation, but this rotation is not preserved in
         /// the result.
         /// </summary>
+        /// <param name="includeObjects">Whether objects should be
+        /// included in the calculation.</param>
         /// <returns>A vector <c>(x, y, z, w)</c> where <c>(x, y)</c>
         /// is the world position of the bounding box center and
         /// <c>z</c> and <c>w</c> are the bounding box width and
         /// height, respectively.</returns>
-        public Vector4 GetBoundingBox()
+        public Vector4 GetBoundingBox(bool includeObjects = true)
         {
+            // Collect particle positions
             ICollection<Vector2Int> positions = inInitializationState ? particleMapInit.Keys : particleMap.Keys;
+            // Collect object positions
+            ICollection<Vector2Int> objPositions = includeObjects ? (inInitializationState ? objectMapInit.Keys : objectMap.Keys) : new List<Vector2Int>();
 
-            if (positions.Count == 0)
+            if (positions.Count + objPositions.Count == 0)
                 return new Vector4(0, 0, 0, 0);
 
             float xMin = float.PositiveInfinity;
@@ -3093,21 +3107,26 @@ namespace AS2.Sim
             float yMin = float.PositiveInfinity;
             float yMax = float.NegativeInfinity;
 
-            foreach (Vector2Int pos in positions)
+            // Find min and max screen coordinates out of particle and object positions
+            foreach (ICollection<Vector2Int> coll in new ICollection<Vector2Int>[] { positions, objPositions })
             {
-                Vector2 abs = AmoebotFunctions.GridToWorldPositionVector2(pos);
-                Vector2 rel = Camera.main.WorldToScreenPoint(abs);
-                if (rel.x < xMin)
-                    xMin = rel.x;
-                if (rel.x > xMax)
-                    xMax = rel.x;
+                foreach (Vector2Int pos in coll)
+                {
+                    Vector2 abs = AmoebotFunctions.GridToWorldPositionVector2(pos);
+                    Vector2 rel = Camera.main.WorldToScreenPoint(abs);
+                    if (rel.x < xMin)
+                        xMin = rel.x;
+                    if (rel.x > xMax)
+                        xMax = rel.x;
 
-                if (rel.y < yMin)
-                    yMin = rel.y;
-                if (rel.y > yMax)
-                    yMax = rel.y;
+                    if (rel.y < yMin)
+                        yMin = rel.y;
+                    if (rel.y > yMax)
+                        yMax = rel.y;
+                }
             }
 
+            // Transform back to world coordinates
             Vector3 lowerLeft = new Vector3(xMin, yMin, 5);
             Vector3 lowerRight = new Vector3(xMax, yMin, 5);
             Vector3 upperLeft = new Vector3(xMin, yMax, 5);
