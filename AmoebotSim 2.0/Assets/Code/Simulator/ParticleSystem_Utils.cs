@@ -382,6 +382,19 @@ namespace AS2.Sim
         {
             return GetNbrInDir(fromHead ? p.Head() : p.Tail(), LocalToGlobalDir(locDir, p.comDir, p.chirality));
         }
+
+        public static int GridDistance(Vector2Int p1, Vector2Int p2)
+        {
+            Vector2Int to = p2 - p1;
+            // If the signs of the two distance components are equal,
+            // we have to cover both of them
+            // If they have opposite signs, we can cover the smaller
+            // distance while moving toward the bigger one
+            if (to.x * to.y >= 0)
+                return Mathf.Abs(to.x + to.y);
+            else
+                return Mathf.Max(Mathf.Abs(to.x), Mathf.Abs(to.y));
+        }
     }
 
 } // namespace AS2.Sim

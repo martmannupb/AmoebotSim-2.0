@@ -60,6 +60,9 @@ namespace AS2.Sim
         /// </summary>
         private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
+        private List<ParticleObject> objects = new List<ParticleObject>();
+        private Dictionary<Vector2Int, ParticleObject> objectMap = new Dictionary<Vector2Int, ParticleObject>();
+
 
         /*
          * Round indexing
@@ -231,6 +234,10 @@ namespace AS2.Sim
         /// </summary>
         private Dictionary<Vector2Int, OpenInitParticle> particleMapInit = new Dictionary<Vector2Int, OpenInitParticle>();
 
+        private List<ParticleObject> objectsInit = new List<ParticleObject>();
+        private Dictionary<Vector2Int, ParticleObject> objectMapInit = new Dictionary<Vector2Int, ParticleObject>();
+
+
         /// <summary>
         /// The index of the anchor particle selected in initialization mode.
         /// <c>-1</c> means that no anchor has been selected, in which case the
@@ -362,6 +369,12 @@ namespace AS2.Sim
             particles.Clear();
             particleMap.Clear();
 
+            // Same for objects
+            foreach (ParticleObject o in objects)
+                o.Free();
+            objects.Clear();
+            objectMap.Clear();
+
             // Reset history state
             _earliestRound = 0;
             _latestRound = 0;
@@ -381,7 +394,7 @@ namespace AS2.Sim
         /// Resets the current particle configuration while in
         /// initialization mode.
         /// </summary>
-        public void ResetInit()
+        public void ResetInit(bool freeObjects = true)
         {
             foreach (InitializationParticle p in particlesInit)
             {
@@ -389,6 +402,12 @@ namespace AS2.Sim
             }
             particlesInit.Clear();
             particleMapInit.Clear();
+
+            if (freeObjects)
+                foreach (ParticleObject o in objectsInit)
+                    o.Free();
+            objectsInit.Clear();
+            objectMapInit.Clear();
             anchorInit = -1;
         }
 
@@ -671,10 +690,10 @@ namespace AS2.Sim
                                     if (a.type == ActionType.EXPAND)
                                     {
                                         Vector2Int targetPos = ParticleSystem_Utils.GetNbrInDir(p.Head(), gDir);
-                                        if (particleMap.ContainsKey(targetPos))
+                                        if (particleMap.ContainsKey(targetPos) || objectMap.ContainsKey(targetPos))
                                         {
                                             Debug.LogWarning("Particle at position " + p.Head() +
-                                                " has switched to automatic bonds but expands into neighbor in global direction " + gDir);
+                                                " has switched to automatic bonds but expands into neighbor/object in global direction " + gDir);
                                         }
                                     }
                                 }
@@ -840,6 +859,7 @@ namespace AS2.Sim
 
             // New particle positions will be stored in new map
             Dictionary<Vector2Int, Particle> newPositions = new Dictionary<Vector2Int, Particle>(particles.Count);
+            Dictionary<Vector2Int, ParticleObject> newObjectMap = new Dictionary<Vector2Int, ParticleObject>(objectMap.Count);
 
             // Queue for BFS
             Queue<Particle> queue = new Queue<Particle>();
@@ -870,6 +890,7 @@ namespace AS2.Sim
                 bool[] nbrHead = new bool[numNbrs];     // True if the neighbor's head is at this position
                 int[] nbrLabels = new int[numNbrs];     // Stores global neighbor label opposite of our label
                 bool[] bondNbrs = new bool[numNbrs];    // True wherever we have a bonded neighbor
+                ParticleObject[] nbrObjs = new ParticleObject[numNbrs];     // Objects bonded to the particle
 
                 // If a handover is scheduled, also ensure that there is a bond to the
                 // partner in the handover
@@ -885,7 +906,7 @@ namespace AS2.Sim
                         handoverLabelToCheck = ParticleSystem_Utils.GetLabelInDir(dir, globalHeadDir, true);
                 }
 
-                CollectBondInfo(p, numNbrs, globalHeadDir, nbrParts, bondNbrs, nbrHead, nbrLabels, handoverLabelToCheck);
+                CollectBondInfo(p, numNbrs, globalHeadDir, nbrParts, bondNbrs, nbrHead, nbrLabels, nbrObjs, handoverLabelToCheck);
 
                 // Neighbors have been found
                 // Now check if the particle's movement agrees with its neighbors
@@ -894,8 +915,53 @@ namespace AS2.Sim
                 for (int label = 0; label < numNbrs; label++)
                 {
                     Particle nbr = nbrParts[label];
-                    if (nbr == null)
+                    ParticleObject nbrObj = nbrObjs[label];
+                    if (nbr == null && nbrObj == null)
                         continue;
+
+                    if (nbrObj != null)
+                    {
+                        // Have an object neighbor here: Compute the offset this bond imposes
+                        // on the object and make sure that it matches the object's current
+                        // offset if it exists
+
+                        // Prepare bond info
+                        Vector2Int bondStart1 = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir) ? p.Head() : p.Tail();
+                        Vector2Int bondEnd1 = bondStart1 + ParticleSystem_Utils.DirectionToVector(ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir));
+                        Vector2Int bondStart2 = bondStart1;
+                        Vector2Int bondEnd2 = bondEnd1;
+
+                        // Decide whether the particle's movement offset must be applied or not
+                        Vector2Int objOffset = p.jmOffset;
+                        if (movementAction != null && p.markedBondsGlobal[label])
+                        {
+                            objOffset += p.movementOffset;
+                            bondStart2 += p.movementOffset;
+                            bondEnd2 += p.movementOffset;
+                        }
+
+                        // Check if the calculated offset matches the object's current offset
+                        if (nbrObj.receivedJmOffset && nbrObj.jmOffset != objOffset)
+                        {
+                            throw new SimulationException("Conflict during joint movement: Offset of object at " + nbrObj.Position
+                                + " is " + nbrObj.jmOffset + " but particle at " + p.Head() + (p.IsExpanded() ? ", " + p.Tail() : "")
+                                + " adds offset " + objOffset);
+                        }
+
+                        // Set the object's offset if it does not have one yet
+                        if (!nbrObj.receivedJmOffset)
+                        {
+                            nbrObj.jmOffset = objOffset;
+                            nbrObj.receivedJmOffset = true;
+                        }
+
+                        // Make bond visible
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1));
+
+                        continue;
+                    }
+
+                    // Have a particle neighbor here
 
                     // The offset by which the neighbor's origin will move relative to our origin
                     Vector2Int nbrOffset = Vector2Int.zero;
@@ -1334,7 +1400,22 @@ namespace AS2.Sim
                 p.processedJointMovement = true;
             }
 
-            // BFS has finished, now apply the movements to the particles locally
+            // Compute new object positions and check if they are valid
+            foreach (ParticleObject o in objects)
+            {
+                foreach (Vector2Int pos in o.GetOccupiedPositions())
+                {
+                    Vector2Int newPos = pos + o.jmOffset;
+                    if (newPositions.ContainsKey(newPos) || newObjectMap.ContainsKey(newPos))
+                    {
+                        throw new SimulationException("Conflict during joint movement: Target location " + newPos + " of object at " + o.Position + " is already occupied.");
+                    }
+                    newObjectMap[newPos] = o;
+                }
+            }
+
+            // BFS has finished, now apply the movements to the particles
+            // and the objects locally
             // Also, check if any particle was not processed
             foreach (Particle p in particles)
             {
@@ -1364,8 +1445,14 @@ namespace AS2.Sim
                 }
             }
 
-            // Replace the particle map with the new positions
+            foreach (ParticleObject o in objects)
+            {
+                o.MovePosition(o.jmOffset);
+            }
+
+            // Replace the particle and object map with the new positions
             particleMap = newPositions;
+            objectMap = newObjectMap;
 
             Debug.Log("Computed joint movements in " + (Time.realtimeSinceStartup - tStart) + "s");
         }
@@ -1386,13 +1473,15 @@ namespace AS2.Sim
         /// all labels that are adjacent to the head of a bonded neighbor.</param>
         /// <param name="nbrLabels">An int array that should hold the bonded neighbor's
         /// label corresponding to each of the current particle's labels.</param>
+        /// <param name="nbrObjs">An object array that should hold references to the
+        /// neighboring objects to which the particle is bonded.</param>
         /// <param name="handoverLabelToCheck">One label that must have a bonded neighbor
         /// because the current particle intends to perform a handover in that direction.
         /// If no such neighbor is found, a <see cref="System.InvalidOperationException"/>
         /// is thrown. Use <c>-1</c> to indicate that no label must be checked.</param>
         private void CollectBondInfo(Particle p, int numNbrs, Direction globalHeadDir,
             Particle[] nbrParts, bool[] bondNbrs, bool[] nbrHead, int[] nbrLabels,
-            int handoverLabelToCheck = -1)
+            ParticleObject[] nbrObjs, int handoverLabelToCheck = -1)
         {
             for (int label = 0; label < numNbrs; label++)
             {
@@ -1432,6 +1521,10 @@ namespace AS2.Sim
                             nbrParts[label] = nbr;
                         }
                     }
+                }
+                else if (objectMap.TryGetValue(nbrPos, out ParticleObject obj))
+                {
+                    nbrObjs[label] = obj;
                 }
 
                 // Error if there is no neighbor here although a handover is scheduled
@@ -1781,15 +1874,29 @@ namespace AS2.Sim
                 bool[] nbrHead = new bool[numNbrs];     // True if the neighbor's head is at this position
                 int[] nbrLabels = new int[numNbrs];     // Stores global neighbor label opposite of our label
                 bool[] bondNbrs = new bool[numNbrs];    // True wherever we have a bonded neighbor
+                ParticleObject[] nbrObjs = new ParticleObject[numNbrs];
 
-                CollectBondInfo(p, numNbrs, globalHeadDir, nbrParts, bondNbrs, nbrHead, nbrLabels);
+                CollectBondInfo(p, numNbrs, globalHeadDir, nbrParts, bondNbrs, nbrHead, nbrLabels, nbrObjs);
 
                 // Go through the labels and process the bonds to each neighbor
                 for (int label = 0; label < numNbrs; label++)
                 {
                     Particle nbr = nbrParts[label];
-                    if (nbr == null)
+                    ParticleObject nbrObj = nbrObjs[label];
+                    if (nbr == null && nbrObj == null)
                         continue;
+
+                    if (nbrObj != null)
+                    {
+                        // Have object neighbor here
+                        // Simply add the bond to the particle's bond graphics info
+                        Vector2Int bondStart = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir) ? p.Head() : p.Tail();
+                        Vector2Int bondEnd = bondStart + ParticleSystem_Utils.DirectionToVector(ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart, bondEnd, bondStart, bondEnd));
+                        continue;
+                    }
+
+                    // Have particle neighbor here
 
                     // Find out how many bonds we have to that neighbor
                     int numBonds = 0;
@@ -2333,14 +2440,19 @@ namespace AS2.Sim
 
         /// <summary>
         /// Stores the released and marked bonds and resets
-        /// them for each particle. Use this to prepare the
-        /// particles for the joint movements in the next round.
+        /// them for each particle and resets joint movement info
+        /// for every object. Use this to prepare the particles
+        /// and objects for the joint movements in the next round.
         /// </summary>
         private void FinishMovementInfo()
         {
             foreach (Particle p in particles)
             {
                 p.StoreAndResetMovementInfo();
+            }
+            foreach (ParticleObject o in objects)
+            {
+                o.receivedJmOffset = false;
             }
         }
 
@@ -2687,6 +2799,42 @@ namespace AS2.Sim
             }
 
             return nbrs;
+        }
+
+        /// <summary>
+        /// System-side implementation of <see cref="ParticleAlgorithm.HasObjectAt(Direction, bool)"/>.
+        /// <para>See also <seealso cref="HasNeighborAt(Particle, Direction, bool)"/>.</para>
+        /// </summary>
+        /// <param name="p">The particle checking for a neighboring object.</param>
+        /// <param name="locDir">The local direction of the particle in which to check.</param>
+        /// <param name="fromHead">If <c>true</c>, check relative to <paramref name="p"/>'s head,
+        /// otherwise check relative to the tail.</param>
+        /// <returns><c>true</c> if and only if the node in local direction <paramref name="locDir"/>
+        /// relative to <paramref name="p"/>'s head or tail is occupied by an object.</returns>
+        public bool HasObjectAt(Particle p, Direction locDir, bool fromHead = true)
+        {
+            Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+            // Return true iff there is an object at that position
+            return objectMap.ContainsKey(pos);
+        }
+
+        /// <summary>
+        /// System-side implementation of <see cref="ParticleAlgorithm.GetObjectAt(Direction, bool)"/>.
+        /// <para>See also <seealso cref="HasObjectAt(Particle, Direction, bool)"/>.</para>
+        /// </summary>
+        /// <param name="p">The particle trying to get its neighbor object.</param>
+        /// <param name="locDir">The local direction of the particle in which to check.</param>
+        /// <param name="fromHead">If <c>true</c>, check relative to <paramref name="p"/>'s head,
+        /// otherwise check relative to the tail.</param>
+        /// <returns>The neighboring object in the specified position, if it exists,
+        /// otherwise <c>null</c>.</returns>
+        public IParticleObject GetObjectAt(Particle p, Direction locDir, bool fromHead = true)
+        {
+            Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, fromHead);
+            if (objectMap.TryGetValue(pos, out ParticleObject obj))
+                return obj;
+            else
+                return null;
         }
 
         /// <summary>
@@ -3113,6 +3261,14 @@ namespace AS2.Sim
                         particleMap[p.Head()] = p;
                     }
                 }
+                // Do the same for objects
+                objectMap.Clear();
+                foreach (ParticleObject o in objects)
+                {
+                    o.SetMarkerToRound(round);
+                    foreach (Vector2Int v in o.GetOccupiedPositions())
+                        objectMap[v] = o;
+                }
                 isTracking = false;
                 anchorIdxHistory.SetMarkerToRound(round);
                 UpdateAfterStep();
@@ -3147,6 +3303,14 @@ namespace AS2.Sim
                         particleMap[p.Head()] = p;
                     }
                 }
+                // Do the same for objects
+                objectMap.Clear();
+                foreach (ParticleObject o in objects)
+                {
+                    o.StepBack();
+                    foreach (Vector2Int v in o.GetOccupiedPositions())
+                        objectMap[v] = o;
+                }
                 isTracking = false;
                 anchorIdxHistory.StepBack();
                 UpdateAfterStep();
@@ -3178,6 +3342,14 @@ namespace AS2.Sim
                         particleMap[p.Head()] = p;
                     }
                 }
+                // Do the same for objects
+                objectMap.Clear();
+                foreach (ParticleObject o in objects)
+                {
+                    o.StepForward();
+                    foreach (Vector2Int v in o.GetOccupiedPositions())
+                        objectMap[v] = o;
+                }
                 isTracking = false;
                 anchorIdxHistory.StepForward();
                 UpdateAfterStep(true, false, false);
@@ -3206,6 +3378,14 @@ namespace AS2.Sim
                         particleMap[p.Head()] = p;
                     }
                 }
+                // Do the same for objects
+                objectMap.Clear();
+                foreach (ParticleObject o in objects)
+                {
+                    o.ContinueTracking();
+                    foreach (Vector2Int v in o.GetOccupiedPositions())
+                        objectMap[v] = o;
+                }
                 isTracking = true;
                 anchorIdxHistory.ContinueTracking();
                 UpdateAfterStep(stepFromSecondLastRound, !stepFromSecondLastRound, !stepFromSecondLastRound);
@@ -3224,6 +3404,11 @@ namespace AS2.Sim
                     // We must reset the planned beeps and messages because they have
                     // been loaded for visualization
                     p.ResetPlannedBeepsAndMessages();
+                }
+                foreach (ParticleObject o in objects)
+                {
+                    o.CutOffAtMarker();
+                    o.ContinueTracking();
                 }
                 isTracking = true;
                 anchorIdxHistory.CutOffAtMarker();
@@ -3249,6 +3434,10 @@ namespace AS2.Sim
             foreach (Particle p in particles)
             {
                 p.ShiftTimescale(amount);
+            }
+            foreach (ParticleObject o in objects)
+            {
+                o.ShiftTimescale(amount);
             }
             anchorIdxHistory.ShiftTimescale(amount);
 
@@ -3306,6 +3495,11 @@ namespace AS2.Sim
             {
                 data.particles[i] = particles[i].GenerateSaveData();
             }
+            data.objects = new ParticleObjectSaveData[objects.Count];
+            for (int i = 0; i < objects.Count; i++)
+            {
+                data.objects[i] = objects[i].GenerateSaveData();
+            }
 
             return data;
         }
@@ -3344,6 +3538,14 @@ namespace AS2.Sim
                 {
                     particleMap.Add(p.Head(), p);
                 }
+            }
+
+            foreach (ParticleObjectSaveData oData in data.objects)
+            {
+                ParticleObject o = ParticleObject.CreateFromSaveData(this, oData);
+                objects.Add(o);
+                foreach (Vector2Int v in o.GetOccupiedPositions())
+                    objectMap[v] = o;
             }
 
             if (updateVisuals)
@@ -3500,6 +3702,13 @@ namespace AS2.Sim
             if (!inInitializationState)
                 return;
 
+            // Perform connectivity check
+            if (!IsInitSystemConnected())
+            {
+                throw new SimulatorStateException("System is not connected! Cannot start simulation.");
+            }
+
+            // Initialize the particles
             foreach (InitializationParticle ip in particlesInit)
             {
                 Particle p = ParticleFactory.CreateParticle(this, algorithmName, ip, true);
@@ -3514,10 +3723,18 @@ namespace AS2.Sim
             else
                 anchorIdxHistory.RecordValueAtMarker(0);
 
-            ResetInit();
+            // Copy the objects
+            foreach (ParticleObject o in objectsInit)
+                objects.Add(o);
+            foreach (KeyValuePair<Vector2Int, ParticleObject> kv in objectMapInit)
+                objectMap[kv.Key] = kv.Value;
+
+            // Clean up Init Mode state
+            ResetInit(false);
             storedSimulationState = false;
             inInitializationState = false;
 
+            // Prepare initial system state
             SetInitialParticleBonds();
             ComputeBondsStatic();
             FinishMovementInfo();
@@ -3526,6 +3743,65 @@ namespace AS2.Sim
             DiscoverCircuits(false);
             UpdateAllParticleVisuals(true);
             CleanupAfterRound();
+        }
+
+        /// <summary>
+        /// Checks whether the initialization system is connected such that
+        /// the particles form a connected component and each object neighbors
+        /// at least one particle.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the particle system is connected
+        /// and all objects are adjacent to the system.</returns>
+        private bool IsInitSystemConnected()
+        {
+            if (particlesInit.Count == 0)
+                return true;
+
+            // Perform simple BFS on particles, make sure that
+            // all objects are visited
+            Queue<InitializationParticle> queue = new Queue<InitializationParticle>();
+            HashSet<InitializationParticle> visitedParticles = new HashSet<InitializationParticle>();
+            HashSet<ParticleObject> visitedObjects = new HashSet<ParticleObject>();
+
+            queue.Enqueue(particlesInit[0]);
+            visitedParticles.Add(particlesInit[0]);
+
+            while (queue.Count > 0)
+            {
+                InitializationParticle ip = queue.Dequeue();
+                int numNbrs = ip.IsExpanded() ? 10 : 6;
+                for (int label = 0; label < numNbrs; label++)
+                {
+                    Vector2Int pos = ParticleSystem_Utils.GetNbrInDir(ParticleSystem_Utils.IsHeadLabel(label, ip.ExpansionDir) ? ip.Head() : ip.Tail(),
+                        ParticleSystem_Utils.GetDirOfLabel(label, ip.ExpansionDir));
+                    if (particleMapInit.TryGetValue(pos, out OpenInitParticle p))
+                    {
+                        if (!visitedParticles.Contains(p))
+                        {
+                            visitedParticles.Add(p);
+                            queue.Enqueue(p);
+                        }
+                    }
+                    else if (objectMapInit.TryGetValue(pos, out ParticleObject o))
+                    {
+                        visitedObjects.Add(o);
+                    }
+                }
+            }
+
+            // Not connected if we have not visited all particles and all objects
+            if (visitedParticles.Count < particlesInit.Count)
+            {
+                Log.Warning("Particle system is not connected!");
+                return false;
+            }
+            if (visitedObjects.Count < objectsInit.Count)
+            {
+                Log.Warning("Not all objects are connected to the system!");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -3713,7 +3989,8 @@ namespace AS2.Sim
 
             OpenInitParticle ip = new OpenInitParticle(this, tailPos, chirality, compassDir, headDirection);
 
-            if (particleMapInit.ContainsKey(ip.Tail()) || ip.IsExpanded() && particleMapInit.ContainsKey(ip.Head()))
+            if (particleMapInit.ContainsKey(ip.Tail()) || objectMapInit.ContainsKey(ip.Tail())
+                || ip.IsExpanded() && (particleMapInit.ContainsKey(ip.Head()) || objectMapInit.ContainsKey(ip.Head())))
             {
                 Log.Error("Cannot add particle at " + ip.Tail() + ", " + ip.Head() + ", position is already occupied.");
                 return null;
@@ -3825,7 +4102,7 @@ namespace AS2.Sim
                 if (!ip.IsExpanded() || newHeadDir != ip.ExpansionDir)
                 {
                     Vector2Int newHeadPos = ParticleSystem_Utils.GetNbrInDir(ip.Tail(), newHeadDir);
-                    if (TryGetInitParticleAt(newHeadPos, out _))
+                    if (TryGetInitParticleAt(newHeadPos, out _) || objectMapInit.ContainsKey(newHeadPos))
                     {
                         Log.Warning("Cannot expand particle at " + ip.Tail() + " in direction " + newHeadDir + ", position is already occupied.");
                         return false;
@@ -3943,7 +4220,8 @@ namespace AS2.Sim
 
             OpenInitParticle ip = particlesInit[idx];
 
-            if (particleMapInit.TryGetValue(gridPos, out OpenInitParticle prt) && prt != ip)
+            if (particleMapInit.TryGetValue(gridPos, out OpenInitParticle prt) && prt != ip
+                || objectMapInit.ContainsKey(gridPos))
             {
                 Log.Error("Cannot move particle to grid position " + gridPos + ": Already occupied.");
                 return;
@@ -3995,7 +4273,9 @@ namespace AS2.Sim
 
             OpenInitParticle ip = particlesInit[idx];
 
-            if (particleMapInit.TryGetValue(gridPosHead, out OpenInitParticle prt1) && prt1 != ip || particleMapInit.TryGetValue(gridPosTail, out OpenInitParticle prt2) && prt2 != ip)
+            if (particleMapInit.TryGetValue(gridPosHead, out OpenInitParticle prt1) && prt1 != ip ||
+                particleMapInit.TryGetValue(gridPosTail, out OpenInitParticle prt2) && prt2 != ip ||
+                objectMapInit.ContainsKey(gridPosHead) || objectMapInit.ContainsKey(gridPosTail))
             {
                 Log.Error("Cannot move particle to grid positions " + gridPosHead + ", " + gridPosTail + ": Already occupied.");
                 return;
@@ -4012,6 +4292,39 @@ namespace AS2.Sim
             particleMapInit[gridPosTail] = ip;
             particleMapInit[gridPosHead] = ip;
             ip.graphics.UpdateReset();
+        }
+
+        // TODO: How to handle visualization and adding new parts?
+        // For now: Have to add completed objects
+        public void AddObject(ParticleObject o)
+        {
+            if (!inInitializationState)
+            {
+                Log.Warning("Cannot add objects in simulation mode.");
+                return;
+            }
+
+            // Make sure that the position is not occupied
+            Vector2Int[] verts = o.GetOccupiedPositions();
+            foreach (Vector2Int v in verts)
+            {
+                if (particleMapInit.ContainsKey(v))
+                {
+                    Log.Error("Cannot add object: Grid node " + v + " is occupied by a particle.");
+                    return;
+                }
+                if (objectMapInit.ContainsKey(v))
+                {
+                    Log.Error("Cannot add object: Grid node " + v + " is already occupied by an object.");
+                    return;
+                }
+            }
+
+            // Add the object
+            o.CalculateBoundaries();
+            objectsInit.Add(o);
+            foreach (Vector2Int v in verts)
+                objectMapInit[v] = o;
         }
     }
 
