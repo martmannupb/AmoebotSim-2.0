@@ -116,12 +116,12 @@ namespace AS2.Algos.ObjectTest
 
             // Create an object using the Random With Holes algorithm
             ParticleObject o = CreateObject(new Vector2Int(10, 0));
-            //System.Func<Vector2Int, bool> excludeFunc = (Vector2Int v) => v == Vector2Int.zero;
-            System.Func<Vector2Int, bool> excludeFunc = (Vector2Int v) => {
-                int dist = ParticleSystem_Utils.GridDistance(v, Vector2Int.zero);
-                return dist <= 3 || dist >= 12 || v == new Vector2Int(3, 2) || v == new Vector2Int(4, 2)
-                || v == new Vector2Int(-6, -3);
-            };
+            System.Func<Vector2Int, bool> excludeFunc = (Vector2Int v) => v == Vector2Int.zero;
+            //System.Func<Vector2Int, bool> excludeFunc = (Vector2Int v) => {
+            //    int dist = ParticleSystem_Utils.GridDistance(v, Vector2Int.zero);
+            //    return dist <= 3 || dist >= 12 || v == new Vector2Int(3, 2) || v == new Vector2Int(4, 2)
+            //    || v == new Vector2Int(-6, -3);
+            //};
             List<Vector2Int> positions = GenerateRandomConnectedPositions(o.Position, numPositions, holeProb, fillHoles, excludeFunc, allowExcludedHoles, prioritizeInner, lambda);
             foreach (Vector2Int p in positions)
                 o.AddPosition(p);

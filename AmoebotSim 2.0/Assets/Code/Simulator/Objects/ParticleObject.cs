@@ -105,7 +105,7 @@ namespace AS2.Sim
 
         /// <summary>
         /// Indicates whether this object has already received a
-        /// joint movement offset from 
+        /// joint movement offset during the movement simulation.
         /// </summary>
         public bool receivedJmOffset = false;
 
@@ -288,8 +288,6 @@ namespace AS2.Sim
             // top has no neighbors in W, NNW and NNE direction
             // Now walk around the outer boundary in clockwise direction
             Direction boundaryDir = Direction.NNE;  // boundaryDir is like a normal pointing away from the shape
-            //Direction initialBoundaryDir = boundaryDir;     // Remember this to know when we are finished
-            //Vector2Int current = top;
             List<Vector2Int> outerBoundary = new List<Vector2Int>();
             List<Direction> successorDirs = new List<Direction>();
 
@@ -474,7 +472,7 @@ namespace AS2.Sim
             float dist = 0.5f;
             foreach (ObjectBorderVertex bv in vertices)
             {
-                Vector3 pos = AmoebotFunctions.CalculateAmoebotCenterPositionVector3(bv.node + position, -2);
+                Vector3 pos = AmoebotFunctions.GridToWorldPositionVector3(bv.node + position, -2);
                 float angle = (bv.dir.ToInt() * 60 + 30) * Mathf.Deg2Rad;
                 pos.x += Mathf.Cos(angle) * dist;
                 pos.y += Mathf.Sin(angle) * dist;
