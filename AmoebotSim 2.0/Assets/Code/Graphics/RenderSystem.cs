@@ -261,6 +261,10 @@ namespace AS2.Visuals
         /// The UI overlay renderer.
         /// </summary>
         public RendererUI rendererUI;
+        /// <summary>
+        /// The object renderer.
+        /// </summary>
+        public RendererObjects rendererObj;
 
 
         public RenderSystem(AmoebotSimulator sim, InputController inputController)
@@ -268,6 +272,7 @@ namespace AS2.Visuals
             rendererBG = new RendererBackground();
             rendererP = new RendererParticles();
             rendererUI = new RendererUI(sim, inputController);
+            rendererObj = new RendererObjects();
         }
 
         /// <summary>
@@ -281,6 +286,7 @@ namespace AS2.Visuals
             // Render
             rendererBG.Render(setting_viewType);
             rendererP.Render(setting_viewType);
+            rendererObj.Render();
             rendererUI.Render(setting_viewType);
 
             // Reset Round Flag

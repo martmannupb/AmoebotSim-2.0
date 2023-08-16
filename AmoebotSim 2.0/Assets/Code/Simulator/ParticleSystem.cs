@@ -371,7 +371,10 @@ namespace AS2.Sim
 
             // Same for objects
             foreach (ParticleObject o in objects)
+            {
+                o.graphics.RemoveObject();
                 o.Free();
+            }
             objects.Clear();
             objectMap.Clear();
 
@@ -405,7 +408,10 @@ namespace AS2.Sim
 
             if (freeObjects)
                 foreach (ParticleObject o in objectsInit)
+                {
+                    o.graphics.RemoveObject();
                     o.Free();
+                }
             objectsInit.Clear();
             objectMapInit.Clear();
             anchorInit = -1;
@@ -4344,6 +4350,9 @@ namespace AS2.Sim
             objectsInit.Add(o);
             foreach (Vector2Int v in verts)
                 objectMapInit[v] = o;
+
+            // Add to render system
+            o.graphics.AddObject();
         }
     }
 

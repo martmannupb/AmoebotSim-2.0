@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using AS2.Visuals;
 
 namespace AS2.Sim
 {
@@ -45,6 +46,8 @@ namespace AS2.Sim
         private static List<ParticleObject> allObjects = new List<ParticleObject>();
 
         private ParticleSystem system;
+
+        public ObjectGraphicsAdapter graphics;
 
         /// <summary>
         /// The global root position of the object. This position
@@ -117,6 +120,8 @@ namespace AS2.Sim
             positionHistory = new ValueHistory<Vector2Int>(position, system.CurrentRound);
             occupiedRel = new List<Vector2Int>();
             occupiedRel.Add(Vector2Int.zero);
+
+            graphics = new ObjectGraphicsAdapter(this, system.renderSystem.rendererObj);
 
             allObjects.Add(this);
         }
@@ -484,7 +489,7 @@ namespace AS2.Sim
             }
         }
 
-        private void Draw()
+        public void Draw()
         {
             DrawBoundaryVertices(tmpOuterBoundaryVerts, Color.black, 0.1f);
             for (int i = 0; i < tmpInnerBoundaryVerts.Count; i++)
@@ -561,7 +566,10 @@ namespace AS2.Sim
 
         public static ParticleObject CreateFromSaveData(ParticleSystem system, ParticleObjectSaveData data)
         {
-            return new ParticleObject(system, data);
+            ParticleObject o = new ParticleObject(system, data);
+            o.CalculateBoundaries();
+            o.graphics.AddObject();
+            return o;
         }
 
         private ParticleObject(ParticleSystem system, ParticleObjectSaveData data)
@@ -572,6 +580,8 @@ namespace AS2.Sim
             this.system = system;
             occupiedRel = new List<Vector2Int>(data.occupiedRel);
             color = data.color;
+
+            graphics = new ObjectGraphicsAdapter(this, system.renderSystem.rendererObj);
         }
 
     }

@@ -70,7 +70,6 @@ namespace AS2
         void Update()
         {
             renderSystem.Render();
-            AS2.Sim.ParticleObject.DrawObjects();
         }
 
         // FixedUpdate is called once per Time.fixedDeltaTime interval
