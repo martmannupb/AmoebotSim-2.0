@@ -183,6 +183,17 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Returns the set of relative positions occupied
+        /// by the object.
+        /// </summary>
+        /// <returns>An array containing the grid coordinates of
+        /// all occupied nodes relative to the object position.</returns>
+        public Vector2Int[] GetRelPositions()
+        {
+            return occupiedRel.ToArray();
+        }
+
+        /// <summary>
         /// Moves the entire object by the given offset.
         /// </summary>
         /// <param name="offset">The offset vector by which
