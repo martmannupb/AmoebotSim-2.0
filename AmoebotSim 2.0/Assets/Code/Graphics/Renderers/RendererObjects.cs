@@ -12,6 +12,8 @@ namespace AS2.Visuals
     public class RendererObjects
     {
 
+        private Dictionary<Color, MaterialPropertyBlockData_Objects> propertyBlocks = new Dictionary<Color, MaterialPropertyBlockData_Objects>();
+
         private List<ObjectGraphicsAdapter> objects = new List<ObjectGraphicsAdapter>();
 
         public RendererObjects()
@@ -27,14 +29,27 @@ namespace AS2.Visuals
                     obj.obj.Draw();
                 else
                 {
-                    Material m = MaterialDatabase.material_circular_bgLines;
-                    Graphics.DrawMesh(obj.mesh, Matrix4x4.TRS(AmoebotFunctions.GridToWorldPositionVector3(obj.obj.Position), Quaternion.identity, Vector3.one), m, 0);
+                    Material m = MaterialDatabase.material_object_base;
+                    Graphics.DrawMesh(obj.mesh,
+                        Matrix4x4.TRS(
+                            AmoebotFunctions.GridToWorldPositionVector3(obj.obj.Position.x, obj.obj.Position.y, RenderSystem.zLayer_objects), Quaternion.identity, Vector3.one),
+                        m, 0, Camera.current, 0, obj.propertyBlock.propertyBlock);
                 }
             }
         }
 
         public void AddObject(ObjectGraphicsAdapter obj)
         {
+            // Find or generate property block
+            if (propertyBlocks.TryGetValue(obj.Color, out MaterialPropertyBlockData_Objects prop))
+                obj.propertyBlock = prop;
+            else
+            {
+                MaterialPropertyBlockData_Objects newProp = new MaterialPropertyBlockData_Objects();
+                newProp.ApplyColor(obj.Color);
+                propertyBlocks[obj.Color] = newProp;
+                obj.propertyBlock = newProp;
+            }
             objects.Add(obj);
         }
 

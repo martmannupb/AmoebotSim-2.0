@@ -224,14 +224,31 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Creates a new object occupying the given position.
+        /// When the object is finished, submit it to the system
+        /// by calling <see cref="AddObjectToSystem(ParticleObject)"/>.
+        /// </summary>
+        /// <param name="pos">The first grid position occupied
+        /// by the new object.</param>
+        /// <param name="identifier">The identifier of the new object.
+        /// Does not have to be unique.</param>
+        /// <returns>A new object with the given <paramref name="identifier"/>
+        /// occupying the given position <paramref name="pos"/>.</returns>
         public ParticleObject CreateObject(Vector2Int pos, int identifier = 0)
         {
             return new ParticleObject(pos, system, identifier);
         }
 
+        /// <summary>
+        /// Adds a copy of the given object <paramref name="o"/> to
+        /// the system. Note that you cannot make any changes to an
+        /// object once it has been added to the system.
+        /// </summary>
+        /// <param name="o">The object to be added.</param>
         public void AddObjectToSystem(ParticleObject o)
         {
-            system.AddObject(o);
+            system.AddObject(o.Copy());
         }
 
         /// <summary>

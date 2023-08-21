@@ -43,8 +43,6 @@ namespace AS2.Sim
             }
         }
 
-        private static List<ParticleObject> allObjects = new List<ParticleObject>();
-
         private ParticleSystem system;
 
         public ObjectGraphicsAdapter graphics;
@@ -122,19 +120,6 @@ namespace AS2.Sim
             occupiedRel.Add(Vector2Int.zero);
 
             graphics = new ObjectGraphicsAdapter(this, system.renderSystem.rendererObj);
-
-            allObjects.Add(this);
-        }
-
-        public void Free()
-        {
-            allObjects.Remove(this);
-        }
-
-        public static void DrawObjects()
-        {
-            foreach (ParticleObject o in allObjects)
-                o.Draw();
         }
 
         /// <summary>
@@ -202,6 +187,34 @@ namespace AS2.Sim
         {
             position += offset;
             positionHistory.RecordValueInRound(position, system.CurrentRound);
+        }
+
+        /// <summary>
+        /// Moves the entire object to the given position.
+        /// This can be used in Init Mode to easily create
+        /// multiple copies of a shape in different locations.
+        /// </summary>
+        /// <param name="position">The new position of the
+        /// object's origin.</param>
+        public void MoveTo(Vector2Int position)
+        {
+            this.position = position;
+            positionHistory.RecordValueInRound(position, system.CurrentRound);
+        }
+
+        /// <summary>
+        /// Creates a copy of this object. The copy is not
+        /// added to the render system automatically, even
+        /// if the original has already been added.
+        /// </summary>
+        /// <returns>A copy of this object.</returns>
+        public ParticleObject Copy()
+        {
+            ParticleObject copy = new ParticleObject(position, system, identifier);
+            copy.occupiedRel.RemoveAt(0);
+            copy.occupiedRel.AddRange(occupiedRel);
+            copy.color = color;
+            return copy;
         }
 
         /// <summary>

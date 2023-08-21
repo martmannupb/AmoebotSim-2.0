@@ -32,6 +32,7 @@ namespace AS2
         {
             int q_background = RenderSystem.renderQueue_background;
             int q_bonds = RenderSystem.renderQueue_bonds;
+            int q_objects = RenderSystem.renderQueue_objects;
             int q_particles = RenderSystem.renderQueue_particles;
             int q_circuits = RenderSystem.renderQueue_circuits;
             int q_circuitBeeps = RenderSystem.renderQueue_circuitBeeps;
@@ -45,6 +46,9 @@ namespace AS2
             // Bond materials
             material_bond_lineCircular_movement.renderQueue = q_bonds;
             material_bond_lineHexagonal_movement.renderQueue = q_bonds;
+
+            // Object material
+            material_object_base.renderQueue = q_objects;
 
             // Particle materials
             material_circular_particleComplete.renderQueue = q_particles;
@@ -88,10 +92,13 @@ namespace AS2
         // Beeps
         public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");
         public static Material material_circuit_beepPaused = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepPausedMat");
-        
+
         // Bonds
         public static Material material_bond_lineHexagonal_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondHexMatWithMovement");
         public static Material material_bond_lineCircular_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondCircMatWithMovement");
+
+        // Objects
+        public static Material material_object_base = Resources.Load<Material>(FilePaths.path_materials + "Base/ObjectMat");
 
         // UI
         public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");

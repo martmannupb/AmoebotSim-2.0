@@ -373,7 +373,6 @@ namespace AS2.Sim
             foreach (ParticleObject o in objects)
             {
                 o.graphics.RemoveObject();
-                o.Free();
             }
             objects.Clear();
             objectMap.Clear();
@@ -397,7 +396,7 @@ namespace AS2.Sim
         /// Resets the current particle configuration while in
         /// initialization mode.
         /// </summary>
-        public void ResetInit(bool freeObjects = true)
+        public void ResetInit(bool removeObjects = true)
         {
             foreach (InitializationParticle p in particlesInit)
             {
@@ -406,11 +405,10 @@ namespace AS2.Sim
             particlesInit.Clear();
             particleMapInit.Clear();
 
-            if (freeObjects)
+            if (removeObjects)
                 foreach (ParticleObject o in objectsInit)
                 {
                     o.graphics.RemoveObject();
-                    o.Free();
                 }
             objectsInit.Clear();
             objectMapInit.Clear();
