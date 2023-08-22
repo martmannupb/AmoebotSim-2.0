@@ -114,6 +114,12 @@ namespace AS2.Visuals
             renderer.RemoveObject(this);
         }
 
+        public void UpdateColor()
+        {
+            if (isRegistered)
+                renderer.UpdateObjectColor(this);
+        }
+
         /// <summary>
         /// Generates the mesh for this object.
         /// </summary>

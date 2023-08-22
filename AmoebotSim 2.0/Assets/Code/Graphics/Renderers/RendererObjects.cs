@@ -16,6 +16,8 @@ namespace AS2.Visuals
 
         private List<ObjectGraphicsAdapter> objects = new List<ObjectGraphicsAdapter>();
 
+        private Material objectMat = MaterialDatabase.material_object_base;
+
         public RendererObjects()
         {
 
@@ -25,37 +27,42 @@ namespace AS2.Visuals
         {
             foreach (ObjectGraphicsAdapter obj in objects)
             {
-                if (obj.mesh == null)
-                    obj.obj.Draw();
-                else
+                if (obj.mesh != null)
                 {
-                    Material m = MaterialDatabase.material_object_base;
                     Graphics.DrawMesh(obj.mesh,
                         Matrix4x4.TRS(
                             AmoebotFunctions.GridToWorldPositionVector3(obj.obj.Position.x, obj.obj.Position.y, RenderSystem.zLayer_objects), Quaternion.identity, Vector3.one),
-                        m, 0, Camera.current, 0, obj.propertyBlock.propertyBlock);
+                        objectMat, 0, Camera.current, 0, obj.propertyBlock.propertyBlock);
                 }
             }
         }
 
         public void AddObject(ObjectGraphicsAdapter obj)
         {
-            // Find or generate property block
-            if (propertyBlocks.TryGetValue(obj.Color, out MaterialPropertyBlockData_Objects prop))
-                obj.propertyBlock = prop;
-            else
-            {
-                MaterialPropertyBlockData_Objects newProp = new MaterialPropertyBlockData_Objects();
-                newProp.ApplyColor(obj.Color);
-                propertyBlocks[obj.Color] = newProp;
-                obj.propertyBlock = newProp;
-            }
+            UpdateObjectColor(obj);
             objects.Add(obj);
         }
 
         public void RemoveObject(ObjectGraphicsAdapter obj)
         {
             objects.Remove(obj);
+        }
+
+        public void UpdateObjectColor(ObjectGraphicsAdapter obj)
+        {
+            if (obj.propertyBlock == null || obj.propertyBlock.Color != obj.Color)
+            {
+                // Find or generate property block
+                if (propertyBlocks.TryGetValue(obj.Color, out MaterialPropertyBlockData_Objects prop))
+                    obj.propertyBlock = prop;
+                else
+                {
+                    MaterialPropertyBlockData_Objects newProp = new MaterialPropertyBlockData_Objects();
+                    newProp.ApplyColor(obj.Color);
+                    propertyBlocks[obj.Color] = newProp;
+                    obj.propertyBlock = newProp;
+                }
+            }
         }
     }
 

@@ -14,6 +14,10 @@ namespace AS2.Visuals
 
         // Data
         private Color color;
+        public Color Color
+        {
+            get;
+        }
 
         public MaterialPropertyBlockData_Objects()
         {

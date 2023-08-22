@@ -17,4 +17,12 @@ public interface IParticleObject
     {
         get;
     }
+
+    /// <summary>
+    /// Gives the object a new color. If multiple
+    /// particles set the same object's color, the one
+    /// set by the last simulated particle will be used.
+    /// </summary>
+    /// <param name="color">The new color of the object.</param>
+    public abstract void SetColor(Color color);
 }

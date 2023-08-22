@@ -71,6 +71,24 @@ namespace AS2.Algos.ObjectTest
                     Expand(objDir);
                 }
             }
+            else
+            {
+                IParticleObject obj = null;
+                foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                {
+                    if (d != HeadDirection().Opposite() && HasObjectAt(d, true))
+                        obj = GetObjectAt(d, true);
+                    if (obj == null && d != HeadDirection() && HasObjectAt(d, false))
+                        obj = GetObjectAt(d, false);
+                    if (obj != null)
+                        break;
+                }
+                // Set random color
+                if (obj != null)
+                {
+                    obj.SetColor(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
+                }
+            }
         }
 
         // The beep activation method
@@ -126,6 +144,7 @@ namespace AS2.Algos.ObjectTest
             foreach (Vector2Int p in positions)
                 o.AddPosition(p);
 
+            o.Color = ColorData.Particle_BlueDark;
             AddObjectToSystem(o);
         }
     }

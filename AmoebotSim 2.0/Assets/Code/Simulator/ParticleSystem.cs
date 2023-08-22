@@ -4344,7 +4344,6 @@ namespace AS2.Sim
             }
 
             // Add the object
-            o.CalculateBoundaries();
             objectsInit.Add(o);
             foreach (Vector2Int v in verts)
                 objectMapInit[v] = o;
