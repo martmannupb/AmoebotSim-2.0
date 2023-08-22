@@ -940,8 +940,8 @@ namespace AS2.Sim
                         if (movementAction != null && p.markedBondsGlobal[label])
                         {
                             objOffset += p.movementOffset;
-                            bondStart2 += p.movementOffset;
-                            bondEnd2 += p.movementOffset;
+                            bondStart2 += p.movementOffset + p.jmOffset;
+                            bondEnd2 += p.movementOffset + p.jmOffset;
                         }
 
                         // Check if the calculated offset matches the object's current offset
