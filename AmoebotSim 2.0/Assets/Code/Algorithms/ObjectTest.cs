@@ -144,7 +144,6 @@ namespace AS2.Algos.ObjectTest
             foreach (Vector2Int p in positions)
                 o.AddPosition(p);
 
-            o.Color = ColorData.Particle_BlueDark;
             AddObjectToSystem(o);
         }
     }

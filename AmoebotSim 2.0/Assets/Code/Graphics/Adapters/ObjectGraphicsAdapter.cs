@@ -77,6 +77,11 @@ namespace AS2.Visuals
         /// </summary>
         public MaterialPropertyBlockData_Objects propertyBlock;
 
+        /// <summary>
+        /// The joint movement offset registered for the current round.
+        /// </summary>
+        public Vector2Int jmOffset;
+
         public ObjectGraphicsAdapter(ParticleObject obj, RendererObjects renderer)
         {
             this.obj = obj;
@@ -114,10 +119,32 @@ namespace AS2.Visuals
             renderer.RemoveObject(this);
         }
 
+        /// <summary>
+        /// Updates the object adapter's color to match
+        /// the object's color.
+        /// </summary>
         public void UpdateColor()
         {
             if (isRegistered)
                 renderer.UpdateObjectColor(this);
+        }
+
+        public Matrix4x4 CalculateMatrix(bool animated = false, float animationPercentage = 1f)
+        {
+            Vector2 pos;
+            if (animated)
+            {
+                Vector2 offset = (1.0f - animationPercentage) * (Vector2)jmOffset;
+                pos = AmoebotFunctions.GridToWorldPositionVector2(obj.Position - offset);
+            }
+            else
+            {
+                pos = AmoebotFunctions.GridToWorldPositionVector2(obj.Position);
+            }
+            return Matrix4x4.TRS(
+                new Vector3(pos.x, pos.y, RenderSystem.zLayer_objects),
+                Quaternion.identity, Vector3.one
+            );
         }
 
         /// <summary>

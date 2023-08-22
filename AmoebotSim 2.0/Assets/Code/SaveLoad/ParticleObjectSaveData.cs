@@ -12,6 +12,7 @@ namespace AS2
         public int identifier;
         public ValueHistorySaveData<Vector2Int> positionHistory;
         public ValueHistorySaveData<Color> colorHistory;
+        public ValueHistorySaveData<Vector2Int> jmOffsetHistory;
         public Vector2Int[] occupiedRel;
     }
 

@@ -111,6 +111,10 @@ namespace AS2.Sim
         /// accumulated by joint movements.
         /// </summary>
         public Vector2Int jmOffset;
+        /// <summary>
+        /// The history of joint movement offsets.
+        /// </summary>
+        private ValueHistory<Vector2Int> jmOffsetHistory;
 
         /// <summary>
         /// Indicates whether this object has already received a
@@ -125,6 +129,7 @@ namespace AS2.Sim
             this.identifier = identifier;
             positionHistory = new ValueHistory<Vector2Int>(position, system.CurrentRound);
             colorHistory = new ValueHistory<Color>(color, system.CurrentRound);
+            jmOffsetHistory = new ValueHistory<Vector2Int>(Vector2Int.zero, system.CurrentRound);
             occupiedRel = new List<Vector2Int>();
             occupiedRel.Add(Vector2Int.zero);
 
@@ -231,6 +236,33 @@ namespace AS2.Sim
             Color = color;
         }
 
+        /// <summary>
+        /// Stores the current joint movement offset in the object's history
+        /// and resets the offset and corresponding flag for the next round.
+        /// </summary>
+        public void StoreAndResetMovementInfo()
+        {
+            receivedJmOffset = false;
+            jmOffsetHistory.RecordValueInRound(jmOffset, system.CurrentRound);
+            RenderMovement();
+            jmOffset = Vector2Int.zero;
+        }
+
+        /// <summary>
+        /// Submits the current joint movement offset to the render system
+        /// to display a movement animation. This should be called after
+        /// each round and whenever the simulation state changes.
+        /// </summary>
+        /// <param name="withAnimation">Whether an animation should
+        /// be played.</param>
+        public void RenderMovement(bool withAnimation = true)
+        {
+            if (withAnimation)
+                graphics.jmOffset = jmOffsetHistory.GetMarkedValue();
+            else
+                graphics.jmOffset = Vector2Int.zero;
+        }
+
 
         /*
          * IReplayHistory
@@ -242,6 +274,7 @@ namespace AS2.Sim
             position = positionHistory.GetMarkedValue();
             colorHistory.ContinueTracking();
             color = colorHistory.GetMarkedValue();
+            jmOffsetHistory.ContinueTracking();
             graphics.UpdateColor();
         }
 
@@ -249,6 +282,7 @@ namespace AS2.Sim
         {
             positionHistory.CutOffAtMarker();
             colorHistory.CutOffAtMarker();
+            jmOffsetHistory.CutOffAtMarker();
         }
 
         public int GetFirstRecordedRound()
@@ -272,12 +306,15 @@ namespace AS2.Sim
             position = positionHistory.GetMarkedValue();
             colorHistory.SetMarkerToRound(round);
             color = colorHistory.GetMarkedValue();
+            jmOffsetHistory.SetMarkerToRound(round);
             graphics.UpdateColor();
         }
 
         public void ShiftTimescale(int amount)
         {
             positionHistory.ShiftTimescale(amount);
+            colorHistory.ShiftTimescale(amount);
+            jmOffsetHistory.ShiftTimescale(amount);
         }
 
         public void StepBack()
@@ -286,6 +323,7 @@ namespace AS2.Sim
             position = positionHistory.GetMarkedValue();
             colorHistory.StepBack();
             color = colorHistory.GetMarkedValue();
+            jmOffsetHistory.StepBack();
             graphics.UpdateColor();
         }
 
@@ -295,6 +333,7 @@ namespace AS2.Sim
             position = positionHistory.GetMarkedValue();
             colorHistory.StepForward();
             color = colorHistory.GetMarkedValue();
+            jmOffsetHistory.StepForward();
             graphics.UpdateColor();
         }
 
@@ -308,6 +347,7 @@ namespace AS2.Sim
             data.identifier = identifier;
             data.positionHistory = positionHistory.GenerateSaveData();
             data.colorHistory = colorHistory.GenerateSaveData();
+            data.jmOffsetHistory = jmOffsetHistory.GenerateSaveData();
             data.occupiedRel = occupiedRel.ToArray();
             return data;
         }
@@ -326,6 +366,7 @@ namespace AS2.Sim
             position = positionHistory.GetMarkedValue();
             colorHistory = new ValueHistory<Color>(data.colorHistory);
             color = colorHistory.GetMarkedValue();
+            jmOffsetHistory = new ValueHistory<Vector2Int>(data.jmOffsetHistory);
             this.system = system;
             occupiedRel = new List<Vector2Int>(data.occupiedRel);
 

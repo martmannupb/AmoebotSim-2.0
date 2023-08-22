@@ -1979,8 +1979,8 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Sets the bond graphics info of all particles to the
-        /// currently loaded state so that it can be displayed.
+        /// Sets the bond graphics info of all particles and objects
+        /// to the currently loaded state so that it can be displayed.
         /// If animations are required, the joint movement info is
         /// also loaded and set up to produce the correct animations.
         /// This should be called when stepping or jumping through
@@ -2012,6 +2012,10 @@ namespace AS2.Sim
                     if (movementInfo.movementAction != ActionType.NULL)
                         p.ScheduledMovement = new ParticleAction(p, movementInfo.movementAction);
                 }
+            }
+            foreach (ParticleObject obj in objects)
+            {
+                obj.RenderMovement(withAnimation);
             }
         }
 
@@ -2456,7 +2460,7 @@ namespace AS2.Sim
             }
             foreach (ParticleObject o in objects)
             {
-                o.receivedJmOffset = false;
+                o.StoreAndResetMovementInfo();
             }
         }
 
