@@ -73,20 +73,11 @@ namespace AS2.Algos.ObjectTest
             }
             else
             {
-                IParticleObject obj = null;
-                foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                // Find neighbor object
+                if (FindFirstObjectNeighbor(out Neighbor<IParticleObject> nbr))
                 {
-                    if (d != HeadDirection().Opposite() && HasObjectAt(d, true))
-                        obj = GetObjectAt(d, true);
-                    if (obj == null && d != HeadDirection() && HasObjectAt(d, false))
-                        obj = GetObjectAt(d, false);
-                    if (obj != null)
-                        break;
-                }
-                // Set random color
-                if (obj != null)
-                {
-                    obj.SetColor(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
+                    // Set random color
+                    nbr.neighbor.SetColor(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
                 }
             }
         }

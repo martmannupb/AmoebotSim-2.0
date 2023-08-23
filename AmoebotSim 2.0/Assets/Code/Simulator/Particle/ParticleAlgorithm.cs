@@ -13,7 +13,7 @@ namespace AS2.Sim
     /// </para>
     /// </summary>
     /// <typeparam name="T">The type of the neighbor particle.</typeparam>
-    public struct Neighbor<T> where T : ParticleAlgorithm
+    public struct Neighbor<T> where T : class
     {
         public T neighbor;
         public Direction localDir;
@@ -782,6 +782,29 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Searches for the first neighboring object in the specified range.
+        /// </summary>
+        /// <param name="neighbor">The first neighbor object that is encountered,
+        /// or <see cref="Neighbor{T}.Null"/> if no neighbor is found.</param>
+        /// <param name="startDir">The local direction of the first port to search.</param>
+        /// <param name="startAtHead">Indicates whether <paramref name="startDir"/>
+        /// is relative to the particle's head. Has no effect for contracted
+        /// particles.</param>
+        /// <param name="withChirality">If <c>true</c>, the search progresses in
+        /// the particle's local counter-clockwise direction, otherwise in the
+        /// local clockwise direction.</param>
+        /// <param name="maxNumber">The maximum number of ports to check.
+        /// The maximum value is <c>6</c> for contracted particles and <c>10</c>
+        /// for expanded particles. Negative values automatically select the
+        /// maximum number.</param>
+        /// <returns><c>true</c> if and only if a neighbor object was found.</returns>
+        public bool FindFirstObjectNeighbor(out Neighbor<IParticleObject> neighbor, Direction startDir = Direction.E, bool startAtHead = true, bool withChirality = true, int maxNumber = -1)
+        {
+            CheckActive("Neighbor information is not available for other particles.");
+            return particle.system.FindFirstObjectNeighbor(particle, out neighbor, startDir, startAtHead, withChirality, maxNumber);
+        }
+
+        /// <summary>
         /// Searches for the first neighboring particle in the specified range
         /// that satisfies the given property.
         /// </summary>
@@ -811,6 +834,33 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Searches for the first neighboring object in the specified range
+        /// that satisfies the given property.
+        /// </summary>
+        /// <param name="prop">The property the neighbor object has to satisfy.</param>
+        /// <param name="neighbor">The first neighbor object that is encountered,
+        /// or <see cref="Neighbor{T}.Null"/> if no neighbor is found.</param>
+        /// <param name="startDir">The local direction of the first port to search
+        /// at.</param>
+        /// <param name="startAtHead">Indicates whether <paramref name="startDir"/>
+        /// is relative to the particle's head. Has no effect for contracted
+        /// particles.</param>
+        /// <param name="withChirality">If <c>true</c>, the search progresses in
+        /// the particle's local counter-clockwise direction, otherwise in the
+        /// local clockwise direction.</param>
+        /// <param name="maxNumber">The maximum number of ports to check.
+        /// The maximum value is <c>6</c> for contracted particles and <c>10</c>
+        /// for expanded particles. Negative values automatically select the
+        /// maximum number.</param>
+        /// <returns><c>true</c> if and only if a neighbor object was found.</returns>
+        public bool FindFirstNeighborObjectWithProperty(System.Func<IParticleObject, bool> prop, out Neighbor<IParticleObject> neighbor, Direction startDir = Direction.E, bool startAtHead = true, bool withChirality = true, int maxNumber = -1)
+        {
+
+            CheckActive("Neighbor information is not available for other particles.");
+            return particle.system.FindFirstNeighborObjectWithProperty(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
+        }
+
+        /// <summary>
         /// Searches for neighboring particles in the specified range.
         /// </summary>
         /// <typeparam name="T">The algorithm type to search for. Should be the
@@ -833,6 +883,29 @@ namespace AS2.Sim
         {
             CheckActive("Neighbor information is not available for other particles.");
             return particle.system.FindNeighbors<T>(particle, startDir, startAtHead, withChirality, maxSearch, maxReturn);
+        }
+
+        /// <summary>
+        /// Searches for neighboring objects in the specified range.
+        /// </summary>
+        /// <param name="startDir">The local direction of the first port to search.</param>
+        /// <param name="startAtHead">Indicates whether <paramref name="startDir"/>
+        /// is relative to the particle's head. Has no effect for contracted
+        /// particles.</param>
+        /// <param name="withChirality">If <c>true</c>, the search progresses in
+        /// the particle's local counter-clockwise direction, otherwise in the
+        /// local clockwise direction.</param>
+        /// <param name="maxSearch">The maximum number of ports to search. Will always
+        /// be limited to the total number of ports. Negative values mean that all
+        /// ports will be searched.</param>
+        /// <param name="maxReturn">The maximum number of neighbors to return. The
+        /// same restrictions as for <paramref name="maxSearch"/> apply.</param>
+        /// <returns>A list containing all discovered neighbor objects.</returns>
+        public List<Neighbor<IParticleObject>> FindNeighborObjects(Direction startDir = Direction.E, bool startAtHead = true,
+            bool withChirality = true, int maxSearch = -1, int maxReturn = -1)
+        {
+            CheckActive("Neighbor information is not available for other particles.");
+            return particle.system.FindNeighborObjects(particle, startDir, startAtHead, withChirality, maxSearch, maxReturn);
         }
 
         /// <summary>
@@ -860,6 +933,31 @@ namespace AS2.Sim
         {
             CheckActive("Neighbor information is not available for other particles.");
             return particle.system.FindNeighborsWithProperty<T>(particle, prop, startDir, startAtHead, withChirality, maxSearch, maxReturn);
+        }
+
+        /// <summary>
+        /// Searches for neighboring objects in the specified range that satisfy
+        /// the given property.
+        /// </summary>
+        /// <param name="prop">The property the neighbor objects have to satisfy.</param>
+        /// <param name="startDir">The local direction of the first port to search.</param>
+        /// <param name="startAtHead">Indicates whether <paramref name="startDir"/>
+        /// is relative to the particle's head. Has no effect for contracted
+        /// particles.</param>
+        /// <param name="withChirality">If <c>true</c>, the search progresses in
+        /// the particle's local counter-clockwise direction, otherwise in the
+        /// local clockwise direction.</param>
+        /// <param name="maxSearch">The maximum number of ports to search. Will always
+        /// be limited to the total number of ports. Negative values mean that all
+        /// ports will be searched.</param>
+        /// <param name="maxReturn">The maximum number of neighbors to return. The
+        /// same restrictions as for <paramref name="maxSearch"/> apply.</param>
+        /// <returns>A list containing all discovered neighbor objects.</returns>
+        public List<Neighbor<IParticleObject>> FindNeighborObjectsWithProperty(System.Func<IParticleObject, bool> prop, Direction startDir = Direction.E, bool startAtHead = true,
+            bool withChirality = true, int maxSearch = -1, int maxReturn = -1)
+        {
+            CheckActive("Neighbor information is not available for other particles.");
+            return particle.system.FindNeighborObjectsWithProperty(particle, prop, startDir, startAtHead, withChirality, maxSearch, maxReturn);
         }
 
         /// <summary>
