@@ -81,11 +81,14 @@ namespace AS2.Visuals
             Vector2Int mouseWorldField = AmoebotFunctions.WorldToGridPosition(mouseWorldPos);
             UIHandler.UITool activeTool = sim.uiHandler.activeTool;
             IParticleState state_particleUnderPointer = null;
+            IObjectInfo state_objectUnderPointer = null;
             bool state_pointerOverMap = EventSystem.current.IsPointerOverGameObject() == false;
             if (state_pointerOverMap)
             {
                 // Show Particle Selection Overlay
-                sim.system.TryGetParticleAt(mouseWorldField, out state_particleUnderPointer);
+                bool foundParticle = sim.system.TryGetParticleAt(mouseWorldField, out state_particleUnderPointer);
+                if (!foundParticle)
+                    sim.system.TryGetObjectAt(mouseWorldField, out state_objectUnderPointer);
             }
 
             switch (action.clickButton)
@@ -137,6 +140,11 @@ namespace AS2.Visuals
                                             default:
                                                 break;
                                         }
+                                    }
+                                    else if (state_objectUnderPointer != null)
+                                    {
+                                        // Object has been clicked
+                                        // TODO
                                     }
                                     else
                                     {
@@ -385,11 +393,14 @@ namespace AS2.Visuals
             Vector2Int mouseWorldField = AmoebotFunctions.WorldToGridPosition(mouseWorldPos);
             UIHandler.UITool activeTool = sim.uiHandler.activeTool;
             IParticleState state_particleUnderPointer = null;
+            IObjectInfo state_objectUnderPointer = null;
             bool state_pointerOverMap = EventSystem.current.IsPointerOverGameObject() == false;
             if (state_pointerOverMap)
             {
                 // Show Particle Selection Overlay
-                sim.system.TryGetParticleAt(mouseWorldField, out state_particleUnderPointer);
+                bool foundParticle = sim.system.TryGetParticleAt(mouseWorldField, out state_particleUnderPointer);
+                if (!foundParticle)
+                    sim.system.TryGetObjectAt(mouseWorldField, out state_objectUnderPointer);
             }
 
             // Update move tool state if tool is not selected anymore or sim is running
@@ -421,6 +432,15 @@ namespace AS2.Visuals
                                 {
                                     Vector3 worldPos_tail = AmoebotFunctions.GridToWorldPositionVector3(state_particleUnderPointer.Tail());
                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+                                }
+                            }
+                            // Show object selection overlay
+                            else if (state_objectUnderPointer != null)
+                            {
+                                foreach (Vector2Int p in state_objectUnderPointer.OccupiedPositions())
+                                {
+                                    Vector3 worldPos = AmoebotFunctions.GridToWorldPositionVector3(p.x, p.y, RenderSystem.zLayer_ui);
+                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos, Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
                                 }
                             }
                         }

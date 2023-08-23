@@ -17,7 +17,7 @@ namespace AS2.Sim
     /// since there would be no way of releasing the bonds.
     /// </para>
     /// </summary>
-    public class ParticleObject : IParticleObject, IReplayHistory
+    public class ParticleObject : IParticleObject, IObjectInfo, IReplayHistory
     {
 
         /// <summary>
@@ -261,6 +261,16 @@ namespace AS2.Sim
                 graphics.jmOffset = jmOffsetHistory.GetMarkedValue();
             else
                 graphics.jmOffset = Vector2Int.zero;
+        }
+
+
+        /*
+         * IObjectInfo
+         */
+
+        public ICollection<Vector2Int> OccupiedPositions()
+        {
+            return GetOccupiedPositions();
         }
 
 

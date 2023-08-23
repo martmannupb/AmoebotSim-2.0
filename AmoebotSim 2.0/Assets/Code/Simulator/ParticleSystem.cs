@@ -467,6 +467,40 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Tries to get the object at the given position.
+        /// </summary>
+        /// <param name="position">The grid position at which to
+        /// look for the object.</param>
+        /// <param name="obj">The object at the given position, if it
+        /// exists, otherwise <c>null</c>.</param>
+        /// <returns><c>true</c> if and only if an object was found at
+        /// the given position.</returns>
+        public bool TryGetObjectAt(Vector2Int position, out IObjectInfo obj)
+        {
+            if (inInitializationState)
+            {
+                if (objectMapInit.TryGetValue(position, out ParticleObject o))
+                {
+                    obj = o;
+                    return true;
+                }
+            }
+            else
+            {
+                if (objectMap.TryGetValue(position, out ParticleObject o))
+                {
+                    obj = o;
+                    return true;
+                }
+            }
+
+            obj = null;
+            return false;
+        }
+
+        
+
+        /// <summary>
         /// Copies the attribute value of the given particle to all
         /// particles in the system.
         /// <para>
