@@ -12,6 +12,12 @@ namespace AS2.Visuals
     public interface IObjectInfo
     {
         public ICollection<Vector2Int> OccupiedPositions();
+
+        public Vector2Int Position { get; }
+
+        public int Size { get; }
+
+        public int Identifier { get; set; }
     }
 
 } // namespace AS2.Visuals

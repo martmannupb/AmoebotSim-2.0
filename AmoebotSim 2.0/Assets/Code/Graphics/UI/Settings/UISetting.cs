@@ -1095,4 +1095,179 @@ namespace AS2.UI
 
     }
 
+    /// <summary>
+    /// <see cref="UISetting"/> subclass for setting a color.
+    /// Colors are represented in RGB format, either as
+    /// integers from 0 to 255 or as floats from 0 to 1.
+    /// </summary>
+    public class UISetting_Color : UISetting
+    {
+        private TMP_InputField inputR;
+        private TMP_InputField inputG;
+        private TMP_InputField inputB;
+        private InputType inputType;
+
+        // Prev values
+        private string inputRprev;
+        private string inputGprev;
+        private string inputBprev;
+
+        public enum InputType
+        {
+            Int, Float
+        }
+
+        public UISetting_Color(GameObject go, Transform parentTransform, string name, Color start, InputType inputType)
+        {
+            // Add GameObject
+            if (go == null)
+                this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_color, Vector3.zero, Quaternion.identity, parentTransform);
+            else
+                this.go = go;
+            
+            // Set Name
+            this.name = name;
+            TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            tmpro.text = name;
+
+            TMP_InputField[] inputFields = this.go.GetComponentsInChildren<TMP_InputField>();
+            inputR = inputFields[0];
+            inputG = inputFields[1];
+            inputB = inputFields[2];
+            // Set initial values
+            this.inputType = inputType;
+            if (inputType == InputType.Int)
+            {
+                inputR.text = "" + (int)(start.r * 255);
+                inputG.text = "" + (int)(start.g * 255);
+                inputB.text = "" + (int)(start.b * 255);
+            }
+            else
+            {
+                inputR.text = "" + start.r;
+                inputR.text = "" + start.g;
+                inputR.text = "" + start.b;
+            }
+            inputRprev = inputR.text;
+            inputGprev = inputG.text;
+            inputBprev = inputB.text;
+
+            // Add Callbacks
+            inputR.onValueChanged.AddListener(delegate { OnValueChanged(); });
+            inputG.onValueChanged.AddListener(delegate { OnValueChanged(); });
+            inputB.onValueChanged.AddListener(delegate { OnValueChanged(); });
+        }
+
+        protected bool IsInputValid(string input)
+        {
+            switch (inputType)
+            {
+                case InputType.Int:
+                    int i;
+                    if (int.TryParse(input, out i)) return true;
+                    else return false;
+                case InputType.Float:
+                    if (TypeConverter.ConvertStringToFloat(input).conversionSuccessful) return true;
+                    else return false;
+                default:
+                    return false;
+            }
+        }
+
+        // TODO
+
+        public override string GetValueString()
+        {
+            string text1 = inputR.text;
+            string text2 = inputB.text;
+            if (inputType == InputType.Float)
+            {
+                text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text1);
+                text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text2);
+            }
+            string text = text1 + "-" + text2;
+            return text;
+        }
+
+        public override void SetValueString(string input)
+        {
+            if (input.Contains('-') == false)
+            {
+                Log.Error("Setting_MinMax: SetValueString: No - in input!");
+                return;
+            }
+            string text1 = input.Substring(0, input.IndexOf('-'));
+            string text2 = input.Substring(input.IndexOf('-') + 1);
+            TypeConverter.ConversionResult res1 = TypeConverter.ConvertStringToFloat(text1);
+            TypeConverter.ConversionResult res2 = TypeConverter.ConvertStringToFloat(text2);
+            if (res1.conversionSuccessful == false || res2.conversionSuccessful == false)
+            {
+                Log.Error("Setting_MinMax: SetValueString: Conversion to float failed for " + text1 + " and/or " + text2);
+                return;
+            }
+            inputR.text = res1.ToString();
+            inputB.text = res2.ToString();
+        }
+
+        protected override void LockSetting()
+        {
+            inputR.enabled = false;
+            inputB.enabled = false;
+        }
+
+        protected override void UnlockSetting()
+        {
+            inputR.enabled = true;
+            inputB.enabled = true;
+        }
+
+        protected override void SetInteractableState(bool interactable)
+        {
+            inputR.interactable = interactable;
+            inputB.interactable = interactable;
+        }
+
+        protected override void ClearRefs()
+        {
+            onValueChangedEvent = null;
+        }
+
+        // Callbacks
+
+        public Action<string, string> onValueChangedEvent;
+        private void OnValueChanged()
+        {
+            bool isValid = true;
+            string text1 = inputR.text;
+            if (IsInputValid(text1) == false)
+            {
+                // Input not valid, reset to old value
+                inputR.text = inputRprev;
+                isValid = false;
+            }
+            string text2 = inputB.text;
+            if (IsInputValid(text2) == false)
+            {
+                // Input not valid, reset to old value
+                inputB.text = inputGprev;
+                isValid = false;
+            }
+            inputRprev = inputR.text;
+            inputGprev = inputB.text;
+
+            if (isValid)
+            {
+                // Input valid, continue
+                if (inputType == InputType.Float)
+                {
+                    text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text1);
+                    text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text2);
+                }
+                string text = inputR.text + "-" + inputB.text;
+                if (onValueChangedEvent != null) onValueChangedEvent(this.name, text);
+            }
+        }
+
+    }
+
 }

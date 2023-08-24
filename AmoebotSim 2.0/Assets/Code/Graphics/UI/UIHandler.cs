@@ -20,6 +20,7 @@ namespace AS2.UI
         [HideInInspector]
         public AmoebotSimulator sim;
         public ParticleUIHandler particleUI;
+        public ObjectUIHandler objectUI;
         public SettingsUIHandler settingsUI;
         public InitializationUIHandler initializationUI;
 

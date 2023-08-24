@@ -82,7 +82,12 @@ namespace AS2.Sim
         public int Identifier
         {
             get { return identifier; }
-            set { identifier = value; }
+            set {
+                if (system.InInitializationState)
+                    identifier = value;
+                else
+                    Log.Warning("Identifier cannot be changed in Simulation Mode");
+            }
         }
 
         /// <summary>
@@ -273,6 +278,10 @@ namespace AS2.Sim
             return GetOccupiedPositions();
         }
 
+        public int Size
+        {
+            get { return occupiedRel.Count; }
+        }
 
         /*
          * IReplayHistory

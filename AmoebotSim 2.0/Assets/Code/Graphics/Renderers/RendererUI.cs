@@ -38,10 +38,6 @@ namespace AS2.Visuals
         private Vector2Int moveToolParticlePosition;
 
         // State
-        private ParticleSelectionState selectionState = ParticleSelectionState.NoSelection;
-        private bool selectedParticle_expanded = false;
-        private Vector2Int selectedParticle_pos1;
-        private Vector2Int selectedParticle_pos2;
 
         public enum ParticleSelectionState
         {
@@ -112,11 +108,6 @@ namespace AS2.Visuals
                                                 // Select particle, open particle panel
                                                 // Pause Simulation
                                                 sim.PauseSim();
-                                                // Update State
-                                                selectionState = ParticleSelectionState.Selected;
-                                                selectedParticle_expanded = state_particleUnderPointer.IsExpanded();
-                                                selectedParticle_pos1 = state_particleUnderPointer.Head();
-                                                selectedParticle_pos2 = state_particleUnderPointer.Tail();
                                                 // Open Particle Panel
                                                 if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Open(state_particleUnderPointer);
                                                 break;
@@ -144,7 +135,18 @@ namespace AS2.Visuals
                                     else if (state_objectUnderPointer != null)
                                     {
                                         // Object has been clicked
-                                        // TODO
+                                        switch (activeTool)
+                                        {
+                                            case UIHandler.UITool.Standard:
+                                                // Select object, open object panel
+                                                // Pause Simulation
+                                                sim.PauseSim();
+                                                // Open Object Panel
+                                                if (ObjectUIHandler.instance != null) ObjectUIHandler.instance.Open(state_objectUnderPointer);
+                                                break;
+                                            default:
+                                                break;
+                                        }
                                     }
                                     else
                                     {
@@ -152,11 +154,11 @@ namespace AS2.Visuals
                                         switch (activeTool)
                                         {
                                             case UIHandler.UITool.Standard:
-                                                // Reset selection, close particle panel (if open)
-                                                // Update State
-                                                selectionState = ParticleSelectionState.NoSelection;
+                                                // Reset selection, close particle and object panel (if open)
                                                 // Close particle panel
                                                 if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Close();
+                                                // Close object panel
+                                                if (ObjectUIHandler.instance != null) ObjectUIHandler.instance.Close();
                                                 break;
                                             case UIHandler.UITool.Add:
                                                 // Pause Simulation
