@@ -102,6 +102,7 @@ namespace AS2
         public void RoundChanged()
         {
             uiHandler.particleUI.SimState_RoundChanged();
+            uiHandler.objectUI.SimState_RoundChanged();
             if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
         }
 

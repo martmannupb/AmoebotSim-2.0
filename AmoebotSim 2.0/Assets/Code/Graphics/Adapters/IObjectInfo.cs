@@ -18,6 +18,8 @@ namespace AS2.Visuals
         public int Size { get; }
 
         public int Identifier { get; set; }
+
+        public Color Color { get; set; }
     }
 
 } // namespace AS2.Visuals

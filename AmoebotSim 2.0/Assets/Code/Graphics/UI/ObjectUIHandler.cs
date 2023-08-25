@@ -41,8 +41,11 @@ namespace AS2.UI
         private Dictionary<string, IParticleAttribute> attributeNameToIParticleAttribute = new Dictionary<string, IParticleAttribute>();
         private Dictionary<string, UISetting> settings = new Dictionary<string, UISetting>();
         private Dictionary<string, GameObject> settings_randomization = new Dictionary<string, GameObject>();
+        private UISetting_Text settingID;
+        private UISetting_Color settingColor;
 
         private readonly string attributeName_Identifier = "Identifier";
+        private readonly string attributeName_Color = "Color";
 
         private void Start()
         {
@@ -185,7 +188,7 @@ namespace AS2.UI
             if (obj != null)
             {
                 RefreshHeader();
-                //RefreshAttributes_ChiralityAndCompassDir();
+                RefreshAttributes_IDAndColor();
                 //foreach (var attribute in obj.GetAttributes())
                 //{
                 //    RefreshAttribute(attribute);
@@ -205,10 +208,7 @@ namespace AS2.UI
                 // Text
                 headerText.text = "Position: " + obj.Position
                     + "\nSize: " + obj.Size;
-                //headerText.text = "Position: (" + (obj.IsExpanded() ?
-                //    (obj.Head().x + "," + obj.Head().y + "), (" + obj.Tail().x + "," + obj.Tail().y)
-                //    : (obj.Head().x + "," + obj.Head().y)) + ")\n" + (obj.IsExpanded() ? "Expanded" : "Contracted");
-                //// Color
+                //// Button
                 //if (obj.IsAnchor())
                 //{
                 //    image_anchor.color = button_color_active;
@@ -224,23 +224,14 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Updates chirality and compass dir.
+        /// Updates the ID and color settings.
         /// </summary>
-        private void RefreshAttributes_ChiralityAndCompassDir()
+        private void RefreshAttributes_IDAndColor()
         {
-            //if (IsOpen() == false) return;
+            if (!IsOpen()) return;
 
-            //UISetting settingDef;
-            //if (settings.TryGetValue("Chirality", out settingDef))
-            //{
-            //    UISetting_Dropdown setting = (UISetting_Dropdown)settingDef;
-            //    setting.UpdateValue(obj.Chirality() ? "CounterClockwise" : "Clockwise");
-            //}
-            //if (settings.TryGetValue("Compass Dir", out settingDef))
-            //{
-            //    UISetting_Dropdown setting = (UISetting_Dropdown)settingDef;
-            //    setting.UpdateValue(obj.CompassDir().ToString());
-            //}
+            settingID.UpdateValue(obj.Identifier.ToString());
+            settingColor.UpdateValue(obj.Color);
         }
 
         /// <summary>
@@ -294,12 +285,24 @@ namespace AS2.UI
         /// in Init Mode.</param>
         private void AddAttributes_IDAndColor(IObjectInfo obj, bool initMode)
         {
-            UISetting_Text setting = new UISetting_Text(null, go_attributeParent.transform, attributeName_Identifier, obj.Identifier.ToString(), UISetting_Text.InputType.Int);
-            setting.GetGameObject().name = attributeName_Identifier;
-            setting.onValueChangedEvent += SettingChanged_Text;
-            //setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-            //setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-            settings.Add(attributeName_Identifier, setting);
+            // ID
+            settingID = new UISetting_Text(null, go_attributeParent.transform, attributeName_Identifier, obj.Identifier.ToString(), UISetting_Text.InputType.Int);
+            settingID.GetGameObject().name = attributeName_Identifier;
+            settingID.onValueChangedEvent += SettingChanged_Text;
+            //settingID.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            //settingID.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
+            settings.Add(attributeName_Identifier, settingID);
+
+            // Color
+            settingColor = new UISetting_Color(null, go_attributeParent.transform, attributeName_Color, obj.Color, UISetting_Color.InputType.Int);
+            settingColor.GetGameObject().name = attributeName_Color;
+            settingColor.onValueChangedEvent += SettingChanged_Color;
+            //settingColor.backgroundButton_onButtonPressedEvent += AttributeClicked;
+            //settingColor.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
+            settings.Add(attributeName_Color, settingColor);
+            //GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
+            //settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
+            //InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
         }
 
         /// <summary>
@@ -679,6 +682,13 @@ namespace AS2.UI
             //    // Refresh UI
             //    if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
             //}
+        }
+
+        private void SettingChanged_Color(string name, string value)
+        {
+            if (!AttributeChangeValid()) return;
+
+            obj.Color = settingColor.Color;
         }
 
         /// <summary>

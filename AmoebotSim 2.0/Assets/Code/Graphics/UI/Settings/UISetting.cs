@@ -1117,6 +1117,12 @@ namespace AS2.UI
             Int, Float
         }
 
+        private Color color;
+        public Color Color
+        {
+            get { return color; }
+        }
+
         public UISetting_Color(GameObject go, Transform parentTransform, string name, Color start, InputType inputType)
         {
             // Add GameObject
@@ -1134,96 +1140,136 @@ namespace AS2.UI
             inputR = inputFields[0];
             inputG = inputFields[1];
             inputB = inputFields[2];
+
             // Set initial values
+            color = start;
             this.inputType = inputType;
-            if (inputType == InputType.Int)
-            {
-                inputR.text = "" + (int)(start.r * 255);
-                inputG.text = "" + (int)(start.g * 255);
-                inputB.text = "" + (int)(start.b * 255);
-            }
-            else
-            {
-                inputR.text = "" + start.r;
-                inputR.text = "" + start.g;
-                inputR.text = "" + start.b;
-            }
-            inputRprev = inputR.text;
-            inputGprev = inputG.text;
-            inputBprev = inputB.text;
+            UpdateValue(color);
 
             // Add Callbacks
-            inputR.onValueChanged.AddListener(delegate { OnValueChanged(); });
-            inputG.onValueChanged.AddListener(delegate { OnValueChanged(); });
-            inputB.onValueChanged.AddListener(delegate { OnValueChanged(); });
+            inputR.onEndEdit.AddListener(delegate { OnValueChanged(); });
+            inputG.onEndEdit.AddListener(delegate { OnValueChanged(); });
+            inputB.onEndEdit.AddListener(delegate { OnValueChanged(); });
         }
 
-        protected bool IsInputValid(string input)
+        protected bool IsInputValid(string input, out int intVal, out float floatVal)
         {
+            intVal = 0;
+            floatVal = 0;
             switch (inputType)
             {
                 case InputType.Int:
-                    int i;
-                    if (int.TryParse(input, out i)) return true;
+                    if (int.TryParse(input, out intVal))
+                    {
+                        if (intVal < 0)
+                            intVal = 0;
+                        else if (intVal > 255)
+                            intVal = 255;
+                        return true;
+                    }
                     else return false;
                 case InputType.Float:
-                    if (TypeConverter.ConvertStringToFloat(input).conversionSuccessful) return true;
+                    TypeConverter.ConversionResult res = TypeConverter.ConvertStringToFloat(input);
+                    if (res.conversionSuccessful)
+                    {
+                        floatVal = (float)res.obj;
+                        if (floatVal < 0f)
+                            floatVal = 0f;
+                        else if (floatVal > 1f)
+                            floatVal = 1f;
+                        return true;
+                    }
                     else return false;
                 default:
                     return false;
             }
         }
 
-        // TODO
+        public void UpdateValue(Color newColor)
+        {
+            color = newColor;
+            if (inputType == InputType.Int)
+            {
+                inputR.text = "" + (int)(color.r * 255);
+                inputG.text = "" + (int)(color.g * 255);
+                inputB.text = "" + (int)(color.b * 255);
+            }
+            else
+            {
+                inputR.text = "" + color.r;
+                inputG.text = "" + color.g;
+                inputB.text = "" + color.b;
+            }
+            inputRprev = inputR.text;
+            inputGprev = inputG.text;
+            inputBprev = inputB.text;
+        }
 
+        // Will probably not be used (color setting only valid for objects)
         public override string GetValueString()
         {
             string text1 = inputR.text;
-            string text2 = inputB.text;
+            string text2 = inputG.text;
+            string text3 = inputB.text;
             if (inputType == InputType.Float)
             {
                 text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text1);
                 text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text2);
+                text3 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text3);
             }
-            string text = text1 + "-" + text2;
+            string text = text1 + ":" + text2 + ":" + text3;
             return text;
         }
 
+        // Will probably not be used (color setting only valid for objects)
         public override void SetValueString(string input)
         {
-            if (input.Contains('-') == false)
+            if (input.Contains(':') == false)
             {
                 Log.Error("Setting_MinMax: SetValueString: No - in input!");
                 return;
             }
-            string text1 = input.Substring(0, input.IndexOf('-'));
-            string text2 = input.Substring(input.IndexOf('-') + 1);
+            string text1 = input.Substring(0, input.IndexOf(':'));
+            string textRest = input.Substring(input.IndexOf(':') + 1);
+            string text2 = textRest.Substring(0, textRest.IndexOf(':'));
+            string text3 = textRest.Substring(textRest.IndexOf(':') + 1);
             TypeConverter.ConversionResult res1 = TypeConverter.ConvertStringToFloat(text1);
             TypeConverter.ConversionResult res2 = TypeConverter.ConvertStringToFloat(text2);
-            if (res1.conversionSuccessful == false || res2.conversionSuccessful == false)
+            TypeConverter.ConversionResult res3 = TypeConverter.ConvertStringToFloat(text3);
+            if (res1.conversionSuccessful == false || res2.conversionSuccessful == false || res3.conversionSuccessful == false)
             {
-                Log.Error("Setting_MinMax: SetValueString: Conversion to float failed for " + text1 + " and/or " + text2);
+                Log.Error("Setting_Color: SetValueString: Conversion to number failed for " + text1 + " and/or " + text2 + " and/or " + text3);
                 return;
             }
+            if (inputType == InputType.Int)
+            {
+                res1.obj = (int)res1.obj;
+                res2.obj = (int)res2.obj;
+                res3.obj = (int)res3.obj;
+            }
             inputR.text = res1.ToString();
-            inputB.text = res2.ToString();
+            inputG.text = res2.ToString();
+            inputB.text = res3.ToString();
         }
 
         protected override void LockSetting()
         {
             inputR.enabled = false;
+            inputG.enabled = false;
             inputB.enabled = false;
         }
 
         protected override void UnlockSetting()
         {
             inputR.enabled = true;
+            inputG.enabled = true;
             inputB.enabled = true;
         }
 
         protected override void SetInteractableState(bool interactable)
         {
             inputR.interactable = interactable;
+            inputG.interactable = interactable;
             inputB.interactable = interactable;
         }
 
@@ -1237,37 +1283,55 @@ namespace AS2.UI
         public Action<string, string> onValueChangedEvent;
         private void OnValueChanged()
         {
-            bool isValid = true;
+            int intValR;
+            int intValG;
+            int intValB;
+            float floatValR;
+            float floatValG;
+            float floatValB;
             string text1 = inputR.text;
-            if (IsInputValid(text1) == false)
+            string text2 = inputG.text;
+            string text3 = inputB.text;
+
+            if (!IsInputValid(text1, out intValR, out floatValR) ||
+                !IsInputValid(text2, out intValG, out floatValG) ||
+                !IsInputValid(text3, out intValB, out floatValB))
             {
                 // Input not valid, reset to old value
                 inputR.text = inputRprev;
-                isValid = false;
+                inputG.text = inputGprev;
+                inputB.text = inputBprev;
             }
-            string text2 = inputB.text;
-            if (IsInputValid(text2) == false)
-            {
-                // Input not valid, reset to old value
-                inputB.text = inputGprev;
-                isValid = false;
-            }
-            inputRprev = inputR.text;
-            inputGprev = inputB.text;
-
-            if (isValid)
+            else
             {
                 // Input valid, continue
-                if (inputType == InputType.Float)
+                if (inputType == InputType.Int)
                 {
-                    text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text1);
-                    text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text2);
+                    color = new Color(intValR / 255.0f, intValG / 255.0f, intValB / 255.0f);
+                    text1 = intValR.ToString();
+                    text2 = intValG.ToString();
+                    text3 = intValB.ToString();
                 }
-                string text = inputR.text + "-" + inputB.text;
+                else
+                {
+                    color = new Color(floatValR, floatValG, floatValB);
+                    text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(floatValR.ToString());
+                    text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(floatValG.ToString());
+                    text3 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(floatValB.ToString());
+                }
+
+                inputR.text = text1;
+                inputG.text = text2;
+                inputB.text = text3;
+                inputRprev = inputR.text;
+                inputGprev = inputG.text;
+                inputBprev = inputB.text;
+
+                string text = inputR.text + ":" + inputG.text + ":" + inputB.text;
                 if (onValueChangedEvent != null) onValueChangedEvent(this.name, text);
             }
         }
 
     }
 
-}
+} // namespace AS2.UI
