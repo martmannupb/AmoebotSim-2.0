@@ -688,7 +688,10 @@ namespace AS2.UI
         {
             if (!AttributeChangeValid()) return;
 
-            obj.Color = settingColor.Color;
+            if (sim.system.InInitializationState || sim.system.IsInLatestRound())
+                obj.Color = settingColor.Color;
+            else
+                settingColor.UpdateValue(obj.Color);
         }
 
         /// <summary>
@@ -723,8 +726,15 @@ namespace AS2.UI
 
             if (name.Equals(attributeName_Identifier))
             {
-                if (int.TryParse(text, out int i))
-                    obj.Identifier = i;
+                if (sim.system.InInitializationState)
+                {
+                    if (int.TryParse(text, out int i))
+                        obj.Identifier = i;
+                }
+                else
+                {
+                    settingID.UpdateValue(obj.Identifier.ToString());
+                }
             }
         }
 

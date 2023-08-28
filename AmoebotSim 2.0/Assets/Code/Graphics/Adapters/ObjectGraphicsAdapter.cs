@@ -56,6 +56,15 @@ namespace AS2.Visuals
         private bool isRegistered = false;
 
         /// <summary>
+        /// Whether the object adapter is registered in the
+        /// render system.
+        /// </summary>
+        public bool IsRegistered
+        {
+            get { return isRegistered; }
+        }
+
+        /// <summary>
         /// The mesh used to draw the object. Its origin is at
         /// the object's origin. Is <c>null</c> as long as no
         /// mesh has been generated.

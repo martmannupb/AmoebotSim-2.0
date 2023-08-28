@@ -32,6 +32,7 @@ namespace AS2
         {
             int q_background = RenderSystem.renderQueue_background;
             int q_bonds = RenderSystem.renderQueue_bonds;
+            int q_object_ui = RenderSystem.renderQueue_object_ui;
             int q_objects = RenderSystem.renderQueue_objects;
             int q_particles = RenderSystem.renderQueue_particles;
             int q_circuits = RenderSystem.renderQueue_circuits;
@@ -46,6 +47,9 @@ namespace AS2
             // Bond materials
             material_bond_lineCircular_movement.renderQueue = q_bonds;
             material_bond_lineHexagonal_movement.renderQueue = q_bonds;
+
+            // Object UI material
+            material_object_ui.renderQueue = q_object_ui;
 
             // Object material
             material_object_base.renderQueue = q_objects;
@@ -99,6 +103,7 @@ namespace AS2
 
         // Objects
         public static Material material_object_base = Resources.Load<Material>(FilePaths.path_materials + "Base/ObjectMat");
+        public static Material material_object_ui = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/ObjectSelectionMaterial");
 
         // UI
         public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");

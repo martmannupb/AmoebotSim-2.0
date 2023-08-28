@@ -32,6 +32,7 @@ namespace AS2.Visuals
         public Material material_hexagonRemoveOverlay;
         public Material material_hexagonMoveOverlay;
         public Material material_hexagonMoveSelectionOverlay;
+        public Material material_objectSelectionOverlay;
 
         // State
         private bool moveToolParticleSelected = false;
@@ -62,6 +63,7 @@ namespace AS2.Visuals
             this.material_hexagonRemoveOverlay = MaterialDatabase.material_hexagonal_ui_baseHexagonRemoveMaterial;
             this.material_hexagonMoveOverlay = MaterialDatabase.material_hexagonal_ui_baseHexagonMoveMaterial;
             this.material_hexagonMoveSelectionOverlay = MaterialDatabase.material_hexagonal_ui_baseHexagonMoveSelectionMaterial;
+            this.material_objectSelectionOverlay = MaterialDatabase.material_object_ui;
         }
 
         /// <summary>
@@ -108,6 +110,8 @@ namespace AS2.Visuals
                                                 // Select particle, open particle panel
                                                 // Pause Simulation
                                                 sim.PauseSim();
+                                                // Close Object Panel
+                                                if (ObjectUIHandler.instance != null) ObjectUIHandler.instance.Close();
                                                 // Open Particle Panel
                                                 if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Open(state_particleUnderPointer);
                                                 break;
@@ -141,6 +145,8 @@ namespace AS2.Visuals
                                                 // Select object, open object panel
                                                 // Pause Simulation
                                                 sim.PauseSim();
+                                                // Close Particle Panel
+                                                if (ParticleUIHandler.instance != null) ParticleUIHandler.instance.Close();
                                                 // Open Object Panel
                                                 if (ObjectUIHandler.instance != null) ObjectUIHandler.instance.Open(state_objectUnderPointer);
                                                 break;
@@ -161,13 +167,28 @@ namespace AS2.Visuals
                                                 if (ObjectUIHandler.instance != null) ObjectUIHandler.instance.Close();
                                                 break;
                                             case UIHandler.UITool.Add:
-                                                // Pause Simulation
+                                                // Pause Simulation (should not be necessary)
                                                 sim.PauseSim();
-                                                // Add particle at position
-                                                if (sim.uiHandler.initializationUI.IsOpen())
-                                                    sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
+
+                                                // Add object position if an object is selected
+                                                if (ObjectUIHandler.instance.IsOpen())
+                                                {
+                                                    // Only add a position if it is connected to the object
+                                                    IObjectInfo selectedObject = ObjectUIHandler.instance.GetShownObject();
+                                                    if (selectedObject != null && selectedObject.IsNeighborPosition(mouseWorldField))
+                                                    {
+                                                        // Add position to object
+                                                        selectedObject.AddPosition(mouseWorldField);
+                                                    }
+                                                }
                                                 else
-                                                    sim.system.AddParticleContracted(mouseWorldField);
+                                                {
+                                                    // Add particle at position otherwise
+                                                    if (sim.uiHandler.initializationUI.IsOpen())
+                                                        sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
+                                                    else
+                                                        sim.system.AddParticleContracted(mouseWorldField);
+                                                }
                                                 break;
                                             case UIHandler.UITool.Remove:
                                                 // magikarp uses splash, nothing happens
@@ -224,16 +245,22 @@ namespace AS2.Visuals
                                             if (node1 == node2 && p1 == null)
                                             {
                                                 // Show Add Overlay (for single particle)
-                                                Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
+                                                if (!ObjectUIHandler.instance.IsOpen() || ObjectUIHandler.instance.GetShownObject().IsNeighborPosition(node1))
+                                                {
+                                                    Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
+                                                }
                                             }
                                             else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null)
                                             {
                                                 // Show Add Overlay (for extended particle)
-                                                Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
-                                                Vector3 worldAbsPos2 = AmoebotFunctions.GridToWorldPositionVector3(node2);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
-                                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos2 + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
+                                                if (!ObjectUIHandler.instance.IsOpen() || ObjectUIHandler.instance.GetShownObject().IsNeighborPosition(node1) || ObjectUIHandler.instance.GetShownObject().IsNeighborPosition(node2))
+                                                {
+                                                    Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
+                                                    Vector3 worldAbsPos2 = AmoebotFunctions.GridToWorldPositionVector3(node2);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
+                                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos2 + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
+                                                }
                                             }
                                             else
                                             {
@@ -293,9 +320,17 @@ namespace AS2.Visuals
                                             {
                                                 // Pause Simulation
                                                 sim.PauseSim();
-                                                // Add particle at position
-                                                if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
-                                                else sim.system.AddParticleContracted(mouseWorldField);
+                                                // Add particle or object at position
+                                                if (sim.uiHandler.objectUI.IsOpen())
+                                                {
+                                                    if (sim.uiHandler.objectUI.GetShownObject().IsNeighborPosition(mouseWorldField))
+                                                        sim.uiHandler.objectUI.GetShownObject().AddPosition(mouseWorldField);
+                                                }
+                                                else
+                                                {
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleContracted(mouseWorldField, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
+                                                    else sim.system.AddParticleContracted(mouseWorldField);
+                                                }
                                             }
                                         }
                                         else
@@ -306,9 +341,21 @@ namespace AS2.Visuals
                                                 // Neighboring nodes which are empty
                                                 // Pause Simulation
                                                 sim.PauseSim();
-                                                // Add particle at position
-                                                if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
-                                                else sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
+                                                // Add particle or objects at position
+                                                if (sim.uiHandler.objectUI.IsOpen())
+                                                {
+                                                    IObjectInfo obj = sim.uiHandler.objectUI.GetShownObject();
+                                                    if (obj.IsNeighborPosition(node1) || obj.IsNeighborPosition(node2))
+                                                    {
+                                                        obj.AddPosition(node1);
+                                                        obj.AddPosition(node2);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (sim.uiHandler.initializationUI.IsOpen()) sim.system.AddParticleExpanded(node2, node1, sim.uiHandler.GetDropdownValue_Chirality(), sim.uiHandler.GetDropdownValue_Compass());
+                                                    else sim.system.AddParticleExpanded(node2, node1); // mouse movement from tail to head
+                                                }
                                             }
                                         }
                                         break;
@@ -421,7 +468,7 @@ namespace AS2.Visuals
                 switch (activeTool)
                 {
                     case UIHandler.UITool.Standard:
-                        if (state_pointerOverMap && sim.uiHandler.particleUI.IsOpen() == false)
+                        if (state_pointerOverMap && sim.uiHandler.particleUI.IsOpen() == false && sim.uiHandler.objectUI.IsOpen() == false)
                         {
                             // Show Particle Selection Overlay
                             if (state_particleUnderPointer != null)
@@ -441,13 +488,14 @@ namespace AS2.Visuals
                             {
                                 foreach (Vector2Int p in state_objectUnderPointer.OccupiedPositions())
                                 {
-                                    Vector3 worldPos = AmoebotFunctions.GridToWorldPositionVector3(p.x, p.y, RenderSystem.zLayer_ui);
-                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos, Quaternion.identity, Vector3.one), material_hexagonSelectionOverlay, 0);
+                                    Vector3 worldPos = AmoebotFunctions.GridToWorldPositionVector3(p.x, p.y, RenderSystem.zLayer_object_ui);
+                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos, Quaternion.identity, Vector3.one), material_objectSelectionOverlay, 0);
                                 }
                             }
                         }
                         else if (sim.uiHandler.particleUI.IsOpen())
                         {
+                            // Particle Panel is open: Render highlight
                             IParticleState activeParticle = sim.uiHandler.particleUI.GetShownParticle();
                             if (activeParticle != null)
                             {
@@ -461,19 +509,35 @@ namespace AS2.Visuals
                                 }
                             }
                         }
+                        else if (sim.uiHandler.objectUI.IsOpen())
+                        {
+                            // Object Panel is open: Render highlight
+                            IObjectInfo activeObject = sim.uiHandler.objectUI.GetShownObject();
+                            if (activeObject != null)
+                            {
+                                foreach (Vector2Int p in activeObject.OccupiedPositions())
+                                {
+                                    Vector3 worldPos = AmoebotFunctions.GridToWorldPositionVector3(p.x, p.y, RenderSystem.zLayer_object_ui);
+                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos, Quaternion.identity, Vector3.one), material_objectSelectionOverlay, 0);
+                                }
+                            }
+                        }
                         break;
                     case UIHandler.UITool.Add:
                         if (state_pointerOverMap)
                         {
-                            // Sim must be paused to add particles
+                            // Sim must be paused to add particles and objects
+                            // (Add tool should not be available in Simulation Mode anyway)
                             if (sim.running == false)
                             {
-                                if (state_particleUnderPointer == null && currentlyDragging == false)
+                                if (state_particleUnderPointer == null && state_objectUnderPointer == null && currentlyDragging == false)
                                 {
                                     // Empty Field Selected + Not dragging
-                                    // Show Add Overlay (for single particle)
+                                    // Show Add Overlay (for single particle or object)
                                     Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(mouseWorldField);
-                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
+                                    // Only draw if no object is selected or position is neighbor of the object
+                                    if (!ObjectUIHandler.instance.IsOpen() || ObjectUIHandler.instance.GetShownObject().IsNeighborPosition(mouseWorldField))
+                                        UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonAddOverlay, 0);
                                 }
                             }
                         }

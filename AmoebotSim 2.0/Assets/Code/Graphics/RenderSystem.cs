@@ -103,6 +103,7 @@ namespace AS2.Visuals
         // The camera is at z layer -10, everything below that will not be visible
         public const float zLayer_background = 10f;
         public const float zLayer_bonds = 9f;
+        public const float zLayer_object_ui = 8.75f;
         public const float zLayer_objects = 8.5f;
         public const float zLayer_particles = 8f;
         public const float zLayer_circuits = 7f;
@@ -119,6 +120,7 @@ namespace AS2.Visuals
         // queue priority as pins
         public static readonly int renderQueue_background = 2800;
         public static readonly int renderQueue_bonds = 2820;
+        public static readonly int renderQueue_object_ui = 2825;
         public static readonly int renderQueue_objects = 2830;
         public static readonly int renderQueue_particles = 2840;
         public static readonly int renderQueue_circuits = 2860;

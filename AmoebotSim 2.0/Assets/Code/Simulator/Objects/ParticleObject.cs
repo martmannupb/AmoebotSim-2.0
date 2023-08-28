@@ -142,10 +142,14 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Adds a new position to the object. Does not
-        /// have to be connected to the other positions
+        /// Adds a new position to the object. The position
+        /// does not have to be connected to the other positions
         /// as long as the object is connected when it is
         /// inserted into the system.
+        /// <para>
+        /// If the object is already registered in the render
+        /// system, its mesh will be recalculated.
+        /// </para>
         /// </summary>
         /// <param name="pos">The global position that should
         /// be added to the object.</param>
@@ -167,6 +171,8 @@ namespace AS2.Sim
         {
             if (!occupiedRel.Contains(posRel))
                 occupiedRel.Add(posRel);
+            if (graphics.IsRegistered)
+                graphics.GenerateMesh();
         }
 
         /// <summary>
@@ -277,6 +283,25 @@ namespace AS2.Sim
         {
             return GetOccupiedPositions();
         }
+
+        public bool IsNeighborPosition(Vector2Int pos)
+        {
+            bool isNbr = false;
+            foreach (Vector2Int p in GetOccupiedPositions())
+            {
+                if (p == pos)
+                    return false;
+                if (AmoebotFunctions.AreNodesNeighbors(pos, p))
+                    isNbr = true;
+            }
+            return isNbr;
+        }
+
+        public bool RemovePosition(Vector2Int pos)
+        {
+            return false;
+        }
+
 
         public int Size
         {
