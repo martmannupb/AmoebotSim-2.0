@@ -45,6 +45,14 @@ namespace AS2.Visuals
         /// was successfully removed from the object.</returns>
         public bool RemovePosition(Vector2Int pos);
 
+        /// <summary>
+        /// Removes the object from the particle system and
+        /// the render system.
+        /// </summary>
+        public void RemoveFromSystem();
+
+        public bool IsConnected(Vector2Int removePosition);
+
         public Vector2Int Position { get; }
 
         public int Size { get; }

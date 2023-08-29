@@ -3969,6 +3969,14 @@ namespace AS2.Sim
             {
                 throw new SimulatorStateException("System is not connected! Cannot start simulation.");
             }
+            // Each object must be connected as well
+            foreach (ParticleObject o in objectsInit)
+            {
+                if (!o.IsConnected())
+                {
+                    throw new SimulatorStateException("Object with ID " + o.Identifier + " at position " + o.Position + " is not connected! Cannot start simulation.");
+                }
+            }
 
             // Initialize the particles
             foreach (InitializationParticle ip in particlesInit)
@@ -4556,8 +4564,16 @@ namespace AS2.Sim
             ip.graphics.UpdateReset();
         }
 
-        // TODO: How to handle visualization and adding new parts?
-        // For now: Have to add completed objects
+        /// <summary>
+        /// Adds an object to the system in Init Mode.
+        /// <para>
+        /// The object is registered in the render system and
+        /// should push updates to the particle system (i.e.,
+        /// whenever positions are added or removed or the
+        /// object is moved).
+        /// </para>
+        /// </summary>
+        /// <param name="o">The object to be added.</param>
         public void AddObject(ParticleObject o)
         {
             if (!inInitializationState)
@@ -4582,6 +4598,13 @@ namespace AS2.Sim
                 }
             }
 
+            // Make sure the object is connected
+            if (!o.IsConnected())
+            {
+                Log.Error("Cannot add disconnected object.");
+                return;
+            }
+
             // Add the object
             objectsInit.Add(o);
             foreach (Vector2Int v in verts)
@@ -4589,6 +4612,101 @@ namespace AS2.Sim
 
             // Add to render system
             o.graphics.AddObject();
+        }
+
+        /// <summary>
+        /// Removes the given object from the system.
+        /// The object must be removed from the
+        /// render system manually. Only works in Init Mode.
+        /// </summary>
+        /// <param name="o">The object to be removed.</param>
+        public void RemoveObject(ParticleObject o)
+        {
+            if (!inInitializationState)
+            {
+                Log.Warning("Cannot remove objects in simulation mode.");
+                return;
+            }
+
+            // Make sure the object is known
+            if (!objectsInit.Contains(o))
+                return;
+
+            // Remove all positions from the object map
+            foreach (Vector2Int pos in o.GetOccupiedPositions())
+                objectMapInit.Remove(pos);
+            objectsInit.Remove(o);
+        }
+
+        /// <summary>
+        /// Extends the given object by adding the given position
+        /// to the object map. Should be called whenever a new
+        /// position is added to a registered object.
+        /// Works only in Init Mode.
+        /// </summary>
+        /// <param name="o">The registered object that gains a
+        /// new position.</param>
+        /// <param name="gridPos">The global grid position that
+        /// should be added to the object.</param>
+        /// <returns><c>true</c> if and only if the position was
+        /// added successfully.</returns>
+        public bool AddPositionToObject(ParticleObject o, Vector2Int gridPos)
+        {
+            if (!inInitializationState)
+            {
+                Log.Warning("Cannot edit objects in simulation mode.");
+                return false;
+            }
+
+            if (!objectsInit.Contains(o))
+            {
+                Log.Error("Object to be updated is not registered in the system.");
+                return false;
+            }
+
+            if (particleMapInit.ContainsKey(gridPos) || objectMapInit.ContainsKey(gridPos))
+            {
+                Log.Error("Position " + gridPos + " is already occupied!");
+                return false;
+            }
+
+            objectMapInit[gridPos] = o;
+            return true;
+        }
+
+        /// <summary>
+        /// Removes the given position from the given object.
+        /// Should be called whenever a position is removed
+        /// from a registered object. Works only in Init Mode.
+        /// </summary>
+        /// <param name="o">The registered object that loses a
+        /// position.</param>
+        /// <param name="gridPos">The global grid position that
+        /// should be removed from the object.</param>
+        /// <returns><c>true</c> if and only if the position was
+        /// removed successfully.</returns>
+        public bool RemovePositionFromObject(ParticleObject o, Vector2Int gridPos)
+        {
+            if (!inInitializationState)
+            {
+                Log.Warning("Cannot edit objects in simulation mode.");
+                return false;
+            }
+
+            if (!objectsInit.Contains(o))
+            {
+                Log.Error("Object to be updated is not registered in the system.");
+                return false;
+            }
+
+            if (!objectMapInit.ContainsKey(gridPos))
+            {
+                Log.Error("Position " + gridPos + " is not registered!");
+                return false;
+            }
+
+            objectMapInit.Remove(gridPos);
+            return true;
         }
     }
 

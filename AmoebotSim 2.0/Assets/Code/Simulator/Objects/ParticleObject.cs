@@ -144,8 +144,7 @@ namespace AS2.Sim
         /// <summary>
         /// Adds a new position to the object. The position
         /// does not have to be connected to the other positions
-        /// as long as the object is connected when it is
-        /// inserted into the system.
+        /// as long as the object is connected when the simulation starts.
         /// <para>
         /// If the object is already registered in the render
         /// system, its mesh will be recalculated.
@@ -155,8 +154,7 @@ namespace AS2.Sim
         /// be added to the object.</param>
         public void AddPosition(Vector2Int pos)
         {
-            pos.x -= position.x;
-            pos.y -= position.y;
+            pos -= position;
             AddPositionRel(pos);
         }
 
@@ -169,8 +167,21 @@ namespace AS2.Sim
         /// be added to the object.</param>
         public void AddPositionRel(Vector2Int posRel)
         {
-            if (!occupiedRel.Contains(posRel))
-                occupiedRel.Add(posRel);
+            // Don't do anything if the position is already occupied
+            if (occupiedRel.Contains(posRel))
+                return;
+
+            // First check if the position can be registered in the system
+            if (graphics.IsRegistered)
+            {
+                if (!system.AddPositionToObject(this, posRel + position))
+                {
+                    Log.Error("Unable to add relative position " + posRel + " to object.");
+                    return;
+                }
+            }
+            
+            occupiedRel.Add(posRel);
             if (graphics.IsRegistered)
                 graphics.GenerateMesh();
         }
@@ -248,6 +259,152 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Checks whether the object occupies a
+        /// connected set of grid nodes.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the
+        /// object is a connected shape.</returns>
+        public bool IsConnected()
+        {
+            return IsConnected(Vector2Int.zero, false);
+        }
+
+        /// <summary>
+        /// Checks whether the object occupies a
+        /// connected set of grid nodes if the given node
+        /// is removed..
+        /// </summary>
+        /// <param name="removedPosition">The global grid
+        /// position that should be removed from the object.
+        /// This position is not considered as occupied in
+        /// the connectivity check.</param>
+        /// <returns><c>true</c> if and only if the
+        /// object is still a connected shape after removing
+        /// the given position.</returns>
+        public bool IsConnected(Vector2Int removedPosition)
+        {
+            // First check if the removed position is even used
+            removedPosition -= position;
+            bool useRemovedPosition = occupiedRel.Contains(removedPosition);
+            if (useRemovedPosition && occupiedRel.Count == 1)
+            {
+                // The empty set is connected
+                return true;
+            }
+
+            return IsConnected(removedPosition, useRemovedPosition);
+        }
+
+        /// <summary>
+        /// Helper implementing the actual connectivity check.
+        /// The case that the object occupies only one node and
+        /// this node is excluded should already have been handled.
+        /// </summary>
+        /// <param name="removedPosition">The relative position that
+        /// should be excluded from the connectivity check. Must be
+        /// part of the object.</param>
+        /// <param name="useRemovedPosition">Whether the removed
+        /// position should be used.</param>
+        /// <returns><c>true</c> if and only if the object is a
+        /// connected shape.</returns>
+        private bool IsConnected(Vector2Int removedPosition, bool useRemovedPosition = false)
+        {
+            /*
+             * Calculate helper data structure:
+             * We compute the bounding rect of the object and
+             * create an int matrix telling us where the
+             * occupied positions of the object are. The entries
+             * are the list indices of the nodes.
+             * This enables us to find neighbors in constant
+             * time rather than O(n).
+             */
+
+            // First find the dimensions of the bounding rect
+            int xMin = 0;
+            int xMax = 0;
+            int yMin = 0;
+            int yMax = 0;
+            foreach (Vector2Int v in occupiedRel)
+            {
+                if (v.x < xMin)
+                    xMin = v.x;
+                else if (v.x > xMax)
+                    xMax = v.x;
+                if (v.y < yMin)
+                    yMin = v.y;
+                else if (v.y > yMax)
+                    yMax = v.y;
+            }
+            int sizeX = xMax - xMin + 1;
+            int sizeY = yMax - yMin + 1;
+
+            // Create and fill the matrix
+            // Stretch the dimensions by one position in each direction
+            // Indices range from 0 to sizeN + 1
+            // Occupied positions are 1 to sizeN
+            int[,] matrix = new int[sizeX + 2, sizeY + 2];
+            // Fill with -1
+            for (int i = 0; i < sizeX + 2; i++)
+                for (int j = 0; j < sizeY + 2; j++)
+                    matrix[i, j] = -1;
+            for (int i = 0; i < occupiedRel.Count; i++)
+            {
+                Vector2Int v = occupiedRel[i];
+                if (!useRemovedPosition || v != removedPosition)
+                    matrix[v.x - xMin + 1, v.y - yMin + 1] = i;
+            }
+
+            // Array containing neighbor coordinate offsets
+            Vector2Int[] nbrOffsets = new Vector2Int[]
+            {
+                new Vector2Int(1, 0),
+                new Vector2Int(0, 1),
+                new Vector2Int(-1, 1),
+                new Vector2Int(-1, 0),
+                new Vector2Int(0, -1),
+                new Vector2Int(1, -1)
+            };
+
+            // Perform a BFS on the occupied positions, using the
+            // matrix as a helper
+            Queue<int> queue = new Queue<int>();
+            bool[] visited = new bool[occupiedRel.Count];
+            // Find a starting position
+            int numVisited = 1;
+            for (int i = 0; i < occupiedRel.Count; i++)
+            {
+                if (!useRemovedPosition || occupiedRel[i] != removedPosition)
+                {
+                    visited[i] = true;
+                    queue.Enqueue(i);
+                    break;
+                }
+            }
+
+            while (queue.Count > 0)
+            {
+                int current = queue.Dequeue();
+                Vector2Int pos = occupiedRel[current];
+                foreach (Vector2Int offset in nbrOffsets)
+                {
+                    Vector2Int nbr = pos + offset;
+                    int idx = matrix[nbr.x - xMin + 1, nbr.y - yMin + 1];
+                    if (idx != -1 && !visited[idx])
+                    {
+                        visited[idx] = true;
+                        numVisited++;
+                        queue.Enqueue(idx);
+                    }
+                }
+            }
+
+            if (useRemovedPosition)
+                return numVisited == occupiedRel.Count - 1;
+            else
+                return numVisited == occupiedRel.Count;
+        }
+
+        /// <summary>
         /// Stores the current joint movement offset in the object's history
         /// and resets the offset and corresponding flag for the next round.
         /// </summary>
@@ -299,7 +456,55 @@ namespace AS2.Sim
 
         public bool RemovePosition(Vector2Int pos)
         {
-            return false;
+            // Convert to relative position
+            pos -= position;
+            if (!occupiedRel.Contains(pos))
+                return false;
+
+            bool isOrigin = pos == occupiedRel[0];
+            // Don't allow removing the last position
+            if (isOrigin && occupiedRel.Count == 1)
+            {
+                Log.Error("Cannot remove last position from object.");
+                return false;
+            }
+
+            // Check if the position can be deregistered from the system
+            if (graphics.IsRegistered)
+            {
+                if (!system.RemovePositionFromObject(this, pos + position))
+                {
+                    Log.Error("Unable to remove relative position " + pos + " from object.");
+                    return false;
+                }
+            }
+
+            // Change origin if necessary
+            if (isOrigin)
+            {
+                Vector2Int offset = occupiedRel[1] - occupiedRel[0];
+                position += offset;
+                for (int i = 1; i < occupiedRel.Count; i++)
+                    occupiedRel[i] -= offset;
+                occupiedRel.RemoveAt(0);
+                positionHistory.RecordValueInRound(position, system.CurrentRound);
+            }
+            // Otherwise just remove the position
+            else
+            {
+                occupiedRel.Remove(pos);
+            }
+
+            if (graphics.IsRegistered)
+                graphics.GenerateMesh();
+
+            return true;
+        }
+
+        public void RemoveFromSystem()
+        {
+            system.RemoveObject(this);
+            graphics.RemoveObject();
         }
 
 

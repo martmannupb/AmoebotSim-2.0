@@ -183,7 +183,7 @@ namespace AS2.UI
         /// Updates the values in the object panel when shown.
         /// Helpful when values have changed (e.g. after a round).
         /// </summary>
-        private void RefreshObjectPanel()
+        public void RefreshObjectPanel()
         {
             if (obj != null)
             {

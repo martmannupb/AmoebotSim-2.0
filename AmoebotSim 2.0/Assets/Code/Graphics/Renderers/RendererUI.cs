@@ -150,6 +150,29 @@ namespace AS2.Visuals
                                                 // Open Object Panel
                                                 if (ObjectUIHandler.instance != null) ObjectUIHandler.instance.Open(state_objectUnderPointer);
                                                 break;
+                                            case UIHandler.UITool.Remove:
+                                                // Remove part of the object if possible (or remove the whole object)
+                                                if (state_objectUnderPointer.Size > 1)
+                                                {
+                                                    if (state_objectUnderPointer.IsConnected(mouseWorldField))
+                                                    {
+                                                        state_objectUnderPointer.RemovePosition(mouseWorldField);
+                                                        if (ObjectUIHandler.instance != null && ObjectUIHandler.instance.GetShownObject() == state_objectUnderPointer)
+                                                            ObjectUIHandler.instance.RefreshObjectPanel();
+                                                    }
+                                                    else
+                                                    {
+                                                        Log.Warning("Cannot remove object position: Object would be disconnected.");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (ObjectUIHandler.instance != null && ObjectUIHandler.instance.IsOpen())
+                                                        ObjectUIHandler.instance.Close();
+                                                    // Remove object from the system
+                                                    state_objectUnderPointer.RemoveFromSystem();
+                                                }
+                                                break;
                                             default:
                                                 break;
                                         }
@@ -557,6 +580,12 @@ namespace AS2.Visuals
                                     Vector3 worldPos_tail = AmoebotFunctions.GridToWorldPositionVector3(state_particleUnderPointer.Tail());
                                     UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos_tail + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonRemoveOverlay, 0);
                                 }
+                            }
+                            else if (state_objectUnderPointer != null)
+                            {
+                                // Render overlay for the current node
+                                Vector3 worldPos = AmoebotFunctions.GridToWorldPositionVector3(mouseWorldField);
+                                UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonRemoveOverlay, 0);
                             }
                         }
                         break;
