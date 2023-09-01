@@ -77,6 +77,11 @@ namespace AS2.Sim
                 return false;
             }
         }
+
+        public override bool Equals(ParticleAttribute<string> other)
+        {
+            return other is not null && GetValue().Equals(other.GetValue());
+        }
     }
 
 } // namespace AS2.Sim

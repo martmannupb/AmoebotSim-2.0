@@ -128,6 +128,11 @@ namespace AS2.Sim
             return true;
         }
 
+        public override bool Equals(ParticleAttribute<T> other)
+        {
+            return other is not null && GetValue().Equals(other.GetValue());
+        }
+
         /// <summary>
         /// Implementation of <see cref="ParticleAttributeWithHistory{T}.GenerateSaveData"/>.
         /// Generates data specifically for enum attributes, which includes the name of the

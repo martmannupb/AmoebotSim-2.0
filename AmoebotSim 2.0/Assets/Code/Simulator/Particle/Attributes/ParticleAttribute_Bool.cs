@@ -84,6 +84,11 @@ namespace AS2.Sim
             history.RecordValueInRound(Random.Range(0, 2) == 0, particle != null ? particle.system.CurrentRound : 0);
             return true;
         }
+
+        public override bool Equals(ParticleAttribute<bool> other)
+        {
+            return other is not null && GetValue() == other.GetValue();
+        }
     }
 
 } // namespace AS2.Sim

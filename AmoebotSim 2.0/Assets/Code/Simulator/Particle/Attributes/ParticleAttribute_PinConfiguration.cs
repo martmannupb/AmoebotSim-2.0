@@ -176,6 +176,11 @@ namespace AS2.Sim
             pcHistory = new ValueHistoryPinConfiguration(myData.history);
             return true;
         }
+
+        public override bool Equals(ParticleAttribute<PinConfiguration> other)
+        {
+            return other is not null && GetValue() as SysPinConfiguration == other.GetValue() as SysPinConfiguration;
+        }
     }
 
 } // namespace AS2.Sim

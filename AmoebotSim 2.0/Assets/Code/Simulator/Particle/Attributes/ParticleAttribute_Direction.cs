@@ -85,6 +85,11 @@ namespace AS2.Sim
             history.RecordValueInRound((Direction)UnityEngine.Random.Range(0, 12), particle != null ? particle.system.CurrentRound : 0);
             return true;
         }
+
+        public override bool Equals(ParticleAttribute<Direction> other)
+        {
+            return other is not null && GetValue() == other.GetValue();
+        }
     }
 
 } // namespace AS2.Sim
