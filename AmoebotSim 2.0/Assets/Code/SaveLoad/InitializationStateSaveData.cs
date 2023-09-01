@@ -21,6 +21,11 @@ namespace AS2
         public InitParticleSaveData[] particles;
 
         /// <summary>
+        /// The current set of objects.
+        /// </summary>
+        public ParticleObjectSaveData[] objects;
+
+        /// <summary>
         /// Description of the current UI state.
         /// </summary>
         public InitModeSaveData initModeSaveData;

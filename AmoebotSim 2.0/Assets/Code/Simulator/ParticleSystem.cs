@@ -3844,6 +3844,11 @@ namespace AS2.Sim
             {
                 data.particles[i] = particlesInit[i].GenerateSaveData();
             }
+            data.objects = new ParticleObjectSaveData[objectsInit.Count];
+            for (int i = 0; i < objectsInit.Count; i++)
+            {
+                data.objects[i] = objectsInit[i].GenerateSaveData();
+            }
             data.initModeSaveData = initModeSaveData;
 
             return data;
@@ -3878,6 +3883,13 @@ namespace AS2.Sim
                     particleMapInit[p.Head()] = p;
                 p.graphics.AddParticle(new ParticleMovementState(p.Head(), p.Tail(), p.IsExpanded(), p.GlobalHeadDirectionInt(), ParticleJointMovementState.None));
                 p.graphics.UpdateReset();
+            }
+            foreach (ParticleObjectSaveData d in data.objects)
+            {
+                ParticleObject o = ParticleObject.CreateFromSaveData(this, d);
+                objectsInit.Add(o);
+                foreach (Vector2Int v in o.GetOccupiedPositions())
+                    objectMapInit[v] = o;
             }
             return data.initModeSaveData;
         }
