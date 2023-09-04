@@ -4627,6 +4627,44 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Creates a new object and adds it to the system in Init Mode.
+        /// <para>
+        /// The object is registered in the render system and
+        /// should push updates to the particle system (i.e.,
+        /// whenever positions are added or removed or the
+        /// object is moved).
+        /// </para>
+        /// </summary>
+        /// <param name="position">The initial position of the new object.</param>
+        /// <returns>The newly created object, if it was created successfully,
+        /// otherwise <c>null</c>.</returns>
+        public ParticleObject AddNewObject(Vector2Int position)
+        {
+            if (!inInitializationState)
+            {
+                Log.Warning("Cannot add objects in simulation mode.");
+                return null;
+            }
+
+            // Make sure that the position is not occupied
+            if (particleMapInit.ContainsKey(position) || objectMapInit.ContainsKey(position))
+            {
+                Log.Error("Cannot add object: Grid node " + position + " is already occupied.");
+                return null;
+            }
+
+            // Create and register the object
+            ParticleObject o = new ParticleObject(position, this);
+            objectsInit.Add(o);
+            objectMapInit[position] = o;
+
+            // Add to render system
+            o.graphics.AddObject();
+
+            return o;
+        }
+
+        /// <summary>
         /// Removes the given object from the system.
         /// The object must be removed from the
         /// render system manually. Only works in Init Mode.

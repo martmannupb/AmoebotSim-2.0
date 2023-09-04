@@ -45,6 +45,7 @@ namespace AS2.UI
         // Tool Panel
         public Button button_toolStandard;
         public Button button_toolAdd;
+        public Button button_toolAddObject;
         public Button button_toolRemove;
         public Button button_toolMove;
         public Button button_toolPSetMove;
@@ -99,7 +100,7 @@ namespace AS2.UI
         /// </summary>
         public enum UITool
         {
-            Standard, Add, Remove, Move, PSetMove
+            Standard, Add, Remove, Move, PSetMove, AddObject
         }
 
 
@@ -140,6 +141,7 @@ namespace AS2.UI
             // Init Tools
             tools_initMode.Add(button_toolStandard.gameObject);
             tools_initMode.Add(button_toolAdd.gameObject);
+            tools_initMode.Add(button_toolAddObject.gameObject);
             tools_initMode.Add(button_toolRemove.gameObject);
             tools_initMode.Add(button_toolMove.gameObject);
             tools_initMode.Add(dropdown_chirality.gameObject.transform.parent.gameObject);
@@ -719,6 +721,15 @@ namespace AS2.UI
         }
 
         /// <summary>
+        /// Selects the add object tool.
+        /// </summary>
+        public void Button_ToolAddObjectPressed()
+        {
+            activeTool = UITool.AddObject;
+            UpdateTools();
+        }
+
+        /// <summary>
         /// Selects the remove tool.
         /// </summary>
         public void Button_ToolRemovePressed()
@@ -793,6 +804,7 @@ namespace AS2.UI
             // Reset Colors
             SetButtonColor(button_toolStandard, toolColor_inactive);
             SetButtonColor(button_toolAdd, toolColor_inactive);
+            SetButtonColor(button_toolAddObject, toolColor_inactive);
             SetButtonColor(button_toolRemove, toolColor_inactive);
             SetButtonColor(button_toolMove, toolColor_inactive);
             SetButtonColor(button_toolPSetMove, toolColor_inactive);
@@ -804,6 +816,9 @@ namespace AS2.UI
                     break;
                 case UITool.Add:
                     SetButtonColor(button_toolAdd, toolColor_active);
+                    break;
+                case UITool.AddObject:
+                    SetButtonColor(button_toolAddObject, toolColor_active);
                     break;
                 case UITool.Remove:
                     SetButtonColor(button_toolRemove, toolColor_active);

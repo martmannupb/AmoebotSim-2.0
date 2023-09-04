@@ -72,6 +72,7 @@ namespace AS2
             // UI overlay materials
             material_hexagonal_ui_baseHexagonSelectionMaterial.renderQueue = q_overlays;
             material_hexagonal_ui_baseHexagonAddMaterial.renderQueue = q_overlays;
+            material_hexagonal_ui_baseHexagonAddObjectMaterial.renderQueue = q_overlays;
             material_hexagonal_ui_baseHexagonRemoveMaterial.renderQueue = q_overlays;
             material_hexagonal_ui_baseHexagonMoveMaterial.renderQueue = q_overlays;
             material_hexagonal_ui_baseHexagonMoveSelectionMaterial.renderQueue = q_overlays;
@@ -108,6 +109,7 @@ namespace AS2
         // UI
         public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");
         public static Material material_hexagonal_ui_baseHexagonAddMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonAddMaterial");
+        public static Material material_hexagonal_ui_baseHexagonAddObjectMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonAddObjectMaterial");
         public static Material material_hexagonal_ui_baseHexagonRemoveMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonRemoveMaterial");
         public static Material material_hexagonal_ui_baseHexagonMoveMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonMoveMaterial");
         public static Material material_hexagonal_ui_baseHexagonMoveSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonMoveSelectionMaterial");

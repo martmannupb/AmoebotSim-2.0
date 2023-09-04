@@ -384,6 +384,9 @@ namespace AS2.UI
                 parameterObjects[i] = TypeConverter.ConvertStringToObjectOfType(genAlg_paramInfo[i].ParameterType, parameters[i]);
             }
 
+            // Reset selection
+            AmoebotSimulator.instance.renderSystem.rendererUI.ResetSelection();
+
             // Call Generation Method
             //AmoebotSimulator.instance.system.Reset();
             //uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
