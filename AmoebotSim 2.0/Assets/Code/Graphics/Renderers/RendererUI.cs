@@ -131,6 +131,7 @@ namespace AS2.Visuals
                                                 // Pause Simulation
                                                 sim.PauseSim();
                                                 // Select
+                                                ResetSelection();
                                                 moveToolParticleSelected = true;
                                                 moveToolParticlePosition = mouseWorldField;
                                                 break;
@@ -166,14 +167,26 @@ namespace AS2.Visuals
                                                     TryRemoveObject(state_objectUnderPointer, mouseWorldField, true);
                                                 break;
                                             case UIHandler.UITool.Move:
-                                                // Select object for movement
+                                                // Clicked object for movement
                                                 // Pause Simulation
                                                 sim.PauseSim();
-                                                // Select
-                                                moveToolObjectSelected = true;
-                                                moveToolSelectedObject = state_objectUnderPointer;
-                                                // TODO
-                                                moveToolObjectOffset = state_objectUnderPointer.Position - mouseWorldField;
+                                                // If no object is selected yet: Select the object
+                                                if (!moveToolObjectSelected || state_objectUnderPointer != moveToolSelectedObject)
+                                                {
+                                                    ResetSelection();
+                                                    // Select
+                                                    moveToolObjectSelected = true;
+                                                    moveToolSelectedObject = state_objectUnderPointer;
+                                                    // Remember the offset so that the object is drawn and placed
+                                                    // at the right position relative to the cursor
+                                                    moveToolObjectOffset = state_objectUnderPointer.Position - mouseWorldField;
+                                                }
+                                                // Object already selected, try to move the object here
+                                                else
+                                                {
+                                                    if (TryMoveObject(moveToolSelectedObject, mouseWorldField + moveToolObjectOffset))
+                                                        ResetSelection();
+                                                }
                                                 break;
                                             default:
                                                 break;
@@ -224,6 +237,12 @@ namespace AS2.Visuals
                                                         // Should not happen
                                                         Log.Error("UIRenderer: Cached move tool particle is not accessible, it must have been deleted or moved.");
                                                     }
+                                                }
+                                                // Same for object
+                                                else if (moveToolObjectSelected)
+                                                {
+                                                    if (TryMoveObject(moveToolSelectedObject, mouseWorldField + moveToolObjectOffset))
+                                                        ResetSelection();
                                                 }
                                                 break;
                                             default:
@@ -329,8 +348,8 @@ namespace AS2.Visuals
                                         }
                                         break;
                                     case UIHandler.UITool.Move:
-                                        // Move Overlay
-                                        if (sim.running == false)
+                                        // Move Overlay, only shown if a particle is selected
+                                        if (sim.running == false && moveToolParticleSelected)
                                         {
                                             // Validity Check (either one empty field or two empty fields next to each other selected)
                                             if (node1 == node2 && p1 == null && o1 == null)
@@ -464,27 +483,27 @@ namespace AS2.Visuals
                                                 Log.Error("UIRenderer: Cached move tool particle is not accessible, it must have been deleted or moved.");
                                             }
 
-                                    }
-                                    break;
-                                case UIHandler.UITool.PSetMove:
-                                    // Partition Set Movement
-                                    pSetDragHandler.DragEvent_Finished(action.positionStart, action.positionTarget);
-                                    break;
-                                default:
-                                    break;
+                                        }
+                                        break;
+                                    case UIHandler.UITool.PSetMove:
+                                        // Partition Set Movement
+                                        pSetDragHandler.DragEvent_Finished(action.positionStart, action.positionTarget);
+                                        break;
+                                    default:
+                                        break;
+                                }
                             }
-                        }
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case ClickAction.ClickButton.MiddleMouse:
-                break;
-            case ClickAction.ClickButton.RightMouse:
-                break;
-            default:
-                break;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case ClickAction.ClickButton.MiddleMouse:
+                    break;
+                case ClickAction.ClickButton.RightMouse:
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -682,7 +701,7 @@ namespace AS2.Visuals
                         }
                         break;
                     case UIHandler.UITool.Move:
-                        if (moveToolParticleSelected || (state_pointerOverMap && state_particleUnderPointer != null))
+                        if (moveToolParticleSelected || (!moveToolObjectSelected && state_pointerOverMap && state_particleUnderPointer != null))
                         {
                             // Mark Selected Particle
                             IParticleState selectedParticle;
@@ -705,7 +724,7 @@ namespace AS2.Visuals
                                 Log.Error("UIRenderer: Cached move tool particle is not accessible, it must have been deleted or moved.");
                             }
                         }
-                        else if (moveToolObjectSelected || (state_pointerOverMap && state_objectUnderPointer != null))
+                        else if (moveToolObjectSelected || (!moveToolParticleSelected && state_pointerOverMap && state_objectUnderPointer != null))
                         {
                             // Mark selected object
                             IObjectInfo selectedObj;
@@ -726,6 +745,19 @@ namespace AS2.Visuals
                             {
                                 Vector3 worldPos = AmoebotFunctions.GridToWorldPositionVector3(mouseWorldField);
                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
+                            }
+                        }
+                        else if (moveToolObjectSelected && currentlyDragging == false)
+                        {
+                            if (state_pointerOverMap && state_particleUnderPointer == null && (state_objectUnderPointer == null || state_objectUnderPointer == moveToolSelectedObject))
+                            {
+                                // Draw whole object with offset
+                                foreach (Vector2Int p in moveToolSelectedObject.OccupiedPositions())
+                                {
+                                    Vector2Int pos = p + moveToolObjectOffset - moveToolSelectedObject.Position + mouseWorldField;
+                                    Vector3 worldPos = AmoebotFunctions.GridToWorldPositionVector3(pos);
+                                    UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
+                                }
                             }
                         }
                         break;
@@ -799,6 +831,11 @@ namespace AS2.Visuals
                 // Remove object from the system
                 obj.RemoveFromSystem();
             }
+        }
+
+        private bool TryMoveObject(IObjectInfo obj, Vector2Int newPos)
+        {
+            return obj.MoveToPosition(newPos);
         }
 
     }

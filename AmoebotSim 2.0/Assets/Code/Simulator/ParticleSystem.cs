@@ -4758,6 +4758,62 @@ namespace AS2.Sim
             objectMapInit.Remove(gridPos);
             return true;
         }
+
+        /// <summary>
+        /// Moves all registered positions of the given object
+        /// by the given offset.
+        /// The positions stored internally by the object are not
+        /// changed by this operation.
+        /// Only works for objects registered in the system and in Init Mode.
+        /// </summary>
+        /// <param name="o">The object that should be moved.</param>
+        /// <param name="offset">The offset by which the object
+        /// should be moved.</param>
+        /// <returns><c>true</c> if and only if the object was
+        /// moved successfully.</returns>
+        public bool MoveObject(ParticleObject o, Vector2Int offset)
+        {
+            if (!inInitializationState)
+            {
+                Log.Warning("Cannot edit objects in simulation mode.");
+                return false;
+            }
+
+            if (!objectsInit.Contains(o))
+            {
+                Log.Error("Object to be updated is not registered in the system.");
+                return false;
+            }
+
+            if (offset == Vector2Int.zero)
+                return true;
+
+            // Make sure that the position is not occupied
+            Vector2Int[] verts = o.GetOccupiedPositions();
+            foreach (Vector2Int v in verts)
+            {
+                Vector2Int pos = v + offset;
+                if (particleMapInit.ContainsKey(pos))
+                {
+                    Log.Error("Cannot add object: Grid node " + pos + " is occupied by a particle.");
+                    return false;
+                }
+                if (objectMapInit.ContainsKey(pos) && objectMapInit[pos] != o)
+                {
+                    Log.Error("Cannot add object: Grid node " + pos + " is already occupied by another object.");
+                    return false;
+                }
+            }
+
+            // Remove positions from current object map
+            foreach (Vector2Int v in verts)
+                objectMapInit.Remove(v);
+            // Fill in new positions
+            foreach (Vector2Int v in verts)
+                objectMapInit[v + offset] = o;
+
+            return true;
+        }
     }
 
 } // namespace AS2.Sim

@@ -46,6 +46,15 @@ namespace AS2.Visuals
         public bool RemovePosition(Vector2Int pos);
 
         /// <summary>
+        /// Moves the object to the given global coordinates.
+        /// </summary>
+        /// <param name="newPos">The global grid coordinates
+        /// to which the object should be moved.</param>
+        /// <returns><c>true</c> if and only if the object
+        /// was moved successfully.</returns>
+        public bool MoveToPosition(Vector2Int newPos);
+
+        /// <summary>
         /// Removes the object from the particle system and
         /// the render system.
         /// </summary>

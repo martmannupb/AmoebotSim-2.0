@@ -216,6 +216,8 @@ namespace AS2.Sim
 
         /// <summary>
         /// Moves the entire object by the given offset.
+        /// Only affects the object's local data. The object
+        /// is not automatically moved in the system.
         /// </summary>
         /// <param name="offset">The offset vector by which
         /// the object should be moved.</param>
@@ -499,6 +501,18 @@ namespace AS2.Sim
                 graphics.GenerateMesh();
 
             return true;
+        }
+
+        public bool MoveToPosition(Vector2Int newPos)
+        {
+            if (newPos == position)
+                return true;
+
+            // First move the object in the system
+            bool moved = system.MoveObject(this, newPos - position);
+            if (moved)
+                MoveTo(newPos);
+            return moved;
         }
 
         public void RemoveFromSystem()
