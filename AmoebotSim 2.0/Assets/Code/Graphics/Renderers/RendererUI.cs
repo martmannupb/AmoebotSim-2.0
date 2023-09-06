@@ -127,13 +127,29 @@ namespace AS2.Visuals
                                                 sim.system.RemoveParticle(state_particleUnderPointer);
                                                 break;
                                             case UIHandler.UITool.Move:
-                                                // Select particle for movement
-                                                // Pause Simulation
-                                                sim.PauseSim();
-                                                // Select
-                                                ResetSelection();
-                                                moveToolParticleSelected = true;
-                                                moveToolParticlePosition = mouseWorldField;
+                                                // Select particle for movement (if no particle selected yet)
+                                                // Otherwise move selected (expanded) particle here
+                                                bool movedParticle = false;
+                                                if (moveToolParticleSelected)
+                                                {
+                                                    IParticleState selectedParticle;
+                                                    sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
+                                                    if (state_particleUnderPointer == selectedParticle && selectedParticle.IsExpanded())
+                                                    {
+                                                        sim.system.MoveParticleToNewContractedPosition(selectedParticle, mouseWorldField);
+                                                        moveToolParticleSelected = false;
+                                                        movedParticle = true;
+                                                    }
+                                                }
+                                                if (movedParticle == false)
+                                                {
+                                                    // Pause Simulation
+                                                    sim.PauseSim();
+                                                    // Select
+                                                    ResetSelection();
+                                                    moveToolParticleSelected = true;
+                                                    moveToolParticlePosition = mouseWorldField;
+                                                }
                                                 break;
                                             default:
                                                 break;
@@ -351,14 +367,17 @@ namespace AS2.Visuals
                                         // Move Overlay, only shown if a particle is selected
                                         if (sim.running == false && moveToolParticleSelected)
                                         {
+                                            IParticleState selectedParticle;
+                                            sim.system.TryGetParticleAt(moveToolParticlePosition, out selectedParticle);
                                             // Validity Check (either one empty field or two empty fields next to each other selected)
-                                            if (node1 == node2 && p1 == null && o1 == null)
+                                            // Dragging over selected particle is fine
+                                            if (node1 == node2 && (p1 == null || p1 == selectedParticle) && o1 == null)
                                             {
                                                 // Show Move Overlay (for single particle)
                                                 Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
                                                 UnityEngine.Graphics.DrawMesh(mesh_baseHexagonBackground, Matrix4x4.TRS(worldAbsPos + new Vector3(0f, 0f, RenderSystem.zLayer_ui), Quaternion.identity, Vector3.one), material_hexagonMoveOverlay, 0);
                                             }
-                                            else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null && o1 == null && o2 == null)
+                                            else if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && (p1 == null || p1 == selectedParticle) && (p2 == null || p2 == selectedParticle) && o1 == null && o2 == null)
                                             {
                                                 // Show Move Overlay (for extended particle)
                                                 Vector3 worldAbsPos = AmoebotFunctions.GridToWorldPositionVector3(node1);
@@ -454,7 +473,7 @@ namespace AS2.Visuals
                                                 if (node1 == node2)
                                                 {
                                                     // One node selected
-                                                    if (p1 == null && o1 == null)
+                                                    if ((p1 == null || p1 == selectedParticle && selectedParticle.IsExpanded()) && o1 == null)
                                                     {
                                                         // Pause Simulation
                                                         sim.PauseSim();
@@ -466,7 +485,7 @@ namespace AS2.Visuals
                                                 else
                                                 {
                                                     // Multiple nodes selected
-                                                    if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && p1 == null && p2 == null && o1 == null && o2 == null)
+                                                    if (AmoebotFunctions.AreNodesNeighbors(node1, node2) && (p1 == null || p1 == selectedParticle) && (p2 == null || p2 == selectedParticle) && o1 == null && o2 == null)
                                                     {
                                                         // Neighboring nodes which are empty
                                                         // Pause Simulation
