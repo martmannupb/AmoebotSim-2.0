@@ -1403,13 +1403,31 @@ namespace AS2.Sim
         /// particle defines the movement of the whole system during joint
         /// movements by keeping its global position.
         /// <para>
-        /// If multiple particles call this method in the same activation,
-        /// the one that is activated last will become the anchor.
+        /// If multiple particles call this method or
+        /// <see cref="MakeObjectAnchor(Direction, bool)"/> in the same
+        /// activation, the one that is activated last will become the anchor.
         /// </para>
         /// </summary>
         public void MakeAnchor()
         {
             particle.MakeAnchor();
+        }
+
+        /// <summary>
+        /// Turns the neighboring object in the indicated direction into
+        /// the anchor of the system.
+        /// <para>
+        /// If multiple particle call this method or <see cref="MakeAnchor"/>
+        /// in the same activation, the particle that is activated last will
+        /// determine the anchor.
+        /// </para>
+        /// </summary>
+        /// <param name="d">The local direction in which the object neighbor lies.</param>
+        /// <param name="fromHead">Whether the neighboring object is at this
+        /// particle's head (only relevant for expanded particles).</param>
+        public void MakeObjectAnchor(Direction d, bool fromHead = true)
+        {
+            particle.system.MakeObjectAnchor(particle, d, fromHead);
         }
     }
 

@@ -208,18 +208,18 @@ namespace AS2.UI
                 // Text
                 headerText.text = "Position: " + obj.Position
                     + "\nSize: " + obj.Size;
-                //// Button
-                //if (obj.IsAnchor())
-                //{
-                //    image_anchor.color = button_color_active;
-                //    button_anchor.interactable = false;
-                //}
-                //else
-                //{
-                //    image_anchor.color = button_color_default;
-                //    button_anchor.interactable = true;
-                //}
-                //if (sim.system.IsInLatestRound() == false) button_anchor.interactable = false;
+                // Button
+                if (obj.IsAnchor())
+                {
+                    image_anchor.color = button_color_active;
+                    button_anchor.interactable = false;
+                }
+                else
+                {
+                    image_anchor.color = button_color_default;
+                    button_anchor.interactable = true;
+                }
+                if (sim.system.IsInLatestRound() == false) button_anchor.interactable = false;
             }
         }
 
@@ -806,16 +806,15 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_Anchor()
         {
-            Debug.Log("Anchor button pressed");
-            //if(IsOpen() && sim.system.IsInLatestRound())
-            //{
-            //    obj.MakeAnchor();
-            //    RefreshObjectPanel();
-            //}
-            //else if(sim.system.IsInLatestRound() == false)
-            //{
-            //    Log.Warning("You cannot set the anchor when you are not in the latest round!");
-            //}
+            if (IsOpen() && sim.system.IsInLatestRound())
+            {
+                obj.MakeAnchor();
+                RefreshObjectPanel();
+            }
+            else if (sim.system.IsInLatestRound() == false)
+            {
+                Log.Warning("You cannot set the anchor when you are not in the latest round!");
+            }
         }
 
         /// <summary>

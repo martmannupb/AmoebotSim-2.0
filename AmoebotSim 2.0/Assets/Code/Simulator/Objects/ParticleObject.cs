@@ -271,18 +271,6 @@ namespace AS2.Sim
             return IsConnected(Vector2Int.zero, false);
         }
 
-        /// <summary>
-        /// Checks whether the object occupies a
-        /// connected set of grid nodes if the given node
-        /// is removed..
-        /// </summary>
-        /// <param name="removedPosition">The global grid
-        /// position that should be removed from the object.
-        /// This position is not considered as occupied in
-        /// the connectivity check.</param>
-        /// <returns><c>true</c> if and only if the
-        /// object is still a connected shape after removing
-        /// the given position.</returns>
         public bool IsConnected(Vector2Int removedPosition)
         {
             // First check if the removed position is even used
@@ -521,6 +509,15 @@ namespace AS2.Sim
             graphics.RemoveObject();
         }
 
+        public bool IsAnchor()
+        {
+            return system.IsAnchor(this);
+        }
+
+        public void MakeAnchor()
+        {
+            system.SetAnchor(this);
+        }
 
         public int Size
         {

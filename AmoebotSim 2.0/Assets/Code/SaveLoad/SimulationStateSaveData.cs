@@ -30,6 +30,12 @@ namespace AS2
         public ValueHistorySaveData<int> anchorIdxHistory;
 
         /// <summary>
+        /// The history of the flag telling whether the anchor
+        /// index refers to an object.
+        /// </summary>
+        public ValueHistorySaveData<bool> anchorIsObjectHistory;
+
+        /// <summary>
         /// The particles in the system (includes their state histories).
         /// </summary>
         public ParticleStateSaveData[] particles;

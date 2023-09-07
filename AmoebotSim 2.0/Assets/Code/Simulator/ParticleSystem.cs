@@ -217,6 +217,11 @@ namespace AS2.Sim
         /// </summary>
         private ValueHistory<int> anchorIdxHistory = new ValueHistory<int>(0, 0);
 
+        /// <summary>
+        /// The history of the flag telling whether the anchor index refers to an object.
+        /// </summary>
+        private ValueHistory<bool> anchorIsObjectHistory = new ValueHistory<bool>(false, 0);
+
 
         /*
          * Initialization mode data structures
@@ -244,6 +249,12 @@ namespace AS2.Sim
         /// first particle on the list will become the anchor.
         /// </summary>
         private int anchorInit = -1;
+
+        /// <summary>
+        /// Flag telling whether the anchor index belongs to an object in
+        /// Init Mode.
+        /// </summary>
+        private bool anchorIsObjectInit = false;
 
         /// <summary>
         /// The name of the selected algorithm in initialization mode.
@@ -388,8 +399,11 @@ namespace AS2.Sim
             finishedRound = -1;
 
             anchorIdxHistory.SetMarkerToRound(0);
+            anchorIsObjectHistory.SetMarkerToRound(0);
             anchorIdxHistory.CutOffAtMarker();
+            anchorIsObjectHistory.CutOffAtMarker();
             anchorIdxHistory.ContinueTracking();
+            anchorIsObjectHistory.ContinueTracking();
         }
 
         /// <summary>
@@ -880,12 +894,12 @@ namespace AS2.Sim
         /// movement.
         /// <para>
         /// Performs a breadth-first search on the graph induced by the
-        /// particles' bonds, starting at the anchor particle. For each
-        /// visited particle, offsets for all of its unvisited neighbors
-        /// are computed based on the particle's own offset. The computation
-        /// fails if two neighboring particles try to perform conflicting
-        /// movements or any two particles end up at the same final
-        /// location.
+        /// particles' bonds, starting at the anchor particle (or the particle
+        /// with index 0 if the anchor is an object). For each visited particle,
+        /// offsets for all of its unvisited neighbors are computed based on the
+        /// particle's own offset. The computation fails if two neighboring
+        /// particles try to perform conflicting movements or any two particles
+        /// end up at the same final location.
         /// </para>
         /// </summary>
         private void SimulateJointMovements()
@@ -903,7 +917,7 @@ namespace AS2.Sim
             Queue<Particle> queue = new Queue<Particle>();
 
             // Start at the anchor particle
-            Particle anchor = particles[anchorIdxHistory.GetMarkedValue()];
+            Particle anchor = anchorIsObjectHistory.GetMarkedValue() ? particles[0] : particles[anchorIdxHistory.GetMarkedValue()];
             anchor.jmOffset = Vector2Int.zero;
             queue.Enqueue(anchor);
             anchor.queuedForJMProcessing = true;
@@ -1452,7 +1466,43 @@ namespace AS2.Sim
                 }
             }
 
-            // BFS has finished, now apply the movements to the particles
+            // BFS has finished
+
+            // If the anchor is an object: subtract its offset from all particles and objects
+            if (anchorIsObjectHistory.GetMarkedValue())
+            {
+                ParticleObject anchorObj = objects[anchorIdxHistory.GetMarkedValue()];
+                Vector2Int anchorOffset = anchorObj.jmOffset;
+                if (anchorOffset != Vector2Int.zero)
+                {
+                    // Anchor object has non-zero offset: Shift entire system to make the offset zero
+                    foreach (Particle p in particles)
+                    {
+                        p.jmOffset -= anchorOffset;
+                        for (int i = 0; i < p.bondGraphicInfo.Count; i++)
+                        {
+                            ParticleBondGraphicState bond = p.bondGraphicInfo[i];
+                            bond.curBondPos1 -= anchorOffset;
+                            bond.curBondPos2 -= anchorOffset;
+                            p.bondGraphicInfo[i] = bond;
+                        }
+                    }
+                    foreach (ParticleObject o in objects)
+                        o.jmOffset -= anchorOffset;
+
+                    Dictionary<Vector2Int, Particle> shiftedPositions = new Dictionary<Vector2Int, Particle>(newPositions.Count);
+                    Dictionary<Vector2Int, ParticleObject> shiftedObjectMap = new Dictionary<Vector2Int, ParticleObject>(newObjectMap.Count);
+                    foreach (KeyValuePair<Vector2Int, Particle> kv in newPositions)
+                        shiftedPositions[kv.Key - anchorOffset] = kv.Value;
+                    foreach (KeyValuePair<Vector2Int, ParticleObject> kv in newObjectMap)
+                        shiftedObjectMap[kv.Key - anchorOffset] = kv.Value;
+
+                    newPositions = shiftedPositions;
+                    newObjectMap = shiftedObjectMap;
+                }
+            }
+
+            // Now apply the movements to the particles
             // and the objects locally
             // Also, check if any particle was not processed
             foreach (Particle p in particles)
@@ -1483,8 +1533,14 @@ namespace AS2.Sim
                 }
             }
 
+            // Same for objects
             foreach (ParticleObject o in objects)
             {
+                if (!o.receivedJmOffset)
+                {
+                    throw new SimulationException("Bond structure is not connected, some object movements were not processed!"
+                        + "\nFirst encountered non-processed object at " + o.Position);
+                }
                 o.MovePosition(o.jmOffset);
             }
 
@@ -3286,6 +3342,29 @@ namespace AS2.Sim
             p.ScheduledMovement = a;
         }
 
+        /// <summary>
+        /// System-side implementation of <see cref="ParticleAlgorithm.MakeObjectAnchor(Direction, bool)"/>.
+        /// <para>
+        /// Checks if there is an object at the given neighbor location and turns
+        /// it into the anchor if it is found.
+        /// </para>
+        /// </summary>
+        /// <param name="p">The particle trying to turn its neighbor object into the anchor.</param>
+        /// <param name="locDir">The local direction in which the neighbor object should be.</param>
+        /// <param name="head">Whether the neighbor object is adjacent to the particle's head.</param>
+        /// <returns><c>true</c> if and only if the object was found and turned into the anchor.</returns>
+        public bool MakeObjectAnchor(Particle p, Direction locDir, bool head)
+        {
+            Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, head);
+            if (objectMap.TryGetValue(pos, out ParticleObject obj))
+            {
+                obj.MakeAnchor();
+                return true;
+            }
+            else
+                return false;
+        }
+
 
         /*
          * Other system info and control
@@ -3387,32 +3466,57 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Returns the world coordinates of the system's current anchor particle.
+        /// Returns the world coordinates of the system's current anchor particle
+        /// or object.
         /// </summary>
-        /// <returns>The world coordinates of the system's anchor particle, if it
-        /// exists, otherwise <c>(0, 0)</c>.</returns>
+        /// <returns>The world coordinates of the system's anchor particle or
+        /// object, if it exists, otherwise <c>(0, 0)</c>.</returns>
         public Vector2 AnchorPosition()
         {
             Vector2 result;
-            IParticleState anchor = null;
-            int n;
-            if (inInitializationState)
-            {
-                n = particlesInit.Count;
-                if (n > 0)
-                    anchor = particlesInit[anchorInit > -1 ? anchorInit : 0];
-            }
-            else
-            {
-                n = particles.Count;
-                if (n > 0)
-                    anchor = particles[anchorIdxHistory.GetMarkedValue()];
-            }
 
-            if (n > 0)
-                result = 0.5f * (Vector2)(anchor.Head() + anchor.Tail());
+            if (inInitializationState && anchorIsObjectInit || !inInitializationState && anchorIsObjectHistory.GetMarkedValue())
+            {
+                int idx;
+                if (inInitializationState)
+                {
+                    idx = anchorInit;
+                    if (idx > -1 && idx < objectsInit.Count)
+                        result = objectsInit[idx].Position;
+                    else
+                        result = Vector2Int.zero;
+                }
+                else
+                {
+                    idx = anchorIdxHistory.GetMarkedValue();
+                    if (idx > -1 && idx < objects.Count)
+                        result = objects[idx].Position;
+                    else
+                        result = Vector2Int.zero;
+                }
+            }
             else
-                result = Vector2.zero;
+            {
+                IParticleState anchor = null;
+                int n;
+                if (inInitializationState)
+                {
+                    n = particlesInit.Count;
+                    if (n > 0)
+                        anchor = particlesInit[anchorInit > -1 ? anchorInit : 0];
+                }
+                else
+                {
+                    n = particles.Count;
+                    if (n > 0)
+                        anchor = particles[anchorIdxHistory.GetMarkedValue()];
+                }
+
+                if (n > 0)
+                    result = 0.5f * (Vector2)(anchor.Head() + anchor.Tail());
+                else
+                    result = Vector2.zero;
+            }
 
             return AmoebotFunctions.GridToWorldPositionVector2(result.x, result.y);
         }
@@ -3420,7 +3524,7 @@ namespace AS2.Sim
         /// <summary>
         /// Sets the given particle to be the new anchor of the system.
         /// Only works in the latest round of the simulation or in
-        /// initialization mode.
+        /// Initialization Mode.
         /// </summary>
         /// <param name="p">The particle that should become the anchor.</param>
         /// <returns><c>true</c> if and only if the anchor particle was
@@ -3430,11 +3534,13 @@ namespace AS2.Sim
             // Init Mode: Search for the given particle
             if (inInitializationState)
             {
+                // Try finding the particle
                 for (int i = 0; i < particlesInit.Count; i++)
                 {
                     if (particlesInit[i] == p)
                     {
                         anchorInit = i;
+                        anchorIsObjectInit = false;
                         return true;
                     }
                 }
@@ -3452,12 +3558,60 @@ namespace AS2.Sim
                     if (particles[i] == p)
                     {
                         anchorIdxHistory.RecordValueInRound(i, _currentRound);
+                        anchorIsObjectHistory.RecordValueInRound(false, _currentRound);
                         return true;
                     }
                 }
             }
             
             Log.Warning("Could not find new anchor particle.");
+            return false;
+        }
+
+        /// <summary>
+        /// Sets the given object to be the new anchor of the system.
+        /// Only works in the latest round of the simulation or in
+        /// Initialization Mode.
+        /// </summary>
+        /// <param name="obj">The object that should become the anchor.</param>
+        /// <returns><c>true</c> if and only if the anchor object was
+        /// set successfully.</returns>
+        public bool SetAnchor(ParticleObject obj)
+        {
+            // Init Mode: Search for the given object
+            if (inInitializationState)
+            {
+                // Try finding the object
+                for (int i = 0; i < objectsInit.Count; i++)
+                {
+                    if (objectsInit[i] == obj)
+                    {
+                        anchorInit = i;
+                        anchorIsObjectInit = true;
+                        return true;
+                    }
+                }
+            }
+            // Simulation Mode: Only search if tracking, store anchor index in history
+            else
+            {
+                if (!isTracking)
+                {
+                    Log.Error("Can only set anchor object while in the last round in simulation mode.");
+                    return false;
+                }
+                for (int i = 0; i < objects.Count; i++)
+                {
+                    if (objects[i] == obj)
+                    {
+                        anchorIdxHistory.RecordValueInRound(i, _currentRound);
+                        anchorIsObjectHistory.RecordValueInRound(true, _currentRound);
+                        return true;
+                    }
+                }
+            }
+
+            Log.Warning("Could not find new anchor object.");
             return false;
         }
 
@@ -3471,11 +3625,29 @@ namespace AS2.Sim
         {
             if (inInitializationState)
             {
-                return anchorInit != -1 && particlesInit[anchorInit] == p;
+                return !anchorIsObjectInit && anchorInit != -1 && particlesInit[anchorInit] == p;
             }
             else
             {
-                return p == particles[anchorIdxHistory.GetMarkedValue()];
+                return !anchorIsObjectHistory.GetMarkedValue() && p == particles[anchorIdxHistory.GetMarkedValue()];
+            }
+        }
+
+        /// <summary>
+        /// Checks if the given object is the anchor of the system.
+        /// </summary>
+        /// <param name="obj">The object that should be checked.</param>
+        /// <returns><c>true</c> if and only if <paramref name="obj"/> is
+        /// currently the anchor object.</returns>
+        public bool IsAnchor(ParticleObject obj)
+        {
+            if (inInitializationState)
+            {
+                return anchorIsObjectInit && anchorInit != -1 && objectsInit[anchorInit] == obj;
+            }
+            else
+            {
+                return anchorIsObjectHistory.GetMarkedValue() && obj == objects[anchorIdxHistory.GetMarkedValue()];
             }
         }
 
@@ -3533,6 +3705,7 @@ namespace AS2.Sim
                 }
                 isTracking = false;
                 anchorIdxHistory.SetMarkerToRound(round);
+                anchorIsObjectHistory.SetMarkerToRound(round);
                 UpdateAfterStep();
             }
         }
@@ -3575,6 +3748,7 @@ namespace AS2.Sim
                 }
                 isTracking = false;
                 anchorIdxHistory.StepBack();
+                anchorIsObjectHistory.StepBack();
                 UpdateAfterStep();
             }
         }
@@ -3614,6 +3788,7 @@ namespace AS2.Sim
                 }
                 isTracking = false;
                 anchorIdxHistory.StepForward();
+                anchorIsObjectHistory.StepForward();
                 UpdateAfterStep(true, false, false);
             }
         }
@@ -3650,6 +3825,7 @@ namespace AS2.Sim
                 }
                 isTracking = true;
                 anchorIdxHistory.ContinueTracking();
+                anchorIsObjectHistory.ContinueTracking();
                 UpdateAfterStep(stepFromSecondLastRound, !stepFromSecondLastRound, !stepFromSecondLastRound);
             }
         }
@@ -3674,7 +3850,9 @@ namespace AS2.Sim
                 }
                 isTracking = true;
                 anchorIdxHistory.CutOffAtMarker();
+                anchorIsObjectHistory.CutOffAtMarker();
                 anchorIdxHistory.ContinueTracking();
+                anchorIsObjectHistory.ContinueTracking();
 
                 // Also reset finished state if necessary
                 if (finished && _latestRound < finishedRound)
@@ -3702,6 +3880,7 @@ namespace AS2.Sim
                 o.ShiftTimescale(amount);
             }
             anchorIdxHistory.ShiftTimescale(amount);
+            anchorIsObjectHistory.ShiftTimescale(amount);
 
             if (finished)
                 finishedRound += amount;
@@ -3751,6 +3930,7 @@ namespace AS2.Sim
             data.latestRound = _latestRound;
             data.finishedRound = finishedRound;
             data.anchorIdxHistory = anchorIdxHistory.GenerateSaveData();
+            data.anchorIsObjectHistory = anchorIsObjectHistory.GenerateSaveData();
 
             data.particles = new ParticleStateSaveData[particles.Count];
             for (int i = 0; i < particles.Count; i++)
@@ -3786,6 +3966,7 @@ namespace AS2.Sim
             _currentRound = _latestRound;
             _previousRound = _latestRound;
             anchorIdxHistory = new ValueHistory<int>(data.anchorIdxHistory);
+            anchorIsObjectHistory = new ValueHistory<bool>(data.anchorIsObjectHistory);
 
             finishedRound = data.finishedRound;
             if (finishedRound != -1)
@@ -3849,6 +4030,8 @@ namespace AS2.Sim
             {
                 data.objects[i] = objectsInit[i].GenerateSaveData();
             }
+            data.anchorIdx = anchorInit;
+            data.anchorIsObject = anchorIsObjectInit;
             data.initModeSaveData = initModeSaveData;
 
             return data;
@@ -3891,6 +4074,8 @@ namespace AS2.Sim
                 foreach (Vector2Int v in o.GetOccupiedPositions())
                     objectMapInit[v] = o;
             }
+            anchorInit = data.anchorIdx;
+            anchorIsObjectInit = data.anchorIsObject;
             return data.initModeSaveData;
         }
 
@@ -4000,10 +4185,27 @@ namespace AS2.Sim
                     particleMap[p.Head()] = p;
             }
 
+            // Make sure we have an anchor
             if (anchorInit != -1)
+            {
                 anchorIdxHistory.RecordValueAtMarker(anchorInit);
+                anchorIsObjectHistory.RecordValueAtMarker(anchorIsObjectInit);
+            }
             else
-                anchorIdxHistory.RecordValueAtMarker(0);
+            {
+                // Have no valid anchor in Init Mode: Try choosing some
+                // particle or some object
+                if (particlesInit.Count > 0)
+                {
+                    anchorIdxHistory.RecordValueAtMarker(0);
+                    anchorIsObjectHistory.RecordValueAtMarker(false);
+                }
+                else if (objectsInit.Count > 0)
+                {
+                    anchorIdxHistory.RecordValueAtMarker(0);
+                    anchorIsObjectHistory.RecordValueAtMarker(true);
+                }
+            }
 
             // Copy the objects
             foreach (ParticleObject o in objectsInit)
@@ -4441,11 +4643,15 @@ namespace AS2.Sim
                 particleMapInit.Remove(p.Head());
             particlesInit[idx].graphics.RemoveParticle();
             particlesInit.RemoveAt(idx);
+
             // Update anchor index
-            if (anchorInit == idx)
-                anchorInit = -1;
-            else if (anchorInit > idx)
-                anchorInit--;
+            if (!anchorIsObjectInit)
+            {
+                if (anchorInit == idx)
+                    anchorInit = -1;
+                else if (anchorInit > idx)
+                    anchorInit--;
+            }
         }
 
         /// <summary>
@@ -4685,6 +4891,25 @@ namespace AS2.Sim
             // Remove all positions from the object map
             foreach (Vector2Int pos in o.GetOccupiedPositions())
                 objectMapInit.Remove(pos);
+
+            // Update anchor index
+            if (anchorIsObjectInit)
+            {
+                int idx = -1;
+                for (int i = 0; i < objectsInit.Count; i++)
+                {
+                    if (objectsInit[i] == o)
+                    {
+                        idx = i;
+                        break;
+                    }
+                }
+                if (anchorInit == idx || idx == -1)
+                    anchorInit = -1;
+                else if (anchorInit > idx)
+                    anchorInit--;
+            }
+
             objectsInit.Remove(o);
         }
 

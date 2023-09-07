@@ -60,7 +60,31 @@ namespace AS2.Visuals
         /// </summary>
         public void RemoveFromSystem();
 
+        /// <summary>
+        /// Checks whether the object occupies a
+        /// connected set of grid nodes if the given node
+        /// is removed.
+        /// </summary>
+        /// <param name="removePosition">The global grid
+        /// position that should be removed from the object.
+        /// This position is not considered as occupied in
+        /// the connectivity check.</param>
+        /// <returns><c>true</c> if and only if the
+        /// object is still a connected shape after removing
+        /// the given position.</returns>
         public bool IsConnected(Vector2Int removePosition);
+
+        /// <summary>
+        /// Checks whether this object is currently the anchor.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the object
+        /// is the anchor.</returns>
+        public bool IsAnchor();
+
+        /// <summary>
+        /// Turns this object into the anchor of the system.
+        /// </summary>
+        public void MakeAnchor();
 
         public Vector2Int Position { get; }
 
