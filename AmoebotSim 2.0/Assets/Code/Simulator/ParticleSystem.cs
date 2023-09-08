@@ -1001,10 +1001,14 @@ namespace AS2.Sim
                         }
 
                         // Set the object's offset if it does not have one yet
+                        // Also propagate the offset to all objects bonded (directly
+                        // or indirectly) to this object
                         if (!nbrObj.receivedJmOffset)
                         {
                             nbrObj.jmOffset = objOffset;
                             nbrObj.receivedJmOffset = true;
+
+                            PropagateObjectOffset(nbrObj, p);
                         }
 
                         // Make bond visible
@@ -1935,11 +1939,66 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Helper method that propagates joint movement offset in a
+        /// connected structure of objects and computes the
+        /// corresponding bonds.
+        /// </summary>
+        /// <param name="o">The object at which to start the propagation.
+        /// The offset of this object will be applied to all connected
+        /// objects.</param>
+        /// <param name="sourceParticle">The particle to which the
+        /// visual bond information should be assigned.</param>
+        private void PropagateObjectOffset(ParticleObject o, Particle sourceParticle)
+        {
+            if (o.releaseBonds)
+                return;
+
+            Queue<ParticleObject> queue = new Queue<ParticleObject>();
+            queue.Enqueue(o);
+
+            // Collect the finished objects to avoid adding bonds twice
+            HashSet<ParticleObject> finishedObjects = new HashSet<ParticleObject>();
+
+            while (queue.Count > 0)
+            {
+                ParticleObject obj = queue.Dequeue();
+
+                // Find all bonded neighboring objects and propagate
+                // the joint movement offset
+                foreach (Vector2Int pos in obj.GetOccupiedPositions())
+                {
+                    foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                    {
+                        Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(pos, d);
+                        if (objectMap.TryGetValue(nbrPos, out ParticleObject nbr) && nbr != obj && !nbr.releaseBonds)
+                        {
+                            if (!nbr.receivedJmOffset)
+                            {
+                                // Neighbor has not been visited yet and has not released its bonds
+                                // Copy the offset and enqueue it
+                                nbr.jmOffset = obj.jmOffset;
+                                nbr.receivedJmOffset = true;
+                                queue.Enqueue(nbr);
+                            }
+                            if (!finishedObjects.Contains(nbr))
+                            {
+                                // This neighbor was not processed yet, so we have to add the bonds
+                                sourceParticle.bondGraphicInfo.Add(new ParticleBondGraphicState(pos + obj.jmOffset, nbrPos + obj.jmOffset, pos, nbrPos));
+                            }
+                        }
+                    }
+                }
+                finishedObjects.Add(obj);
+            }
+        }
+
+        /// <summary>
         /// Computes bond information in the case that no movements have occurred.
         /// This method works similar to the joint movement simulation but it does
         /// not process any movements. It also does not check whether the particle
         /// bond structure is connected or not. Bonds will only be computed for the
-        /// connected component that contains the anchor particle.
+        /// connected component that contains the anchor particle (or the first
+        /// particle if the anchor is an object).
         /// </summary>
         private void ComputeBondsStatic()
         {
@@ -1950,7 +2009,7 @@ namespace AS2.Sim
             Queue<Particle> queue = new Queue<Particle>();
 
             // Start with the anchor particle
-            Particle anchor = particles[anchorIdxHistory.GetMarkedValue()];
+            Particle anchor = anchorIsObjectHistory.GetMarkedValue() ? particles[0] : particles[anchorIdxHistory.GetMarkedValue()];
             anchor.jmOffset = Vector2Int.zero;
             queue.Enqueue(anchor);
             anchor.queuedForJMProcessing = true;
@@ -1987,6 +2046,12 @@ namespace AS2.Sim
                         Vector2Int bondStart = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir) ? p.Head() : p.Tail();
                         Vector2Int bondEnd = bondStart + ParticleSystem_Utils.DirectionToVector(ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir));
                         p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart, bondEnd, bondStart, bondEnd));
+
+                        nbrObj.jmOffset = Vector2Int.zero;
+                        nbrObj.receivedJmOffset = true;
+
+                        // Then compute bonds for all objects connected to this object
+                        PropagateObjectOffset(nbrObj, p);
                         continue;
                     }
 
@@ -2484,8 +2549,8 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Resets the helper information of all particles to prepare for
-        /// the simulation of the next round.
+        /// Resets the helper information of all particles and
+        /// objects to prepare for the simulation of the next round.
         /// </summary>
         private void CleanupAfterRound()
         {
@@ -2502,6 +2567,12 @@ namespace AS2.Sim
                 p.ResetAttributeIntermediateValues();
 
                 p.bondGraphicInfo.Clear();
+            }
+            // Same for objects
+            foreach (ParticleObject o in objects)
+            {
+                o.releaseBonds = false;
+                o.receivedJmOffset = false;
             }
         }
 
@@ -3363,6 +3434,25 @@ namespace AS2.Sim
             }
             else
                 return false;
+        }
+
+        /// <summary>
+        /// System-side implementation of <see cref="ParticleAlgorithm.TriggerObjectBondRelease(Direction, bool)"/>.
+        /// <para>
+        /// Checks if there is an object at the given neighbor location and
+        /// releases its object bonds if it is found.
+        /// </para>
+        /// </summary>
+        /// <param name="p">The particle trying to release the neighbor object's bonds.</param>
+        /// <param name="locDir">The local direction in which the neighbor object should be.</param>
+        /// <param name="head">Whether the neighbor object is adjacent to the particle's head.</param>
+        public void TriggerObjectBondRelease(Particle p, Direction locDir, bool head)
+        {
+            Vector2Int pos = ParticleSystem_Utils.GetNeighborPosition(p, locDir, head);
+            if (objectMap.TryGetValue(pos, out ParticleObject obj))
+            {
+                obj.releaseBonds = true;
+            }
         }
 
 
@@ -4231,11 +4321,11 @@ namespace AS2.Sim
 
         /// <summary>
         /// Checks whether the initialization system is connected such that
-        /// the particles form a connected component and each object neighbors
-        /// at least one particle.
+        /// the particles form a connected component and all objects are either
+        /// directly or indirectly connected to a particle.
         /// </summary>
         /// <returns><c>true</c> if and only if the particle system is connected
-        /// and all objects are adjacent to the system.</returns>
+        /// and all objects are connected to the particles.</returns>
         private bool IsInitSystemConnected()
         {
             if (particlesInit.Count == 0)
@@ -4244,6 +4334,7 @@ namespace AS2.Sim
             // Perform simple BFS on particles, make sure that
             // all objects are visited
             Queue<InitializationParticle> queue = new Queue<InitializationParticle>();
+            Queue<ParticleObject> objectQueue = new Queue<ParticleObject>();
             HashSet<InitializationParticle> visitedParticles = new HashSet<InitializationParticle>();
             HashSet<ParticleObject> visitedObjects = new HashSet<ParticleObject>();
 
@@ -4266,9 +4357,27 @@ namespace AS2.Sim
                             queue.Enqueue(p);
                         }
                     }
-                    else if (objectMapInit.TryGetValue(pos, out ParticleObject o))
+                    else if (objectMapInit.TryGetValue(pos, out ParticleObject o) && !visitedObjects.Contains(o))
                     {
                         visitedObjects.Add(o);
+                        // Perform BFS on this subgraph of objects
+                        objectQueue.Enqueue(o);
+                        while (objectQueue.Count > 0)
+                        {
+                            ParticleObject nbr = objectQueue.Dequeue();
+                            foreach (Vector2Int v in nbr.GetOccupiedPositions())
+                            {
+                                foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                                {
+                                    Vector2Int w = ParticleSystem_Utils.GetNbrInDir(v, d);
+                                    if (objectMapInit.TryGetValue(w, out ParticleObject nbrObj) && !visitedObjects.Contains(nbrObj))
+                                    {
+                                        visitedObjects.Add(nbrObj);
+                                        objectQueue.Enqueue(nbrObj);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

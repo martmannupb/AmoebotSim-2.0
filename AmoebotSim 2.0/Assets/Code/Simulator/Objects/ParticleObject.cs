@@ -127,6 +127,13 @@ namespace AS2.Sim
         /// </summary>
         public bool receivedJmOffset = false;
 
+        /// <summary>
+        /// Indicates whether this object should release all bonds to
+        /// other objects in the current movement simulation. Must be
+        /// reset after each round.
+        /// </summary>
+        public bool releaseBonds = false;
+
         public ParticleObject(Vector2Int position, ParticleSystem system, int identifier = 0)
         {
             this.position = position;

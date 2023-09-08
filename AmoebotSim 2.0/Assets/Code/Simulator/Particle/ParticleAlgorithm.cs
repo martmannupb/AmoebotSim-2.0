@@ -1410,6 +1410,7 @@ namespace AS2.Sim
         /// </summary>
         public void MakeAnchor()
         {
+            CheckActive("Cannot turn other particles into anchor.");
             particle.MakeAnchor();
         }
 
@@ -1427,7 +1428,24 @@ namespace AS2.Sim
         /// particle's head (only relevant for expanded particles).</param>
         public void MakeObjectAnchor(Direction d, bool fromHead = true)
         {
+            CheckActive("Cannot turn other particles' neighbor objects into anchor.");
             particle.system.MakeObjectAnchor(particle, d, fromHead);
+        }
+
+        /// <summary>
+        /// Makes the neighboring object in the indicated direction release
+        /// all of its bonds to other objects in the current round. Can only
+        /// be called in the movement phase.
+        /// </summary>
+        /// <param name="d">The local direction in which the object neighbor lies.</param>
+        /// <param name="fromHead">Whether the neighboring object is at this
+        /// particle's head (only relevant for expanded particles).</param>
+        public void TriggerObjectBondRelease(Direction d, bool fromHead = true)
+        {
+            CheckActive("Bond releases cannot be triggered for other particles.");
+            if (!CheckMove("Cannot release object bonds during beep phase.", true))
+                return;
+            particle.system.TriggerObjectBondRelease(particle, d, fromHead);
         }
     }
 

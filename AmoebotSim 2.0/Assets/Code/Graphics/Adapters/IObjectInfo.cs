@@ -11,6 +11,11 @@ namespace AS2.Visuals
     /// </summary>
     public interface IObjectInfo
     {
+        /// <summary>
+        /// Computes the set of grid nodes occupied by the object.
+        /// </summary>
+        /// <returns>The global coordinates of all grid nodes
+        /// occupied by the object.</returns>
         public ICollection<Vector2Int> OccupiedPositions();
 
         /// <summary>

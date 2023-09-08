@@ -45,6 +45,10 @@ namespace AS2.Algos.ObjectTest
         {
             if (IsContracted())
             {
+                //TriggerObjectBondRelease(Direction.E);
+                //Expand(Direction.E);
+                //return;
+
                 // Find a direction into which we can expand
                 Direction objDir = Direction.NONE;
                 for (int i = 0; i < 6; i++)
@@ -65,9 +69,11 @@ namespace AS2.Algos.ObjectTest
 
                 if (objDir != Direction.NONE)
                 {
+                    TriggerObjectBondRelease(objDir);
                     // Must mark all bonds for the movement to work
                     foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
-                        MarkBond(d);
+                        if (HasObjectAt(d))
+                            MarkBond(d);
                     Expand(objDir);
                 }
             }
