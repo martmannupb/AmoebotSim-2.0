@@ -138,6 +138,18 @@ namespace AS2.Visuals
                 renderer.UpdateObjectColor(this);
         }
 
+        /// <summary>
+        /// Calculates the TRS matrix of the object's mesh for
+        /// the current position and movement.
+        /// </summary>
+        /// <param name="animated">Whether the current movement
+        /// should be animated.</param>
+        /// <param name="animationPercentage">The current percentage
+        /// of the animation. <c>0</c> is the start position and
+        /// <c>1</c> is the end position of the movement. The
+        /// position interpolation is linear.</param>
+        /// <returns>The TRS matrix corresponding to the object's
+        /// current position that can be applied to its mesh.</returns>
         public Matrix4x4 CalculateMatrix(bool animated = false, float animationPercentage = 1f)
         {
             Vector2 pos;

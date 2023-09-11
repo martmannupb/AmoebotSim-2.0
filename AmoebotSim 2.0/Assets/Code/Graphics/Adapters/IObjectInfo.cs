@@ -93,10 +93,20 @@ namespace AS2.Visuals
 
         public Vector2Int Position { get; }
 
+        /// <summary>
+        /// The number of nodes occupied by the object.
+        /// </summary>
         public int Size { get; }
 
+        /// <summary>
+        /// The object's identifier. Does not have to
+        /// be unique among all objects.
+        /// </summary>
         public int Identifier { get; set; }
 
+        /// <summary>
+        /// The object's color.
+        /// </summary>
         public Color Color { get; set; }
     }
 

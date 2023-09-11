@@ -13,44 +13,26 @@ namespace AS2.Sim
     /// An object is a structure occupying a connected set of
     /// grid nodes. Particles can connect to objects through
     /// bonds and move the objects using the joint movement
-    /// mechanisms. Objects do not form bonds to each other
-    /// since there would be no way of releasing the bonds.
+    /// mechanisms. Objects also form bonds to each other.
+    /// A particle can trigger a neighboring object to release
+    /// all its bonds to other objects.
     /// </para>
     /// </summary>
     public class ParticleObject : IParticleObject, IObjectInfo, IReplayHistory
     {
 
-        /// <summary>
-        /// Represents a vertex used to draw the border of
-        /// an object or hexagon.
-        /// </summary>
-        public struct ObjectBorderVertex
-        {
-            /// <summary>
-            /// The grid node to which the vertex belongs.
-            /// </summary>
-            public Vector2Int node;
-            /// <summary>
-            /// The direction in which the vertex lies relative
-            /// to the node's center.
-            /// </summary>
-            public Direction dir;
-
-            public ObjectBorderVertex(Vector2Int node, Direction dir)
-            {
-                this.node = node;
-                this.dir = dir;
-            }
-        }
-
         private ParticleSystem system;
 
+        /// <summary>
+        /// The graphics adapter of this object. Used to represent
+        /// the object in the render system and make visualization updates.
+        /// </summary>
         public ObjectGraphicsAdapter graphics;
 
         /// <summary>
         /// The global root position of the object. This position
         /// marks the origin of the local coordinate system and is
-        /// always occupied by a node.
+        /// always occupied by the object.
         /// </summary>
         private Vector2Int position;
         /// <summary>
@@ -62,9 +44,6 @@ namespace AS2.Sim
         /// local coordinates, i.e., relative to the root position.
         /// </summary>
         private List<Vector2Int> occupiedRel;
-
-        private List<ObjectBorderVertex> tmpOuterBoundaryVerts = new List<ObjectBorderVertex>();
-        private List<List<ObjectBorderVertex>> tmpInnerBoundaryVerts = new List<List<ObjectBorderVertex>>();
 
         /// <summary>
         /// The current root position of the object.
@@ -112,12 +91,13 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// The absolute offset from the object's initial location,
-        /// accumulated by joint movements.
+        /// The absolute offset from the object's initial location
+        /// that was accumulated by joint movements.
         /// </summary>
         public Vector2Int jmOffset;
         /// <summary>
-        /// The history of joint movement offsets.
+        /// The history of joint movement offsets. Used for
+        /// storing animation data.
         /// </summary>
         private ValueHistory<Vector2Int> jmOffsetHistory;
 
@@ -161,8 +141,7 @@ namespace AS2.Sim
         /// be added to the object.</param>
         public void AddPosition(Vector2Int pos)
         {
-            pos -= position;
-            AddPositionRel(pos);
+            AddPositionRel(pos - position);
         }
 
         /// <summary>
@@ -529,6 +508,12 @@ namespace AS2.Sim
         public int Size
         {
             get { return occupiedRel.Count; }
+        }
+
+        public void ReleaseBonds()
+        {
+            if (system.InMovePhase)
+                releaseBonds = true;
         }
 
         /*

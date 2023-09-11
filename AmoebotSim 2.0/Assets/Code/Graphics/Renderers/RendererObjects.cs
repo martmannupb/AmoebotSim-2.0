@@ -12,10 +12,19 @@ namespace AS2.Visuals
     public class RendererObjects
     {
 
+        /// <summary>
+        /// Stores material property blocks for different colors.
+        /// </summary>
         private Dictionary<Color, MaterialPropertyBlockData_Objects> propertyBlocks = new Dictionary<Color, MaterialPropertyBlockData_Objects>();
 
+        /// <summary>
+        /// Stores all registered object adapters.
+        /// </summary>
         private List<ObjectGraphicsAdapter> objects = new List<ObjectGraphicsAdapter>();
 
+        /// <summary>
+        /// The material used for rendering objects.
+        /// </summary>
         private Material objectMat = MaterialDatabase.material_object_base;
 
         public RendererObjects()

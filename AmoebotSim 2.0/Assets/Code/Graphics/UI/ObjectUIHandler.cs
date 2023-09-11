@@ -171,12 +171,6 @@ namespace AS2.UI
             RefreshHeader();
 
             AddAttributes_IDAndColor(obj, initMode);
-            //// Attributes
-            //AddAttributes_ChiralityAndCompassDir(p, initMode);
-            //foreach (var attribute in p.GetAttributes())
-            //{
-            //    AddAttribute(attribute);
-            //}
         }
 
         /// <summary>
@@ -189,19 +183,14 @@ namespace AS2.UI
             {
                 RefreshHeader();
                 RefreshAttributes_IDAndColor();
-                //foreach (var attribute in obj.GetAttributes())
-                //{
-                //    RefreshAttribute(attribute);
-                //}
             }
         }
 
         /// <summary>
-        /// Updates the header (position, expansion and anchor information).
+        /// Updates the header (position, size and anchor information).
         /// </summary>
         private void RefreshHeader()
         {
-
             // Text
             if (obj != null)
             {
@@ -235,49 +224,6 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Updates the specific attribute.
-        /// </summary>
-        /// <param name="particleAttribute">The attribute to be refreshed.</param>
-        private void RefreshAttribute(IParticleAttribute particleAttribute)
-        {
-            if (attributeNameToIParticleAttribute.ContainsKey(particleAttribute.ToString_AttributeName()))
-            {
-                // Attribute is listed
-                System.Type type = particleAttribute.GetAttributeType();
-                if (type == typeof(bool))
-                {
-                    UISetting_Toggle setting = (UISetting_Toggle)settings[particleAttribute.ToString_AttributeName()];
-                    setting.UpdateValue(((ParticleAttribute_Bool)particleAttribute).GetValue());
-                }
-                else if (type == typeof(int))
-                {
-                    UISetting_Text setting = (UISetting_Text)settings[particleAttribute.ToString_AttributeName()];
-                    setting.UpdateValue(particleAttribute.ToString_AttributeValue());
-                }
-                else if (type == typeof(float))
-                {
-                    UISetting_Text setting = (UISetting_Text)settings[particleAttribute.ToString_AttributeName()];
-                    setting.UpdateValue(particleAttribute.ToString_AttributeValue());
-                }
-                else if (type == typeof(string))
-                {
-                    UISetting_Text setting = (UISetting_Text)settings[particleAttribute.ToString_AttributeName()];
-                    setting.UpdateValue(particleAttribute.ToString_AttributeValue());
-                }
-                else if (type == typeof(Direction))
-                {
-                    UISetting_Dropdown setting = (UISetting_Dropdown)settings[particleAttribute.ToString_AttributeName()];
-                    setting.UpdateValue(particleAttribute.ToString_AttributeValue());
-                }
-                else if (type.IsEnum) // Enum (other than Direction)
-                {
-                    UISetting_Dropdown setting = (UISetting_Dropdown)settings[particleAttribute.ToString_AttributeName()];
-                    setting.UpdateValue(particleAttribute.ToString_AttributeValue());
-                }
-            }
-        }
-
-        /// <summary>
         /// Adds the ID and color attributes to the object panel.
         /// </summary>
         /// <param name="obj">The selected object</param>
@@ -303,205 +249,6 @@ namespace AS2.UI
             //GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
             //settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
             //InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
-        }
-
-        /// <summary>
-        /// Adds the chirality and compass dir attributes to the particle panel attributes.
-        /// These attributes are contained in all possible particles.
-        /// </summary>
-        /// <param name="p">The selected particle.</param>
-        /// <param name="initMode">Indicates whether or not the system is in Init Mode.</param>
-        public void AddAttributes_ChiralityAndCompassDir(IParticleState p, bool initMode)
-        {
-            // Chirality
-            bool chirality = p.Chirality();
-            string[] choices = new string[] { "Clockwise", "CounterClockwise" };
-            UISetting_Dropdown setting = new UISetting_Dropdown(null, go_attributeParent.transform, "Chirality", choices, chirality ? "CounterClockwise" : "Clockwise");
-            setting.GetGameObject().name = "Chirality";
-            setting.onValueChangedEvent += SettingChanged_Dropdown;
-            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-            settings.Add("Chirality", setting);
-            if(initMode)
-            {
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add("Chirality", go_randomization);
-                InitRandomizationGameObject(go_randomization, "Chirality");
-            }
-            else
-            {
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_placeholder, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add("Chirality", go_randomization);
-            }
-            // Compass Dir
-            Direction compassDir = p.CompassDir();
-            string[] choicesTemp = System.Enum.GetNames(typeof(Initialization.Compass));
-            choices = new string[choicesTemp.Length - 1];
-            int curIndex = 0;
-            for (int i = 0; i < choicesTemp.Length; i++)
-            {
-                if (choicesTemp[i].Equals("Random") == false)
-                {
-                    choices[curIndex] = choicesTemp[i];
-                    curIndex++;
-                }
-            }
-            setting = new UISetting_Dropdown(null, go_attributeParent.transform, "Compass Dir", choices, compassDir.ToString());
-            setting.GetGameObject().name = "Compass Dir";
-            setting.onValueChangedEvent += SettingChanged_Dropdown;
-            setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-            setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-            settings.Add("Compass Dir", setting);
-            if(initMode)
-            {
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add("Compass Dir", go_randomization);
-                InitRandomizationGameObject(go_randomization, "Compass Dir");
-            }
-            else
-            {
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_placeholder, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add("Compass Dir", go_randomization);
-            }
-        }
-
-        /// <summary>
-        /// Adds a particle attribute to the particle panel.
-        /// </summary>
-        /// <param name="particleAttribute">The attribute to be added.</param>
-        public void AddAttribute(IParticleAttribute particleAttribute)
-        {
-            // Duplicate Check
-            if (attributeNameToIParticleAttribute.ContainsKey(particleAttribute.ToString_AttributeName()))
-            {
-                Log.Error("ParticleUIHandler: AddAttribute: Attribute " + particleAttribute.ToString_AttributeName() + " is a duplicate!");
-                return;
-            }
-
-            // Add to Dictionary
-            attributeNameToIParticleAttribute.Add(particleAttribute.ToString_AttributeName(), particleAttribute);
-            // Spawn Prefab
-            System.Type type = particleAttribute.GetAttributeType();
-            if (type == typeof(bool))
-            {
-                UISetting_Toggle setting = new UISetting_Toggle(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), ((ParticleAttribute_Bool)particleAttribute).GetValue());
-                setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
-                setting.onValueChangedEvent += SettingChanged_Toggle;
-                setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-                setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-                settings.Add(particleAttribute.ToString_AttributeName(), setting);
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
-                InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
-
-            }
-            else if (type == typeof(int))
-            {
-                UISetting_Text setting = new UISetting_Text(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Int);
-                setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
-                setting.onValueChangedEvent += SettingChanged_Text;
-                setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-                setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-                settings.Add(particleAttribute.ToString_AttributeName(), setting);
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_placeholder, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
-            }
-            else if (type == typeof(float))
-            {
-                UISetting_Text setting = new UISetting_Text(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Float);
-                setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
-                setting.onValueChangedEvent += SettingChanged_Text;
-                setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-                setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-                settings.Add(particleAttribute.ToString_AttributeName(), setting);
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_placeholder, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
-            }
-            else if (type == typeof(string))
-            {
-                UISetting_Text setting = new UISetting_Text(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), particleAttribute.ToString_AttributeValue(), UISetting_Text.InputType.Text);
-                setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
-                setting.onValueChangedEvent += SettingChanged_Text;
-                setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-                setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-                settings.Add(particleAttribute.ToString_AttributeName(), setting);
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_placeholder, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
-            }
-            else if (type == typeof(Direction))
-            {
-                string[] choices = System.Enum.GetNames(typeof(Direction));
-                UISetting_Dropdown setting = new UISetting_Dropdown(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), choices, particleAttribute.ToString_AttributeValue());
-                setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
-                setting.onValueChangedEvent += SettingChanged_Dropdown;
-                setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-                setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-                settings.Add(particleAttribute.ToString_AttributeName(), setting);
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
-                InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
-            }
-            else if (type == typeof(MinMax))
-            {
-                UISetting_MinMax setting = new UISetting_MinMax(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), MinMax.Parse(particleAttribute.ToString_AttributeValue()));
-                setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
-                setting.onValueChangedEvent += SettingChanged_Text;
-                setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-                setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-                settings.Add(particleAttribute.ToString_AttributeName(), setting);
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
-                InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
-            }
-            else if (type.IsEnum) // Enum (other than Direction)
-            {
-                string[] choices = System.Enum.GetNames(type);
-                UISetting_Dropdown setting = new UISetting_Dropdown(null, go_attributeParent.transform, particleAttribute.ToString_AttributeName(), choices, particleAttribute.ToString_AttributeValue());
-                setting.GetGameObject().name = particleAttribute.ToString_AttributeName();
-                setting.onValueChangedEvent += SettingChanged_Dropdown;
-                setting.backgroundButton_onButtonPressedEvent += AttributeClicked;
-                setting.backgroundButton_onButtonPressedLongEvent += SettingHeldDown;
-                settings.Add(particleAttribute.ToString_AttributeName(), setting);
-                GameObject go_randomization = Instantiate<GameObject>(UIDatabase.prefab_randomization_dices, Vector3.zero, Quaternion.identity, go_attributeRandomizationParent.transform);
-                settings_randomization.Add(particleAttribute.ToString_AttributeName(), go_randomization);
-                InitRandomizationGameObject(go_randomization, particleAttribute.ToString_AttributeName());
-            }
-            else
-            {
-                // Remove Attribute (since we dont display it)
-                attributeNameToIParticleAttribute.Remove(particleAttribute.ToString_AttributeName());
-            }
-        }
-
-        /// <summary>
-        /// Called when an attribute has been clicked. Opens the world space UI overlay
-        /// which shows this attribute's state for all particles.
-        /// </summary>
-        /// <param name="name">The name of the clicked attribute.</param>
-        public void AttributeClicked(string name)
-        {
-            // Null Check
-            if (WorldSpaceUIHandler.instance == null)
-            {
-                Log.Error("ParticleUIHandler: AttributeClicked: WorldSpaceUIHandler.instance is null!");
-                return;
-            }
-
-            if (IsOpen())
-            {
-                IParticleAttribute attribute;
-                attributeNameToIParticleAttribute.TryGetValue(name, out attribute);
-                if (attribute != null)
-                {
-                    // An attribute has been clicked in the open particle panel
-                    WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Attribute, name);
-                }
-                else
-                {
-                    if (name.Equals("Chirality")) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Chirality, "Chirality");
-                    else if (name.Equals("Compass Dir")) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.CompassDir, "Compass Dir");
-                }
-            }
         }
 
         /// <summary>
@@ -597,8 +344,8 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Notifies the particle panel that the system is running/not running.
-        /// Locks or unlocks the particle attributes, so that changes during runtime are not possible.
+        /// Notifies the object panel that the system is running/not running.
+        /// Locks or unlocks the attributes, so that changes during runtime are not possible.
         /// </summary>
         /// <param name="running"></param>
         public void SimState_RunningToggled(bool running)
@@ -616,7 +363,7 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Notifies the particle panel that the round has been changed, so it can refresh.
+        /// Notifies the object panel that the round has been changed, so it can refresh.
         /// </summary>
         public void SimState_RoundChanged()
         {
@@ -628,62 +375,6 @@ namespace AS2.UI
 
         // Callbacks
 
-        /// <summary>
-        /// Called when a particle attribute has been clicked and held for some time.
-        /// This should take the value of the attribute and set it at all other particles.
-        /// </summary>
-        /// <param name="name">The name of the attribute.</param>
-        /// <param name="duration">The duration for which it was held down.</param>
-        private void SettingHeldDown(string name, float duration)
-        {
-            //if (IsOpen() && duration >= 2f)
-            //{
-            //    // Setting held down long enough to apply attribute value to all particles (of same type)
-
-            //    string attributeValue = "";
-            //    IParticleAttribute attribute = obj.TryGetAttributeByName(name);
-            //    if (name.Equals("Chirality"))
-            //    {
-            //        if (sim.uiHandler.initializationUI.IsOpen()) // only editable in init mode
-            //        {
-            //            attributeValue = obj.Chirality() ? "CounterClockwise" : "Clockwise";
-            //            sim.system.SetSystemChirality(obj.Chirality() ? Initialization.Chirality.CounterClockwise : Initialization.Chirality.Clockwise);
-            //            Log.Entry("Chirality with value " + attributeValue + " has been applied to all particles of the same type.");
-            //        }
-            //        else
-            //        {
-            //            Log.Warning("Sorry, the chirality can only be set during init mode.");
-            //        }
-            //    }
-            //    else if (name.Equals("Compass Dir"))
-            //    {
-            //        if (sim.uiHandler.initializationUI.IsOpen()) // only editable in init mode
-            //        {
-            //            attributeValue = obj.CompassDir().ToString();
-            //            sim.system.SetSystemCompassDir((Initialization.Compass)obj.CompassDir().ToInt());
-            //            Log.Entry("Compass Dir with value " + attributeValue + " has been applied to all particles of the same type.");
-            //        }
-            //        else
-            //        {
-            //            Log.Warning("Sorry, the compass dir can only be set during init mode.");
-            //        }
-            //    }
-            //    else if (attribute != null)
-            //    {
-            //        attributeValue = attribute.ToString_AttributeValue();
-            //        sim.system.ApplyAttributeValueToAllParticles(obj, name);
-            //        Log.Entry("Setting " + name + " with value " + attributeValue + " has been applied to all particles of the same type.");
-            //    }
-            //    else
-            //    {
-            //        Log.Error("Setting " + name + " could not be applied since it has not been found!");
-            //    }
-
-            //    // Refresh UI
-            //    if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
-            //}
-        }
-
         private void SettingChanged_Color(string name, string value)
         {
             if (!AttributeChangeValid()) return;
@@ -692,26 +383,6 @@ namespace AS2.UI
                 obj.Color = settingColor.Color;
             else
                 settingColor.UpdateValue(obj.Color);
-        }
-
-        /// <summary>
-        /// Called when one attribute has been changed by the user. Forwards this to the particle system and refreshes the relevant UI.
-        /// </summary>
-        /// <param name="name">The name of the attribute.</param>
-        /// <param name="value">The new value of the attribute.</param>
-        private void SettingChanged_Value(string name, float value)
-        {
-            //if (AttributeChangeValid() == false) return;
-
-            //foreach (var attribute in obj.GetAttributes())
-            //{
-            //    if (attribute.ToString_AttributeName().Equals(name))
-            //    {
-            //        attribute.UpdateAttributeValue(value.ToString());
-            //        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
-            //        return;
-            //    }
-            //}
         }
 
         /// <summary>
@@ -736,58 +407,6 @@ namespace AS2.UI
                     settingID.UpdateValue(obj.Identifier.ToString());
                 }
             }
-        }
-
-        /// <summary>
-        /// Called when one attribute has been changed by the user. Forwards this to the particle system and refreshes the relevant UI.
-        /// </summary>
-        /// <param name="name">The name of the attribute.</param>
-        /// <param name="text">The new value of the attribute.</param>
-        private void SettingChanged_Toggle(string name, bool isOn)
-        {
-            //if (AttributeChangeValid() == false) return;
-
-            //foreach (var attribute in obj.GetAttributes())
-            //{
-            //    if (attribute.ToString_AttributeName().Equals(name))
-            //    {
-            //        attribute.UpdateAttributeValue(isOn ? "True" : "False");
-            //        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
-            //        return;
-            //    }
-            //}
-        }
-
-        /// <summary>
-        /// Called when one attribute has been changed by the user. Forwards this to the particle system and refreshes the relevant UI.
-        /// </summary>
-        /// <param name="name">The name of the attribute.</param>
-        /// <param name="text">The new value of the attribute.</param>
-        private void SettingChanged_Dropdown(string name, string value)
-        {
-            //if (AttributeChangeValid() == false) return;
-
-            //foreach (var attribute in obj.GetAttributes())
-            //{
-            //    if (attribute.ToString_AttributeName().Equals(name))
-            //    {
-            //        attribute.UpdateAttributeValue(value);
-            //        if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
-            //        return;
-            //    }
-            //}
-            //if (name.Equals("Chirality"))
-            //{
-            //    obj.SetChirality(value.Equals("CounterClockwise") ? true : false);
-            //    if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
-            //    return;
-            //}
-            //if (name.Equals("Compass Dir"))
-            //{
-            //    obj.SetCompassDir((Direction)Enum.Parse(typeof(Direction), value));
-            //    if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
-            //    return;
-            //}
         }
 
         /// <summary>
@@ -816,76 +435,6 @@ namespace AS2.UI
                 Log.Warning("You cannot set the anchor when you are not in the latest round!");
             }
         }
-
-        /// <summary>
-        /// Adds listeners to the given randomization button panel.
-        /// </summary>
-        /// <param name="dicePanel">The panel holding two randomization buttons,
-        /// one for setting a single random value and one for setting all random values.</param>
-        /// <param name="attributeName">The name of the attribute affected by the randomization.</param>
-        public void InitRandomizationGameObject(GameObject dicePanel, string attributeName)
-        {
-            Button[] buttons = dicePanel.GetComponentsInChildren<Button>();
-            buttons[0].onClick.AddListener(delegate { ButtonPressed_Randomize(attributeName, false); });
-            buttons[1].onClick.AddListener(delegate { ButtonPressed_Randomize(attributeName, true); });
-        }
-
-        /// <summary>
-        /// Callback for when a randomization button has been pressed.
-        /// Gives the associated attribute a random value on either just
-        /// the selected particle or all particles.
-        /// </summary>
-        /// <param name="attributeName">The name of the associated attribute.</param>
-        /// <param name="randomizeAll">Indicates whether all particles should
-        /// get a random value for this attribute.</param>
-        public void ButtonPressed_Randomize(string attributeName, bool randomizeAll)
-        {
-            //if(IsOpen() && sim.system.IsInLatestRound())
-            //{
-            //    if(randomizeAll)
-            //    {
-            //        // Find random values for all attributes
-            //        bool updateSuccessful = false;
-            //        if(attributeName.Equals("Chirality"))
-            //        {
-            //            updateSuccessful = sim.system.SetSystemChirality(Initialization.Chirality.Random);
-            //            if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Chirality, attributeName);
-            //        }
-            //        else if(attributeName.Equals("Compass Dir"))
-            //        {
-            //            updateSuccessful = sim.system.SetSystemCompassDir(Initialization.Compass.Random);
-            //            if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.CompassDir, attributeName);
-            //        }
-            //        else
-            //        {
-            //            sim.system.SetSystemAttributeRandom(attributeName);
-            //            updateSuccessful = true;
-            //            if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.DisplayText(WorldSpaceUIHandler.TextType.Attribute, attributeName);
-            //        }
-            //        if(updateSuccessful) Log.Entry("Setting " + attributeName + " has been randomized for all particles of the same type.");
-            //    }
-            //    else
-            //    {
-            //        // Only find random values for current attribute
-            //        if(attributeName.Equals("Chirality"))
-            //        {
-            //            obj.SetChiralityRandom();
-            //        }
-            //        else if (attributeName.Equals("Compass Dir"))
-            //        {
-            //            obj.SetCompassDirRandom();
-            //        }
-            //        else
-            //        {
-            //            IParticleAttribute attribute = obj.TryGetAttributeByName(attributeName);
-            //            if(attribute != null) attribute.SetRandomValue();
-            //        }
-            //    }
-            //    if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
-            //    RefreshObjectPanel();
-            //}
-        }
-
     }
 
 } // namespace AS2.UI

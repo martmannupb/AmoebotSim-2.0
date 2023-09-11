@@ -150,7 +150,8 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// Update loop of the UI Handler. Calls UpdateUI and updates the particle panel. Also processes the inputs for hotkeys.
+        /// Update loop of the UI Handler. Calls UpdateUI and updates the particle and object panel.
+        /// Also processes the inputs for hotkeys.
         /// </summary>
         public void Update()
         {
@@ -158,6 +159,7 @@ namespace AS2.UI
 
             UpdateUI(sim.running);
             particleUI.UpdateUI();
+            objectUI.UpdateUI();
 
             ProcessInputs();
         }

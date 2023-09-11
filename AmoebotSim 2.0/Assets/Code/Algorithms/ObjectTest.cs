@@ -46,8 +46,13 @@ namespace AS2.Algos.ObjectTest
             if (IsContracted())
             {
                 //TriggerObjectBondRelease(Direction.E);
-                //Expand(Direction.E);
-                //return;
+                // Alternative
+                IParticleObject obj = GetObjectAt(Direction.E);
+                if (obj != null)
+                    obj.ReleaseBonds();
+
+                Expand(Direction.E);
+                return;
 
                 // Find a direction into which we can expand
                 Direction objDir = Direction.NONE;
