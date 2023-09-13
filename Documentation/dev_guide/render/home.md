@@ -1,6 +1,6 @@
 # Dev Guide: The Render System
 
-The render system renders the background grid, the particles, their circuits and bonds, and some additional UI overlays to the screen.
+The render system renders the background grid, the particles, their circuits and bonds, the objects and some additional UI overlays to the screen.
 This must be done efficiently to keep the application responsive even while simulating large particle systems.
 Achieving this requires some effort and the render system's code is therefore quite complex.
 This part of the Developer Guide gives an overview of the render system's structure, roughly explains the most important high-level concepts and points to the places where the visualization could be changed or extended.
@@ -17,7 +17,7 @@ The individual parts of the system are explained in more detail on their own pag
 The [`RenderSystem`][1] class is the main container of the render system and forms the root of a tree structure.
 One instance of this class is created by the application's main class, [`AmoebotSimulator`][2], when the application starts.
 In every `Update` call, the [`AmoebotSimulator`][2] calls the [`RenderSystem`][1]'s [`Render()`][3] method, which triggers a cascade of similar method calls through the entire render system hierarchy (represented by the arrows in the image above).
-The [`RenderSystem`][1] creates and manages one instance of each of the three render classes, the [`RendererUI`][4], [`RendererBackground`][5] and [`RendererParticles`][6].
+The [`RenderSystem`][1] creates and manages one instance of each of the four render classes, the [`RendererUI`][4], [`RendererBackground`][5], [`RendererObjects`][7] and [`RendererParticles`][6].
 These classes receive the [`Render()`][3] call of the [`RenderSystem`][1] and handle the rendering or pass the call to subordinate classes.
 
 Apart from that, the [`RenderSystem`][1] class contains most of the render parameters and constants.
@@ -28,7 +28,7 @@ The class stores most of these parameters as public static fields, which makes t
 Almost all of the render system's classes use these values to influence the render result.
 
 The next page explains the [basics of rendering in Unity](rendering_basics.md).
-The concepts explained on that page are relevant to all of the following pages, which explain the three render classes in more detail.
+The concepts explained on that page are relevant to all of the following pages, which explain the four render classes in more detail.
 
 
 
@@ -38,3 +38,4 @@ The concepts explained on that page are relevant to all of the following pages, 
 [4]: xref:AS2.Visuals.RendererUI
 [5]: xref:AS2.Visuals.RendererBackground
 [6]: xref:AS2.Visuals.RendererParticles
+[7]: xref:AS2.Visuals.RendererObjects

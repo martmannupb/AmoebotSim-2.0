@@ -4,6 +4,8 @@
   href: background_renderer.md
 - name: UI Renderer
   href: ui_renderer.md
+- name: Object Renderer
+  href: object_renderer.md
 - name: Particle Renderer
   href: particles/toc.yml
   topicHref: particles/home.md

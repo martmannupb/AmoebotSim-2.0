@@ -430,6 +430,23 @@ namespace AS2.Sim
             return isNbr;
         }
 
+        /// <summary>
+        /// Removes the given local grid position from the object,
+        /// if the object remains non-empty.
+        /// <para>
+        /// Note that the object's origin position will change if
+        /// the node at the origin is removed.
+        /// </para>
+        /// </summary>
+        /// <param name="pos">The occupied grid position to remove from
+        /// the object, relative to the object's origin.</param>
+        /// <returns><c>true</c> if and only if the position was
+        /// successfully removed from the object.</returns>
+        public bool RemovePositionRel(Vector2Int pos)
+        {
+            return RemovePosition(pos + position);
+        }
+
         public bool RemovePosition(Vector2Int pos)
         {
             // Convert to relative position
