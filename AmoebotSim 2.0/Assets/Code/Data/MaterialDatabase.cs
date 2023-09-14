@@ -78,6 +78,7 @@ namespace AS2
             material_hexagonal_ui_baseHexagonMoveSelectionMaterial.renderQueue = q_overlays;
             material_circuit_ui_pSetHoverMaterial.renderQueue = q_overlays;
             material_circuit_ui_pSetDragMaterial.renderQueue = q_overlays;
+            material_line.renderQueue = q_overlays;
         }
 
         // Circular View
@@ -115,7 +116,7 @@ namespace AS2
         public static Material material_hexagonal_ui_baseHexagonMoveSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonMoveSelectionMaterial");
         public static Material material_circuit_ui_pSetHoverMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/PSetHoverMaterial");
         public static Material material_circuit_ui_pSetDragMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/PSetDragMaterial");
-
+        public static Material material_line = Resources.Load<Material>(FilePaths.path_materials + "Base/Sprite-Unlit-Default");
     }
 
 } // namespace AS2

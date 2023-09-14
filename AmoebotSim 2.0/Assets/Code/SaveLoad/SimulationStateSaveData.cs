@@ -1,4 +1,5 @@
 using System;
+using AS2.Sim;
 
 namespace AS2
 {
@@ -23,6 +24,14 @@ namespace AS2
         /// The round in which the simulation finished.
         /// </summary>
         public int finishedRound;
+
+        /// <summary>
+        /// Indicates whether the simulation is in a collision state or not.
+        /// </summary>
+        public bool inCollisionState;
+
+
+        public CollisionChecker.DebugLine[] collisionDebugLines;
 
         /// <summary>
         /// The history of the anchor particle indices.

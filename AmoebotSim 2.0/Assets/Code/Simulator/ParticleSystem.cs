@@ -60,8 +60,19 @@ namespace AS2.Sim
         /// </summary>
         private Dictionary<Vector2Int, Particle> particleMap = new Dictionary<Vector2Int, Particle>();
 
+        /// <summary>
+        /// A list of all objects in the system. Similar to
+        /// <see cref="particles"/>.
+        /// </summary>
         private List<ParticleObject> objects = new List<ParticleObject>();
+        /// <summary>
+        /// A map of the grid positions of all objects in the simulation.
+        /// Similar to <see cref="particleMap"/>.
+        /// </summary>
         private Dictionary<Vector2Int, ParticleObject> objectMap = new Dictionary<Vector2Int, ParticleObject>();
+        
+        // Edge collection for collision check
+        private List<EdgeMovement> edgeMovements = new List<EdgeMovement>();
 
 
         /*
@@ -221,6 +232,35 @@ namespace AS2.Sim
         /// The history of the flag telling whether the anchor index refers to an object.
         /// </summary>
         private ValueHistory<bool> anchorIsObjectHistory = new ValueHistory<bool>(false, 0);
+        
+        /// <summary>
+        /// <c>true</c> when a collision occurred in the last recorded round.
+        /// </summary>
+        private bool inCollisionState = false;
+        /// <summary>
+        /// <c>true</c> if a collision has occurred in the last recorded round.
+        /// The simulation will not proceed until the last round is cut off
+        /// from the history.
+        /// </summary>
+        public bool InCollisionState
+        {
+            get { return InCollisionState; }
+        }
+
+        /// <summary>
+        /// Indicates whether the collision check should be executed.
+        /// </summary>
+        private bool collisionCheckEnabled = true;
+        /// <summary>
+        /// Indicates whether the collision check should be executed.
+        /// Turn the collision check off for improved performance.
+        /// </summary>
+        public bool CollisionCheckEnabled
+        {
+            get { return collisionCheckEnabled; }
+        }
+
+        private CollisionChecker.DebugLine[] collisionDebugLines;
 
 
         /*
@@ -365,6 +405,19 @@ namespace AS2.Sim
          */
 
         /// <summary>
+        /// Enables or disables the collision check.
+        /// </summary>
+        /// <param name="enabled">If <c>true</c>, the collision check
+        /// will be enabled, otherwise it will be disabled.</param>
+        public void SetCollisionCheck(bool enabled)
+        {
+            collisionCheckEnabled = enabled;
+            // Forget about collision if check is disabled
+            if (!enabled)
+                inCollisionState = false;
+        }
+
+        /// <summary>
         /// Resets the entire system to a state from which it can be
         /// initialized again.
         /// </summary>
@@ -396,6 +449,7 @@ namespace AS2.Sim
             isTracking = true;
 
             finished = false;
+            inCollisionState = false;
             finishedRound = -1;
 
             anchorIdxHistory.SetMarkerToRound(0);
@@ -581,6 +635,14 @@ namespace AS2.Sim
                 return;
             }
 
+            if (inCollisionState)
+            {
+                Log.Error("A collision occurred! The simulation will not continue.");
+                CollisionChecker.DrawDebugLines(collisionDebugLines);
+                AmoebotSimulator.instance.PauseSim();
+                return;
+            }
+
             _currentRound++;
             Debug.Log("Simulate round " + _currentRound + " (previous round: " + _previousRound + ")");
             _latestRound++;
@@ -608,7 +670,25 @@ namespace AS2.Sim
             try
             {
                 if (particlesMove)
+                {
                     SimulateJointMovements();
+                    // Only perform collision check if it is enabled
+                    bool foundCollision = collisionCheckEnabled && CheckForCollision();
+
+                    // Clear after processing edges and checking for collisions
+                    foreach (EdgeMovement em in edgeMovements)
+                    {
+                        EdgeMovement.Release(em);
+                    }
+                    edgeMovements.Clear();
+
+                    if (foundCollision)
+                    {
+                        inCollisionState = true;
+                        collisionDebugLines = CollisionChecker.GetDebugLines();
+                        AmoebotSimulator.instance.PauseSim();
+                    }
+                }
                 else
                     // Compute bond information for the case with no movements
                     ComputeBondsStatic();
@@ -673,6 +753,7 @@ namespace AS2.Sim
         {
             inMovePhase = false;
             inBeepPhase = false;
+            inCollisionState = false;   // If the exception occurred after a collision, the collision has no effect
             CleanupAfterRound();
             SetMarkerToRound(_currentRound - 1);
             CutOffAtMarker();
@@ -1053,6 +1134,7 @@ namespace AS2.Sim
 
                         p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1,
                             !(p.visibleBondsGlobal[label] && nbr.visibleBondsGlobal[nbrLabels[label]])));
+                        edgeMovements.Add(EdgeMovement.Create(bondStart1, bondEnd1, bondStart2, bondEnd2));
                     }
 
                     // We are contracted and the neighbor is expanded
@@ -1205,6 +1287,7 @@ namespace AS2.Sim
 
                             // Store the bond info
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, hidden1));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond1_1, nbrBond1_1, ourBond1_2, nbrBond1_2));
                         }
                         else if (numBonds == 2)
                         {
@@ -1332,6 +1415,8 @@ namespace AS2.Sim
                             // Store the bond info
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, hidden1));
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, hidden2));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond1_1, nbrBond1_1, ourBond1_2, nbrBond1_2));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond2_1, nbrBond2_1, ourBond2_2, nbrBond2_2));
                         }
                         else
                         {
@@ -1393,6 +1478,9 @@ namespace AS2.Sim
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond1_2, nbrBond1_2, ourBond1_1, nbrBond1_1, hidden1));
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond2_2, nbrBond2_2, ourBond2_1, nbrBond2_1, hidden2));
                             p.bondGraphicInfo.Add(new ParticleBondGraphicState(ourBond3_2, nbrBond3_2, ourBond3_1, nbrBond3_1, hidden3));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond1_1, nbrBond1_1, ourBond1_2, nbrBond1_2));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond2_1, nbrBond2_1, ourBond2_2, nbrBond2_2));
+                            edgeMovements.Add(EdgeMovement.Create(ourBond3_1, nbrBond3_1, ourBond3_2, nbrBond3_2));
                         }
                     }
 
@@ -1509,6 +1597,7 @@ namespace AS2.Sim
             // Now apply the movements to the particles
             // and the objects locally
             // Also, check if any particle was not processed
+            // Edge movements are recorded for expanded, expanding and contracting particles
             foreach (Particle p in particles)
             {
                 if (!p.processedJointMovement)
@@ -1518,6 +1607,7 @@ namespace AS2.Sim
                 }
                 else if (p.ScheduledMovement != null)
                 {
+                    EdgeMovement em = EdgeMovement.Create(p.Tail(), p.Head(), Vector2Int.zero, Vector2Int.zero);
                     if (p.ScheduledMovement.IsExpansion())
                     {
                         p.Apply_Expand(p.ScheduledMovement.localDir, p.jmOffset);
@@ -1530,9 +1620,34 @@ namespace AS2.Sim
                     {
                         p.Apply_ContractTail(p.jmOffset);
                     }
+
+                    // Overwrite edge movement in the case of handover
+                    if (p.ScheduledMovement.IsHandoverExpansion())
+                    {
+                        // Expansion: Make start position expanded too
+                        em.end1 += p.Head() - p.Tail();
+                        em.start2 = p.Tail();
+                        em.end2 = p.Head();
+                    }
+                    else if (p.ScheduledMovement.IsHandoverContraction())
+                    {
+                        // Contraction: Make end position expanded too
+                        em.start2 = p.Tail();
+                        em.end2 = p.Tail() + em.end1 - em.start1;
+                    }
+                    else
+                    {
+                        em.start2 = p.Tail();
+                        em.end2 = p.Head();
+                    }
+                    edgeMovements.Add(em);
                 }
                 else
                 {
+                    if (p.IsExpanded())
+                    {
+                        edgeMovements.Add(EdgeMovement.Create(p.Tail(), p.Head(), p.Tail() + p.jmOffset, p.Head() + p.jmOffset));
+                    }
                     p.Apply_Offset(p.jmOffset);
                 }
             }
@@ -1741,13 +1856,18 @@ namespace AS2.Sim
 
                 // Store the bond info
                 bool hidden = !(c.visibleBondsGlobal[cLabel1] && e.visibleBondsGlobal[eLabel1]);
+                // Only collect edge movement if we have no handover
                 if (bondForContracted)
                 {
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, hidden));
+                    if (!weWantHandover)
+                        edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, cBond2 + c.jmOffset, eBond2 + c.jmOffset));
                 }
                 else
                 {
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, hidden));
+                    if (!weWantHandover)
+                        edgeMovements.Add(EdgeMovement.Create(eBond1, cBond1, eBond2 + e.jmOffset, cBond2 + e.jmOffset));
                 }
             }
             else
@@ -1854,15 +1974,24 @@ namespace AS2.Sim
                 // Store the bond info
                 bool hidden1 = !(c.visibleBondsGlobal[cLabel1] && e.visibleBondsGlobal[eLabel1]);
                 bool hidden2 = !(c.visibleBondsGlobal[cLabel2] && e.visibleBondsGlobal[eLabel2]);
+                // Do not store info for bond on which handover is performed
                 if (bondForContracted)
                 {
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2 + c.jmOffset, eBond2 + c.jmOffset, cBond1, eBond1, hidden1));
                     c.bondGraphicInfo.Add(new ParticleBondGraphicState(cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset, cBond1, eBond1_2, hidden2));
+                    if (!handoverFirst)
+                        edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, cBond2 + c.jmOffset, eBond2 + c.jmOffset));
+                    if (!handoverSecond)
+                        edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1_2, cBond2_2 + c.jmOffset, eBond2_2 + c.jmOffset));
                 }
                 else
                 {
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2 + e.jmOffset, cBond2 + e.jmOffset, eBond1, cBond1, hidden1));
                     e.bondGraphicInfo.Add(new ParticleBondGraphicState(eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset, eBond1_2, cBond1, hidden2));
+                    if (!handoverFirst)
+                        edgeMovements.Add(EdgeMovement.Create(cBond1, eBond1, eBond2 + e.jmOffset, cBond2 + e.jmOffset));
+                    if (!handoverSecond)
+                        edgeMovements.Add(EdgeMovement.Create(eBond1_2, cBond1, eBond2_2 + e.jmOffset, cBond2_2 + e.jmOffset));
                 }
             }
             return eOffset;
@@ -2115,6 +2244,29 @@ namespace AS2.Sim
 
                 p.processedJointMovement = true;
             }
+        }
+
+        // TODO
+        private bool CheckForCollision()
+        {
+            float tStart = Time.realtimeSinceStartup;
+
+            // For each pair of edges, check if there is a collision
+            for (int i = 0; i < edgeMovements.Count - 1; i++)
+            {
+                EdgeMovement em1 = edgeMovements[i];
+                for (int j = i + 1; j < edgeMovements.Count; j++)
+                {
+                    EdgeMovement em2 = edgeMovements[j];
+
+                    if (CollisionChecker.EdgesCollide(em1, em2))
+                        return true;
+                }
+            }
+
+            Debug.Log("Finished collision check in " + (Time.realtimeSinceStartup - tStart) + " s");
+
+            return false;
         }
 
         /// <summary>
@@ -3917,6 +4069,10 @@ namespace AS2.Sim
                 anchorIdxHistory.ContinueTracking();
                 anchorIsObjectHistory.ContinueTracking();
                 UpdateAfterStep(stepFromSecondLastRound, !stepFromSecondLastRound, !stepFromSecondLastRound);
+
+                // Draw collision debug lines
+                if (collisionCheckEnabled && inCollisionState)
+                    CollisionChecker.DrawDebugLines(collisionDebugLines);
             }
         }
 
@@ -3944,12 +4100,13 @@ namespace AS2.Sim
                 anchorIdxHistory.ContinueTracking();
                 anchorIsObjectHistory.ContinueTracking();
 
-                // Also reset finished state if necessary
+                // Also reset finished and collision state if necessary
                 if (finished && _latestRound < finishedRound)
                 {
                     finished = false;
                     finishedRound = -1;
                 }
+                inCollisionState = false;
             }
         }
 
@@ -4019,6 +4176,8 @@ namespace AS2.Sim
             data.earliestRound = _earliestRound;
             data.latestRound = _latestRound;
             data.finishedRound = finishedRound;
+            data.inCollisionState = inCollisionState;
+            data.collisionDebugLines = collisionDebugLines;
             data.anchorIdxHistory = anchorIdxHistory.GenerateSaveData();
             data.anchorIsObjectHistory = anchorIsObjectHistory.GenerateSaveData();
 
@@ -4061,6 +4220,9 @@ namespace AS2.Sim
             finishedRound = data.finishedRound;
             if (finishedRound != -1)
                 finished = true;
+
+            inCollisionState = data.inCollisionState;
+            collisionDebugLines = data.collisionDebugLines;
 
             foreach (ParticleStateSaveData pData in data.particles)
             {

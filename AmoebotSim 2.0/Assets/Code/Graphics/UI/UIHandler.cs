@@ -360,8 +360,8 @@ namespace AS2.UI
             if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
             // Collision Check
-            //if (true) button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_active;
-            //else button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_inactive;
+            if (sim.system.CollisionCheckEnabled) button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_active;
+            else button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_inactive;
             // Bonds Active
             if (sim.renderSystem.AreBondsActive()) button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
@@ -779,7 +779,7 @@ namespace AS2.UI
         /// </summary>
         public void Button_ToggleCollisionCheck()
         {
-            Log.Debug("Collision Check Button Pressed. This is not connected yet.");
+            sim.system.SetCollisionCheck(!sim.system.CollisionCheckEnabled);
         }
 
         /// <summary>
