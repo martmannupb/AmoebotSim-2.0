@@ -764,7 +764,7 @@ namespace AS2.Sim
         /// </para>
         /// </summary>
         /// <returns><c>true</c> if any particle has scheduled a movement
-        /// or released a bond.</returns>
+        /// or released a bond (object bonds count as well).</returns>
         private bool ActivateParticlesMove()
         {
             bool anyParticleMoved = false;
@@ -916,6 +916,15 @@ namespace AS2.Sim
                     offsetDir = p.GlobalTailDirection();
                 }
                 p.movementOffset = ParticleSystem_Utils.DirectionToVector(offsetDir);
+            }
+            // Check if any object's bonds have been released
+            foreach (ParticleObject o in objects)
+            {
+                if (o.releaseBonds)
+                {
+                    anyParticleMoved = true;
+                    break;
+                }
             }
 
             return anyParticleMoved;

@@ -103,6 +103,26 @@ If we encounter any particle that has not been processed in the BFS, then there 
 The exception handling code will revert the simulation state to the previous round, undoing the state changes that were applied so far.
 If no disconnected particle is encountered, we finally replace the particle map with the updated positions.
 
+#### Handling of Objects
+
+Objects in the particle system are handled as special cases.
+If a bond belonging to the current particle $p$ connects $p$ to an object $o$, the following happens:
+
+First, we compute the offset that $p$'s joint movement and its local movement impose on the bond and the object $o$.
+If $o$ has already received a joint movement offset, we compare this offset to the one belonging to $p$.
+In the case that they are not the same, we have to report a joint movement conflict, just like for non-matching particle offsets.
+
+If $o$ has not yet received an offset, we assign the offset computed for $p$ and move on to the offset propagation procedure, implemented by the `PropagateObjectOffset` method.
+This procedure starts a separate BFS starting at the given object and traversing only other objects that are connected by bonds.
+Because the objects cannot perform any local movements, all connected objects must have the same movement offset.
+Thus, if we encounter an object with a different offset, we report a joint movement conflict.
+If no conflicts occur, all objects connected to $o$ will receive the same offset.
+The bonds between the objects are assigned to the graphical information of $p$ (this way, we do not have to add more graphical information to the objects).
+
+If the system's anchor is an object instead of a particle, we start the joint movement BFS at the first particle in the system's particle list.
+After the movement simulation, we find the offset $v$ of the anchor object and subtract $v$ from all joint movement offsets of all particles, objects and bonds in the system.
+Additionally, if some object has not received a joint movement offset during the simulation, we have to throw an exception because the object is not connected to the rest of the system.
+
 
 ### Between the Phases
 
