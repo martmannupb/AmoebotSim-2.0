@@ -675,13 +675,6 @@ namespace AS2.Sim
                     // Only perform collision check if it is enabled
                     bool foundCollision = collisionCheckEnabled && CheckForCollision();
 
-                    // Clear after processing edges and checking for collisions
-                    foreach (EdgeMovement em in edgeMovements)
-                    {
-                        EdgeMovement.Release(em);
-                    }
-                    edgeMovements.Clear();
-
                     if (foundCollision)
                     {
                         inCollisionState = true;
@@ -1061,16 +1054,19 @@ namespace AS2.Sim
                         // Prepare bond info
                         Vector2Int bondStart1 = ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir) ? p.Head() : p.Tail();
                         Vector2Int bondEnd1 = bondStart1 + ParticleSystem_Utils.DirectionToVector(ParticleSystem_Utils.GetDirOfLabel(label, globalHeadDir));
-                        Vector2Int bondStart2 = bondStart1;
-                        Vector2Int bondEnd2 = bondEnd1;
+                        Vector2Int bondStart2 = bondStart1 + p.jmOffset;
+                        Vector2Int bondEnd2 = bondEnd1 + p.jmOffset;
 
                         // Decide whether the particle's movement offset must be applied or not
+                        // Must be applied if the particle performs a movement and the bond is marked
+                        // or the movement is a contraction and the bond is not at the origin
                         Vector2Int objOffset = p.jmOffset;
-                        if (movementAction != null && p.markedBondsGlobal[label])
+                        if (movementAction != null && (p.markedBondsGlobal[label]
+                            || movementAction.IsRegularContraction() && (p.isHeadOrigin ^ ParticleSystem_Utils.IsHeadLabel(label, globalHeadDir))))
                         {
                             objOffset += p.movementOffset;
-                            bondStart2 += p.movementOffset + p.jmOffset;
-                            bondEnd2 += p.movementOffset + p.jmOffset;
+                            bondStart2 += p.movementOffset;
+                            bondEnd2 += p.movementOffset;
                         }
 
                         // Check if the calculated offset matches the object's current offset
@@ -1093,7 +1089,8 @@ namespace AS2.Sim
                         }
 
                         // Make bond visible
-                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1));
+                        p.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1, !p.visibleBondsGlobal[label]));
+                        edgeMovements.Add(EdgeMovement.Create(bondStart1, bondEnd1, bondStart2, bondEnd2));
 
                         continue;
                     }
@@ -1561,6 +1558,7 @@ namespace AS2.Sim
             // BFS has finished
 
             // If the anchor is an object: subtract its offset from all particles and objects
+            // Also subtract the offset from edge movements for collision check
             if (anchorIsObjectHistory.GetMarkedValue())
             {
                 ParticleObject anchorObj = objects[anchorIdxHistory.GetMarkedValue()];
@@ -1581,6 +1579,14 @@ namespace AS2.Sim
                     }
                     foreach (ParticleObject o in objects)
                         o.jmOffset -= anchorOffset;
+
+                    for (int i = 0; i < edgeMovements.Count; i++)
+                    {
+                        EdgeMovement em = edgeMovements[i];
+                        em.start2 -= anchorOffset;
+                        em.end2 -= anchorOffset;
+                        edgeMovements[i] = em;
+                    }
 
                     Dictionary<Vector2Int, Particle> shiftedPositions = new Dictionary<Vector2Int, Particle>(newPositions.Count);
                     Dictionary<Vector2Int, ParticleObject> shiftedObjectMap = new Dictionary<Vector2Int, ParticleObject>(newObjectMap.Count);
@@ -1737,7 +1743,9 @@ namespace AS2.Sim
                 }
                 else if (objectMap.TryGetValue(nbrPos, out ParticleObject obj))
                 {
-                    nbrObjs[label] = obj;
+                    // Add object to neighbors if the bond is active
+                    if (p.activeBondsGlobal[label])
+                        nbrObjs[label] = obj;
                 }
 
                 // Error if there is no neighbor here although a handover is scheduled
@@ -2077,7 +2085,10 @@ namespace AS2.Sim
         /// objects.</param>
         /// <param name="sourceParticle">The particle to which the
         /// visual bond information should be assigned.</param>
-        private void PropagateObjectOffset(ParticleObject o, Particle sourceParticle)
+        /// <param name="collectEdgeMovements">Whether edge movements
+        /// should be collected for the bonds between objects. These edge
+        /// movements will be used for the collision check.</param>
+        private void PropagateObjectOffset(ParticleObject o, Particle sourceParticle, bool collectEdgeMovements = true)
         {
             if (o.releaseBonds)
                 return;
@@ -2112,7 +2123,13 @@ namespace AS2.Sim
                             if (!finishedObjects.Contains(nbr))
                             {
                                 // This neighbor was not processed yet, so we have to add the bonds
-                                sourceParticle.bondGraphicInfo.Add(new ParticleBondGraphicState(pos + obj.jmOffset, nbrPos + obj.jmOffset, pos, nbrPos));
+                                Vector2Int bondStart1 = pos;
+                                Vector2Int bondEnd1 = nbrPos;
+                                Vector2Int bondStart2 = pos + obj.jmOffset;
+                                Vector2Int bondEnd2 = nbrPos + obj.jmOffset;
+                                sourceParticle.bondGraphicInfo.Add(new ParticleBondGraphicState(bondStart2, bondEnd2, bondStart1, bondEnd1));
+                                if (collectEdgeMovements)
+                                    edgeMovements.Add(EdgeMovement.Create(bondStart1, bondEnd1, bondStart2, bondEnd2));
                             }
                         }
                     }
@@ -2180,7 +2197,7 @@ namespace AS2.Sim
                         nbrObj.receivedJmOffset = true;
 
                         // Then compute bonds for all objects connected to this object
-                        PropagateObjectOffset(nbrObj, p);
+                        PropagateObjectOffset(nbrObj, p, false);
                         continue;
                     }
 
@@ -2246,27 +2263,104 @@ namespace AS2.Sim
             }
         }
 
-        // TODO
+        /// <summary>
+        /// Checks for joint movement collisions by searching for
+        /// overlapping edge movements in the set of recorded edges.
+        /// <para>
+        /// This method also clears the sets of collected edge movements
+        /// in any case.
+        /// </para>
+        /// </summary>
+        /// <returns><c>true</c> if and only if a collision was found.</returns>
         private bool CheckForCollision()
         {
             float tStart = Time.realtimeSinceStartup;
 
+            bool foundCollision = false;
+
+            // Determine object edges
+            Dictionary<ParticleObject, EdgeMovement[]> objectEdgeMovements = new Dictionary<ParticleObject, EdgeMovement[]>();
+            foreach (ParticleObject o in objects)
+            {
+                objectEdgeMovements[o] = o.ComputeEdgeMovements();
+            }
+
             // For each pair of edges, check if there is a collision
-            for (int i = 0; i < edgeMovements.Count - 1; i++)
+            // (Do not check collisions between objects yet)
+            for (int i = 0; i < edgeMovements.Count - 1 && !foundCollision; i++)
             {
                 EdgeMovement em1 = edgeMovements[i];
-                for (int j = i + 1; j < edgeMovements.Count; j++)
+                for (int j = i + 1; j < edgeMovements.Count && !foundCollision; j++)
                 {
                     EdgeMovement em2 = edgeMovements[j];
 
                     if (CollisionChecker.EdgesCollide(em1, em2))
-                        return true;
+                    {
+                        foundCollision = true;
+                        break;
+                    }
+                }
+                foreach (ParticleObject o in objectEdgeMovements.Keys)
+                {
+                    foreach (EdgeMovement em3 in objectEdgeMovements[o])
+                    {
+                        if (CollisionChecker.EdgesCollide(em1, em3))
+                        {
+                            foundCollision = true;
+                            break;
+                        }
+                    }
+                    if (foundCollision)
+                        break;
+                }
+            }
+
+            // Now check for collisions between objects
+            for (int i = 0; i < objects.Count - 1 && !foundCollision; i++)
+            {
+                ParticleObject o1 = objects[i];
+                for (int j = i + 1; j < objects.Count && !foundCollision; j++)
+                {
+                    ParticleObject o2 = objects[j];
+                    // Only check for collision if the joint movement offsets
+                    // of the two objects are different
+                    if (o1.jmOffset != o2.jmOffset)
+                    {
+                        EdgeMovement[] o1m = objectEdgeMovements[o1];
+                        EdgeMovement[] o2m = objectEdgeMovements[o2];
+                        foreach (EdgeMovement em1 in o1m)
+                        {
+                            foreach (EdgeMovement em2 in o2m)
+                            {
+                                if (CollisionChecker.EdgesCollide(em1, em2))
+                                {
+                                    foundCollision = true;
+                                    break;
+                                }
+                            }
+                            if (foundCollision)
+                                break;
+                        }
+                    }
                 }
             }
 
             Debug.Log("Finished collision check in " + (Time.realtimeSinceStartup - tStart) + " s");
 
-            return false;
+            // Clear after processing edges and checking for collisions
+            foreach (EdgeMovement em in edgeMovements)
+            {
+                EdgeMovement.Release(em);
+            }
+            foreach (ParticleObject o in objects)
+            {
+                foreach (EdgeMovement em in objectEdgeMovements[o])
+                    EdgeMovement.Release(em);
+            }
+            objectEdgeMovements.Clear();
+            edgeMovements.Clear();
+
+            return foundCollision;
         }
 
         /// <summary>
@@ -4239,6 +4333,7 @@ namespace AS2.Sim
             {
                 ParticleObject o = ParticleObject.CreateFromSaveData(this, oData);
                 objects.Add(o);
+                o.CalculateBoundaries();
                 foreach (Vector2Int v in o.GetOccupiedPositions())
                     objectMap[v] = o;
             }
@@ -4459,9 +4554,12 @@ namespace AS2.Sim
                 }
             }
 
-            // Copy the objects
+            // Copy the objects and calculate their boundaries
             foreach (ParticleObject o in objectsInit)
+            {
                 objects.Add(o);
+                o.CalculateBoundaries();
+            }
             foreach (KeyValuePair<Vector2Int, ParticleObject> kv in objectMapInit)
                 objectMap[kv.Key] = kv.Value;
 

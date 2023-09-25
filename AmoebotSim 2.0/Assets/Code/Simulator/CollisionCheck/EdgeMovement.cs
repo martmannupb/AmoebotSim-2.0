@@ -18,7 +18,7 @@ namespace AS2.Sim
     /// for every new edge.
     /// </para>
     /// </summary>
-    public struct EdgeMovement
+    public class EdgeMovement
     {
         /// <summary>
         /// The start position before the movement.

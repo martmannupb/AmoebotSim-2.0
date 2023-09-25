@@ -11,7 +11,8 @@ namespace AS2.Sim
     /// <para>
     /// Collision checks work by tracking the movements of all edges
     /// in the system. Edges are created by all bonds and expanded,
-    /// expanding and contracting particles in the system.
+    /// expanding and contracting particles in the system, as well as
+    /// the boundaries of objects.
     /// If any two edges that do not coincide in one point at the start
     /// or the end of the movement intersect during the movement, a
     /// collision occurs.

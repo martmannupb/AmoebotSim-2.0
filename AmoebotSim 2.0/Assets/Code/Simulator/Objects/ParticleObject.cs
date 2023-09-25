@@ -114,6 +114,13 @@ namespace AS2.Sim
         /// </summary>
         public bool releaseBonds = false;
 
+        /// <summary>
+        /// The edges on the boundary of the object, used for collision detection.
+        /// Every entry <c>(x, y, z)</c> stores a relative node position
+        /// <c>(x, y)</c> and a cardinal direction code <c>z</c>.
+        /// </summary>
+        private HashSet<Vector3Int> boundaryEdges = new HashSet<Vector3Int>();
+
         public ParticleObject(Vector2Int position, ParticleSystem system, int identifier = 0)
         {
             this.position = position;
@@ -378,6 +385,263 @@ namespace AS2.Sim
                 return numVisited == occupiedRel.Count - 1;
             else
                 return numVisited == occupiedRel.Count;
+        }
+
+        /// <summary>
+        /// Calculates all boundaries of the object so that the object
+        /// can be used in collision checks. This should be called once
+        /// when the simulation starts and the object is complete.
+        /// </summary>
+        /// <param name="debug">Whether debug lines showing the detected
+        /// edges should be drawn.</param>
+        public void CalculateBoundaries(bool debug = false)
+        {
+            // If we have only one part: No boundary edges
+            if (occupiedRel.Count == 1)
+            {
+                return;
+            }
+
+            /*
+             * Calculate helper data structures:
+             * We compute the bounding rect of the object and
+             * create an int matrix telling us where the
+             * occupied positions of the object are. -1 entries
+             * are empty and other entries give the index of the
+             * node occupying this position.
+             * This enables us to check whether a position is
+             * occupied in constant time rather than O(n).
+             */
+
+            // First find the dimensions of the bounding rect
+            int xMin = 0;
+            int xMax = 0;
+            int yMin = 0;
+            int yMax = 0;
+            foreach (Vector2Int v in occupiedRel)
+            {
+                if (v.x < xMin)
+                    xMin = v.x;
+                else if (v.x > xMax)
+                    xMax = v.x;
+                if (v.y < yMin)
+                    yMin = v.y;
+                else if (v.y > yMax)
+                    yMax = v.y;
+            }
+            int sizeX = xMax - xMin + 1;
+            int sizeY = yMax - yMin + 1;
+
+            // Create and fill the matrix
+            // Stretch the dimensions by one position in each direction
+            // Indices range from 0 to sizeN + 1
+            // Occupied positions are 1 to sizeN
+            int[,] matrix = new int[sizeX + 2, sizeY + 2];
+            for (int i = 0; i < sizeX + 2; i++)
+                for (int j = 0; j < sizeY + 2; j++)
+                    matrix[i, j] = -1;
+            for (int i = 0; i < occupiedRel.Count; i++)
+            {
+                Vector2Int v = occupiedRel[i];
+                matrix[v.x - xMin + 1, v.y - yMin + 1] = i;
+            }
+
+            /*
+             * We also create a bool matrix telling us whether
+             * each direction of a node has been considered in
+             * a boundary detection pass. This allows us to
+             * avoid duplicate boundaries.
+             */
+            bool[,] finishedDirections = new bool[occupiedRel.Count, 6];
+
+            /*
+             * Start with outer boundary
+             */
+
+            // Find the left- and topmost position (must be on the outer boundary)
+            Vector2Int top = occupiedRel[0];
+            bool foundTop = false;
+            for (int y = sizeY; y > 0; y--)
+            {
+                for (int x = 1; x < sizeX + 1; x++)
+                {
+                    if (matrix[x, y] != -1)
+                    {
+                        top = new Vector2Int(x + xMin - 1, y + yMin - 1);
+                        foundTop = true;
+                        break;
+                    }
+                }
+                if (foundTop)
+                    break;
+            }
+
+            // top has no neighbors in W, NNW and NNE direction
+            // Now walk around the outer boundary in clockwise direction
+            Direction boundaryDir = Direction.NNE;  // boundaryDir is like a normal pointing away from the shape
+            boundaryEdges.Clear();
+
+            ComputeBoundary(top, boundaryDir, boundaryEdges, xMin, yMin, matrix, finishedDirections);
+
+            // Now do the same for the inner boundaries
+            for (int i = 0; i < occupiedRel.Count; i++)
+            {
+                Vector2Int node = occupiedRel[i];
+                for (int j = 0; j < 6; j++)
+                {
+                    if (!finishedDirections[i, j])
+                    {
+                        Direction d = DirectionHelpers.Cardinal(j);
+                        Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(node, d);
+                        if (matrix[nbr.x - xMin + 1, nbr.y - yMin + 1] == -1)
+                        {
+                            // Compute new boundary here
+                            ComputeBoundary(node, d, boundaryEdges, xMin, yMin, matrix, finishedDirections);
+                        }
+                    }
+
+                }
+            }
+
+            // Draw the boundary for debugging
+            if (debug)
+            {
+                Debug.Log("Computed " + boundaryEdges.Count + " boundary edges");
+                foreach (Vector3Int v in boundaryEdges)
+                {
+                    Vector2Int start = new Vector2Int(v.x, v.y) + position;
+                    Vector2Int end = ParticleSystem_Utils.GetNbrInDir(start, DirectionHelpers.Cardinal(v.z));
+                    Debug.DrawLine(AmoebotFunctions.GridToWorldPositionVector3(start, -5f), AmoebotFunctions.GridToWorldPositionVector3(end, -5f), Color.blue, 15f);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method that collects the boundary nodes and
+        /// direction vectors for the boundary to which the given
+        /// node belongs.
+        /// </summary>
+        /// <param name="start">The starting node whose boundary
+        /// should be computed.</param>
+        /// <param name="initialBoundaryDir">A cardinal direction that
+        /// points from <paramref name="start"/> towards the empty
+        /// space the boundary is adjacent to.</param>
+        /// <param name="edges">The set into which the detected edges
+        /// should be written. The format for each edge is <c>(x, y, z)</c>,
+        /// where <c>(x, y)</c> is the relative position of a boundary node
+        /// and <c>z</c> is the cardinal direction int of the edge.</param>
+        /// <param name="xMin">The minimum x coordinate of the object's
+        /// bounding rectangle, used for indexing the object matrix.</param>
+        /// <param name="yMin">The minimum y coordinate of the object's
+        /// bounding rectangle, used for indexing the object matrix.</param>
+        /// <param name="matrix">The object matrix that maps relative
+        /// coordinates in the bounding rectangle to node indices.</param>
+        /// <param name="finishedDirections">A matrix indicating which
+        /// directions of which node have been considered for boundary
+        /// detection already. Will be updated with all nodes and
+        /// directions belonging to the new boundary.</param>
+        private void ComputeBoundary(Vector2Int start, Direction initialBoundaryDir,
+            HashSet<Vector3Int> edges,
+            int xMin, int yMin,
+            int[,] matrix, bool[,] finishedDirections)
+        {
+            // Rotate initial boundary direction to the left until a neighbor is found
+            // => ensures that all empty neighbors of the boundary are checked
+            for (int i = 0; i < 6; i++)
+            {
+                Direction d = initialBoundaryDir.Rotate60(1);
+                Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(start, d);
+                if (matrix[nbr.x - xMin + 1, nbr.y - yMin + 1] != -1)
+                {
+                    break;
+                }
+                initialBoundaryDir = d;
+            }
+
+            Direction boundaryDir = initialBoundaryDir;
+            Vector2Int current = start;
+            Vector2Int last = current;
+            int currentIdx = matrix[start.x - xMin + 1, start.y - yMin + 1];
+            int dirInt;
+            int iterations = 0;
+            int maxIterations = 100000;
+            while (iterations < maxIterations)
+            {
+                // Search for the next part of the boundary by rotating the
+                // boundary direction until a neighbor is found
+                Direction nbrDir = boundaryDir;
+                for (int i = 0; i < 6; i++)
+                {
+                    // The current nbrDir is empty
+                    finishedDirections[currentIdx, nbrDir.ToInt()] = true;
+
+                    nbrDir = nbrDir.Rotate60(-1);
+                    Vector2Int nbrPos = ParticleSystem_Utils.GetNbrInDir(current, nbrDir);
+                    int matrixNbrEntry = matrix[nbrPos.x - xMin + 1, nbrPos.y - yMin + 1];
+                    if (matrixNbrEntry != -1)
+                    {
+                        dirInt = nbrDir.ToInt();
+                        if (dirInt < 3)
+                            edges.Add(new Vector3Int(current.x, current.y, dirInt));
+                        else
+                            edges.Add(new Vector3Int(nbrPos.x, nbrPos.y, (dirInt + 3) % 6));
+                        last = current;
+                        current = nbrPos;
+                        currentIdx = matrixNbrEntry;
+                        boundaryDir = nbrDir.Rotate60(2);
+                        break;
+                    }
+                }
+                // We are finished if we have reached the starting position again
+                if (current == start && boundaryDir == initialBoundaryDir)
+                {
+                    break;
+                }
+                iterations++;
+            }
+
+            if (iterations >= maxIterations)
+            {
+                Log.Error("Error while computing object boundary: Exceeded max iterations (" + maxIterations + ")");
+                return;
+            }
+
+            // Add edge from last to first node
+            Direction dir = ParticleSystem_Utils.VectorToDirection(start - last);
+            dirInt = dir.ToInt();
+            if (dirInt < 3)
+                edges.Add(new Vector3Int(last.x, last.y, dirInt));
+            else
+                edges.Add(new Vector3Int(start.x, start.y, (dirInt + 3) % 6));
+        }
+
+        /// <summary>
+        /// Computes all edge movements belonging to this object.
+        /// The edges are computed from the boundaries of the
+        /// object and their movement is determined by the
+        /// object's current joint movement offset.
+        /// <para>
+        /// This only works after the boundary edges of the
+        /// object have been calculated.
+        /// </para>
+        /// </summary>
+        /// <returns>An array containing all edge movements
+        /// of this object for the current round.</returns>
+        public EdgeMovement[] ComputeEdgeMovements()
+        {
+            EdgeMovement[] movements = new EdgeMovement[boundaryEdges.Count];
+
+            int i = 0;
+            foreach (Vector3Int v in boundaryEdges)
+            {
+                // Have to subtract offset here because our position has already been updated
+                Vector2Int start1 = new Vector2Int(v.x, v.y) + position - jmOffset;
+                Vector2Int end1 = AmoebotFunctions.GetNeighborPosition(start1, v.z);
+                movements[i] = EdgeMovement.Create(start1, end1, start1 + jmOffset, end1 + jmOffset);
+                i++;
+            }
+
+            return movements;
         }
 
         /// <summary>
