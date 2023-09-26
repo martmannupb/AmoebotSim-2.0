@@ -105,7 +105,7 @@ If no disconnected particle is encountered, we finally replace the particle map 
 
 #### Handling of Objects
 
-Objects in the particle system are handled as special cases.
+[Objects](~/model_ref/objects.md) in the particle system are handled as special cases.
 If a bond belonging to the current particle $p$ connects $p$ to an object $o$, the following happens:
 
 First, we compute the offset that $p$'s joint movement and its local movement impose on the bond and the object $o$.
@@ -122,6 +122,33 @@ The bonds between the objects are assigned to the graphical information of $p$ (
 If the system's anchor is an object instead of a particle, we start the joint movement BFS at the first particle in the system's particle list.
 After the movement simulation, we find the offset $v$ of the anchor object and subtract $v$ from all joint movement offsets of all particles, objects and bonds in the system.
 Additionally, if some object has not received a joint movement offset during the simulation, we have to throw an exception because the object is not connected to the rest of the system.
+
+
+### Collision Check
+
+![Collision Check](~/images/collision.png "Collision check: The green particles contracted West and the blue particles expanded, leading to the collision of the blue and orange edges as indicated by the arrows")
+
+If the collision check is enabled, we call the `CheckForCollision()` method directly after simulating the movements.
+We define a collision to occur if at any point in time during the joint movement, two *edges* intersect that do not share an end point at the start or the end of the movement.
+An *edge* is either
+- a bond (belonging to particles or objects),
+- the connection between the head and tail of an expanded, expanding or contracting particle,
+- or the grid edge between two boundary nodes of an object.
+
+Note that every edge has a length of $1$ at some point during the movement, but edges belonging to expanding or contracting particles linearly change their length from $0$ to $1$ or from $1$ to $0$ during the joint movement, respectively.
+If two edges share an end point at the start or the end of the movement, they must belong to the same particle or the same object, in which case they cannot cause a collision.
+
+We use the [`EdgeMovement`][28] class to represent the movements of all edges in the system.
+These movements are mostly collected during the joint movement simulation.
+The only edges that are computed separately are the boundary edges of the objects in the system.
+After computing the remaining edges, the `CheckForCollision()` method checks almost all pairs of edges for collisions.
+It does not check for collisions between boundary edges of objects with the same joint movement offset since these edges can never collide.
+
+The collision check for two given edges is performed by the static [`CollisionChecker`][29] class.
+This class provides several methods implementing geometrical operations to test whether two edge movements collide.
+The basic idea behind these calculations is to view the movement of one edge relative to the other edge and to consider the movement vectors of the edges' end points.
+This way, the temporal component of the movement is removed and the collision check can be reduced to checking whether line segments intersect.
+In case a collision is found, the class also generates and stores visual data so that the colliding edges can be displayed in the system.
 
 
 ### Between the Phases
@@ -286,3 +313,5 @@ For this purpose, the particle attribute classes have an [`intermediateVal`][27]
 [25]: xref:AS2.Sim.ParticleAttribute`1.GetCurrentValue
 [26]: xref:AS2.Sim.Particle.isActive
 [27]: xref:AS2.Sim.ParticleAttributeWithHistory`1.intermediateVal
+[28]: xref:AS2.Sim.EdgeMovement
+[29]: xref:AS2.Sim.CollisionChecker

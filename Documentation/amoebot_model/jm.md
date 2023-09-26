@@ -74,7 +74,7 @@ We call that a *structural conflict*.
 
 Second, parts of the structure collide into each other.
 More precisely, a *collision* occurs if there is a $t \in [0, 1]$ such that two bonds intersect at some point that is not incident to both bonds (see Figure 4).
-In particular, note that an expanded Amoebot cannot contract if it has two incident bonds to the same node even if the Amoebot occupying that node expands at the same time without causing a collision (see Figure 2c).
+In particular, note that an expanded Amoebot cannot contract if it has two incident bonds to the same node even if the Amoebot occupying that node expands at the same time without causing a collision (see Figure 2e).
 
 Whenever either a structural conflict or a collision occurs, the Amoebot structure transitions into an undefined state such that we become unable to make any statements about the structure.
 

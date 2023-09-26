@@ -113,6 +113,11 @@ The only difference between the two cases is that in the left case, the leftmost
 On the right side, it might look like two of the particles are expanding in the West (W) direction, but this is only due to the joint movement.
 From their local views, they are pushing their neighbors away while expanding their head in the East (E) direction.
 
+> [!NOTE]
+> As of version 1.5 of the simulation environment, an [object](~/model_ref/objects.md) can also become the anchor of the system.
+> Marking the anchor object in the UI works similarly by selecting the object and clikcing the small anchor button.
+> Particles neighboring an object also have the ability to turn the object into the anchor programmatically.
+
 
 ### Conflicts
 

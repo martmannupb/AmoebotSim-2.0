@@ -1,5 +1,9 @@
 # Simulator Usage: Simulation Mode
 
+> [!NOTE]
+> Some of the images may be outdated.
+> However, all available UI elements are covered, even if they do not appear in every image.
+
 Pressing the "Start" button in [Init Mode](init.md) leads you to the second main mode of the simulation environment, which is *Simulation Mode*.
 In Simulation Mode, the computation of the particle system that was set up in Init Mode is simulated in *rounds*, as explained on the [reference pages](~/model_ref/rounds.md).
 The state of the particle system can be inspected in every round, even if the simulation has already progressed further than the currently viewed round, thanks to the history feature.
@@ -100,6 +104,13 @@ The third and fourth button simply toggle the circuit and bond visualization on 
 <img src="~/images/+circuits+bonds.png" alt="Circuits and bonds" title="Circuits and bonds" height="250"/>       | <img src="~/images/+circuits-bonds.png" alt="Circuits and no bonds" title="Circuits and no bonds" height="250"/>
 **No circuits and bonds**                                                                                        | **No circuits and no bonds**
 <img src="~/images/-circuits+bonds.png" alt="No circuits and bonds" title="No circuits and bonds" height="250"/> | <img src="~/images/-circuits-bonds.png" alt="No circuits and no bonds" title="No circuits and no bonds" height="250"/>
+
+<img src="~/images/view_menu_sim.png" alt="View Menu" title="View Menu" width="150" align="right"/>
+
+The last button in the view menu does not only affect the visualization.
+This button toggles the **collision check**.
+As long as the check is enabled, any collision occurring during joint movements will force the simulation to stop and display the colliding edges in the UI.
+Once the collision check is disabled, the simulation can proceed and will "forget" about the last collision.
 
 
 <img src="~/images/settings_panel.png" alt="Settings Panel" title="Settings Panel" width="200" align="right"/>

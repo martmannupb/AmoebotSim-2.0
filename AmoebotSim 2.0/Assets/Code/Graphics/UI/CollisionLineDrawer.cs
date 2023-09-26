@@ -122,7 +122,7 @@ namespace AS2.UI
         /// <param name="end">The grid coordinates of the line's end point.</param>
         /// <param name="color">The color of the line.</param>
         /// <param name="arrow">Whether the line should have an arrow head or not.</param>
-        public void AddLine(Vector2Int start, Vector2Int end, Color color, bool arrow = false)
+        public void AddLine(Vector2 start, Vector2 end, Color color, bool arrow = false)
         {
             // Obtain GameObject with LineRenderer
             GameObject obj = GetLine();
