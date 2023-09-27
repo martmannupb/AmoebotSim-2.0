@@ -11,7 +11,7 @@ In this mode, you can select an algorithm, place or remove the particles and obj
 
 The Init Mode UI is organized like this:
 
-![Init Mode UI Overview](~/images/init_mode_overview_2.png "Init Mode UI Overview")
+![Init Mode UI Overview](~/images/init_mode_overview.png "Init Mode UI Overview")
 
 In the following, we will cover the areas that are relevant in Init Mode.
 Many of the UI elements are also visible in Simulation Mode and will be covered on the corresponding page.
