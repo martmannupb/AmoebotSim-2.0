@@ -16,7 +16,7 @@ All future particles with the same color and number of pins will be rendered by 
 
 A similar approach is used for the circuit render batch classes, but the system is more complex.
 This part is handled by a single [`RendererCircuitsAndBonds`][4] instance that acts as the root of another sub-tree.
-Because bonds are technically rendered the same way as bonds, it makes sense to handle these two components together.
+Because bonds are technically rendered the same way as circuits, it makes sense to handle these two components together.
 
 In addition to the render batches, the [`RendererParticles`][1] also keeps track of all particles that are registered in the render system.
 They are stored in a dictionary that maps [`IParticleState`][5]s to [`ParticleGraphicsAdapterImpl`][6]s.
