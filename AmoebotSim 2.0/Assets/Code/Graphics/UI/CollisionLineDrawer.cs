@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace AS2.UI
 {
-
+    
     /// <summary>
     /// Utility class for drawing lines and arrows that indicate
     /// collisions to the screen.

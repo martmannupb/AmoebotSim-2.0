@@ -147,6 +147,9 @@ namespace AS2.UI
             tools_initMode.Add(dropdown_chirality.gameObject.transform.parent.gameObject);
             tools_playMode.Add(button_toolStandard.gameObject);
             tools_playMode.Add(button_toolPSetMove.gameObject);
+            // Init button tooltips
+            UpdateTooltip(button_pSetPositioning.gameObject, GetPSetViewModeTooltip());
+            UpdateTooltip(button_viewType.gameObject, GetViewModeTooltip());
         }
 
         /// <summary>
@@ -764,6 +767,7 @@ namespace AS2.UI
         public void Button_ToggleViewPressed()
         {
             sim.renderSystem.ToggleViewType();
+            UpdateTooltip(button_viewType.gameObject, GetViewModeTooltip());
         }
 
         /// <summary>
@@ -788,6 +792,7 @@ namespace AS2.UI
         public void Button_TogglePSetPositioningPressed()
         {
             sim.renderSystem.TogglePSetPositioning();
+            UpdateTooltip(button_pSetPositioning.gameObject, GetPSetViewModeTooltip());
         }
 
         /// <summary>
@@ -915,6 +920,79 @@ namespace AS2.UI
         {
             button_settings.interactable = true;
             //button_exit.interactable = true;
+        }
+
+        // Special button tooltip values
+
+        /// <summary>
+        /// Tries to update the tooltip message of the Tooltip
+        /// component in the given GameObject.
+        /// </summary>
+        /// <param name="go">The GameObject that has a Tooltip.</param>
+        /// <param name="message">The new tooltip message.</param>
+        private void UpdateTooltip(GameObject go, string message)
+        {
+            Tooltip tt = go.GetComponent<Tooltip>();
+            if (tt != null)
+            {
+                tt.ChangeMessage(message);
+            }
+        }
+
+        /// <summary>
+        /// Generates the tooltip matching the current partition set
+        /// view type.
+        /// </summary>
+        /// <returns>The new tooltip message for the partition set
+        /// view type button.</returns>
+        private string GetPSetViewModeTooltip()
+        {
+            PartitionSetViewType vt = sim.renderSystem.GetPSetViewType();
+            string s = "Toggle partition set view type: ";
+
+            switch (vt)
+            {
+                case PartitionSetViewType.Auto:
+                    s += "Automatic (circle)";
+                    break;
+                case PartitionSetViewType.Auto_2DCircle:
+                    s += "Automatic (disk)";
+                    break;
+                case PartitionSetViewType.CodeOverride:
+                    s += "Auto with manual override";
+                    break;
+                case PartitionSetViewType.Line:
+                    s += "Line";
+                    break;
+            }
+
+            return s;
+        }
+
+        /// <summary>
+        /// Generates the tooltip matching the current view type.
+        /// </summary>
+        /// <returns>The new tooltip message for the partition set
+        /// view type button.</returns>
+        private string GetViewModeTooltip()
+        {
+            ViewType vt = sim.renderSystem.GetCurrentViewType();
+            string s = "Toggle view mode: ";
+
+            switch (vt)
+            {
+                case ViewType.Circular:
+                    s += "Circular";
+                    break;
+                case ViewType.Hexagonal:
+                    s += "Hexagonal";
+                    break;
+                case ViewType.HexagonalCirc:
+                    s += "Hexagonal (round)";
+                    break;
+            }
+
+            return s;
         }
     }
 }

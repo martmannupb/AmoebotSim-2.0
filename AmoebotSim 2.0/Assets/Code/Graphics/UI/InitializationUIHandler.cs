@@ -430,6 +430,8 @@ namespace AS2.UI
         public void ButtonPressed_StartAlgorithm()
         {
             AmoebotSimulator.instance.system.InitializationModeFinished(alg_setting_algo.GetValueString());
+            // Close tooltips
+            TooltipHandler.Instance.Close();
             Close(false);
         }
 
@@ -438,6 +440,8 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_Abort()
         {
+            // Close tooltips
+            TooltipHandler.Instance.Close();
             Close(true);
         }
 

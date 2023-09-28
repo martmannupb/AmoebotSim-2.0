@@ -90,6 +90,7 @@ GameObject:
   - component: {fileID: 8835354706283290745}
   - component: {fileID: 8835354706283290746}
   - component: {fileID: 8835354706283290747}
+  - component: {fileID: 305363596515762782}
   m_Layer: 5
   m_Name: Button (Randomize All)
   m_TagString: Untagged
@@ -200,6 +201,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &305363596515762782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8835354706283290629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c15908e87a2379544be2285b07af258f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  message: Randomize for all particles
 --- !u!1 &8835354706671972542
 GameObject:
   m_ObjectHideFlags: 0
@@ -364,6 +378,7 @@ GameObject:
   - component: {fileID: 8835354707485479658}
   - component: {fileID: 8835354707485479659}
   - component: {fileID: 8835354707485479668}
+  - component: {fileID: 4530897826620186993}
   m_Layer: 5
   m_Name: Button (Randomize)
   m_TagString: Untagged
@@ -474,3 +489,16 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4530897826620186993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8835354707485479670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c15908e87a2379544be2285b07af258f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  message: Randomize for this particle

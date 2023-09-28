@@ -1,9 +1,5 @@
 # Simulator Usage: Initialization Mode
 
-> [!NOTE]
-> Some of the images may be outdated.
-> However, all available UI elements are covered, even if they do not appear in every image.
-
 When the application is started using the Play Button in the Unity Editor, it opens in *Initialization Mode*.
 Initialization Mode (or Init Mode) is one of the two main modes of the simulation environment, the other one being [*Simulation Mode*](sim.md).
 The Init Mode is used to initialize the particle system before running a simulation.
@@ -15,6 +11,10 @@ The Init Mode UI is organized like this:
 
 In the following, we will cover the areas that are relevant in Init Mode.
 Many of the UI elements are also visible in Simulation Mode and will be covered on the corresponding page.
+
+> [!NOTE]
+> If you place the cursor on a UI element like a button or slider and do not move it for one second, a **tooltip** will be displayed.
+> Use this feature to easily explore and learn the simulator's UI without having to consult the documentation.
 
 
 ## Central Area
