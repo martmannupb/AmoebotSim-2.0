@@ -56,6 +56,7 @@ namespace AS2.Subroutines.LeaderElection
     {
         private ParticleAttribute<int> kappa;               // Number of repetitions
         private ParticleAttribute<int> partitionSetId;      // The ID of the partition set on which to perform the LE
+        private ParticleAttribute<bool> controlColor;       // Whether we control the particle's color
 
         private ParticleAttribute<bool> isLeaderCandidate;  // Whether we are still a leader candidate
         private ParticleAttribute<bool> isPhase2Candidate;  // Whether we are a candidate in the second phase
@@ -67,10 +68,29 @@ namespace AS2.Subroutines.LeaderElection
         private ParticleAttribute<bool> beepFromTails;      // Flag storing whether we have received a beep sent in the TAILS round
         private ParticleAttribute<bool> finished;           // Whether the leader election has finished
 
+        /// <summary>
+        /// Color for particles that are still active leader candidates.
+        /// </summary>
+        public static readonly Color candidateColor = ColorData.Particle_Green;
+        /// <summary>
+        /// Color for particles that are no leader candidate but still
+        /// an active candidate in phase 2.
+        /// </summary>
+        public static readonly Color activeColor = ColorData.Particle_Blue;
+        /// <summary>
+        /// Color for particles that are no candidates but still not finished.
+        /// </summary>
+        public static readonly Color passiveColor = ColorData.Particle_BlueDark;
+        /// <summary>
+        /// Color for particles that are finished and no leader candidate.
+        /// </summary>
+        public static readonly Color retiredColor = ColorData.Particle_Black;
+
         public SubLeaderElection(Particle p) : base(p)
         {
             kappa = algo.CreateAttributeInt(FindValidAttributeName("[LE] Kappa"), 3);
             partitionSetId = algo.CreateAttributeInt(FindValidAttributeName("[LE] Partition set"), -1);
+            controlColor = algo.CreateAttributeBool(FindValidAttributeName("[LE] Control color"), false);
 
             isLeaderCandidate = algo.CreateAttributeBool(FindValidAttributeName("[LE] Candidate"), true);
             isPhase2Candidate = algo.CreateAttributeBool(FindValidAttributeName("[LE] Candidate 2"), true);
@@ -83,10 +103,11 @@ namespace AS2.Subroutines.LeaderElection
             finished = algo.CreateAttributeBool(FindValidAttributeName("[LE] Finished"), false);
         }
 
-        public void Init(int partitionSet, int kappa = 3)
+        public void Init(int partitionSet, bool controlColor = false, int kappa = 3)
         {
-            this.kappa.SetValue(kappa);
             partitionSetId.SetValue(partitionSet);
+            this.controlColor.SetValue(controlColor);
+            this.kappa.SetValue(kappa);
 
             isLeaderCandidate.SetValue(true);
             isPhase2Candidate.SetValue(true);
@@ -117,7 +138,7 @@ namespace AS2.Subroutines.LeaderElection
                 if (round.GetCurrentValue() == 0 && (!beepFromHeads.GetCurrentValue() || !beepFromTails.GetCurrentValue()))
                 {
                     // Either start an iteration of phase 2 or terminate completely
-                    if (firstPhase.GetCurrentValue() || repetitions.GetCurrentValue() < kappa.GetCurrentValue())
+                    if (firstPhase.GetCurrentValue() && kappa.GetCurrentValue() > 0 || repetitions.GetCurrentValue() < kappa.GetCurrentValue())
                     {
                         // We need to start an iteration of phase 2
                         firstPhase.SetValue(false);
@@ -132,6 +153,8 @@ namespace AS2.Subroutines.LeaderElection
                     {
                         // This was the last iteration
                         finished.SetValue(true);
+                        if (controlColor.GetCurrentValue())
+                            UpdateColor();
                         return;
                     }
                 }
@@ -151,14 +174,11 @@ namespace AS2.Subroutines.LeaderElection
                         else if (isPhase2Candidate.GetCurrentValue())
                             isPhase2Candidate.SetValue(false);
                     }
-                    else
-                    {
-                        // Don't have to withdraw candidacy
-                        // Toss a coin if we are a candidate in the correct round
-                        if (round.GetCurrentValue() == 0 && isLeaderCandidate.GetCurrentValue()
-                            || round.GetCurrentValue() == 2 && isPhase2Candidate.GetCurrentValue())
-                            TossCoin();
-                    }
+                    
+                    // Toss a coin if we are a candidate in the correct round
+                    if (round.GetCurrentValue() == 0 && isLeaderCandidate.GetCurrentValue()
+                        || round.GetCurrentValue() == 2 && isPhase2Candidate.GetCurrentValue())
+                        TossCoin();
                 }
             }
             else
@@ -166,6 +186,9 @@ namespace AS2.Subroutines.LeaderElection
                 // Odd round: Receive HEADS beep
                 beepFromHeads.SetValue(receivedBeep);
             }
+
+            if (controlColor.GetCurrentValue())
+                UpdateColor();
         }
 
         public void ActivateSend()
@@ -187,6 +210,8 @@ namespace AS2.Subroutines.LeaderElection
 
                 // This is a stand-in for round 0, so we continue with round 1
                 round.SetValue(1);
+                if (controlColor.GetCurrentValue())
+                    UpdateColor();
                 return;
             }
 
@@ -229,6 +254,9 @@ namespace AS2.Subroutines.LeaderElection
                 else
                     round.SetValue(2);
             }
+
+            if (controlColor.GetCurrentValue())
+                UpdateColor();
         }
 
         private bool TossCoin()
@@ -238,6 +266,21 @@ namespace AS2.Subroutines.LeaderElection
             return result;
         }
 
+        private void UpdateColor()
+        {
+            if (isLeaderCandidate.GetCurrentValue())
+                algo.SetMainColor(candidateColor);
+            else
+            {
+                if (finished.GetCurrentValue())
+                    algo.SetMainColor(retiredColor);
+                else if (!firstPhase.GetCurrentValue() && isPhase2Candidate.GetCurrentValue())
+                    algo.SetMainColor(activeColor);
+                else
+                    algo.SetMainColor(passiveColor);
+            }
+        }
+
         public bool IsFinished()
         {
             return finished.GetCurrentValue();
@@ -245,12 +288,22 @@ namespace AS2.Subroutines.LeaderElection
 
         public bool IsCandidate()
         {
-            return isLeaderCandidate.GetCurrentValue();
+            return !IsFinished() && isLeaderCandidate.GetCurrentValue();
+        }
+
+        public bool IsPhase2Candidate()
+        {
+            return !IsFinished() && !firstPhase.GetCurrentValue() && isPhase2Candidate.GetCurrentValue();
         }
 
         public bool IsLeader()
         {
-            return IsFinished() && IsCandidate();
+            return IsFinished() && isLeaderCandidate.GetCurrentValue();
+        }
+
+        public int GetRound()
+        {
+            return round.GetCurrentValue();
         }
     }
 
