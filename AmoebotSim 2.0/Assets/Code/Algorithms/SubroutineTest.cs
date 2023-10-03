@@ -1,6 +1,6 @@
 using AS2.Sim;
 using UnityEngine;
-using AS2.Subroutines;
+
 
 namespace AS2.Algos.SubroutineTest
 {
@@ -40,20 +40,20 @@ namespace AS2.Algos.SubroutineTest
         };
 
         // Declare attributes here
-        private ParticleAttribute<bool> finished;
+        private ParticleAttribute<bool> finished;                               // Whether the algorithm has finished
+        private ParticleAttribute<int> round;                                   // Round counter for synchronization
 
-        private ParticleAttribute<int> round;
+        private ParticleAttribute<int> numBoundaries;                           // The number of our boundaries
+        private ParticleAttribute<int>[,] boundaries;                           // Boundary directions: [boundaryIndex, 0=predecessor;1=successor direction]
 
-        private ParticleAttribute<int> numBoundaries;
-        private ParticleAttribute<int>[,] boundaries;
+        private ParticleAttribute<int> kappa;                                   // Number of repetitions
 
-        private Subroutines.LeaderElection.SubLeaderElection[] subLEs;
+        private Subroutines.LeaderElection.SubLeaderElection[] subLEs;          // Leader election subroutines by boundary index
 
         public SubroutineTestParticle(Particle p) : base(p)
         {
             // Initialize the attributes here
             finished = CreateAttributeBool("Finished", false);
-
             round = CreateAttributeInt("Round", -1);
 
             numBoundaries = CreateAttributeInt("Num boundaries", 0);
@@ -66,6 +66,8 @@ namespace AS2.Algos.SubroutineTest
                 }
             }
 
+            kappa = CreateAttributeInt("Kappa", 0);
+
             subLEs = new Subroutines.LeaderElection.SubLeaderElection[3];
             for (int i = 0; i < 3; i++)
                 subLEs[i] = new Subroutines.LeaderElection.SubLeaderElection(p);
@@ -73,10 +75,11 @@ namespace AS2.Algos.SubroutineTest
 
         // Implement this if the particles require special initialization
         // The parameters will be converted to particle attributes for initialization
-        //public void Init(/* Custom parameters with default values */)
-        //{
-        //    // This code is executed directly after the constructor
-        //}
+        public void Init(int kappa = 3)
+        {
+            // This code is executed directly after the constructor
+            this.kappa.SetValue(kappa);
+        }
 
         // Implement this method if the algorithm terminates at some point
         public override bool IsFinished()
@@ -119,9 +122,8 @@ namespace AS2.Algos.SubroutineTest
                 // Initialize and activate leader election subroutines
                 for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
                 {
-                    subLEs[i].Init(i, false, 3);
-                    subLEs[i].ActivateReceive();
-                    subLEs[i].ActivateSend();
+                    subLEs[i].Init(i, false, kappa, true);
+                    subLEs[i].ActivateBeep();
                 }
 
                 UpdateColor();
@@ -183,8 +185,7 @@ namespace AS2.Algos.SubroutineTest
                 // Normal computation round
                 for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
                 {
-                    subLEs[i].ActivateReceive();
-                    subLEs[i].ActivateSend();
+                    subLEs[i].ActivateBeep();
                 }
             }
 
@@ -239,6 +240,12 @@ namespace AS2.Algos.SubroutineTest
             return true;
         }
 
+        /// <summary>
+        /// Sets up the boundary pin configuration by connecting the
+        /// predecessor and successor using the pins closest to that
+        /// boundary. Partition set IDs are the boundary indices.
+        /// </summary>
+        /// <param name="pc">The pin configuration to be changed.</param>
         private void SetupPinConfiguration(PinConfiguration pc)
         {
             for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
@@ -257,6 +264,13 @@ namespace AS2.Algos.SubroutineTest
             }
         }
 
+        /// <summary>
+        /// Updates the particle's color based on its candidacies.
+        /// Leaders and candidates are green, being brighter the
+        /// more leaderships/candidacies they have. Phase 2
+        /// candidates are shades of blue, again depending on
+        /// how many candidacies they have. Inner particles are black.
+        /// </summary>
         private void UpdateColor()
         {
             if (numBoundaries.GetCurrentValue() == 0)
@@ -292,11 +306,14 @@ namespace AS2.Algos.SubroutineTest
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(int numParticles = 100, float holeProb = 0.1f, bool fillHoles = false, bool prioritizeInner = true, float lambda = 0.1f)
+        public void Generate(int numParticles = 100, float holeProb = 0.1f, bool fillHoles = false, bool prioritizeInner = true, float lambda = 0.1f, int kappa = 3)
         {
-            // The parameters of the Init() method can be set as particle attributes here
+            InitializationParticle p;
             foreach (Vector2Int pos in GenerateRandomConnectedPositions(Vector2Int.zero, numParticles, holeProb, fillHoles, null, false, prioritizeInner, lambda))
-                AddParticle(pos);
+            {
+                p = AddParticle(pos);
+                p.SetAttribute("kappa", kappa);
+            }
         }
     }
 

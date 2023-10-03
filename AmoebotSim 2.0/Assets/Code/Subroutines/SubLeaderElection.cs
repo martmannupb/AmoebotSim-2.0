@@ -18,7 +18,7 @@ namespace AS2.Subroutines.LeaderElection
     /// </para>
     /// <para>
     /// The sequence of calls should be as follows:<br/>
-    /// <see cref="Init(int, int)"/> to initialize the subroutine.<br/>
+    /// <see cref="Init(int, bool, int, bool)"/> to initialize the subroutine.<br/>
     /// Then, in the beep activation: <see cref="ActivateReceive"/>
     /// with the current pin configuration so that beeps can be received,
     /// followed by <see cref="ActivateSend"/> with a pin configuration that
@@ -103,13 +103,28 @@ namespace AS2.Subroutines.LeaderElection
             finished = algo.CreateAttributeBool(FindValidAttributeName("[LE] Finished"), false);
         }
 
-        public void Init(int partitionSet, bool controlColor = false, int kappa = 3)
+        /// <summary>
+        /// Initializes the subroutine for a new leader election.
+        /// </summary>
+        /// <param name="partitionSet">The index of the partition set used
+        /// to run the leader election. This should always identify the same
+        /// circuit throughout the procedure.</param>
+        /// <param name="controlColor">Whether the subroutine should set
+        /// the particle color according to the leader election.</param>
+        /// <param name="kappa">The number of repetitions of the second
+        /// phase. The more repetitions are made, the lower the chances
+        /// of electing multiple leaders become.</param>
+        /// <param name="startAsCandidate">Whether this participant should
+        /// start the leader election as a candidate. Useful for restricting
+        /// the set of candidates beforehand. Note that it is possible that
+        /// no leader is elected in case there are no candidates to start with.</param>
+        public void Init(int partitionSet, bool controlColor = false, int kappa = 3, bool startAsCandidate = true)
         {
             partitionSetId.SetValue(partitionSet);
             this.controlColor.SetValue(controlColor);
             this.kappa.SetValue(kappa);
 
-            isLeaderCandidate.SetValue(true);
+            isLeaderCandidate.SetValue(startAsCandidate);
             isPhase2Candidate.SetValue(true);
             round.SetValue(-1);
             firstPhase.SetValue(true);
@@ -120,6 +135,15 @@ namespace AS2.Subroutines.LeaderElection
             finished.SetValue(false);
         }
 
+        /// <summary>
+        /// The first half of the beep activation. Must be called
+        /// while the beeps of the previous <see cref="ActivateSend"/> call
+        /// can still be read on the current pin configuration (i.e., the pin
+        /// configuration must not be changed before this method is called).
+        /// It may however be changed after this call, as long as the correct
+        /// pin configuration is planned again before the next <see cref="ActivateSend"/>
+        /// call.
+        /// </summary>
         public void ActivateReceive()
         {
             if (finished.GetCurrentValue() || round.GetCurrentValue() == -1)
@@ -191,6 +215,12 @@ namespace AS2.Subroutines.LeaderElection
                 UpdateColor();
         }
 
+        /// <summary>
+        /// The second half of the beep activation. Must be
+        /// called only when the correct pin configuration has
+        /// been established. The beeps sent by this method
+        /// must be received by the next call of <see cref="ActivateReceive"/>.
+        /// </summary>
         public void ActivateSend()
         {
             if (finished.GetCurrentValue())
@@ -202,8 +232,8 @@ namespace AS2.Subroutines.LeaderElection
 
             if (round.GetCurrentValue() == -1)
             {
-                // First round: Toss coin and send a beep
-                if (TossCoin())
+                // First round: Candidates toss coin and send a beep
+                if (isLeaderCandidate.GetCurrentValue() && TossCoin())
                 {
                     pc.SendBeepOnPartitionSet(partitionSetId.GetCurrentValue());
                 }
@@ -259,6 +289,24 @@ namespace AS2.Subroutines.LeaderElection
                 UpdateColor();
         }
 
+        /// <summary>
+        /// Shorthand for calling <see cref="ActivateReceive"/>
+        /// and then <see cref="ActivateSend"/> for when the pin
+        /// configuration should not be changed inbetween.
+        /// </summary>
+        public override void ActivateBeep()
+        {
+            ActivateReceive();
+            ActivateSend();
+        }
+
+        /// <summary>
+        /// Tosses a fair coin and returns the result.
+        /// Also stores the result in the <see cref="heads"/>
+        /// attribute.
+        /// </summary>
+        /// <returns><c>true</c> if the result was HEADS (probability
+        /// of 1/2), <c>false</c> otherwise.</returns>
         private bool TossCoin()
         {
             bool result = Random.Range(0.0f, 1.0f) <= 0.5f;
@@ -266,6 +314,10 @@ namespace AS2.Subroutines.LeaderElection
             return result;
         }
 
+        /// <summary>
+        /// Updates the particle's color based on the current
+        /// leader election state.
+        /// </summary>
         private void UpdateColor()
         {
             if (isLeaderCandidate.GetCurrentValue())
@@ -281,26 +333,63 @@ namespace AS2.Subroutines.LeaderElection
             }
         }
 
+        /// <summary>
+        /// Checks whether the leader election procedure has finished.
+        /// Once this returns <c>true</c>, no activation method calls
+        /// will change the state of this subroutine.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the leader election
+        /// procedure has terminated.</returns>
         public bool IsFinished()
         {
             return finished.GetCurrentValue();
         }
 
+        /// <summary>
+        /// Checks whether the LE participant represented by this
+        /// subroutine is still a leader candidate.
+        /// </summary>
+        /// <returns><c>true</c> if and only if this participant
+        /// still has a chance of becoming the leader.</returns>
         public bool IsCandidate()
         {
             return !IsFinished() && isLeaderCandidate.GetCurrentValue();
         }
 
+        /// <summary>
+        /// Checks whether the LE participant represented by this
+        /// subroutine is currently a phase 2 candidate. Phase 2
+        /// candidate are independent of leader candidates and are
+        /// reinstated in each iteration of the second phase.
+        /// </summary>
+        /// <returns><c>true</c> if and only if this participant
+        /// is currently a phase 2 candidate and is not still
+        /// running phase 1.</returns>
         public bool IsPhase2Candidate()
         {
             return !IsFinished() && !firstPhase.GetCurrentValue() && isPhase2Candidate.GetCurrentValue();
         }
 
+        /// <summary>
+        /// Checks whether this LE participant has been elected
+        /// as a leader. Note that for small sets of particles
+        /// and a low value of kappa, it is possible that
+        /// multiple participants are elected as leaders.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the leader election
+        /// procedure has terminated and this participant
+        /// is still marked as a leader candidate.</returns>
         public bool IsLeader()
         {
             return IsFinished() && isLeaderCandidate.GetCurrentValue();
         }
 
+        /// <summary>
+        /// Gets the current round counter of the participant.
+        /// See the class documentation for an overview of what
+        /// happens during each round.
+        /// </summary>
+        /// <returns>The current value of the round counter.</returns>
         public int GetRound()
         {
             return round.GetCurrentValue();
