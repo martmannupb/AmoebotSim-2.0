@@ -290,7 +290,7 @@ namespace AS2.Visuals
             float length = vec.magnitude;
             float z;
             if (properties.lineType == PropertyBlockData.LineType.BondHexagonal || properties.lineType == PropertyBlockData.LineType.BondCircular)
-                z = RenderSystem.ZLayer_bonds;
+                z = RenderSystem.zLayer_bonds;
             else
                 z = RenderSystem.zLayer_circuits + zOffset;
             Quaternion q = Quaternion.FromToRotation(Vector2.right, vec);

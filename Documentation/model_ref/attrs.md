@@ -2,16 +2,20 @@
 
 As defined on the [Amoebot model pages](~/amoebot_model/home.md), Amoebot particles are finite state machines.
 This means that the set of possible particle states is finite and the behavior of a particle is defined by transitions between these states.
-While this is sufficient for the theoretical model, it is not convenient for developing and programming algorithms.
+While this is sufficient for the mathematical model, it is not convenient for developing and programming algorithms.
+
 
 
 ## State Representation
 
 In the simulator, we define the *behavior* of a particle using methods in a C# class, as explained on the [Round Simulation reference page](rounds.md).
 The *state* of a particle is defined using *particle attributes*.
-An attribute has a unique name and a data type, and all particles running the same algorithm have the same fixed set of attributes.
+An attribute has a unique name and a data type, and all particles running the same algorithm have the same, fixed set of attributes.
 Thus, the state of a particle is simply the combination of its current attribute values, its [pin configuration](pin_cfgs.md) and its expansion state (technically, its color must also be counted).
 Since the computation of a particle is based on the current state of the system, including the particle's own state, the code in the activation methods implicitly defines the state transitions by computing the next state.
+
+![State represented by attributes](~/images/state_attributes.png "State represented by attributes")
+
 
 
 ## Implementation
@@ -21,7 +25,7 @@ There are subclasses for the types `int`, `bool`, [`Direction`][2], `enum`, `flo
 The subclass for `enum` is generic itself and allows you to have attributes for arbitrary `enum` types.
 [`Direction`][2] is also an `enum` but it has its own attribute type.
 
-As opposed to regular member variables, particle attributes provide several useful features for the simulation.
+As opposed to regular member variables, particle attributes provide several useful features specifically for the simulation.
 To start with, all attributes except those of type [`PinConfiguration`][3] are displayed in the UI's Particle Panel, where their values can be viewed and edited during the simulation.
 In addition to this, the history of each attribute is stored, such that all rounds of the simulation can be reviewed arbitrarily and the simulation can even be restarted from any round by restoring the previous particle states.
 If the state of a particle depends on anything that is not part of the API (like regular member variables), this feature may not work anymore.
@@ -30,10 +34,15 @@ Note that editing attribute values is not possible while reviewing any round oth
 Similarly, particle attributes enable the saving and loading of simulation states because they can be serialized.
 This feature may also break if any non-API state representation is used since that part of the state will not be saved or loaded.
 
+> [!WARNING]
+> The state of a particle should be exclusively defined by attributes and other API fields like the particle's color.
+> Other means of state representation like simple member variables, static members etc. *should not be used* unless you know exactly what you are doing.
+
 Finally, particle attributes provide special access functionality to ensure that particles can work with their own attributes easily while other particles cannot see the changed attribute values in the same round.
-In the theoretical model, all particles are activated simultaneously and their computations are based on the system state at the beginning of the round.
+In the mathematical model, all particles are activated simultaneously and their computations are based on the system state at the beginning of the round.
 In the simulator, the particles are activated sequentially, which means that the system state already changes before all particles have been activated.
 The particle attributes ensure that reading another particle's attribute values always results in their *old* values from the beginning of the round, even if that particle has already changed its attributes internally.
+
 
 ### Using Particle Attributes
 
@@ -94,6 +103,11 @@ public override void ActivateMove()
     myIntAttr.SetValue(17);               // Update attribute value
     int i2 = myIntAttr;                   // i2 = 42 (value from the beginning of the round)
     int i3 = myIntAttr.GetCurrentValue(); // i3 = 17 (updated value)
+
+    // Read neighbor particle's attribute value
+    MyAlgoParticle nbr = (MyAlgoParticle)GetNeighborAt(Direction.E); // Find a neighbor
+    int i4 = nbr.myIntAttr; // i4 = 42 (value from the beginning of the round)
+    int i5 = nbr.myIntAttr.GetCurrentValue(); // Not allowed! Leads to exception
 }
 ```
 

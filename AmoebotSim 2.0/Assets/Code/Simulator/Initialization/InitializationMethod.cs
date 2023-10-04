@@ -23,6 +23,89 @@ namespace AS2
         /// </summary>
         private AS2.Sim.ParticleSystem system;
 
+        private class DistanceSortedVectorList
+        {
+            private List<Vector2Int> list;
+            private Vector2Int center;
+
+            public DistanceSortedVectorList(Vector2Int center)
+            {
+                list = new List<Vector2Int>();
+                this.center = center;
+            }
+
+            public Vector2Int this[int index]
+            {
+                get { return list[index]; }
+            }
+
+            public void Clear()
+            {
+                list.Clear();
+            }
+
+            public int Count
+            {
+                get { return list.Count; }
+            }
+
+            public void Remove(Vector2Int v)
+            {
+                list.Remove(v);
+            }
+
+            public void RemoveAt(int index)
+            {
+                list.RemoveAt(index);
+            }
+
+            public bool Contains(Vector2Int v)
+            {
+                return list.Contains(v);
+            }
+
+            public void Add(Vector2Int v)
+            {
+                // Empty list: Just add the new vector
+                if (list.Count == 0)
+                {
+                    list.Add(v);
+                    return;
+                }
+
+                // Check if new vector can be added at the front or the back
+                int distNew = ParticleSystem_Utils.GridDistance(v, center);
+                int distFirst = ParticleSystem_Utils.GridDistance(list[0], center);
+                int distLast = ParticleSystem_Utils.GridDistance(list[list.Count - 1], center);
+                if (distNew < distFirst)
+                {
+                    list.Insert(0, v);
+                    return;
+                }
+                else if (distNew >= distLast)
+                {
+                    list.Add(v);
+                    return;
+                }
+
+                // New vector cannot be added at front or back, use binary search to find correct location
+                int left = 0;
+                int right = list.Count - 1;
+                int middle;
+                int distMiddle;
+                while (left < right - 1)
+                {
+                    middle = (left + right) / 2;
+                    distMiddle = ParticleSystem_Utils.GridDistance(list[middle], center);
+                    if (distNew < distMiddle)
+                        right = middle;
+                    else
+                        left = middle;
+                }
+                list.Insert(right, v);
+            }
+        }
+
         public InitializationMethod(AS2.Sim.ParticleSystem system)
         {
             this.system = system;
@@ -67,7 +150,7 @@ namespace AS2
         }
 
         /// <summary>
-        /// Removes the <see cref="InitializationParticle"/> at the given position.
+        /// Removes the <see cref="AS2.Sim.InitializationParticle"/> at the given position.
         /// </summary>
         /// <param name="position">The grid position from which a particle should
         /// be removed. If an expanded particle occupies this position, its other
@@ -142,6 +225,33 @@ namespace AS2
         }
 
         /// <summary>
+        /// Creates a new object occupying the given position.
+        /// When the object is finished, submit it to the system
+        /// by calling <see cref="AddObjectToSystem(ParticleObject)"/>.
+        /// </summary>
+        /// <param name="pos">The first grid position occupied
+        /// by the new object.</param>
+        /// <param name="identifier">The identifier of the new object.
+        /// Does not have to be unique.</param>
+        /// <returns>A new object with the given <paramref name="identifier"/>
+        /// occupying the given position <paramref name="pos"/>.</returns>
+        public ParticleObject CreateObject(Vector2Int pos, int identifier = 0)
+        {
+            return new ParticleObject(pos, system, identifier);
+        }
+
+        /// <summary>
+        /// Adds a copy of the given object <paramref name="o"/> to
+        /// the system. Note that you cannot make any changes to an
+        /// object once it has been added to the system.
+        /// </summary>
+        /// <param name="o">The object to be added.</param>
+        public void AddObjectToSystem(ParticleObject o)
+        {
+            system.AddObject(o.Copy());
+        }
+
+        /// <summary>
         /// Generates a system with a fixed number of particles using a
         /// randomized breadth-first-search algorithm that leaves out some
         /// positions to insert holes. It is guaranteed that the desired
@@ -162,72 +272,447 @@ namespace AS2
             if (numParticles < 1)
                 return;
 
-            int n = 1;
-            // Always start by adding a particle at position (0, 0)
-            List<Vector2Int> candidates = new List<Vector2Int>();
-            Vector2Int node = new Vector2Int(0, 0);
-            AddParticle(node, Direction.NONE, chirality, compassDir);
+            List<Vector2Int> positions = GenerateRandomConnectedPositions(Vector2Int.zero, numParticles, holeProb);
+            foreach (Vector2Int pos in positions)
+            {
+                AddParticle(pos, Direction.NONE, chirality, compassDir);
+            }
 
-            for (int d = 0; d < 6; d++)
-                candidates.Add(ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d)));
+            return;
+        }
+
+        /// <summary>
+        /// Randomly generates a set of connected grid positions
+        /// according to the given constraints.
+        /// <para>
+        /// The algorithm performs a breadth-first search starting at the
+        /// given <paramref name="startPos"/>. In each iteration, one of
+        /// the open neighbors is chosen randomly to place a position or
+        /// mark a position as a hole. If there are no more open neighbor
+        /// positions, one of the marked hole positions is chosen instead.
+        /// Before placing a new position, it is checked whether doing this
+        /// would close an inner boundary in case this is not allowed.
+        /// </para>
+        /// </summary>
+        /// <param name="startPos">The start position of the shape. This
+        /// position is always part of the resulting set, even if it should
+        /// be excluded.</param>
+        /// <param name="numPositions">The desired number of grid positions
+        /// in the generated set.</param>
+        /// <param name="holeProb">The probability of a random candidate position
+        /// selected to be kept unoccupied.</param>
+        /// <param name="fillHoles">If <c>true</c>, the system of positions
+        /// is not allowed to have inner boundaries.</param>
+        /// <param name="excludeFunc">A function that marks grid positions
+        /// as excluded such that no excluded position is contained in
+        /// the resulting set. Note that it is possible that the resulting set
+        /// is smaller than desired if there is not enough room for all positions.</param>
+        /// <param name="allowExcludedHoles">If <paramref name="fillHoles"/>
+        /// is <c>true</c>, this controls whether inner boundaries that
+        /// surround empty regions containing excluded positions are allowed.</param>
+        /// <param name="prioritizeInner">If <c>true</c>, new positions are not
+        /// selected uniformly at random from the set of candidate locations, but
+        /// using an exponential distribution that prioritizes positions close to
+        /// the <paramref name="startPos"/>.</param>
+        /// <param name="lambda">The lambda parameter of the exponential distribution
+        /// if <paramref name="prioritizeInner"/> is <c>true</c>. Larger values
+        /// lead to a stronger bias towards positions close to <paramref name="startPos"/>.
+        /// Very small values can lead to a bias towards positions further away.</param>
+        /// <returns>A list of grid positions forming a connected system according
+        /// to the specified constraints.</returns>
+        public List<Vector2Int> GenerateRandomConnectedPositions(Vector2Int startPos, int numPositions, float holeProb = 0.3f,
+            bool fillHoles = false, System.Func<Vector2Int, bool> excludeFunc = null, bool allowExcludedHoles = true,
+            bool prioritizeInner = false, float lambda = 0.1f)
+        {
+            List<Vector2Int> positions = new List<Vector2Int>();
+
+            if (numPositions < 1)
+                return positions;
+
+            int n = 1;
+            // Always start by adding the start position
+            DistanceSortedVectorList candidates = new DistanceSortedVectorList(startPos);
+            Vector2Int node = startPos;
+            positions.Add(node);
 
             HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();       // Occupied by particles
-            HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Reserved for holes
+            HashSet<Vector2Int> holes = new HashSet<Vector2Int>();          // Reserved for holes
+            HashSet<Vector2Int> excluded = new HashSet<Vector2Int>();       // Excluded from available positions by exclude function
             occupied.Add(node);
 
-            int numExcludedChosen = 0;
-
-            while (n < numParticles)
+            // Collect the start position's neighbors
+            for (int d = 0; d < 6; d++)
             {
-                // Find next position
-                Vector2Int newPos = Vector2Int.zero;
-                bool choseExcluded = false;
-                if (candidates.Count > 0)
-                {
-                    int randIdx = Random.Range(0, candidates.Count);
-                    newPos = candidates[randIdx];
-                    candidates.RemoveAt(randIdx);
-                }
+                Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(d));
+                if (excludeFunc == null || !excludeFunc(nbr))
+                    candidates.Add(nbr);
                 else
+                    excluded.Add(nbr);
+            }
+
+            // Mechanism for checking whether the placement is blocked
+            int numIterationsBeforeCheck = numPositions / 10 + 1;           // Number of iterations without placement until block is checked
+            int numIterationsWithoutChange = 0;
+            bool somethingChanged;
+
+            while (n < numPositions)
+            {
+                somethingChanged = false;
+                Vector2Int newPos = Vector2Int.zero;
+                bool bruteForcedPos = false;
+                bool foundNewPos = false;
+                bool choseHole = false;
+
+                // If nothing has changed for too long: Check if any position is eligible at all
+                if (numIterationsWithoutChange >= numIterationsBeforeCheck)
                 {
-                    // Choose random excluded position
-                    int randIdx = Random.Range(0, excluded.Count);
-                    int i = 0;
-                    foreach (Vector2Int v in excluded)
+                    // First check candidates
+                    for (int i = 0; i < candidates.Count; i++)
                     {
-                        if (i == randIdx)
+                        Vector2Int pos = candidates[i];
+                        if (!IsPositionHoleOpening(pos, occupied, excludeFunc, allowExcludedHoles))
                         {
-                            newPos = v;
+                            newPos = pos;
+                            foundNewPos = true;
+                            candidates.RemoveAt(i);
                             break;
                         }
-                        i++;
                     }
-                    numExcludedChosen++;
-                    excluded.Remove(newPos);
-                    choseExcluded = true;
+
+                    // Then check hole positions if necessary
+                    if (!foundNewPos)
+                    {
+                        foreach (Vector2Int pos in holes)
+                        {
+                            if (!IsPositionHoleOpening(pos, occupied, excludeFunc, allowExcludedHoles))
+                            {
+                                newPos = pos;
+                                foundNewPos = true;
+                                choseHole = true;
+                                break;
+                            }
+                        }
+                        if (foundNewPos)
+                            holes.Remove(newPos);
+                    }
+
+                    // If we still have not found a suitable position, abort
+                    if (!foundNewPos)
+                    {
+                        Log.Warning("Could not place " + numPositions + " positions due to placement restrictions. Only placed " + positions.Count);
+                        return positions;
+                    }
+                    bruteForcedPos = true;
                 }
 
-                // Either use newPos to insert particle or to insert hole
-                if (choseExcluded || Random.Range(0.0f, 1.0f) >= holeProb)
+                // Decide whether to place position or hole
+                bool placePosition = foundNewPos && choseHole
+                    || !foundNewPos && candidates.Count == 0 || Random.Range(0.0f, 1.0f) >= holeProb;
+
+                if (placePosition)
                 {
-                    for (int d = 0; d < 6; d++)
+                    // Select a random position if none has been selected yet
+                    if (!foundNewPos)
                     {
-                        Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
-                        if (!occupied.Contains(nbr) && !excluded.Contains(nbr) && !candidates.Contains(nbr))
-                            candidates.Add(nbr);
+                        if (candidates.Count > 0)
+                        {
+                            int randIdx;
+                            if (prioritizeInner)
+                            {
+                                randIdx = Mathf.RoundToInt(-Mathf.Log(Random.Range(0.00001f, 1f)) / lambda);
+                                randIdx = Mathf.Clamp(randIdx, 0, candidates.Count - 1);
+                            }
+                            else
+                                randIdx = Random.Range(0, candidates.Count);
+                            newPos = candidates[randIdx];
+                            candidates.RemoveAt(randIdx);
+                            foundNewPos = true;
+                        }
+                        else if (holes.Count > 0)
+                        {
+                            // Choose random hole position
+                            int randIdx = Random.Range(0, holes.Count);
+                            int i = 0;
+                            foreach (Vector2Int v in holes)
+                            {
+                                if (i == randIdx)
+                                {
+                                    newPos = v;
+                                    break;
+                                }
+                                i++;
+                            }
+                            holes.Remove(newPos);
+                            choseHole = true;
+                            foundNewPos = true;
+                        }
+                        else
+                        {
+                            // No holes or candidates to choose from, jump to next blockade check
+                            numIterationsWithoutChange = numIterationsBeforeCheck;
+                            continue;
+                        }
                     }
 
-                    AddParticle(newPos, Direction.NONE, chirality, compassDir);
+                    // Check if the position is allowed if it has not been brute forced anyway
+                    bool permissible = true;
+                    if (!bruteForcedPos && fillHoles)
+                    {
+                        if (IsPositionHoleOpening(newPos, occupied, excludeFunc, allowExcludedHoles))
+                        {
+                            permissible = false;
+                            // Position is not allowed, return it to where it was before
+                            if (choseHole)
+                                holes.Add(newPos);
+                            else
+                                candidates.Add(newPos);
+                        }
+                    }
 
-                    occupied.Add(newPos);
-                    n++;
+                    if (permissible)
+                    {
+                        // Add available neighbors to candidates
+                        for (int d = 0; d < 6; d++)
+                        {
+                            Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(newPos, DirectionHelpers.Cardinal(d));
+                            if (!occupied.Contains(nbr) && !holes.Contains(nbr) && !candidates.Contains(nbr) && !excluded.Contains(nbr))
+                            {
+                                // First check if the position should be excluded
+                                if (excludeFunc != null && excludeFunc(nbr))
+                                    excluded.Add(nbr);
+                                else
+                                    candidates.Add(nbr);
+                            }
+                        }
+
+                        positions.Add(newPos);
+                        occupied.Add(newPos);
+                        n++;
+                        somethingChanged = true;
+                    }
                 }
                 else
                 {
-                    excluded.Add(newPos);
+                    // Want to place a hole, simply select random candidate position
+                    // if none has been chosen yet
+                    if (!foundNewPos)
+                    {
+                        int idx = Random.Range(0, candidates.Count);
+                        newPos = candidates[idx];
+                        candidates.RemoveAt(idx);
+                    }
+                    holes.Add(newPos);
+                    somethingChanged = true;
+                }
+
+                if (!somethingChanged)
+                    numIterationsWithoutChange++;
+                else
+                    numIterationsWithoutChange = 0;
+            }
+
+            return positions;
+        }
+
+        /// <summary>
+        /// Random placement helper that checks whether placing a position
+        /// would close an inner boundary that should not be closed.
+        /// </summary>
+        /// <param name="pos">The new position to be placed.</param>
+        /// <param name="occupied">The set of already occupied positions.</param>
+        /// <param name="excludeFunc">A function marking some grid nodes as excluded.</param>
+        /// <param name="allowExcludedHoles">Determines whether inner boundaries around
+        /// empty regions that contain excluded positions are allowed.</param>
+        /// <returns><c>true</c> if and only if placing <paramref name="pos"/> would
+        /// close an inner boundary that should not be closed.</returns>
+        private bool IsPositionHoleOpening(Vector2Int pos, HashSet<Vector2Int> occupied,
+            System.Func<Vector2Int, bool> excludeFunc, bool allowExcludedHoles)
+        {
+            // Go around the position and count the number of switches between
+            // occupied and unoccupied neighbors
+            // If the number of switches is greater than 2, the position is a tunnel opening
+            // and occupying it would create a hole
+            // (The number of switches is always even, 0 and 2 switches are allowed,
+            // 4 or more are not allowed)
+            // If a neighbor position is excluded and excluded holes are allowed, the position
+            // inherits the state of its predecessor ()
+            Vector2Int[] nbrs = new Vector2Int[6];
+            bool[] nbrOccupied = new bool[6];
+            for (int d = 0; d < 6; d++)
+            {
+                Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(pos, DirectionHelpers.Cardinal(d));
+                nbrs[d] = nbr;
+                nbrOccupied[d] = occupied.Contains(nbr);
+            }
+            // Find excluded holes if applicable
+            bool[] isExcluded = new bool[6];
+            int numExcluded = 0;
+            if (allowExcludedHoles && excludeFunc != null)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    isExcluded[i] = excludeFunc(nbrs[i]);
+                    if (isExcluded[i])
+                        numExcluded++;
                 }
             }
-            Log.Debug("Created system with " + n + " particles, had to choose " + numExcludedChosen + " excluded positions");
+
+            // Now count the number of switches
+            int numSwitches = 0;
+            for (int i = 0; i < 6; i++)
+            {
+                if (nbrOccupied[i] != nbrOccupied[(i + 1) % 6])
+                    numSwitches++;
+            }
+
+            // If we have a hole situation: Check whether closing the hole is
+            // allowed due to excluded positions
+            if (numSwitches > 2 && allowExcludedHoles && excludeFunc != null)
+            {
+                // First compute the bounding rect of the occupied shape
+                int xMin = pos.x;
+                int xMax = pos.x;
+                int yMin = pos.y;
+                int yMax = pos.y;
+                foreach (Vector2Int v in occupied)
+                {
+                    if (v.x < xMin)
+                        xMin = v.x;
+                    else if (v.x > xMax)
+                        xMax = v.x;
+                    if (v.y < yMin)
+                        yMin = v.y;
+                    else if (v.y > yMax)
+                        yMax = v.y;
+                }
+                xMin -= 2;
+                xMax += 2;
+                yMin -= 2;
+                yMax += 2;
+                Vector2Int topLeft = new Vector2Int(xMin, yMax);
+                Vector2Int topRight = new Vector2Int(xMax, yMax);
+                Vector2Int botLeft = new Vector2Int(xMin, yMin);
+                Vector2Int botRight = new Vector2Int(xMax, yMin);
+
+                // Find all openings that do not contain an excluded position and
+                // perform a search in each of them: If the search reaches an
+                // excluded position or a position outside of the occupied shape,
+                // the hole may be closed
+
+                // First find the start indices of the openings and determine whether or not they
+                // contain excluded positions
+                int startIdx = -1;
+                for (int i = 0; i < 6; i++)
+                {
+                    if (!nbrOccupied[i] && nbrOccupied[(i + 5) % 6])
+                    {
+                        startIdx = i;
+                        break;
+                    }
+                }
+                int holeIndex = -1;
+                int[] startIndices = new int[3];
+                bool[] hasExcluded = new bool[3];
+                for (int i = 0; i < 6; i++)
+                {
+                    int idx = (startIdx + i) % 6;
+                    if (!nbrOccupied[idx] && nbrOccupied[(idx + 5) % 6])
+                    {
+                        // A hole starts here
+                        holeIndex++;
+                        startIndices[holeIndex] = idx;
+                    }
+                    // This works because the first idx already starts a hole region
+                    if (isExcluded[idx])
+                        hasExcluded[holeIndex] = true;
+                }
+
+                // Now perform a search for each of the hole openings
+                for (int i = 0; i <= holeIndex; i++)
+                {
+                    if (!hasExcluded[i])
+                    {
+                        // Get the start node and find out which of the corner nodes is the closest
+                        Vector2Int startNode = nbrs[startIndices[i]];
+                        int distTL = ParticleSystem_Utils.GridDistance(startNode, topLeft);
+                        int distTR = ParticleSystem_Utils.GridDistance(startNode, topRight);
+                        int distBL = ParticleSystem_Utils.GridDistance(startNode, botLeft);
+                        int distBR = ParticleSystem_Utils.GridDistance(startNode, botRight);
+                        int minDist = Mathf.Min(distTL, distTR, distBL, distBR);
+                        Vector2Int goalNode;
+                        if (distTL == minDist)
+                            goalNode = topLeft;
+                        else if (distTR == minDist)
+                            goalNode = topRight;
+                        else if (distBL == minDist)
+                            goalNode = botLeft;
+                        else
+                            goalNode = botRight;
+
+                        if (!HoleValidSearch(startNode, goalNode, pos, occupied, excludeFunc))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                // If all openings are fine, the hole may be closed
+                return false;
+            }
+
+            return numSwitches > 2;
+        }
+
+        /// <summary>
+        /// Random placement helper that checks whether a hole that
+        /// would be closed by placing a new position is allowed or not.
+        /// Uses a BFS to search for a goal node that is a corner of the
+        /// occupied system's bounding box or for any excluded position.
+        /// </summary>
+        /// <param name="startNode">The node from which the search
+        /// should be started.</param>
+        /// <param name="goalNode">The closest corner of the occupied
+        /// system's bounding rectangle. If the search ever visits this
+        /// position's x or y coordinate, the hole is considered to be
+        /// open to the outer boundary.</param>
+        /// <param name="openingPos">The grid node where the new position
+        /// should be placed, used to limit the search to this side of
+        /// the hole.</param>
+        /// <param name="occupied">The set of occupied positions.</param>
+        /// <param name="excludeFunc">The function that marks positions
+        /// as excluded. Must not be <c>null</c>.</param>
+        /// <returns><c>true</c> if and only if the search reaches the
+        /// bounding rectangle of the occupied system or an excluded node.</returns>
+        private bool HoleValidSearch(Vector2Int startNode, Vector2Int goalNode, Vector2Int openingPos,
+            HashSet<Vector2Int> occupied, System.Func<Vector2Int, bool> excludeFunc)
+        {
+            // Start BFS at start node, searching for goal node or excluded position
+            // If no goal or excluded position is found, return false
+            Queue<Vector2Int> queue = new Queue<Vector2Int>();
+            HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+            queue.Enqueue(startNode);
+            visited.Add(startNode);
+            visited.Add(openingPos);
+
+            while (queue.Count > 0)
+            {
+                Vector2Int node = queue.Dequeue();
+                // Goal is reached if we are at the same x or y level as the goal node
+                // (goal is corner of the bounding rect) or the node is excluded
+                if (node.x == goalNode.x || node.y == goalNode.y || excludeFunc(node))
+                    return true;
+
+                for (int i = 0; i < 6; i++)
+                {
+                    Vector2Int nbr = ParticleSystem_Utils.GetNbrInDir(node, DirectionHelpers.Cardinal(i));
+                    if (!visited.Contains(nbr) && !occupied.Contains(nbr))
+                    {
+                        visited.Add(nbr);
+                        queue.Enqueue(nbr);
+                    }
+                }
+            }
+
+            return false;
         }
     }
 

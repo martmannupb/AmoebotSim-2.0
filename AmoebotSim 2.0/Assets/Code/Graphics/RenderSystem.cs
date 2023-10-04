@@ -91,12 +91,20 @@ namespace AS2.Visuals
         /// Width of bond lines in graph view mode.
         /// </summary>
         public const float const_bondsLineWidthCirc = 0.15f;
+        /// <summary>
+        /// The fraction of the hexagon size that the borders
+        /// of object meshes should have. Should be at most 1.
+        /// </summary>
+        public const float const_objectIndentFactor = 0.9f;
+
         // Layers
         // The z layers of the objects determine how they are ordered
         // Smaller z layers are in front of larger ones
         // The camera is at z layer -10, everything below that will not be visible
         public const float zLayer_background = 10f;
-        public const float ZLayer_bonds = 9f;
+        public const float zLayer_bonds = 9f;
+        public const float zLayer_object_ui = 8.75f;
+        public const float zLayer_objects = 8.5f;
         public const float zLayer_particles = 8f;
         public const float zLayer_circuits = 7f;
         public const float zLayer_pins = 6f;
@@ -112,6 +120,8 @@ namespace AS2.Visuals
         // queue priority as pins
         public static readonly int renderQueue_background = 2800;
         public static readonly int renderQueue_bonds = 2820;
+        public static readonly int renderQueue_object_ui = 2825;
+        public static readonly int renderQueue_objects = 2830;
         public static readonly int renderQueue_particles = 2840;
         public static readonly int renderQueue_circuits = 2860;
         public static readonly int renderQueue_circuitBeeps = 2870;
@@ -261,6 +271,10 @@ namespace AS2.Visuals
         /// The UI overlay renderer.
         /// </summary>
         public RendererUI rendererUI;
+        /// <summary>
+        /// The object renderer.
+        /// </summary>
+        public RendererObjects rendererObj;
 
 
         public RenderSystem(AmoebotSimulator sim, InputController inputController)
@@ -268,6 +282,7 @@ namespace AS2.Visuals
             rendererBG = new RendererBackground();
             rendererP = new RendererParticles();
             rendererUI = new RendererUI(sim, inputController);
+            rendererObj = new RendererObjects();
         }
 
         /// <summary>
@@ -281,6 +296,7 @@ namespace AS2.Visuals
             // Render
             rendererBG.Render(setting_viewType);
             rendererP.Render(setting_viewType);
+            rendererObj.Render();
             rendererUI.Render(setting_viewType);
 
             // Reset Round Flag

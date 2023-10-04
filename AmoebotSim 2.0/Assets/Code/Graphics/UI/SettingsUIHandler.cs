@@ -38,6 +38,7 @@ namespace AS2.UI
         private const string settingName_compassOvArrows = "Compass Ov. Arrows";
         private const string settingName_circuitBorder = "Circuit Border";
         private const string settingName_circularRing = "Circular Ring";
+        private const string settingName_toggleTooltips = "Tooltips";
 
         private void Start()
         {
@@ -102,6 +103,14 @@ namespace AS2.UI
             // Fullscreen
             UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, false);
             setting_fullscreen.onValueChangedEvent += SettingChanged_Toggle;
+
+            // Header: Other
+            UISetting_Spacing setting_spacing2 = new UISetting_Spacing(null, settingsParent.transform, "Spacing2");
+            UISetting_Header setting_header_other = new UISetting_Header(null, settingsParent.transform, "Other");
+
+            // Tooltips On/Off
+            UISetting_Toggle setting_tooltipsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_toggleTooltips, true);
+            setting_tooltipsOnOff.onValueChangedEvent += SettingChanged_Toggle;
         }
 
         /// <summary>
@@ -203,6 +212,9 @@ namespace AS2.UI
                     break;
                 case settingName_cameraPosWorldOrGrid:
                     ToggleCamPositionWorldGrid(isOn);
+                    break;
+                case settingName_toggleTooltips:
+                    TooltipHandler.Instance.Enabled = isOn;
                     break;
                 default:
                     break;

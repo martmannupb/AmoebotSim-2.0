@@ -1,3 +1,5 @@
+using System;
+
 
 namespace AS2.Sim
 {
@@ -40,7 +42,7 @@ namespace AS2.Sim
     /// </para>
     /// </summary>
     /// <typeparam name="T">The type of values the attribute stores.</typeparam>
-    public abstract class ParticleAttribute<T> : ParticleAttributeBase
+    public abstract class ParticleAttribute<T> : ParticleAttributeBase, IEquatable<ParticleAttribute<T>>
     {
         public ParticleAttribute(Particle particle, string name) : base(particle, name) { }
 
@@ -75,6 +77,33 @@ namespace AS2.Sim
         /// </summary>
         /// <param name="value">The new value assigned to this attribute.</param>
         public abstract void SetValue(T value);
+
+        // Comparison methods
+
+        public abstract bool Equals(ParticleAttribute<T> other);
+
+        public override bool Equals(object obj)
+        {
+            return obj is ParticleAttribute<T> && Equals(obj as ParticleAttribute<T>);
+        }
+
+        public static bool operator==(ParticleAttribute<T> a1, ParticleAttribute<T> a2)
+        {
+            return a1 is not null && a1.Equals(a2);
+        }
+
+        public static bool operator !=(ParticleAttribute<T> a1, ParticleAttribute<T> a2)
+        {
+            return !(a1 == a2);
+        }
+
+        // This should probably never be used
+        // (Not recommended to use attribute instances as keys in data structures)
+
+        public override int GetHashCode()
+        {
+            return GetValue().GetHashCode();
+        }
 
         public static implicit operator T(ParticleAttribute<T> attr) => attr.GetValue();
     }

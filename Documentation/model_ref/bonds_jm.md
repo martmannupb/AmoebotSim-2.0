@@ -1,7 +1,8 @@
 # Model Reference: Bonds and Joint Movements
 
 This page explains how movements in general and *joint movements* in particular are implemented in the simulation environment.
-Please refer to the [Joint Movement Extension](~/amoebot_model/jm.md) page for details on the theoretical model.
+Please refer to the [Joint Movement Extension](~/amoebot_model/jm.md) page for details on the mathematical model.
+
 
 
 ## Bonds
@@ -15,9 +16,13 @@ It is enough for one of the two bonded particles to release the bond, but it is 
 After all particles have been activated, the released bonds are removed and the scheduled movements are performed with the remaining bonds.
 Finally, new bonds are created for the new positions of the particles and the process repeats in the next round (after the beep phase).
 
+![Bonds in the simulator](~/images/bonds_vis.png "Bonds in the simulator")
+In the simulator, bonds are visualized as light red lines between the particles.
+
 The graph induced by the bonds and particles must remain connected at all times.
 If it becomes disconnected during the simulation, the round will be aborted and an error message will be logged.
 In a real, physical environment, a disconnection like this could cause the particles to be separated from each other without any chance of connecting again.
+
 
 ### Movements
 
@@ -31,7 +36,7 @@ In a contraction, it can be either the head or the tail that moves.
 The bonds of a moving particle behave according to the part they are connected to and the following rules:
 - By default, a bond connected to the stationary part never moves relative to that part.
 - In a contraction movement, the active bonds at the moving part are pulled towards the stationary part and connect to it at the end of the movement.
-	If there are no other conflicts, a bond of the moving part can merge into a bond of the stationary part that lies on the destination edge of the moving bond.
+	If there are no other conflicts, a bond of the moving part can merge into a bond of the stationary part that lies on the destination edge of the moving bond (see Figure 2c on the [Joint Movements page](~/amoebot_model/jm.md)).
 - If the particle expands, it can *mark* some of its bonds to move with its head.
 	Unmarked bonds will simply stay at the particle's tail.
 	The bond pointing directly in the expansion direction will always move with the head and the bond exactly opposite of the expansion direction will always stay at the tail.
@@ -44,6 +49,39 @@ The bonds of a moving particle behave according to the part they are connected t
 > When a bond "moves" or "stays" relative to the stationary part of a particle, this means that the
 > part of the neighboring particle at the other end of the bond behaves the same way. It is possible
 > that the movement of this bond is interpreted differently from the neighbor particle's perspective.
+
+
+### Illustration
+
+The animations below illustrate the movement types.
+
+<img src="~/images/jm_expansion.gif" alt="Expansion animation" title="Expansion animation" width="350" align="right"/>
+This is the basic expansion movement, it shows the head of the expanding particle moving in the East (E) direction.
+The bond in the NNE direction is marked, meaning that it moves together with the expanding particle's head.
+The bond in the expansion direction (E) is always marked automatically because it cannot stay at the particle's tail without a conflict.
+The bond in the West (W) direction, which is the opposite of the expansion direction, can never be marked for the same reason.
+
+<br style="clear:both" />
+
+-----
+
+<img src="~/images/jm_contraction.gif" alt="Contraction animation" title="Contraction animation" width="350" align="right"/>
+This animation shows the basic contraction movement.
+The green particle contracts and pulls all bonded neighbors of the moving part with it.
+It could be contracting into its head or into its tail - note that the resulting system is the same in both cases, up to a translation of one unit on the global grid.
+
+<br style="clear:both" />
+
+-----
+
+<img src="~/images/jm_handover.gif" alt="Handover animation" title="Handover animation" width="350" align="right"/>
+Finally, this animation illustrates the handover movement.
+The blue particle performs a push handover while the green particle performs a pull handover.
+All bonds other than the one connecting the two moving particles maintain their relative position to the moving particles' stationary parts.
+This means that the bond in the NNW direction is transferred from the green to the blue particle.
+
+<br style="clear:both" />
+
 
 ### Joint Movements
 
@@ -68,6 +106,19 @@ However, no particle in the system is able to know the difference because the pa
 This system only has the purpose of making the outcome of a joint movement uniquely defined.
 In some cases, it may also be used to create a specific visualization by changing the anchor during the simulation.
 
+<img src="~/images/expansion_1.gif" alt="Expansion with anchor left" title="Expansion with anchor left" height="175"/> <img src="~/images/expansion_2.gif" alt="Expansion with anchor right" title="Expansion with anchor right" height="175"/>
+
+In the two animations above, all three particles perform an expansion in the East (E) direction.
+The only difference between the two cases is that in the left case, the leftmost particle is the anchor (marked in green) and in the right case, the rightmost particle is the anchor.
+On the right side, it might look like two of the particles are expanding in the West (W) direction, but this is only due to the joint movement.
+From their local views, they are pushing their neighbors away while expanding their head in the East (E) direction.
+
+> [!NOTE]
+> As of version 1.5 of the simulation environment, an [object](~/model_ref/objects.md) can also become the anchor of the system.
+> Marking the anchor object in the UI works similarly by selecting the object and clikcing the small anchor button.
+> Particles neighboring an object also have the ability to turn the object into the anchor programmatically.
+
+
 ### Conflicts
 
 If movements are not coordinated properly, *movement conflicts* can occur.
@@ -75,15 +126,16 @@ The simplest kind of conflict is caused by multiple particles moving onto the sa
 This can happen if two particles expand onto the same node or if a particle is pushed into another one, even without moving on its own.
 
 Other conflicts are caused by the bonds of neighboring particles not agreeing with their individual movements.
-For example, if two expanded particles are connected by three bonds and one of them tries to contract, its own bonds would try crossing each other, which is not allowed.
+For example, if two expanded particles are connected by three bonds and one of them tries to contract, its own bonds would try crossing each other, which is not allowed (see Figure 2e on the [Joint Movements page](~/amoebot_model/jm.md)).
 In a similar situation where there are only two bonds between the two expanded particles, such that each of them has one bond at its head and one at its tail, it is impossible for one of them to contract while the other one stays expanded.
 
 Any conflict of these types will cause the round simulation to be aborted.
 In any algorithm that uses particle movements, it is essential that movement conflicts are prevented since the particles cannot react to them when they occur.
 
 > [!NOTE]
-> "Conflicts" that arise from particles moving through each other (but not necessarily ending up in an invalid position) are not handled by the system yet.
+> "Collisions" that arise from particles moving through each other (but not necessarily ending up in an invalid position) are not handled by the system yet.
 > However, this kind of conflict should also be avoided because such movements would not be possible in a physical environment.
+
 
 
 ## Implementation

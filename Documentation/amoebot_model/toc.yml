@@ -1,4 +1,4 @@
-- name: Amoebot Basics
+- name: Geometric Amoebot Model
   href: basics.md
 - name: Reconfigurable Circuits
   href: circuits.md

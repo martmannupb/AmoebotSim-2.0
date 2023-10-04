@@ -68,7 +68,11 @@ namespace AS2
                     defaultName = this.defaultName;
                 if (directory.Equals("") && !lastDir.Equals(""))
                     directory = lastDir;
+#if (UNITY_EDITOR_LINUX || UNITY_STANDALONE_LINUX)
+                string path = StandaloneFileBrowser.SaveFilePanel(title, directory, defaultName + "." + fileExt, "");
+#else
                 string path = StandaloneFileBrowser.SaveFilePanel(title, directory, defaultName, fileExt);
+#endif
                 UpdateLastDir(path);
                 return path;
             }
@@ -85,7 +89,11 @@ namespace AS2
                     title = defaultTitleLoad;
                 if (directory.Equals("") && !lastDir.Equals(""))
                     directory = lastDir;
+#if (UNITY_EDITOR_LINUX || UNITY_STANDALONE_LINUX)
+                string[] paths = StandaloneFileBrowser.OpenFilePanel(title, directory, "", false);
+#else
                 string[] paths = StandaloneFileBrowser.OpenFilePanel(title, directory, fileExt, false);
+#endif
                 if (paths.Length > 0)
                 {
                     UpdateLastDir(paths[0]);

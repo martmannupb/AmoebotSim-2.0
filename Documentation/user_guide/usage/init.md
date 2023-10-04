@@ -3,7 +3,7 @@
 When the application is started using the Play Button in the Unity Editor, it opens in *Initialization Mode*.
 Initialization Mode (or Init Mode) is one of the two main modes of the simulation environment, the other one being [*Simulation Mode*](sim.md).
 The Init Mode is used to initialize the particle system before running a simulation.
-In this mode, you can select an algorithm, place the particles, modify the particles' parameters and finally start the simulation.
+In this mode, you can select an algorithm, place or remove the particles and objects, modify the particles' parameters and finally, start the simulation.
 
 The Init Mode UI is organized like this:
 
@@ -11,6 +11,10 @@ The Init Mode UI is organized like this:
 
 In the following, we will cover the areas that are relevant in Init Mode.
 Many of the UI elements are also visible in Simulation Mode and will be covered on the corresponding page.
+
+> [!NOTE]
+> If you place the cursor on a UI element like a button or slider and do not move it for one second, a **tooltip** will be displayed.
+> Use this feature to easily explore and learn the simulator's UI without having to consult the documentation.
 
 
 ## Central Area
@@ -107,6 +111,15 @@ The first button randomizes the attribute's value for the selected particle, if 
 The second button randomizes the attribute value for *all particles*.
 
 
+## Object Panel
+
+<img src="~/images/object_panel.png" alt="Object Panel" title="Object Panel" width="600"/>
+
+Similar to the Particle Panel, selecting an object by clicking on it in the Central Area will open the Object Panel.
+The Object Panel shows the selected object's position and size (number of occupied grid cells) as well as its integer identifier and its color.
+It also contains an Anchor button, allowing you to turn the selected object into the anchor.
+
+
 ## Top Bar
 
 ![Top Bar](~/images/top_bar.png "Top Bar")
@@ -137,25 +150,35 @@ It contains four tool buttons and two dropdown menus with additional options.
 A tool can be selected by clicking the button, which will highlight the button in red.
 
 The first tool is the Selection tool.
-It is selected by default and allows you to select particles by clicking on them, opening the Particle Panel.
+It is selected by default and allows you to select particles and objects by clicking on them, opening the Particle Panel or Object Panel, respectively.
 This tool works both in Init and Simulation Mode.
 
-The second tool is the Add tool.
+The second tool is the Add Particle tool.
 It can be used to manually add particles to the system while in Init Mode.
-With the Add tool selected, hovering over a grid cell will highlight that cell in green.
+With the Add Particle tool selected, hovering over a grid cell will highlight that cell in green.
 Clicking the cell will place a new contracted particle in the cell.
 Clicking and dragging to one of the neighboring cells and then releasing will place a new expanded particle such that its Tail is in the first and its Head is in the second cell.
 The two dropdown menus to the right determine the new particle's chirality and compass direction.
-By default, both will be selected randomly.
+By default, the particle will have a counter-clockwise chirality and a compass facing East.
 
-The third tool is the Remove tool.
+The third tool is the Add Object tool.
+It is similar to the Add Particle tool, but it adds objects instead of particles.
+Clicking and then dragging from an empty grid cell will create a new object and add more grid cells to it, as long as the selected cells are adjacent to the object.
+More cells can be added to existing objects by clicking into and dragging from an already occupied cell.
+
+The fourth tool is the Remove tool.
 When the Remove tool is selected, hovering over a particle will highlight that particle in red and clicking a particle will remove it from the system.
+The same holds for cells occupied by objects, as long as removing the cell does not split the object into multiple components.
+You can also click and drag to remove multiple particles or object cells in quick succession.
+Holding Shift while clicking on an object will remove the entire object at once.
 
-The fourth and last tool is the Move tool.
-With this tool selected, clicking a particle will highlight it in purple, after which it can be moved to a different, empty cell just like using the Add tool, but with blue cell highlighting.
+The fifth and last tool is the Move tool.
+With this tool selected, clicking a particle or object will highlight it in purple, after which it can be moved to a different, empty cell just like using the Add tool, but with blue cell highlighting.
 Moving a particle will not change any of its internal data, including its chirality and compass direction.
+However, the expansion state of a particle can be changed by the movement.
 
 Keep in mind that the particle system must be connected when starting the simulation.
+The particles must form a single connected component and every object must be connected directly or indirectly (through other objects) to the particles.
 Apart from that, simply adding, removing or moving particles may cause an algorithm to behave in unexpected ways if it requires particles to be initialized in a specific way.
 You should only use these tools to fine-tune generated systems and if you know how the particles need to be initialized.
 
@@ -188,6 +211,11 @@ Its first button brings the whole particle system into view by setting the camer
 The second button just centers the viewport on the particle system using the center of its bounding rectangle, but it does not change the zoom level.
 The third button only works in Simulation Mode and opens the Settings Panel.
 The last button closes the application and is available in Init and Simulation Mode.
+
+
+### Next Steps
+
+Continue by reading the [Simulation Mode guide](sim.md) to learn how simulations are controlled.
 
 
 

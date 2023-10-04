@@ -384,6 +384,9 @@ namespace AS2.UI
                 parameterObjects[i] = TypeConverter.ConvertStringToObjectOfType(genAlg_paramInfo[i].ParameterType, parameters[i]);
             }
 
+            // Reset selection
+            AmoebotSimulator.instance.renderSystem.rendererUI.ResetSelection();
+
             // Call Generation Method
             //AmoebotSimulator.instance.system.Reset();
             //uiHandler.sim.system.SetSelectedAlgorithm(algorithm);
@@ -427,6 +430,8 @@ namespace AS2.UI
         public void ButtonPressed_StartAlgorithm()
         {
             AmoebotSimulator.instance.system.InitializationModeFinished(alg_setting_algo.GetValueString());
+            // Close tooltips
+            TooltipHandler.Instance.Close();
             Close(false);
         }
 
@@ -435,6 +440,8 @@ namespace AS2.UI
         /// </summary>
         public void ButtonPressed_Abort()
         {
+            // Close tooltips
+            TooltipHandler.Instance.Close();
             Close(true);
         }
 

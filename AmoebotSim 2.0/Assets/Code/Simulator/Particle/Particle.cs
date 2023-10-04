@@ -417,6 +417,14 @@ namespace AS2.Sim
         /// </summary>
         public bool isActive = false;
 
+        /// <summary>
+        /// Flag used to indicate that the particle's algorithm is currently
+        /// running its constructor. If this is <c>false</c> while the
+        /// algorithm tries to create a new attribute, an exception will
+        /// be thrown.
+        /// </summary>
+        public bool inConstructor = false;
+
 
         /*
          * Graphical information
@@ -1914,6 +1922,7 @@ namespace AS2.Sim
             Particle p = new Particle(system, data);
             p.isActive = true;
             p.inReinitialize = true;
+            p.inConstructor = true;
             // Then create algorithm
             string algoName = data.algorithmType;
             AlgorithmManager man = AlgorithmManager.Instance;
@@ -1926,6 +1935,7 @@ namespace AS2.Sim
                 Log.Error("Error: Algorithm '" + algoName + "' is not known, cannot instantiate algorithm");
             }
 
+            p.inConstructor = false;
             p.inReinitialize = false;
             p.isActive = false;
             p.InitWithAlgorithm(data);

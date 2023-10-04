@@ -21,6 +21,21 @@ namespace AS2
         public InitParticleSaveData[] particles;
 
         /// <summary>
+        /// The current set of objects.
+        /// </summary>
+        public ParticleObjectSaveData[] objects;
+
+        /// <summary>
+        /// The index of the current anchor particle or object.
+        /// </summary>
+        public int anchorIdx;
+
+        /// <summary>
+        /// Whether the current anchor is an object.
+        /// </summary>
+        public bool anchorIsObject;
+
+        /// <summary>
         /// Description of the current UI state.
         /// </summary>
         public InitModeSaveData initModeSaveData;

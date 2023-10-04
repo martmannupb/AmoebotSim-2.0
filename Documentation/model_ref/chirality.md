@@ -8,11 +8,12 @@ If a particle's sense of positive rotation matches the global positive rotation 
 In the code, this is often represented by the Boolean value `true`.
 Otherwise, we say the particle has *clockwise chirality*, or *inverted chirality*, represented by `false`.
 A particle with clockwise chirality perceives rotations in the global positive direction as negative and vice-versa.
-Its [compass](direction.md) is flipped, meaning that its North direction, which it perceives as being 90 degrees counter-clockwise from its East direction, actually lies 90 degrees in clockwise direction when viewed from the global perspective.
+Its [compass](direction.md) is flipped, meaning that its North direction, which it perceives as being 90 degrees counter-clockwise from its East direction, actually lies 90 degrees in *clockwise* direction when viewed from the global perspective.
 You can think of a clock lying flat on a table with the dial pointing up and another clock on the same table lying with the dial facing down.
 Even though both clocks run normally, their hands will be rotating in opposite ways and almost all of their hour labels will point in different directions (even if you make the "12" labels point in the same direction, "11" and "1" etc. will disagree).
 
 A particle *does not know* its own chirality and has no way to find it.
+
 
 
 ## Pins and Chirality Agreement
@@ -20,6 +21,8 @@ A particle *does not know* its own chirality and has no way to find it.
 As explained in the [Pin Configuration reference](pin_cfgs.md), the pins on each edge of a particle are numbered in *local* counter-clockwise direction.
 Therefore, the local pin labeling of a particle with inverted chirality differs from the local labeling of a particle with counter-clockwise chirality.
 If an algorithm uses more than one pin for the circuit communication, this can cause problems when particles with different chirality try to establish a circuit.
+
+![Pin labels depending on chirality](~/images/pin_labels_chirality.png "Pin labels depending on chirality")
 
 However, it is possible for the particles to agree on a *common chirality* using a *chirality agreement algorithm*.
 Such algorithms are usually based on the ability of two neighboring particles to determine whether or not they have the same chirality.
@@ -32,6 +35,7 @@ This process can be repeated until all particles in the system have the same chi
 The "Chirality & Compass Alignment" algorithm that is part of the simulator project demonstrates this technique and then also establishes a common compass orientation.
 Note that the algorithm relies on randomness due to the coin tosses, which means that it is not guaranteed to terminate.
 However, in practice, this generally does not cause any problems.
+
 
 
 ## Setting Chirality

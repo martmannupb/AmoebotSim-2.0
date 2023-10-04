@@ -20,6 +20,7 @@ namespace AS2.UI
         [HideInInspector]
         public AmoebotSimulator sim;
         public ParticleUIHandler particleUI;
+        public ObjectUIHandler objectUI;
         public SettingsUIHandler settingsUI;
         public InitializationUIHandler initializationUI;
 
@@ -44,6 +45,7 @@ namespace AS2.UI
         // Tool Panel
         public Button button_toolStandard;
         public Button button_toolAdd;
+        public Button button_toolAddObject;
         public Button button_toolRemove;
         public Button button_toolMove;
         public Button button_toolPSetMove;
@@ -98,7 +100,7 @@ namespace AS2.UI
         /// </summary>
         public enum UITool
         {
-            Standard, Add, Remove, Move, PSetMove
+            Standard, Add, Remove, Move, PSetMove, AddObject
         }
 
 
@@ -139,15 +141,20 @@ namespace AS2.UI
             // Init Tools
             tools_initMode.Add(button_toolStandard.gameObject);
             tools_initMode.Add(button_toolAdd.gameObject);
+            tools_initMode.Add(button_toolAddObject.gameObject);
             tools_initMode.Add(button_toolRemove.gameObject);
             tools_initMode.Add(button_toolMove.gameObject);
             tools_initMode.Add(dropdown_chirality.gameObject.transform.parent.gameObject);
             tools_playMode.Add(button_toolStandard.gameObject);
             tools_playMode.Add(button_toolPSetMove.gameObject);
+            // Init button tooltips
+            UpdateTooltip(button_pSetPositioning.gameObject, GetPSetViewModeTooltip());
+            UpdateTooltip(button_viewType.gameObject, GetViewModeTooltip());
         }
 
         /// <summary>
-        /// Update loop of the UI Handler. Calls UpdateUI and updates the particle panel. Also processes the inputs for hotkeys.
+        /// Update loop of the UI Handler. Calls UpdateUI and updates the particle and object panel.
+        /// Also processes the inputs for hotkeys.
         /// </summary>
         public void Update()
         {
@@ -155,6 +162,7 @@ namespace AS2.UI
 
             UpdateUI(sim.running);
             particleUI.UpdateUI();
+            objectUI.UpdateUI();
 
             ProcessInputs();
         }
@@ -355,8 +363,8 @@ namespace AS2.UI
             if (sim.renderSystem.IsCircuitViewActive()) button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_circuitViewType.gameObject.GetComponent<Image>().color = overlayColor_inactive;
             // Collision Check
-            //if (true) button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_active;
-            //else button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_inactive;
+            if (sim.system.CollisionCheckEnabled) button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_active;
+            else button_collisionCheck.gameObject.GetComponent<Image>().color = overlayColor_inactive;
             // Bonds Active
             if (sim.renderSystem.AreBondsActive()) button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_active;
             else button_bondsActive.gameObject.GetComponent<Image>().color = overlayColor_inactive;
@@ -718,6 +726,15 @@ namespace AS2.UI
         }
 
         /// <summary>
+        /// Selects the add object tool.
+        /// </summary>
+        public void Button_ToolAddObjectPressed()
+        {
+            activeTool = UITool.AddObject;
+            UpdateTools();
+        }
+
+        /// <summary>
         /// Selects the remove tool.
         /// </summary>
         public void Button_ToolRemovePressed()
@@ -750,6 +767,7 @@ namespace AS2.UI
         public void Button_ToggleViewPressed()
         {
             sim.renderSystem.ToggleViewType();
+            UpdateTooltip(button_viewType.gameObject, GetViewModeTooltip());
         }
 
         /// <summary>
@@ -765,7 +783,7 @@ namespace AS2.UI
         /// </summary>
         public void Button_ToggleCollisionCheck()
         {
-            Log.Debug("Collision Check Button Pressed. This is not connected yet.");
+            sim.system.SetCollisionCheck(!sim.system.CollisionCheckEnabled);
         }
 
         /// <summary>
@@ -774,6 +792,7 @@ namespace AS2.UI
         public void Button_TogglePSetPositioningPressed()
         {
             sim.renderSystem.TogglePSetPositioning();
+            UpdateTooltip(button_pSetPositioning.gameObject, GetPSetViewModeTooltip());
         }
 
         /// <summary>
@@ -792,6 +811,7 @@ namespace AS2.UI
             // Reset Colors
             SetButtonColor(button_toolStandard, toolColor_inactive);
             SetButtonColor(button_toolAdd, toolColor_inactive);
+            SetButtonColor(button_toolAddObject, toolColor_inactive);
             SetButtonColor(button_toolRemove, toolColor_inactive);
             SetButtonColor(button_toolMove, toolColor_inactive);
             SetButtonColor(button_toolPSetMove, toolColor_inactive);
@@ -803,6 +823,9 @@ namespace AS2.UI
                     break;
                 case UITool.Add:
                     SetButtonColor(button_toolAdd, toolColor_active);
+                    break;
+                case UITool.AddObject:
+                    SetButtonColor(button_toolAddObject, toolColor_active);
                     break;
                 case UITool.Remove:
                     SetButtonColor(button_toolRemove, toolColor_active);
@@ -897,6 +920,79 @@ namespace AS2.UI
         {
             button_settings.interactable = true;
             //button_exit.interactable = true;
+        }
+
+        // Special button tooltip values
+
+        /// <summary>
+        /// Tries to update the tooltip message of the Tooltip
+        /// component in the given GameObject.
+        /// </summary>
+        /// <param name="go">The GameObject that has a Tooltip.</param>
+        /// <param name="message">The new tooltip message.</param>
+        private void UpdateTooltip(GameObject go, string message)
+        {
+            Tooltip tt = go.GetComponent<Tooltip>();
+            if (tt != null)
+            {
+                tt.ChangeMessage(message);
+            }
+        }
+
+        /// <summary>
+        /// Generates the tooltip matching the current partition set
+        /// view type.
+        /// </summary>
+        /// <returns>The new tooltip message for the partition set
+        /// view type button.</returns>
+        private string GetPSetViewModeTooltip()
+        {
+            PartitionSetViewType vt = sim.renderSystem.GetPSetViewType();
+            string s = "Toggle partition set view type: ";
+
+            switch (vt)
+            {
+                case PartitionSetViewType.Auto:
+                    s += "Automatic (circle)";
+                    break;
+                case PartitionSetViewType.Auto_2DCircle:
+                    s += "Automatic (disk)";
+                    break;
+                case PartitionSetViewType.CodeOverride:
+                    s += "Auto with manual override";
+                    break;
+                case PartitionSetViewType.Line:
+                    s += "Line";
+                    break;
+            }
+
+            return s;
+        }
+
+        /// <summary>
+        /// Generates the tooltip matching the current view type.
+        /// </summary>
+        /// <returns>The new tooltip message for the partition set
+        /// view type button.</returns>
+        private string GetViewModeTooltip()
+        {
+            ViewType vt = sim.renderSystem.GetCurrentViewType();
+            string s = "Toggle view mode: ";
+
+            switch (vt)
+            {
+                case ViewType.Circular:
+                    s += "Circular";
+                    break;
+                case ViewType.Hexagonal:
+                    s += "Hexagonal";
+                    break;
+                case ViewType.HexagonalCirc:
+                    s += "Hexagonal (round)";
+                    break;
+            }
+
+            return s;
         }
     }
 }

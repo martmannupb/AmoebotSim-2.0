@@ -4,43 +4,62 @@ The [Reconfigurable Circuits](~/amoebot_model/circuits.md) extension of the Amoe
 This page describes how this communication system is represented in the simulation environment and how it is used.
 
 
+
 ## Pin Configuration Overview
 
 The basic component of the circuit communication system is the *pin*.
-Each algorithm specifies the number of pins $n$ used by the particles.
-This means that every particle will have $n$ pins on each of its incident edges.
-Thus, contracted particles have $6n$ pins and expanded particles have $10n$ pins overall.
+Each algorithm specifies the number of pins $k$ used by the particles.
+This means that every particle will have $k$ pins on each of its incident edges.
+Thus, contracted particles have $6k$ pins and expanded particles have $10k$ pins overall.
 
-The pins of two particles incident to the same edge are connected in pairs.
-Each pair contains one pin of each particle.
+The pins of two particles incident to the same edge are connected in pairs called *external links*.
+Each link contains one pin of each particle.
 This allows the particles to use each pair of connected pins as a communication channel.
 
-On each edge incident to a particle, the pins are numbered $0,\ldots,n-1$ in the *local* counter-clockwise direction of the particle.
+On each edge incident to a particle, the pins are numbered $0,\ldots,k-1$ in the *local* counter-clockwise direction of the particle.
 This numbering is internal: Other particles may not have the same numbering and cannot see the numbering of a neighbor directly.
 Due to the way the pins of neighboring particles are connected, we can see how their pin numberings relate to each other:
-- If the particles have the *same chirality*, pin $0$ of one particle will be connected to pin $n-1$ of the neighbor, pin $1$ to $n-2$, etc.
+- If the particles have the *same chirality*, pin $0$ of one particle will be connected to pin $k-1$ of the neighbor, pin $1$ to $k-2$, etc.
 	In other words, the pin numberings of the neighbors are the exact opposite of each other.
 - If the particles have a *different chirality*, the pins will share the same numbering.
 
+![Pins and pin IDs](~/images/pin_labeling.png "Pins and pin IDs")
+
+
 ### Partition Sets
 
-The connections between the pins of different particles are established automatically as soon as the particles become neighbors.
+The external links between the pins of different particles are established automatically as soon as the particles become neighbors.
 However, a particle can also connect its own pins internally, causing them to behave like a single pin with multiple external connection points.
 If any of the pins sends or receives a beep, all of them will do the same.
 Any number of pins can be connected in this way.
 We call a maximal set of connected pins a *partition set*.
-Every pin of a particle belongs to exactly one partition set at any time.
 If a pin is not connected (internally) to any other pins, we call its partition set a *singleton*.
 
-The maximum number of partition sets is equal to the total number of pins.
-Thus, we number the partition sets of a contracted particle $0,\ldots,6n-1$ and the partition sets of an expanded particle $0,\ldots,10n-1$.
-The index of a partition set does not have any implications regarding its content.
+In the [mathematical model](~/amoebot_model/circuits.md), the partition sets of a particle are defined as disjoint sets of pins such that each pin is contained in a partition set.
+The model does not contain any assumption or restriction on the number of partition sets since it even allows empty partition sets.
+We use this feature of the model to implement partition sets in the simulator:
+Note that the maximum number of non-empty partition sets is equal to the total number of pins (i.e., one pin in each partition set).
+Thus, a contracted particle needs at most $6k$ partition sets and an expanded particle will need at most $10k$ partition sets.
+In our approach, we simply give a particle the maximum number of partition set objects it requires.
+The particle cannot add or remove partition sets manually, the number only changes when the particle expands or contracts.
+All it can do is assign its pins to the partition sets: Every pin belongs to exactly one of the partition sets at any time.
+If the particle has $m$ partition sets, the sets are identified by the indices $0,\ldots,m-1$.
+However, the index of a partition set does not have any implications regarding its content.
 We only use the numbering to easily refer to individual partition sets.
 
 The *pin configuration* of a particle is the set of its partition sets.
 It defines how the particle's pins are connected internally.
 In a *singleton pin configuration*, all partition sets are singletons, i.e., there are no internal connections between any pins.
 In a *global pin configuration*, all pins are contained in the same partition set.
+
+![Partition sets for k = 2](~/images/partition_sets.png "Partition sets for k = 2")
+
+Partition sets with more than one pin are visualized as black circles inside the particles that are connected to the contained pins with thin lines (see image above).
+Each pair of curly brackets in the image represents one partition set.
+The numbers inside the curly brackets specify the number of pins contained in a partition set.
+Note that there are $6k = 12$ partition sets because $k = 2$ and the particle is contracted.
+The partition set IDs range from $0$ to $11$ but are not shown in the picture.
+
 
 ### Circuits
 
@@ -52,29 +71,44 @@ Note that a circuit can contain multiple partition sets of the same particle, ca
 If a circuit contains at least one partition set of each particle, i.e., all particles are on the circuit, we call it a *global circuit*.
 An easy way to establish a global circuit is to give each particle a global pin configuration.
 
+![Partition sets and circuits](~/images/circuits_model_2.png "Partition sets and circuits")
+
+In the simulator, circuits are indicated by different colors where possible.
+
+
 
 ## Implementation
 
 In the simulation environment, a particle's pin configuration is represented by an instance of the [`PinConfiguration`][1] class.
-This class contains all pins and partition sets of a particle as instances of the [`Pin`][2] and [`PartitionSet`][3] classes, but it simply identifies them with integer IDs.
+This class contains all pins and partition sets of a particle as instances of the [`Pin`][2] and [`PartitionSet`][3] classes, and it simply identifies them with integer IDs.
 A [`PinConfiguration`][1] instance is always specific to an *expansion state*, which also defines the range of the IDs:
-It is $0,\ldots,6n-1$ if the configuration is contracted and $0,\ldots,10n-1$ if it is expanded.
-A contracted [`PinConfiguration`][1] instance is incompatible with an expanded [`PinConfiguration`][1] in the sense that the same IDs may not refer to the same pins.
+It is $0,\ldots,6k-1$ if the configuration is contracted and $0,\ldots,10k-1$ if it is expanded.
+A contracted [`PinConfiguration`][1] instance is *incompatible* with an expanded [`PinConfiguration`][1] in the sense that the same IDs may not refer to the same pins.
 Similarly, expanded instances with different expansion directions are also incompatible.
-It is possible for partition sets to be empty, e.g., if the partition set with ID `0` contains all pins, then all other partition sets will be empty.
+It is possible for partition set instances to be empty, e.g., if the partition set with ID `0` contains all pins, then all other partition sets will automatically be empty.
 
 Individual pins are addressed by a combination of the edge on which a pin is located and the pin's index on that edge.
-The index is in the range $0,\ldots,n-1$ and comes from the local pin numbering of the particle.
+The index is in the range $0,\ldots,k-1$ and comes from the local pin numbering of the particle.
+The image below shows a particle with its internal compass and pin numbering.
+The two highlighted pins are identified by a combination of local direction and edge index.
+For expanded particles, a third parameter is necessary to distinguish between the particle's head and tail.
+
+![Pin identification](~/images/pin_id.png "Pin identification")
+
 
 ### Reading Pin Configurations
 
 The [`GetCurrentPinConfiguration`][4] method returns the pin configuration from the beginning of the current phase.
 If the particle has received any beeps or [Messages](messages.md) in the previous beep phase, they can be read using the returned [`PinConfiguration`][1] instance.
+To check for received beeps, the [`ReceivedBeepOnPartitionSet`][26] method can be called on the [`PinConfiguration`][1] instance, giving the partition set ID as parameter, or the [`ReceivedBeep`][27] method can be called directly on a [`PartitionSet`][3] instance.
+Similar methods exist to check for messages.
+
 As outlined in the [Round Simulation reference](rounds.md), this will always work in the movement phase.
 In the beep phase, the received beeps and messages can only be read if the particle has not performed a movement in the previous movement phase.
 If a movement was performed, the particle's pin configuration is automatically reset to a singleton configuration and the received beeps and messages are lost.
 Note that the circuit on which a beep or message was sent may not exist anymore after the movement phase, even if the particle itself did not perform any movements.
 The ability to still read the received information is a convenience functionality to avoid having to store this information manually.
+
 
 ### Changing Pin Configurations and Sending Beeps
 
@@ -95,6 +129,52 @@ Modifications made after [`SetPlannedPinConfiguration`][5] has been called have 
 After a [`PinConfiguration`][1] instance `pc` has been committed using [`SetPlannedPinConfiguration(pc)`][5], it can be used to send beeps and messages.
 Simply call [`pc.SendBeepOnPartitionSet(int id)`][10] to send a beep on the partition set with ID `id` and [`pc.SendMessageOnPartitionSet(int id, Message msg)`][11] to send the message `msg` (Refer to the [Message reference page](messages.md) for more information).
 
+For example, the following code shows how to set up any of the three pin configurations shown in the second figure above (assuming compass direction E and counter-clockwise chirality):
+```csharp
+public override void ActivateBeep() {
+    PinConfiguration pc = GetCurrentPinConfiguration();  // Gets the current pin configuration object
+
+    // ----- Setup the first (singleton) pin configuration -----
+    pc.SetToSingleton();
+
+    // ----- Setup the second (mixed) pin configuration -----
+    // Choosing partition sets 0, 1 and 2 to contain more than one pin
+    // First partition set with 3 pins
+    pc.MakePartitionSet(
+        new int[] {
+            pc.GetPinAt(Direction.NNE, 0).Id,
+            pc.GetPinAt(Direction.W, 0).Id,
+            pc.GetPinAt(Direction.W, 1).Id
+        },
+        0  // Partition set with ID 0
+    );
+    // Second partition set with 3 pins
+    pc.MakePartitionSet(
+        new int[] {
+            pc.GetPinAt(Direction.E, 0).Id,
+            pc.GetPinAt(Direction.NNW, 1).Id,
+            pc.GetPinAt(Direction.SSE, 0).Id
+        },
+        1  // Partition set with ID 1
+    );
+    // Partition set with 2 pins
+    pc.MakePartitionSet(
+        new int[] {
+            pc.GetPinAt(Direction.SSW, 0).Id,
+            pc.GetPinAt(Direction.SSW, 1).Id
+        },
+        2  // Partition set with ID 2
+    );
+
+    // ----- Setup the third (global) pin configuration in partition set 0 -----
+    pc.SetToGlobal(0);
+
+    // Apply the new pin configuration (important!)
+    SetPlannedPinConfiguration(pc);
+}
+```
+
+
 
 ## Additional Features
 
@@ -107,7 +187,8 @@ If no colored partition sets are encountered, the circuit will get a color from 
 Additionally, the placement of the partition sets inside the particle can be defined by setting the placement mode.
 This can be done by calling the [`SetPSPlacementMode(PSPlacementMode mode, bool head)`][15] method on a pin configuration.
 The [`PSPlacementMode`][16] enum specifies various modes for placing partition sets automatically or manually and the mode can be set individually for an expanded particle's head and tail by using the `head` parameter.
-Note that this only works for partition sets containing at least two pins because other partition sets do not have a separate visual representation.
+Note that this only works for non-empty partition sets.
+If the partition set contains only one pin, the [`SetPartitionSetDrawHandle(int partitionSetId, bool draw)`][28] method must be called with parameter `true` to ensure that the partition set gets its own handle (this is only drawn automatically for sets with at least 2 pins).
 
 The available placement modes are:
 - [`NONE`][17]:
@@ -121,7 +202,7 @@ The available placement modes are:
 	- Places the partition sets on a circle such that each partition set is close to the average position of its pins but not too close to the other partition sets.
 - [`MANUAL`][21]:
 	- Places each partition set at a custom position defined using polar coordinates.
-	The position of a partition set can be defined by calling the [`SetPartitionSetPosition(int id, Vector2 polarCoords, bool head)`][23] method on a [`PinConfiguration`][1] instance or the [`SetPosition(Vector2 polarCoords, bool head)`][24] on a [`PartitionSet`][25] instance.
+	The position of a partition set can be defined by calling the [`SetPartitionSetPosition(int id, Vector2 polarCoords, bool head)`][23] method on a [`PinConfiguration`][1] instance or the [`SetPosition(Vector2 polarCoords, bool head)`][24] method on a [`PartitionSet`][25] instance.
 	The `Vector2 polarCoords` defines the angle and distance of the partition set relative to the center of the particle.
 	Partition sets for which no position was set will be placed directly in the center.
 
@@ -158,3 +239,6 @@ Note that stored pin configurations cannot be used to read beeps or messages.
 [23]: xref:AS2.Sim.PinConfiguration.SetPartitionSetPosition(System.Int32,Vector2,System.Boolean)
 [24]: xref:AS2.Sim.PartitionSet.SetPosition(Vector2,System.Boolean)
 [25]: xref:AS2.Sim.PartitionSet
+[26]: xref:AS2.Sim.PinConfiguration.ReceivedBeepOnPartitionSet(System.Int32)
+[27]: xref:AS2.Sim.PartitionSet.ReceivedBeep
+[28]: xref:AS2.Sim.PinConfiguration.SetPartitionSetDrawHandle(System.Int32,System.Boolean)

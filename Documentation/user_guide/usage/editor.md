@@ -11,7 +11,8 @@ After opening the simulator project through Unity Hub and opening the *Simulator
 ![Editor Window Overview](~/images/editor_overview.png "The Unity Editor with Default layout")
 
 If your Editor looks different, use the dropdown menu in the top-right corner and select the "Default" layout.
-You can resize and move the windows around to fit your needs
+You can resize and move the windows around to fit your needs.
+In case you accidentally close one of the tabs or windows, you can reopen it using the "Window" > "General" menu.
 
 
 ### Scene and Game View

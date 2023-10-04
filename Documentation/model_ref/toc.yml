@@ -1,3 +1,5 @@
+- name: General
+  href: general.md
 - name: Round Simulation
   href: rounds.md
 - name: Directions and Compass
@@ -12,3 +14,7 @@
   href: messages.md
 - name: Bonds and Joint Movements
   href: bonds_jm.md
+- name: Objects
+  href: objects.md
+- name: Collisions and Line Drawer
+  href: collisions.md

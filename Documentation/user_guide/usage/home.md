@@ -4,5 +4,5 @@ These pages will teach you how to initialize and run Amoebot algorithms in the s
 To follow along, please open the simulator project in the Unity Editor.
 
 1. [Unity Editor Overview](editor.md)
-2. [Simulation Mode](sim.md)
-3. [Initialization Mode](init.md)
+2. [Initialization Mode](init.md)
+3. [Simulation Mode](sim.md)

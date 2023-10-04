@@ -10,19 +10,41 @@ using TMPro;
 namespace AS2
 {
 
+    /// <summary>
+    /// The main class of the entire simulator.
+    /// Manages the particle system and the render system and
+    /// provides the high-level interface for controlling the simulation.
+    /// This class triggers the main render call in each frame and the
+    /// round simulation in each fixed update.
+    /// </summary>
     public class AmoebotSimulator : MonoBehaviour
     {
 
-        // Singleton
+        /// <summary>
+        /// The singleton instance of the class.
+        /// </summary>
         public static AmoebotSimulator instance;
 
         // System Data
+        /// <summary>
+        /// The particle system handling the simulation.
+        /// </summary>
         public AS2.Sim.ParticleSystem system;
+        /// <summary>
+        /// The render system handling the visualization.
+        /// </summary>
         public RenderSystem renderSystem;
+
         // System State
+        /// <summary>
+        /// Whether the simulation is currently running.
+        /// </summary>
         public bool running = true;
 
         // UI
+        /// <summary>
+        /// Reference to the UI handler root object.
+        /// </summary>
         public UIHandler uiHandler;
 
         public AmoebotSimulator()
@@ -73,12 +95,21 @@ namespace AS2
             RoundChanged();
         }
 
+        /// <summary>
+        /// Triggers UI updates after the displayed round has changed in
+        /// Simulation Mode. Should be called every time the round changes.
+        /// </summary>
         public void RoundChanged()
         {
             uiHandler.particleUI.SimState_RoundChanged();
+            uiHandler.objectUI.SimState_RoundChanged();
             if (WorldSpaceUIHandler.instance != null) WorldSpaceUIHandler.instance.Refresh();
         }
 
+        /// <summary>
+        /// Updates the simulation speed to the given value.
+        /// </summary>
+        /// <param name="roundTime">The time between two round simulations.</param>
         public void SetSimSpeed(float roundTime)
         {
             if (roundTime == 0)
@@ -90,10 +121,9 @@ namespace AS2
             renderSystem.SetRoundTime(roundTime);
         }
 
-
-
         /// <summary>
-        /// Toggles the Play/Pause functionality.
+        /// Toggles the play state of the simulation between
+        /// Playing and Paused.
         /// </summary>
         public void TogglePlayPause()
         {
@@ -113,6 +143,9 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Starts playing the simulation.
+        /// </summary>
         public void PlaySim()
         {
             if (running == false)
@@ -121,6 +154,9 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Pauses the simulation.
+        /// </summary>
         public void PauseSim()
         {
             if (running)
@@ -129,6 +165,11 @@ namespace AS2
             }
         }
 
+        /// <summary>
+        /// Helper coroutine that opens the Init Mode UI after
+        /// waiting for all required components to be initialized.
+        /// </summary>
+        /// <returns></returns>
         private IEnumerator OpenInitModeCoroutine()
         {
             yield return new WaitForEndOfFrame();

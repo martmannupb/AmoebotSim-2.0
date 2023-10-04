@@ -1,6 +1,6 @@
 # Welcome to the **AmoebotSim 2.0** Documentation
 
-AmoebotSim 2.0 is a simulation environment for an extended version of the [Amoebot model][1] that supports communication via [reconfigurable circuits][2] as well as joint movement operations.
+AmoebotSim 2.0 is a simulation environment for an extended version of the [Amoebot model][1] that supports communication via [reconfigurable circuits][2] as well as [joint movement operations][5].
 
 It is designed to facilitate the development of algorithms for this model by providing a platform on which algorithms can be tested in various scenarios, inspected at runtime and visualized easily.
 The simulator's main features are:
@@ -10,9 +10,10 @@ The simulator's main features are:
 - A detailed documentation that explains the concepts behind the code as well as the entire API
 
 
+
 ## Getting Started
 
-If you are new to the Amoebot model, we recommend visiting the [Amoebot Model](amoebot_model/home.md) pages.
+If you are new to the Amoebot model, we recommend visiting the [Amoebot Model](amoebot_model/home.md) pages, which explain the theoretical foundation and the basic technical terms.
 These pages also reference the original publications in which the Amoebot model and its extensions were introduced.
 
 If you would like to install the simulator, visit the [Installation Guide](installation_guide/home.md).
@@ -27,6 +28,7 @@ The [API Reference](api/index.md) contains all of the code documentation that sh
 If you want to modify or extend the simulator itself, the [Developer Guide](dev_guide/home.md) provides a rough outline of the simulator's architecture and should give you an idea of what needs to be changed for your purpose.
 
 
+
 ## Acknowledgements
 
 AmoebotSim 2.0 was developed at the [Theory of Distributed Systems Group][3] at [Paderborn University][4].
@@ -38,3 +40,4 @@ The simulator was designed and implemented by Tobias Maurer (rendering and GUI) 
 [2]: https://arxiv.org/abs/2105.05071v1
 [3]: https://cs.uni-paderborn.de/en/ti
 [4]: https://www.uni-paderborn.de/en/
+[5]: https://arxiv.org/abs/2305.06146

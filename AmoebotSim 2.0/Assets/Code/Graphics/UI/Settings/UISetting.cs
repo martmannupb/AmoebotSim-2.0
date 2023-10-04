@@ -1095,4 +1095,243 @@ namespace AS2.UI
 
     }
 
-}
+    /// <summary>
+    /// <see cref="UISetting"/> subclass for setting a color.
+    /// Colors are represented in RGB format, either as
+    /// integers from 0 to 255 or as floats from 0 to 1.
+    /// </summary>
+    public class UISetting_Color : UISetting
+    {
+        private TMP_InputField inputR;
+        private TMP_InputField inputG;
+        private TMP_InputField inputB;
+        private InputType inputType;
+
+        // Prev values
+        private string inputRprev;
+        private string inputGprev;
+        private string inputBprev;
+
+        public enum InputType
+        {
+            Int, Float
+        }
+
+        private Color color;
+        public Color Color
+        {
+            get { return color; }
+        }
+
+        public UISetting_Color(GameObject go, Transform parentTransform, string name, Color start, InputType inputType)
+        {
+            // Add GameObject
+            if (go == null)
+                this.go = GameObject.Instantiate<GameObject>(UIDatabase.prefab_setting_color, Vector3.zero, Quaternion.identity, parentTransform);
+            else
+                this.go = go;
+            
+            // Set Name
+            this.name = name;
+            TextMeshProUGUI tmpro = this.go.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            tmpro.text = name;
+
+            TMP_InputField[] inputFields = this.go.GetComponentsInChildren<TMP_InputField>();
+            inputR = inputFields[0];
+            inputG = inputFields[1];
+            inputB = inputFields[2];
+
+            // Set initial values
+            color = start;
+            this.inputType = inputType;
+            UpdateValue(color);
+
+            // Add Callbacks
+            inputR.onEndEdit.AddListener(delegate { OnValueChanged(); });
+            inputG.onEndEdit.AddListener(delegate { OnValueChanged(); });
+            inputB.onEndEdit.AddListener(delegate { OnValueChanged(); });
+        }
+
+        protected bool IsInputValid(string input, out int intVal, out float floatVal)
+        {
+            intVal = 0;
+            floatVal = 0;
+            switch (inputType)
+            {
+                case InputType.Int:
+                    if (int.TryParse(input, out intVal))
+                    {
+                        if (intVal < 0)
+                            intVal = 0;
+                        else if (intVal > 255)
+                            intVal = 255;
+                        return true;
+                    }
+                    else return false;
+                case InputType.Float:
+                    TypeConverter.ConversionResult res = TypeConverter.ConvertStringToFloat(input);
+                    if (res.conversionSuccessful)
+                    {
+                        floatVal = (float)res.obj;
+                        if (floatVal < 0f)
+                            floatVal = 0f;
+                        else if (floatVal > 1f)
+                            floatVal = 1f;
+                        return true;
+                    }
+                    else return false;
+                default:
+                    return false;
+            }
+        }
+
+        public void UpdateValue(Color newColor)
+        {
+            color = newColor;
+            if (inputType == InputType.Int)
+            {
+                inputR.text = "" + (int)(color.r * 255);
+                inputG.text = "" + (int)(color.g * 255);
+                inputB.text = "" + (int)(color.b * 255);
+            }
+            else
+            {
+                inputR.text = "" + color.r;
+                inputG.text = "" + color.g;
+                inputB.text = "" + color.b;
+            }
+            inputRprev = inputR.text;
+            inputGprev = inputG.text;
+            inputBprev = inputB.text;
+        }
+
+        // Will probably not be used (color setting only valid for objects)
+        public override string GetValueString()
+        {
+            string text1 = inputR.text;
+            string text2 = inputG.text;
+            string text3 = inputB.text;
+            if (inputType == InputType.Float)
+            {
+                text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text1);
+                text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text2);
+                text3 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(text3);
+            }
+            string text = text1 + ":" + text2 + ":" + text3;
+            return text;
+        }
+
+        // Will probably not be used (color setting only valid for objects)
+        public override void SetValueString(string input)
+        {
+            if (input.Contains(':') == false)
+            {
+                Log.Error("Setting_MinMax: SetValueString: No - in input!");
+                return;
+            }
+            string text1 = input.Substring(0, input.IndexOf(':'));
+            string textRest = input.Substring(input.IndexOf(':') + 1);
+            string text2 = textRest.Substring(0, textRest.IndexOf(':'));
+            string text3 = textRest.Substring(textRest.IndexOf(':') + 1);
+            TypeConverter.ConversionResult res1 = TypeConverter.ConvertStringToFloat(text1);
+            TypeConverter.ConversionResult res2 = TypeConverter.ConvertStringToFloat(text2);
+            TypeConverter.ConversionResult res3 = TypeConverter.ConvertStringToFloat(text3);
+            if (res1.conversionSuccessful == false || res2.conversionSuccessful == false || res3.conversionSuccessful == false)
+            {
+                Log.Error("Setting_Color: SetValueString: Conversion to number failed for " + text1 + " and/or " + text2 + " and/or " + text3);
+                return;
+            }
+            if (inputType == InputType.Int)
+            {
+                res1.obj = (int)res1.obj;
+                res2.obj = (int)res2.obj;
+                res3.obj = (int)res3.obj;
+            }
+            inputR.text = res1.ToString();
+            inputG.text = res2.ToString();
+            inputB.text = res3.ToString();
+        }
+
+        protected override void LockSetting()
+        {
+            inputR.enabled = false;
+            inputG.enabled = false;
+            inputB.enabled = false;
+        }
+
+        protected override void UnlockSetting()
+        {
+            inputR.enabled = true;
+            inputG.enabled = true;
+            inputB.enabled = true;
+        }
+
+        protected override void SetInteractableState(bool interactable)
+        {
+            inputR.interactable = interactable;
+            inputG.interactable = interactable;
+            inputB.interactable = interactable;
+        }
+
+        protected override void ClearRefs()
+        {
+            onValueChangedEvent = null;
+        }
+
+        // Callbacks
+
+        public Action<string, string> onValueChangedEvent;
+        private void OnValueChanged()
+        {
+            int intValR;
+            int intValG;
+            int intValB;
+            float floatValR;
+            float floatValG;
+            float floatValB;
+            string text1 = inputR.text;
+            string text2 = inputG.text;
+            string text3 = inputB.text;
+
+            if (!IsInputValid(text1, out intValR, out floatValR) ||
+                !IsInputValid(text2, out intValG, out floatValG) ||
+                !IsInputValid(text3, out intValB, out floatValB))
+            {
+                // Input not valid, reset to old value
+                inputR.text = inputRprev;
+                inputG.text = inputGprev;
+                inputB.text = inputBprev;
+            }
+            else
+            {
+                // Input valid, continue
+                if (inputType == InputType.Int)
+                {
+                    color = new Color(intValR / 255.0f, intValG / 255.0f, intValB / 255.0f);
+                    text1 = intValR.ToString();
+                    text2 = intValG.ToString();
+                    text3 = intValB.ToString();
+                }
+                else
+                {
+                    color = new Color(floatValR, floatValG, floatValB);
+                    text1 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(floatValR.ToString());
+                    text2 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(floatValG.ToString());
+                    text3 = TypeConverter.ConvertStringInStringThatCanBeConvertedToFloat(floatValB.ToString());
+                }
+
+                inputR.text = text1;
+                inputG.text = text2;
+                inputB.text = text3;
+                inputRprev = inputR.text;
+                inputGprev = inputG.text;
+                inputBprev = inputB.text;
+
+                string text = inputR.text + ":" + inputG.text + ":" + inputB.text;
+                if (onValueChangedEvent != null) onValueChangedEvent(this.name, text);
+            }
+        }
+
+    }
+
+} // namespace AS2.UI

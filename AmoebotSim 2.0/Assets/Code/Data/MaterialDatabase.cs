@@ -32,6 +32,8 @@ namespace AS2
         {
             int q_background = RenderSystem.renderQueue_background;
             int q_bonds = RenderSystem.renderQueue_bonds;
+            int q_object_ui = RenderSystem.renderQueue_object_ui;
+            int q_objects = RenderSystem.renderQueue_objects;
             int q_particles = RenderSystem.renderQueue_particles;
             int q_circuits = RenderSystem.renderQueue_circuits;
             int q_circuitBeeps = RenderSystem.renderQueue_circuitBeeps;
@@ -45,6 +47,12 @@ namespace AS2
             // Bond materials
             material_bond_lineCircular_movement.renderQueue = q_bonds;
             material_bond_lineHexagonal_movement.renderQueue = q_bonds;
+
+            // Object UI material
+            material_object_ui.renderQueue = q_object_ui;
+
+            // Object material
+            material_object_base.renderQueue = q_objects;
 
             // Particle materials
             material_circular_particleComplete.renderQueue = q_particles;
@@ -64,11 +72,13 @@ namespace AS2
             // UI overlay materials
             material_hexagonal_ui_baseHexagonSelectionMaterial.renderQueue = q_overlays;
             material_hexagonal_ui_baseHexagonAddMaterial.renderQueue = q_overlays;
+            material_hexagonal_ui_baseHexagonAddObjectMaterial.renderQueue = q_overlays;
             material_hexagonal_ui_baseHexagonRemoveMaterial.renderQueue = q_overlays;
             material_hexagonal_ui_baseHexagonMoveMaterial.renderQueue = q_overlays;
             material_hexagonal_ui_baseHexagonMoveSelectionMaterial.renderQueue = q_overlays;
             material_circuit_ui_pSetHoverMaterial.renderQueue = q_overlays;
             material_circuit_ui_pSetDragMaterial.renderQueue = q_overlays;
+            material_line.renderQueue = q_overlays;
         }
 
         // Circular View
@@ -88,20 +98,25 @@ namespace AS2
         // Beeps
         public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");
         public static Material material_circuit_beepPaused = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepPausedMat");
-        
+
         // Bonds
         public static Material material_bond_lineHexagonal_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondHexMatWithMovement");
         public static Material material_bond_lineCircular_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BondCircMatWithMovement");
 
+        // Objects
+        public static Material material_object_base = Resources.Load<Material>(FilePaths.path_materials + "Base/ObjectMat");
+        public static Material material_object_ui = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/ObjectSelectionMaterial");
+
         // UI
         public static Material material_hexagonal_ui_baseHexagonSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonSelectionMaterial");
         public static Material material_hexagonal_ui_baseHexagonAddMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonAddMaterial");
+        public static Material material_hexagonal_ui_baseHexagonAddObjectMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonAddObjectMaterial");
         public static Material material_hexagonal_ui_baseHexagonRemoveMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonRemoveMaterial");
         public static Material material_hexagonal_ui_baseHexagonMoveMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonMoveMaterial");
         public static Material material_hexagonal_ui_baseHexagonMoveSelectionMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/HexagonMoveSelectionMaterial");
         public static Material material_circuit_ui_pSetHoverMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/PSetHoverMaterial");
         public static Material material_circuit_ui_pSetDragMaterial = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/UI/PSetDragMaterial");
-
+        public static Material material_line = Resources.Load<Material>(FilePaths.path_materials + "Base/Sprite-Unlit-Default");
     }
 
 } // namespace AS2
