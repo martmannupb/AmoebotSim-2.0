@@ -262,6 +262,24 @@ namespace AS2.Sim
 
         private CollisionChecker.DebugLine[] collisionDebugLines;
 
+        private float beepFailureProb = 0f;
+        /// <summary>
+        /// The probability of a beep not being received on
+        /// each partition set of a particle.
+        /// <para>
+        /// Value is always clamped between 0 and 1.
+        /// </para>
+        /// </summary>
+        public float BeepFailureProb
+        {
+            get { return beepFailureProb; }
+            set
+            {
+                beepFailureProb = Mathf.Clamp01(value);
+                Log.Debug("Changed beep failure probability to " + beepFailureProb);
+            }
+        }
+
 
         /*
          * Initialization mode data structures
@@ -2744,10 +2762,15 @@ namespace AS2.Sim
 
                     if (sendBeepsAndMessages)
                     {
-                        if (circ.HasBeep())
+                        // If beep failure is enabled: Fail to receive beep and message
+                        // unless they were sent by the particle itself
+                        bool failure = beepFailureProb > 0f && Random.Range(0f, 1f) <= beepFailureProb;
+
+                        if (circ.HasBeep() && (!failure || p.HasPlannedBeep(ps.Id)))
                             p.ReceiveBeep(ps.Id);
+
                         Message msg = circ.GetMessage();
-                        if (msg != null)
+                        if (msg != null && !failure || p.HasPlannedMessage(ps.Id))
                             p.ReceiveMessage(ps.Id, msg);
                     }
 

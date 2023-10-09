@@ -20,6 +20,7 @@ namespace AS2.UI
         private UISetting_Text setting_cameraPosX;
         private UISetting_Text setting_cameraPosY;
         private UISetting_Text setting_cameraSize;
+        private UISetting_Text setting_beepFailureProb;
 
         // Data
         public GameObject settingsPanel;
@@ -39,6 +40,7 @@ namespace AS2.UI
         private const string settingName_circuitBorder = "Circuit Border";
         private const string settingName_circularRing = "Circular Ring";
         private const string settingName_toggleTooltips = "Tooltips";
+        private const string settingName_beepFailureProb = "Beep Failure Prob.";
 
         private void Start()
         {
@@ -111,6 +113,9 @@ namespace AS2.UI
             // Tooltips On/Off
             UISetting_Toggle setting_tooltipsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_toggleTooltips, true);
             setting_tooltipsOnOff.onValueChangedEvent += SettingChanged_Toggle;
+
+            setting_beepFailureProb = new UISetting_Text(null, settingsParent.transform, settingName_beepFailureProb, "0", UISetting_Text.InputType.Float);
+            setting_beepFailureProb.onValueChangedEvent += SettingChanged_BeepFailureProb;
         }
 
         /// <summary>
@@ -233,6 +238,12 @@ namespace AS2.UI
                 default:
                     break;
             }
+        }
+
+        private void SettingChanged_BeepFailureProb(string name, string value)
+        {
+            uiHandler.sim.system.BeepFailureProb = float.Parse(setting_beepFailureProb.GetValueString());
+            setting_beepFailureProb.SetValueString(uiHandler.sim.system.BeepFailureProb.ToString());
         }
 
         /// <summary>
