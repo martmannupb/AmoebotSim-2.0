@@ -217,12 +217,18 @@ namespace AS2.Visuals
                             }
                         }
 
-                        // Beep Origin
+                        // Beep Origin and faulty highlight
                         if (innerPin.pSet.beepOrigin)
                         {
                             // Pin
                             batch_pins = instance.GetBatch_Pin(gd.properties_pin_beep);
                             batch_pins.UpdatePin(worldPos, false, gd.index_pSet1_beep);
+                        }
+                        if (innerPin.pSet.isFaulty)
+                        {
+                            // Pin
+                            batch_pins = instance.GetBatch_Pin(gd.properties_pin_faulty);
+                            batch_pins.UpdatePin(worldPos, false, gd.index_pSet1_fault);
                         }
                         break;
                     case PSetInnerPinRef.PinType.PSet2:
@@ -263,12 +269,18 @@ namespace AS2.Visuals
                             }
                         }
 
-                        // Beeps
+                        // Beeps and faults
                         if (innerPin.pSet.beepOrigin)
                         {
                             // Pin
                             batch_pins = instance.GetBatch_Pin(gd.properties_pin_beep);
                             batch_pins.UpdatePin(worldPos, false, gd.index_pSet2_beep);
+                        }
+                        if (innerPin.pSet.isFaulty)
+                        {
+                            // Pin
+                            batch_pins = instance.GetBatch_Pin(gd.properties_pin_faulty);
+                            batch_pins.UpdatePin(worldPos, false, gd.index_pSet2_fault);
                         }
                         break;
                     case PSetInnerPinRef.PinType.PConnector1:
@@ -807,7 +819,10 @@ namespace AS2.Visuals
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
                     ParticlePinGraphicState.PSetData.GraphicalData gd = pSet.graphicalData;
                     // 1. Add Pin
-                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
+                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, pSet.isFaulty, movementOffset,
+                        new GDRef(gd, false, true, false),
+                        new GDRef(gd, false, true, false),
+                        new GDRef(gd, false, true, false));
                     // 2. Add Lines
                     GDRef gdRef_lines = new GDRef(gd, true, true, false, 0);
                     AddLines_PartitionSetContracted(state, snap, pSet, pSet.graphicalData.active_position1, delayed, movementOffset, gdRef_lines);
@@ -847,8 +862,10 @@ namespace AS2.Visuals
                     GDRef gdRef_lines1 = new GDRef(gd, true, true, false, 0);
                     GDRef gdRef_lines2 = new GDRef(gd, true, false, false, 0);
                     // 1. Add Pins + Connectors + Internal Lines
-                    if (pSet.graphicalData.hasPinsInHead) AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
-                    if (pSet.graphicalData.hasPinsInTail) AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
+                    if (pSet.graphicalData.hasPinsInHead)
+                        AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, pSet.isFaulty, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
+                    if (pSet.graphicalData.hasPinsInTail)
+                        AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, pSet.isFaulty, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
                     if (pSet.HasPinsInHeadAndTail())
                     {
                         AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset, new GDRef(gd, false, true, true));
@@ -918,7 +935,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Adds the external circuit lines belonging to a singleton
         /// partition set of a contracted particle. Also adds a beep
-        /// highlight if the partition set is a beep origin.
+        /// highlight if the partition set is a beep origin and a fault
+        /// highlight if the partition set has a beep fault.
         /// </summary>
         /// <param name="state">The graphical circuit information belonging
         /// to the particle.</param>
@@ -945,6 +963,10 @@ namespace AS2.Visuals
                 if (pSet.beepOrigin)
                 {
                     AddSingletonBeep(posPin, pSet.color, delayed, movementOffset);
+                }
+                if (pSet.isFaulty)
+                {
+                    AddSingletonFault(posPin, pSet.color, delayed, movementOffset);
                 }
             }
         }
@@ -1007,7 +1029,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Adds the internal and external circuit lines belonging to a
         /// singleton partition set of an expanded particle. Also adds a
-        /// beep highlight if the partition set is a beep origin.
+        /// beep highlight if the partition set is a beep origin and a
+        /// fault highlight if the partition set has a beep fault.
         /// </summary>
         /// <param name="state">The graphical circuit information belonging
         /// to the particle.</param>
@@ -1035,6 +1058,10 @@ namespace AS2.Visuals
                 if (pSet.beepOrigin)
                 {
                     AddSingletonBeep(posPin, pSet.color, delayed, movementOffset);
+                }
+                if (pSet.isFaulty)
+                {
+                    AddSingletonFault(posPin, pSet.color, delayed, movementOffset);
                 }
             }
         }
@@ -1106,7 +1133,7 @@ namespace AS2.Visuals
             RenderBatchIndex index = batch.AddLine(globalLineStartPos, globalLineEndPos);
             if(gdRef.valid)
             {
-                StoreRenderBatchIndex(gdRef, index, true, false);
+                StoreRenderBatchIndex(gdRef, index, true, false, false);
                 gdRef.gd.properties_line = batch.properties;
             }
             // Beep
@@ -1121,7 +1148,7 @@ namespace AS2.Visuals
                 index = batch.AddLine(globalLineStartPos, globalLineEndPos);
                 if(gdRef_beep.valid)
                 {
-                    StoreRenderBatchIndex(gdRef_beep, index, true, true);
+                    StoreRenderBatchIndex(gdRef_beep, index, true, true, false);
                     gdRef_beep.gd.properties_line_beep = batch.properties;
                 }
             }
@@ -1136,29 +1163,44 @@ namespace AS2.Visuals
         /// <param name="delayed">Whether this pin should be displayed with a delay
         /// so that it only appears after any movement animations are finished.</param>
         /// <param name="beeping">Whether a beep should be displayed on this pin.</param>
+        /// <param name="faulty">Whether a beep fault should be displayed on this pin.</param>
         /// <param name="movementOffset">The world coordinate vector pointing from the
         /// pin's end position after its movement to its start position.</param>
         /// <param name="gdRef">Graphical data belonging to the pin.</param>
         /// <param name="gdRef_beep">Graphical data belonging to the beep. Should usually
         /// be the same as <paramref name="gdRef"/>.</param>
-        private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
+        /// <param name="gdRef_fault">Graphical data belonging to the beep fault. Should
+        /// usually be the same as <paramref name="gdRef"/>.</param>
+        private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, bool faulty, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep, GDRef gdRef_fault)
         {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
+            // Base pin
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, false, movementOffset);
             RenderBatchIndex index = batch.AddPin(pinPos, false);
             if(gdRef.valid)
             {
-                StoreRenderBatchIndex(gdRef, index, false, false);
+                StoreRenderBatchIndex(gdRef, index, false, false, false);
                 gdRef.gd.properties_pin = batch.properties;
             }
             // Beep
             if (beeping)
             {
-                batch = GetBatch_Pin(color, delayed, true, movementOffset);
+                batch = GetBatch_Pin(color, delayed, true, false, movementOffset);
                 index = batch.AddPin(pinPos, false);
                 if(gdRef_beep.valid)
                 {
-                    StoreRenderBatchIndex(gdRef_beep, index, false, true);
+                    StoreRenderBatchIndex(gdRef_beep, index, false, true, false);
                     gdRef_beep.gd.properties_pin_beep = batch.properties;
+                }
+            }
+            // Faulty beeps
+            if (faulty)
+            {
+                batch = GetBatch_Pin(color, delayed, false, true, movementOffset);
+                index = batch.AddPin(pinPos, false);
+                if (gdRef_fault.valid)
+                {
+                    StoreRenderBatchIndex(gdRef_fault, index, false, false, true);
+                    gdRef_fault.gd.properties_pin_faulty = batch.properties;
                 }
             }
         }
@@ -1177,7 +1219,23 @@ namespace AS2.Visuals
         private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
         {
             // Beep
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, false, movementOffset);
+            batch.AddPin(pinPos, true);
+        }
+
+        /// <summary>
+        /// Adds a fault highlight to the pin of a singleton partition set.
+        /// </summary>
+        /// <param name="pinPos">The global position of the pin.</param>
+        /// <param name="color">The color of the partition set (will
+        /// not be rendered; the fault highlight is always red).</param>
+        /// <param name="delayed">Whether the pin and fault should appear delayed
+        /// because the particle is performing a movement.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the pin's end position after its movement to its start position.</param>
+        private void AddSingletonFault(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
+        {
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, true, movementOffset);
             batch.AddPin(pinPos, true);
         }
 
@@ -1196,11 +1254,11 @@ namespace AS2.Visuals
         /// <param name="gdRef">Graphical data belonging to the partition set.</param>
         private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, false, movementOffset);
             RenderBatchIndex index = batch.AddConnectorPin(pinPos);
             if(gdRef.valid)
             {
-                StoreRenderBatchIndex(gdRef, index, false, false);
+                StoreRenderBatchIndex(gdRef, index, false, false, false);
                 gdRef.gd.properties_connectorPin = batch.properties;
             }
         }
@@ -1216,7 +1274,10 @@ namespace AS2.Visuals
         /// circuit line.</param>
         /// <param name="isBeep">Whether the index belongs to an
         /// object that is currently beeping.</param>
-        private void StoreRenderBatchIndex(GDRef gdRef, RenderBatchIndex index, bool isLine, bool isBeep)
+        /// <param name="isFault">Whether the index belongs to an
+        /// object with a beep fault. Should never be true when
+        /// <paramref name="isBeep"/>is also true.</param>
+        private void StoreRenderBatchIndex(GDRef gdRef, RenderBatchIndex index, bool isLine, bool isBeep, bool isFault)
         {
             if(gdRef.valid == false)
             {
@@ -1264,20 +1325,7 @@ namespace AS2.Visuals
                     Log.Error("StoreRenderBatchIndex: isLine is not set, but it is set in GDRef");
                     return;
                 }
-                if (isBeep == false)
-                {
-                    if (gdRef.isConnector)
-                    {
-                        if (gdRef.isHead) gdRef.gd.index_pSetConnectorPin1 = index;
-                        else gdRef.gd.index_pSetConnectorPin2 = index;
-                    }
-                    else
-                    {
-                        if (gdRef.isHead) gdRef.gd.index_pSet1 = index;
-                        else gdRef.gd.index_pSet2 = index;
-                    }
-                }
-                else
+                if (isBeep)
                 {
                     if (gdRef.isConnector)
                     {
@@ -1289,6 +1337,31 @@ namespace AS2.Visuals
                     {
                         if (gdRef.isHead) gdRef.gd.index_pSet1_beep = index;
                         else gdRef.gd.index_pSet2_beep = index;
+                    }
+                }
+                else if (isFault)
+                {
+                    if (gdRef.isConnector)
+                    {
+                        // No highlight here
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSet1_fault = index;
+                        else gdRef.gd.index_pSet2_fault = index;
+                    }
+                }
+                else
+                {
+                    if (gdRef.isConnector)
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSetConnectorPin1 = index;
+                        else gdRef.gd.index_pSetConnectorPin2 = index;
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSet1 = index;
+                        else gdRef.gd.index_pSet2 = index;
                     }
                 }
             }
@@ -1340,12 +1413,14 @@ namespace AS2.Visuals
         /// <param name="color">The color of the pin.</param>
         /// <param name="delayed">Whether the pin should be shown delayed.</param>
         /// <param name="beeping">Whether the pin should beep.</param>
+        /// <param name="faulty">Whether the pin is faulty. Must not be true at
+        /// the same time as <paramref name="beeping"/>.</param>
         /// <param name="movementOffset">The offset for the joint movement. Set to
         /// <c>Vector2.zero</c> if no joint movement is present.</param>
         /// <returns>A render batch that renders all pins with the given properties.</returns>
-        private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping, Vector2 movementOffset)
+        private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping, bool faulty, Vector2 movementOffset)
         {
-            return GetBatch_Pin(new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping, movementOffset));
+            return GetBatch_Pin(new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping, faulty, movementOffset));
         }
 
         /// <summary>

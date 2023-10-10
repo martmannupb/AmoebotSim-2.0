@@ -127,6 +127,7 @@ namespace AS2.Visuals
         public static readonly int renderQueue_circuitBeeps = 2870;
         public static readonly int renderQueue_pins = 2880;
         public static readonly int renderQueue_pinBeeps = 2890;
+        public static readonly int renderQueue_pinFault = 2895;
         public static readonly int renderQueue_overlays = 2900;
 
         // Global Data

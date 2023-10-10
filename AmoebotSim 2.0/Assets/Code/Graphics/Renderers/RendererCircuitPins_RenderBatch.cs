@@ -39,16 +39,18 @@ namespace AS2.Visuals
             public Color color;
             public bool delayed;
             public bool beeping;
+            public bool faulty;
             public Vector2 animationOffset;
 
-            public PropertyBlockData(Color color, bool delayed, bool beeping) : this(color, delayed, beeping, Vector2.zero) { }
-            public PropertyBlockData(Color color, bool delayed, bool beeping, Vector2 animationOffset)
+            public PropertyBlockData(Color color, bool delayed, bool beeping, bool faulty) : this(color, delayed, beeping, faulty, Vector2.zero) { }
+            public PropertyBlockData(Color color, bool delayed, bool beeping, bool faulty, Vector2 animationOffset)
             {
                 this.color = color;
                 this.delayed = delayed;
                 this.beeping = beeping;
+                this.faulty = faulty;
                 this.animationOffset = animationOffset;
-        }
+            }
         }
 
         public RendererCircuitPins_RenderBatch(PropertyBlockData properties)
@@ -77,6 +79,15 @@ namespace AS2.Visuals
                 // Render the beep origin in front of the pin / partition set handle
                 zOffset = -0.1f;
                 pinMaterial.renderQueue = RenderSystem.renderQueue_pinBeeps;
+            }
+            else if (properties.faulty)
+            {
+                propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.faultyBeep);
+                propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
+                // Render the fault highlight in front of the pin / partition set handle
+                // but behind the beep origin highlight
+                zOffset = -0.05f;
+                pinMaterial.renderQueue = RenderSystem.renderQueue_pinFault;
             }
             else
             {
