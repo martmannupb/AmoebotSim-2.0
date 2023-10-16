@@ -82,7 +82,13 @@ namespace AS2.Visuals
         /// Fraction of the partition set pin that should be colored
         /// when the partition set is a beep or message origin.
         /// </summary>
-        public const float const_circuitPinBeepSizePercentage = 0.5f;
+        public const float const_circuitPinBeepOriginSizePercentage = 0.5f;
+        /// <summary>
+        /// Fraction of the partition set pin that should be colored
+        /// when the partition set has received a beep or has suffered
+        /// a failure.
+        /// </summary>
+        public const float const_circuitPinBeepHighlightSizePercentage = 0.75f;
         /// <summary>
         /// Width of bond lines in hexagonal view modes.
         /// </summary>

@@ -70,19 +70,32 @@ namespace AS2.Algos.BeepFailureTest
                 for (int i = 0; i < 6; i++)
                 {
                     Direction d = DirectionHelpers.Cardinal(i);
-                    if (HasNeighborAt(d.Opposite()))
+                    if (HasNeighborAt(d) && HasNeighborAt(d.Opposite()))
                     {
+                        // Neighbors on both sides: Connect them
                         pc.MakePartitionSet(new int[] {
                             pc.GetPinAt(d, 0).Id,
                             pc.GetPinAt(d.Opposite(), 1).Id
                         }, i);
-                        pc.SetPartitionSetPosition(i, new Vector2(i * 60f - 20f, 0.7f));
+                        pc.SetPartitionSetPosition(i, new Vector2(i * 60f - 16f, 0.7f));
                     }
-                    else
+                    else if (!HasNeighborAt(d.Opposite()))
                     {
+                        // Have no neighbor in opposite direction:
+                        // Expect beep on the pin where we send it
                         pc.MakePartitionSet(new int[] {
                             pc.GetPinAt(d, 0).Id
                         }, i);
+                    }
+                    else
+                    {
+                        // Have no neighbor in direction d but have
+                        // the opposite neighbor: Expect to receive beep
+                        pc.MakePartitionSet(new int[] {
+                            pc.GetPinAt(d.Opposite(), 1).Id
+                        }, i);
+                        //pc.SetPartitionSetDrawHandle(i, true);
+                        //pc.SetPartitionSetPosition(i, new Vector2(((i + 3) % 6) * 60f + 16f, 0.7f));
                     }
                 }
                 firstRound.SetValue(false);

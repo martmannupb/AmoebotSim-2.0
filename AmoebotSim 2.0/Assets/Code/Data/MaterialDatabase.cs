@@ -68,6 +68,7 @@ namespace AS2
 
             // Pin materials
             material_circuit_pin_movement.renderQueue = q_pins;
+            material_circuit_pin_movement_border.renderQueue = q_pins;
 
             // UI overlay materials
             material_hexagonal_ui_baseHexagonSelectionMaterial.renderQueue = q_overlays;
@@ -94,6 +95,7 @@ namespace AS2
         public static Material material_circuit_line_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitMatWithMovement");
         public static Material material_circuit_lineConnector_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/CircuitConnectorMatWithMovement");
         public static Material material_circuit_pin_movement = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMatWithMovement");
+        public static Material material_circuit_pin_movement_border = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/PinMatWithMovementAndBorder");
         
         // Beeps
         public static Material material_circuit_beep = Resources.Load<Material>(FilePaths.path_materials + "HexagonalView/Circuits/BeepMat");

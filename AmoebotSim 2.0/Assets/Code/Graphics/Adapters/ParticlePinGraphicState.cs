@@ -210,28 +210,30 @@ namespace AS2.Visuals
                 /// </summary>
                 public RenderBatchIndex index_pSet1;
                 /// <summary>
-                /// Batch index of the head partition set handle's beep highlight.
+                /// Batch index of the head partition set handle's beep origin highlight.
                 /// </summary>
-                public RenderBatchIndex index_pSet1_beep;
+                public RenderBatchIndex index_pSet1_beep_origin;
                 /// <summary>
-                /// Batch index of the head partition set handle's fault highlight.
+                /// Batch index of the head partition set handle's beep or
+                /// fault highlight.
                 /// </summary>
-                public RenderBatchIndex index_pSet1_fault;
+                public RenderBatchIndex index_pSet1_beep_or_fault;
                 /// <summary>
                 /// Batch index of the tail partition set handle.
                 /// Only used for expanded particles.
                 /// </summary>
                 public RenderBatchIndex index_pSet2;
                 /// <summary>
-                /// Batch index of the tail partition set handle's beep highlight.
+                /// Batch index of the tail partition set handle's beep origin highlight.
                 /// Only used for expanded particles.
                 /// </summary>
-                public RenderBatchIndex index_pSet2_beep;
+                public RenderBatchIndex index_pSet2_beep_origin;
                 /// <summary>
-                /// Batch index of the tail partition set handle's fault highlight.
+                /// Batch index of the tail partition set handle's beep or
+                /// fault highlight.
                 /// Only used for expanded particles.
                 /// </summary>
-                public RenderBatchIndex index_pSet2_fault;
+                public RenderBatchIndex index_pSet2_beep_or_fault;
                 /// <summary>
                 /// Batch indices for circuit lines belonging to the head partition
                 /// set handle. The last entry belongs to the line between the handle
@@ -386,11 +388,11 @@ namespace AS2.Visuals
                     active_connector_position2 = new Vector2(float.MinValue, float.MinValue);
                     // Indices
                     index_pSet1.Discard();
-                    index_pSet1_beep.Discard();
-                    index_pSet1_fault.Discard();
+                    index_pSet1_beep_origin.Discard();
+                    index_pSet1_beep_or_fault.Discard();
                     index_pSet2.Discard();
-                    index_pSet2_beep.Discard();
-                    index_pSet2_fault.Discard();
+                    index_pSet2_beep_origin.Discard();
+                    index_pSet2_beep_or_fault.Discard();
                     index_lines1.Clear();
                     index_lines1_beep.Clear();
                     index_lines2.Clear();

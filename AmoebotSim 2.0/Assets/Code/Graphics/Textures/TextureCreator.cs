@@ -325,8 +325,15 @@ namespace AS2.Visuals
             {
                 for (int y = 0; y < tex_height; y++)
                 {
-                    if (viewType == ViewType.Hexagonal) tex.SetPixel(x, y, hexagonTexture.GetPixel(x, y));
-                    else if (viewType == ViewType.HexagonalCirc) tex.SetPixel(x, y, hexagonCircTexture.GetPixel(x, y));
+                    Color pixel = viewType == ViewType.Hexagonal ? hexagonTexture.GetPixel(x, y) : hexagonCircTexture.GetPixel(x, y);
+                    // Replace black border with custom color
+                    float alpha = pixel.a;
+                    Color gray = new Color(0.35f, 0.35f, 0.35f);
+                    pixel = (1.0f - pixel.grayscale) * gray + pixel.grayscale * pixel;
+                    pixel.a = alpha;
+                    tex.SetPixel(x, y, pixel);
+                    //if (viewType == ViewType.Hexagonal) tex.SetPixel(x, y, hexagonTexture.GetPixel(x, y));
+                    //else if (viewType == ViewType.HexagonalCirc) tex.SetPixel(x, y, hexagonCircTexture.GetPixel(x, y));
                 }
             }
 

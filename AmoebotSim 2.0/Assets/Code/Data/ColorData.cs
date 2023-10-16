@@ -33,7 +33,8 @@ namespace AS2
 
         // Other Colors
         public static Color beepOrigin = new Color(222f / 255f, 222f / 255f, 222f / 255f, 1f);
-        public static Color faultyBeep = new Color(255f / 255f, 95f / 255f, 91f / 255f, 0.85f);
+        public static Color beepReceive = new Color(100f / 255f, 100f / 255f, 100f / 255f, 1f);
+        public static Color faultyBeep = new Color(255f / 255f, 95f / 255f, 64f / 255f, 1f);
 
         private static Color defaultHexBGColor = new Color(121f / 255f, 121f / 255f, 121f / 255f, 1f);
 
