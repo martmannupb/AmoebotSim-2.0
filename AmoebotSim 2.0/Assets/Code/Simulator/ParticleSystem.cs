@@ -2766,22 +2766,17 @@ namespace AS2.Sim
 
                     if (sendBeepsAndMessages)
                     {
+                        // Determine whether a failure occurs
                         failure = beepFailureProb > 0f && Random.Range(0f, 1f) <= beepFailureProb;
-                        Message msg = circ.GetMessage();
-
-                        // Do not register a failure if all received signals (beep and message)
-                        // have been sent by the particle itself
-                        if ((!circ.HasBeep() || p.HasPlannedBeep(ps.Id)) &&
-                            (msg == null || p.HasPlannedMessage(ps.Id) && p.GetPlannedMessage(ps.Id).Equals(msg)))
-                            failure = false;
-
                         if (failure)
                             p.LogPsetFailure(ps.Id);
 
-                        if (circ.HasBeep() && (!failure || p.HasPlannedBeep(ps.Id)))
+                        // Deliver beeps and messages if no failure has occurred
+                        if (circ.HasBeep() && !failure)
                             p.ReceiveBeep(ps.Id);
 
-                        if (msg != null && !failure || p.HasPlannedMessage(ps.Id))
+                        Message msg = circ.GetMessage();
+                        if (msg != null && !failure)
                             p.ReceiveMessage(ps.Id, msg);
                     }
 
