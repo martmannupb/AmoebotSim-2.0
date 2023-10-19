@@ -9,7 +9,7 @@ namespace AS2
     {
 
         // Standard Particle Colors
-        public static Color Particle_Black = new Color(25f / 255f, 25f / 255f, 25f / 255f, 1f);
+        public static Color Particle_Black = new Color(45f / 255f, 45f / 255f, 45f / 255f, 1f);
         public static Color Particle_Yellow = new Color(202f / 255f, 192f / 255f, 91f / 255f, 1f);
         public static Color Particle_Orange = new Color(202f / 255f, 155f / 255f, 91f / 255f, 1f);
         public static Color Particle_Red = new Color(202f / 255f, 95f / 255f, 91f / 255f, 1f);
@@ -35,6 +35,8 @@ namespace AS2
         public static Color beepOrigin = new Color(222f / 255f, 222f / 255f, 222f / 255f, 1f);
         public static Color beepReceive = new Color(100f / 255f, 100f / 255f, 100f / 255f, 1f);
         public static Color faultyBeep = new Color(255f / 255f, 95f / 255f, 64f / 255f, 1f);
+
+        public static Color particleBorderColor = new Color(0.15f, 0.15f, 0.15f);
 
         private static Color defaultHexBGColor = new Color(121f / 255f, 121f / 255f, 121f / 255f, 1f);
 

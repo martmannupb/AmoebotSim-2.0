@@ -215,8 +215,10 @@ namespace AS2.Visuals
                     if (omitSide == false || !isOmitted)
                     {
                         Vector2 relPosRotated = Quaternion.Euler(new Vector3(0f, 0f, 60f * k)) * relPosPinRight;
-                        Vector2Int absPosRotated = texCenterPixel + new Vector2Int((int)(0.5f * relPosRotated.x * tex_width), (int)(0.5f * relPosRotated.y * tex_height));
-                        Vector2Int startPos = absPosRotated - new Vector2Int(pin_tex_width / 2, pin_tex_height / 2);
+                        Vector2 absPosRotated = texCenterPixel + new Vector2(0.5f * relPosRotated.x * tex_width, 0.5f * relPosRotated.y * tex_height);
+                        Vector2 startPosF = absPosRotated - new Vector2(pin_tex_width / 2.0f, pin_tex_height / 2.0f);
+                        Vector2Int startPos = new Vector2Int(Mathf.RoundToInt(startPosF.x), Mathf.RoundToInt(startPosF.y));
+
                         pinStartPositions.Add(startPos);
                     }
                 }
@@ -326,9 +328,12 @@ namespace AS2.Visuals
                 for (int y = 0; y < tex_height; y++)
                 {
                     Color pixel = viewType == ViewType.Hexagonal ? hexagonTexture.GetPixel(x, y) : hexagonCircTexture.GetPixel(x, y);
+
+                    // TODO: Make this color configurable
+
                     // Replace black border with custom color
                     float alpha = pixel.a;
-                    Color gray = new Color(0.35f, 0.35f, 0.35f);
+                    Color gray = ColorData.particleBorderColor;
                     pixel = (1.0f - pixel.grayscale) * gray + pixel.grayscale * pixel;
                     pixel.a = alpha;
                     tex.SetPixel(x, y, pixel);
@@ -373,8 +378,9 @@ namespace AS2.Visuals
                 for (int k = 0; k < 6; k++)
                 {
                     Vector2 relPosRotated = Quaternion.Euler(new Vector3(0f, 0f, 60f * k)) * relPosPinRight;
-                    Vector2Int absPosRotated = texCenterPixel + new Vector2Int((int)(0.5f * relPosRotated.x * tex_width), (int)(0.5f * relPosRotated.y * tex_height));
-                    Vector2Int startPos = absPosRotated - new Vector2Int(pin_tex_width / 2, pin_tex_height / 2);
+                    Vector2 absPosRotated = texCenterPixel + new Vector2(0.5f * relPosRotated.x * tex_width, 0.5f * relPosRotated.y * tex_height);
+                    Vector2 startPosF = absPosRotated - new Vector2(pin_tex_width / 2.0f, pin_tex_height / 2.0f);
+                    Vector2Int startPos = new Vector2Int(Mathf.RoundToInt(startPosF.x), Mathf.RoundToInt(startPosF.y));
                     pinStartPositions.Add(startPos);
                 }
             }
@@ -385,6 +391,9 @@ namespace AS2.Visuals
                 for (int y = 0; y < pin_tex_height; y++)
                 {
                     Color colorPin = pinTexture.GetPixel(x, y);
+                    colorPin.r = 1.0f;
+                    colorPin.g = 0.0f;
+                    colorPin.b = 0.0f;
                     foreach (Vector2Int startPos in pinStartPositions)
                     {
                         int texPos_x = startPos.x + x;
