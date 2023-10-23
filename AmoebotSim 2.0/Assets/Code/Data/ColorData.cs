@@ -32,11 +32,11 @@ namespace AS2
         };
 
         // Other Colors
-        public static Color beepOrigin = new Color(222f / 255f, 222f / 255f, 222f / 255f, 1f);
-        public static Color beepReceive = new Color(100f / 255f, 100f / 255f, 100f / 255f, 1f);
-        public static Color faultyBeep = new Color(255f / 255f, 95f / 255f, 64f / 255f, 1f);
+        public static Color beepOrigin = Config.ConfigData.additionalConfiguration.beepOriginColor;
+        public static Color beepReceive = Config.ConfigData.additionalConfiguration.beepReceiveColor;
+        public static Color faultyBeep = Config.ConfigData.additionalConfiguration.faultyBeepColor;
 
-        public static Color particleBorderColor = new Color(0.15f, 0.15f, 0.15f);
+        public static Color particleBorderColor = Config.ConfigData.additionalConfiguration.particleBorderColor;
 
         private static Color defaultHexBGColor = new Color(121f / 255f, 121f / 255f, 121f / 255f, 1f);
 

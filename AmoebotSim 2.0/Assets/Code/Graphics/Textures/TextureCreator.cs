@@ -60,6 +60,8 @@ namespace AS2.Visuals
             Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
             Material mat = new Material(hexMat.shader);
             mat.CopyPropertiesFromMaterial(hexMat);
+            // We have to set a new color threshold in case the border color is different
+            mat.SetFloat("_BorderColorThreshold", Config.ConfigData.additionalConfiguration.shaderBorderThreshold);
             //Texture2D borderTex1 = GetPinBorderTextureEmpty();
             //Texture2D borderTex2 = GetPinBorderTextureEmpty();
             Texture2D borderTex100P = GetPinBorderTexture(pinsPerSide, true, false, 0, false, viewType);
@@ -102,6 +104,8 @@ namespace AS2.Visuals
             Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
             Material mat = new Material(hexMat.shader);
             mat.CopyPropertiesFromMaterial(hexMat);
+            // We have to set a new color threshold in case the border color is different
+            mat.SetFloat("_BorderColorThreshold", Config.ConfigData.additionalConfiguration.shaderBorderThreshold);
             Texture2D hexTex1 = GetHexagonBaseTextureWithPins(pinsPerSide, viewType);
             mat.SetTexture("_TextureHexagon", hexTex1);
             mat.SetTexture("_TextureHexagon2", hexTex1);
@@ -329,16 +333,12 @@ namespace AS2.Visuals
                 {
                     Color pixel = viewType == ViewType.Hexagonal ? hexagonTexture.GetPixel(x, y) : hexagonCircTexture.GetPixel(x, y);
 
-                    // TODO: Make this color configurable
-
                     // Replace black border with custom color
                     float alpha = pixel.a;
                     Color gray = ColorData.particleBorderColor;
                     pixel = (1.0f - pixel.grayscale) * gray + pixel.grayscale * pixel;
                     pixel.a = alpha;
                     tex.SetPixel(x, y, pixel);
-                    //if (viewType == ViewType.Hexagonal) tex.SetPixel(x, y, hexagonTexture.GetPixel(x, y));
-                    //else if (viewType == ViewType.HexagonalCirc) tex.SetPixel(x, y, hexagonCircTexture.GetPixel(x, y));
                 }
             }
 

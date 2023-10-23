@@ -167,14 +167,15 @@ namespace AS2.Visuals
         /// <summary>
         /// Determines whether the outer ring should be drawn
         /// around particles in the graph view mode. Can be
-        /// set in the Settings Panel.
+        /// set in the Settings Panel and the configuration file.
         /// </summary>
-        public static bool flag_showCircuitViewOuterRing = true;
+        public static bool flag_showCircuitViewOuterRing = Config.ConfigData.settingsMenu.drawParticleRing;
         /// <summary>
         /// Determines whether circuit lines between particles
-        /// should have a border. Can be set in the Settings Panel.
+        /// should have a border. Can be set in the Settings Panel
+        /// and the configuration file.
         /// </summary>
-        public static bool flag_circuitBorderActive = false;
+        public static bool flag_circuitBorderActive = Config.ConfigData.settingsMenu.drawCircuitBorder;
 
         // Dynamic Data _____
         /// <summary>
@@ -234,9 +235,10 @@ namespace AS2.Visuals
         public static bool data_circuitBeepRepeatOn = false;
         /// <summary>
         /// Determines whether the movement animations should
-        /// be played. Can be set in the Settings Panel.
+        /// be played. Can be set in the Settings Panel and the
+        /// configuration file.
         /// </summary>
-        public static bool animationsOn = true;
+        public static bool animationsOn = Config.ConfigData.settingsMenu.movementAnimationsOn;
 
         /// <summary>
         /// The time at which the current movement animation

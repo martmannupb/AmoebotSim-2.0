@@ -94,7 +94,7 @@ namespace AS2.UI
             UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_animationsOnOff, RenderSystem.animationsOn);
             setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
             // Compass Dir Overlay Display
-            UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, settingName_compassOvArrows, WorldSpaceUIHandler.instance.showCompassDirArrows);
+            UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, settingName_compassOvArrows, Config.ConfigData.settingsMenu.drawCompassOverlayAsArrows);
             setting_compassDirOverlayDisplayType.onValueChangedEvent += SettingChanged_Toggle;
             // Circuit Connections Border
             UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, settingName_circuitBorder, RenderSystem.flag_circuitBorderActive);
@@ -103,7 +103,7 @@ namespace AS2.UI
             UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, settingName_circularRing, RenderSystem.flag_showCircuitViewOuterRing);
             setting_graphViewOutterRing.onValueChangedEvent += SettingChanged_Toggle;
             // Fullscreen
-            UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, false);
+            UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, Config.ConfigData.settingsMenu.fullscreen);
             setting_fullscreen.onValueChangedEvent += SettingChanged_Toggle;
 
             // Header: Other
@@ -111,10 +111,11 @@ namespace AS2.UI
             UISetting_Header setting_header_other = new UISetting_Header(null, settingsParent.transform, "Other");
 
             // Tooltips On/Off
-            UISetting_Toggle setting_tooltipsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_toggleTooltips, true);
+            UISetting_Toggle setting_tooltipsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_toggleTooltips, Config.ConfigData.settingsMenu.showTooltips);
             setting_tooltipsOnOff.onValueChangedEvent += SettingChanged_Toggle;
 
-            setting_beepFailureProb = new UISetting_Text(null, settingsParent.transform, settingName_beepFailureProb, "0", UISetting_Text.InputType.Float);
+            uiHandler.sim.system.BeepFailureProb = Config.ConfigData.settingsMenu.beepFailureProbability;
+            setting_beepFailureProb = new UISetting_Text(null, settingsParent.transform, settingName_beepFailureProb, uiHandler.sim.system.BeepFailureProb.ToString(), UISetting_Text.InputType.Float);
             setting_beepFailureProb.onValueChangedEvent += SettingChanged_BeepFailureProb;
         }
 

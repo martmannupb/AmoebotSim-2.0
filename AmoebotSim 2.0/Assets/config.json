@@ -1,0 +1,38 @@
+{
+    "settingsMenu": {
+        "movementAnimationsOn": true,
+        "drawCompassOverlayAsArrows": true,
+        "drawCircuitBorder": true,
+        "drawParticleRing": true,
+        "fullscreen": false,
+        "showTooltips": true,
+        "beepFailureProbability": 0.0
+    },
+    "additionalConfiguration": {
+        "particleBorderColor": {
+            "r": 0.15000000596046449,
+            "g": 0.15000000596046449,
+            "b": 0.15000000596046449,
+            "a": 1.0
+        },
+        "shaderBorderThreshold": 0.30000001192092898,
+        "beepOriginColor": {
+            "r": 0.8705882430076599,
+            "g": 0.8705882430076599,
+            "b": 0.8705882430076599,
+            "a": 1.0
+        },
+        "beepReceiveColor": {
+            "r": 0.3921568691730499,
+            "g": 0.3921568691730499,
+            "b": 0.3921568691730499,
+            "a": 1.0
+        },
+        "faultyBeepColor": {
+            "r": 1.0,
+            "g": 0.37254902720451357,
+            "b": 0.250980406999588,
+            "a": 1.0
+        }
+    }
+}
