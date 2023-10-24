@@ -5,22 +5,18 @@ using UnityEngine;
 namespace AS2
 {
 
+    /// <summary>
+    /// Script for the configuration editor GameObject.
+    /// The custom Inspector content is implemented by the
+    /// <see cref="AS2.ConfigurationEditorBehavior"/>.
+    /// </summary>
     [ExecuteInEditMode]
     public class ConfigurationEditor : MonoBehaviour
     {
+        /// <summary>
+        /// The configuration data to be editable in the Inspector
+        /// </summary>
         public ConfigData configData;
-
-        private static ConfigurationEditor instance;
-        public static ConfigurationEditor Instance
-        {
-            get { return instance; }
-        }
-
-        private void OnValidate()
-        {
-            if (instance is null)
-                instance = this;
-        }
     }
 
 } // namespace AS2

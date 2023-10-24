@@ -19,17 +19,15 @@ namespace AS2
         public static Color Particle_Aqua = new Color(91f / 255f, 202f / 255f, 154f / 255f, 1f);
         public static Color Particle_Green = new Color(111f / 255f, 202f / 255f, 91f / 255f, 1f);
 
+        // Additional Colors
+        /// <summary>
+        /// Additional custom colors to choose from. These are specified in the configuration
+        /// file and can be used for particles, objects, circuits, etc.
+        /// </summary>
+        public static Color[] Additional_Colors = Config.ConfigData.additionalConfiguration.additionalColors;
+
         // Standard Circuit Colors
-        public static Color[] Circuit_Colors = new Color[] {
-            // Tertiary colors
-            // Amber, Vermillion, Magenta, Violet, Teal, Chartreuse
-            new Color(255f / 255f, 191f / 255f, 0f / 255f),
-            new Color(227f / 255f, 66f / 255f, 52f / 255f),
-            new Color(255f / 255f, 0f / 255f, 255f / 255f),
-            new Color(143f / 255f, 0f / 255f, 255f / 255f),
-            new Color(0f / 255f, 128f / 255f, 128f / 255f),
-            new Color(127f / 255f, 255f / 255f, 0f / 255f)
-        };
+        public static Color[] Circuit_Colors = Config.ConfigData.additionalConfiguration.circuitColors;
 
         // Other Colors
         public static Color beepOrigin = Config.ConfigData.additionalConfiguration.beepOriginColor;
@@ -37,15 +35,6 @@ namespace AS2
         public static Color faultyBeep = Config.ConfigData.additionalConfiguration.faultyBeepColor;
 
         public static Color particleBorderColor = Config.ConfigData.additionalConfiguration.particleBorderColor;
-
-        private static Color defaultHexBGColor = new Color(121f / 255f, 121f / 255f, 121f / 255f, 1f);
-
-        public static Color ConvertColorToHexBGColor(Color color)
-        {
-            return new Color((defaultHexBGColor.r + color.r) / 2f, (defaultHexBGColor.g + color.g) / 2f, (defaultHexBGColor.b + color.b) / 2f, (defaultHexBGColor.a + color.a) / 2f);
-        }
-
-
     }
 
 } // namespace AS2

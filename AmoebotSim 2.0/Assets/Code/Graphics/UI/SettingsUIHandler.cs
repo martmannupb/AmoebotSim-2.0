@@ -54,6 +54,7 @@ namespace AS2.UI
 
         /// <summary>
         /// Initializes the settings UI. Dynamically sets up all the settings with all their input fields.
+        /// Initial values are loaded from the configuration file if they are not available elsewhere.
         /// </summary>
         private void InitSettings()
         {
@@ -114,9 +115,17 @@ namespace AS2.UI
             UISetting_Toggle setting_tooltipsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_toggleTooltips, Config.ConfigData.settingsMenu.showTooltips);
             setting_tooltipsOnOff.onValueChangedEvent += SettingChanged_Toggle;
 
+            // Beep failure probability
             uiHandler.sim.system.BeepFailureProb = Config.ConfigData.settingsMenu.beepFailureProbability;
             setting_beepFailureProb = new UISetting_Text(null, settingsParent.transform, settingName_beepFailureProb, uiHandler.sim.system.BeepFailureProb.ToString(), UISetting_Text.InputType.Float);
             setting_beepFailureProb.onValueChangedEvent += SettingChanged_BeepFailureProb;
+
+            // Button to save the current settings
+            GameObject go_button_save = Instantiate(UIDatabase.prefab_ui_button, settingsParent.transform);
+            tmpro = go_button_save.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            tmpro.text = "Save Settings";
+            Button button_save = go_button_save.GetComponentInChildren<Button>();
+            button_save.onClick.AddListener(delegate { Button_SaveSettings(); });
         }
 
         /// <summary>
@@ -266,6 +275,26 @@ namespace AS2.UI
             float size = float.Parse(setting_cameraSize.GetValueString());
             MouseController.instance.SetCameraPosition(x, y);
             MouseController.instance.SetOrthographicSize(size);
+        }
+
+        /// <summary>
+        /// Stores the current settings in the configuration and
+        /// saves the config file.
+        /// </summary>
+        private void Button_SaveSettings()
+        {
+            // Copy current settings to config
+            ConfigData data = Config.ConfigData;
+            data.settingsMenu.movementAnimationsOn = RenderSystem.animationsOn;
+            data.settingsMenu.drawCompassOverlayAsArrows = WorldSpaceUIHandler.instance.showCompassDirArrows;
+            data.settingsMenu.drawCircuitBorder = RenderSystem.flag_circuitBorderActive;
+            data.settingsMenu.drawParticleRing = RenderSystem.flag_showCircuitViewOuterRing;
+            data.settingsMenu.fullscreen = Screen.fullScreen;
+            data.settingsMenu.showTooltips = TooltipHandler.Instance.Enabled;
+            data.settingsMenu.beepFailureProbability = uiHandler.sim.system.BeepFailureProb;
+
+            // Save configuration file
+            Config.SaveConfigData();
         }
 
         /// <summary>
