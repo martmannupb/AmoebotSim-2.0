@@ -36,6 +36,7 @@ In addition to that, the distinction between head and tail is crucial for identi
 While a simple direction is enough to identify a neighbor position of a contracted particle, expanded particles additionally require the information whether the neighbor is at the particle's head or its tail.
 This system is used wherever neighbor positions are required, i.e., looking for neighbor particles, marking and releasing bonds, scheduling movements, and identifying pins.
 It is therefore important to get comfortable with this concept to prevent unnecessary problems while implementing Amoebot algorithms.
+In all API methods using this system, the particle's head is specified by the boolean value `true` or the constant [`HEAD`][1] and the tail is specified by `false` or the constant [`TAIL`][2].
 
 
 ### API Documentation
@@ -45,3 +46,8 @@ After opening the C# project in Visual Studio directly from the Unity Editor (by
 It can be viewed by hovering over a class or method name and it should also appear in auto-completion suggestions.
 If that is not the case, the API documentation can also be viewed on the [API documentation pages](~/api/index.md) or directly in the source code.
 The online documentation pages in combination with the in-line API documentation should provide everything you need to develop and simulate complex algorithms using AmoebotSim 2.0.
+
+
+
+[1]: xref:AS2.Constants.HEAD
+[2]: xref:AS2.Constants.TAIL

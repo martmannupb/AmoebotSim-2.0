@@ -13460,7 +13460,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1496484896}
   m_Direction: 2
   m_Value: 0.012048192
-  m_Size: 0.9999946
+  m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -16848,7 +16848,7 @@ MonoBehaviour:
       beepFailureProbability: 0
     additionalConfiguration:
       particleBorderColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
-      shaderBorderThreshold: 0.3
+      shaderBorderThreshold: 0.2
       beepOriginColor: {r: 0.87058824, g: 0.87058824, b: 0.87058824, a: 1}
       beepReceiveColor: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 1}
       faultyBeepColor: {r: 1, g: 0.37254903, b: 0.2509804, a: 1}

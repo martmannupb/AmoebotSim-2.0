@@ -4,3 +4,5 @@
   href: init.md
 - name: Simulation Mode
   href: sim.md
+- name: Configuration
+  href: config.md

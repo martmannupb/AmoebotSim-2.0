@@ -391,9 +391,6 @@ namespace AS2.Visuals
                 for (int y = 0; y < pin_tex_height; y++)
                 {
                     Color colorPin = pinTexture.GetPixel(x, y);
-                    colorPin.r = 1.0f;
-                    colorPin.g = 0.0f;
-                    colorPin.b = 0.0f;
                     foreach (Vector2Int startPos in pinStartPositions)
                     {
                         int texPos_x = startPos.x + x;

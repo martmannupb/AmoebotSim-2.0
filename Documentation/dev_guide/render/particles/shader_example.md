@@ -73,6 +73,8 @@ When the application is running, the first four textures are replaced by texture
 In the round hexagonal view mode, the body shape is also replaced by a circle.
 This is all done by the [`TextureCreator`][2] and it allows the shader to render particles both in the hexagonal and the round hexagonal view mode.
 The [`TextureCreator`][2] also creates a new copy of the material every time an algorithm with a different number of pins is loaded.
+Additionally, it replaces the solid black border color with the particle border color specified in the configuration file.
+Since this color should always be darker than the white fill color, the shader can still tell the difference.
 
 <img src="~/images/shader_inspector2.png" alt="Shader Parameters" title="Shader Parameters" width="300" align="right"/>
 
@@ -81,6 +83,7 @@ The trigger time is the time stamp at which the animation starts and the duratio
 In this time frame, the animation percentage is interpolated smoothly between the two given percentages, where a percentage of $0$ means that the particle is contracted and $1$ means the particle is expanded.
 
 Most of the other inputs are for fine-tuning the scaling and positions of the textures.
+Only the `BorderColorThreshold` value might have to be adjusted if the particle border color is changed (see [Combining the Colors](#combining-the-colors)).
 
 #### Composition
 
@@ -207,20 +210,31 @@ If the animation percentage is $1$ or $0$, we use the textures with the `100P` s
 
 Having sampled the two textures and the connector piece, we can now merge their color values to obtain the final output.
 
-<img src="~/images/shader_combine.png" alt="Combining the samples" title="Combining the samples" width="600"/>
+<img src="~/images/shader_combine.png" alt="Combining the samples" title="Combining the samples"/>
 
 To this end, we first use two `ExpansionMergeSubgraph` nodes to combine the three sampled color values.
 This is another custom subgraph that simply returns the maximum value in each channel (R, G, B and alpha) of the two given colors.
 
 <img src="~/images/shader_merge.png" alt="ExpansionMergeSubgraph" title="ExpansionMergeSubgraph" width="600"/>
 
-We then multiply the resulting color with the `InputColor` to obtain the final result.
-Because the input textures are black and white, this simply replaces the white parts of the textures with the `InputColor`.
-The result is then returned as the Fragment shader output.
+The result already has the correct shape of a particle, possibly during an animation, with the specified border color and white fill color.
+The white color of the textures overrides their darker borders in the maximum operation, resulting in a combined shape with a white fill color and a continuous darker border that is composed of all three textures.
+This smooth expansion and contraction effect would be very difficult to achieve outside of a shader.
 
-This last step achieves the smooth expansion and contraction effect that would be very difficult to achieve outside of a shader.
-The white color of the textures overrides their black borders in the maximum operation, resulting in a combined shape with a white fill color and a continuous black border that is composed of all three textures.
+Incidentally, the pins are also drawn in the border color, but this is only visible during animations since another set of pins is rendered on top of the particle when the animation is not playing.
+The only thing left to do is applying the fill color.
+For this, we want to multiply the white fill color of the resulting shape with the `InputColor`.
+However, we do not want the fill color to bleed into the border color.
+Thus, we use another `Branch` node that keeps the current pixel color if the predicate is false and multiplies it with the `InputColor` if the predicate is true.
+As predicate, we check whether the average of the current pixel's RGB values is above a certain threshold, which is given as the `BorderColorThreshold` input.
+Note that the average RGB value of white is 1 and the value of black is 0.
+Because the base texture has a small gradient between the border and the fill area, the threshold helps to control the sharpness of this transition.
+For brighter border colors, the threshold should be larger.
+In general, if the threshold is too large, there can be a sharp edge between the border and the fill color.
 
+The final result for an expanded particle with 4 pins looks like this:
+
+<img src="~/images/shader_example_final.png" alt="Final result" title="The final output of the shader" width="600"/>
 
 
 

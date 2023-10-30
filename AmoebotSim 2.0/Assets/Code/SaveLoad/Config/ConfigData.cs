@@ -55,7 +55,7 @@ namespace AS2
             public Color particleBorderColor = new Color(0.15f, 0.15f, 0.15f);
             [Tooltip("Color brightness threshold seen as a particle's interior by the shader. Used to avoid a sharp transition between the particle's center and its border as well as bleeding of the fill color. For bright border colors, a higher value is usually better.")]
             [Range(0f, 1f)]
-            public float shaderBorderThreshold = 0.3f;
+            public float shaderBorderThreshold = 0.2f;
             
             [Tooltip("The color of beep origin highlights.")]
             public Color beepOriginColor = new Color(222f / 255f, 222f / 255f, 222f / 255f, 1f);
