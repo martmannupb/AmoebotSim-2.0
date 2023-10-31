@@ -42,10 +42,11 @@ namespace AS2.Visuals
             public bool beeping;
             public bool beepOrigin;
             public bool faulty;
+            public bool connector;
             public Vector2 animationOffset;
 
-            public PropertyBlockData(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty) : this(color, delayed, singleton, beeping, beepOrigin, faulty, Vector2.zero) { }
-            public PropertyBlockData(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty, Vector2 animationOffset)
+            public PropertyBlockData(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty, bool connector) : this(color, delayed, singleton, beeping, beepOrigin, faulty, connector, Vector2.zero) { }
+            public PropertyBlockData(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty, bool connector, Vector2 animationOffset)
             {
                 this.color = color;
                 this.singleton = singleton;
@@ -53,6 +54,7 @@ namespace AS2.Visuals
                 this.beeping = beeping;
                 this.beepOrigin = beepOrigin;
                 this.faulty = faulty;
+                this.connector = connector;
                 this.animationOffset = animationOffset;
             }
         }
@@ -70,18 +72,32 @@ namespace AS2.Visuals
         public void Init()
         {
             // Set Material
-            // This material expects two colors to fill the center and the
-            // border of a circle. We can use this to make solid circles by
-            // setting both to the same color
-            pinMaterial = MaterialDatabase.material_circuit_pin_movement_border;
+            if (!properties.connector)
+            {
+                // This material expects two colors to fill the center and the
+                // border of a circle. We can use this to make solid circles by
+                // setting both to the same color
+                pinMaterial = MaterialDatabase.material_circuit_pin_movement_border;
+            }
+            else
+            {
+                pinMaterial = MaterialDatabase.material_circuit_pin_movement;
+                // Render the connector on the same level as the circuit lines
+                // TODO: Set correct zOffset
+                pinMaterial.renderQueue = RenderSystem.renderQueue_circuits;
+            }
 
             // PropertyBlocks
-            if (properties.beepOrigin)
+            if (properties.connector)
+            {
+                propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
+            }
+            else if (properties.beepOrigin)
             {
                 // Beep origin is always filled and singleton
                 propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.beepOrigin);
                 propertyBlock_circuitMatrices_Pins.ApplyColorSecondary(ColorData.beepOrigin);
-                propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
+
                 // Render the beep origin in front of the pin / partition set handle
                 zOffset = -0.1f;
                 pinMaterial.renderQueue = RenderSystem.renderQueue_pinBeeps;
@@ -97,7 +113,6 @@ namespace AS2.Visuals
                     zOffset = -0.05f;
                     pinMaterial.renderQueue = RenderSystem.renderQueue_pinFault;
                 }
-                propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
             }
             else if (properties.beeping)
             {
@@ -110,12 +125,10 @@ namespace AS2.Visuals
                     zOffset = -0.05f;
                     pinMaterial.renderQueue = RenderSystem.renderQueue_pinFault;
                 }
-                propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
             }
             else
             {
                 propertyBlock_circuitMatrices_Pins.ApplyColor(Color.black);
-                propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
             }
             propertyBlock_circuitMatrices_Pins.ApplyMovementOffset(properties.animationOffset);
             propertyBlock_circuitMatrices_PinConnectors.ApplyMovementOffset(properties.animationOffset);
@@ -242,7 +255,7 @@ namespace AS2.Visuals
         /// with the given properties.</returns>
         private Matrix4x4 CalculatePinConnectorMatrix(Vector2 pinPos)
         {
-            return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
+            return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_circuits), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
         }
 
         /// <summary>

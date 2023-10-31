@@ -1,10 +1,10 @@
 # Dev Guide: Circuit and Bonds Renderer
 
-The [`RendererParticles`][1] class manages a [`RendererCircuitsAndBonds`][2] instance to handle the rendering of all elements that are added to the basic particle bodies, namely *bonds*, *circuit lines* and *partition set handles*, including the beep highlights.
+The [`RendererParticles`][1] class manages a [`RendererCircuitsAndBonds`][2] instance to handle the rendering of all elements that are added to the basic particle bodies, namely *bonds*, *circuit lines* and *partition set handles*, including the beep origin, receiving and failure highlights.
 The circuit lines also include little circles placed where the bends of the lines are to cover up the gaps between the rectangles.
 
 <img src="~/images/circuit_renderer_all.png" alt="Circuit Renderer example" title="Circuit Renderer example" width="600"/>  
-<img src="~/images/circuit_renderer_bonds_cropped.png" alt="Bonds" title="Bonds" width="200"/> <img src="~/images/circuit_renderer_lines_cropped.png" alt="Circuit lines" title="Circuit lines" width="200"/> <img src="~/images/circuit_renderer_circles_cropped.png" alt="Beep highlights and partition set handles" title="Beep highlights and partition set handles" width="200"/>
+<img src="~/images/circuit_renderer_bonds.png" alt="Bonds" title="Bonds" width="200"/> <img src="~/images/circuit_renderer_lines.png" alt="Circuit lines" title="Circuit lines" width="200"/> <img src="~/images/circuit_renderer_circles.png" alt="Beep highlights and partition set handles" title="Beep highlights and partition set handles" width="200"/>
 
 As mentioned before, the structure of the circuit and bond rendering sub-tree is a bit more complex than the base particle rendering system.
 In particular, there is one extra management level and there are two instances of a manager class that take turns with rendering rounds.

@@ -1171,7 +1171,7 @@ namespace AS2.Visuals
         private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, bool beepOrigin, bool faulty, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep_origin, GDRef gdRef_beep_fault)
         {
             // Base pin
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, beeping, false, faulty, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, beeping, false, faulty, false, movementOffset);
             RenderBatchIndex index = batch.AddPin(pinPos, false);
             if(gdRef.valid)
             {
@@ -1181,7 +1181,7 @@ namespace AS2.Visuals
             // Beep origin
             if (beepOrigin)
             {
-                batch = GetBatch_Pin(color, delayed, false, false, true, false, movementOffset);
+                batch = GetBatch_Pin(color, delayed, false, false, true, false, false, movementOffset);
                 index = batch.AddPin(pinPos, false);
                 if (gdRef_beep_origin.valid)
                 {
@@ -1205,7 +1205,7 @@ namespace AS2.Visuals
         private void AddSingletonBeepOrigin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
         {
             // Beep
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, false, true, false, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, false, true, false, false, movementOffset);
             batch.AddPin(pinPos, true);
         }
 
@@ -1221,7 +1221,7 @@ namespace AS2.Visuals
         /// the pin's end position after its movement to its start position.</param>
         private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
         {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, true, false, false, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, true, false, false, false, movementOffset);
             batch.AddPin(pinPos, true);
         }
 
@@ -1237,7 +1237,7 @@ namespace AS2.Visuals
         /// the pin's end position after its movement to its start position.</param>
         private void AddSingletonFault(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
         {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, false, false, true, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, false, false, true, false, movementOffset);
             batch.AddPin(pinPos, true);
         }
 
@@ -1256,7 +1256,7 @@ namespace AS2.Visuals
         /// <param name="gdRef">Graphical data belonging to the partition set.</param>
         private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, false, false, false, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, false, false, false, true, movementOffset);
             RenderBatchIndex index = batch.AddConnectorPin(pinPos);
             if(gdRef.valid)
             {
@@ -1418,14 +1418,15 @@ namespace AS2.Visuals
         /// <param name="beeping">Whether the pin should beep.</param>
         /// <param name="beepOrigin">Whether this is just a beep origin
         /// highlight.</param>
+        /// <param name="connector">Whether this is a circuit line connector.</param>
         /// <param name="faulty">Whether the pin is faulty. Must not be true at
         /// the same time as <paramref name="beeping"/>.</param>
         /// <param name="movementOffset">The offset for the joint movement. Set to
         /// <c>Vector2.zero</c> if no joint movement is present.</param>
         /// <returns>A render batch that renders all pins with the given properties.</returns>
-        private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty, Vector2 movementOffset)
+        private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty, bool connector, Vector2 movementOffset)
         {
-            return GetBatch_Pin(new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, singleton, beeping, beepOrigin, faulty, movementOffset));
+            return GetBatch_Pin(new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, singleton, beeping, beepOrigin, faulty, connector, movementOffset));
         }
 
         /// <summary>
