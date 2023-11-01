@@ -6,9 +6,9 @@ After [installing Unity](unity.md), you can setup the simulator project.
 
 ### 1. Import the Project
 
-- Clone the repository (https://git.cs.uni-paderborn.de/tmaurer1/amoebotsim2.0) into a new folder
+- Clone the repository (https://git.cs.uni-paderborn.de/padalkin/amoebotsim2.0) into a new folder
 	- **Using the command line:**
-		- Run `git clone https://git.cs.uni-paderborn.de/tmaurer1/amoebotsim2.0.git`
+		- Run `git clone https://git.cs.uni-paderborn.de/padalkin/amoebotsim2.0.git`
 		- If you get the error message `warning: remote HEAD refers to nonexistent ref, unable to checkout.`:
 			- Navigate into the cloned repository (this will now only contain the `.git/` directory)
 			- Run `git checkout master`
@@ -16,7 +16,7 @@ After [installing Unity](unity.md), you can setup the simulator project.
 	- **Using Visual Studio:**
 		- Open a new instance of Visual Studio and select "Clone a repository"
 			<img src="~/images/vs_clone_repo.png" alt="Clone a repository in Visual Studio" title="Clone a repository in Visual Studio" width="300"/>
-		- Enter the link `https://git.cs.uni-paderborn.de/tmaurer1/amoebotsim2.0.git` and choose a location for the repository, then click "Clone"
+		- Enter the link `https://git.cs.uni-paderborn.de/padalkin/amoebotsim2.0.git` and choose a location for the repository, then click "Clone"
 		- Visual Studio should now clone the repository and display the git window
 			<img src="~/images/vs_git.png" alt="The Git window of Visual Studio" title="The Git window of Visual Studio" width="300"/>
 		- Open the repository in your file browser and check if it contains the `AmoebotSim 2.0/` directory
