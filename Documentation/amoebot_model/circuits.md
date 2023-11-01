@@ -58,6 +58,19 @@ It should be easy to see that this is possible for any finite-size struct and al
 Please refer to the [Model Reference page](~/model_ref/pin_cfgs.md) on pin configurations for more information on how the reconfigurable circuits extension is implemented and used in the simulator.
 
 
+
+## Beep Failures
+
+An interesting avenue of research is examining the setting where the circuits may not be reliable.
+In this setting, there is a *failure probability* $p$ specifying the chances of beeps or messages not being received.
+More precisely, in every round and for each partition set of a particle, the partition set fails to receive any incoming beeps or messages with probability $p$.
+Even if the particle sends a beep or message on this partition set, it will not receive anything if a failure occurs on that partition set in this round.
+The simulator implements this feature by providing a beep failure probability setting in the configuration file and in the Settings Panel.
+Through this option, you can directly control the value of $p$.
+Partition sets on which a beep failure occurs are marked with a red highlight instead of the gray highlight indicating that a beep or message was received.
+
+
+
 Continue by reading about the second extension of the Amoebot model, [*joint movements*](jm.md)
 
 

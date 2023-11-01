@@ -212,6 +212,10 @@ Attributes of this type are not displayed in the UI and cannot be accessed by ot
 Their only purpose is to save complex pin configurations so that they can be reused later without having to construct them again.
 Note that stored pin configurations cannot be used to read beeps or messages.
 
+The simulator additionally provides a *beep failure* feature.
+If you set the beep failure probability $p$ to a non-zero value in the configuration file or the Settings Panel, the simulator will randomly cause failures on partition sets, causing a partition set to not receive any beeps or messages for one round with probability $p$.
+This feature is explained on the [Amoebot Model page](~/amoebot_model/circuits.md).
+
 
 
 [1]: xref:AS2.Sim.PinConfiguration

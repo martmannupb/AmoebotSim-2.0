@@ -13,3 +13,4 @@ You should be familiar with these concepts in order to develop Amoebot algorithm
 6. [Messages](messages.md)
 7. [Bonds and Joint Movements](bonds_jm.md)
 8. [Objects](objects.md)
+9. [Collisions and Line Drawer](collisions.md)
