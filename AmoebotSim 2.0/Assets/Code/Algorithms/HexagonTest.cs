@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using AS2.Sim;
 using UnityEngine;
+using AS2.Subroutines.PASC;
 
 namespace AS2.Algos.HexagonTest
 {
@@ -77,14 +78,54 @@ namespace AS2.Algos.HexagonTest
     ///     - All particles in sectors 6, 12 and 13, on axes 1 and 8, and corner 0 become candidates (for both sides)
     /// Round 1:
     ///     - Identify candidate interval start and end points in both directions
+    ///     - Establish simple axis circuit for NNE and E axes (only interval starts do not connect)
+    ///     - Interval starts send beep in direction in which they want to shift
+    /// Round 2:
+    ///     - Particles receive beeps from interval start points
+    ///     - All particles receiving the beep setup PASC
+    ///       - Use PASC 1 for left candidates and PASC 2 for right candidates
+    ///     - Interval start points start with first PASC step
+    ///     - Remaining particles chill
+    ///     - Additionally: Corner particles initialize two binary counter iterators
+    ///       -> Simply set two counters to 0, corresponding to the two binary strings representing
+    ///          edge lengths 0 and 1
+    /// Round 3:
+    ///     - Receive PASC beeps (stores bits as well)
+    ///     - Setup 3-way global circuit
+    ///     - Beep on first circuit if we became passive in this round OR one of the side lengths has not been scanned completely yet
+    ///     - Send first counter bit on second circuit
+    ///     - Send second counter bit on third circuit
+    /// Round 4:
+    ///     - Receive beep on global circuit 0 if we have to continue
+    ///       -> Otherwise: Move on to next step
+    ///       - TODO
+    ///     - Receive the two edge length bits and update comparison results
+    ///     - Setup PASC circuits again, send beeps and go back to round 3
+    /// Round 5:
+    ///     - TODO
     /// </summary>
     public class HexagonTestParticle : ParticleAlgorithm
     {
+        // Target hexagon size (in binary)
+        public static string hexLine0;     // Top
+        public static string hexLine1;     // Top Left
+        public static string hexLine2;     // Bot Left
+        public static string hexLine3;     // Bottom
+        public static string hexLine4;     // Bot Right
+        public static string hexLine5;     // Top Right
+
         enum Phase
         {
             START,              // Find corners, edges and internal particles
             SECTOR_IDENT,       // Identify particles on the various axes and in the relevant sectors
             CANDIDATE_SHIFT     // Find candidates and shift them around
+        }
+
+        enum Comparison
+        {
+            EQUAL,
+            LESS,
+            GREATER
         }
 
         private static readonly float pSetDistance = 0.7f;
@@ -121,9 +162,19 @@ namespace AS2.Algos.HexagonTest
         ParticleAttribute<bool> isIntervalEndL;
         ParticleAttribute<bool> isIntervalStartR;
         ParticleAttribute<bool> isIntervalEndR;
+        ParticleAttribute<bool> pasc1Participant;   // Whether or not we participate in PASC1/2
+        ParticleAttribute<bool> pasc2Participant;
+        ParticleAttribute<int> counter1Idx;         // Index in the binary counter specifying edge length 1
+        ParticleAttribute<int> counter2Idx;
+        ParticleAttribute<Comparison> comparison1;  // Counter comparison results 1 and 2
+        ParticleAttribute<Comparison> comparison2;
 
         // Generic attributes that can be used in multiple phases
         ParticleAttribute<bool> genericBool1;
+
+        // Subroutines
+        SubPASC pasc1;
+        SubPASC pasc2;
 
         public HexagonTestParticle(Particle p) : base(p)
         {
@@ -152,8 +203,17 @@ namespace AS2.Algos.HexagonTest
             isIntervalEndL = CreateAttributeBool("Interval End L", false);
             isIntervalStartR = CreateAttributeBool("Interval Start R", false);
             isIntervalEndR = CreateAttributeBool("Interval End R", false);
+            pasc1Participant = CreateAttributeBool("PASC 1 Part.", false);
+            pasc2Participant = CreateAttributeBool("PASC 2 Part.", false);
+            counter1Idx = CreateAttributeInt("Counter 1 Idx", 0);
+            counter2Idx = CreateAttributeInt("Counter 2 Idx", 0);
+            comparison1 = CreateAttributeEnum<Comparison>("Comparison 1", Comparison.EQUAL);
+            comparison2 = CreateAttributeEnum<Comparison>("Comparison 2", Comparison.EQUAL);
 
             genericBool1 = CreateAttributeBool("Generic Bool 1", false);
+
+            pasc1 = new SubPASC(p);
+            pasc2 = new SubPASC(p);
 
             // Also, set the default initial color
             SetMainColor(ColorData.Particle_Black);
@@ -773,13 +833,157 @@ namespace AS2.Algos.HexagonTest
                 }
                 if (isCandidateR)
                 {
-                    if (!IsNbrCandidate(Direction.SSE, false))
+                    if (!IsNbrCandidate(Direction.E, false))
                         isIntervalStartR.SetValue(true);
-                    if (!IsNbrCandidate(Direction.NNW, false))
+                    if (!IsNbrCandidate(Direction.W, false))
                         isIntervalEndR.SetValue(true);
                 }
 
+                // Setup simple axis circuit, candidates do not connect
+                PinConfiguration pc = SetupAxisCircuit(2);
+                // IntervalL starts send beep on NNE axis, IntervalR starts send beep on E axis
+                if (isIntervalStartL.GetCurrentValue())
+                    pc.GetPinAt(Direction.SSW, 0).PartitionSet.SendBeep();
+                if (isIntervalStartR.GetCurrentValue())
+                    pc.GetPinAt(Direction.E, 0).PartitionSet.SendBeep();
+
                 round.SetValue(round + 1);
+            }
+            else if (round == 2)
+            {
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                // Check whether we have received the PASC activation beep
+                if (isIntervalStartL || pc.GetPinAt(Direction.NNE, PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                {
+                    pasc1.Init(isIntervalStartL, isIntervalStartL ? Direction.NONE : Direction.NNE, Direction.SSW, 3, 0, 0, 3, 0, 1);
+                    pasc1Participant.SetValue(true);
+                }
+                if (isIntervalStartR || pc.GetPinAt(Direction.W, PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                {
+                    pasc2.Init(isIntervalStartR, isIntervalStartR ? Direction.NONE : Direction.W, Direction.E, 0, 3, 3, 0, 2, 3);
+                    pasc2Participant.SetValue(true);
+                }
+
+                // Setup PASC circuit and start the procedure
+                pc.SetToSingleton();
+
+                if (pasc1Participant.GetCurrentValue())
+                    pasc1.SetupPC(pc);
+                if (pasc2Participant.GetCurrentValue())
+                    pasc2.SetupPC(pc);
+
+                SetPlannedPinConfiguration(pc);
+
+                if (isIntervalStartL)
+                    pasc1.ActivateSend();
+                if (isIntervalStartR)
+                    pasc2.ActivateSend();
+
+                // Corner particles initialize counters
+                if (hexCornerIndex != -1)
+                {
+                    counter1Idx.SetValue(0);
+                    counter2Idx.SetValue(0);
+                }
+
+                // Participants initialize comparison results
+                if (pasc1Participant.GetCurrentValue())
+                    comparison1.SetValue(Comparison.EQUAL);
+                if (pasc2Participant.GetCurrentValue())
+                    comparison2.SetValue(Comparison.EQUAL);
+
+                round.SetValue(round + 1);
+            }
+            else if (round == 3)
+            {
+                PinConfiguration pc = GetCurrentPinConfiguration();
+
+                // Receive PASC beep
+                if (pasc1Participant)
+                    pasc1.ActivateReceive();
+                if (pasc2Participant)
+                    pasc2.ActivateReceive();
+
+                // Setup 3-way global circuit (have 3 separate global circuits 0, 1, 2)
+                pc = SetupNWayGlobalCircuit(3);
+
+                // Beep if participant became inactive or one counter is still not finished
+                if (pasc1Participant && pasc1.BecamePassive() ||
+                    pasc2Participant && pasc2.BecamePassive() ||
+                    hexCornerIndex != -1 && (counter1Idx < hexLine1.Length || counter2Idx < hexLine0.Length))
+                    pc.SendBeepOnPartitionSet(0);
+
+                // Corner particles send current bit of counter
+                if (hexCornerIndex != -1)
+                {
+                    if (counter1Idx < hexLine1.Length && hexLine1[counter1Idx] == '1')
+                        pc.SendBeepOnPartitionSet(1);
+                    if (counter2Idx < hexLine0.Length && hexLine0[counter2Idx] == '1')
+                        pc.SendBeepOnPartitionSet(2);
+                }
+
+                round.SetValue(round + 1);
+            }
+            else if (round == 4)
+            {
+                PinConfiguration pc = GetCurrentPinConfiguration();
+
+                // Check for beep on global circuit
+                if (!pc.ReceivedBeepOnPartitionSet(0))
+                {
+                    // TODO: Move on to next step
+                    round.SetValue(round + 1);
+                }
+                else
+                {
+                    // Receive bits from the two counters and update comparison results
+                    if (pasc1Participant || pasc2Participant)
+                    {
+                        int counter1Bit = pc.ReceivedBeepOnPartitionSet(1) ? 1 : 0;
+                        int counter2Bit = pc.ReceivedBeepOnPartitionSet(2) ? 1 : 0;
+
+                        // Update comparison result
+                        if (pasc1Participant)
+                        {
+                            int pascBit = pasc1.GetReceivedBit();
+                            if (pascBit > counter1Bit)
+                                comparison1.SetValue(Comparison.GREATER);
+                            else if (pascBit < counter1Bit)
+                                comparison1.SetValue(Comparison.LESS);
+                        }
+                        if (pasc2Participant)
+                        {
+                            int pascBit = pasc2.GetReceivedBit();
+                            if (pascBit > counter2Bit)
+                                comparison2.SetValue(Comparison.GREATER);
+                            else if (pascBit < counter2Bit)
+                                comparison2.SetValue(Comparison.LESS);
+                        }
+                    }
+
+                    // Corners increment indices
+                    if (hexCornerIndex != -1)
+                    {
+                        if (counter1Idx < hexLine1.Length)
+                            counter1Idx.SetValue(counter1Idx + 1);
+                        if (counter2Idx < hexLine0.Length)
+                            counter2Idx.SetValue(counter2Idx + 1);
+                    }
+
+                    // Setup PASC circuits again, send next beeps and go back to round 3
+                    pc.SetToSingleton();
+                    if (pasc1Participant)
+                        pasc1.SetupPC(pc);
+                    if (pasc2Participant)
+                        pasc2.SetupPC(pc);
+                    SetPlannedPinConfiguration(pc);
+                    if (isIntervalStartL)
+                        pasc1.ActivateSend();
+                    if (isIntervalStartR)
+                        pasc2.ActivateSend();
+
+                    round.SetValue(3);
+                }
             }
         }
 
@@ -790,6 +994,8 @@ namespace AS2.Algos.HexagonTest
             // Mode 0: Extreme boundary particles do not connect
             //          their directions
             // Mode 1: Corners connect no directions
+            // Mode 2: CandidateL interval starts do not connect NNE axis and
+            //         CandidateR interval starts do not connect E axis
 
             for (int d = 0; d < 3; d++)
             {
@@ -805,6 +1011,12 @@ namespace AS2.Algos.HexagonTest
                 else if (mode == 1)
                 {
                     if (hexCornerIndex.GetCurrentValue() != -1)
+                        connectAxis = false;
+                }
+                else if (mode == 2)
+                {
+                    if (isIntervalStartL.GetCurrentValue() && d == 1 ||
+                        isIntervalStartR.GetCurrentValue() && d == 0)
                         connectAxis = false;
                 }
 
@@ -968,6 +1180,31 @@ namespace AS2.Algos.HexagonTest
             return pc;
         }
 
+        private PinConfiguration SetupNWayGlobalCircuit(int n)
+        {
+            // n must be between 1 and PinsPerEdge
+
+            PinConfiguration pc = GetContractedPinConfiguration();
+
+            // Connect pins to create multiple global circuits
+            for (int i = 0; i < n; i++)
+            {
+                int j = PinsPerEdge - 1 - i;
+                pc.MakePartitionSet(new int[] {
+                    pc.GetPinAt(Direction.E, i).Id,
+                    pc.GetPinAt(Direction.NNE, i).Id,
+                    pc.GetPinAt(Direction.NNW, i).Id,
+                    pc.GetPinAt(Direction.W, j).Id,
+                    pc.GetPinAt(Direction.SSW, j).Id,
+                    pc.GetPinAt(Direction.SSE, j).Id
+                }, i);
+            }
+
+            SetPlannedPinConfiguration(pc);
+
+            return pc;
+        }
+
         private bool IsNbrCandidate(Direction dir, bool left)
         {
             if (!HasNeighborAt(dir))
@@ -986,7 +1223,8 @@ namespace AS2.Algos.HexagonTest
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
         public void Generate(int holeSize = 10, int numSurroundingParticles = 250, float holeProb = 0.025f, bool fillHoles = false,
-            bool prioritizeInner = true, float lambda = 0.1f)
+            bool prioritizeInner = true, float lambda = 0.1f,
+            int hexLengthTop = 6, int hexLengthTopLeft = 6, int hexLengthBotLeft = 6, int hexLengthBot = 6)
         {
             // Generate hole
             List<Vector2Int> holePositions = GenerateRandomConnectedPositions(Vector2Int.zero, holeSize, 0f, true);
@@ -1116,6 +1354,57 @@ namespace AS2.Algos.HexagonTest
                 if (v.x < xMin || v.x > xMax || v.y < yMin || v.y > yMax || v.x + v.y < xyMin || v.x + v.y > xyMax)
                     AddParticle(v);
             }
+
+            // Compute hexagon size
+
+            // First test for invalid input data
+            if (hexLengthTop < 1 || hexLengthTopLeft < 1 || hexLengthBotLeft < 1 || hexLengthBot < 1)
+                throw new SimulatorStateException("Invalid hexagon size, all lengths must be at least 1");
+            if (hexLengthBot + hexLengthBotLeft <= hexLengthTop)
+                throw new SimulatorStateException("Invalid hexagon size, bottom line is too short");
+            if (hexLengthBot >= hexLengthTop + hexLengthTopLeft)
+                throw new SimulatorStateException("Invalid hexagon size, bottom line is too long");
+
+            // Now compute the remaining side lengths
+            // Side4 + Side5 = Side1 + Side2  <=>  Side5 = Side1 + Side2 - Side4
+            // Side4 = Side1 + Side2 - (Side3 + Side2 - Side0) = Side0 + Side1 - Side3
+            int hexLengthBotRight = hexLengthTop + hexLengthTopLeft - hexLengthBot;
+            int hexLengthTopRight = hexLengthTopLeft + hexLengthBotLeft - hexLengthBotRight;
+
+            // DEBUG: Draw lines
+            Vector2Int u = Vector2Int.zero;
+            Vector2Int w = new Vector2Int(hexLengthTop, 0);
+            ld.AddLine(u, w, Color.red, false);
+            w = new Vector2Int(0, -hexLengthTopLeft);
+            ld.AddLine(u, w, Color.red, false);
+            u = w + new Vector2Int(hexLengthBotLeft, -hexLengthBotLeft);
+            ld.AddLine(u, w, Color.red, false);
+            w = u + new Vector2Int(hexLengthBot, 0);
+            ld.AddLine(u, w, Color.red, false);
+            u = w + new Vector2Int(0, hexLengthBotRight);
+            ld.AddLine(u, w, Color.red, false);
+            w = u + new Vector2Int(-hexLengthTopRight, hexLengthTopRight);
+            ld.AddLine(u, w, Color.red, false);
+
+            HexagonTestParticle.hexLine0 = intToBinary(hexLengthTop);
+            HexagonTestParticle.hexLine1 = intToBinary(hexLengthTopLeft);
+            HexagonTestParticle.hexLine2 = intToBinary(hexLengthBotLeft);
+            HexagonTestParticle.hexLine3 = intToBinary(hexLengthBot);
+            HexagonTestParticle.hexLine4 = intToBinary(hexLengthBotRight);
+            HexagonTestParticle.hexLine5 = intToBinary(hexLengthTopRight);
+        }
+
+        private string intToBinary(int num)
+        {
+            string s = "";
+
+            while (num > 0)
+            {
+                s += (num & 1) > 0 ? '1' : '0';
+                num >>= 1;
+            }
+
+            return s;
         }
     }
 
