@@ -431,8 +431,8 @@ namespace AS2.Sim
         /// <summary>
         /// Flag used to indicate that the particle's algorithm is currently
         /// running its constructor. If this is <c>false</c> while the
-        /// algorithm tries to create a new attribute, an exception will
-        /// be thrown.
+        /// algorithm tries to create a new attribute or subroutine, an exception
+        /// will be thrown.
         /// </summary>
         public bool inConstructor = false;
 
