@@ -17,7 +17,8 @@ namespace AS2.Subroutines.PASC
     /// arriving in increasing order.
     /// </para>
     /// <para>
-    /// Setup: Call <see cref="Init(bool, Direction, Direction, int, int, int, int, int, int, bool)"/>
+    /// Setup:<br/>
+    /// Call <see cref="Init(bool, Direction, Direction, int, int, int, int, int, int, bool)"/>
     /// and tell each particle in the sequence whether it is p0, the directions to
     /// its predecessor and successor particles (<see cref="Direction.NONE"/> for
     /// the predecessor/successor of the first/last particle, resp.), which pins and
@@ -29,7 +30,8 @@ namespace AS2.Subroutines.PASC
     /// predecessor pin of p(i+1) and the same holds for the secondary pins.
     /// </para>
     /// <para>
-    /// Usage: After initializing the sequence of particles, call
+    /// Usage:<br/>
+    /// After initializing the sequence of particles, call
     /// <see cref="SetupPC(PinConfiguration)"/> to make each particle establish its
     /// partition sets. This does not plan the pin configuration yet, in the case
     /// that other changes are required. You can then call <see cref="ActivateSend"/>
@@ -46,7 +48,29 @@ namespace AS2.Subroutines.PASC
     /// until each instance has finished.
     /// </para>
     /// <para>
-    /// Warning: The algorithm only works properly if there are at least two particles!
+    /// Early termination:<br/>
+    /// If you use PASC to compare the distance bits to another sequence of bits which
+    /// may be shorter than the PASC result (i.e., the compared sequence has a lower most
+    /// significant bit than the number of PASC iterations), you can perform a cutoff to
+    /// save a few rounds as follows:<br/>
+    /// Instead of calling <see cref="SetupPC(PinConfiguration)"/>, call
+    /// <see cref="SetupCutoffCircuit(PinConfiguration)"/> and plan the resulting pin
+    /// configuration. This will setup a circuit where all active non-leader particles
+    /// disconnect their predecessor and successor. After planning the pin configuration,
+    /// call <see cref="SendCutoffBeep"/> instead of <see cref="ActivateSend"/> (but call
+    /// it on all particles, not just the leader). This will make the active non-leader
+    /// particles send a beep to their successor on both circuits, causing all particles
+    /// after the first active non-leader particle to receive a beep. These are exactly
+    /// the particles that will receive at least one 1-bit in the future PASC iterations,
+    /// i.e., the particles whose PASC value will definitely be greater than the compared
+    /// bit sequence. All particles that do not receive a beep (the leader and all
+    /// connected passive particles) will only receive 0-bits, i.e., their comparison
+    /// result is already finished since the compared sequence also has only 0-bits left.
+    /// To read the result of this cutoff, call <see cref="ReceiveCutoffBeep"/> instead of
+    /// <see cref="ActivateReceive"/>. The result of <see cref="GetReceivedBit"/> will be
+    /// <c>1</c> if the particle has received the cutoff bit, and <c>0</c> otherwise.<br/>
+    /// Afterwards, it is still possible to continue the PASC procedure where it was
+    /// interrupted, starting with <see cref="SetupPC(PinConfiguration)"/>.
     /// </para>
     /// </summary>
     public class SubPASC : Subroutine
@@ -136,10 +160,17 @@ namespace AS2.Subroutines.PASC
         /// specified for this subroutine.</param>
         public void SetupPC(PinConfiguration pc)
         {
+            SetupPinConfig(pc, false);
+        }
+
+        private void SetupPinConfig(PinConfiguration pc, bool cutoff = false)
+        {
             // TODO: Could simplify this by storing the pin IDs directly
 
 
-            if (predPrimaryPin.GetCurrentValue() == -1)
+            if (predPrimaryPin.GetCurrentValue() == -1
+                // Cutoff: Active particles do not connect their predecessor to their successor
+                || cutoff && isActive.GetCurrentValue())
             {
                 // We have no predecessor => Only need successor pins
                 Direction succDir = DirectionHelpers.Cardinal(succPrimaryPin.GetCurrentValue() / algo.PinsPerEdge);
@@ -186,6 +217,18 @@ namespace AS2.Subroutines.PASC
                 pc.SetPartitionSetPosition(primaryPSetID.GetCurrentValue(), new Vector2(predDir.ToInt() * 60.0f + primaryPin * maxAngle, 0.7f));
                 pc.SetPartitionSetPosition(secondaryPSetID.GetCurrentValue(), new Vector2(predDir.ToInt() * 60.0f + secondaryPin * maxAngle, 0.7f));
             }
+        }
+
+        /// <summary>
+        /// Sets up the cutoff circuit for early termination.
+        /// The pin configuration is not planned by this method.
+        /// </summary>
+        /// <param name="pc">The pin configuration to be modified.
+        /// This will only modify the pins and partition sets
+        /// specified for this subroutine.</param>
+        public void SetupCutoffCircuit(PinConfiguration pc)
+        {
+            SetupPinConfig(pc, true);
         }
 
         /// <summary>
@@ -246,6 +289,38 @@ namespace AS2.Subroutines.PASC
                 PinConfiguration pc = algo.GetPlannedPinConfiguration();
                 pc.SendBeepOnPartitionSet(primaryPSetID.GetCurrentValue());
             }
+        }
+
+        /// <summary>
+        /// Causes the active non-leader particles to send the
+        /// cutoff beep that is received by all particles that will
+        /// receive at least one 1-bit in a future PASC iteration.
+        /// Must only be called after the final pin configuration
+        /// setup by <see cref="SetupCutoffCircuit(PinConfiguration)"/>
+        /// has been planned.
+        /// </summary>
+        public void SendCutoffBeep()
+        {
+            if (isActive.GetCurrentValue() && !IsLeader())
+            {
+                PinConfiguration pc = algo.GetPlannedPinConfiguration();
+                pc.SendBeepOnPartitionSet(primaryPSetID.GetCurrentValue());
+                pc.SendBeepOnPartitionSet(secondaryPSetID.GetCurrentValue());
+            }
+        }
+
+        /// <summary>
+        /// Processes the received cutoff beep that was sent in
+        /// the last round. Must be called in the next round
+        /// after sending the cutoff beep and before the current
+        /// pin configuration changes. Afterwards,
+        /// <see cref="GetReceivedBit"/> will be <c>1</c> if and
+        /// only if we received the cutoff beep.
+        /// </summary>
+        public void ReceiveCutoffBeep()
+        {
+            PinConfiguration pc = algo.GetCurrentPinConfiguration();
+            lastBitIs1.SetValue(pc.ReceivedBeepOnPartitionSet(primaryPSetID.GetCurrentValue()));
         }
 
         /// <summary>
