@@ -26,7 +26,7 @@ namespace AS2.Algos.HexagonTest
     /// Round 3:
     ///     - Internal particles receive beep and become inactive
     /// 
-    /// SECTOR_IDENT:
+    /// SECTOR_IDENT (independent of scaling factor):
     /// Round 0:
     ///     - Setup axis circuits (except hexagon particles)
     ///     - Corner particles send beeps in two axis directions
@@ -72,6 +72,33 @@ namespace AS2.Algos.HexagonTest
     /// Round 7:
     ///     - Particles that did not receive the global beep become holes
     ///     - Move to next phase
+    /// 
+    /// CANDIDATE_LIMIT (dependent on scaling factor):
+    /// - Repeat this for the 3 axes and their corresponding sectors
+    /// Round 0:
+    ///     - Establish simple axis circuits
+    ///     - Particles in the sectors that have a hole on one side corresponding to the hexagon side send beep
+    ///       in the opposite direction
+    ///       -> Particles that have holes on both sides immediately become limited
+    /// Round 1:
+    ///     - Particles that received the beep setup PASC circuits
+    ///     - Send first PASC beeps
+    /// Round 2:
+    ///     - Receive PASC beeps
+    ///     - Establish 4-way global circuit, send beeps according to counters and PASC status
+    /// Round 3:
+    ///     - Update comparison result
+    ///     - If we are completely finished: Use comparison result to find out which segments do not work (end points determine this)
+    ///       -> Then establish axis circuit again and send beep where the segments are too small
+    ///     - If comparisons are finished but PASC is not: Start PASC cutoff and go to round 4
+    ///     - Otherwise setup PASC circuits again and continue
+    /// Round 4:
+    ///     - Receive PASC cutoff
+    ///     - Use final comparison to determine result (same as when we finish in round 3)
+    /// Round 5:
+    ///     - Receive elimination beep and become limited hole
+    ///     - Setup repetition for next direction, repeat this whole process for all three axes
+    ///     - After the last iteration: Go to next phase
     /// 
     /// CANDIDATE_SHIFT:
     /// Round 0:
@@ -144,6 +171,7 @@ namespace AS2.Algos.HexagonTest
         {
             START,              // Find corners, edges and internal particles
             SECTOR_IDENT,       // Identify particles on the various axes and in the relevant sectors
+            CANDIDATE_LIMIT,    // Rule out areas where the segments are too short to enable candidate shift
             CANDIDATE_SHIFT     // Find candidates and shift them around
         }
 
@@ -181,6 +209,8 @@ namespace AS2.Algos.HexagonTest
         ParticleAttribute<bool>[] virtualHoles;     // Directions in which we have no neighbor (either due to actual hole or because we have to behave as if there was a hole)
         ParticleAttribute<bool> isHole;             // Whether we are a virtual hole (basically excluded from the rest of the procedure)
         ParticleAttribute<int> sectorIndex;         // Which sector we are in (-1: no sector; 0-5: triangles, 6-11: single candidate areas, 12-17: intersections)
+
+        ParticleAttribute<bool> limited;            // Whether we have been excluded from becoming a candidate by segment length limits
 
         ParticleAttribute<bool> isCandidateL;       // Whether or not we are a candidate for the left (right) side
         ParticleAttribute<bool> isCandidateR;
@@ -222,6 +252,8 @@ namespace AS2.Algos.HexagonTest
                 virtualHoles[i] = CreateAttributeBool("Virtual Hole " + i, false);
             isHole = CreateAttributeBool("Is Hole", false);
             sectorIndex = CreateAttributeInt("Sector Idx", -1);
+
+            limited = CreateAttributeBool("Limited", false);
 
             isCandidateL = CreateAttributeBool("Candidate L", false);
             isCandidateR = CreateAttributeBool("Candidate R", false);
@@ -280,6 +312,9 @@ namespace AS2.Algos.HexagonTest
                     break;
                 case Phase.SECTOR_IDENT:
                     ActivateSector();
+                    break;
+                case Phase.CANDIDATE_LIMIT:
+                    ActivateCandidateLimit();
                     break;
                 case Phase.CANDIDATE_SHIFT:
                     ActivateCandidateShift();
@@ -420,7 +455,6 @@ namespace AS2.Algos.HexagonTest
                     pc.SetPartitionSetColor(pSetS, Color.yellow);
                     pc.SendBeepOnPartitionSet(pSetP);
                     pc.SendBeepOnPartitionSet(pSetS);
-
                 }
 
                 round.SetValue(round + 1);
@@ -465,13 +499,10 @@ namespace AS2.Algos.HexagonTest
                         if (axisIndex2.GetCurrentValue() != -1)
                         {
                             // We are on two axes!
-                            SetMainColor(Color.green);
                         }
                         else
                         {
                             // We are on one axis
-                            SetMainColor(ColorData.Particle_Green);
-
                             // If we are on an even axis: Send beep in parallel to triangle base (towards the other side of the triangle)
                             if (axisIndex1.GetCurrentValue() % 2 == 0)
                             {
@@ -479,6 +510,7 @@ namespace AS2.Algos.HexagonTest
                                 pc.SendBeepOnPartitionSet(pc.GetPinAt(DirectionHelpers.Cardinal(dir), 0).PartitionSet.Id);
                             }
                         }
+                        UpdateColor();
                     }
                 }
 
@@ -735,7 +767,6 @@ namespace AS2.Algos.HexagonTest
                     if (receiveDir2 == -1)
                     {
                         // Received less than two beeps => We are hidden by a hole, so we are just as good as a hole
-                        SetMainColor(ColorData.Particle_Red);
                         isHole.SetValue(true);
                         // We also lose our status as axis particle in this case
                         axisIndex1.SetValue(-1);
@@ -788,6 +819,7 @@ namespace AS2.Algos.HexagonTest
                                 sectorIndex.SetValue(13);
                         }
                     }
+                    UpdateColor();
                 }
 
                 // Setup global circuit excluding holes
@@ -816,9 +848,9 @@ namespace AS2.Algos.HexagonTest
                     {
                         // We are not part of a valid sector: Become hole and lose axis status
                         isHole.SetValue(true);
-                        SetMainColor(ColorData.Particle_Red);
                         axisIndex1.SetValue(-1);
                         axisIndex2.SetValue(-1);
+                        UpdateColor();
                     }
                 }
 
@@ -826,8 +858,75 @@ namespace AS2.Algos.HexagonTest
                 SetPlannedPinConfiguration(pc);
 
                 // Move to next phase
-                phase.SetValue(Phase.CANDIDATE_SHIFT);
+                phase.SetValue(Phase.CANDIDATE_LIMIT);
                 round.SetValue(0);
+            }
+        }
+
+        void ActivateCandidateLimit()
+        {
+            if (isHole)
+                return;
+
+            // Rounds 0-5: First iteration with axis E
+            // Rounds 6-11: Second iteration with axis NNE
+            // Rounds 12-17: Third iteration with axis NNW
+            // Round 18: Finish and move on to next phase
+            if (round < 18)
+            {
+                Direction dir = round < 6 ? Direction.E : (round < 12 ? Direction.NNE : Direction.NNW);
+                string line1 = round < 6 ? hexLine0 : (round < 12 ? hexLine1 : hexLine2);
+                string line2 = round < 6 ? hexLine3 : (round < 12 ? hexLine4 : hexLine5);
+                if (round % 6 == 0)
+                {
+                    CandidateLimitRound0(dir);
+                    UpdateColor();
+                    round.SetValue(round + 1);
+                }
+                else if (round % 6 == 1)
+                {
+                    CandidateLimitRound1(dir);
+                    round.SetValue(round + 1);
+                }
+                else if (round % 6 == 2)
+                {
+                    CandidateLimitRound2(line1, line2);
+                    round.SetValue(round + 1);
+                }
+                else if (round % 6 == 3)
+                {
+                    int result = CandidateLimitRound3(dir, line1, line2);
+                    if (result == 0)
+                    {
+                        // Finished
+                        round.SetValue(round + 2);
+                    }
+                    else if (result == 1)
+                    {
+                        // PASC cutoff
+                        round.SetValue(round + 1);
+                    }
+                    else
+                    {
+                        // Next iteration
+                        round.SetValue(round - 1);
+                    }
+                }
+                else if (round % 6 == 4)
+                {
+                    CandidateLimitRound4(dir);
+                    round.SetValue(round + 1);
+                }
+                else if (round % 6 == 5)
+                {
+                    CandidateLimitRound5(dir);
+                    UpdateColor();
+                    round.SetValue(round + 1);
+                }
+            }
+            else
+            {
+                // TODO: Finish
             }
         }
 
@@ -1218,6 +1317,383 @@ namespace AS2.Algos.HexagonTest
                 round.SetValue(round + 1);
             }
         }
+
+
+        /// <summary>
+        /// Determines in which region of the candidate limit procedure we are.
+        /// </summary>
+        /// <param name="dir">The axis of the limit procedure.</param>
+        /// <param name="extended">Whether the extended sectors should be used
+        /// (for finding out which side we are on rather than checking if we
+        /// have to become a PASC leader).</param>
+        /// <returns><c>1</c> if we are in the first area, <c>2</c> if
+        /// we are in the second area, <c>0</c> otherwise.</returns>
+        private int CandidateLimitSector(Direction dir, bool extended = false)
+        {
+            if (dir == Direction.E)
+            {
+                // Sectors 0, 6, 11, 12, corners 0 and 5, sector 1 x axis 1, sector 5 x axis 6 for top side
+                // Extended: Sectors 13 and 17, entire axes 1 and 6
+                if (SectorCheck(0, 6, 11, 12, 0, 5, 1, 1, 5, 6, 13, 17, extended))
+                    return 1;
+                // Sectors 3, 8, 9, 15, corners 2 and 3, sector 2 x axis 0, sector 4 x axis 7 for bottom side
+                // Extended: Sectors 14 and 16, entire axes 0 and 7
+                else if (SectorCheck(3, 8, 9, 15, 2, 3, 2, 0, 4, 7, 14, 16, extended))
+                    return 2;
+            }
+            else if (dir == Direction.NNE)
+            {
+                // Sectors 1, 6, 7, 13, corners 0 and 1, sector 2 x axis 3, sector 0 x axis 8 for top side
+                // Extended: Sectors 12 and 14, entire axes 3 and 8
+                if (SectorCheck(1, 6, 7, 13, 0, 1, 2, 3, 0, 8, 12, 14, extended))
+                    return 1;
+                // Sectors 4, 9, 10, 16, corners 3 and 4, sector 3 x axis 2, sector 5 x axis 9 for bottom side
+                // Extended: Sectors 15 and 17, entire axes 2 and 9
+                else if (SectorCheck(4, 9, 10, 16, 3, 4, 3, 2, 5, 9, 15, 17, extended))
+                    return 2;
+            }
+            else if (dir == Direction.NNW)
+            {
+                // Sectors 2, 7, 8, 14, corners 1 and 2, sector 1 x axis 10, sector 3 x axis 5 for top side
+                // Extended: Sectors 13 and 15, entire axes 5 and 10
+                if (SectorCheck(2, 7, 8, 14, 1, 2, 1, 10, 3, 5, 13, 15, extended))
+                    return 1;
+                // Sectors 5, 10, 11, 17, corners 4 and 5, sector 0 x axis 11, sector 4 x axis 4 for bottom side
+                // Extended: Sectors 12 and 16, entire axes 4 and 11
+                else if (SectorCheck(5, 10, 11, 17, 4, 5, 0, 11, 4, 4, 12, 16, extended))
+                    return 2;
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// Helper to check whether the particle is in a specific region.
+        /// Returns true if any of the conditions holds.
+        /// <para>
+        /// <paramref name="s1"/> to <paramref name="s4"/> are sector IDs.<br/>
+        /// <paramref name="c1"/> and <paramref name="c2"/> are corner indices.<br/>
+        /// <paramref name="sas1"/> and <paramref name="saa1"/> are IDs of a sector
+        /// and an axis that both have to match (intersection; same for index 2).<br/>
+        /// <paramref name="se1"/> and <paramref name="se2"/> are sectors for the
+        /// extended check.<br/>
+        /// Extended axes are taken from the intersections (<paramref name="saa1"/>
+        /// and <paramref name="saa2"/>);
+        /// </para>
+        /// </summary>
+        /// <returns><c>true</c> if and only if the particle lies in the specified region.</returns>
+        private bool SectorCheck(int s1, int s2, int s3, int s4, int c1, int c2, int sas1, int saa1, int sas2, int saa2, int se1, int se2, bool extended)
+        {
+            return sectorIndex == s1 || sectorIndex == s2 || sectorIndex == s3 || sectorIndex == s4 || hexCornerIndex == c1 || hexCornerIndex == c2
+                    || sectorIndex == sas1 && (axisIndex1 == saa1 || axisIndex2 == saa1)
+                    || sectorIndex == sas2 && (axisIndex1 == saa2 || axisIndex2 == saa2)
+                    || extended && (sectorIndex == se1 || sectorIndex == se2 || axisIndex1 == saa1 || axisIndex2 == saa1 || axisIndex1 == saa2 || axisIndex2 == saa2);
+        }
+
+        /// <summary>
+        /// Establish simple axis circuits, particles with hole neighbors
+        /// in the corresponding directions send beep or become limited
+        /// immediately.
+        /// which they want to check.
+        /// </summary>
+        /// <param name="dir">The direction of the axis we are checking
+        /// (directions 0, 1 and 2 identify the axes).</param>
+        private void CandidateLimitRound0(Direction dir)
+        {
+            // Check whether we are in the right sector to check for holes
+            bool checkHoles = false;
+            if (CandidateLimitSector(dir) != 0)
+                checkHoles = true;
+
+            // Check whether we are a leader in one direction or we even have to become limited already
+            bool hasNbr1 = true;
+            bool hasNbr2 = true;
+            if (checkHoles)
+            {
+                hasNbr1 = !IsNbrHole(dir);
+                hasNbr2 = !IsNbrHole(dir.Opposite());
+                if (!hasNbr1 && !hasNbr2)
+                {
+                    // No neighbors: Become limited and don't do anything
+                    limited.SetValue(true);
+                    return;
+                }
+            }
+
+            // Setup simple axis circuit, only connect axis direction if we have both neighbors
+            PinConfiguration pc = SetupAxisCircuit(dir.Rotate60(1), dir.Rotate60(2), !hasNbr1 || !hasNbr2 ? dir : Direction.NONE);
+            // Particles with hole neighbors send beep
+            if (!hasNbr1)
+                pc.GetPinAt(dir.Opposite(), 0).PartitionSet.SendBeep();
+            if (!hasNbr2)
+                pc.GetPinAt(dir, 0).PartitionSet.SendBeep();
+        }
+
+        /// <summary>
+        /// Establish PASC circuits where needed, initialize counters,
+        /// send first PASC beeps.
+        /// </summary>
+        /// <param name="dir">The direction of the axis we are checking
+        /// (directions 0, 1 and 2 identify the axes).</param>
+        private void CandidateLimitRound1(Direction dir)
+        {
+            // We only use one direction if we have received beeps from both sides
+            // -> Prefer the one that goes in direction dir
+            // The PASC instance we use later tells us in sector we are (top or bottom etc.)
+
+            // Reset data first
+            pasc1Participant.SetValue(false);
+            pasc2Participant.SetValue(false);
+
+            // Check whether we have received the PASC activation beep
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            bool beep1 = pc.GetPinAt(dir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+            bool beep2 = pc.GetPinAt(dir, PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+
+            bool sentBeep1 = false;
+            bool sentBeep2 = false;
+            if (CandidateLimitSector(dir) != 0)
+            {
+                bool hasNbr1 = !IsNbrHole(dir);
+                bool hasNbr2 = !IsNbrHole(dir.Opposite());
+                if (hasNbr1 ^ hasNbr2)
+                {
+                    sentBeep1 = !hasNbr2;
+                    sentBeep2 = !hasNbr1;
+                }
+            }
+
+            pc.SetToSingleton();
+
+            if (beep1 || beep2 || sentBeep1 || sentBeep2)
+            {
+                // We are involved in the PASC procedure
+                // Find out in which sector we are
+                int sector = CandidateLimitSector(dir, true);
+                SubPASC pascInstance;
+                if (sector == 1)
+                {
+                    // Setup PASC 1 instance
+                    pascInstance = pasc1;
+                    pasc1Participant.SetValue(true);
+                }
+                else
+                {
+                    // Setup PASC 2 instance
+                    pascInstance = pasc2;
+                    pasc2Participant.SetValue(true);
+                }
+
+                bool isLeader = sentBeep1 || (sentBeep2 && !beep1);
+                bool withDir = sentBeep1 || beep1;
+
+                pascInstance.Init(isLeader, isLeader ? Direction.NONE : (withDir ? dir.Opposite() : dir), withDir ? dir : dir.Opposite(), 0, PinsPerEdge - 1, PinsPerEdge - 1, 0, 0, 1);
+                pascInstance.SetupPC(pc);
+            }
+
+            SetPlannedPinConfiguration(pc);
+
+            if (pasc1Participant.GetCurrentValue() && pasc1.IsLeader())
+                pasc1.ActivateSend();
+            if (pasc2Participant.GetCurrentValue() && pasc2.IsLeader())
+                pasc2.ActivateSend();
+
+            // Corner particles initialize counters
+            if (hexCornerIndex != -1)
+            {
+                counter1Idx.SetValue(0);
+                counter2Idx.SetValue(0);
+            }
+
+            // Participants initialize comparison results
+            if (pasc1Participant.GetCurrentValue())
+                comparison1.SetValue(Comparison.EQUAL);
+            if (pasc2Participant.GetCurrentValue())
+                comparison2.SetValue(Comparison.EQUAL);
+        }
+
+        /// <summary>
+        /// Receive PASC beep, then establish 4-way global circuit and
+        /// send PASC and comparison status info.
+        /// </summary>
+        /// <param name="length1">The bit string representing the first sector
+        /// length to be checked.</param>
+        /// <param name="length2">The bit string representing the second sector
+        /// length to be checked.</param>
+        private void CandidateLimitRound2(string length1, string length2)
+        {
+            PinConfiguration pc = GetCurrentPinConfiguration();
+
+            // Receive PASC beep
+            if (pasc1Participant)
+                pasc1.ActivateReceive();
+            if (pasc2Participant)
+                pasc2.ActivateReceive();
+
+            // Setup 4-way global circuit (have 4 separate global circuits 0, 1, 2, 3)
+            pc = SetupNWayGlobalCircuit(4);
+
+            // Beep on circuit 0 if participant became inactive
+            if (pasc1Participant && pasc1.BecamePassive() ||
+                pasc2Participant && pasc2.BecamePassive())
+                pc.SendBeepOnPartitionSet(0);
+
+            // Beep on circuit 1 if one counter is still active
+            if (hexCornerIndex != -1 && (counter1Idx < length1.Length || counter2Idx < length2.Length))
+                pc.SendBeepOnPartitionSet(1);
+
+            // Corner particles send current bit of counter
+            if (hexCornerIndex != -1)
+            {
+                if (counter1Idx < length1.Length && length1[counter1Idx] == '1')
+                    pc.SendBeepOnPartitionSet(2);
+                if (counter2Idx < length2.Length && length2[counter2Idx] == '1')
+                    pc.SendBeepOnPartitionSet(3);
+            }
+        }
+
+        /// <summary>
+        /// Updates the comparison result and checks the
+        /// status beeps on the global circuit. If we are
+        /// finished: Line ends with comparison result LESS
+        /// send beep on axis circuit. If the comparison is finished:
+        /// Start PASC cutoff. Otherwise: Start next iteration.
+        /// </summary>
+        /// <param name="dir">The direction of the limit check.</param>
+        /// <param name="length1">The bit string representing the first sector
+        /// length to be checked.</param>
+        /// <param name="length2">The bit string representing the second sector
+        /// length to be checked.</param>
+        /// <returns><c>0</c> if we are finished completely,
+        /// <c>1</c> if we are performing PASC cutoff,
+        /// <c>2</c> if we have to continue.</returns>
+        private int CandidateLimitRound3(Direction dir, string length1, string length2)
+        {
+            PinConfiguration pc = GetCurrentPinConfiguration();
+
+            // Check for beeps on global circuits
+            bool[] beeps = new bool[4];
+            for (int i = 0; i < 4; i++)
+                beeps[i] = pc.ReceivedBeepOnPartitionSet(i);
+
+            int counter1Bit = beeps[2] ? 1 : 0;
+            int counter2Bit = beeps[3] ? 1 : 0;
+
+            // Update comparison result
+            if (pasc1Participant)
+                UpdateComparisonResult(pasc1.GetReceivedBit(), counter1Bit, comparison1);
+            if (pasc2Participant)
+                UpdateComparisonResult(pasc2.GetReceivedBit(), counter2Bit, comparison2);
+
+            // Check status beeps on global circuit
+            if (!beeps[0] && !beeps[1])
+            {
+                // Both PASC and comparison are finished:
+                // Setup axis circuit again and let line ends with comparison result
+                // of LESS send beep
+                CandidateLimitEliminationBeep(dir);
+
+                return 0;
+            }
+            else if (!beeps[1])
+            {
+                // Comparison is finished but PASC may not be: Start PASC cutoff
+                pc.SetToSingleton();
+                if (pasc1Participant)
+                    pasc1.SetupCutoffCircuit(pc);
+                if (pasc2Participant)
+                    pasc2.SetupCutoffCircuit(pc);
+                SetPlannedPinConfiguration(pc);
+                if (pasc1Participant)
+                    pasc1.SendCutoffBeep();
+                if (pasc2Participant)
+                    pasc2.SendCutoffBeep();
+
+                return 1;
+            }
+            else
+            {
+                // Not finished yet
+                // Corners increment indices
+                if (hexCornerIndex != -1)
+                {
+                    if (counter1Idx < length1.Length)
+                        counter1Idx.SetValue(counter1Idx + 1);
+                    if (counter2Idx < length2.Length)
+                        counter2Idx.SetValue(counter2Idx + 1);
+                }
+
+                // Setup PASC circuits again, send next beeps and go back to round 3
+                pc.SetToSingleton();
+                if (pasc1Participant)
+                    pasc1.SetupPC(pc);
+                if (pasc2Participant)
+                    pasc2.SetupPC(pc);
+                SetPlannedPinConfiguration(pc);
+                if (pasc1Participant && pasc1.IsLeader())
+                    pasc1.ActivateSend();
+                if (pasc2Participant && pasc2.IsLeader())
+                    pasc2.ActivateSend();
+
+                return 2;
+            }
+        }
+
+        /// <summary>
+        /// Receive PASC cutoff beep and determine final comparison result.
+        /// Then establish axis circuit and send elimination beep.
+        /// </summary>
+        /// <param name="dir">The direction of the limit check.</param>
+        private void CandidateLimitRound4(Direction dir)
+        {
+            // Receive PASC cutoff beep
+            if (pasc1Participant)
+            {
+                pasc1.ReceiveCutoffBeep();
+                if (pasc1.GetReceivedBit() > 0)
+                    comparison1.SetValue(Comparison.GREATER);
+            }
+            if (pasc2Participant)
+            {
+                pasc2.ReceiveCutoffBeep();
+                if (pasc2.GetReceivedBit() > 0)
+                    comparison2.SetValue(Comparison.GREATER);
+            }
+
+            CandidateLimitEliminationBeep(dir);
+        }
+
+        private void CandidateLimitEliminationBeep(Direction dir)
+        {
+            // Setup axis circuit and let line ends with comparison
+            // result of LESS send beep
+            PinConfiguration pc;
+            pc = SetupAxisCircuit(dir.Rotate60(1), dir.Rotate60(2));
+            bool hasNbr1 = !IsNbrHole(dir);
+            bool hasNbr2 = !IsNbrHole(dir.Opposite());
+            if (pasc1Participant && comparison1.GetCurrentValue() == Comparison.LESS && !pasc1.IsLeader() && (hasNbr1 ^ hasNbr2) ||
+                pasc2Participant && comparison2.GetCurrentValue() == Comparison.LESS && !pasc2.IsLeader() && (hasNbr1 ^ hasNbr2))
+            {
+                pc.GetPinAt(dir, 0).PartitionSet.SendBeep();
+                pc.GetPinAt(dir.Opposite(), 0).PartitionSet.SendBeep();
+            }
+        }
+
+        /// <summary>
+        /// Receive elimination beep on axis circuit, become limited hole
+        /// if received.
+        /// </summary>
+        /// <param name="dir">The direction of the limit check.</param>
+        private void CandidateLimitRound5(Direction dir)
+        {
+            // Check for elimination beep
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            if (pc.GetPinAt(dir, 0).PartitionSet.ReceivedBeep() && !isHole)
+            {
+                limited.SetValue(true);
+            }
+        }
+
+
 
         private void Activate_Rounds3And6()
         {
@@ -1801,13 +2277,42 @@ namespace AS2.Algos.HexagonTest
 
         private void SetCandidateColor()
         {
-            if (hexCornerIndex.GetCurrentValue() == -1 && hexEdgeIndex.GetCurrentValue() == -1 && axisIndex1.GetCurrentValue() == -1 && !isHole.GetCurrentValue() && !isInternal.GetCurrentValue())
+            if (hexCornerIndex.GetCurrentValue() == -1 && hexEdgeIndex.GetCurrentValue() == -1 && axisIndex1.GetCurrentValue() == -1 && !isHole.GetCurrentValue() && !limited.GetCurrentValue() && !isInternal.GetCurrentValue())
             {
                 if (isCandidateL.GetCurrentValue() || isCandidateR.GetCurrentValue())
                     SetMainColor(ColorData.Particle_Aqua);
                 else
                     SetMainColor(ColorData.Particle_Black);
             }
+        }
+
+        private void SetLimitedColor()
+        {
+            if (limited.GetCurrentValue() && hexCornerIndex.GetCurrentValue() == -1 && hexEdgeIndex.GetCurrentValue() == -1 && !isHole.GetCurrentValue() && !isInternal.GetCurrentValue())
+            {
+                SetMainColor(ColorData.Particle_Orange);
+            }
+        }
+
+        // TODO: Proper color management
+        private void UpdateColor()
+        {
+            if (isInternal.GetCurrentValue())
+                SetMainColor(Color.gray);
+            else if (isHole.GetCurrentValue())
+                SetMainColor(ColorData.Particle_Red);
+            else if (hexCornerIndex.GetCurrentValue() != -1)
+                SetMainColor(ColorData.Particle_BlueDark);
+            else if (hexEdgeIndex.GetCurrentValue() != -1)
+                SetMainColor(ColorData.Particle_Blue);
+            else if (limited.GetCurrentValue())
+                SetMainColor(ColorData.Particle_Orange);
+            else if (axisIndex1.GetCurrentValue() != -1)
+                SetMainColor(ColorData.Particle_Yellow);
+            else if (isCandidateL.GetCurrentValue() || isCandidateR.GetCurrentValue())
+                SetMainColor(ColorData.Particle_Green);
+            else
+                SetMainColor(ColorData.Particle_Black);
         }
     }
 
