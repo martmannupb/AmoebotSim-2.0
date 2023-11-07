@@ -103,7 +103,28 @@ namespace AS2.Algos.HexagonTest
     /// CANDIDATE_SHIFT:
     /// Round 0:
     ///     - All particles in sectors 6, 12 and 13, on axes 1 and 8, and corner 0 become candidates (for both sides)
-    ///     
+    /// Round 1:
+    ///     - All candidates determine interval start and end points
+    ///     - Start shift procedure from interval start points
+    /// Rounds 1-5: Candidate shift for interval starts
+    /// Rounds 7-11: Candidate shift for interval ends
+    ///     -> There is no round 6 because of modulo operations...
+    /// Round 12:
+    ///     - Setup axis circuit limited by interval start and end points
+    ///     - Interval ends send beep toward interval starts
+    /// Round 13:
+    ///     - All particles receiving the corresponding beeps become candidates (everyone else loses candidate status)
+    ///     - Also, particles in the wrong sectors lose candidate status (outside of possible candidate area)
+    /// Then repeat rounds 1-13 with updated shift index for second shift
+    /// 
+    /// 
+    /// 
+    /// 
+    /// 
+    /// 
+    /// 
+    /// 
+    /// 
     /// Round 1-5: Distance check in SSW and E direction at the same time
     /// 
     /// TODO
@@ -224,6 +245,7 @@ namespace AS2.Algos.HexagonTest
         ParticleAttribute<int> counter2Idx;
         ParticleAttribute<Comparison> comparison1;  // Counter comparison results 1 and 2
         ParticleAttribute<Comparison> comparison2;
+        ParticleAttribute<int> shiftIndex;          // Current shift index (0 = first shift, 1 = second shift, 2 = third shift)
 
         // Generic attributes that can be used in multiple phases
         ParticleAttribute<bool> genericBool1;
@@ -267,6 +289,7 @@ namespace AS2.Algos.HexagonTest
             counter2Idx = CreateAttributeInt("Counter 2 Idx", 0);
             comparison1 = CreateAttributeEnum<Comparison>("Comparison 1", Comparison.EQUAL);
             comparison2 = CreateAttributeEnum<Comparison>("Comparison 2", Comparison.EQUAL);
+            shiftIndex = CreateAttributeInt("Shift", 0);
 
             genericBool1 = CreateAttributeBool("Generic Bool 1", false);
 
@@ -926,13 +949,18 @@ namespace AS2.Algos.HexagonTest
             }
             else
             {
-                // TODO: Finish
+                // Finished
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                pc.SetToSingleton();
+                SetPlannedPinConfiguration(pc);
+                phase.SetValue(Phase.CANDIDATE_SHIFT);
+                round.SetValue(0);
             }
         }
 
         void ActivateCandidateShift()
         {
-            if (isHole)
+            if (isHole || limited)
                 return;
 
             if (round == 0)
@@ -942,380 +970,136 @@ namespace AS2.Algos.HexagonTest
                 {
                     isCandidateL.SetValue(true);
                     isCandidateR.SetValue(true);
-                    SetCandidateColor();
+                    UpdateColor();
                 }
 
                 round.SetValue(round + 1);
             }
-            else if (round == 1)
+            else
             {
-                DistanceCheckRound0(Direction.SSW, Direction.E);
-                round.SetValue(round + 1);
-            }
-            else if (round == 2)
-            {
-                DistanceCheckRound1(Direction.SSW, Direction.E);
-                round.SetValue(round + 1);
-            }
-            else if (round == 3)
-            {
-                DistanceCheckRound2(hexLine1, hexLine0);
-                round.SetValue(round + 1);
-            }
-            else if (round == 4)
-            {
-                int result = DistanceCheckRound3(hexLine1, hexLine0, true);
-                if (result == 0)
+                Direction dirL;
+                Direction dirR;
+                string lengthL;
+                string lengthR;
+                if (shiftIndex == 0)
                 {
-                    // Finished
-                    round.SetValue(100);
-                }
-                else if (result == 1)
-                {
-                    // Do PASC Cutoff
-                    round.SetValue(5);
+                    dirL = Direction.SSW;
+                    dirR = Direction.E;
+                    lengthL = hexLine1;
+                    lengthR = hexLine0;
                 }
                 else
                 {
-                    // Continue
-                    round.SetValue(3);
-                }
-            }
-            else if (round == 5)
-            {
-                DistanceCheckRound4(true);
-
-                PinConfiguration pc = GetContractedPinConfiguration();
-                SetPlannedPinConfiguration(pc);
-
-                round.SetValue(100);
-            }
-
-
-
-
-
-
-
-
-
-
-
-
-            else if (round == 2)
-            {
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                // Check whether we have received the PASC activation beep
-                if (isIntervalStartL || pc.GetPinAt(Direction.NNE, PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-                {
-                    pasc1.Init(isIntervalStartL, isIntervalStartL ? Direction.NONE : Direction.NNE, Direction.SSW, 3, 0, 0, 3, 0, 1);
-                    pasc1Participant.SetValue(true);
-                }
-                if (isIntervalStartR || pc.GetPinAt(Direction.W, PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-                {
-                    pasc2.Init(isIntervalStartR, isIntervalStartR ? Direction.NONE : Direction.W, Direction.E, 0, 3, 3, 0, 2, 3);
-                    pasc2Participant.SetValue(true);
+                    dirL = Direction.SSE;
+                    dirR = Direction.SSE;
+                    lengthL = hexLine2;
+                    lengthR = hexLine5;
                 }
 
-                // Setup PASC circuit and start the procedure
-                pc.SetToSingleton();
-
-                if (pasc1Participant.GetCurrentValue())
-                    pasc1.SetupPC(pc);
-                if (pasc2Participant.GetCurrentValue())
-                    pasc2.SetupPC(pc);
-
-                SetPlannedPinConfiguration(pc);
-
-                if (isIntervalStartL)
-                    pasc1.ActivateSend();
-                if (isIntervalStartR)
-                    pasc2.ActivateSend();
-
-                // Corner particles initialize counters
-                if (hexCornerIndex != -1)
+                if (round < 12)
                 {
-                    counter1Idx.SetValue(0);
-                    counter2Idx.SetValue(0);
+                    if (round % 6 == 1)
+                    {
+                        // Determine interval start points
+                        if (round == 1)
+                            SetCandidateIntervalStartEnd(dirL, dirR);
+
+                        CandidateShiftRound0(dirL, dirR, round < 6);
+
+                        round.SetValue(round + 1);
+                    }
+                    else if (round % 6 == 2)
+                    {
+                        CandidateShiftRound1(dirL, dirR, round < 6);
+
+                        round.SetValue(round + 1);
+                    }
+                    else if (round % 6 == 3)
+                    {
+                        CandidateShiftRound2(lengthL, lengthR);
+
+                        round.SetValue(round + 1);
+                    }
+                    else if (round % 6 == 4)
+                    {
+                        int result = CandidateShiftRound3(lengthL, lengthR, round < 6);
+                        if (result == 0)
+                        {
+                            // Finished, continue with next phase
+                            if (round < 6)
+                                round.SetValue(7);
+                            else
+                                round.SetValue(12);
+                        }
+                        else if (result == 1)
+                        {
+                            // PASC Cutoff
+                            round.SetValue(round + 1);
+                        }
+                        else
+                        {
+                            // Continue
+                            round.SetValue(round - 1);
+                        }
+                    }
+                    else if (round % 6 == 5)
+                    {
+                        // PASC Cutoff
+                        CandidateShiftRound4(round < 6);
+
+                        if (round < 6)
+                            round.SetValue(7);
+                        else
+                            round.SetValue(12);
+                    }
                 }
-
-                // Participants initialize comparison results
-                if (pasc1Participant.GetCurrentValue())
-                    comparison1.SetValue(Comparison.EQUAL);
-                if (pasc2Participant.GetCurrentValue())
-                    comparison2.SetValue(Comparison.EQUAL);
-
-                round.SetValue(round + 1);
-            }
-            else if (round == 3)
-            {
-                Activate_Rounds3And6();
-            }
-            else if (round == 4)
-            {
-                PinConfiguration pc = GetCurrentPinConfiguration();
-
-                // Check for beep on global circuit
-                if (!pc.ReceivedBeepOnPartitionSet(0))
+                else if (round % 14 == 12)
                 {
-                    // No beep on global circuit: First PASC run is finished
-                    // Interval starts remove this status
-                    if (isIntervalStartL)
-                        isIntervalStartL.SetValue(false);
-                    if (isIntervalStartR)
-                        isIntervalStartR.SetValue(false);
-
-                    // If we are a participant and we have received an EQUAL result, become interval start
-                    if (pasc1Participant && comparison1 == Comparison.EQUAL)
-                        isIntervalStartL.SetValue(true);
-                    if (pasc2Participant && comparison2 == Comparison.EQUAL)
-                        isIntervalStartR.SetValue(true);
-
-                    // Reset participant states
-                    pasc1Participant.SetValue(false);
-                    pasc2Participant.SetValue(false);
-
-                    // Setup simple axis circuit using interval ends as breaks
-                    pc = SetupAxisCircuit(3);
-                    // IntervalL ends send beep on NNE axis, IntervalR ends send beep on E axis
-                    if (isIntervalEndL.GetCurrentValue())
-                        pc.GetPinAt(Direction.SSW, 0).PartitionSet.SendBeep();
-                    if (isIntervalEndR.GetCurrentValue())
-                        pc.GetPinAt(Direction.E, 0).PartitionSet.SendBeep();
-
+                    // Establish axis circuits using interval start and end points
+                    CandidateShiftRound5(dirL, dirR);
                     round.SetValue(round + 1);
                 }
-                else
+                else if (round % 14 == 13)
                 {
-                    // Receive bits from the two counters and update comparison results
-                    if (pasc1Participant || pasc2Participant)
-                    {
-                        int counter1Bit = pc.ReceivedBeepOnPartitionSet(1) ? 1 : 0;
-                        int counter2Bit = pc.ReceivedBeepOnPartitionSet(2) ? 1 : 0;
+                    // Receive axis beeps and determine new candidates
+                    CandidateShiftRound6(dirL, dirR);
 
-                        // Update comparison result
-                        if (pasc1Participant)
-                        {
-                            int pascBit = pasc1.GetReceivedBit();
-                            if (pascBit > counter1Bit)
-                                comparison1.SetValue(Comparison.GREATER);
-                            else if (pascBit < counter1Bit)
-                                comparison1.SetValue(Comparison.LESS);
-                        }
-                        if (pasc2Participant)
-                        {
-                            int pascBit = pasc2.GetReceivedBit();
-                            if (pascBit > counter2Bit)
-                                comparison2.SetValue(Comparison.GREATER);
-                            else if (pascBit < counter2Bit)
-                                comparison2.SetValue(Comparison.LESS);
-                        }
+                    // Eliminate candidates in the wrong sectors
+                    if (shiftIndex == 0)
+                    {
+                        if (isCandidateL.GetCurrentValue() &&
+                            !IsInSector(new int[] { 7, 13, 14 }) && !IsOnAxis(new int[] { 3, 10 }) && hexCornerIndex != 1)
+                            isCandidateL.SetValue(false);
+                        if (isCandidateR.GetCurrentValue() &&
+                            !IsInSector(new int[] { 11, 12, 17 }) && !IsOnAxis(new int[] { 6, 11 }) && hexCornerIndex != 5)
+                            isCandidateR.SetValue(false);
+                    }
+                    else
+                    {
+                        if (isCandidateL.GetCurrentValue() &&
+                            !IsInSector(new int[] { 8, 14, 15 }) && !IsOnAxis(new int[] { 0, 5 }) && hexCornerIndex != 2)
+                            isCandidateL.SetValue(false);
+                        if (isCandidateR.GetCurrentValue() &&
+                            !IsInSector(new int[] { 10, 16, 17 }) && !IsOnAxis(new int[] { 4, 9 }) && hexCornerIndex != 4)
+                            isCandidateR.SetValue(false);
                     }
 
-                    // Corners increment indices
-                    if (hexCornerIndex != -1)
+                    UpdateColor();
+
+                    // Decide what to do next
+                    if (shiftIndex == 0)
                     {
-                        if (counter1Idx < hexLine1.Length)
-                            counter1Idx.SetValue(counter1Idx + 1);
-                        if (counter2Idx < hexLine0.Length)
-                            counter2Idx.SetValue(counter2Idx + 1);
+                        shiftIndex.SetValue(1);
+                        round.SetValue(1);
                     }
-
-                    // Setup PASC circuits again, send next beeps and go back to round 3
-                    pc.SetToSingleton();
-                    if (pasc1Participant)
-                        pasc1.SetupPC(pc);
-                    if (pasc2Participant)
-                        pasc2.SetupPC(pc);
-                    SetPlannedPinConfiguration(pc);
-                    if (isIntervalStartL)
-                        pasc1.ActivateSend();
-                    if (isIntervalStartR)
-                        pasc2.ActivateSend();
-
-                    round.SetValue(3);
+                    else
+                        round.SetValue(100);
                 }
             }
-            else if (round == 5)
-            {
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                // Check whether we have received the PASC activation beep
-                if (isIntervalEndL || pc.GetPinAt(Direction.NNE, PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-                {
-                    pasc1.Init(isIntervalEndL, isIntervalEndL ? Direction.NONE : Direction.NNE, Direction.SSW, 3, 0, 0, 3, 0, 1);
-                    pasc1Participant.SetValue(true);
-                }
-                if (isIntervalEndR || pc.GetPinAt(Direction.W, PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-                {
-                    pasc2.Init(isIntervalEndR, isIntervalEndR ? Direction.NONE : Direction.W, Direction.E, 0, 3, 3, 0, 2, 3);
-                    pasc2Participant.SetValue(true);
-                }
 
-                // Setup PASC circuit and start the procedure
-                pc.SetToSingleton();
 
-                if (pasc1Participant.GetCurrentValue())
-                    pasc1.SetupPC(pc);
-                if (pasc2Participant.GetCurrentValue())
-                    pasc2.SetupPC(pc);
 
-                SetPlannedPinConfiguration(pc);
 
-                if (isIntervalEndL)
-                    pasc1.ActivateSend();
-                if (isIntervalEndR)
-                    pasc2.ActivateSend();
-
-                // Corner particles initialize counters (again)
-                if (hexCornerIndex != -1)
-                {
-                    counter1Idx.SetValue(0);
-                    counter2Idx.SetValue(0);
-                }
-
-                // Participants initialize comparison results
-                if (pasc1Participant.GetCurrentValue())
-                    comparison1.SetValue(Comparison.EQUAL);
-                if (pasc2Participant.GetCurrentValue())
-                    comparison2.SetValue(Comparison.EQUAL);
-
-                round.SetValue(round + 1);
-            }
-            else if (round == 6)
-            {
-                Activate_Rounds3And6();
-            }
-            else if (round == 7)
-            {
-                // Almost the same as round 4
-                PinConfiguration pc = GetCurrentPinConfiguration();
-
-                // Check for beep on global circuit
-                if (!pc.ReceivedBeepOnPartitionSet(0))
-                {
-                    // No beep on global circuit: Second PASC run is finished
-                    // Interval ends remove this status
-                    if (isIntervalEndL)
-                        isIntervalEndL.SetValue(false);
-                    if (isIntervalEndR)
-                        isIntervalEndR.SetValue(false);
-
-                    // If we are a participant and we have received an EQUAL result, become interval end
-                    if (pasc1Participant && comparison1 == Comparison.EQUAL)
-                        isIntervalEndL.SetValue(true);
-                    if (pasc2Participant && comparison2 == Comparison.EQUAL)
-                        isIntervalEndR.SetValue(true);
-
-                    // Reset participant states
-                    pasc1Participant.SetValue(false);
-                    pasc2Participant.SetValue(false);
-
-                    // Finalize the first shift
-
-                    // Setup simple axis circuit using interval starts and ends as breaks
-                    pc = SetupAxisCircuit(4);
-                    // IntervalL ends send beep on NNE axis, IntervalR ends send beep on E axis
-                    if (isIntervalEndL.GetCurrentValue())
-                        pc.GetPinAt(Direction.SSW, 0).PartitionSet.SendBeep();
-                    if (isIntervalEndR.GetCurrentValue())
-                        pc.GetPinAt(Direction.E, 0).PartitionSet.SendBeep();
-
-                    round.SetValue(round + 1);
-                }
-                else
-                {
-                    // Receive bits from the two counters and update comparison results
-                    if (pasc1Participant || pasc2Participant)
-                    {
-                        int counter1Bit = pc.ReceivedBeepOnPartitionSet(1) ? 1 : 0;
-                        int counter2Bit = pc.ReceivedBeepOnPartitionSet(2) ? 1 : 0;
-
-                        // Update comparison result
-                        if (pasc1Participant)
-                        {
-                            int pascBit = pasc1.GetReceivedBit();
-                            if (pascBit > counter1Bit)
-                                comparison1.SetValue(Comparison.GREATER);
-                            else if (pascBit < counter1Bit)
-                                comparison1.SetValue(Comparison.LESS);
-                        }
-                        if (pasc2Participant)
-                        {
-                            int pascBit = pasc2.GetReceivedBit();
-                            if (pascBit > counter2Bit)
-                                comparison2.SetValue(Comparison.GREATER);
-                            else if (pascBit < counter2Bit)
-                                comparison2.SetValue(Comparison.LESS);
-                        }
-                    }
-
-                    // Corners increment indices
-                    if (hexCornerIndex != -1)
-                    {
-                        if (counter1Idx < hexLine1.Length)
-                            counter1Idx.SetValue(counter1Idx + 1);
-                        if (counter2Idx < hexLine0.Length)
-                            counter2Idx.SetValue(counter2Idx + 1);
-                    }
-
-                    // Setup PASC circuits again, send next beeps and go back to round 3
-                    pc.SetToSingleton();
-                    if (pasc1Participant)
-                        pasc1.SetupPC(pc);
-                    if (pasc2Participant)
-                        pasc2.SetupPC(pc);
-                    SetPlannedPinConfiguration(pc);
-                    if (isIntervalEndL)
-                        pasc1.ActivateSend();
-                    if (isIntervalEndR)
-                        pasc2.ActivateSend();
-
-                    round.SetValue(6);
-                }
-            }
-            else if (round == 8)
-            {
-                // Receive candidate beeps
-                PinConfiguration pc = GetCurrentPinConfiguration();
-
-                isCandidateL.SetValue(false);
-                isCandidateR.SetValue(false);
-
-                // Become candidate if beep was received (or we are interval end)
-                if (pc.GetPinAt(Direction.NNE, PinsPerEdge - 1).PartitionSet.ReceivedBeep() || isIntervalEndL)
-                    isCandidateL.SetValue(true);
-                if (pc.GetPinAt(Direction.W, PinsPerEdge - 1).PartitionSet.ReceivedBeep() || isIntervalEndR)
-                    isCandidateR.SetValue(true);
-
-                // Update color
-                SetCandidateColor();
-
-                // Setup simple axis circuit (axes do not connect)
-                pc = SetupAxisCircuit(5);
-                // Axis 10 sends beep in NNE direction, axis 11 sends in W direction
-                // (to eliminate candidates that have not moved far enough)
-                if (axisIndex1 == 10 || axisIndex2 == 10 || hexCornerIndex == 1)
-                    pc.GetPinAt(Direction.NNE, 0).PartitionSet.SendBeep();
-                if (axisIndex1 == 11 || axisIndex2 == 11 || hexCornerIndex == 5)
-                    pc.GetPinAt(Direction.W, 0).PartitionSet.SendBeep();
-
-                round.SetValue(round + 1);
-            }
-            else if (round == 9)
-            {
-                PinConfiguration pc = GetCurrentPinConfiguration();
-
-                // Receive direction beeps and withdraw candidacy
-                if (isCandidateL && pc.GetPinAt(Direction.SSW, PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-                    isCandidateL.SetValue(false);
-                if (isCandidateR && pc.GetPinAt(Direction.E, PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-                    isCandidateR.SetValue(false);
-
-                // Update color
-                SetCandidateColor();
-
-                round.SetValue(round + 1);
-            }
         }
 
 
@@ -1393,7 +1177,6 @@ namespace AS2.Algos.HexagonTest
         /// Establish simple axis circuits, particles with hole neighbors
         /// in the corresponding directions send beep or become limited
         /// immediately.
-        /// which they want to check.
         /// </summary>
         /// <param name="dir">The direction of the axis we are checking
         /// (directions 0, 1 and 2 identify the axes).</param>
@@ -1695,88 +1478,72 @@ namespace AS2.Algos.HexagonTest
 
 
 
-        private void Activate_Rounds3And6()
-        {
-            PinConfiguration pc = GetCurrentPinConfiguration();
 
-            // Receive PASC beep
-            if (pasc1Participant)
-                pasc1.ActivateReceive();
-            if (pasc2Participant)
-                pasc2.ActivateReceive();
-
-            // Setup 3-way global circuit (have 3 separate global circuits 0, 1, 2)
-            pc = SetupNWayGlobalCircuit(3);
-
-            // Beep if participant became inactive or one counter is still not finished
-            if (pasc1Participant && pasc1.BecamePassive() ||
-                pasc2Participant && pasc2.BecamePassive() ||
-                hexCornerIndex != -1 && (counter1Idx < hexLine1.Length || counter2Idx < hexLine0.Length))
-                pc.SendBeepOnPartitionSet(0);
-
-            // Corner particles send current bit of counter
-            if (hexCornerIndex != -1)
-            {
-                if (counter1Idx < hexLine1.Length && hexLine1[counter1Idx] == '1')
-                    pc.SendBeepOnPartitionSet(1);
-                if (counter2Idx < hexLine0.Length && hexLine0[counter2Idx] == '1')
-                    pc.SendBeepOnPartitionSet(2);
-            }
-
-            round.SetValue(round + 1);
-        }
 
         /// <summary>
-        /// Establish axis circuits, let candidates beep in the direction in
-        /// which they want to check.
+        /// Establish simple axis circuits, interval start or end points
+        /// do not connect and will send activation beeps.
         /// </summary>
-        /// <param name="dirL">Left candidate check direction.</param>
-        /// <param name="dirR">Right candidate check direction.</param>
-        private void DistanceCheckRound0(Direction dirL, Direction dirR)
+        /// <param name="dirL">The shifting direction of left candidates.</param>
+        /// <param name="dirR">The shifting direction of right candidates.</param>
+        /// <param name="intervalStart">Whether or not we are considering
+        /// interval start points (otherwise we consider end points as leaders).</param>
+        private void CandidateShiftRound0(Direction dirL, Direction dirR, bool intervalStart)
         {
-            bool candL = isCandidateL.GetCurrentValue();
-            bool candR = isCandidateR.GetCurrentValue();
-            // Setup simple axis circuit, candidates do not connect
-            PinConfiguration pc = SetupAxisCircuit(candL ? dirL : Direction.NONE, candR ? dirR : Direction.NONE);
-            // Left candidates send beep on first axis, Right candidates send beep on second axis
-            if (candL)
+            bool leaderL = intervalStart ? isIntervalStartL.GetCurrentValue() : isIntervalEndL.GetCurrentValue();
+            bool leaderR = intervalStart ? isIntervalStartR.GetCurrentValue() : isIntervalEndR.GetCurrentValue();
+
+            // Setup simple axis circuit, do not connect if we are leader
+            PinConfiguration pc = SetupAxisCircuit(leaderL ? dirL : Direction.NONE, leaderR ? dirR : Direction.NONE, Direction.NONE, true);
+            // Leaders send beep
+            if (leaderL)
                 pc.GetPinAt(dirL, 0).PartitionSet.SendBeep();
-            if (candR)
-                pc.GetPinAt(dirR, 0).PartitionSet.SendBeep();
+            if (leaderR)
+                pc.GetPinAt(dirR, 1).PartitionSet.SendBeep();
         }
 
         /// <summary>
         /// Establish PASC circuits where needed, initialize counters,
         /// send first PASC beeps.
         /// </summary>
-        /// <param name="dirL">Left candidate check direction.</param>
-        /// <param name="dirR">Right candidate check direction.</param>
-        private void DistanceCheckRound1(Direction dirL, Direction dirR)
+        /// <param name="dirL">The shifting direction of left candidates.</param>
+        /// <param name="dirR">The shifting direction of right candidates.</param>
+        /// <param name="intervalStart">Whether or not we are considering
+        /// interval start points (otherwise we consider end points as leaders).</param>
+        private void CandidateShiftRound1(Direction dirL, Direction dirR, bool intervalStart)
         {
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            // Check whether we have received the PASC activation beep
-            if (isCandidateL || pc.GetPinAt(dirL.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-            {
-                // Leader has no neighbor in check direction
-                bool leader = IsNbrHole(dirL);
-                pasc1.Init(leader, leader ? Direction.NONE : dirL, dirL.Opposite(), 0, PinsPerEdge - 1, PinsPerEdge - 1, 0, 0, 1);
-                pasc1Participant.SetValue(true);
-            }
-            if (isCandidateR || pc.GetPinAt(dirR.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-            {
-                // Leader has no neighbor in check direction
-                bool leader = IsNbrHole(dirR);
-                pasc2.Init(leader, leader ? Direction.NONE : dirR, dirR.Opposite(), PinsPerEdge - 2, 1, 1, PinsPerEdge - 2, 2, 3);
-                pasc2Participant.SetValue(true);
-            }
+            // Reset data first
+            pasc1Participant.SetValue(false);
+            pasc2Participant.SetValue(false);
 
-            // Setup PASC circuit and start the procedure
+            // Check whether we have received the PASC activation beep
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            bool beepL = pc.GetPinAt(dirL.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+            bool beepR = pc.GetPinAt(dirR.Opposite(), PinsPerEdge - 2).PartitionSet.ReceivedBeep();
+
+            // Or whether we sent it
+            bool leaderL = intervalStart ? isIntervalStartL.GetCurrentValue() : isIntervalEndL.GetCurrentValue();
+            bool leaderR = intervalStart ? isIntervalStartR.GetCurrentValue() : isIntervalEndR.GetCurrentValue();
+
             pc.SetToSingleton();
 
-            if (pasc1Participant.GetCurrentValue())
+            // Participants initialize PASC circuits and comparison results
+            if (beepL || leaderL)
+            {
+                pasc1Participant.SetValue(true);
+                pasc1.Init(leaderL, leaderL ? Direction.NONE : dirL.Opposite(), dirL, PinsPerEdge - 1, 0, 0, PinsPerEdge - 1, 0, 1);
                 pasc1.SetupPC(pc);
-            if (pasc2Participant.GetCurrentValue())
+
+                comparison1.SetValue(Comparison.EQUAL);
+            }
+            if (beepR || leaderR)
+            {
+                pasc2Participant.SetValue(true);
+                pasc2.Init(leaderR, leaderR ? Direction.NONE : dirR.Opposite(), dirR, 0, PinsPerEdge - 1, PinsPerEdge - 1, 0, 2, 3);
                 pasc2.SetupPC(pc);
+
+                comparison2.SetValue(Comparison.EQUAL);
+            }
 
             SetPlannedPinConfiguration(pc);
 
@@ -1791,23 +1558,17 @@ namespace AS2.Algos.HexagonTest
                 counter1Idx.SetValue(0);
                 counter2Idx.SetValue(0);
             }
-
-            // Participants initialize comparison results
-            if (pasc1Participant.GetCurrentValue())
-                comparison1.SetValue(Comparison.EQUAL);
-            if (pasc2Participant.GetCurrentValue())
-                comparison2.SetValue(Comparison.EQUAL);
         }
 
         /// <summary>
         /// Receive PASC beep, then establish 4-way global circuit and
         /// send PASC and comparison status info.
         /// </summary>
-        /// <param name="lengthL">The bit string representing the left
-        /// length to be checked.</param>
-        /// <param name="lengthR">The bit string representing the right
-        /// length to be checked.</param>
-        private void DistanceCheckRound2(string lengthL, string lengthR)
+        /// <param name="length1">The bit string representing the first shift
+        /// distance.</param>
+        /// <param name="length2">The bit string representing the second shift
+        /// distance.</param>
+        private void CandidateShiftRound2(string length1, string length2)
         {
             PinConfiguration pc = GetCurrentPinConfiguration();
 
@@ -1820,21 +1581,21 @@ namespace AS2.Algos.HexagonTest
             // Setup 4-way global circuit (have 4 separate global circuits 0, 1, 2, 3)
             pc = SetupNWayGlobalCircuit(4);
 
-            // Beep on circuit 0if participant became inactive
+            // Beep on circuit 0 if participant became inactive
             if (pasc1Participant && pasc1.BecamePassive() ||
                 pasc2Participant && pasc2.BecamePassive())
                 pc.SendBeepOnPartitionSet(0);
 
             // Beep on circuit 1 if one counter is still active
-            if (hexCornerIndex != -1 && (counter1Idx < hexLine1.Length || counter2Idx < hexLine0.Length))
+            if (hexCornerIndex != -1 && (counter1Idx < length1.Length || counter2Idx < length2.Length))
                 pc.SendBeepOnPartitionSet(1);
 
             // Corner particles send current bit of counter
             if (hexCornerIndex != -1)
             {
-                if (counter1Idx < lengthL.Length && lengthL[counter1Idx] == '1')
+                if (counter1Idx < length1.Length && length1[counter1Idx] == '1')
                     pc.SendBeepOnPartitionSet(2);
-                if (counter2Idx < lengthR.Length && lengthR[counter2Idx] == '1')
+                if (counter2Idx < length2.Length && length2[counter2Idx] == '1')
                     pc.SendBeepOnPartitionSet(3);
             }
         }
@@ -1842,20 +1603,20 @@ namespace AS2.Algos.HexagonTest
         /// <summary>
         /// Updates the comparison result and checks the
         /// status beeps on the global circuit. If we are
-        /// finished: Candidates with comparison result LESS
-        /// are eliminated. If the comparison is finished:
-        /// Start PASC cutoff. Otherwise: Start next iteration.
+        /// finished: New interval start/end points are determined.
+        /// If the comparison is finished: Start PASC cutoff.
+        /// Otherwise: Start next iteration.
         /// </summary>
-        /// <param name="lengthL">The bit string representing the left
-        /// length to be checked.</param>
-        /// <param name="lengthR">The bit string representing the right
-        /// length to be checked.</param>
-        /// <param name="eliminateBoth">Whether both candidate types
-        /// should be eliminated if one comparison result is LESS.</param>
+        /// <param name="length1">The bit string representing the first shift
+        /// distance.</param>
+        /// <param name="length2">The bit string representing the second shift
+        /// distance.</param>
+        /// <param name="intervalStart">Whether or not we are considering
+        /// interval start points (otherwise we consider end points as leaders).</param>
         /// <returns><c>0</c> if we are finished completely,
         /// <c>1</c> if we are performing PASC cutoff,
         /// <c>2</c> if we have to continue.</returns>
-        private int DistanceCheckRound3(string lengthL, string lengthR, bool eliminateBoth = false)
+        private int CandidateShiftRound3(string length1, string length2, bool intervalStart)
         {
             PinConfiguration pc = GetCurrentPinConfiguration();
 
@@ -1877,26 +1638,16 @@ namespace AS2.Algos.HexagonTest
             if (!beeps[0] && !beeps[1])
             {
                 // Both PASC and comparison are finished:
-                // All candidates with a comparison result of LESS withdraw their candidacies
-                if (isCandidateL && comparison1.GetCurrentValue() == Comparison.LESS)
-                {
-                    isCandidateL.SetValue(false);
-                    if (eliminateBoth)
-                        isCandidateR.SetValue(false);
-                }
-                if (isCandidateR && comparison2.GetCurrentValue() == Comparison.LESS)
-                {
-                    isCandidateR.SetValue(false);
-                    if (eliminateBoth)
-                        isCandidateL.SetValue(false);
-                }
-                SetCandidateColor();
+                // Previous interval start/end points withdraw,
+                // Comparison result EQUAL leads to new ones
+                CandidateShiftFinish(intervalStart);
 
                 return 0;
             }
             else if (!beeps[1])
             {
                 // Comparison is finished but PASC may not be: Start PASC cutoff
+                pc.SetToSingleton();
                 if (pasc1Participant)
                     pasc1.SetupCutoffCircuit(pc);
                 if (pasc2Participant)
@@ -1915,9 +1666,9 @@ namespace AS2.Algos.HexagonTest
                 // Corners increment indices
                 if (hexCornerIndex != -1)
                 {
-                    if (counter1Idx < lengthL.Length)
+                    if (counter1Idx < length1.Length)
                         counter1Idx.SetValue(counter1Idx + 1);
-                    if (counter2Idx < lengthR.Length)
+                    if (counter2Idx < length2.Length)
                         counter2Idx.SetValue(counter2Idx + 1);
                 }
 
@@ -1939,11 +1690,11 @@ namespace AS2.Algos.HexagonTest
 
         /// <summary>
         /// Receive PASC cutoff beep and determine final comparison result.
-        /// Then eliminate candidates.
-        /// <param name="eliminateBoth">Whether both candidate types
-        /// should be eliminated if one comparison result is LESS.</param>
+        /// Then eliminate and create new interval start/end points.
         /// </summary>
-        private void DistanceCheckRound4(bool eliminateBoth = false)
+        /// <param name="intervalStart">Whether or not we are considering
+        /// interval start points (otherwise we consider end points as leaders).</param>
+        private void CandidateShiftRound4(bool intervalStart)
         {
             // Receive PASC cutoff beep
             if (pasc1Participant)
@@ -1959,20 +1710,74 @@ namespace AS2.Algos.HexagonTest
                     comparison2.SetValue(Comparison.GREATER);
             }
 
-            if (isCandidateL && comparison1.GetCurrentValue() == Comparison.LESS)
-            {
-                isCandidateL.SetValue(false);
-                if (eliminateBoth)
-                    isCandidateR.SetValue(false);
-            }
-            if (isCandidateR && comparison2.GetCurrentValue() == Comparison.LESS)
-            {
-                isCandidateR.SetValue(false);
-                if (eliminateBoth)
-                    isCandidateL.SetValue(false);
-            }
-            SetCandidateColor();
+            CandidateShiftFinish(intervalStart);
         }
+
+        private void CandidateShiftFinish(bool intervalStart)
+        {
+            if (pasc1Participant)
+            {
+                bool resultEqual = comparison1.GetCurrentValue() == Comparison.EQUAL;
+                if (intervalStart)
+                    isIntervalStartL.SetValue(resultEqual);
+                else
+                    isIntervalEndL.SetValue(resultEqual);
+            }
+            if (pasc2Participant)
+            {
+                bool resultEqual = comparison2.GetCurrentValue() == Comparison.EQUAL;
+                if (intervalStart)
+                    isIntervalStartR.SetValue(resultEqual);
+                else
+                    isIntervalEndR.SetValue(resultEqual);
+            }
+        }
+
+        /// <summary>
+        /// Establish axis circuit using interval start and end points as limits,
+        /// let interval end points beep towards start points.
+        /// </summary>
+        /// <param name="dirL">The shifting direction of left candidates.</param>
+        /// <param name="dirR">The shifting direction of right candidates.</param>
+        private void CandidateShiftRound5(Direction dirL, Direction dirR)
+        {
+            bool limiterL = isIntervalStartL || isIntervalEndL;
+            bool limiterR = isIntervalStartR || isIntervalEndR;
+
+            PinConfiguration pc = SetupAxisCircuit(limiterL ? dirL : Direction.NONE, limiterR ? dirR : Direction.NONE, Direction.NONE, true);
+
+            // End points send beeps (only if they are not also the start point!)
+            if (isIntervalEndL && !isIntervalStartL)
+                pc.GetPinAt(dirL, 0).PartitionSet.SendBeep();
+            if (isIntervalEndR && !isIntervalStartR)
+                pc.GetPinAt(dirR, 1).PartitionSet.SendBeep();
+        }
+
+        /// <summary>
+        /// Receive axis circuit beep and determine new candidates.
+        /// </summary>
+        /// <param name="dirL">The shifting direction of left candidates.</param>
+        /// <param name="dirR">The shifting direction of right candidates.</param>
+        private void CandidateShiftRound6(Direction dirL, Direction dirR)
+        {
+            // Reset candidate status
+            isCandidateL.SetValue(false);
+            isCandidateR.SetValue(false);
+
+            // Update based on received beep or being interval end point
+            PinConfiguration pc = GetCurrentPinConfiguration();
+            if (isIntervalEndL || pc.GetPinAt(dirL.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                isCandidateL.SetValue(true);
+            if (isIntervalEndR || pc.GetPinAt(dirR.Opposite(), PinsPerEdge - 2).PartitionSet.ReceivedBeep())
+                isCandidateR.SetValue(true);
+        }
+
+
+
+
+
+
+
 
         private PinConfiguration SetupAxisCircuit(int mode)
         {
@@ -2055,7 +1860,8 @@ namespace AS2.Algos.HexagonTest
             return pc;
         }
 
-        private PinConfiguration SetupAxisCircuit(Direction excludeDir1 = Direction.NONE, Direction excludeDir2 = Direction.NONE, Direction excludeDir3 = Direction.NONE)
+        private PinConfiguration SetupAxisCircuit(Direction excludeDir1 = Direction.NONE, Direction excludeDir2 = Direction.NONE, Direction excludeDir3 = Direction.NONE,
+            bool multiAxis = false)
         {
             PinConfiguration pc = GetContractedPinConfiguration();
 
@@ -2068,27 +1874,34 @@ namespace AS2.Algos.HexagonTest
 
                 if (connectAxis)
                 {
-                    pc.MakePartitionSet(
-                        new int[] { pc.GetPinAt(dir, 0).Id, pc.GetPinAt(dir.Opposite(), PinsPerEdge - 1).Id },
-                        d
-                    );
-                    pc.MakePartitionSet(
-                        new int[] { pc.GetPinAt(dir, PinsPerEdge - 1).Id, pc.GetPinAt(dir.Opposite(), 0).Id },
-                        d + 3
-                    );
-                    pc.SetPartitionSetPosition(d, new Vector2(d * 60.0f - 30.0f, pSetDistance));
-                    pc.SetPartitionSetPosition(d + 3, new Vector2(((d + 3) % 6) * 60.0f - 30.0f, pSetDistance * 0.9f));
-                }
-                else
-                {
-                    pc.MakePartitionSet(
-                        new int[] { pc.GetPinAt(dir, 0).Id },
-                        d
-                    );
-                    pc.MakePartitionSet(
-                        new int[] { pc.GetPinAt(dir.Opposite(), 0).Id },
-                        d + 3
-                    );
+                    if (!multiAxis)
+                    {
+                        pc.MakePartitionSet(
+                            new int[] { pc.GetPinAt(dir, 0).Id, pc.GetPinAt(dir.Opposite(), PinsPerEdge - 1).Id },
+                            d
+                        );
+                        pc.MakePartitionSet(
+                            new int[] { pc.GetPinAt(dir, PinsPerEdge - 1).Id, pc.GetPinAt(dir.Opposite(), 0).Id },
+                            d + 3
+                        );
+                        pc.SetPartitionSetPosition(d, new Vector2(d * 60.0f - 30.0f, pSetDistance));
+                        pc.SetPartitionSetPosition(d + 3, new Vector2(((d + 3) % 6) * 60.0f - 30.0f, pSetDistance * 0.9f));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < PinsPerEdge; i++)
+                        {
+                            pc.MakePartitionSet(new int[] {
+                                pc.GetPinAt(dir, i).Id,
+                                pc.GetPinAt(dir.Opposite(), PinsPerEdge - 1 - i).Id
+                            }, d * PinsPerEdge + i);
+
+                            if (i < 2)
+                                pc.SetPartitionSetPosition(d * PinsPerEdge + i, new Vector2(d * 60.0f - (i == 0 ? 30.0f : 10.0f), i == 0 ? pSetDistance : pSetDistance * 0.9f));
+                            else
+                                pc.SetPartitionSetPosition(d * PinsPerEdge + i, new Vector2(((d + 3) % 6) * 60.0f - (i == PinsPerEdge - 1 ? 30.0f : 10.0f), i == PinsPerEdge - 1 ? pSetDistance : pSetDistance * 0.9f));
+                        }
+                    }
                 }
             }
 
@@ -2235,15 +2048,7 @@ namespace AS2.Algos.HexagonTest
             // Connect pins to create multiple global circuits
             for (int i = 0; i < n; i++)
             {
-                int j = PinsPerEdge - 1 - i;
-                pc.MakePartitionSet(new int[] {
-                    pc.GetPinAt(Direction.E, i).Id,
-                    pc.GetPinAt(Direction.NNE, i).Id,
-                    pc.GetPinAt(Direction.NNW, i).Id,
-                    pc.GetPinAt(Direction.W, j).Id,
-                    pc.GetPinAt(Direction.SSW, j).Id,
-                    pc.GetPinAt(Direction.SSE, j).Id
-                }, i);
+                pc.SetStarConfig(i, new bool[] { false, false, false, true, true, true }, i);
             }
 
             SetPlannedPinConfiguration(pc);
@@ -2259,6 +2064,38 @@ namespace AS2.Algos.HexagonTest
             return left ? nbr.isCandidateL : nbr.isCandidateR;
         }
 
+        private bool IsNbrHole(Direction dir, bool treatLimitedAsHole = false)
+        {
+            if (!HasNeighborAt(dir))
+                return true;
+            HexagonTestParticle nbr = (HexagonTestParticle)GetNeighborAt(dir);
+            return nbr.isHole || treatLimitedAsHole && nbr.limited;
+        }
+
+        private bool IsInSector(int[] sectorIndices)
+        {
+            foreach (int i in sectorIndices)
+                if (sectorIndex == i)
+                    return true;
+            return false;
+        }
+
+        private bool IsOnAxis(int[] axisIndices)
+        {
+            foreach (int i in axisIndices)
+                if (axisIndex1 == i || axisIndex2 == i)
+                    return true;
+            return false;
+        }
+
+        private void SetCandidateIntervalStartEnd(Direction dirL, Direction dirR)
+        {
+            isIntervalStartL.SetValue(isCandidateL && !IsNbrCandidate(dirL, true));
+            isIntervalEndL.SetValue(isCandidateL && !IsNbrCandidate(dirL.Opposite(), true));
+            isIntervalStartR.SetValue(isCandidateR && !IsNbrCandidate(dirR, false));
+            isIntervalEndR.SetValue(isCandidateR && !IsNbrCandidate(dirR.Opposite(), false));
+        }
+
         private void UpdateComparisonResult(int bit1, int bit2, ParticleAttribute<Comparison> comp)
         {
             if (bit1 > bit2)
@@ -2267,13 +2104,6 @@ namespace AS2.Algos.HexagonTest
                 comp.SetValue(Comparison.LESS);
         }
 
-        private bool IsNbrHole(Direction dir)
-        {
-            if (!HasNeighborAt(dir))
-                return true;
-            HexagonTestParticle nbr = (HexagonTestParticle)GetNeighborAt(dir);
-            return nbr.isHole;
-        }
 
         private void SetCandidateColor()
         {
@@ -2283,14 +2113,6 @@ namespace AS2.Algos.HexagonTest
                     SetMainColor(ColorData.Particle_Aqua);
                 else
                     SetMainColor(ColorData.Particle_Black);
-            }
-        }
-
-        private void SetLimitedColor()
-        {
-            if (limited.GetCurrentValue() && hexCornerIndex.GetCurrentValue() == -1 && hexEdgeIndex.GetCurrentValue() == -1 && !isHole.GetCurrentValue() && !isInternal.GetCurrentValue())
-            {
-                SetMainColor(ColorData.Particle_Orange);
             }
         }
 
@@ -2307,10 +2129,10 @@ namespace AS2.Algos.HexagonTest
                 SetMainColor(ColorData.Particle_Blue);
             else if (limited.GetCurrentValue())
                 SetMainColor(ColorData.Particle_Orange);
-            else if (axisIndex1.GetCurrentValue() != -1)
-                SetMainColor(ColorData.Particle_Yellow);
             else if (isCandidateL.GetCurrentValue() || isCandidateR.GetCurrentValue())
                 SetMainColor(ColorData.Particle_Green);
+            else if (axisIndex1.GetCurrentValue() != -1)
+                SetMainColor(Color.yellow);
             else
                 SetMainColor(ColorData.Particle_Black);
         }
