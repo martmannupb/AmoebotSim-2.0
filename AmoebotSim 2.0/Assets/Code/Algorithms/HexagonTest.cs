@@ -128,8 +128,20 @@ namespace AS2.Algos.HexagonTest
     ///     - Interval ends send beeps in both directions
     /// Round 2:
     ///     - Receive interval end beeps, determine interval end role
-    /// Rounds 2-6: Shift FRONT intervals by scale factor
+    /// Rounds 3-16: Shift intervals by scale factor
     ///     -> Repeat for base hexagon side length many steps
+    ///     -> Repeat for FRONT, MIDDLE and BACK segments
+    /// Round 17:
+    ///     - Establish axis circuit limited by interval start and end points
+    ///     - Interval ends send beep towards interval starts
+    /// Round 18:
+    ///     - All particles receiving the corresponding beeps become candidates (everyone else loses candidate status)
+    ///     - Particles in the wrong sectors lose candidate status
+    /// Round 19:
+    ///     - Particles that are not candidates for left and right side lose candidate status too
+    /// Round 20:
+    ///     - Change colors
+    ///     - DONE
     /// 
     /// </summary>
     public class HexagonTestParticle : ParticleAlgorithm
@@ -169,7 +181,7 @@ namespace AS2.Algos.HexagonTest
 
         enum IntervalType
         {
-            FRONT, MIDDLE, BACK, SINGLE, NONE
+            FRONT, MIDDLE, BACK, SINGLE, NONE   // SINGLE is actually not needed, it is equivalent to FRONT
         }
 
         private static readonly float pSetDistance = 0.7f;
@@ -187,6 +199,7 @@ namespace AS2.Algos.HexagonTest
 
         ParticleAttribute<Phase> phase;
         ParticleAttribute<int> round;
+        ParticleAttribute<bool> finished;
 
         ParticleAttribute<int> hexCornerIndex;      // -1 = No corner; 0 = Top left, 1 = Left, etc.
         ParticleAttribute<int> hexEdgeIndex;        // -1 = No edge; 0 = Top, 1 = Top left, etc.
@@ -217,7 +230,8 @@ namespace AS2.Algos.HexagonTest
         ParticleAttribute<int> shiftIndex;          // Current shift index (0 = first shift, 1 = second shift, 2 = third shift)
         ParticleAttribute<int> numShifts;           // Number of completed shifts
 
-        ParticleAttribute<IntervalType> intervalType;   // Type of the interval we are a start or end point of
+        ParticleAttribute<IntervalType> intervalTypeL;  // Type of the interval we are a start or end point of (Left side)
+        ParticleAttribute<IntervalType> intervalTypeR;
 
         // Generic attributes that can be used in multiple phases
         ParticleAttribute<bool> genericBool1;
@@ -232,6 +246,7 @@ namespace AS2.Algos.HexagonTest
             hexBoundIndex = CreateAttributeString("Hexagon boundary idx", string.Empty);
             phase = CreateAttributeEnum<Phase>("Phase", Phase.START);
             round = CreateAttributeInt("Round", 0);
+            finished = CreateAttributeBool("Finished", false);
 
             hexCornerIndex = CreateAttributeInt("Hex Corner Idx", -1);
             hexEdgeIndex = CreateAttributeInt("Hex Edge Idx", -1);
@@ -264,7 +279,8 @@ namespace AS2.Algos.HexagonTest
             shiftIndex = CreateAttributeInt("Shift", 0);
             numShifts = CreateAttributeInt("Num shifts", 0);
 
-            intervalType = CreateAttributeEnum<IntervalType>("Interval T.", IntervalType.NONE);
+            intervalTypeL = CreateAttributeEnum<IntervalType>("Interval T. L", IntervalType.NONE);
+            intervalTypeR = CreateAttributeEnum<IntervalType>("Interval T. R", IntervalType.NONE);
 
             genericBool1 = CreateAttributeBool("Generic Bool 1", false);
 
@@ -288,7 +304,7 @@ namespace AS2.Algos.HexagonTest
         public override bool IsFinished()
         {
             // Return true when this particle has terminated
-            return isInternal;
+            return isInternal || finished;
         }
 
         // The movement activation method
@@ -300,7 +316,7 @@ namespace AS2.Algos.HexagonTest
         // The beep activation method
         public override void ActivateBeep()
         {
-            if (isInternal)
+            if (isInternal || finished)
                 return;
 
             switch (phase.GetValue())
@@ -1086,6 +1102,8 @@ namespace AS2.Algos.HexagonTest
 
             Direction dirL = Direction.E;
             Direction dirR = Direction.SSW;
+            int numShiftsL = hexSize3;
+            int numShiftsR = hexSize4;
 
             if (round == 0)
             {
@@ -1111,53 +1129,190 @@ namespace AS2.Algos.HexagonTest
                 // Shift index 0 = FRONT + SINGLE, 1 = MIDDLE, 2 = BACK
                 shiftIndex.SetValue(0);
 
-                CandidateShiftRound0(dirL, dirR, true, IntervalType.FRONT);
-
                 round.SetValue(round + 1);
             }
-            else if (round == 3)
+            else if (round < 17)
             {
-                CandidateShiftRound1(dirL, dirR, true, IntervalType.FRONT);
+                // This is where the shifting procedure starts
+                // The shift distance is (almost) always the scale factor
+                // The number of shifts is determined by the side lengths of the base hexagon
+                // If one side has to be repeated more often than the other, the shift distance
+                //   for the shorter side is set to 0
+                // At the end of each shift, the target interval start/end's interval type is
+                //   set to the currently checked type
+                // We first shift the interval start points and then the end points
+                // The order of interval types is FRONT/SINGLE, MIDDLE, BACK
+                //   Before each type of intervals, we send a beep on the global circuit to check
+                //   whether this interval type even exists (this happens for r = 0 and r = 1)
+                // The actual shift happens for r % 7 = 2,...,6 (interval start) and r = 9,...,13 (interval end)
 
-                round.SetValue(round + 1);
-            }
-            else if (round == 4)
-            {
-                CandidateShiftRound2(scaleFactor, scaleFactor);
+                int r = round - 3;
+                IntervalType typeToCheck = shiftIndex == 0 ? IntervalType.FRONT : (shiftIndex == 1 ? IntervalType.MIDDLE : IntervalType.BACK);
 
-                round.SetValue(round + 1);
-            }
-            else if (round == 5)
-            {
-                int result = CandidateShiftRound3(scaleFactor, scaleFactor, true);
-                if (result == 0)
+                if (r == 0)
                 {
-                    // Finished, continue with next phase
-                    // TODO
-                    //if (round < 6)
-                    //    round.SetValue(7);
-                    //else
-                    //    round.SetValue(12);
-                    round.SetValue(100);
-                }
-                else if (result == 1)
-                {
-                    // PASC Cutoff
+                    // Setup global circuit
+                    PinConfiguration pc = GetCurrentPinConfiguration();
+                    pc.SetToGlobal(0);
+                    pc.ResetPartitionSetPlacement();
+                    SetPlannedPinConfiguration(pc);
+
+                    // Send beep if we have the correct interval type
+                    if (HaveMatchingIntervalType(typeToCheck, true) || HaveMatchingIntervalType(typeToCheck, false))
+                        pc.SendBeepOnPartitionSet(0);
+
                     round.SetValue(round + 1);
+                }
+                else if (r == 1)
+                {
+                    // Receive global circuit beep to check whether this shift is even necessary
+                    PinConfiguration pc = GetCurrentPinConfiguration();
+                    if (!pc.ReceivedBeepOnPartitionSet(0))
+                    {
+                        if (shiftIndex == 2)
+                        {
+                            round.SetValue(14 + 3);
+                        }
+                        else
+                        {
+                            shiftIndex.SetValue(shiftIndex + 1);
+                            numShifts.SetValue(0);
+                            round.SetValue(3);
+                        }
+                    }
+                    else
+                    {
+                        round.SetValue(round + 1);
+                    }
                 }
                 else
                 {
-                    // Continue
-                    round.SetValue(round - 1);
+                    // Here we shift the start and the end points
+                    // We repeat the whole procedure as many times as necessary
+                    bool intervalStart = r < 9;
+                    string lengthL = numShifts < numShiftsL ? scaleFactor : "0";
+                    string lengthR = numShifts < numShiftsR ? scaleFactor : "0";
+
+                    if (r % 7 == 2)
+                    {
+                        CandidateShiftRound0(dirL, dirR, intervalStart, typeToCheck);
+                        round.SetValue(round + 1);
+                    }
+                    else if (r % 7 == 3)
+                    {
+                        CandidateShiftRound1(dirL, dirR, intervalStart, typeToCheck);
+
+                        round.SetValue(round + 1);
+                    }
+                    else if (r % 7 == 4)
+                    {
+                        CandidateShiftRound2(lengthL, lengthR);
+
+                        round.SetValue(round + 1);
+                    }
+                    else if (r % 7 == 5)
+                    {
+                        int result = CandidateShiftRound3(lengthL, lengthR, intervalStart, typeToCheck);
+                        if (result == 0)
+                        {
+                            if (intervalStart)
+                                // Finished with interval start, continue with interval end or next phase
+                                round.SetValue(9 + 3);
+                            else
+                            {
+                                // Finished with interval end
+                                // Either continue with next repetition or next interval type
+                                numShifts.SetValue(numShifts + 1);
+                                if (numShifts.GetCurrentValue() >= numShiftsL && numShifts.GetCurrentValue() >= numShiftsR)
+                                {
+                                    if (shiftIndex == 2)
+                                        // Finished
+                                        round.SetValue(14 + 3);
+                                    shiftIndex.SetValue(shiftIndex + 1);
+                                    round.SetValue(3);
+                                }
+                                else
+                                    round.SetValue(5);
+                            }
+                        }
+                        else if (result == 1)
+                        {
+                            // PASC Cutoff
+                            round.SetValue(round + 1);
+                        }
+                        else
+                        {
+                            // Continue
+                            round.SetValue(round - 1);
+                        }
+                    }
+                    else if (r % 7 == 6)
+                    {
+                        CandidateShiftRound4(intervalStart, typeToCheck);
+
+                        // (This is the same code as for result 0 in step 5)
+                        if (intervalStart)
+                            // Finished with interval start, continue with interval end or next phase
+                            round.SetValue(9 + 3);
+                        else
+                        {
+                            // Finished with interval end
+                            // Either continue with next repetition or next interval type
+                            numShifts.SetValue(numShifts + 1);
+                            if (numShifts.GetCurrentValue() >= numShiftsL && numShifts.GetCurrentValue() >= numShiftsR)
+                            {
+                                if (shiftIndex == 2)
+                                    // Finished
+                                    round.SetValue(14 + 3);
+                                shiftIndex.SetValue(shiftIndex + 1);
+                                round.SetValue(3);
+                            }
+                            else
+                                round.SetValue(5);
+                        }
+                    }
                 }
             }
-            else if (round == 6)
+            else if (round == 17)
             {
-                CandidateShiftRound4(true);
+                CandidateShiftRound5(dirL, dirR);
+                round.SetValue(round + 1);
+            }
+            else if (round == 18)
+            {
+                CandidateShiftRound6(dirL, dirR);
 
-                // TODO
+                // Eliminate candidates in the wrong sectors
+                if ((isCandidateL.GetCurrentValue() || isCandidateR.GetCurrentValue()) &&
+                    !IsInSector(new int[] { 9, 15, 16 }) && !IsOnAxis(new int[] { 2, 7 }) && hexCornerIndex != 3)
+                {
+                    isCandidateL.SetValue(false);
+                    isCandidateR.SetValue(false);
+                }
 
-                round.SetValue(100);
+                PinConfiguration pc = GetContractedPinConfiguration();
+                SetPlannedPinConfiguration(pc);
+
+                UpdateColor();
+
+                round.SetValue(round + 1);
+            }
+            else if (round == 19)
+            {
+                // Intersect candidate sets
+                if (!isCandidateL || !isCandidateR)
+                {
+                    isCandidateL.SetValue(false);
+                    isCandidateR.SetValue(false);
+                }
+                UpdateColor();
+
+                round.SetValue(round + 1);
+            }
+            else if (round == 20)
+            {
+                finished.SetValue(true);
+                UpdateColor();
             }
         }
 
@@ -1171,9 +1326,15 @@ namespace AS2.Algos.HexagonTest
 
             // Leaders send beeps
             if (leaderL)
+            {
                 pc.GetPinAt(dirL, 0).PartitionSet.SendBeep();
+                pc.GetPinAt(dirL.Opposite(), 0).PartitionSet.SendBeep();
+            }
             if (leaderR)
-                pc.GetPinAt(dirR, 0).PartitionSet.SendBeep();
+            {
+                pc.GetPinAt(dirR, 1).PartitionSet.SendBeep();
+                pc.GetPinAt(dirR.Opposite(), 1).PartitionSet.SendBeep();
+            }
         }
 
         private void Shift2ReceiveAxisBeeps(Direction dirL, Direction dirR, bool intervalStart)
@@ -1183,30 +1344,30 @@ namespace AS2.Algos.HexagonTest
 
             bool beepL1 = pc.GetPinAt(dirL, PinsPerEdge - 1).PartitionSet.ReceivedBeep();
             bool beepL2 = pc.GetPinAt(dirL.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep();
-            bool beepR1 = pc.GetPinAt(dirR, PinsPerEdge - 1).PartitionSet.ReceivedBeep();
-            bool beepR2 = pc.GetPinAt(dirR.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+            bool beepR1 = pc.GetPinAt(dirR, PinsPerEdge - 2).PartitionSet.ReceivedBeep();
+            bool beepR2 = pc.GetPinAt(dirR.Opposite(), PinsPerEdge - 2).PartitionSet.ReceivedBeep();
 
             if (intervalStart && isIntervalStartL || !intervalStart && isIntervalEndL)
             {
                 if (beepL1 && beepL2)
-                    intervalType.SetValue(IntervalType.MIDDLE);
+                    intervalTypeL.SetValue(IntervalType.MIDDLE);
                 else if (beepL1)
-                    intervalType.SetValue(IntervalType.BACK);
+                    intervalTypeL.SetValue(IntervalType.BACK);
                 else if (beepL2)
-                    intervalType.SetValue(IntervalType.FRONT);
+                    intervalTypeL.SetValue(IntervalType.FRONT);
                 else
-                    intervalType.SetValue(IntervalType.SINGLE);
+                    intervalTypeL.SetValue(IntervalType.SINGLE);
             }
             if (intervalStart && isIntervalStartR || !intervalStart && isIntervalEndR)
             {
                 if (beepR1 && beepR2)
-                    intervalType.SetValue(IntervalType.MIDDLE);
+                    intervalTypeR.SetValue(IntervalType.MIDDLE);
                 else if (beepR1)
-                    intervalType.SetValue(IntervalType.BACK);
+                    intervalTypeR.SetValue(IntervalType.BACK);
                 else if (beepR2)
-                    intervalType.SetValue(IntervalType.FRONT);
+                    intervalTypeR.SetValue(IntervalType.FRONT);
                 else
-                    intervalType.SetValue(IntervalType.SINGLE);
+                    intervalTypeR.SetValue(IntervalType.SINGLE);
             }
         }
 
@@ -1585,9 +1746,6 @@ namespace AS2.Algos.HexagonTest
         }
 
 
-
-
-
         /// <summary>
         /// Establish simple axis circuits, interval start or end points
         /// do not connect and will send activation beeps.
@@ -1604,11 +1762,10 @@ namespace AS2.Algos.HexagonTest
             bool leaderL = intervalStart ? isIntervalStartL.GetCurrentValue() : isIntervalEndL.GetCurrentValue();
             bool leaderR = intervalStart ? isIntervalStartR.GetCurrentValue() : isIntervalEndR.GetCurrentValue();
 
-            if (!HaveMatchingIntervalType(it))
-            {
+            if (!HaveMatchingIntervalType(it, true))
                 leaderL = false;
+            if (!HaveMatchingIntervalType(it, false))
                 leaderR = false;
-            }
 
             // Setup simple axis circuit, do not connect if we are leader
             PinConfiguration pc = SetupAxisCircuit(leaderL ? dirL : Direction.NONE, leaderR ? dirR : Direction.NONE, Direction.NONE, true);
@@ -1645,11 +1802,10 @@ namespace AS2.Algos.HexagonTest
             bool leaderL = intervalStart ? isIntervalStartL.GetCurrentValue() : isIntervalEndL.GetCurrentValue();
             bool leaderR = intervalStart ? isIntervalStartR.GetCurrentValue() : isIntervalEndR.GetCurrentValue();
 
-            if (!HaveMatchingIntervalType(it))
-            {
+            if (!HaveMatchingIntervalType(it, true))
                 leaderL = false;
+            if (!HaveMatchingIntervalType(it, false))
                 leaderR = false;
-            }
 
             pc.SetToSingleton();
 
@@ -1739,10 +1895,13 @@ namespace AS2.Algos.HexagonTest
         /// distance.</param>
         /// <param name="intervalStart">Whether or not we are considering
         /// interval start points (otherwise we consider end points as leaders).</param>
+        /// <param name="it">If not <see cref="IntervalType.NONE"/>, use only the
+        /// specified interval type. <see cref="IntervalType.FRONT"/> includes
+        /// <see cref="IntervalType.SINGLE"/> intervals.</param>
         /// <returns><c>0</c> if we are finished completely,
         /// <c>1</c> if we are performing PASC cutoff,
         /// <c>2</c> if we have to continue.</returns>
-        private int CandidateShiftRound3(string length1, string length2, bool intervalStart)
+        private int CandidateShiftRound3(string length1, string length2, bool intervalStart, IntervalType it = IntervalType.NONE)
         {
             PinConfiguration pc = GetCurrentPinConfiguration();
 
@@ -1766,7 +1925,7 @@ namespace AS2.Algos.HexagonTest
                 // Both PASC and comparison are finished:
                 // Previous interval start/end points withdraw,
                 // Comparison result EQUAL leads to new ones
-                CandidateShiftFinish(intervalStart);
+                CandidateShiftFinish(intervalStart, it);
 
                 return 0;
             }
@@ -1820,7 +1979,10 @@ namespace AS2.Algos.HexagonTest
         /// </summary>
         /// <param name="intervalStart">Whether or not we are considering
         /// interval start points (otherwise we consider end points as leaders).</param>
-        private void CandidateShiftRound4(bool intervalStart)
+        /// <param name="it">If not <see cref="IntervalType.NONE"/>, use only the
+        /// specified interval type. <see cref="IntervalType.FRONT"/> includes
+        /// <see cref="IntervalType.SINGLE"/> intervals.</param>
+        private void CandidateShiftRound4(bool intervalStart, IntervalType it = IntervalType.NONE)
         {
             // Receive PASC cutoff beep
             if (pasc1Participant)
@@ -1836,10 +1998,10 @@ namespace AS2.Algos.HexagonTest
                     comparison2.SetValue(Comparison.GREATER);
             }
 
-            CandidateShiftFinish(intervalStart);
+            CandidateShiftFinish(intervalStart, it);
         }
 
-        private void CandidateShiftFinish(bool intervalStart)
+        private void CandidateShiftFinish(bool intervalStart, IntervalType it = IntervalType.NONE)
         {
             if (pasc1Participant)
             {
@@ -1848,8 +2010,12 @@ namespace AS2.Algos.HexagonTest
                     isIntervalStartL.SetValue(resultEqual);
                 else
                     isIntervalEndL.SetValue(resultEqual);
+
+                // Set new interval type
+                // We don't care that the original start/end keeps its interval type:
+                // it loses its start/end status and if it becomes a start/end later, the type will be overwritten
                 if (resultEqual)
-                    intervalType.SetValue(IntervalType.NONE);
+                    intervalTypeL.SetValue(it);
             }
             if (pasc2Participant)
             {
@@ -1858,8 +2024,12 @@ namespace AS2.Algos.HexagonTest
                     isIntervalStartR.SetValue(resultEqual);
                 else
                     isIntervalEndR.SetValue(resultEqual);
+
+                // Set new interval type
+                // We don't care that the original start/end keeps its interval type:
+                // it loses its start/end status and if it becomes a start/end later, the type will be overwritten
                 if (resultEqual)
-                    intervalType.SetValue(IntervalType.NONE);
+                    intervalTypeR.SetValue(it);
             }
         }
 
@@ -2234,11 +2404,11 @@ namespace AS2.Algos.HexagonTest
                 comp.SetValue(Comparison.LESS);
         }
 
-        private bool HaveMatchingIntervalType(IntervalType t)
+        private bool HaveMatchingIntervalType(IntervalType t, bool left)
         {
             if (t == IntervalType.NONE)
                 return true;
-            IntervalType myType = intervalType.GetCurrentValue();
+            IntervalType myType = left ? intervalTypeL.GetCurrentValue() : intervalTypeR.GetCurrentValue();
             if (t == IntervalType.FRONT)
                 return myType == IntervalType.FRONT || myType == IntervalType.SINGLE;
             else
@@ -2257,9 +2427,17 @@ namespace AS2.Algos.HexagonTest
             }
         }
 
-        // TODO: Proper color management
         private void UpdateColor()
         {
+            if (finished.GetCurrentValue())
+            {
+                if (isCandidateL || isCandidateR)
+                    SetMainColor(ColorData.Particle_Aqua);
+                else
+                    SetMainColor(ColorData.Particle_Black);
+                return;
+            }
+
             if (isInternal.GetCurrentValue())
                 SetMainColor(Color.gray);
             else if (isHole.GetCurrentValue())
