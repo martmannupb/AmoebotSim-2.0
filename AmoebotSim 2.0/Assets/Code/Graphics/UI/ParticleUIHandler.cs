@@ -167,6 +167,10 @@ namespace AS2.UI
             // Header
             RefreshHeader();
 
+            // Status info methods
+            if (!initMode)
+                AddStatusInfoButtons(p);
+
             // Attributes
             AddAttributes_ChiralityAndCompassDir(p, initMode);
             foreach (var attribute in p.GetAttributes())
@@ -447,6 +451,36 @@ namespace AS2.UI
             {
                 // Remove Attribute (since we dont display it)
                 attributeNameToIParticleAttribute.Remove(particleAttribute.ToString_AttributeName());
+            }
+        }
+
+        /// <summary>
+        /// Adds buttons for calling the current algorithm's status
+        /// info methods, in case it has defined any.
+        /// </summary>
+        /// <param name="p">The currently selected particle.</param>
+        private void AddStatusInfoButtons(IParticleState p)
+        {
+            // Find the currently selected algorithm
+            string algo = p.AlgorithmName();
+            if (!AlgorithmManager.Instance.IsAlgorithmKnown(algo))
+            {
+                Log.Error("Current algorithm '" + algo + "' is not known");
+                return;
+            }
+            Tuple<string, System.Reflection.MethodInfo>[] statusInfoMethods = AlgorithmManager.Instance.GetStatusInfoMethods(algo);
+
+            if (statusInfoMethods is not null && statusInfoMethods.Length > 0)
+            {
+                foreach (Tuple<string, System.Reflection.MethodInfo> tuple in statusInfoMethods)
+                {
+                    GameObject go_button_save = Instantiate(UIDatabase.prefab_ui_button, go_attributeParent.transform);
+                    TextMeshProUGUI tmpro = go_button_save.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                    tmpro.text = tuple.Item1;
+                    Button button_save = go_button_save.GetComponentInChildren<Button>();
+                    button_save.onClick.AddListener(delegate { tuple.Item2.Invoke(null, new object[] { sim.system, p }); });
+                }
+                UISetting_Spacing setting_spacing = new UISetting_Spacing(null, go_attributeParent.transform, "Spacing");
             }
         }
 

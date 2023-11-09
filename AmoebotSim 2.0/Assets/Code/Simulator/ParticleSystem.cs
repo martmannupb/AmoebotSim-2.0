@@ -276,7 +276,6 @@ namespace AS2.Sim
             set
             {
                 beepFailureProb = Mathf.Clamp01(value);
-                Log.Debug("Changed beep failure probability to " + beepFailureProb);
             }
         }
 
