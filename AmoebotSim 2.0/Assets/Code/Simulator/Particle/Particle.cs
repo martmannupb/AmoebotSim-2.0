@@ -1550,6 +1550,11 @@ namespace AS2.Sim
             return system.SetAnchor(this);
         }
 
+        public string AlgorithmName()
+        {
+            return algorithm?.GetAlgorithmName();
+        }
+
 
         /*
          * Methods implementing the IReplayHistory interface.

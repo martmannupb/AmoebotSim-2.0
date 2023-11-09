@@ -74,14 +74,20 @@ namespace AS2
             /// the algorithm does not specify a method.
             /// </summary>
             public string generationMethod;
+            /// <summary>
+            /// The display names and method references of the
+            /// status info methods defined by the algorithm.
+            /// </summary>
+            public Tuple<string, MethodInfo>[] statusInfoMethods;
 
-            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo initMethod, string generationMethod)
+            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo initMethod, string generationMethod, Tuple<string, MethodInfo>[] statusInfoMethods)
             {
                 this.name = name;
                 this.type = type;
                 this.ctor = ctor;
                 this.initMethod = initMethod;
                 this.generationMethod = generationMethod;
+                this.statusInfoMethods = statusInfoMethods;
             }
         }
 
@@ -141,9 +147,30 @@ namespace AS2
 
                 // Get the Init method
                 MethodInfo initMethod = algoType.GetMethod(Init_Method);
-                
+
+                // Get the status info methods
+                List<Tuple<string, MethodInfo>> statusInfoMethods = new List<Tuple<string, MethodInfo>>();
+                foreach (MethodInfo mi in algoType.GetMethods())
+                {
+                    // Must have a StatusInfo attribute
+                    if (mi.IsStatic && mi.GetCustomAttribute<StatusInfoAttribute>() is not null)
+                    {
+                        StatusInfoAttribute attr = mi.GetCustomAttribute<StatusInfoAttribute>();
+                        if (attr is null)
+                            continue;
+                        // Must have a ParticleSystem and a Particle parameter
+                        ParameterInfo[] parameters = mi.GetParameters();
+                        if (parameters.Length != 2 ||
+                            !parameters[0].ParameterType.Equals(typeof(AS2.Sim.ParticleSystem)) ||
+                            !parameters[1].ParameterType.Equals(typeof(Particle)))
+                            continue;
+
+                        statusInfoMethods.Add(new Tuple<string, MethodInfo>(attr.name, mi));
+                    }
+                }
+
                 // Add record for the new algorithm
-                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, initMethod, generator);
+                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, initMethod, generator, statusInfoMethods.ToArray());
             }
         }
 
@@ -267,6 +294,17 @@ namespace AS2
         {
             AlgorithmInfo info = FindAlgorithm(name);
             return info != null;
+        }
+
+        public Tuple<string, MethodInfo>[] GetStatusInfoMethods(string name)
+        {
+            AlgorithmInfo info = FindAlgorithm(name);
+            if (info == null)
+            {
+                throw new System.ArgumentException("Could not find algorithm");
+            }
+
+            return info.statusInfoMethods;
         }
     }
 
