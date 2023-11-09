@@ -11,6 +11,7 @@ namespace AS2
         public static readonly string path_materials = "Materials/";
         public static readonly string path_textures = "Textures/";
         public static readonly string path_ui = "UI/";
+        public static readonly string file_config = Application.dataPath + "/config.json";
 
     }
 

@@ -63,6 +63,7 @@ namespace AS2
         public ValueHistorySaveData<MessageSaveData>[] receivedMessagesHistory;
         public ValueHistorySaveData<bool>[] plannedBeepsHistory;
         public ValueHistorySaveData<MessageSaveData>[] plannedMessagesHistory;
+        public ValueHistorySaveData<bool>[] psetFailureHistory;
 
         // Visualization data
         public ValueHistorySaveData<Color> mainColorHistory;

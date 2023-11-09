@@ -157,6 +157,11 @@ namespace AS2.Visuals
             /// Whether the partition set sends a beep in the current round.
             /// </summary>
             public bool beepOrigin;
+            /// <summary>
+            /// Whether the partition set has suffered a beep reception
+            /// failure in the current round.
+            /// </summary>
+            public bool isFaulty;
 
             // Graphics
             /// <summary>
@@ -205,19 +210,30 @@ namespace AS2.Visuals
                 /// </summary>
                 public RenderBatchIndex index_pSet1;
                 /// <summary>
-                /// Batch index of the head partition set handle's beep highlight.
+                /// Batch index of the head partition set handle's beep origin highlight.
                 /// </summary>
-                public RenderBatchIndex index_pSet1_beep;
+                public RenderBatchIndex index_pSet1_beep_origin;
+                /// <summary>
+                /// Batch index of the head partition set handle's beep or
+                /// fault highlight.
+                /// </summary>
+                public RenderBatchIndex index_pSet1_beep_or_fault;
                 /// <summary>
                 /// Batch index of the tail partition set handle.
                 /// Only used for expanded particles.
                 /// </summary>
                 public RenderBatchIndex index_pSet2;
                 /// <summary>
-                /// Batch index of the tail partition set handle's beep highlight.
+                /// Batch index of the tail partition set handle's beep origin highlight.
                 /// Only used for expanded particles.
                 /// </summary>
-                public RenderBatchIndex index_pSet2_beep;
+                public RenderBatchIndex index_pSet2_beep_origin;
+                /// <summary>
+                /// Batch index of the tail partition set handle's beep or
+                /// fault highlight.
+                /// Only used for expanded particles.
+                /// </summary>
+                public RenderBatchIndex index_pSet2_beep_or_fault;
                 /// <summary>
                 /// Batch indices for circuit lines belonging to the head partition
                 /// set handle. The last entry belongs to the line between the handle
@@ -279,6 +295,10 @@ namespace AS2.Visuals
                 /// Material properties for beeping partition set handles.
                 /// </summary>
                 public RendererCircuitPins_RenderBatch.PropertyBlockData properties_pin_beep;
+                /// <summary>
+                /// Material properties for faulty partition set handles.
+                /// </summary>
+                public RendererCircuitPins_RenderBatch.PropertyBlockData properties_pin_faulty;
                 /// <summary>
                 /// Material properties for circuit line connectors.
                 /// </summary>
@@ -368,9 +388,11 @@ namespace AS2.Visuals
                     active_connector_position2 = new Vector2(float.MinValue, float.MinValue);
                     // Indices
                     index_pSet1.Discard();
-                    index_pSet1_beep.Discard();
+                    index_pSet1_beep_origin.Discard();
+                    index_pSet1_beep_or_fault.Discard();
                     index_pSet2.Discard();
-                    index_pSet2_beep.Discard();
+                    index_pSet2_beep_origin.Discard();
+                    index_pSet2_beep_or_fault.Discard();
                     index_lines1.Clear();
                     index_lines1_beep.Clear();
                     index_lines2.Clear();
@@ -417,7 +439,7 @@ namespace AS2.Visuals
             /// in this system.</param>
             public void UpdatePSetData(Color color, bool beepsThisRound, params PinDef[] pins)
             {
-                UpdatePSetData(color, beepsThisRound, false, pins);
+                UpdatePSetData(color, beepsThisRound, false, false, pins);
             }
 
             /// <summary>
@@ -427,13 +449,16 @@ namespace AS2.Visuals
             /// <param name="beepsThisRound"><c>true</c> if there is a beep in this round.</param>
             /// <param name="beepOrigin"><c>true</c> if the origin of the beep came from
             /// this particle.</param>
+            /// <param name="faulty"><c>true</c> if this particle has not received a beep
+            /// due to a failure.</param>
             /// <param name="pins">An array of pin references that show the pins contained
             /// in this system.</param>
-            public void UpdatePSetData(Color color, bool beepsThisRound, bool beepOrigin, params PinDef[] pins)
+            public void UpdatePSetData(Color color, bool beepsThisRound, bool beepOrigin, bool faulty, params PinDef[] pins)
             {
                 this.color = color;
                 this.beepsThisRound = beepsThisRound;
                 this.beepOrigin = beepOrigin;
+                this.isFaulty = faulty;
                 foreach (PinDef pin in pins)
                 {
                     this.pins.Add(pin);
@@ -530,6 +555,7 @@ namespace AS2.Visuals
                 this.pins.Clear();
                 this.beepsThisRound = false;
                 this.beepOrigin = false;
+                this.isFaulty = false;
                 this.graphicalData.Clear();
             }
 

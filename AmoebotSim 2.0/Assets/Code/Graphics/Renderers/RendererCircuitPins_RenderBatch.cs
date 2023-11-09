@@ -37,18 +37,26 @@ namespace AS2.Visuals
         public struct PropertyBlockData
         {
             public Color color;
+            public bool singleton;
             public bool delayed;
             public bool beeping;
+            public bool beepOrigin;
+            public bool faulty;
+            public bool connector;
             public Vector2 animationOffset;
 
-            public PropertyBlockData(Color color, bool delayed, bool beeping) : this(color, delayed, beeping, Vector2.zero) { }
-            public PropertyBlockData(Color color, bool delayed, bool beeping, Vector2 animationOffset)
+            public PropertyBlockData(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty, bool connector) : this(color, delayed, singleton, beeping, beepOrigin, faulty, connector, Vector2.zero) { }
+            public PropertyBlockData(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty, bool connector, Vector2 animationOffset)
             {
                 this.color = color;
+                this.singleton = singleton;
                 this.delayed = delayed;
                 this.beeping = beeping;
+                this.beepOrigin = beepOrigin;
+                this.faulty = faulty;
+                this.connector = connector;
                 this.animationOffset = animationOffset;
-        }
+            }
         }
 
         public RendererCircuitPins_RenderBatch(PropertyBlockData properties)
@@ -64,24 +72,63 @@ namespace AS2.Visuals
         public void Init()
         {
             // Set Material
-            if (properties.beeping)
-                pinMaterial = MaterialDatabase.material_circuit_pin_movement;
+            if (!properties.connector)
+            {
+                // This material expects two colors to fill the center and the
+                // border of a circle. We can use this to make solid circles by
+                // setting both to the same color
+                pinMaterial = MaterialDatabase.material_circuit_pin_movement_border;
+            }
             else
+            {
                 pinMaterial = MaterialDatabase.material_circuit_pin_movement;
+                // Render the connector on the same level as the circuit lines
+                // TODO: Set correct zOffset
+                pinMaterial.renderQueue = RenderSystem.renderQueue_circuits;
+            }
 
             // PropertyBlocks
-            if (properties.beeping)
+            if (properties.connector)
             {
-                propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.beepOrigin);
                 propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
+            }
+            else if (properties.beepOrigin)
+            {
+                // Beep origin is always filled and singleton
+                propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.beepOrigin);
+                propertyBlock_circuitMatrices_Pins.ApplyColorSecondary(ColorData.beepOrigin);
+
                 // Render the beep origin in front of the pin / partition set handle
                 zOffset = -0.1f;
                 pinMaterial.renderQueue = RenderSystem.renderQueue_pinBeeps;
             }
+            else if (properties.faulty)
+            {
+                propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.faultyBeep);
+                if (properties.singleton)
+                {
+                    propertyBlock_circuitMatrices_Pins.ApplyColorSecondary(ColorData.faultyBeep);
+                    // Render the fault highlight in front of the pin
+                    // but behind the beep origin highlight
+                    zOffset = -0.05f;
+                    pinMaterial.renderQueue = RenderSystem.renderQueue_pinFault;
+                }
+            }
+            else if (properties.beeping)
+            {
+                propertyBlock_circuitMatrices_Pins.ApplyColor(ColorData.beepReceive);
+                if (properties.singleton)
+                {
+                    propertyBlock_circuitMatrices_Pins.ApplyColorSecondary(ColorData.beepReceive);
+                    // Render the receiving highlight in front of the pin
+                    // but behind the beep origin highlight
+                    zOffset = -0.05f;
+                    pinMaterial.renderQueue = RenderSystem.renderQueue_pinFault;
+                }
+            }
             else
             {
                 propertyBlock_circuitMatrices_Pins.ApplyColor(Color.black);
-                propertyBlock_circuitMatrices_PinConnectors.ApplyColor(properties.color);
             }
             propertyBlock_circuitMatrices_Pins.ApplyMovementOffset(properties.animationOffset);
             propertyBlock_circuitMatrices_PinConnectors.ApplyMovementOffset(properties.animationOffset);
@@ -190,8 +237,10 @@ namespace AS2.Visuals
         {
             // Calc Pin Size
             float pinSize = isSingletonPin ? RenderSystem.const_circuitSingletonPinSize : RenderSystem.const_circuitPinSize;
-            if (properties.beeping)
-                pinSize *= RenderSystem.const_circuitPinBeepSizePercentage;
+            if (properties.beepOrigin)
+                pinSize *= RenderSystem.const_circuitPinBeepOriginSizePercentage;
+            else if (properties.singleton && (properties.beeping || properties.faulty))
+                pinSize *= RenderSystem.const_circuitPinBeepHighlightSizePercentage;
             // Calc Matrix
             return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins + zOffset), Quaternion.identity, new Vector3(pinSize, pinSize, 1f));
         }
@@ -206,7 +255,7 @@ namespace AS2.Visuals
         /// with the given properties.</returns>
         private Matrix4x4 CalculatePinConnectorMatrix(Vector2 pinPos)
         {
-            return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_pins), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
+            return Matrix4x4.TRS(new Vector3(pinPos.x, pinPos.y, RenderSystem.zLayer_circuits), Quaternion.identity, new Vector3(RenderSystem.const_circuitPinConnectorSize, RenderSystem.const_circuitPinConnectorSize, 1f));
         }
 
         /// <summary>

@@ -100,6 +100,8 @@ namespace AS2.UI
 
         private void Start()
         {
+            showCompassDirArrows = Config.ConfigData.settingsMenu.drawCompassOverlayAsArrows;
+
             // Test
             //DisplayText(TextType.Text, "Contract");
 

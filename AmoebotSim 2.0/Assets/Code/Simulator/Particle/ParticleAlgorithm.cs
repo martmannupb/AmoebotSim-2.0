@@ -828,7 +828,6 @@ namespace AS2.Sim
         /// <returns><c>true</c> if and only if a neighbor was found.</returns>
         public bool FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> neighbor, Direction startDir = Direction.E, bool startAtHead = true, bool withChirality = true, int maxNumber = -1) where T : ParticleAlgorithm
         {
-
             CheckActive("Neighbor information is not available for other particles.");
             return particle.system.FindFirstNeighborWithProperty<T>(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
         }
@@ -855,7 +854,6 @@ namespace AS2.Sim
         /// <returns><c>true</c> if and only if a neighbor object was found.</returns>
         public bool FindFirstNeighborObjectWithProperty(System.Func<IParticleObject, bool> prop, out Neighbor<IParticleObject> neighbor, Direction startDir = Direction.E, bool startAtHead = true, bool withChirality = true, int maxNumber = -1)
         {
-
             CheckActive("Neighbor information is not available for other particles.");
             return particle.system.FindFirstNeighborObjectWithProperty(particle, prop, out neighbor, startDir, startAtHead, withChirality, maxNumber);
         }

@@ -334,17 +334,17 @@ public override void ActivateMove()
             // Release bonds if necessary
             if (HeadDirection() == Direction.NNW)
             {
-                ReleaseBond(Direction.NNE, true);
-                ReleaseBond(Direction.NNE, false);
-                ReleaseBond(Direction.SSW, true);
-                ReleaseBond(Direction.SSW, false);
+                ReleaseBond(Direction.NNE, HEAD);
+                ReleaseBond(Direction.NNE, TAIL);
+                ReleaseBond(Direction.SSW, HEAD);
+                ReleaseBond(Direction.SSW, TAIL);
             }
             else if (HeadDirection() == Direction.SSW)
             {
-                ReleaseBond(Direction.NNW, true);
-                ReleaseBond(Direction.NNW, false);
-                ReleaseBond(Direction.SSE, true);
-                ReleaseBond(Direction.SSE, false);
+                ReleaseBond(Direction.NNW, HEAD);
+                ReleaseBond(Direction.NNW, TAIL);
+                ReleaseBond(Direction.SSE, HEAD);
+                ReleaseBond(Direction.SSE, TAIL);
             }
             ContractTail();
         }
@@ -354,6 +354,7 @@ public override void ActivateMove()
 
 This concludes our extensions of the demo algorithm.
 You can read more about bonds and joint movements on the corresponding [reference page](~/model_ref/bonds_jm.md).
+There are still some features that have not been discussed yet and which you can read about on the other [reference pages](~/model_ref/home.md).
 
 
 

@@ -20,6 +20,7 @@ namespace AS2.UI
         private UISetting_Text setting_cameraPosX;
         private UISetting_Text setting_cameraPosY;
         private UISetting_Text setting_cameraSize;
+        private UISetting_Text setting_beepFailureProb;
 
         // Data
         public GameObject settingsPanel;
@@ -39,6 +40,7 @@ namespace AS2.UI
         private const string settingName_circuitBorder = "Circuit Border";
         private const string settingName_circularRing = "Circular Ring";
         private const string settingName_toggleTooltips = "Tooltips";
+        private const string settingName_beepFailureProb = "Beep Failure Prob.";
 
         private void Start()
         {
@@ -52,6 +54,7 @@ namespace AS2.UI
 
         /// <summary>
         /// Initializes the settings UI. Dynamically sets up all the settings with all their input fields.
+        /// Initial values are loaded from the configuration file if they are not available elsewhere.
         /// </summary>
         private void InitSettings()
         {
@@ -92,7 +95,7 @@ namespace AS2.UI
             UISetting_Toggle setting_animationsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_animationsOnOff, RenderSystem.animationsOn);
             setting_animationsOnOff.onValueChangedEvent += SettingChanged_Toggle;
             // Compass Dir Overlay Display
-            UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, settingName_compassOvArrows, WorldSpaceUIHandler.instance.showCompassDirArrows);
+            UISetting_Toggle setting_compassDirOverlayDisplayType = new UISetting_Toggle(null, settingsParent.transform, settingName_compassOvArrows, Config.ConfigData.settingsMenu.drawCompassOverlayAsArrows);
             setting_compassDirOverlayDisplayType.onValueChangedEvent += SettingChanged_Toggle;
             // Circuit Connections Border
             UISetting_Toggle setting_circuitConnectionBorders = new UISetting_Toggle(null, settingsParent.transform, settingName_circuitBorder, RenderSystem.flag_circuitBorderActive);
@@ -101,7 +104,7 @@ namespace AS2.UI
             UISetting_Toggle setting_graphViewOutterRing = new UISetting_Toggle(null, settingsParent.transform, settingName_circularRing, RenderSystem.flag_showCircuitViewOuterRing);
             setting_graphViewOutterRing.onValueChangedEvent += SettingChanged_Toggle;
             // Fullscreen
-            UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, false);
+            UISetting_Toggle setting_fullscreen = new UISetting_Toggle(null, settingsParent.transform, settingName_fullscreen, Config.ConfigData.settingsMenu.fullscreen);
             setting_fullscreen.onValueChangedEvent += SettingChanged_Toggle;
 
             // Header: Other
@@ -109,8 +112,20 @@ namespace AS2.UI
             UISetting_Header setting_header_other = new UISetting_Header(null, settingsParent.transform, "Other");
 
             // Tooltips On/Off
-            UISetting_Toggle setting_tooltipsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_toggleTooltips, true);
+            UISetting_Toggle setting_tooltipsOnOff = new UISetting_Toggle(null, settingsParent.transform, settingName_toggleTooltips, Config.ConfigData.settingsMenu.showTooltips);
             setting_tooltipsOnOff.onValueChangedEvent += SettingChanged_Toggle;
+
+            // Beep failure probability
+            uiHandler.sim.system.BeepFailureProb = Config.ConfigData.settingsMenu.beepFailureProbability;
+            setting_beepFailureProb = new UISetting_Text(null, settingsParent.transform, settingName_beepFailureProb, uiHandler.sim.system.BeepFailureProb.ToString(), UISetting_Text.InputType.Float);
+            setting_beepFailureProb.onValueChangedEvent += SettingChanged_BeepFailureProb;
+
+            // Button to save the current settings
+            GameObject go_button_save = Instantiate(UIDatabase.prefab_ui_button, settingsParent.transform);
+            tmpro = go_button_save.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            tmpro.text = "Save Settings";
+            Button button_save = go_button_save.GetComponentInChildren<Button>();
+            button_save.onClick.AddListener(delegate { Button_SaveSettings(); });
         }
 
         /// <summary>
@@ -235,6 +250,12 @@ namespace AS2.UI
             }
         }
 
+        private void SettingChanged_BeepFailureProb(string name, string value)
+        {
+            uiHandler.sim.system.BeepFailureProb = float.Parse(setting_beepFailureProb.GetValueString());
+            setting_beepFailureProb.SetValueString(uiHandler.sim.system.BeepFailureProb.ToString());
+        }
+
         /// <summary>
         /// Reads the current position and size values from the
         /// Settings Panel and applies them to the camera.
@@ -254,6 +275,26 @@ namespace AS2.UI
             float size = float.Parse(setting_cameraSize.GetValueString());
             MouseController.instance.SetCameraPosition(x, y);
             MouseController.instance.SetOrthographicSize(size);
+        }
+
+        /// <summary>
+        /// Stores the current settings in the configuration and
+        /// saves the config file.
+        /// </summary>
+        private void Button_SaveSettings()
+        {
+            // Copy current settings to config
+            ConfigData data = Config.ConfigData;
+            data.settingsMenu.movementAnimationsOn = RenderSystem.animationsOn;
+            data.settingsMenu.drawCompassOverlayAsArrows = WorldSpaceUIHandler.instance.showCompassDirArrows;
+            data.settingsMenu.drawCircuitBorder = RenderSystem.flag_circuitBorderActive;
+            data.settingsMenu.drawParticleRing = RenderSystem.flag_showCircuitViewOuterRing;
+            data.settingsMenu.fullscreen = Screen.fullScreen;
+            data.settingsMenu.showTooltips = TooltipHandler.Instance.Enabled;
+            data.settingsMenu.beepFailureProbability = uiHandler.sim.system.BeepFailureProb;
+
+            // Save configuration file
+            Config.SaveConfigData();
         }
 
         /// <summary>

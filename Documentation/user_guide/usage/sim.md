@@ -115,7 +115,7 @@ Once the collision check is disabled, the simulation can proceed and will "forge
 
 The Settings Panel is opened by pressing the Top Bar button with the gear icon, which is the second-last button in the Top Bar.
 It will appear on the right side of the UI, where the Initialization Panel is in Init Mode.
-The panel contains some advanced camera controls and visualization options.
+The panel contains some advanced camera controls, visualization options and other settings.
 
 ### Camera Controls
 
@@ -163,6 +163,19 @@ Turning the rings off removes the color information from the particles but may b
 When the application is built and run as a standalone outside the Unity Editor, this setting can be used to toggle between fullscreen and windowed mode.
 It is recommended to run the application in fullscreen mode.
 This setting has no effect when the simulator runs in the Unity Editor.
+
+### Other
+
+**Tooltips**  
+This setting toggles the tooltip feature.
+While tooltips are enabled, placing the cursor over a button and keeping it still for a short time will display a helpful tooltip.
+
+**Beep Failure Prob.**  
+Here, you can set the probability of beep failures (TODO: Reference).
+The value can be changed at any time but it will not have an effect while replaying already simulated rounds.
+
+**Save Settings**  
+Press this button to store the current settings in the [configuration file](config.md).
 
 
 <img src="~/images/particle_panel_sim.png" alt="Particle Panel (Simulation Mode)" title="Particle Panel (Simulation Mode)" width="200" align="right"/>

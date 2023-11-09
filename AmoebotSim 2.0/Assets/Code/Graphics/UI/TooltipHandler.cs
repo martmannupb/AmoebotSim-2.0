@@ -62,6 +62,7 @@ namespace AS2.UI
         void Start()
         {
             childTransform.gameObject.SetActive(false);
+            isEnabled = Config.ConfigData.settingsMenu.showTooltips;
         }
 
         void Update()

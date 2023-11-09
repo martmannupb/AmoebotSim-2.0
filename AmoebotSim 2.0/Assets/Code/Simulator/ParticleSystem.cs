@@ -262,6 +262,24 @@ namespace AS2.Sim
 
         private CollisionChecker.DebugLine[] collisionDebugLines;
 
+        private float beepFailureProb = 0f;
+        /// <summary>
+        /// The probability of a beep not being received on
+        /// each partition set of a particle.
+        /// <para>
+        /// Value is always clamped between 0 and 1.
+        /// </para>
+        /// </summary>
+        public float BeepFailureProb
+        {
+            get { return beepFailureProb; }
+            set
+            {
+                beepFailureProb = Mathf.Clamp01(value);
+                Log.Debug("Changed beep failure probability to " + beepFailureProb);
+            }
+        }
+
 
         /*
          * Initialization mode data structures
@@ -2742,12 +2760,23 @@ namespace AS2.Sim
 
                     Circuit circ = circuits[ps.circuit];
 
+                    // If beep failure is enabled: Fail to receive beep and message
+                    // unless they were sent by the particle itself
+                    bool failure = p.HasPsetFailure(ps.Id);
+
                     if (sendBeepsAndMessages)
                     {
-                        if (circ.HasBeep())
+                        // Determine whether a failure occurs
+                        failure = beepFailureProb > 0f && Random.Range(0f, 1f) <= beepFailureProb;
+                        if (failure)
+                            p.LogPsetFailure(ps.Id);
+
+                        // Deliver beeps and messages if no failure has occurred
+                        if (circ.HasBeep() && !failure)
                             p.ReceiveBeep(ps.Id);
+
                         Message msg = circ.GetMessage();
-                        if (msg != null)
+                        if (msg != null && !failure)
                             p.ReceiveMessage(ps.Id, msg);
                     }
 
@@ -2759,9 +2788,9 @@ namespace AS2.Sim
                         ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                         pset.UpdatePSetData(
                             circ.GetColor(),
-                            // TODO: Visualize messages differently?
                             circ.HasBeep() || circ.GetMessage() != null,
                             p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
+                            failure,
                             new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir.ToInt(), pin.globalEdgeOffset, pin.head) });
                         p.gCircuit.singletonSets.Add(pset);
                     }
@@ -2782,9 +2811,9 @@ namespace AS2.Sim
                         ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                         pset.UpdatePSetData(
                             circ.GetColor(),
-                            // TODO: Visualize messages differently?
                             circ.HasBeep() || circ.GetMessage() != null,
                             p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
+                            failure,
                             pins);
                         // Set manual coordinates (angle must be converted from East to North)
                         if (manualPositionHead)

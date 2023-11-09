@@ -227,6 +227,8 @@ While computing the circuits, every root circuit has received an active beep fla
 We now iterate through all particles and all partition sets of each particle again.
 For each partition set, we simply copy the beep and message info stored in the root parent of its assigned circuit.
 Due to the way the circuits were constructed, the root parent is always the complete circuit that contains the partition set, so the information stored in that circuit is correct.
+In case the beep failure probability is greater than zero, we determine for each partition set whether a failure occurs before delivering the beeps and messages.
+If a failure occurs, we log the failure in the particle's history and do not deliver anything.
 During this iteration, we also complete the graphical circuit information stored in each particle's [`ParticlePinGraphicState`][11].
 This information includes the partition set placement mode in the particle's head and tail and the individual partition set data like the pins it contains, its color and its beep and message status.
 
