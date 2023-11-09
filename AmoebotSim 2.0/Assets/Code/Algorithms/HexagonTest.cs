@@ -165,6 +165,9 @@ namespace AS2.Algos.HexagonTest
         // Scale factor in binary
         public static string scaleFactor;
 
+        // Scale factor as int (only for debugging)
+        public static int scaleInt;
+
         enum Phase
         {
             START,              // Find corners, edges and internal particles
@@ -239,6 +242,29 @@ namespace AS2.Algos.HexagonTest
         // Subroutines
         SubPASC pasc1;
         SubPASC pasc2;
+
+        [StatusInfo("Show Target Shape")]
+        public static void ShowTargetShape(AS2.Sim.ParticleSystem system, Particle p)
+        {
+            AS2.UI.CollisionLineDrawer ld = AS2.UI.CollisionLineDrawer.Instance;
+            ld.Clear();
+
+            Vector2Int v = p.Head();
+            Vector2Int w = v - new Vector2Int(hexSize3, 0) * scaleInt;
+            ld.AddLine(v, w, Color.green, false);
+            w = v + new Vector2Int(0, hexSize4) * scaleInt;
+            ld.AddLine(v, w, Color.green, false);
+            v = w + new Vector2Int(-hexSize5, hexSize5) * scaleInt;
+            ld.AddLine(v, w, Color.green, false);
+            w = v + new Vector2Int(-hexSize0, 0) * scaleInt;
+            ld.AddLine(v, w, Color.green, false);
+            v = w + new Vector2Int(0, -hexSize1) * scaleInt;
+            ld.AddLine(v, w, Color.green, false);
+            w = v + new Vector2Int(hexSize2, -hexSize2) * scaleInt;
+            ld.AddLine(v, w, Color.green, false);
+
+            ld.SetTimer(15f);
+        }
 
         public HexagonTestParticle(Particle p) : base(p)
         {
@@ -2643,6 +2669,7 @@ namespace AS2.Algos.HexagonTest
             HexagonTestParticle.hexLine5 = IntToBinary(hexLengthTopRight * scale);
 
             HexagonTestParticle.scaleFactor = IntToBinary(scale);
+            HexagonTestParticle.scaleInt = scale;
         }
 
         private string IntToBinary(int num)
