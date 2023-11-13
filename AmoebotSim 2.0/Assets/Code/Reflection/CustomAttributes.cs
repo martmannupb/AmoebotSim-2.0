@@ -15,11 +15,32 @@ namespace AS2
     [System.AttributeUsage(System.AttributeTargets.Method)]
     public class StatusInfoAttribute : System.Attribute
     {
+        /// <summary>
+        /// The display name of the status info method.
+        /// </summary>
         public string name;
 
-        public StatusInfoAttribute(string name)
+        /// <summary>
+        /// The tooltip to be displayed for the status info button.
+        /// </summary>
+        public string tooltip;
+
+        /// <summary>
+        /// Marks this static method as a status info method.
+        /// The method must have two parameters: The first must have
+        /// type <see cref="AS2.Sim.ParticleSystem"/> and gives access
+        /// to the entire particle system and the second must have
+        /// type <see cref="AS2.Sim.Particle"/> and gives access to
+        /// the currently selected particle.
+        /// </summary>
+        /// <param name="name">The label of the button in the
+        /// Particle Panel.</param>
+        /// <param name="tooltip">The (optional) tooltip to be displayed
+        /// for the button.</param>
+        public StatusInfoAttribute(string name, string tooltip = null)
         {
             this.name = name;
+            this.tooltip = tooltip;
         }
     }
 

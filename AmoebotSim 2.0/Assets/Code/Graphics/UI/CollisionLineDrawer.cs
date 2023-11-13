@@ -122,7 +122,9 @@ namespace AS2.UI
         /// <param name="end">The grid coordinates of the line's end point.</param>
         /// <param name="color">The color of the line.</param>
         /// <param name="arrow">Whether the line should have an arrow head or not.</param>
-        public void AddLine(Vector2 start, Vector2 end, Color color, bool arrow = false)
+        /// <param name="width">The width factor of the line.</param>
+        /// <param name="arrowWidth">The width factor of the arrow head.</param>
+        public void AddLine(Vector2 start, Vector2 end, Color color, bool arrow = false, float width = 1.0f, float arrowWidth = 1.0f)
         {
             // Obtain GameObject with LineRenderer
             GameObject obj = GetLine();
@@ -139,9 +141,9 @@ namespace AS2.UI
 
             // Setup the line renderer for the given type of line
             if (arrow)
-                SetupArrowLine(startWorld, endWorld, lr);
+                SetupArrowLine(startWorld, endWorld, lr, width, arrowWidth);
             else
-                SetupLine(startWorld, endWorld, lr);
+                SetupLine(startWorld, endWorld, lr, width);
 
             // Activate the line
             activeLines.Add(obj);
@@ -166,7 +168,8 @@ namespace AS2.UI
         /// <param name="start">The world coordinates of the line's start point.</param>
         /// <param name="end">The world coordinates of the line's end point.</param>
         /// <param name="lr">The LineRenderer that should display the line.</param>
-        private void SetupLine(Vector2 start, Vector2 end, LineRenderer lr)
+        /// <param name="width">The width factor of the line.</param>
+        private void SetupLine(Vector2 start, Vector2 end, LineRenderer lr, float width = 1.0f)
         {
             // Set the points
             lr.positionCount = 2;
@@ -176,9 +179,10 @@ namespace AS2.UI
             });
 
             // Set width
+            float w = lineWidth * width;
             AnimationCurve ac = new AnimationCurve(new Keyframe[] {
-                new Keyframe(0, lineWidth, 0, 0),
-                new Keyframe(1, lineWidth, 0, 0)
+                new Keyframe(0, w, 0, 0),
+                new Keyframe(1, w, 0, 0)
             });
             lr.widthCurve = ac;
         }
@@ -189,7 +193,9 @@ namespace AS2.UI
         /// <param name="start">The world coordinates of the line's start point.</param>
         /// <param name="end">The world coordinates of the line's end point.</param>
         /// <param name="lr">The LineRenderer that should display the line.</param>
-        private void SetupArrowLine(Vector2 start, Vector2 end, LineRenderer lr)
+        /// <param name="width">The width factor of the line.</param>
+        /// <param name="arrowWidth">The width factor of the arrow head.</param>
+        private void SetupArrowLine(Vector2 start, Vector2 end, LineRenderer lr, float width = 1.0f, float arrowWidth = 1.0f)
         {
             // Set the points
             Vector2 to = end - start;
@@ -211,14 +217,16 @@ namespace AS2.UI
             // Set width
             float slope1 = (arrowHeadWidth - arrowLineWidth) / (arrowStartOffset / length);
             float slope2 = arrowHeadWidth / (1.0f - s2_offset);
+            float wl = arrowLineWidth * width;
+            float wh = arrowHeadWidth * arrowWidth;
             AnimationCurve ac = new AnimationCurve(new Keyframe[] {
-                new Keyframe(0, arrowLineWidth, 0, 0),
-                new Keyframe(s1_offset, arrowLineWidth, 0, slope1),
-                new Keyframe(s2_offset, arrowHeadWidth, slope1, -slope2),
+                new Keyframe(0, wl, 0, 0),
+                new Keyframe(s1_offset, wl, 0, slope1),
+                new Keyframe(s2_offset, wh, slope1, -slope2),
                 new Keyframe(1, 0, slope2, 0)
             });
             lr.widthCurve = ac;
         }
     }
 
-}
+} // namespace AS2.UI

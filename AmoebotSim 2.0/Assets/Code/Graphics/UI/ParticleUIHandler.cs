@@ -468,17 +468,19 @@ namespace AS2.UI
                 Log.Error("Current algorithm '" + algo + "' is not known");
                 return;
             }
-            Tuple<string, System.Reflection.MethodInfo>[] statusInfoMethods = AlgorithmManager.Instance.GetStatusInfoMethods(algo);
+            Tuple<string, string, System.Reflection.MethodInfo>[] statusInfoMethods = AlgorithmManager.Instance.GetStatusInfoMethods(algo);
 
             if (statusInfoMethods is not null && statusInfoMethods.Length > 0)
             {
-                foreach (Tuple<string, System.Reflection.MethodInfo> tuple in statusInfoMethods)
+                foreach (Tuple<string, string, System.Reflection.MethodInfo> tuple in statusInfoMethods)
                 {
-                    GameObject go_button_save = Instantiate(UIDatabase.prefab_ui_button, go_attributeParent.transform);
-                    TextMeshProUGUI tmpro = go_button_save.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                    GameObject go_button = Instantiate(UIDatabase.prefab_ui_button, go_attributeParent.transform);
+                    TextMeshProUGUI tmpro = go_button.GetComponentInChildren<TMPro.TextMeshProUGUI>();
                     tmpro.text = tuple.Item1;
-                    Button button_save = go_button_save.GetComponentInChildren<Button>();
-                    button_save.onClick.AddListener(delegate { tuple.Item2.Invoke(null, new object[] { sim.system, p }); });
+                    Tooltip tt = go_button.GetComponentInChildren<Tooltip>();
+                    tt.ChangeMessage(tuple.Item2);
+                    Button button_save = go_button.GetComponentInChildren<Button>();
+                    button_save.onClick.AddListener(delegate { tuple.Item3.Invoke(null, new object[] { sim.system, p }); });
                 }
                 UISetting_Spacing setting_spacing = new UISetting_Spacing(null, go_attributeParent.transform, "Spacing");
             }

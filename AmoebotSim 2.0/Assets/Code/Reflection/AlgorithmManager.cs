@@ -75,12 +75,12 @@ namespace AS2
             /// </summary>
             public string generationMethod;
             /// <summary>
-            /// The display names and method references of the
+            /// The display names, tooltips and method references of the
             /// status info methods defined by the algorithm.
             /// </summary>
-            public Tuple<string, MethodInfo>[] statusInfoMethods;
+            public Tuple<string, string, MethodInfo>[] statusInfoMethods;
 
-            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo initMethod, string generationMethod, Tuple<string, MethodInfo>[] statusInfoMethods)
+            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo initMethod, string generationMethod, Tuple<string, string, MethodInfo>[] statusInfoMethods)
             {
                 this.name = name;
                 this.type = type;
@@ -149,24 +149,26 @@ namespace AS2
                 MethodInfo initMethod = algoType.GetMethod(Init_Method);
 
                 // Get the status info methods
-                List<Tuple<string, MethodInfo>> statusInfoMethods = new List<Tuple<string, MethodInfo>>();
+                List<Tuple<string, string, MethodInfo>> statusInfoMethods = new List<Tuple<string, string, MethodInfo>>();
                 foreach (MethodInfo mi in algoType.GetMethods())
                 {
-                    // Must have a StatusInfo attribute
-                    if (mi.IsStatic && mi.GetCustomAttribute<StatusInfoAttribute>() is not null)
-                    {
-                        StatusInfoAttribute attr = mi.GetCustomAttribute<StatusInfoAttribute>();
-                        if (attr is null)
-                            continue;
-                        // Must have a ParticleSystem and a Particle parameter
-                        ParameterInfo[] parameters = mi.GetParameters();
-                        if (parameters.Length != 2 ||
-                            !parameters[0].ParameterType.Equals(typeof(AS2.Sim.ParticleSystem)) ||
-                            !parameters[1].ParameterType.Equals(typeof(Particle)))
-                            continue;
+                    // Must be static
+                    if (!mi.IsStatic)
+                        continue;
 
-                        statusInfoMethods.Add(new Tuple<string, MethodInfo>(attr.name, mi));
-                    }
+                    // Must have a StatusInfo attribute
+                    StatusInfoAttribute attr = mi.GetCustomAttribute<StatusInfoAttribute>();
+                    if (attr is null)
+                        continue;
+
+                    // Must have a ParticleSystem and a Particle parameter
+                    ParameterInfo[] parameters = mi.GetParameters();
+                    if (parameters.Length != 2 ||
+                        !parameters[0].ParameterType.Equals(typeof(AS2.Sim.ParticleSystem)) ||
+                        !parameters[1].ParameterType.Equals(typeof(Particle)))
+                        continue;
+
+                    statusInfoMethods.Add(new Tuple<string, string, MethodInfo>(attr.name, attr.tooltip, mi));
                 }
 
                 // Add record for the new algorithm
@@ -296,7 +298,18 @@ namespace AS2
             return info != null;
         }
 
-        public Tuple<string, MethodInfo>[] GetStatusInfoMethods(string name)
+        /// <summary>
+        /// Gets the status info methods defined for the given algorithm.
+        /// </summary>
+        /// <param name="name">The string ID of the algorithm.</param>
+        /// <returns>An array of tuples <c>(name, tooltip, methodInfo)</c>,
+        /// where <c>name</c> is the display name of the status method,
+        /// <c>tooltip</c> is the tooltip text to be displayed for the
+        /// button and <c>methodInfo</c> is the method object obtained by
+        /// reflection. The method must be called with two parameters,
+        /// the first of type <see cref="Sim.ParticleSystem"/> and the
+        /// second of type <see cref="Particle"/>.</returns>
+        public Tuple<string, string, MethodInfo>[] GetStatusInfoMethods(string name)
         {
             AlgorithmInfo info = FindAlgorithm(name);
             if (info == null)
