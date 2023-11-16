@@ -20,3 +20,5 @@
   href: objects.md
 - name: Collisions and Line Drawer
   href: collisions.md
+- name: Status Info Methods
+  href: status_info.md

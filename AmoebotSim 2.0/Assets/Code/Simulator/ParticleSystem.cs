@@ -4795,6 +4795,9 @@ namespace AS2.Sim
                 throw new SimulatorStateException("Unknown algorithm selected: '" + algoName + "'");
             }
 
+            // Clear the line drawer to avoid showing lines created by other generation algorithm
+            AS2.UI.LineDrawer.Instance.Clear();
+
             selectedAlgorithm = algoName;
             ResetInit();
 

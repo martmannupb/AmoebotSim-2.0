@@ -388,14 +388,13 @@ namespace AS2.UI
                 if (item.isVisible) item.go.SetActive(true);
             }
             display_isVisible = true;
-            button_hideOverlay.interactable = true;
-            StartCoroutine(PaintButtonActiveInactive(button_hideOverlay, true));
             isVisible = true;
         }
 
         /// <summary>
-        /// Hides the world space UI.
-        /// Call <see cref="ShowVisible"/> to show it again.
+        /// Hides the world space UI and clears the line drawer.
+        /// Call <see cref="ShowVisible"/> to show the current
+        /// overlay again.
         /// </summary>
         public void HideAll()
         {
@@ -403,9 +402,8 @@ namespace AS2.UI
             {
                 item.go.SetActive(false);
             }
+            LineDrawer.Instance.Clear();
             display_isVisible = false;
-            button_hideOverlay.interactable = false;
-            StartCoroutine(PaintButtonActiveInactive(button_hideOverlay, false));
             isVisible = false;
         }
 
@@ -418,25 +416,6 @@ namespace AS2.UI
         private void SwitchInitSimMode(bool initMode)
         {
             HideAll();
-        }
-
-        /// <summary>
-        /// Updates the color of the button.
-        /// Called as coroutine to wait until the active and inactive button colors
-        /// have been set by the main UI handler.
-        /// </summary>
-        /// <param name="button">The button to paint.</param>
-        /// <param name="active">If the button is active.</param>
-        /// <returns></returns>
-        private IEnumerator PaintButtonActiveInactive(Button button, bool active)
-        {
-            while (!(AmoebotSimulator.instance != null && AmoebotSimulator.instance.uiHandler != null
-                && AmoebotSimulator.instance.uiHandler.GetButtonColor_Active() != default(Color) && AmoebotSimulator.instance.uiHandler.GetButtonColor_Inactive() != default(Color)))
-            {
-                yield return new WaitForEndOfFrame();
-            }
-            if(active) button.gameObject.GetComponent<Image>().color = AmoebotSimulator.instance.uiHandler.GetButtonColor_Active();
-            else button.gameObject.GetComponent<Image>().color = AmoebotSimulator.instance.uiHandler.GetButtonColor_Inactive();
         }
 
         /// <summary>
@@ -490,4 +469,4 @@ namespace AS2.UI
 
     }
 
-}
+} // namespace AS2.UI
