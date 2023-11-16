@@ -94,10 +94,10 @@ namespace AS2.Algos.LineFormation
         // Flag to make LEADER send a beep every 2 rounds and recognize when the line is complete
         private ParticleAttribute<bool> beepInLastRound;
 
-        [StatusInfo("Draw Spanning Tree", "Draws the entire spanning tree, i.e., the parent edges for all FLWR particles.")]
+        [StatusInfo("Draw Spanning Tree", "Draws the entire spanning tree, i.e., the parent edges for all FLWR particles.", true)]
         public static void DrawSpanningTree(AS2.Sim.ParticleSystem system, Particle selected)
         {
-            AS2.UI.CollisionLineDrawer ld = AS2.UI.CollisionLineDrawer.Instance;
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
             ld.Clear();
 
             // Draw parent edge for each follower particle
@@ -118,8 +118,11 @@ namespace AS2.Algos.LineFormation
         [StatusInfo("Draw FLWR Path", "Draws the follower path from the currently selected FLWR particle to its ROOT parent.")]
         public static void DrawPath(AS2.Sim.ParticleSystem system, Particle selected)
         {
-            AS2.UI.CollisionLineDrawer ld = AS2.UI.CollisionLineDrawer.Instance;
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
             ld.Clear();
+
+            if (selected is null)
+                return;
 
             Particle p = selected;
             LineFormationParticleSync lfp = (LineFormationParticleSync)selected.algorithm;

@@ -26,6 +26,11 @@ namespace AS2
         public string tooltip;
 
         /// <summary>
+        /// Whether this info method should be called automatically at the end of each round.
+        /// </summary>
+        public bool autocall;
+
+        /// <summary>
         /// Marks this static method as a status info method.
         /// The method must have two parameters: The first must have
         /// type <see cref="AS2.Sim.ParticleSystem"/> and gives access
@@ -37,10 +42,14 @@ namespace AS2
         /// Particle Panel.</param>
         /// <param name="tooltip">The (optional) tooltip to be displayed
         /// for the button.</param>
-        public StatusInfoAttribute(string name, string tooltip = null)
+        /// <param name="autocall">Whether the status info method should be
+        /// called automatically at the end of each round by default. This
+        /// behavior can be changed using the toggles in the Particle Panel.</param>
+        public StatusInfoAttribute(string name, string tooltip = null, bool autocall = false)
         {
             this.name = name;
             this.tooltip = tooltip;
+            this.autocall = autocall;
         }
     }
 

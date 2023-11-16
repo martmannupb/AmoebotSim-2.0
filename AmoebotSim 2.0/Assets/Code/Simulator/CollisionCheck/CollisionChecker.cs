@@ -352,10 +352,10 @@ namespace AS2.Sim
         {
             if (time < 0)
                 time = debugDisplayTime;
-            CollisionLineDrawer.Instance.Clear();
+            LineDrawer.Instance.Clear();
             foreach (DebugLine line in lines)
                 DrawDebugLine(line, time);
-            CollisionLineDrawer.Instance.SetTimer(time);
+            LineDrawer.Instance.SetTimer(time);
         }
 
         /// <summary>
@@ -369,7 +369,7 @@ namespace AS2.Sim
         /// Negative values lead to <see cref="debugDisplayTime"/> being used.</param>
         private static void DrawDebugLine(Vector2Int p, Vector2Int q, Color color, bool arrow = false, float time = -1)
         {
-            CollisionLineDrawer.Instance.AddLine(p, q, color, arrow);
+            LineDrawer.Instance.AddLine(p, q, color, arrow);
         }
 
         /// <summary>

@@ -3,22 +3,29 @@ using UnityEngine;
 
 namespace AS2.UI
 {
-    
+
     /// <summary>
-    /// Utility class for drawing lines and arrows that indicate
-    /// collisions to the screen.
+    /// Utility class for drawing lines and arrows over the system,
+    /// for example to visualize structures like spanning trees or
+    /// to indicate collisions.
     /// <para>
     /// One instance of this script is attached to an empty GameObject
     /// in the Simulator Scene. This instance can be accessed as a
     /// singleton object and it maintains a pool of GameObjects that
-    /// contain LineRenderers. Arrows are created by setting the
-    /// width curve of a line renderer appropriately.
+    /// contain LineRenderers. Note that the class is located in the
+    /// <c>AS2.UI</c> namespace.
+    /// </para>
+    /// <para>
+    /// Call <see cref="Clear"/> to remove all currently displayed lines,
+    /// use <see cref="AddLine(Vector2, Vector2, Color, bool, float, float)"/>
+    /// to add lines, and use <see cref="SetTimer(float)"/> to clear all lines
+    /// after a specific time.
     /// </para>
     /// </summary>
-    public class CollisionLineDrawer : MonoBehaviour
+    public class LineDrawer : MonoBehaviour
     {
         // The singleton instance
-        private static CollisionLineDrawer instance;
+        private static LineDrawer instance;
 
         // Pooling
         private List<GameObject> activeLines = new List<GameObject>();
@@ -43,7 +50,7 @@ namespace AS2.UI
         /// <summary>
         /// The singleton instance of this class.
         /// </summary>
-        public static CollisionLineDrawer Instance
+        public static LineDrawer Instance
         {
             get { return instance; }
         }
