@@ -340,7 +340,14 @@ namespace AS2
             }
             if (idx < 0 || idx >= info.statusInfoMethods.Length)
                 throw new System.ArgumentException("Index " + idx + " is invalid status info method index.");
-            info.statusInfoMethods[idx].Item2.Invoke(null, new object[] { system, selectedParticle });
+            try
+            {
+                info.statusInfoMethods[idx].Item2.Invoke(null, new object[] { system, selectedParticle });
+            }
+            catch (Exception e)
+            {
+                Log.Error("Caught exception while executing status info method: " + e);
+            }
         }
     }
 

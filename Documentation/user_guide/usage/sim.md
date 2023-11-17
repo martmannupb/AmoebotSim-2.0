@@ -183,13 +183,19 @@ Press this button to store the current settings in the [configuration file](conf
 ## Particle Panel
 
 The Particle Panel is available by clicking a particle with the Selection tool activated, both in Simulation and Init Mode.
-The difference between the two modes is that the panel now displays the [*particle attributes*](~/model_ref/attrs.md) instead of the particle's initialization parameters.
+The difference between the two modes is that the panel now displays the [*particle attributes*](~/model_ref/attrs.md) instead of the particle's initialization parameters, and it shows the algorithm's status info buttons (see below).
 Note that although the same algorithm as in the Init Mode example is selected (Line Formation), the Particle Panel displays different content.
 
 The only content that is displayed in both modes are the chirality and compass direction, which are neither initialization parameters nor particle attributes.
 In Simulation Mode, their values cannot be changed anymore.
 The attribute values as well as the Anchor state (the little button left of the "Particle" text) can only be edited when the simulation state is in the latest round of the history.
 If you want to change a particle's state in an earlier round, you will need to cut off the rest of the history.
+
+Above the attributes, you can now find the *status info buttons* of the algorithm.
+Pressing these buttons will run some method defined by the current algorithm that usually displays some additional information, like the spanning tree in the line formation algorithm.
+The result may depend on the currently selected particle.
+If the toggle next to a status info button is active, the corresponding method will be called automatically whenever the round changes.
+You can read more about status info methods on their [model reference page](~/model_ref/status_info.md).
 
 
 ## Hotkeys
