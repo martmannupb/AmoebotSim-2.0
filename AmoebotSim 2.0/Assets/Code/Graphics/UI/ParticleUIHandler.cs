@@ -468,17 +468,29 @@ namespace AS2.UI
                 Log.Error("Current algorithm '" + algo + "' is not known");
                 return;
             }
-            Tuple<string, System.Reflection.MethodInfo>[] statusInfoMethods = AlgorithmManager.Instance.GetStatusInfoMethods(algo);
+            StatusInfoAttribute[] statusInfoMethods = AlgorithmManager.Instance.GetStatusInfoMethods(algo);
 
             if (statusInfoMethods is not null && statusInfoMethods.Length > 0)
             {
-                foreach (Tuple<string, System.Reflection.MethodInfo> tuple in statusInfoMethods)
+                for (int i = 0; i < statusInfoMethods.Length; i++)
                 {
-                    GameObject go_button_save = Instantiate(UIDatabase.prefab_ui_button, go_attributeParent.transform);
-                    TextMeshProUGUI tmpro = go_button_save.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                    tmpro.text = tuple.Item1;
-                    Button button_save = go_button_save.GetComponentInChildren<Button>();
-                    button_save.onClick.AddListener(delegate { tuple.Item2.Invoke(null, new object[] { sim.system, p }); });
+                    StatusInfoAttribute attr = statusInfoMethods[i];
+                    GameObject go_button_toggle = Instantiate(UIDatabase.prefab_button_toggle, go_attributeParent.transform);
+                    TextMeshProUGUI tmpro = go_button_toggle.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                    tmpro.text = attr.name;
+                    Button button_call = go_button_toggle.GetComponentInChildren<Button>();
+                    int idx = i;    // Have to do this to capture the correct index in the closure
+                                    // Otherwise, the index i will be updated for *every* delegate
+                    button_call.onClick.AddListener(delegate { AlgorithmManager.Instance.CallStatusInfoMethod(algo, idx, sim.system, (Particle)p); });
+
+                    Tooltip tt = button_call.gameObject.GetComponentInChildren<Tooltip>();
+                    tt.ChangeMessage(attr.tooltip);
+
+                    Toggle toggle_auto = go_button_toggle.GetComponentInChildren<Toggle>();
+                    toggle_auto.isOn = attr.autocall;
+                    toggle_auto.onValueChanged.AddListener(delegate (bool isOn) { attr.autocall = isOn; });
+                    tt = toggle_auto.gameObject.GetComponentInChildren<Tooltip>();
+                    tt.ChangeMessage("Auto-Call");
                 }
                 UISetting_Spacing setting_spacing = new UISetting_Spacing(null, go_attributeParent.transform, "Spacing");
             }

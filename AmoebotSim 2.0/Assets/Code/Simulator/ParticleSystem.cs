@@ -316,7 +316,7 @@ namespace AS2.Sim
         /// <summary>
         /// The name of the selected algorithm in initialization mode.
         /// </summary>
-        private string selectedAlgorithm = "Line Formation";
+        private string selectedAlgorithm = AS2.Algos.LineFormation.LineFormationParticleSync.Name;
 
         /// <summary>
         /// The name of the currently selected algorithm in initialization mode.
@@ -753,6 +753,9 @@ namespace AS2.Sim
                 Log.Debug("Simulation finished.");
                 AmoebotSimulator.instance.PauseSim();
             }
+
+            // Call the automatic status info methods
+            CallAutomaticStatusInfoMethods();
         }
 
         /// <summary>
@@ -2968,6 +2971,30 @@ namespace AS2.Sim
             renderSystem.CircuitCalculationOver();
         }
 
+        /// <summary>
+        /// Calls all automatic status info methods of the currently
+        /// selected algorithm. Only works in Simulation Mode.
+        /// </summary>
+        private void CallAutomaticStatusInfoMethods()
+        {
+            if (inInitializationState)
+                return;
+
+            // Find the current algorithm
+            if (particles.Count == 0)
+                return;
+            string algo = particles[0].AlgorithmName();
+            // Find the selected particle if there is one
+            Particle selected = null;
+            if (sim.uiHandler.particleUI.IsOpen())
+                selected = (Particle)sim.uiHandler.particleUI.GetShownParticle();
+            // Get all status info methods and call the ones that should be called automatically
+            StatusInfoAttribute[] attrs = AlgorithmManager.Instance.GetStatusInfoMethods(algo);
+            for (int i = 0; i < attrs.Length; i++)
+                if (attrs[i].autocall)
+                    AlgorithmManager.Instance.CallStatusInfoMethod(algo, i, this, selected);
+        }
+
         #endregion
 
 
@@ -4080,6 +4107,8 @@ namespace AS2.Sim
                 anchorIdxHistory.SetMarkerToRound(round);
                 anchorIsObjectHistory.SetMarkerToRound(round);
                 UpdateAfterStep();
+
+                CallAutomaticStatusInfoMethods();
             }
         }
 
@@ -4123,6 +4152,8 @@ namespace AS2.Sim
                 anchorIdxHistory.StepBack();
                 anchorIsObjectHistory.StepBack();
                 UpdateAfterStep();
+
+                CallAutomaticStatusInfoMethods();
             }
         }
 
@@ -4163,6 +4194,7 @@ namespace AS2.Sim
                 anchorIdxHistory.StepForward();
                 anchorIsObjectHistory.StepForward();
                 UpdateAfterStep(true, false, false);
+                CallAutomaticStatusInfoMethods();
             }
         }
 
@@ -4204,6 +4236,8 @@ namespace AS2.Sim
                 // Draw collision debug lines
                 if (collisionCheckEnabled && inCollisionState)
                     CollisionChecker.DrawDebugLines(collisionDebugLines);
+
+                CallAutomaticStatusInfoMethods();
             }
         }
 
@@ -4760,6 +4794,9 @@ namespace AS2.Sim
             {
                 throw new SimulatorStateException("Unknown algorithm selected: '" + algoName + "'");
             }
+
+            // Clear the line drawer to avoid showing lines created by other generation algorithm
+            AS2.UI.LineDrawer.Instance.Clear();
 
             selectedAlgorithm = algoName;
             ResetInit();
