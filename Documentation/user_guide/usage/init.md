@@ -195,7 +195,8 @@ The first button cycles through the three general visualization modes.
 The default mode shows both the grid and the particles in a hexagonal style, the second mode renders the particles as circles in the hexagonal grid, and the third mode resembles the original AmoebotSim visualization, where the background shows the triangular grid graph and particles are displayed as solid black disks surrounded by colored circles.
 In the third view mode, circuits are not displayed.
 
-The "UI" button is only used to disable the overlay showing an attribute value for all particles, which is enabled by clicking an attribute's name in the Particle Panel.
+The "UI" button is used to disable the overlay showing an attribute value for all particles, which is enabled by clicking an attribute's name in the Particle Panel.
+It also clears all lines that have been drawn using the [Line Drawer](~/model_ref/collisions.md).
 
 The "#" button toggles another overlay which displays the global grid coordinates of all visible empty grid nodes.
 While this overlay is active, all camera movements are disabled because updating the overlay takes too long for smooth movements.

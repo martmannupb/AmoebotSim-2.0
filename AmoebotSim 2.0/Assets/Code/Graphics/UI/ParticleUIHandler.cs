@@ -167,6 +167,10 @@ namespace AS2.UI
             // Header
             RefreshHeader();
 
+            // Status info methods
+            if (!initMode)
+                AddStatusInfoButtons(p);
+
             // Attributes
             AddAttributes_ChiralityAndCompassDir(p, initMode);
             foreach (var attribute in p.GetAttributes())
@@ -447,6 +451,48 @@ namespace AS2.UI
             {
                 // Remove Attribute (since we dont display it)
                 attributeNameToIParticleAttribute.Remove(particleAttribute.ToString_AttributeName());
+            }
+        }
+
+        /// <summary>
+        /// Adds buttons for calling the current algorithm's status
+        /// info methods, in case it has defined any.
+        /// </summary>
+        /// <param name="p">The currently selected particle.</param>
+        private void AddStatusInfoButtons(IParticleState p)
+        {
+            // Find the currently selected algorithm
+            string algo = p.AlgorithmName();
+            if (!AlgorithmManager.Instance.IsAlgorithmKnown(algo))
+            {
+                Log.Error("Current algorithm '" + algo + "' is not known");
+                return;
+            }
+            StatusInfoAttribute[] statusInfoMethods = AlgorithmManager.Instance.GetStatusInfoMethods(algo);
+
+            if (statusInfoMethods is not null && statusInfoMethods.Length > 0)
+            {
+                for (int i = 0; i < statusInfoMethods.Length; i++)
+                {
+                    StatusInfoAttribute attr = statusInfoMethods[i];
+                    GameObject go_button_toggle = Instantiate(UIDatabase.prefab_button_toggle, go_attributeParent.transform);
+                    TextMeshProUGUI tmpro = go_button_toggle.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                    tmpro.text = attr.name;
+                    Button button_call = go_button_toggle.GetComponentInChildren<Button>();
+                    int idx = i;    // Have to do this to capture the correct index in the closure
+                                    // Otherwise, the index i will be updated for *every* delegate
+                    button_call.onClick.AddListener(delegate { AlgorithmManager.Instance.CallStatusInfoMethod(algo, idx, sim.system, (Particle)p); });
+
+                    Tooltip tt = button_call.gameObject.GetComponentInChildren<Tooltip>();
+                    tt.ChangeMessage(attr.tooltip);
+
+                    Toggle toggle_auto = go_button_toggle.GetComponentInChildren<Toggle>();
+                    toggle_auto.isOn = attr.autocall;
+                    toggle_auto.onValueChanged.AddListener(delegate (bool isOn) { attr.autocall = isOn; });
+                    tt = toggle_auto.gameObject.GetComponentInChildren<Tooltip>();
+                    tt.ChangeMessage("Auto-Call");
+                }
+                UISetting_Spacing setting_spacing = new UISetting_Spacing(null, go_attributeParent.transform, "Spacing");
             }
         }
 

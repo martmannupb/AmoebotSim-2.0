@@ -84,6 +84,8 @@ namespace AS2.UI
             GameObject go_button_apply = Instantiate(UIDatabase.prefab_ui_button, settingsParent.transform);
             TextMeshProUGUI tmpro = go_button_apply.GetComponentInChildren<TMPro.TextMeshProUGUI>();
             tmpro.text = "Apply";
+            Tooltip tt = go_button_apply.GetComponentInChildren<Tooltip>();
+            tt.ChangeMessage("Move the camera to the specified location and zoom level");
             Button button_apply = go_button_apply.GetComponentInChildren<Button>();
             button_apply.onClick.AddListener(delegate { Button_CameraApply(); });
 
@@ -124,6 +126,8 @@ namespace AS2.UI
             GameObject go_button_save = Instantiate(UIDatabase.prefab_ui_button, settingsParent.transform);
             tmpro = go_button_save.GetComponentInChildren<TMPro.TextMeshProUGUI>();
             tmpro.text = "Save Settings";
+            tt = go_button_save.GetComponentInChildren<Tooltip>();
+            tt.ChangeMessage("Save the current settings in the configuration file");
             Button button_save = go_button_save.GetComponentInChildren<Button>();
             button_save.onClick.AddListener(delegate { Button_SaveSettings(); });
         }

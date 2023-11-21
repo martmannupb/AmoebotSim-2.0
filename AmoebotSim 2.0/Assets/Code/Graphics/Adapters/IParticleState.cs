@@ -148,6 +148,14 @@ namespace AS2.Visuals
         /// was overwritten by the particle algorithm.</returns>
         bool IsParticleColorSet();
 
+        /// <summary>
+        /// Gets the name of the algorithm running this particle's
+        /// behavior.
+        /// </summary>
+        /// <returns>The unique display name of the algorithm
+        /// running this particle.</returns>
+        string AlgorithmName();
+
     }
 
 }
