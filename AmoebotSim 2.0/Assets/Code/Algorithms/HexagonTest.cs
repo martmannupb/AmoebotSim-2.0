@@ -246,7 +246,7 @@ namespace AS2.Algos.HexagonTest
         [StatusInfo("Show Target Shape")]
         public static void ShowTargetShape(AS2.Sim.ParticleSystem system, Particle p)
         {
-            AS2.UI.CollisionLineDrawer ld = AS2.UI.CollisionLineDrawer.Instance;
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
             ld.Clear();
 
             Vector2Int v = p.Head();
@@ -2533,7 +2533,7 @@ namespace AS2.Algos.HexagonTest
             Vector2Int botRight = new Vector2Int(xMax, yMin);
 
             // Also draw lines
-            AS2.UI.CollisionLineDrawer ld = AS2.UI.CollisionLineDrawer.Instance;
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
             ld.Clear();
             // Hexagon
             ld.AddLine(topLeft, topRight, Color.blue);
