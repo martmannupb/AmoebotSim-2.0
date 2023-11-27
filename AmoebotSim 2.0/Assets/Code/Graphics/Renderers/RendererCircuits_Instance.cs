@@ -1395,16 +1395,12 @@ namespace AS2.Visuals
         private RendererCircuits_RenderBatch GetBatch_Line(RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData)
         {
             RendererCircuits_RenderBatch batch;
-            if (propertiesToRenderBatchMap.ContainsKey(propertyBlockData) == false)
+            if (propertiesToRenderBatchMap.TryGetValue(propertyBlockData, out batch) == false)
             {
                 // Batch does not exist
                 // Create Batch
                 batch = new RendererCircuits_RenderBatch(propertyBlockData);
                 propertiesToRenderBatchMap.Add(propertyBlockData, batch);
-            }
-            else
-            {
-                propertiesToRenderBatchMap.TryGetValue(propertyBlockData, out batch);
             }
             return batch;
         }
@@ -1437,16 +1433,12 @@ namespace AS2.Visuals
         private RendererCircuitPins_RenderBatch GetBatch_Pin(RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData)
         {
             RendererCircuitPins_RenderBatch batch;
-            if (propertiesToPinRenderBatchMap.ContainsKey(propertyBlockData) == false)
+            if (propertiesToPinRenderBatchMap.TryGetValue(propertyBlockData, out batch) == false)
             {
                 // Batch does not exist
                 // Create Batch
                 batch = new RendererCircuitPins_RenderBatch(propertyBlockData);
                 propertiesToPinRenderBatchMap.Add(propertyBlockData, batch);
-            }
-            else
-            {
-                propertiesToPinRenderBatchMap.TryGetValue(propertyBlockData, out batch);
             }
             return batch;
         }

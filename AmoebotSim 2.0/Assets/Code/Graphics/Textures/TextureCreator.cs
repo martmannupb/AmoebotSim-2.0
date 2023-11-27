@@ -53,8 +53,10 @@ namespace AS2.Visuals
         /// particle is not moving.</returns>
         public static Material GetPinBorderMaterial(int pinsPerSide, ViewType viewType)
         {
-            if (viewType == ViewType.Hexagonal && pinBorderHexMaterials.ContainsKey(pinsPerSide)) return pinBorderHexMaterials[pinsPerSide];
-            if (viewType == ViewType.HexagonalCirc && pinBorderHexCircMaterials.ContainsKey(pinsPerSide)) return pinBorderHexCircMaterials[pinsPerSide];
+            if (viewType == ViewType.Hexagonal && pinBorderHexMaterials.TryGetValue(pinsPerSide, out Material m1))
+                return m1;
+            if (viewType == ViewType.HexagonalCirc && pinBorderHexCircMaterials.TryGetValue(pinsPerSide, out Material m2))
+                return m2;
 
             // Create Material
             Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
@@ -97,8 +99,10 @@ namespace AS2.Visuals
         /// <paramref name="viewType"/>.</returns>
         public static Material GetHexagonWithPinsMaterial(int pinsPerSide, ViewType viewType)
         {
-            if (viewType == ViewType.Hexagonal && hexagonMaterials.ContainsKey(pinsPerSide)) return hexagonMaterials[pinsPerSide];
-            if (viewType == ViewType.HexagonalCirc && hexagonCircMaterials.ContainsKey(pinsPerSide)) return hexagonCircMaterials[pinsPerSide];
+            if (viewType == ViewType.Hexagonal && hexagonMaterials.TryGetValue(pinsPerSide, out Material m1))
+                return m1;
+            if (viewType == ViewType.HexagonalCirc && hexagonCircMaterials.TryGetValue(pinsPerSide, out Material m2))
+                return m2;
 
             // Create Material
             Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
@@ -142,17 +146,25 @@ namespace AS2.Visuals
         {
             if(viewType == ViewType.Hexagonal)
             {
-                if (isTex1 && omit3Pins && pinBorderTextures3Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins1[pinsPerSide];
-                if (isTex1 && !omit3Pins && pinBorderTextures5Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins1[pinsPerSide];
-                if (!isTex1 && omit3Pins && pinBorderTextures3Pins2.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins2[pinsPerSide];
-                if (!isTex1 && !omit3Pins && pinBorderTextures5Pins2.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins2[pinsPerSide];
+                if (isTex1 && omit3Pins && pinBorderTextures3Pins1.TryGetValue(pinsPerSide, out Texture2D t1))
+                    return t1;
+                if (isTex1 && !omit3Pins && pinBorderTextures5Pins1.TryGetValue(pinsPerSide, out Texture2D t2))
+                    return t2;
+                if (!isTex1 && omit3Pins && pinBorderTextures3Pins2.TryGetValue(pinsPerSide, out Texture2D t3))
+                    return t3;
+                if (!isTex1 && !omit3Pins && pinBorderTextures5Pins2.TryGetValue(pinsPerSide, out Texture2D t4))
+                    return t4;
             }
             else if(viewType == ViewType.HexagonalCirc)
             {
-                if (isTex1 && omit3Pins && pinBorderCircTextures3Pins1.ContainsKey(pinsPerSide)) return pinBorderCircTextures3Pins1[pinsPerSide];
-                if (isTex1 && !omit3Pins && pinBorderCircTextures5Pins1.ContainsKey(pinsPerSide)) return pinBorderCircTextures5Pins1[pinsPerSide];
-                if (!isTex1 && omit3Pins && pinBorderCircTextures3Pins2.ContainsKey(pinsPerSide)) return pinBorderCircTextures3Pins2[pinsPerSide];
-                if (!isTex1 && !omit3Pins && pinBorderCircTextures5Pins2.ContainsKey(pinsPerSide)) return pinBorderCircTextures5Pins2[pinsPerSide];
+                if (isTex1 && omit3Pins && pinBorderCircTextures3Pins1.TryGetValue(pinsPerSide, out Texture2D t1))
+                    return t1;
+                if (isTex1 && !omit3Pins && pinBorderCircTextures5Pins1.TryGetValue(pinsPerSide, out Texture2D t2))
+                    return t2;
+                if (!isTex1 && omit3Pins && pinBorderCircTextures3Pins2.TryGetValue(pinsPerSide, out Texture2D t3))
+                    return t3;
+                if (!isTex1 && !omit3Pins && pinBorderCircTextures5Pins2.TryGetValue(pinsPerSide, out Texture2D t4))
+                    return t4;
             }
 
             // Create Texture
