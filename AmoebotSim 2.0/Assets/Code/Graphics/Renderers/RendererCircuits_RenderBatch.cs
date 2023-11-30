@@ -89,10 +89,30 @@ namespace AS2.Visuals
 
             public Color color;
             public LineType lineType;
+            /// <summary>
+            /// <c>true</c> if this line should appear after a delay because
+            /// the particle is performing a movement.
+            /// </summary>
             public bool delayed;
+            /// <summary>
+            /// Whether this line belongs to a circuit that is currently beeping.
+            /// </summary>
             public bool beeping;
+            /// <summary>
+            /// <c>true</c> if the start and end points of this line are
+            /// animated separately and outside of the shader. This is only
+            /// the case for moving bonds.
+            /// </summary>
             public bool animationUpdatedManually;
+            /// <summary>
+            /// The global offset by which this line should move during the
+            /// animation phase (uses the shader animation).
+            /// </summary>
             public Vector2 animationOffset;
+            /// <summary>
+            /// Determines in which state of the simulator this line
+            /// should be visible.
+            /// </summary>
             public ActiveState activeState;
 
             public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animationUpdatedManually) : this(color, lineType, delayed, beeping, animationUpdatedManually, Vector2.zero) { }
