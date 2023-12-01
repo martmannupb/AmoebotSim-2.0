@@ -170,6 +170,11 @@ namespace AS2.Visuals
                     propertyBlock_circuitMatrices_Lines.ApplyColor(Color.white);
                     propertyBlock_circuitMatrices_Lines.ApplyColorSecondary(properties.color);
                 }
+                else if (properties.beeping && properties.activeState == PropertyBlockData.ActiveState.SimActive)
+                {
+                    // This is a beep flash highlight, which should always be white
+                    propertyBlock_circuitMatrices_Lines.ApplyColor(Color.white);
+                }
                 else
                     propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Circuit Color stays
             }
