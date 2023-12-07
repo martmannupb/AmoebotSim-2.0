@@ -34,6 +34,27 @@ namespace AS2
         /// </summary>
         public static readonly float hexRadiusMajor2 = 0.25f / Mathf.Cos(Mathf.Deg2Rad * 30f);
 
+        // Rotation matrices for counter-clockwise rotations in 60 degree steps
+        public static readonly Quaternion rotation_0 = Quaternion.Euler(0f, 0f, 0f);
+        public static readonly Quaternion rotation_60 = Quaternion.Euler(0f, 0f, 60f);
+        public static readonly Quaternion rotation_120 = Quaternion.Euler(0f, 0f, 120f);
+        public static readonly Quaternion rotation_180 = Quaternion.Euler(0f, 0f, 180f);
+        public static readonly Quaternion rotation_240 = Quaternion.Euler(0f, 0f, 240f);
+        public static readonly Quaternion rotation_300 = Quaternion.Euler(0f, 0f, 300f);
+        /// <summary>
+        /// Rotation matrices for counter-clockwise rotations in 60 degree steps.
+        /// The matrix at index i rotates by <c>i * 60</c> degrees.
+        /// </summary>
+        public static readonly Quaternion[] rotationMatrices = new Quaternion[] {
+            rotation_0, rotation_60, rotation_120, rotation_180, rotation_240, rotation_300
+        };
+
+        // Caches for relative pin positions
+        // List index is number of pins per side - 1, first array index
+        // is direction, second array index is edge offset
+        private static List<Vector2[][]> pinPositionCacheHex = new List<Vector2[][]>();
+        private static List<Vector2[][]> pinPositionCacheRound = new List<Vector2[][]>();
+
         /// <summary>
         /// Translates grid coordinates into Cartesian (world) coordinates.
         /// </summary>
@@ -322,25 +343,78 @@ namespace AS2
         /// </summary>
         /// <param name="pinDef">The pin whose position to calculate.</param>
         /// <param name="pinsPerSide">The number of pins per side.</param>
-        /// <param name="particleScale">The global scale factor for particles.</param>
         /// <param name="viewType">The view type used to place the pins.</param>
         /// <returns>A vector representing the pin's coordinates relative
         /// to the particle's center. Will be <c>(0, 0)</c> if the
         /// <paramref name="viewType"/> is not <see cref="ViewType.Hexagonal"/>
         /// or <see cref="ViewType.HexagonalCirc"/>.</returns>
-        public static Vector2 CalculateRelativePinPosition(ParticlePinGraphicState.PinDef pinDef, int pinsPerSide, float particleScale, ViewType viewType)
+        public static Vector2 CalculateRelativePinPosition(ParticlePinGraphicState.PinDef pinDef, int pinsPerSide, ViewType viewType)
         {
-            float linePos = (pinDef.dirID + 1) / (float)(pinsPerSide + 1);
+            if (pinsPerSide > pinPositionCacheHex.Count)
+                AdvancePinPositionCaches(pinsPerSide);
+
+            if (viewType == ViewType.Hexagonal)
+                return pinPositionCacheHex[pinsPerSide - 1][pinDef.globalDir][pinDef.dirID];
+            else if (viewType == ViewType.HexagonalCirc)
+                return pinPositionCacheRound[pinsPerSide - 1][pinDef.globalDir][pinDef.dirID];
+            else
+                return Vector2.zero;
+        }
+
+        /// <summary>
+        /// Adds entries to the pin position caches such that the
+        /// desired number of pins per side is included.
+        /// </summary>
+        /// <param name="maxPinsPerSide">The desired number of pins
+        /// per side. After this, both caches will have length at
+        /// least <paramref name="maxPinsPerSide"/>.</param>
+        private static void AdvancePinPositionCaches(int maxPinsPerSide)
+        {
             Vector2 topRight = new Vector2(hexRadiusMinor, hexRadiusMajor2);
             Vector2 bottomRight = new Vector2(hexRadiusMinor, -hexRadiusMajor2);
-            Vector2 pinPosNonRotated = Vector2.zero;
-            if (viewType == ViewType.Hexagonal)
-                pinPosNonRotated = bottomRight + linePos * (topRight - bottomRight);
-            else if (viewType == ViewType.HexagonalCirc)
-                pinPosNonRotated = Quaternion.Euler(0f, 0f, -30f + linePos * 60f) * new Vector2(hexRadiusMinor, 0f);
-            pinPosNonRotated *= particleScale;
-            Vector2 pinPos = Quaternion.Euler(0f, 0f, 60f * pinDef.globalDir) * pinPosNonRotated;
-            return pinPos;
+            Vector2 pinPosNonRotatedHex;
+            Vector2 pinPosNonRotatedRound;
+
+            for (int pps = pinPositionCacheHex.Count + 1; pps <= maxPinsPerSide; pps++)
+            {
+                Vector2[][] positionsHex = new Vector2[6][];
+                Vector2[][] positionsRound = new Vector2[6][];
+
+                // Calculate the vectors for rotation 0
+                Vector2[] dirVecsHex = new Vector2[pps];
+                Vector2[] dirVecsRound = new Vector2[pps];
+
+                for (int offset = 0; offset < pps; offset++)
+                {
+                    float linePos = (offset + 1) / (float)(pps + 1);
+                    pinPosNonRotatedHex = bottomRight + linePos * (topRight - bottomRight);
+                    pinPosNonRotatedRound = Quaternion.Euler(0f, 0f, -30f + linePos * 60f) * new Vector2(hexRadiusMinor, 0f);
+                    pinPosNonRotatedHex *= RenderSystem.global_particleScale;
+                    pinPosNonRotatedRound *= RenderSystem.global_particleScale;
+                    dirVecsHex[offset] = pinPosNonRotatedHex;
+                    dirVecsRound[offset] = pinPosNonRotatedRound;
+                }
+
+                positionsHex[0] = dirVecsHex;
+                positionsRound[0] = dirVecsRound;
+
+                // The other vectors are just rotated copies
+                for (int dir = 1; dir < 6; dir++)
+                {
+                    Vector2[] rotatedHex = new Vector2[pps];
+                    Vector2[] rotatedRound = new Vector2[pps];
+                    for (int offset = 0; offset < pps; offset++)
+                    {
+                        rotatedHex[offset] = rotationMatrices[dir] * dirVecsHex[offset];
+                        rotatedRound[offset] = rotationMatrices[dir] * dirVecsRound[offset];
+                    }
+                    positionsHex[dir] = rotatedHex;
+                    positionsRound[dir] = rotatedRound;
+                }
+
+                pinPositionCacheHex.Add(positionsHex);
+                pinPositionCacheRound.Add(positionsRound);
+            }
         }
     }
 

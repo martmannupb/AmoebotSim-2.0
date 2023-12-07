@@ -496,7 +496,7 @@ namespace AS2.Visuals
                 {
                     if (isHead == pinDef.isHead)
                     {
-                        relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, circuitData.state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+                        relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, circuitData.state.pinsPerSide, RenderSystem.setting_viewType);
                         virtualPinCount++;
                     }
                 }
@@ -1857,7 +1857,7 @@ namespace AS2.Visuals
         private Vector2 CalculateGlobalPinPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
         {
             Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(gridPosParticle);
-            Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+            Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.setting_viewType);
             return posParticle + relPinPos;
         }
 

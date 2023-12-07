@@ -306,12 +306,12 @@ namespace AS2.Visuals
         /// We basically take a standard quad and transform it so that it forms a line.
         /// The pivot of the quad must be at the center of the quad's left side.
         /// </summary>
-        /// <param name="posInitial">The start position of the line.</param>
+        /// <param name="posStart">The start position of the line.</param>
         /// <param name="posEnd">The end position of the line.</param>
         /// <returns>A transformation, rotation, scaling matrix for the new line.</returns>
-        private Matrix4x4 CalculateLineMatrix(Vector2 posInitial, Vector2 posEnd)
+        private Matrix4x4 CalculateLineMatrix(Vector2 posStart, Vector2 posEnd)
         {
-            Vector2 vec = posEnd - posInitial;
+            Vector2 vec = posEnd - posStart;
             float length = vec.magnitude;
             float z;
             if (properties.lineType == PropertyBlockData.LineType.BondHexagonal || properties.lineType == PropertyBlockData.LineType.BondCircular)
@@ -320,8 +320,8 @@ namespace AS2.Visuals
                 z = RenderSystem.zLayer_circuits + zOffset;
             Quaternion q = Quaternion.FromToRotation(Vector2.right, vec);
             if (q.eulerAngles.y >= 179.999)
-                q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
-            return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, z), q, new Vector3(length, lineWidth, 1f));
+                q = AmoebotFunctions.rotation_180; // Hotfix for wrong axis rotation for 180 degrees
+            return Matrix4x4.TRS(new Vector3(posStart.x, posStart.y, z), q, new Vector3(length, lineWidth, 1f));
         }
 
         /// <summary>
