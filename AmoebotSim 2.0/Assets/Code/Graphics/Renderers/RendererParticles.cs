@@ -58,11 +58,11 @@ namespace AS2.Visuals
         {
             RendererParticles_RenderBatch.PropertyBlockData block = new RendererParticles_RenderBatch.PropertyBlockData(graphicalData.graphics_color, graphicalData.particle.GetCircuitPinsPerSide());
             // Add particle to existing/new RenderBatch
-            if (propertiesToRenderBatchMap.ContainsKey(block))
+            if (propertiesToRenderBatchMap.TryGetValue(block, out RendererParticles_RenderBatch batch))
             {
                 // RenderBatch does already exist
                 // Add particle to batch
-                propertiesToRenderBatchMap[block].Particle_Add(graphicalData);
+                batch.Particle_Add(graphicalData);
             }
             else
             {

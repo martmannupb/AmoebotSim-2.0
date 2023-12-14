@@ -89,10 +89,30 @@ namespace AS2.Visuals
 
             public Color color;
             public LineType lineType;
+            /// <summary>
+            /// <c>true</c> if this line should appear after a delay because
+            /// the particle is performing a movement.
+            /// </summary>
             public bool delayed;
+            /// <summary>
+            /// Whether this line belongs to a circuit that is currently beeping.
+            /// </summary>
             public bool beeping;
+            /// <summary>
+            /// <c>true</c> if the start and end points of this line are
+            /// animated separately and outside of the shader. This is only
+            /// the case for moving bonds.
+            /// </summary>
             public bool animationUpdatedManually;
+            /// <summary>
+            /// The global offset by which this line should move during the
+            /// animation phase (uses the shader animation).
+            /// </summary>
             public Vector2 animationOffset;
+            /// <summary>
+            /// Determines in which state of the simulator this line
+            /// should be visible.
+            /// </summary>
             public ActiveState activeState;
 
             public PropertyBlockData(Color color, LineType lineType, bool delayed, bool beeping, bool animationUpdatedManually) : this(color, lineType, delayed, beeping, animationUpdatedManually, Vector2.zero) { }
@@ -149,6 +169,11 @@ namespace AS2.Visuals
                     // Special Case: Paused Beeps
                     propertyBlock_circuitMatrices_Lines.ApplyColor(Color.white);
                     propertyBlock_circuitMatrices_Lines.ApplyColorSecondary(properties.color);
+                }
+                else if (properties.beeping && properties.activeState == PropertyBlockData.ActiveState.SimActive)
+                {
+                    // This is a beep flash highlight, which should always be white
+                    propertyBlock_circuitMatrices_Lines.ApplyColor(Color.white);
                 }
                 else
                     propertyBlock_circuitMatrices_Lines.ApplyColor(properties.color); // Circuit Color stays
@@ -281,12 +306,12 @@ namespace AS2.Visuals
         /// We basically take a standard quad and transform it so that it forms a line.
         /// The pivot of the quad must be at the center of the quad's left side.
         /// </summary>
-        /// <param name="posInitial">The start position of the line.</param>
+        /// <param name="posStart">The start position of the line.</param>
         /// <param name="posEnd">The end position of the line.</param>
         /// <returns>A transformation, rotation, scaling matrix for the new line.</returns>
-        private Matrix4x4 CalculateLineMatrix(Vector2 posInitial, Vector2 posEnd)
+        private Matrix4x4 CalculateLineMatrix(Vector2 posStart, Vector2 posEnd)
         {
-            Vector2 vec = posEnd - posInitial;
+            Vector2 vec = posEnd - posStart;
             float length = vec.magnitude;
             float z;
             if (properties.lineType == PropertyBlockData.LineType.BondHexagonal || properties.lineType == PropertyBlockData.LineType.BondCircular)
@@ -295,8 +320,8 @@ namespace AS2.Visuals
                 z = RenderSystem.zLayer_circuits + zOffset;
             Quaternion q = Quaternion.FromToRotation(Vector2.right, vec);
             if (q.eulerAngles.y >= 179.999)
-                q = Quaternion.Euler(0f, 0f, 180f); // Hotfix for wrong axis rotation for 180 degrees
-            return Matrix4x4.TRS(new Vector3(posInitial.x, posInitial.y, z), q, new Vector3(length, lineWidth, 1f));
+                q = AmoebotFunctions.rotation_180; // Hotfix for wrong axis rotation for 180 degrees
+            return Matrix4x4.TRS(new Vector3(posStart.x, posStart.y, z), q, new Vector3(length, lineWidth, 1f));
         }
 
         /// <summary>

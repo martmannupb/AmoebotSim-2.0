@@ -17,11 +17,54 @@ namespace AS2.Visuals
     public class RendererCircuits_Instance
     {
 
+        // Special batches for bonds to avoid unnecessary dictionary lookups
+        public RendererCircuits_RenderBatch renderBatch_bondsHexagonal_static = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondHexagonal, false, false, false, Vector2.zero, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActiveOrPaused));
+        public RendererCircuits_RenderBatch renderBatch_bondsHexagonal_animated = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondHexagonal, false, false, true, Vector2.zero, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActiveOrPaused));
+        public RendererCircuits_RenderBatch renderBatch_bondsCircular_static = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondCircular, false, false, false, Vector2.zero, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActiveOrPaused));
+        public RendererCircuits_RenderBatch renderBatch_bondsCircular_animated = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondCircular, false, false, true, Vector2.zero, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActiveOrPaused));
+        // Stores all the batches containing bonds for easier iteration
+        private readonly RendererCircuits_RenderBatch[] bondBatches;
+
+        // Updated batch data structure:
+        // There is a dictionary mapping colors to int indices
+        // For batches rendering delayed lines, there is a list of arrays
+        // For batches rendering non-delayed lines, there is a list of dictionaries mapping offset vectors to arrays
+        // Each array stores six render batches
+        // The index of each batch in the array describes the combination of the internal/external, beeping/not beeping and active/paused/activeOrPaused flags
         /// <summary>
-        /// Map of render batches for all line-like elements: Circuit lines
-        /// inside and outside of particles, their beep highlights, and bonds.
+        /// Maps colors to render batch list indices. Use
+        /// <see cref="GetColorIndex(Color)"/> to access.
         /// </summary>
-        public Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch> propertiesToRenderBatchMap = new Dictionary<RendererCircuits_RenderBatch.PropertyBlockData, RendererCircuits_RenderBatch>();
+        private Dictionary<Color, int> colorIndices = new Dictionary<Color, int>();
+        /// <summary>
+        /// Contains the render batch arrays for delayed batches. Use
+        /// <see cref="GetColorIndex(Color)"/> to get the index of the array
+        /// belonging to the desired color. Use
+        /// <see cref="GetBatchGroup(RendererCircuits_RenderBatch[], bool, bool, Color, Vector2, bool)"/>
+        /// to find the correct batches or use <see cref="internal_notBeeping"/> etc. directly.
+        /// </summary>
+        private List<RendererCircuits_RenderBatch[]> delayedCircuitBatches = new List<RendererCircuits_RenderBatch[]>();
+        /// <summary>
+        /// Contains a dictionary mapping offset vectors to render batch arrays for
+        /// non-delayed batches. Use <see cref="GetColorIndex(Color)"/> to get the index of the
+        /// dictionary belonging to the desired color. Use
+        /// <see cref="GetNonDelayedArray(int, Vector2)"/> using this index to get the batch array.
+        /// Then use <see cref="GetBatchGroup(RendererCircuits_RenderBatch[], bool, bool, Color, Vector2, bool)"/>
+        /// or <see cref="internal_notBeeping"/> etc. directly to get the specific batches.
+        /// </summary>
+        private List<Dictionary<Vector2, RendererCircuits_RenderBatch[]>> nonDelyedCircuitBatches = new List<Dictionary<Vector2, RendererCircuits_RenderBatch[]>>();
+        /// <summary>
+        /// Contains all line batches for easier iteration.
+        /// </summary>
+        private List<RendererCircuits_RenderBatch> lineBatches = new List<RendererCircuits_RenderBatch>();
+        // Indices in batch arrays indicating property combinations
+        private const int internal_notBeeping = 0;
+        private const int internal_beeping_active = 1;
+        private const int internal_beeping_paused = 2;
+        private const int external_notBeeping = 3;
+        private const int external_beeping_active = 4;
+        private const int external_beeping_paused = 5;
+
         /// <summary>
         /// Map of render batches for all circle-like elements: Partition set
         /// handles, their beep highlights, and circles at circuit line
@@ -35,8 +78,6 @@ namespace AS2.Visuals
         // Flags
         public bool isRenderingActive = false;
         // Temporary
-        private bool[] globalDirLineSet1 = new bool[] { false, false, false, false, false, false };
-        private bool[] globalDirLineSet2 = new bool[] { false, false, false, false, false, false };
         private List<float> degreeList = new List<float>(16);
         private List<Vector2> vectorList = new List<Vector2>(16);
         private PriorityQueue<ParticlePinGraphicState.PSetData> pSetSortingList = new PriorityQueue<ParticlePinGraphicState.PSetData>();
@@ -175,9 +216,21 @@ namespace AS2.Visuals
             public void UpdatePSetOrConnectorPinPosition(PSetInnerPinRef innerPin, Vector2 worldPos)
             {
                 RendererCircuitPins_RenderBatch batch_pins;
-                RendererCircuits_RenderBatch batch_lines;
                 ParticlePinGraphicState.PSetData.GraphicalData gd = innerPin.pSet.graphicalData;
                 int offset = 0;
+
+                // Get the render batches (all affected lines have the same properties)
+                int colorIdx = instance.GetColorIndex(innerPin.pSet.color);
+                RendererCircuits_RenderBatch[] batchesDelayed = instance.delayedCircuitBatches[colorIdx];
+                RendererCircuits_RenderBatch[] batchesNonDelayed = instance.GetNonDelayedArray(colorIdx, gd.properties_line.animationOffset);
+
+                // Find the correct batches beforehand
+                // We only have internal lines
+                RendererCircuits_RenderBatch[] batchesD = instance.GetBatchGroup(batchesDelayed, true, innerPin.pSet.beepsThisRound, innerPin.pSet.color, gd.properties_line.animationOffset, true);
+                RendererCircuits_RenderBatch[] batchesND = instance.GetBatchGroup(batchesNonDelayed, true, innerPin.pSet.beepsThisRound, innerPin.pSet.color, gd.properties_line.animationOffset, false);
+                RendererCircuits_RenderBatch batchBase = gd.properties_line.delayed ? batchesD[0] : batchesND[0];
+                RendererCircuits_RenderBatch batchBeep = gd.properties_line_beep.delayed ? batchesD[2] : batchesND[2];
+
                 switch (innerPin.pinType)
                 {
                     case PSetInnerPinRef.PinType.None:
@@ -192,37 +245,34 @@ namespace AS2.Visuals
                         batch_pins.UpdatePin(worldPos, false, gd.index_pSet1);
                         // Line to connector
                         offset = 0;
+                        
                         if (state.IsExpanded && innerPin.pSet.HasPinsInHeadAndTail())
                         {
                             // Connector
-                            batch_lines = instance.GetBatch_Line(gd.properties_line);
-                            batch_lines.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lines1[0]);
+                            batchBase.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lines1[0]);
                             if(innerPin.pSet.beepsThisRound)
                             {
-                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                batch_lines.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lines1_beep[0]);
+                                batchBeep.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lines1_beep[0]);
                             }
                             offset = 1;
                         }
                         // Lines
                         for (int i = 0; i < gd.pSet1_pins.Count; i++)
                         {
-                            batch_lines = instance.GetBatch_Line(gd.properties_line);
                             Vector2 pinPos = instance.CalculateGlobalPinPosition(snap.position1, gd.pSet1_pins[i], state.pinsPerSide);
-                            batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines1[i + offset]);
+                            batchBase.UpdateLine(worldPos, pinPos, gd.index_lines1[i + offset]);
                             if (innerPin.pSet.beepsThisRound)
                             {
-                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines1_beep[i + offset]);
+                                batchBeep.UpdateLine(worldPos, pinPos, gd.index_lines1_beep[i + offset]);
                             }
                         }
 
-                        // Beep Origin
+                        // Beep Origin and faulty highlight
                         if (innerPin.pSet.beepOrigin)
                         {
                             // Pin
                             batch_pins = instance.GetBatch_Pin(gd.properties_pin_beep);
-                            batch_pins.UpdatePin(worldPos, false, gd.index_pSet1_beep);
+                            batch_pins.UpdatePin(worldPos, false, gd.index_pSet1_beep_origin);
                         }
                         break;
                     case PSetInnerPinRef.PinType.PSet2:
@@ -241,34 +291,30 @@ namespace AS2.Visuals
                         offset = 0;
                         if (innerPin.pSet.HasPinsInHeadAndTail())
                         {
-                            batch_lines = instance.GetBatch_Line(gd.properties_line);
-                            batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2[0]);
+                            batchBase.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2[0]);
                             if (innerPin.pSet.beepsThisRound)
                             {
-                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2_beep[0]);
+                                batchBeep.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lines2_beep[0]);
                             }
                             offset = 1;
                         }
                         // Lines
                         for (int i = 0; i < gd.pSet2_pins.Count; i++)
                         {
-                            batch_lines = instance.GetBatch_Line(gd.properties_line);
                             Vector2 pinPos = instance.CalculateGlobalPinPosition(snap.position2, gd.pSet2_pins[i], state.pinsPerSide);
-                            batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines2[i + offset]);
+                            batchBase.UpdateLine(worldPos, pinPos, gd.index_lines2[i + offset]);
                             if (innerPin.pSet.beepsThisRound)
                             {
-                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                batch_lines.UpdateLine(worldPos, pinPos, gd.index_lines2_beep[i + offset]);
+                                batchBeep.UpdateLine(worldPos, pinPos, gd.index_lines2_beep[i + offset]);
                             }
                         }
 
-                        // Beeps
+                        // Beeps and faults
                         if (innerPin.pSet.beepOrigin)
                         {
                             // Pin
                             batch_pins = instance.GetBatch_Pin(gd.properties_pin_beep);
-                            batch_pins.UpdatePin(worldPos, false, gd.index_pSet2_beep);
+                            batch_pins.UpdatePin(worldPos, false, gd.index_pSet2_beep_origin);
                         }
                         break;
                     case PSetInnerPinRef.PinType.PConnector1:
@@ -281,20 +327,16 @@ namespace AS2.Visuals
                             batch_pins = instance.GetBatch_Pin(gd.properties_connectorPin);
                             batch_pins.UpdateConnectorPin(worldPos, gd.index_pSetConnectorPin1);
                             // Line to PSet
-                            batch_lines = instance.GetBatch_Line(gd.properties_line);
-                            batch_lines.UpdateLine(worldPos, gd.active_position1, gd.index_lines1[0]);
+                            batchBase.UpdateLine(worldPos, gd.active_position1, gd.index_lines1[0]);
                             if (innerPin.pSet.beepsThisRound)
                             {
-                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                batch_lines.UpdateLine(worldPos, gd.active_position1, gd.index_lines1_beep[0]);
+                                batchBeep.UpdateLine(worldPos, gd.active_position1, gd.index_lines1_beep[0]);
                             }
                             // Other connector
-                            batch_lines = instance.GetBatch_Line(gd.properties_line);
-                            batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lineConnector);
+                            batchBase.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lineConnector);
                             if(innerPin.pSet.beepsThisRound)
                             {
-                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                batch_lines.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lineConnector_beep);
+                                batchBeep.UpdateLine(worldPos, gd.active_connector_position2, gd.index_lineConnector_beep);
                             }
                         }
                         else Log.Error("UpdatePSetOrConnectorPinPosition: Trying to edit connector 1 for a particle that is contracted. This is not possible.");
@@ -309,23 +351,19 @@ namespace AS2.Visuals
                             batch_pins = instance.GetBatch_Pin(gd.properties_connectorPin);
                             batch_pins.UpdateConnectorPin(worldPos, gd.index_pSetConnectorPin2);
                             // Line to PSet
-                            batch_lines = instance.GetBatch_Line(gd.properties_line);
-                            batch_lines.UpdateLine(worldPos, gd.active_position2, gd.index_lines2[0]);
+                            batchBase.UpdateLine(worldPos, gd.active_position2, gd.index_lines2[0]);
                             if (innerPin.pSet.beepsThisRound)
                             {
-                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                batch_lines.UpdateLine(worldPos, gd.active_position2, gd.index_lines2_beep[0]);
+                                batchBeep.UpdateLine(worldPos, gd.active_position2, gd.index_lines2_beep[0]);
                             }
                             // Other connector
-                            batch_lines = instance.GetBatch_Line(gd.properties_line);
-                            batch_lines.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lineConnector);
+                            batchBase.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lineConnector);
                             if (innerPin.pSet.beepsThisRound)
                             {
-                                batch_lines = instance.GetBatch_Line(gd.properties_line_beep);
-                                batch_lines.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lineConnector_beep);
+                                batchBeep.UpdateLine(worldPos, gd.active_connector_position1, gd.index_lineConnector_beep);
                             }
                         }
-                        else Log.Error("UpdatePSetOrConnectorPinPosition: Trying to edit connector 1 for a particle that is contracted. This is not possible.");
+                        else Log.Error("UpdatePSetOrConnectorPinPosition: Trying to edit connector 2 for a particle that is contracted. This is not possible.");
                         break;
                     default:
                         break;
@@ -364,6 +402,20 @@ namespace AS2.Visuals
                 this.lineIndex = lineIndex;
                 this.valid = true;
             }
+        }
+
+        public RendererCircuits_Instance()
+        {
+            bondBatches = new RendererCircuits_RenderBatch[] {
+                renderBatch_bondsHexagonal_static,
+                renderBatch_bondsHexagonal_animated,
+                renderBatch_bondsCircular_static,
+                renderBatch_bondsCircular_animated
+            };
+            lineBatches.Add(renderBatch_bondsHexagonal_static);
+            lineBatches.Add(renderBatch_bondsHexagonal_animated);
+            lineBatches.Add(renderBatch_bondsCircular_static);
+            lineBatches.Add(renderBatch_bondsCircular_animated);
         }
 
         /// <summary>
@@ -444,7 +496,7 @@ namespace AS2.Visuals
                 {
                     if (isHead == pinDef.isHead)
                     {
-                        relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, circuitData.state.pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+                        relPos += AmoebotFunctions.CalculateRelativePinPosition(pinDef, circuitData.state.pinsPerSide, RenderSystem.setting_viewType);
                         virtualPinCount++;
                     }
                 }
@@ -807,7 +859,10 @@ namespace AS2.Visuals
                     ParticlePinGraphicState.PSetData pSet = state.partitionSets[i];
                     ParticlePinGraphicState.PSetData.GraphicalData gd = pSet.graphicalData;
                     // 1. Add Pin
-                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
+                    AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepsThisRound, pSet.beepOrigin, pSet.isFaulty, movementOffset,
+                        new GDRef(gd, false, true, false),
+                        new GDRef(gd, false, true, false),
+                        new GDRef(gd, false, true, false));
                     // 2. Add Lines
                     GDRef gdRef_lines = new GDRef(gd, true, true, false, 0);
                     AddLines_PartitionSetContracted(state, snap, pSet, pSet.graphicalData.active_position1, delayed, movementOffset, gdRef_lines);
@@ -819,22 +874,6 @@ namespace AS2.Visuals
                     // 1. Add Lines
                     AddLines_SingletonSetContracted(state, snap, pSet, delayed, movementOffset);
                 }
-                // Add Connection Pins
-                for (int i = 0; i < 6; i++)
-                {
-                    if (state.hasNeighbor1[i] && globalDirLineSet1[i] == false)
-                    {
-                        bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[i] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        for (int j = 0; j < state.pinsPerSide; j++)
-                        {
-                            ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(i, j, true);
-                            Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                            Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                            AddLine(posPin, posOuterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
-                        }
-                    }
-                }
-                for (int j = 0; j < 6; j++) globalDirLineSet1[j] = false;
             }
             else
             {
@@ -847,34 +886,42 @@ namespace AS2.Visuals
                     GDRef gdRef_lines1 = new GDRef(gd, true, true, false, 0);
                     GDRef gdRef_lines2 = new GDRef(gd, true, false, false, 0);
                     // 1. Add Pins + Connectors + Internal Lines
-                    if (pSet.graphicalData.hasPinsInHead) AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
-                    if (pSet.graphicalData.hasPinsInTail) AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepOrigin, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
+                    if (pSet.graphicalData.hasPinsInHead)
+                        AddPin(pSet.graphicalData.active_position1, pSet.color, delayed, pSet.beepsThisRound, pSet.beepOrigin, pSet.isFaulty, movementOffset, new GDRef(gd, false, true, false), new GDRef(gd, false, true, false), new GDRef(gd, false, true, false));
+                    if (pSet.graphicalData.hasPinsInTail)
+                        AddPin(pSet.graphicalData.active_position2, pSet.color, delayed, pSet.beepsThisRound, pSet.beepOrigin, pSet.isFaulty, movementOffset, new GDRef(gd, false, false, false), new GDRef(gd, false, false, false), new GDRef(gd, false, false, false));
                     if (pSet.HasPinsInHeadAndTail())
                     {
-                        AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset, new GDRef(gd, false, true, true));
-                        AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset, new GDRef(gd, false, false, true));
-                        AddLine(pSet.graphicalData.active_position1, pSet.graphicalData.active_connector_position1, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
-                        AddLine(pSet.graphicalData.active_position2, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines2);
+                        // All of these connector lines have the same color and batch, only one dict lookup
+                        int colorIdx = GetColorIndex(pSet.color);
+                        // These are the batches for delayed lines
+                        RendererCircuits_RenderBatch[] batchesDelayed = delayedCircuitBatches[colorIdx];
+                        RendererCircuits_RenderBatch[] batchesNonDelayed = GetNonDelayedArray(colorIdx, movementOffset);
+
+                        // Add 3 lines to the same batch (since they have the same properties)
+                        // These lines connect the two partition set handles
+                        AddLines(
+                            new Vector2[] { pSet.graphicalData.active_position1, pSet.graphicalData.active_position2, pSet.graphicalData.active_connector_position1 },
+                            new Vector2[] { pSet.graphicalData.active_connector_position1, pSet.graphicalData.active_connector_position2, pSet.graphicalData.active_connector_position2 },
+                            pSet.color, false, delayed, pSet.beepsThisRound, movementOffset,
+                            batchesDelayed, batchesNonDelayed,
+                            new GDRef[] { gdRef_lines1, gdRef_lines2, new GDRef(gd, true, true, true) },
+                            new GDRef[] { gdRef_lines1, gdRef_lines2, new GDRef(gd, true, true, true) }
+                        );
                         gdRef_lines1.lineIndex++;
                         gdRef_lines2.lineIndex++;
-                        AddLine(pSet.graphicalData.active_connector_position1, pSet.graphicalData.active_connector_position2, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, new GDRef(gd, true, true, true), new GDRef(gd, true, true, true));
-                    }
-                    // 2. Add Lines + Connector Lines
-                    AddLines_PartitionSetExpanded(state, snap, pSet, pSet.graphicalData.active_position1, pSet.graphicalData.active_position2, delayed, movementOffset, gdRef_lines1, gdRef_lines2);
 
+                        AddConnectorPin(pSet.graphicalData.active_connector_position1, pSet.color, delayed, movementOffset, new GDRef(gd, false, true, true));
+                        AddConnectorPin(pSet.graphicalData.active_connector_position2, pSet.color, delayed, movementOffset, new GDRef(gd, false, false, true));
+                    }
+                    // 2. Add Internal Lines + Connector Lines
+                    AddLines_PartitionSetExpanded(state, snap, pSet, pSet.graphicalData.active_position1, pSet.graphicalData.active_position2, delayed, movementOffset, gdRef_lines1, gdRef_lines2);
                 }
                 // Add Singleton Lines
                 for (int i = 0; i < state.singletonSets.Count; i++)
                 {
                     ParticlePinGraphicState.PSetData pSet = state.singletonSets[i];
                     AddLines_SingletonSetExpanded(state, snap, pSet, delayed, movementOffset);
-                }
-                AddLines_ExternalWithoutPartitionSet(state, snap, delayed, movementOffset);
-                // Reset Temporary Data
-                for (int j = 0; j < 6; j++)
-                {
-                    globalDirLineSet1[j] = false;
-                    globalDirLineSet2[j] = false;
                 }
             }
         }
@@ -897,20 +944,36 @@ namespace AS2.Visuals
         /// information should be stored.</param>
         private void AddLines_PartitionSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
+            // All lines of the pSet have the same color, only one dict lookup
+            int colorIdx = GetColorIndex(pSet.color);
+            // These are the batches for delayed lines
+            RendererCircuits_RenderBatch[] batchesDelayed = delayedCircuitBatches[colorIdx];
+            // These are for non-delayed lines
+            RendererCircuits_RenderBatch[] batchesNonDelayed = GetNonDelayedArray(colorIdx, movementOffset);
+
+            // Find the correct batches beforehand to avoid calculating the indices redundantly
+            // Batches for the internal lines
+            RendererCircuits_RenderBatch[] internalBatches = GetBatchGroup(delayed ? batchesDelayed : batchesNonDelayed, true, pSet.beepsThisRound, pSet.color, movementOffset, delayed);
+            // Batches for the external lines
+            RendererCircuits_RenderBatch[] externalBatchesD = GetBatchGroup(batchesDelayed, false, pSet.beepsThisRound, pSet.color, movementOffset, true);
+            RendererCircuits_RenderBatch[] externalBatchesND = GetBatchGroup(batchesNonDelayed, false, pSet.beepsThisRound, pSet.color, movementOffset, false);
+
             foreach (var pin in pSet.pins)
             {
                 // Inner Line
                 Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                 gdRef.gd.pSet1_pins.Add(pin);
-                AddLine(posPartitionSet, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef, gdRef);
+                AddCircuitLineToBatches(posPartitionSet, posPin, internalBatches[0], pSet.beepsThisRound, internalBatches[1], internalBatches[2], gdRef, gdRef);
                 gdRef.lineIndex++;
                 // Outer Line
                 if (state.hasNeighbor1[pin.globalDir])
                 {
                     Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                    AddLine(posPin, posOuterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
-                    globalDirLineSet1[pin.globalDir] = true;
+                    RendererCircuits_RenderBatch[] arr = delayedState ? externalBatchesD : externalBatchesND;
+                    AddCircuitLineToBatches(posPin, posOuterLineCenter,
+                        arr[0], pSet.beepsThisRound, arr[1], arr[2],
+                        GDRef.Empty, GDRef.Empty);
                 }
             }
         }
@@ -918,7 +981,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Adds the external circuit lines belonging to a singleton
         /// partition set of a contracted particle. Also adds a beep
-        /// highlight if the partition set is a beep origin.
+        /// highlight if the partition set is a beep origin and a fault
+        /// highlight if the partition set has a beep fault.
         /// </summary>
         /// <param name="state">The graphical circuit information belonging
         /// to the particle.</param>
@@ -930,6 +994,16 @@ namespace AS2.Visuals
         /// the particle's end position after its movement to its start position.</param>
         private void AddLines_SingletonSetContracted(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool delayed, Vector2 movementOffset)
         {
+            // All lines of the pSet have the same color, only one dict lookup
+            int colorIdx = GetColorIndex(pSet.color);
+            RendererCircuits_RenderBatch[] batchesDelayed = delayedCircuitBatches[colorIdx];
+            RendererCircuits_RenderBatch[] batchesNonDelayed = GetNonDelayedArray(colorIdx, movementOffset);
+
+            // Find the correct batches beforehand to avoid calculating the indices redundantly
+            // We only have external lines
+            RendererCircuits_RenderBatch[] batchesD = GetBatchGroup(batchesDelayed, false, pSet.beepsThisRound, pSet.color, movementOffset, true);
+            RendererCircuits_RenderBatch[] batchesND = GetBatchGroup(batchesNonDelayed, false, pSet.beepsThisRound, pSet.color, movementOffset, false);
+
             foreach (var pin in pSet.pins)
             {
                 Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
@@ -938,11 +1012,21 @@ namespace AS2.Visuals
                 {
                     Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                    AddLine(posPin, posOuterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
-                    globalDirLineSet1[pin.globalDir] = true;
+                    RendererCircuits_RenderBatch[] arr = delayedState ? batchesD : batchesND;
+                    AddCircuitLineToBatches(posPin, posOuterLineCenter,
+                        arr[0], pSet.beepsThisRound, arr[1], arr[2],
+                        GDRef.Empty, GDRef.Empty);
                 }
                 // Beep Origin
                 if (pSet.beepOrigin)
+                {
+                    AddSingletonBeepOrigin(posPin, pSet.color, delayed, movementOffset);
+                }
+                if (pSet.isFaulty)
+                {
+                    AddSingletonFault(posPin, pSet.color, delayed, movementOffset);
+                }
+                else if (pSet.beepsThisRound)
                 {
                     AddSingletonBeep(posPin, pSet.color, delayed, movementOffset);
                 }
@@ -971,6 +1055,19 @@ namespace AS2.Visuals
         /// information for the tail lines should be stored.</param>
         private void AddLines_PartitionSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, Vector2 posPartitionSet1, Vector2 posPartitionSet2, bool delayed, Vector2 movementOffset, GDRef gdRef_lines1, GDRef gdRef_lines2)
         {
+            // All lines of the pSet have the same color, only one dict lookup
+            int colorIdx = GetColorIndex(pSet.color);
+            // These are the batches for delayed lines
+            RendererCircuits_RenderBatch[] batchesDelayed = delayedCircuitBatches[colorIdx];
+            RendererCircuits_RenderBatch[] batchesNonDelayed = GetNonDelayedArray(colorIdx, movementOffset);
+
+            // Find the correct batches beforehand to avoid calculating the indices redundantly
+            // Batches for the internal lines
+            RendererCircuits_RenderBatch[] internalBatches = GetBatchGroup(delayed ? batchesDelayed : batchesNonDelayed, true, pSet.beepsThisRound, pSet.color, movementOffset, delayed);
+            // Batches for the external lines
+            RendererCircuits_RenderBatch[] externalBatchesD = GetBatchGroup(batchesDelayed, false, pSet.beepsThisRound, pSet.color, movementOffset, true);
+            RendererCircuits_RenderBatch[] externalBatchesND = GetBatchGroup(batchesNonDelayed, false, pSet.beepsThisRound, pSet.color, movementOffset, false);
+
             foreach (var pin in pSet.pins)
             {
                 // Inner Line
@@ -979,14 +1076,14 @@ namespace AS2.Visuals
                 {
                     posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
                     gdRef_lines1.gd.pSet1_pins.Add(pin);
-                    AddLine(posPartitionSet1, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines1, gdRef_lines1);
+                    AddCircuitLineToBatches(posPartitionSet1, posPin, internalBatches[0], pSet.beepsThisRound, internalBatches[1], internalBatches[2], gdRef_lines1, gdRef_lines1);
                     gdRef_lines1.lineIndex++;
                 }
                 else
                 {
                     posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
                     gdRef_lines2.gd.pSet2_pins.Add(pin);
-                    AddLine(posPartitionSet2, posPin, pSet.color, false, delayed, pSet.beepsThisRound, movementOffset, gdRef_lines2, gdRef_lines2);
+                    AddCircuitLineToBatches(posPartitionSet2, posPin, internalBatches[0], pSet.beepsThisRound, internalBatches[1], internalBatches[2], gdRef_lines2, gdRef_lines2);
                     gdRef_lines2.lineIndex++;
                 }
 
@@ -995,11 +1092,8 @@ namespace AS2.Visuals
                 {
                     Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
-                    AddLine(posPin, posOuterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
-                    if (pin.isHead)
-                        globalDirLineSet1[pin.globalDir] = true;
-                    else
-                        globalDirLineSet2[pin.globalDir] = true;
+                    RendererCircuits_RenderBatch[] arr = delayedState ? externalBatchesD : externalBatchesND;
+                    AddCircuitLineToBatches(posPin, posOuterLineCenter, arr[0], pSet.beepsThisRound, arr[1], arr[2], GDRef.Empty, GDRef.Empty);
                 }
             }
         }
@@ -1007,7 +1101,8 @@ namespace AS2.Visuals
         /// <summary>
         /// Adds the internal and external circuit lines belonging to a
         /// singleton partition set of an expanded particle. Also adds a
-        /// beep highlight if the partition set is a beep origin.
+        /// beep highlight if the partition set is a beep origin and a
+        /// fault highlight if the partition set has a beep fault.
         /// </summary>
         /// <param name="state">The graphical circuit information belonging
         /// to the particle.</param>
@@ -1019,6 +1114,16 @@ namespace AS2.Visuals
         /// the particle's end position after its movement to its start position.</param>
         private void AddLines_SingletonSetExpanded(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, ParticlePinGraphicState.PSetData pSet, bool delayed, Vector2 movementOffset)
         {
+            // All lines of the pSet have the same color, only one dict lookup
+            int colorIdx = GetColorIndex(pSet.color);
+            RendererCircuits_RenderBatch[] batchesDelayed = delayedCircuitBatches[colorIdx];
+            RendererCircuits_RenderBatch[] batchesNonDelayed = GetNonDelayedArray(colorIdx, movementOffset);
+
+            // Find the correct batches beforehand to avoid calculating the indices redundantly
+            // We only have external lines
+            RendererCircuits_RenderBatch[] batchesD = GetBatchGroup(batchesDelayed, false, pSet.beepsThisRound, pSet.color, movementOffset, true);
+            RendererCircuits_RenderBatch[] batchesND = GetBatchGroup(batchesNonDelayed, false, pSet.beepsThisRound, pSet.color, movementOffset, false);
+
             foreach (var pin in pSet.pins)
             {
                 Vector2 posPin = CalculateGlobalPinPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
@@ -1027,102 +1132,133 @@ namespace AS2.Visuals
                 {
                     Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(pin.isHead ? snap.position1 : snap.position2, pin, state.pinsPerSide);
                     bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || (pin.isHead ? state.neighborPinConnection1[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn : state.neighborPinConnection2[pin.globalDir] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn));
-                    AddLine(posPin, posOuterLineCenter, pSet.color, true, delayedState, pSet.beepsThisRound, movementOffset, GDRef.Empty, GDRef.Empty);
-                    if (pin.isHead) globalDirLineSet1[pin.globalDir] = true;
-                    else globalDirLineSet2[pin.globalDir] = true;
+                    RendererCircuits_RenderBatch[] arr = delayedState ? batchesD : batchesND;
+                    AddCircuitLineToBatches(posPin, posOuterLineCenter, arr[0], pSet.beepsThisRound, arr[1], arr[2], GDRef.Empty, GDRef.Empty);
                 }
                 // Beep Origin
                 if (pSet.beepOrigin)
+                {
+                    AddSingletonBeepOrigin(posPin, pSet.color, delayed, movementOffset);
+                }
+                if (pSet.isFaulty)
+                {
+                    AddSingletonFault(posPin, pSet.color, delayed, movementOffset);
+                }
+                else if (pSet.beepsThisRound)
                 {
                     AddSingletonBeep(posPin, pSet.color, delayed, movementOffset);
                 }
             }
         }
 
+
         /// <summary>
-        /// Adds the external circuit lines that have not been
-        /// added yet (typically the ones that do not belong
-        /// to a partition set).
+        /// Adds lines representing a circuit line between the two
+        /// given positions to the corresponding batches.
         /// </summary>
-        /// <param name="state">The graphical circuit information belonging
-        /// to the particle.</param>
-        /// <param name="snap">The position snapshot of the particle.</param>
-        /// <param name="delayed">Whether the lines should be
-        /// displayed after a delay.</param>
-        /// <param name="movementOffset">The world coordinate vector pointing from
-        /// the particle's end position after its movement to its start position.</param>
-        private void AddLines_ExternalWithoutPartitionSet(ParticlePinGraphicState state, ParticleGraphicsAdapterImpl.PositionSnap snap, bool delayed, Vector2 movementOffset)
+        /// <param name="globalLineStartPos">The start position of the line.</param>
+        /// <param name="globalLineEndPos">The end position of the line.</param>
+        /// <param name="batchBase">The render batch into which the non-beeping part of
+        /// the line should be added.</param>
+        /// <param name="beeping">Whether or not the circuit to which the line belongs
+        /// is currently beeping.</param>
+        /// <param name="batchBeepActive">The render batch to which the animated flashing
+        /// part of the line should be added if the circuit is beeping. May be <c>null</c>
+        /// if <paramref name="beeping"/> is <c>false</c>.</param>
+        /// <param name="batchBeepPaused">The render batch to which the static part with
+        /// the white center shown while the simulation is paused should be added if the
+        /// circuit is beeping. May be <c>null</c> if <paramref name="beeping"/> is
+        /// <c>false</c>.</param>
+        /// <param name="gdRef">Graphical data reference for the non-beeping part.</param>
+        /// <param name="gdRef_beep">Graphical data reference for the beeping part.</param>
+        private void AddCircuitLineToBatches(Vector2 globalLineStartPos, Vector2 globalLineEndPos,
+            RendererCircuits_RenderBatch batchBase, bool beeping, RendererCircuits_RenderBatch batchBeepActive, RendererCircuits_RenderBatch batchBeepPaused,
+            GDRef gdRef, GDRef gdRef_beep)
         {
-            for (int k = 0; k < 6; k++)
+            // Normal Circuit
+            RenderBatchIndex index = batchBase.AddLine(globalLineStartPos, globalLineEndPos);
+            if (gdRef.valid)
             {
-                if (state.hasNeighbor1[k] && globalDirLineSet1[k] == false && state.neighbor1ToNeighbor2Direction != k)
+                StoreRenderBatchIndex(gdRef, index, true, false, false);
+                gdRef.gd.properties_line = batchBase.properties;
+            }
+            // Beep
+            if (beeping)
+            {
+                // Play Mode
+                index = batchBeepActive.AddLine(globalLineStartPos, globalLineEndPos);
+                // We only need to store the index for the paused mode
+                // Pause Mode
+                index = batchBeepPaused.AddLine(globalLineStartPos, globalLineEndPos);
+                if (gdRef_beep.valid)
                 {
-                    for (int j = 0; j < state.pinsPerSide; j++)
-                    {
-                        ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, true);
-                        Vector2 posPin = CalculateGlobalPinPosition(snap.position1, pin, state.pinsPerSide);
-                        Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position1, pin, state.pinsPerSide);
-                        bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection1[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        AddLine(posPin, posOuterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
-                    }
-                }
-                if (state.hasNeighbor2[k] && globalDirLineSet2[k] == false && ((state.neighbor1ToNeighbor2Direction + 3) % 6) != k)
-                {
-                    for (int j = 0; j < state.pinsPerSide; j++)
-                    {
-                        ParticlePinGraphicState.PinDef pin = new ParticlePinGraphicState.PinDef(k, j, false);
-                        Vector2 posPin = CalculateGlobalPinPosition(snap.position2, pin, state.pinsPerSide);
-                        Vector2 posOuterLineCenter = CalculateGlobalOuterPinLineCenterPosition(snap.position2, pin, state.pinsPerSide);
-                        bool delayedState = snap.noAnimation == false && RenderSystem.animationsOn && (delayed || state.neighborPinConnection2[k] == ParticlePinGraphicState.NeighborPinConnection.ShownFadingIn);
-                        AddLine(posPin, posOuterLineCenter, Color.black, true, delayedState, false, movementOffset, GDRef.Empty, GDRef.Empty);
-                    }
+                    StoreRenderBatchIndex(gdRef_beep, index, true, true, false);
+                    gdRef_beep.gd.properties_line_beep = batchBeepPaused.properties;
                 }
             }
         }
 
-
-
         /// <summary>
-        /// Adds a line to the render system, using the corresponding render
-        /// batch or creating a new one.
+        /// Convenience version of <see cref="AddCircuitLineToBatches(Vector2, Vector2, RendererCircuits_RenderBatch, bool, RendererCircuits_RenderBatch, RendererCircuits_RenderBatch, GDRef, GDRef)"/>
+        /// for the case that several lines have the exact same properties.
         /// </summary>
-        /// <param name="globalLineStartPos">The global start position of the line.</param>
-        /// <param name="globalLineEndPos">The global end position of the line.</param>
-        /// <param name="color">The color in which the line should be rendered.</param>
-        /// <param name="isConnectorLine">Whether this line is a connection between
-        /// two neighboring particles.</param>
-        /// <param name="delayed">Whether this line should be displayed with a delay
-        /// so that it only appears after any movement animations are finished.</param>
-        /// <param name="beeping">Whether a beep should be displayed on this line.</param>
-        /// <param name="movementOffset">The world coordinate vector pointing from the
-        /// line's end position after its movement to its start position.</param>
-        /// <param name="gdRef">Graphical data belonging to the line.</param>
-        /// <param name="gdRef_beep">Graphical data belonging to the beep. Should usually
-        /// be the same as <paramref name="gdRef"/>.</param>
-        private void AddLine(Vector2 globalLineStartPos, Vector2 globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
+        /// <param name="globalLineStartPos">The start positions of the lines.</param>
+        /// <param name="globalLineEndPos">The end positions of the lines. Must have the same
+        /// length as <paramref name="globalLineStartPos"/>.</param>
+        /// <param name="color">The color of the lines.</param>
+        /// <param name="isConnectorLine">Whether the lines are connectors between particles
+        /// or internal lines.</param>
+        /// <param name="delayed">Whether the lines should be displayed with a delay or not.</param>
+        /// <param name="beeping">Whether the lines should have a beeping effect or not.</param>
+        /// <param name="movementOffset">The movement offset used to animate the line movements.
+        /// Should be <c>Vector2.zero</c> if <paramref name="delayed"/> is <c>true</c>.</param>
+        /// <param name="delayedBatches">The render batch array of size 6 containing the delayed
+        /// batches for the color <paramref name="color"/>.</param>
+        /// <param name="nonDelayedBatches">The render batch array of size 6 containing the
+        /// non-delayed batches for the color <paramref name="color"/> and the movement offset
+        /// <paramref name="movementOffset"/>.</param>
+        /// <param name="gdRef">Graphical data references for the non-beeping lines. Must have
+        /// the same length as <paramref name="globalLineStartPos"/>.</param>
+        /// <param name="gdRef_beep">Graphical data references for the beeping lines. Must have
+        /// the same length as <paramref name="globalLineStartPos"/>.</param>
+        private void AddLines(Vector2[] globalLineStartPos, Vector2[] globalLineEndPos, Color color, bool isConnectorLine, bool delayed, bool beeping, Vector2 movementOffset,
+            RendererCircuits_RenderBatch[] delayedBatches, RendererCircuits_RenderBatch[] nonDelayedBatches, GDRef[] gdRef, GDRef[] gdRef_beep)
         {
             // Normal Circuit
-            RendererCircuits_RenderBatch batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, false, false, movementOffset);
-            RenderBatchIndex index = batch.AddLine(globalLineStartPos, globalLineEndPos);
-            if(gdRef.valid)
+            int arrayIndex = GetArrayIndex(!isConnectorLine, false);
+            RendererCircuits_RenderBatch[] arr = delayed ? delayedBatches : nonDelayedBatches;
+            RendererCircuits_RenderBatch batch = GetArrayBatch(arr, arrayIndex, color, movementOffset, delayed);
+            RenderBatchIndex index;
+            for (int i = 0; i < globalLineStartPos.Length; i++)
             {
-                StoreRenderBatchIndex(gdRef, index, true, false);
-                gdRef.gd.properties_line = batch.properties;
+                index = batch.AddLine(globalLineStartPos[i], globalLineEndPos[i]);
+                if (gdRef[i].valid)
+                {
+                    StoreRenderBatchIndex(gdRef[i], index, true, false, false);
+                    gdRef[i].gd.properties_line = batch.properties;
+                }
             }
             // Beep
-            if(beeping)
+            if (beeping)
             {
+                int arrayIndexActive = GetArrayIndex(!isConnectorLine, true, true);
+                int arrayIndexPaused = GetArrayIndex(!isConnectorLine, true, false);
+
                 // Play Mode
-                batch = GetBatch_Line(Color.white, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false, movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActive);
-                index = batch.AddLine(globalLineStartPos, globalLineEndPos);
-                //StoreRenderBatchIndex(gdRef, index, true, true); // we only need to store the index for the paused mode
+                batch = GetArrayBatch(arr, arrayIndexActive, color, movementOffset, delayed);
                 // Pause Mode
-                batch = GetBatch_Line(color, isConnectorLine ? RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine : RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false, movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimPaused);
-                index = batch.AddLine(globalLineStartPos, globalLineEndPos);
-                if(gdRef_beep.valid)
+                RendererCircuits_RenderBatch batch2 = GetArrayBatch(arr, arrayIndexPaused, color, movementOffset, delayed);
+
+                for (int i = 0; i < globalLineStartPos.Length; i++)
                 {
-                    StoreRenderBatchIndex(gdRef_beep, index, true, true);
-                    gdRef_beep.gd.properties_line_beep = batch.properties;
+                    batch.AddLine(globalLineStartPos[i], globalLineEndPos[i]);
+                    // Only need to store the index for the paused mode
+                    index = batch2.AddLine(globalLineStartPos[i], globalLineEndPos[i]);
+                    if (gdRef_beep[i].valid)
+                    {
+                        StoreRenderBatchIndex(gdRef_beep[i], index, true, true, false);
+                        gdRef_beep[i].gd.properties_line_beep = batch.properties;
+                    }
                 }
             }
         }
@@ -1136,36 +1272,41 @@ namespace AS2.Visuals
         /// <param name="delayed">Whether this pin should be displayed with a delay
         /// so that it only appears after any movement animations are finished.</param>
         /// <param name="beeping">Whether a beep should be displayed on this pin.</param>
+        /// <param name="beepOrigin">Whether this pin is a beep origin.</param>
+        /// <param name="faulty">Whether a beep fault should be displayed on this pin.</param>
         /// <param name="movementOffset">The world coordinate vector pointing from the
         /// pin's end position after its movement to its start position.</param>
         /// <param name="gdRef">Graphical data belonging to the pin.</param>
-        /// <param name="gdRef_beep">Graphical data belonging to the beep. Should usually
+        /// <param name="gdRef_beep_origin">Graphical data belonging to the beep origin. Should usually
         /// be the same as <paramref name="gdRef"/>.</param>
-        private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep)
+        /// <param name="gdRef_beep_fault">Graphical data belonging to the beep or fault highlight.
+        /// Should usually be the same as <paramref name="gdRef"/>.</param>
+        private void AddPin(Vector2 pinPos, Color color, bool delayed, bool beeping, bool beepOrigin, bool faulty, Vector2 movementOffset, GDRef gdRef, GDRef gdRef_beep_origin, GDRef gdRef_beep_fault)
         {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
+            // Base pin
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, beeping, false, faulty, false, movementOffset);
             RenderBatchIndex index = batch.AddPin(pinPos, false);
             if(gdRef.valid)
             {
-                StoreRenderBatchIndex(gdRef, index, false, false);
+                StoreRenderBatchIndex(gdRef, index, false, false, false);
                 gdRef.gd.properties_pin = batch.properties;
             }
-            // Beep
-            if (beeping)
+            // Beep origin
+            if (beepOrigin)
             {
-                batch = GetBatch_Pin(color, delayed, true, movementOffset);
+                batch = GetBatch_Pin(color, delayed, false, false, true, false, false, movementOffset);
                 index = batch.AddPin(pinPos, false);
-                if(gdRef_beep.valid)
+                if (gdRef_beep_origin.valid)
                 {
-                    StoreRenderBatchIndex(gdRef_beep, index, false, true);
-                    gdRef_beep.gd.properties_pin_beep = batch.properties;
+                    StoreRenderBatchIndex(gdRef_beep_origin, index, false, true, false);
+                    gdRef_beep_origin.gd.properties_pin_beep = batch.properties;
                 }
             }
         }
 
 
         /// <summary>
-        /// Adds a beep highlight to the pin of a singleton partition set.
+        /// Adds a beep origin highlight to the pin of a singleton partition set.
         /// </summary>
         /// <param name="pinPos">The global position of the pin.</param>
         /// <param name="color">The color of the partition set (will
@@ -1174,10 +1315,42 @@ namespace AS2.Visuals
         /// because the particle is performing a movement.</param>
         /// <param name="movementOffset">The world coordinate vector pointing from
         /// the pin's end position after its movement to its start position.</param>
-        private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
+        private void AddSingletonBeepOrigin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
         {
             // Beep
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, false, true, false, false, movementOffset);
+            batch.AddPin(pinPos, true);
+        }
+
+        /// <summary>
+        /// Adds a beep highlight to the pin of a singleton partition set.
+        /// </summary>
+        /// <param name="pinPos">The global position of the pin.</param>
+        /// <param name="color">The color of the partition set (will
+        /// not be rendered; the fault highlight is always red).</param>
+        /// <param name="delayed">Whether the pin and fault should appear delayed
+        /// because the particle is performing a movement.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the pin's end position after its movement to its start position.</param>
+        private void AddSingletonBeep(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
+        {
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, true, false, false, false, movementOffset);
+            batch.AddPin(pinPos, true);
+        }
+
+        /// <summary>
+        /// Adds a fault highlight to the pin of a singleton partition set.
+        /// </summary>
+        /// <param name="pinPos">The global position of the pin.</param>
+        /// <param name="color">The color of the partition set (will
+        /// not be rendered; the fault highlight is always red).</param>
+        /// <param name="delayed">Whether the pin and fault should appear delayed
+        /// because the particle is performing a movement.</param>
+        /// <param name="movementOffset">The world coordinate vector pointing from
+        /// the pin's end position after its movement to its start position.</param>
+        private void AddSingletonFault(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset)
+        {
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, true, false, false, true, false, movementOffset);
             batch.AddPin(pinPos, true);
         }
 
@@ -1196,11 +1369,11 @@ namespace AS2.Visuals
         /// <param name="gdRef">Graphical data belonging to the partition set.</param>
         private void AddConnectorPin(Vector2 pinPos, Color color, bool delayed, Vector2 movementOffset, GDRef gdRef)
         {
-            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, movementOffset);
+            RendererCircuitPins_RenderBatch batch = GetBatch_Pin(color, delayed, false, false, false, false, true, movementOffset);
             RenderBatchIndex index = batch.AddConnectorPin(pinPos);
             if(gdRef.valid)
             {
-                StoreRenderBatchIndex(gdRef, index, false, false);
+                StoreRenderBatchIndex(gdRef, index, false, false, false);
                 gdRef.gd.properties_connectorPin = batch.properties;
             }
         }
@@ -1214,9 +1387,12 @@ namespace AS2.Visuals
         /// <param name="index">The render batch index to be stored.</param>
         /// <param name="isLine">Whether the index belongs to a
         /// circuit line.</param>
-        /// <param name="isBeep">Whether the index belongs to an
-        /// object that is currently beeping.</param>
-        private void StoreRenderBatchIndex(GDRef gdRef, RenderBatchIndex index, bool isLine, bool isBeep)
+        /// <param name="isBeepOrigin">Whether the index belongs to a
+        /// beep origin highlight or to a beeping circuit line.</param>
+        /// <param name="isBeepOrFault">Whether the index belongs to an
+        /// object with a beep or fault highlight. Should never be true when
+        /// <paramref name="isBeepOrigin"/>is also true.</param>
+        private void StoreRenderBatchIndex(GDRef gdRef, RenderBatchIndex index, bool isLine, bool isBeepOrigin, bool isBeepOrFault)
         {
             if(gdRef.valid == false)
             {
@@ -1231,7 +1407,7 @@ namespace AS2.Visuals
                     Log.Error("StoreRenderBatchIndex: isLine is set, but it is not set in GDRef");
                     return;
                 }
-                if(isBeep == false)
+                if(isBeepOrigin == false)
                 {
                     if(gdRef.isConnector)
                     {
@@ -1264,7 +1440,33 @@ namespace AS2.Visuals
                     Log.Error("StoreRenderBatchIndex: isLine is not set, but it is set in GDRef");
                     return;
                 }
-                if (isBeep == false)
+                if (isBeepOrigin)
+                {
+                    if (gdRef.isConnector)
+                    {
+                        // No beeps here
+                        //if (gdRef.isHead) gdRef.gd.index_pSetConnectorPin1 = index;
+                        //else gdRef.gd.index_pSetConnectorPin2 = index;
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSet1_beep_origin = index;
+                        else gdRef.gd.index_pSet2_beep_origin = index;
+                    }
+                }
+                else if (isBeepOrFault)
+                {
+                    if (gdRef.isConnector)
+                    {
+                        // No highlight here
+                    }
+                    else
+                    {
+                        if (gdRef.isHead) gdRef.gd.index_pSet1_beep_or_fault = index;
+                        else gdRef.gd.index_pSet2_beep_or_fault = index;
+                    }
+                }
+                else
                 {
                     if (gdRef.isConnector)
                     {
@@ -1277,25 +1479,16 @@ namespace AS2.Visuals
                         else gdRef.gd.index_pSet2 = index;
                     }
                 }
-                else
-                {
-                    if (gdRef.isConnector)
-                    {
-                        // No beeps here
-                        //if (gdRef.isHead) gdRef.gd.index_pSetConnectorPin1 = index;
-                        //else gdRef.gd.index_pSetConnectorPin2 = index;
-                    }
-                    else
-                    {
-                        if (gdRef.isHead) gdRef.gd.index_pSet1_beep = index;
-                        else gdRef.gd.index_pSet2_beep = index;
-                    }
-                }
             }
         }
 
         /// <summary>
-        /// Returns the fitting batch for rendering lines.
+        /// Returns the fitting batch for rendering circuit lines.
+        /// <para>
+        /// WARNING: Use this only for special cases where only a few batches
+        /// are required. Use the alternative indexing system for more frequent
+        /// accesses to get better performance.
+        /// </para>
         /// </summary>
         /// <param name="color">The color of the line.</param>
         /// <param name="lineType">The type of the line.</param>
@@ -1307,31 +1500,20 @@ namespace AS2.Visuals
         /// <param name="activeState">The state of the simulator for which the
         /// line should be drawn.</param>
         /// <returns>A render batch that renders all lines with the given properties.</returns>
-        private RendererCircuits_RenderBatch GetBatch_Line(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated, Vector2 movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState activeState = RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActiveOrPaused)
+        private RendererCircuits_RenderBatch GetBatch_CircuitLine(Color color, RendererCircuits_RenderBatch.PropertyBlockData.LineType lineType, bool delayed, bool beeping, bool animated, Vector2 movementOffset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState activeState = RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActiveOrPaused)
         {
-            return GetBatch_Line(new RendererCircuits_RenderBatch.PropertyBlockData(color, lineType, delayed, beeping, animated, movementOffset, activeState));
-        }
-
-        /// <summary>
-        /// Returns the fitting batch for rendering lines.
-        /// </summary>
-        /// <param name="propertyBlockData">The properties of the batch.</param>
-        /// <returns>A render batch that renders all lines with the given properties.</returns>
-        private RendererCircuits_RenderBatch GetBatch_Line(RendererCircuits_RenderBatch.PropertyBlockData propertyBlockData)
-        {
-            RendererCircuits_RenderBatch batch;
-            if (propertiesToRenderBatchMap.ContainsKey(propertyBlockData) == false)
+            int colorIdx = GetColorIndex(color);
+            int arrIdx = GetArrayIndex(lineType == RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, beeping, beeping ? activeState == RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActive : true);
+            RendererCircuits_RenderBatch[] arr;
+            if (delayed)
             {
-                // Batch does not exist
-                // Create Batch
-                batch = new RendererCircuits_RenderBatch(propertyBlockData);
-                propertiesToRenderBatchMap.Add(propertyBlockData, batch);
+                arr = delayedCircuitBatches[colorIdx];
             }
             else
             {
-                propertiesToRenderBatchMap.TryGetValue(propertyBlockData, out batch);
+                arr = GetNonDelayedArray(colorIdx, movementOffset);
             }
-            return batch;
+            return GetArrayBatch(arr, arrIdx, color, movementOffset, delayed);
         }
 
         /// <summary>
@@ -1339,13 +1521,19 @@ namespace AS2.Visuals
         /// </summary>
         /// <param name="color">The color of the pin.</param>
         /// <param name="delayed">Whether the pin should be shown delayed.</param>
+        /// <param name="singleton">Whether the pin is a singleton highlight.</param>
         /// <param name="beeping">Whether the pin should beep.</param>
+        /// <param name="beepOrigin">Whether this is just a beep origin
+        /// highlight.</param>
+        /// <param name="connector">Whether this is a circuit line connector.</param>
+        /// <param name="faulty">Whether the pin is faulty. Must not be true at
+        /// the same time as <paramref name="beeping"/>.</param>
         /// <param name="movementOffset">The offset for the joint movement. Set to
         /// <c>Vector2.zero</c> if no joint movement is present.</param>
         /// <returns>A render batch that renders all pins with the given properties.</returns>
-        private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool beeping, Vector2 movementOffset)
+        private RendererCircuitPins_RenderBatch GetBatch_Pin(Color color, bool delayed, bool singleton, bool beeping, bool beepOrigin, bool faulty, bool connector, Vector2 movementOffset)
         {
-            return GetBatch_Pin(new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, beeping, movementOffset));
+            return GetBatch_Pin(new RendererCircuitPins_RenderBatch.PropertyBlockData(color, delayed, singleton, beeping, beepOrigin, faulty, connector, movementOffset));
         }
 
         /// <summary>
@@ -1356,16 +1544,12 @@ namespace AS2.Visuals
         private RendererCircuitPins_RenderBatch GetBatch_Pin(RendererCircuitPins_RenderBatch.PropertyBlockData propertyBlockData)
         {
             RendererCircuitPins_RenderBatch batch;
-            if (propertiesToPinRenderBatchMap.ContainsKey(propertyBlockData) == false)
+            if (propertiesToPinRenderBatchMap.TryGetValue(propertyBlockData, out batch) == false)
             {
                 // Batch does not exist
                 // Create Batch
                 batch = new RendererCircuitPins_RenderBatch(propertyBlockData);
                 propertiesToPinRenderBatchMap.Add(propertyBlockData, batch);
-            }
-            else
-            {
-                propertiesToPinRenderBatchMap.TryGetValue(propertyBlockData, out batch);
             }
             return batch;
         }
@@ -1387,13 +1571,181 @@ namespace AS2.Visuals
             Vector2 curBondPosWorld1 = AmoebotFunctions.GridToWorldPositionVector2(bondState.curBondPos1);
             Vector2 curBondPosWorld2 = AmoebotFunctions.GridToWorldPositionVector2(bondState.curBondPos2);
             // Hexagonal
-            RendererCircuits_RenderBatch batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondHexagonal, false, false, bondState.IsAnimated(), Vector2.zero);
+            RendererCircuits_RenderBatch batch = bondState.IsAnimated() ? renderBatch_bondsHexagonal_animated : renderBatch_bondsHexagonal_static;
             if (bondState.IsAnimated()) batch.AddManuallyUpdatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
             else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
             // Circular
-            batch = GetBatch_Line(Color.black, RendererCircuits_RenderBatch.PropertyBlockData.LineType.BondCircular, false, false, bondState.IsAnimated(), Vector2.zero);
+            batch = bondState.IsAnimated() ? renderBatch_bondsCircular_animated : renderBatch_bondsCircular_static;
             if (bondState.IsAnimated()) batch.AddManuallyUpdatedLine(prevBondPosWorld1, prevBondPosWorld2, curBondPosWorld1, curBondPosWorld2);
             else batch.AddLine(curBondPosWorld1, curBondPosWorld2);
+        }
+
+        /// <summary>
+        /// Finds the render batch list index for the given color.
+        /// If there is no entry for this color yet, a new entry is created.
+        /// <para>
+        /// Use <see cref="GetArrayBatch(RendererCircuits_RenderBatch[], int, Color, Vector2, bool)"/>
+        /// to get an actual render batch from an array obtained using this index..
+        /// </para>
+        /// </summary>
+        /// <param name="c">The color whose batch list index should be found.</param>
+        /// <returns>The list index of the batch array or dictionary belonging
+        /// to color <paramref name="c"/>.</returns>
+        private int GetColorIndex(Color c)
+        {
+            int idx;
+            if (!colorIndices.TryGetValue(c, out idx))
+            {
+                // Don't know this color yet, add entry
+                idx = colorIndices.Count;
+                colorIndices[c] = idx;
+                // Also extend data structures storing the batch references
+                delayedCircuitBatches.Add(new RendererCircuits_RenderBatch[6]);
+                nonDelyedCircuitBatches.Add(new Dictionary<Vector2, RendererCircuits_RenderBatch[]>());
+            }
+            return idx;
+        }
+
+        /// <summary>
+        /// Calculates the array index of a render batch for circuit lines
+        /// based on the line's type, beeping and activeState flags.
+        /// </summary>
+        /// <param name="isInternal">Whether the circuit line is internal
+        /// (as opposed to being an external line between particles).</param>
+        /// <param name="beeping">Whether the line belongs to a circuit that
+        /// is currently beeping.</param>
+        /// <param name="active">If <paramref name="beeping"/> is <c>true</c>,
+        /// this differentiates between the animated flashing part of the line
+        /// (<c>true</c>) and the static part with the white center that is
+        /// shown while the simulation is paused (<c>false</c>).</param>
+        /// <returns>The index of the desired batch in its array of size 6.</returns>
+        private int GetArrayIndex(bool isInternal, bool beeping, bool active = true)
+        {
+            if (isInternal)
+            {
+                if (beeping)
+                    return active ? internal_beeping_active : internal_beeping_paused;
+                else
+                    return internal_notBeeping;
+            }
+            else
+            {
+                if (beeping)
+                    return active ? external_beeping_active : external_beeping_paused;
+                else
+                    return external_notBeeping;
+            }
+        }
+
+        /// <summary>
+        /// Finds the render batch array in the list of batches for non-delayed
+        /// lines at the given index and for the given animation offset. If no
+        /// entry for the given entry exists yet, a new array is added to the
+        /// dictionary.
+        /// </summary>
+        /// <param name="colorIdx">The list index obtained from
+        /// <see cref="GetColorIndex(Color)"/>.</param>
+        /// <param name="offset">The animation offset vector of the
+        /// desired render batch.</param>
+        /// <returns>The array of size 6 that stores the render batches for
+        /// lines with the specified color and animation offset and which
+        /// are not delayed.
+        /// <para>
+        /// Use <see cref="GetArrayBatch(RendererCircuits_RenderBatch[], int, Color, Vector2, bool)"/>
+        /// to get an actual render batch from the array.
+        /// </para></returns>
+        private RendererCircuits_RenderBatch[] GetNonDelayedArray(int colorIdx, Vector2 offset)
+        {
+            Dictionary<Vector2, RendererCircuits_RenderBatch[]> dict = nonDelyedCircuitBatches[colorIdx];
+            RendererCircuits_RenderBatch[] arr;
+            if (dict.TryGetValue(offset, out arr))
+                return arr;
+            arr = new RendererCircuits_RenderBatch[6];
+            dict[offset] = arr;
+            return arr;
+        }
+
+        /// <summary>
+        /// Gets a render batch from the given array, at the given
+        /// index and for the given parameters. If the array entry at
+        /// index <paramref name="idx"/> is <c>null</c>, a new render
+        /// batch is created using the given parameters and added to
+        /// the list of circuit line batches.
+        /// </summary>
+        /// <param name="arr">The array of size 6 from which to get the render batch.</param>
+        /// <param name="idx">The array index obtained from <see cref="GetArrayIndex(bool, bool, bool)"/>.</param>
+        /// <param name="c">The color of the desired render batch (must be the one used
+        /// to obtain the list index of the array or the dictionary).</param>
+        /// <param name="offset">The animation offset of the desired render batch.
+        /// Set to <c>Vector2.zero</c> if the batch is delayed anyway, otherwise it must be
+        /// the offset that was given to <see cref="GetNonDelayedArray(int, Vector2)"/>
+        /// to obtain the array <paramref name="arr"/>.</param>
+        /// <param name="delayed">Whether the given array belongs to the delayed list or
+        /// the non-delayed list of dictionaries.</param>
+        /// <returns>The desired render batch from the given array.</returns>
+        private RendererCircuits_RenderBatch GetArrayBatch(RendererCircuits_RenderBatch[] arr, int idx, Color c, Vector2 offset, bool delayed = true)
+        {
+            RendererCircuits_RenderBatch batch = arr[idx];
+            if (batch != null)
+                return batch;
+            switch (idx)
+            {
+                case internal_notBeeping:
+                    batch = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(c, RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, false, false, offset));
+                    break;
+                case internal_beeping_active:
+                    batch = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(c, RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false, offset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActive));
+                    break;
+                case internal_beeping_paused:
+                    batch = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(c, RendererCircuits_RenderBatch.PropertyBlockData.LineType.InternalLine, delayed, true, false, offset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimPaused));
+                    break;
+                case external_notBeeping:
+                    batch = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(c, RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine, delayed, false, false, offset));
+                    break;
+                case external_beeping_active:
+                    batch = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(c, RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine, delayed, true, false, offset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimActive));
+                    break;
+                case external_beeping_paused:
+                    batch = new RendererCircuits_RenderBatch(new RendererCircuits_RenderBatch.PropertyBlockData(c, RendererCircuits_RenderBatch.PropertyBlockData.LineType.ExternalLine, delayed, true, false, offset, RendererCircuits_RenderBatch.PropertyBlockData.ActiveState.SimPaused));
+                    break;
+            }
+            arr[idx] = batch;
+            lineBatches.Add(batch);
+            return batch;
+        }
+
+        /// <summary>
+        /// Convenience method getting the non-beeping and the two
+        /// beeping render batches from the given array. This is useful
+        /// because for beeping circuits, each connection is made up of
+        /// 3 lines that have to be added to different batches.
+        /// </summary>
+        /// <param name="arr">The array of size 6 from which to get
+        /// the desired batches.</param>
+        /// <param name="isInternal">Whether the internal or the external
+        /// batches should be returned.</param>
+        /// <param name="beeping">Whether or not the circuit to which the
+        /// lines belong is currently beeping.</param>
+        /// <param name="c">The color of the lines.</param>
+        /// <param name="movementOffset">The movement offset of the lines.</param>
+        /// <param name="delayed">Whether the given array <paramref name="arr"/>
+        /// belongs to the delayed or the non-delayed batch list.</param>
+        /// <returns>A render batch array containing the non-beeping batch
+        /// at index <c>0</c> and the beeping active and beeping paused batches
+        /// at positions <c>1</c> and <c>2</c> respectively. If
+        /// <paramref name="beeping"/> is <c>false</c>, the latter two entries
+        /// are both <c>null</c>.</returns>
+        private RendererCircuits_RenderBatch[] GetBatchGroup(RendererCircuits_RenderBatch[] arr, bool isInternal, bool beeping, Color c, Vector2 movementOffset, bool delayed)
+        {
+            RendererCircuits_RenderBatch[] batches = new RendererCircuits_RenderBatch[3];
+            batches[0] = GetArrayBatch(arr, isInternal ? internal_notBeeping : external_notBeeping, c, movementOffset, delayed);
+            if (beeping)
+            {
+                batches[1] = GetArrayBatch(arr, isInternal ? internal_beeping_active : external_beeping_active, c, movementOffset, delayed);
+                batches[2] = GetArrayBatch(arr, isInternal ? internal_beeping_paused : external_beeping_paused, c, movementOffset, delayed);
+            }
+
+            return batches;
         }
 
 
@@ -1403,7 +1755,11 @@ namespace AS2.Visuals
         /// </summary>
         public void ReinitBatches()
         {
-            foreach (var batch in propertiesToRenderBatchMap.Values)
+            foreach (var batch in bondBatches)
+            {
+                batch.Init();
+            }
+            foreach (var batch in lineBatches)
             {
                 batch.Init();
             }
@@ -1422,7 +1778,17 @@ namespace AS2.Visuals
         public void Render(ViewType type)
         {
             bool firstRenderFrame = isRenderingActive == false;
-            foreach (var batch in propertiesToRenderBatchMap.Values)
+            if (type == ViewType.Hexagonal || type == ViewType.HexagonalCirc)
+            {
+                renderBatch_bondsHexagonal_static.Render(type, firstRenderFrame);
+                renderBatch_bondsHexagonal_animated.Render(type, firstRenderFrame);
+            }
+            else
+            {
+                renderBatch_bondsCircular_static.Render(type, firstRenderFrame);
+                renderBatch_bondsCircular_animated.Render(type, firstRenderFrame);
+            }
+            foreach (var batch in lineBatches)
             {
                 batch.Render(type, firstRenderFrame);
             }
@@ -1440,7 +1806,11 @@ namespace AS2.Visuals
         /// <param name="keepBondData">Whether bond data should be kept in the system.</param>
         public void Clear(bool keepCircuitData = false, bool keepBondData = false)
         {
-            foreach (var batch in propertiesToRenderBatchMap.Values)
+            foreach (var batch in bondBatches)
+            {
+                batch.ClearMatrices();
+            }
+            foreach (var batch in lineBatches)
             {
                 batch.ClearMatrices();
             }
@@ -1487,7 +1857,7 @@ namespace AS2.Visuals
         private Vector2 CalculateGlobalPinPosition(Vector2Int gridPosParticle, ParticlePinGraphicState.PinDef pinDef, int pinsPerSide)
         {
             Vector2 posParticle = AmoebotFunctions.GridToWorldPositionVector2(gridPosParticle);
-            Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.global_particleScale, RenderSystem.setting_viewType);
+            Vector2 relPinPos = AmoebotFunctions.CalculateRelativePinPosition(pinDef, pinsPerSide, RenderSystem.setting_viewType);
             return posParticle + relPinPos;
         }
 

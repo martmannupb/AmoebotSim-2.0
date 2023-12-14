@@ -94,6 +94,61 @@ namespace AS2.Algos.LineFormation
         // Flag to make LEADER send a beep every 2 rounds and recognize when the line is complete
         private ParticleAttribute<bool> beepInLastRound;
 
+        [StatusInfo("Draw Spanning Tree", "Draws the entire spanning tree, i.e., the parent edges for all FLWR particles.", true)]
+        public static void DrawSpanningTree(AS2.Sim.ParticleSystem system, Particle selected)
+        {
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
+            ld.Clear();
+
+            // Draw parent edge for each follower particle
+            foreach (Particle p in system.particles)
+            {
+                LineFormationParticleSync lfp = (LineFormationParticleSync)p.algorithm;
+                if (lfp.state == LFState.FLWR)
+                {
+                    Vector2Int pos = p.Head();
+                    Vector2 parent = pos + (Vector2)ParticleSystem_Utils.DirectionToVector(lfp.followDir) * 0.8f;
+                    ld.AddLine(pos, parent, Color.blue, true, 1.5f, 1.5f);
+                }
+            }
+
+            ld.SetTimer(20f);
+        }
+
+        [StatusInfo("Draw FLWR Path", "Draws the follower path from the currently selected FLWR particle to its ROOT parent.")]
+        public static void DrawPath(AS2.Sim.ParticleSystem system, Particle selected)
+        {
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
+            ld.Clear();
+
+            if (selected is null)
+                return;
+
+            Particle p = selected;
+            LineFormationParticleSync lfp = (LineFormationParticleSync)selected.algorithm;
+            while (p is not null && lfp.state == LFState.FLWR)
+            {
+                // Get follow vector
+                Vector2Int followVec = ParticleSystem_Utils.DirectionToVector(lfp.followDir);
+                // Draw line to parent
+                Vector2Int pos = p.Head();
+                Vector2 parent = pos + (Vector2)followVec * 0.8f;
+                ld.AddLine(pos, parent, Color.blue, true, 1.5f, 1.5f);
+
+                // Get parent
+                Vector2Int parentPos = pos + followVec;
+                if (system.TryGetParticleAt(parentPos, out Visuals.IParticleState q))
+                {
+                    p = (Particle)q;
+                    lfp = (LineFormationParticleSync)p.algorithm;
+                }
+                else
+                    p = null;
+            }
+
+            ld.SetTimer(20f);
+        }
+
         public LineFormationParticleSync(Particle p) : base(p)
         {
             constructionDir = CreateAttributeDirection("constructionDir", Direction.NONE);

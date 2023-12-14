@@ -74,14 +74,20 @@ namespace AS2
             /// the algorithm does not specify a method.
             /// </summary>
             public string generationMethod;
+            /// <summary>
+            /// The attributes and method references of the
+            /// status info methods defined by the algorithm.
+            /// </summary>
+            public Tuple<StatusInfoAttribute, MethodInfo>[] statusInfoMethods;
 
-            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo initMethod, string generationMethod)
+            public AlgorithmInfo(string name, Type type, ConstructorInfo ctor, MethodInfo initMethod, string generationMethod, Tuple<StatusInfoAttribute, MethodInfo>[] statusInfoMethods)
             {
                 this.name = name;
                 this.type = type;
                 this.ctor = ctor;
                 this.initMethod = initMethod;
                 this.generationMethod = generationMethod;
+                this.statusInfoMethods = statusInfoMethods;
             }
         }
 
@@ -141,9 +147,32 @@ namespace AS2
 
                 // Get the Init method
                 MethodInfo initMethod = algoType.GetMethod(Init_Method);
-                
+
+                // Get the status info methods
+                List<Tuple<StatusInfoAttribute, MethodInfo>> statusInfoMethods = new List<Tuple<StatusInfoAttribute, MethodInfo>>();
+                foreach (MethodInfo mi in algoType.GetMethods())
+                {
+                    // Must be static
+                    if (!mi.IsStatic)
+                        continue;
+
+                    // Must have a StatusInfo attribute
+                    StatusInfoAttribute attr = mi.GetCustomAttribute<StatusInfoAttribute>();
+                    if (attr is null)
+                        continue;
+
+                    // Must have a ParticleSystem and a Particle parameter
+                    ParameterInfo[] parameters = mi.GetParameters();
+                    if (parameters.Length != 2 ||
+                        !parameters[0].ParameterType.Equals(typeof(AS2.Sim.ParticleSystem)) ||
+                        !parameters[1].ParameterType.Equals(typeof(Particle)))
+                        continue;
+
+                    statusInfoMethods.Add(new Tuple<StatusInfoAttribute, MethodInfo>(attr, mi));
+                }
+
                 // Add record for the new algorithm
-                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, initMethod, generator);
+                algorithms[name] = new AlgorithmInfo(name, algoType, ctor, initMethod, generator, statusInfoMethods.ToArray());
             }
         }
 
@@ -267,6 +296,58 @@ namespace AS2
         {
             AlgorithmInfo info = FindAlgorithm(name);
             return info != null;
+        }
+
+        /// <summary>
+        /// Gets the status info attributes defined for the given algorithm.
+        /// </summary>
+        /// <param name="name">The string ID of the algorithm.</param>
+        /// <returns>An array of status info attribute instances defined
+        /// for the given algorithm. The attributes contain a name, a tooltip
+        /// and a default auto-call value. Call these info methods using
+        /// <see cref="CallStatusInfoMethod(string, int, Sim.ParticleSystem, Particle)"/>
+        /// with the index from this array.</returns>
+        public StatusInfoAttribute[] GetStatusInfoMethods(string name)
+        {
+            AlgorithmInfo info = FindAlgorithm(name);
+            if (info == null)
+            {
+                throw new System.ArgumentException("Could not find algorithm");
+            }
+
+            StatusInfoAttribute[] attrs = new StatusInfoAttribute[info.statusInfoMethods.Length];
+            for (int i = 0; i < info.statusInfoMethods.Length; i++)
+                attrs[i] = info.statusInfoMethods[i].Item1;
+
+            return attrs;
+        }
+
+        /// <summary>
+        /// Call the status info method of the algorithm with the given name.
+        /// The index <paramref name="idx"/> must be the attribute's array
+        /// index as returned by <see cref="GetStatusInfoMethods(string)"/>.
+        /// </summary>
+        /// <param name="name">The string ID of the algorithm.</param>
+        /// <param name="idx">The array index of the status info method to call.</param>
+        /// <param name="system">The first parameter of the status info method.</param>
+        /// <param name="selectedParticle">The second parameter of the status info method.</param>
+        public void CallStatusInfoMethod(string name, int idx, AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            AlgorithmInfo info = FindAlgorithm(name);
+            if (info == null)
+            {
+                throw new System.ArgumentException("Could not find algorithm");
+            }
+            if (idx < 0 || idx >= info.statusInfoMethods.Length)
+                throw new System.ArgumentException("Index " + idx + " is invalid status info method index.");
+            try
+            {
+                info.statusInfoMethods[idx].Item2.Invoke(null, new object[] { system, selectedParticle });
+            }
+            catch (Exception e)
+            {
+                Log.Error("Caught exception while executing status info method: " + e);
+            }
         }
     }
 

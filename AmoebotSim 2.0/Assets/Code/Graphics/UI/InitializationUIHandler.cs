@@ -445,6 +445,15 @@ namespace AS2.UI
             Close(true);
         }
 
+        /// <summary>
+        /// Returns the name of the currently selected algorithm.
+        /// </summary>
+        /// <returns>The current value of the algorithm selection dropdown.</returns>
+        public string GetSelectedAlgorithmName()
+        {
+            return alg_setting_algo?.GetValueString();
+        }
+
     }
 
 }

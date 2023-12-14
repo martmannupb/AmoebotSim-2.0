@@ -225,6 +225,17 @@ namespace AS2.Sim
         /// </summary>
         private bool hasPlannedMessages = false;
 
+        /// <summary>
+        /// Flags indicating which partition sets of the planned pin
+        /// configuration have suffered a failure. Indices equal
+        /// (local) partition set IDs.
+        /// </summary>
+        private BitArray psetFailures;
+        /// <summary>
+        /// The histories of partition set failures for all partition sets.
+        /// </summary>
+        private ValueHistory<bool>[] psetFailureHistory;
+
         // Neighbor cache
         // Indices are global labels.
         // The two caches are swapped each round such that we always have
@@ -509,16 +520,19 @@ namespace AS2.Sim
             receivedMessages = new Message[maxNumPins];
             plannedBeeps = new BitArray(maxNumPins);
             plannedMessages = new Message[maxNumPins];
+            psetFailures = new BitArray(maxNumPins);
             receivedBeepsHistory = new ValueHistory<bool>[maxNumPins];
             receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
             plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
             plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
+            psetFailureHistory = new ValueHistory<bool>[maxNumPins];
             for (int i = 0; i < maxNumPins; i++)
             {
                 receivedBeepsHistory[i] = new ValueHistory<bool>(false, currentRound);
                 receivedMessagesHistory[i] = new ValueHistoryMessage(null, currentRound);
                 plannedBeepsHistory[i] = new ValueHistory<bool>(false, currentRound);
                 plannedMessageHistory[i] = new ValueHistoryMessage(null, currentRound);
+                psetFailureHistory[i] = new ValueHistory<bool>(false, currentRound);
             }
         }
 
@@ -1361,6 +1375,31 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Stores a partition set failure for the given partition set.
+        /// This is done by the system so that failures can be stored in
+        /// the history, allowing failures to be visualized while
+        /// scrolling through the history and after loading a
+        /// simulation state.
+        /// </summary>
+        /// <param name="idx">The ID of the partition set on which
+        /// the failure occurred.</param>
+        public void LogPsetFailure(int idx)
+        {
+            psetFailures[idx] = true;
+        }
+
+        /// <summary>
+        /// Checks if the specified partition set has suffered a failure.
+        /// </summary>
+        /// <param name="idx">ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the partition set with
+        /// ID <paramref name="idx"/> has suffered a failure.</returns>
+        public bool HasPsetFailure(int idx)
+        {
+            return psetFailures[idx];
+        }
+
+        /// <summary>
         /// Deletes all planned beeps and messages to prepare
         /// for planning new ones in the next round.
         /// </summary>
@@ -1376,6 +1415,7 @@ namespace AS2.Sim
                 }
                 hasPlannedMessages = false;
             }
+            psetFailures = new BitArray(algorithm.PinsPerEdge * 10);
         }
 
         /// <summary>
@@ -1404,6 +1444,7 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].RecordValueInRound(receivedMessages[i], system.CurrentRound);
                 plannedBeepsHistory[i].RecordValueInRound(plannedBeeps[i], system.CurrentRound);
                 plannedMessageHistory[i].RecordValueInRound(plannedMessages[i], system.CurrentRound);
+                psetFailureHistory[i].RecordValueInRound(psetFailures[i], system.CurrentRound);
             }
         }
 
@@ -1509,6 +1550,11 @@ namespace AS2.Sim
             return system.SetAnchor(this);
         }
 
+        public string AlgorithmName()
+        {
+            return algorithm?.GetAlgorithmName();
+        }
+
 
         /*
          * Methods implementing the IReplayHistory interface.
@@ -1562,6 +1608,7 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].SetMarkerToRound(round);
                 plannedBeepsHistory[i].SetMarkerToRound(round);
                 plannedMessageHistory[i].SetMarkerToRound(round);
+                psetFailureHistory[i].SetMarkerToRound(round);
             }
 
             // Reset visuals
@@ -1601,6 +1648,7 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].StepBack();
                 plannedBeepsHistory[i].StepBack();
                 plannedMessageHistory[i].StepBack();
+                psetFailureHistory[i].StepBack();
             }
 
             mainColorHistory.StepBack();
@@ -1633,6 +1681,7 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].StepForward();
                 plannedBeepsHistory[i].StepForward();
                 plannedMessageHistory[i].StepForward();
+                psetFailureHistory[i].StepForward();
             }
 
             mainColorHistory.StepForward();
@@ -1680,6 +1729,7 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].ContinueTracking();
                 plannedBeepsHistory[i].ContinueTracking();
                 plannedMessageHistory[i].ContinueTracking();
+                psetFailureHistory[i].ContinueTracking();
             }
 
             mainColorHistory.ContinueTracking();
@@ -1720,6 +1770,7 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].CutOffAtMarker();
                 plannedBeepsHistory[i].CutOffAtMarker();
                 plannedMessageHistory[i].CutOffAtMarker();
+                psetFailureHistory[i].CutOffAtMarker();
             }
 
             mainColorHistory.CutOffAtMarker();
@@ -1753,6 +1804,7 @@ namespace AS2.Sim
                 receivedMessagesHistory[i].ShiftTimescale(amount);
                 plannedBeepsHistory[i].ShiftTimescale(amount);
                 plannedMessageHistory[i].ShiftTimescale(amount);
+                psetFailureHistory[i].ShiftTimescale(amount);
             }
 
             mainColorHistory.ShiftTimescale(amount);
@@ -1799,6 +1851,7 @@ namespace AS2.Sim
                 receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
                 plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
                 plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
+                psetFailures[i] = psetFailureHistory[i].GetMarkedValue();
                 if (plannedMessages[i] != null)
                     hasPlannedMessages = true;
             }
@@ -1889,12 +1942,14 @@ namespace AS2.Sim
             data.receivedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[receivedMessagesHistory.Length];
             data.plannedBeepsHistory = new ValueHistorySaveData<bool>[plannedBeepsHistory.Length];
             data.plannedMessagesHistory = new ValueHistorySaveData<MessageSaveData>[plannedMessageHistory.Length];
+            data.psetFailureHistory = new ValueHistorySaveData<bool>[psetFailureHistory.Length];
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
             {
                 data.receivedBeepsHistory[i] = receivedBeepsHistory[i].GenerateSaveData();
                 data.receivedMessagesHistory[i] = receivedMessagesHistory[i].GenerateMessageSaveData();
                 data.plannedBeepsHistory[i] = plannedBeepsHistory[i].GenerateSaveData();
                 data.plannedMessagesHistory[i] = plannedMessageHistory[i].GenerateMessageSaveData();
+                data.psetFailureHistory[i] = psetFailureHistory[i].GenerateSaveData();
             }
 
             data.mainColorHistory = mainColorHistory.GenerateSaveData();
@@ -2007,11 +2062,13 @@ namespace AS2.Sim
             receivedMessages = new Message[maxNumPins];
             plannedBeeps = new BitArray(maxNumPins);
             plannedMessages = new Message[maxNumPins];
+            psetFailures = new BitArray(maxNumPins);
 
             receivedBeepsHistory = new ValueHistory<bool>[maxNumPins];
             receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];
             plannedBeepsHistory = new ValueHistory<bool>[maxNumPins];
             plannedMessageHistory = new ValueHistoryMessage[maxNumPins];
+            psetFailureHistory = new ValueHistory<bool>[maxNumPins];
 
             for (int i = 0; i < maxNumPins; i++)
             {
@@ -2019,11 +2076,13 @@ namespace AS2.Sim
                 receivedMessagesHistory[i] = new ValueHistoryMessage(data.receivedMessagesHistory[i]);
                 plannedBeepsHistory[i] = new ValueHistory<bool>(data.plannedBeepsHistory[i]);
                 plannedMessageHistory[i] = new ValueHistoryMessage(data.plannedMessagesHistory[i]);
+                psetFailureHistory[i] = new ValueHistory<bool>(data.psetFailureHistory[i]);
 
                 receivedBeeps[i] = receivedBeepsHistory[i].GetMarkedValue();
                 receivedMessages[i] = receivedMessagesHistory[i].GetMarkedValue();
                 plannedBeeps[i] = plannedBeepsHistory[i].GetMarkedValue();
                 plannedMessages[i] = plannedMessageHistory[i].GetMarkedValue();
+                psetFailures[i] = psetFailureHistory[i].GetMarkedValue();
             }
 
             // Finally, update the attributes
