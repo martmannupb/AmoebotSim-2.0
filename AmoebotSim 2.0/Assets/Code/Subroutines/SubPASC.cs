@@ -369,6 +369,83 @@ namespace AS2.Subroutines.PASC
         {
             return lastBitIs1.GetCurrentValue() ? 1 : 0;
         }
+
+        // Public generic helpers
+
+        public static void SetupPascConfig(PinConfiguration pc, Direction predDir, Direction succDir,
+            int predPinPrimary, int predPinSecondary, int succPinPrimary, int succPinSecondary,
+            int pSetPrimary, int pSetSecondary, bool active, bool placePsets = true)
+        {
+            List<int> primaryPins = new List<int>();
+            List<int> secondaryPins = new List<int>();
+            if (predDir != Direction.NONE)
+            {
+                if (predPinPrimary != -1)
+                {
+                    int pin = pc.GetPinAt(predDir, predPinPrimary).Id;
+                    if (active)
+                        secondaryPins.Add(pin);
+                    else
+                        primaryPins.Add(pin);
+                }
+                if (predPinSecondary != -1)
+                {
+                    int pin = pc.GetPinAt(predDir, predPinSecondary).Id;
+                    if (active)
+                        primaryPins.Add(pin);
+                    else
+                        secondaryPins.Add(pin);
+                }
+            }
+            if (succDir != Direction.NONE)
+            {
+                if (succPinPrimary != -1)
+                {
+                    primaryPins.Add(pc.GetPinAt(succDir, succPinPrimary).Id);
+                }
+                if (succPinSecondary != -1)
+                {
+                    secondaryPins.Add(pc.GetPinAt(succDir, succPinSecondary).Id);
+                }
+            }
+
+            pc.MakePartitionSet(primaryPins.ToArray(), pSetPrimary);
+            pc.MakePartitionSet(secondaryPins.ToArray(), pSetSecondary);
+
+            if (placePsets)
+            {
+                float angle1, angle2;
+                float dist1, dist2;
+                if (predDir != Direction.NONE && succDir != Direction.NONE && predDir != succDir)
+                {
+                    angle1 = (predDir.ToInt() + predDir.DistanceTo(succDir) / 4f) * 60f;
+                    angle2 = angle1;
+                    dist1 = 0.7f;
+                    dist2 = 0.35f;
+                }
+                else
+                {
+                    Direction d = predDir != Direction.NONE ? predDir : succDir;
+                    float a = d.ToInt() * 60f;
+                    if (active)
+                    {
+                        angle1 = a + 17.5f;
+                        angle2 = a - 17.5f;
+                        dist1 = 0.65f;
+                        dist2 = 0.65f;
+                    }
+                    else
+                    {
+                        angle1 = a;
+                        angle2 = a;
+                        dist1 = 0.25f;
+                        dist2 = 0.65f;
+                    }
+                }
+                pc.SetPartitionSetPosition(pSetPrimary, new Vector2(angle1, dist1));
+                pc.SetPartitionSetPosition(pSetSecondary, new Vector2(angle2, dist2));
+            }
+        }
     }
 
 } // namespace AS2.Subroutines.PASC

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using AS2.Sim;
+using AS2.Subroutines.ETT;
 using UnityEngine;
 using static AS2.Constants;
 
@@ -32,6 +33,7 @@ namespace AS2.Algos.SingleSourceSP
     //  - Let the destination amoebots beep to identify the destination portals
     // Round 2:
     //  - Identify the destination portals and their representatives
+    // Round 3:
     //  - Setup ETT circuit:
     //      - Find the incoming and outgoing edges
     //      - Root representative chooses a place to split the cycle
@@ -47,6 +49,13 @@ namespace AS2.Algos.SingleSourceSP
         // If the algorithm has a special generation method, specify its full name here
         public static new string GenerationMethod => typeof(SingleSourceSPInitializer).FullName;
 
+        // Colors
+        static readonly Color sourceColor = ColorData.Particle_Red;
+        static readonly Color destColor = ColorData.Particle_BlueDark;
+        static readonly Color sourcePortalColor = ColorData.Particle_Orange;
+        static readonly Color destPortalColor = ColorData.Particle_Blue;
+        static readonly Color mixedPortalColor = ColorData.Particle_Purple;
+
         // Declare attributes here
         ParticleAttribute<bool> isFinished;     // Finished flag
         ParticleAttribute<int> round;           // Round counter
@@ -55,10 +64,15 @@ namespace AS2.Algos.SingleSourceSP
         ParticleAttribute<bool> isDest;     // Destination flag
 
         ParticleAttribute<Direction> portalAxisDir;     // The current portal axis (should be E, NNE or NNW)
+        ParticleAttribute<bool> onRootPortal;           // Flag for root/source portal (only visual)
+        ParticleAttribute<bool> onDestPortal;           // Flag for destination portal (only visual)
         ParticleAttribute<bool> isRootRepr;             // Representative flag for root/source portal
         ParticleAttribute<bool> isDestRepr;             // Representative flag for destination portal
         ParticleAttribute<Direction> nbrPortalDir1;     // Direction of the first neighbor portal edge (portalDir + 60 or portalDir + 120 or NONE)
         ParticleAttribute<Direction> nbrPortalDir2;     // Direction of the second neighbor portal edge (portalDir - 60 or portalDir - 120 or NONE)
+
+        // ETT subroutine
+        SubETT ett;
 
         public SingleSourceSPParticle(Particle p) : base(p)
         {
@@ -70,10 +84,14 @@ namespace AS2.Algos.SingleSourceSP
             isDest = CreateAttributeBool("Is Destination", false);
 
             portalAxisDir = CreateAttributeDirection("Portal Axis Dir", Direction.E);
+            onRootPortal = CreateAttributeBool("Root Portal", false);
+            onDestPortal = CreateAttributeBool("Dest Portal", false);
             isRootRepr = CreateAttributeBool("Root Representative", false);
             isDestRepr = CreateAttributeBool("Destination Representative", false);
             nbrPortalDir1 = CreateAttributeDirection("Nbr Portal Dir 1", Direction.NONE);
             nbrPortalDir2 = CreateAttributeDirection("Nbr Portal Dir 2", Direction.NONE);
+
+            ett = new SubETT(p);
 
             // Also, set the default initial color
             SetMainColor(Color.gray);
@@ -88,9 +106,9 @@ namespace AS2.Algos.SingleSourceSP
             this.isDest.SetValue(isDest);
 
             if (this.isSource.GetCurrentValue())
-                SetMainColor(ColorData.Particle_Red);
+                SetMainColor(sourceColor);
             else if (this.isDest.GetCurrentValue())
-                SetMainColor(ColorData.Particle_Blue);
+                SetMainColor(destColor);
         }
 
         // Implement this method if the algorithm terminates at some point
@@ -131,24 +149,81 @@ namespace AS2.Algos.SingleSourceSP
                 PinConfiguration pc = GetCurrentPinConfiguration();
                 if (pc.ReceivedBeepOnPartitionSet(0))
                 {
-                    // Received source portal beep - become root/source representative if we have no predecessor
+                    // Received source portal beep
+                    onRootPortal.SetValue(true);
+                    // Become root/source representative if we have no predecessor
                     if (!HasNeighborAt(portalAxisDir.GetValue().Opposite()))
                         isRootRepr.SetValue(true);
                 }
                 SetPlannedPinConfiguration(pc);
                 if (isDest)
                     pc.SendBeepOnPartitionSet(0);
+
+                SetPortalColor();
             }
             else if (round == 2)
             {
                 PinConfiguration pc = GetCurrentPinConfiguration();
                 if (pc.ReceivedBeepOnPartitionSet(0))
                 {
-                    // Received dest portal beep - become dest representative if we have no predecessor
+                    // Received dest portal beep
+                    onDestPortal.SetValue(true);
+                    // Become dest representative if we have no predecessor
                     if (!HasNeighborAt(portalAxisDir.GetValue().Opposite()))
                         isDestRepr.SetValue(true);
                 }
+
+                SetPortalColor();
             }
+            else if (round == 3)
+            {
+                // Setup ETT
+                // First collect the neighbor directions (order is important)
+                List<Direction> nbrDirs = new List<Direction>();
+                if (HasNeighborAt(portalAxisDir))
+                    nbrDirs.Add(portalAxisDir);
+                if (nbrPortalDir1 != Direction.NONE)
+                    nbrDirs.Add(nbrPortalDir1);
+                if (HasNeighborAt(portalAxisDir.GetValue().Opposite()))
+                    nbrDirs.Add(portalAxisDir.GetValue().Opposite());
+                if (nbrPortalDir2 != Direction.NONE)
+                    nbrDirs.Add(nbrPortalDir2);
+                // Mark the first edge if we are a dest portal representative
+                int markedIdx = isDestRepr.GetCurrentValue() ? 0 : -1;
+                // Split if we are the source portal representative
+                bool split = isRootRepr;
+                ett.Init(nbrDirs.ToArray(), markedIdx, split);
+
+                PinConfiguration pc = GetContractedPinConfiguration();
+                ett.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+
+                // Root representative sends a beep
+                if (isRootRepr)
+                    ett.ActivateSend();
+            }
+            else if (round > 3)
+            {
+                ett.ActivateReceive();
+
+                if (ett.IsFinished())
+                {
+                    isFinished.SetValue(true);
+                    return;
+                }
+
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                ett.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                if (ett.IsTerminationRound())
+                    ett.ActivateSend();
+                else
+                {
+                    if (isRootRepr)
+                        ett.ActivateSend();
+                }
+            }
+
             round.SetValue(round + 1);
         }
 
@@ -221,6 +296,20 @@ namespace AS2.Algos.SingleSourceSP
                     nbrPortalDir2.SetValue(d60n);
                 }
             }
+        }
+
+        private void SetPortalColor()
+        {
+            if (isSource.GetCurrentValue())
+                SetMainColor(sourceColor);
+            else if (isDest.GetCurrentValue())
+                SetMainColor(destColor);
+            else if (onRootPortal.GetCurrentValue() && onDestPortal.GetCurrentValue())
+                SetMainColor(mixedPortalColor);
+            else if (onRootPortal.GetCurrentValue())
+                SetMainColor(sourcePortalColor);
+            else if (onDestPortal.GetCurrentValue())
+                SetMainColor(destPortalColor);
         }
     }
 
