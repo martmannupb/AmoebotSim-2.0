@@ -109,8 +109,8 @@ namespace AS2.Algos.SingleSourceSP
             FINISHED
         }
 
-        [StatusInfo("Show Portal Tree")]
-        public static void ShowPortalTree(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        [StatusInfo("Show Portal Graph")]
+        public static void ShowPortalGraph(AS2.Sim.ParticleSystem system, Particle selectedParticle)
         {
             AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
             ld.Clear();
@@ -123,7 +123,114 @@ namespace AS2.Algos.SingleSourceSP
             pDir = algo.portalAxisDir;
 
             // Find bounding dimensions of the system
-            // TODO
+            int minX = 0, minY = 0, minXY = 0, maxX = 0, maxY = 0, maxXY = 0;
+            foreach (Particle p in system.particles)
+            {
+                Vector2Int pos = p.Head();
+                int x = pos.x;
+                int y = pos.y;
+                int xy = x + y;
+                if (x < minX)
+                    minX = x;
+                if (x > maxX)
+                    maxX = x;
+                if (y < minY)
+                    minY = y;
+                if (y > maxY)
+                    maxY = y;
+                if (xy < minXY)
+                    minXY = xy;
+                if (xy > maxXY)
+                    maxXY = xy;
+            }
+
+            Color portalColor = new Color(0.6f, 0.6f, 0.6f);
+            Color rootPortalColor = Color.red;
+            Color destPortalColor = Color.blue;
+            Color mixedPortalColor = Color.magenta;
+            Color edgeColor = Color.cyan;
+
+            // Determine iteration direction
+            // Default is X axis
+            int dim1Lower = minX, dim1Upper = maxX + 2;
+            int dim2Lower = minY, dim2Upper = maxY + 1;
+            Vector2Int increment = Vector2Int.right;
+            // Y axis
+            if (pDir == Direction.NNE || pDir == Direction.SSW)
+            {
+                dim1Lower = minY;
+                dim1Upper = maxY + 2;
+                dim2Lower = minX;
+                dim2Upper = maxX + 1;
+                increment = Vector2Int.up;
+            }
+            // Z axis
+            else if (pDir == Direction.NNW || pDir == Direction.SSE)
+            {
+                dim1Lower = minY;
+                dim1Upper = maxY + 2;
+                dim2Lower = minXY;
+                dim2Upper = maxXY + 1;
+                increment = new Vector2Int(-1, 1);
+            }
+
+            // Scan the system portal by portal and draw the lines
+            for (int dim2 = dim2Lower; dim2 < dim2Upper; dim2++)
+            {
+                Vector2 startPos = Vector2.zero;
+                Vector2 endPos = Vector2.zero;
+                bool startedPortal = false;
+                bool isSourcePortal = false;
+                bool isDestPortal = false;
+                Vector2Int currentPos = new Vector2Int(dim1Lower, dim2);
+                if (pDir == Direction.NNE || pDir == Direction.SSW)
+                {
+                    currentPos = new Vector2Int(dim2, dim1Lower);
+                }
+                else if (pDir == Direction.NNW || pDir == Direction.SSE)
+                {
+                    currentPos = new Vector2Int(dim2 - dim1Lower, dim1Lower);
+                }
+                for (int dim1 = dim1Lower; dim1 < dim1Upper; dim1++)
+                {
+                    if (system.TryGetParticleAt(currentPos, out AS2.Visuals.IParticleState ips))
+                    {
+                        // Draw line to next portal if this amoebot has a portal edge
+                        algo = (SingleSourceSPParticle)((Particle)ips).algorithm;
+                        if (algo.nbrPortalDir1 != Direction.NONE)
+                        {
+                            Vector2Int nbrPos = currentPos + ParticleSystem_Utils.DirectionToVector(algo.nbrPortalDir1);
+                            ld.AddLine(currentPos, nbrPos, edgeColor, false, 1.5f);
+                        }
+                        if (algo.isSource)
+                            isSourcePortal = true;
+                        if (algo.isDest)
+                            isDestPortal = true;
+
+                        // If we are not drawing a portal yet, remember this as the start position
+                        if (!startedPortal)
+                        {
+                            startPos = currentPos;
+                            startedPortal = true;
+                        }
+                        // Also remember it as the last end position
+                        endPos = currentPos;
+                    }
+                    else
+                    {
+                        // If a portal has just ended, draw it
+                        if (startedPortal)
+                        {
+                            Color c = isSourcePortal && isDestPortal ? mixedPortalColor : (isSourcePortal ? rootPortalColor : (isDestPortal ? destPortalColor : portalColor));
+                            ld.AddLine(startPos, endPos, c, false, 4, 1, -0.5f);
+                            startedPortal = false;
+                            isSourcePortal = false;
+                            isDestPortal = false;
+                        }
+                    }
+                    currentPos += increment;
+                }
+            }
 
             ld.SetTimer(20f);
         }
