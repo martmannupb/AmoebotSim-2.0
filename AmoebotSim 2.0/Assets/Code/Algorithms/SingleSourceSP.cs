@@ -25,6 +25,7 @@ namespace AS2.Algos.SingleSourceSP
     /// are not connected to the root.
     /// </para>
     /// </summary>
+    // PORTAL PHASE
     // Round 0:
     //  - Setup portal circuits and let the source amoebot beep to identify the source portal
     //  - Find the amoebots with edges to the neighbor portals
@@ -38,6 +39,51 @@ namespace AS2.Algos.SingleSourceSP
     //      - Find the incoming and outgoing edges
     //      - Root representative chooses a place to split the cycle
     //      - Dest representatives choose exactly one outgoing edge to mark
+    //      - Send first beep
+    // Round 4:
+    //  - Keep running the ETT subroutine:
+    //      - Receive last beep, setup new circuit and send new beep
+    //  - As soon as the ETT subroutine is finished: Go to round 5
+    // Round 5:
+    //  - Setup simple portal circuits again
+    //  - Amoebots with edges to other portals read the comparison results
+    //  - For all portals except the root: Send beep if one of the edge differences is != 0
+    //  - Root portal: Send beep if |Q| = 0
+    // Round 6:
+    //  - Receive portal beeps:
+    //      - If we are not the root portal and we received no beep: We were pruned! (Does not mean anything yet)
+    //      - If we are not the root portal and we received a beep: We were not pruned
+    //      - If we are the root portal and we received a beep: |Q| = 0, so we can terminate (does not happen in this implementation)
+    //  - Setup portal neighbor circuits (one circuit for each neighbor portal
+    //      - Amoebots with neighbor edges send beep on that circuit if the comparison of OUT - IN was GREATER 0
+    // Round 7:
+    //  - Receive parent beeps
+    //  - Increment neighbor counters for all parent portal neighbors
+    //  - Reset all flags specific to this iteration and move on to the next iteration
+    //      - After the third portal axis, move on to the next phase
+    //
+    // FINAL PRUNE PHASE
+    // Round 0:
+    //  - Choose one of the neighbors with counter 2 as parent
+    //      - If there is no such neighbor, we have no parent (either we are the source or we will be pruned)
+    //      - After this round, we can find our children by inspecting our neighbors' parent directions
+    // Round 1:
+    //  - Establish ETT circuit again, but using the actual tree this time
+    //      - Amoebots that have neither a parent nor any children immediately terminate by pruning themselves
+    //  - The root sends a beep on the circuit, this will be received by the component that contains the source
+    // Round 2:
+    //  - Amoebots that have not received any beep prune themselves already
+    //      - They terminate and thereafter do not participate in the rest of the procedure
+    //  - Root sends first actual ETT beep
+    // Round 3:
+    //  - Receive ETT beep and send
+    //  - Keep running ETT until finished
+    //  - Once finished, go to round 4
+    // Round 4:
+    //  - Read the comparison result of the parent edge (unless we are the source)
+    //      - If OUT - IN is GREATER than 0, our subtree contains a destination, so we do nothing
+    //      - Otherwise, we must prune ourselves
+    //  - Finally, reset the pin configuration to singleton and terminate
     public class SingleSourceSPParticle : ParticleAlgorithm
     {
         // This is the display name of the algorithm (must be unique)
@@ -56,20 +102,72 @@ namespace AS2.Algos.SingleSourceSP
         static readonly Color destPortalColor = ColorData.Particle_Blue;
         static readonly Color mixedPortalColor = ColorData.Particle_Purple;
 
+        enum Phase
+        {
+            PORTAL_1, PORTAL_2, PORTAL_3,
+            FINAL_PRUNE,
+            FINISHED
+        }
+
+        [StatusInfo("Show Portal Tree")]
+        public static void ShowPortalTree(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
+            ld.Clear();
+
+            // Find portal direction
+            Direction pDir = Direction.NONE;
+            SingleSourceSPParticle algo = (SingleSourceSPParticle)system.particles[0].algorithm;
+            if (algo.phase == Phase.FINISHED || algo.phase == Phase.FINAL_PRUNE)
+                return;
+            pDir = algo.portalAxisDir;
+
+            // Find bounding dimensions of the system
+            // TODO
+
+            ld.SetTimer(20f);
+        }
+
+        [StatusInfo("Show SP Tree")]
+        public static void ShowTree(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
+            ld.Clear();
+
+            foreach (Particle p in system.particles)
+            {
+                SingleSourceSPParticle algo = (SingleSourceSPParticle)p.algorithm;
+                Vector2Int pos = p.Head();
+                Direction d = algo.parent;
+                if (d == Direction.NONE)
+                    continue;
+
+                Vector2 parent = pos + (Vector2)ParticleSystem_Utils.DirectionToVector(d) * 0.9f;
+                ld.AddLine(pos, parent, Color.cyan, true, 1.5f, 1.5f);
+            }
+
+            ld.SetTimer(20f);
+        }
+
         // Declare attributes here
-        ParticleAttribute<bool> isFinished;     // Finished flag
+        ParticleAttribute<Phase> phase;         // Current phase
         ParticleAttribute<int> round;           // Round counter
 
         ParticleAttribute<bool> isSource;   // Source flag
         ParticleAttribute<bool> isDest;     // Destination flag
 
         ParticleAttribute<Direction> portalAxisDir;     // The current portal axis (should be E, NNE or NNW)
-        ParticleAttribute<bool> onRootPortal;           // Flag for root/source portal (only visual)
-        ParticleAttribute<bool> onDestPortal;           // Flag for destination portal (only visual)
+        ParticleAttribute<bool> onRootPortal;           // Flag for root/source portal
+        ParticleAttribute<bool> onDestPortal;           // Flag for destination portal
         ParticleAttribute<bool> isRootRepr;             // Representative flag for root/source portal
         ParticleAttribute<bool> isDestRepr;             // Representative flag for destination portal
         ParticleAttribute<Direction> nbrPortalDir1;     // Direction of the first neighbor portal edge (portalDir + 60 or portalDir + 120 or NONE)
         ParticleAttribute<Direction> nbrPortalDir2;     // Direction of the second neighbor portal edge (portalDir - 60 or portalDir - 120 or NONE)
+
+        ParticleAttribute<int>[] parentCounters = new ParticleAttribute<int>[6];    // Count the number of times a neighbor has occurred as a parent portal
+
+        ParticleAttribute<Direction> parent;            // The direction of our chosen parent
+        ParticleAttribute<bool> pruned;                 // Flag for pruned amoebots
 
         // ETT subroutine
         SubETT ett;
@@ -77,7 +175,7 @@ namespace AS2.Algos.SingleSourceSP
         public SingleSourceSPParticle(Particle p) : base(p)
         {
             // Initialize the attributes here
-            isFinished = CreateAttributeBool("Finished", false);
+            phase = CreateAttributeEnum<Phase>("Phase", Phase.PORTAL_1);
             round = CreateAttributeInt("Round", 0);
 
             isSource = CreateAttributeBool("Is Source", false);
@@ -90,6 +188,14 @@ namespace AS2.Algos.SingleSourceSP
             isDestRepr = CreateAttributeBool("Destination Representative", false);
             nbrPortalDir1 = CreateAttributeDirection("Nbr Portal Dir 1", Direction.NONE);
             nbrPortalDir2 = CreateAttributeDirection("Nbr Portal Dir 2", Direction.NONE);
+
+            for (int i = 0; i < 6; i++)
+            {
+                parentCounters[i] = CreateAttributeInt("Parent Counter " + i, 0);
+            }
+
+            parent = CreateAttributeDirection("Parent", Direction.NONE);
+            pruned = CreateAttributeBool("Pruned", false);
 
             ett = new SubETT(p);
 
@@ -115,24 +221,49 @@ namespace AS2.Algos.SingleSourceSP
         public override bool IsFinished()
         {
             // Return true when this particle has terminated
-            return isFinished;
+            return phase == Phase.FINISHED;
         }
 
         // The movement activation method
         public override void ActivateMove()
         {
-            // Just hide a few bonds
-            foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+            if (phase == Phase.FINISHED)
+                return;
+            else if (phase == Phase.FINAL_PRUNE)
             {
-                if (d == portalAxisDir || d.Opposite() == portalAxisDir)
-                    continue;
-                if (d != nbrPortalDir1 && d != nbrPortalDir2)
-                    HideBond(d);
+                // Hide bonds to indicate parents during last phase
+
+            }
+            else
+            {
+                // Hide bonds to indicate portals during portal phase
+                foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                {
+                    if (d == portalAxisDir || d.Opposite() == portalAxisDir)
+                        continue;
+                    if (d != nbrPortalDir1 && d != nbrPortalDir2)
+                        HideBond(d);
+                }
             }
         }
 
         // The beep activation method
         public override void ActivateBeep()
+        {
+            switch (phase.GetValue())
+            {
+                case Phase.PORTAL_1:
+                case Phase.PORTAL_2:
+                case Phase.PORTAL_3:
+                    ActivatePortalPhase();
+                    break;
+                case Phase.FINAL_PRUNE:
+                    ActivateFinalPrunePhase();
+                    break;
+            }
+        }
+
+        private void ActivatePortalPhase()
         {
             if (round == 0)
             {
@@ -159,7 +290,7 @@ namespace AS2.Algos.SingleSourceSP
                 if (isDest)
                     pc.SendBeepOnPartitionSet(0);
 
-                SetPortalColor();
+                SetColor();
             }
             else if (round == 2)
             {
@@ -173,7 +304,7 @@ namespace AS2.Algos.SingleSourceSP
                         isDestRepr.SetValue(true);
                 }
 
-                SetPortalColor();
+                SetColor();
             }
             else if (round == 3)
             {
@@ -202,13 +333,13 @@ namespace AS2.Algos.SingleSourceSP
                 if (isRootRepr)
                     ett.ActivateSend();
             }
-            else if (round > 3)
+            else if (round == 4)
             {
                 ett.ActivateReceive();
 
                 if (ett.IsFinished())
                 {
-                    isFinished.SetValue(true);
+                    round.SetValue(5);
                     return;
                 }
 
@@ -222,8 +353,190 @@ namespace AS2.Algos.SingleSourceSP
                     if (isRootRepr)
                         ett.ActivateSend();
                 }
+                return;
+            }
+            else if (round == 5)
+            {
+                SetupSimplePortalCircuit(portalAxisDir);
+                bool send = false;
+                // Root portal: Representative sends beep if |Q| = 0
+                if (onRootPortal)
+                {
+                    if (isRootRepr && ett.GetSumComparisonResult() == Comparison.EQUAL)
+                    {
+                        send = true;
+                    }
+                }
+                // Other portal: Send beep if a neighbor edge was not equal to 0,
+                // i.e., our subtree contains a portal in Q
+                else
+                {
+                    if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) != Comparison.EQUAL)
+                        send = true;
+                    else if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) != Comparison.EQUAL)
+                        send = true;
+                }
+                if (send)
+                {
+                    PinConfiguration pc = GetPlannedPinConfiguration();
+                    pc.SendBeepOnPartitionSet(0);
+                }
+            }
+            else if (round == 6)
+            {
+                // No need to receive the beeps since the results are not used
+                // Continue with finding parent portals
+                SetupPortalNeighborCircuits(portalAxisDir);
+                // Amoebots with portal neighbor difference > 0 send beep
+                if (nbrPortalDir1 != Direction.NONE || nbrPortalDir2 != Direction.NONE)
+                {
+                    PinConfiguration pc = GetPlannedPinConfiguration();
+                    if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) == Comparison.GREATER)
+                        pc.SendBeepOnPartitionSet(0);
+                    if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) == Comparison.GREATER)
+                        pc.SendBeepOnPartitionSet(1);
+                }
+            }
+            else if (round == 7)
+            {
+                // Receive parent beeps and update parent counters
+                // There are only four parents that can be updated this round
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                UpdateParentCounter(portalAxisDir.GetValue().Rotate60(1), pc, 0);
+                UpdateParentCounter(portalAxisDir.GetValue().Rotate60(2), pc, 0);
+                UpdateParentCounter(portalAxisDir.GetValue().Rotate60(-1), pc, 1);
+                UpdateParentCounter(portalAxisDir.GetValue().Rotate60(-2), pc, 1);
+
+                // Reset
+                round.SetValue(0);
+                // (Just reset these values to be sure)
+                onRootPortal.SetValue(false);
+                onDestPortal.SetValue(false);
+                isRootRepr.SetValue(false);
+                isDestRepr.SetValue(false);
+                nbrPortalDir1.SetValue(Direction.NONE);
+                nbrPortalDir2.SetValue(Direction.NONE);
+                SetColor();
+
+                // Determine next phase
+                switch (phase.GetValue())
+                {
+                    case Phase.PORTAL_1:
+                        phase.SetValue(Phase.PORTAL_2);
+                        break;
+                    case Phase.PORTAL_2:
+                        phase.SetValue(Phase.PORTAL_3);
+                        break;
+                    case Phase.PORTAL_3:
+                        phase.SetValue(Phase.FINAL_PRUNE);
+                        break;
+                }
+                portalAxisDir.SetValue(portalAxisDir.GetCurrentValue().Rotate60(1));
+
+                return;
             }
 
+            round.SetValue(round + 1);
+        }
+
+        private void ActivateFinalPrunePhase()
+        {
+            if (round == 0)
+            {
+                // Choose one of the neighbors with parent counter 2 as parent
+                for (int i = 0; i < 6; i++)
+                {
+                    if (parentCounters[i] == 2)
+                    {
+                        parent.SetValue(DirectionHelpers.Cardinal(i));
+                        break;
+                    }
+                }
+            }
+            else if (round == 1)
+            {
+                // Initialize ETT
+                List<Direction> edges = new List<Direction>();
+                foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                {
+                    if (parent == d || IsChild(d))
+                        edges.Add(d);
+                }
+
+                PinConfiguration pc = GetContractedPinConfiguration();
+
+                if (edges.Count == 0)
+                {
+                    // We don't have a single edge => Must be pruned
+                    Prune();
+                    SetPlannedPinConfiguration(pc);
+                    return;
+                }
+
+                ett.Init(edges.ToArray(), isDest ? 0 : -1, isSource);
+                ett.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                // Root sends beep on one of the circuits
+                if (isSource)
+                {
+                    Direction d = ett.GetNeighborDirections()[0];
+                    pc.SendBeepOnPartitionSet(d.ToInt() * 2);
+                }
+            }
+            else if (round == 2)
+            {
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                Direction d = ett.GetNeighborDirections()[0];
+                if (!pc.ReceivedBeepOnPartitionSet(d.ToInt() * 2) && !pc.ReceivedBeepOnPartitionSet(d.ToInt() * 2 + 1))
+                {
+                    // Received no beep on either circuit: Prune
+                    Prune();
+                    pc.SetToSingleton();
+                    SetPlannedPinConfiguration(pc);
+                    return;
+                }
+
+                // Root sends first proper ETT beep
+                if (isSource)
+                {
+                    SetPlannedPinConfiguration(pc);
+                    ett.ActivateSend();
+                }
+            }
+            else if (round == 3)
+            {
+                ett.ActivateReceive();
+
+                if (ett.IsFinished())
+                {
+                    round.SetValue(4);
+                    return;
+                }
+
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                ett.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                if (ett.IsTerminationRound())
+                    ett.ActivateSend();
+                else if (isSource)
+                    ett.ActivateSend();
+                return;
+            }
+            else if (round == 4)
+            {
+                // Read parent edge comparison result unless we are the source
+                if (!isSource)
+                {
+                    if (ett.GetComparisonResult(parent) != Comparison.GREATER)
+                    {
+                        // We have no destination in our subtree, so we have to terminate
+                        Prune();
+                    }
+                }
+                SetColor();
+                SetPlannedPinConfiguration(GetContractedPinConfiguration());
+                phase.SetValue(Phase.FINISHED);
+            }
             round.SetValue(round + 1);
         }
 
@@ -242,6 +555,48 @@ namespace AS2.Algos.SingleSourceSP
                 pinIds[2 * i + 1] = pc.GetPinAt(portalDir.Opposite(), i).Id;
             }
             pc.MakePartitionSet(pinIds, 0);
+            SetPlannedPinConfiguration(pc);
+        }
+
+        private void SetupPortalNeighborCircuits(Direction portalDir)
+        {
+            PinConfiguration pc = GetContractedPinConfiguration();
+            List<int> pinsTop = new List<int>();
+            List<int> pinsBot = new List<int>();
+            // Top right
+            if (HasNeighborAt(portalDir.Rotate60(1)))
+            {
+                pinsTop.Add(pc.GetPinAt(portalDir, PinsPerEdge - 1).Id);
+            }
+            // Top left
+            if (HasNeighborAt(portalDir.Rotate60(2)))
+            {
+                pinsTop.Add(pc.GetPinAt(portalDir.Opposite(), 0).Id);
+            }
+
+            // Bottom right
+            if (HasNeighborAt(portalDir.Rotate60(-1)))
+            {
+                pinsBot.Add(pc.GetPinAt(portalDir, 0).Id);
+            }
+            // Bottom left
+            if (HasNeighborAt(portalDir.Rotate60(-2)))
+            {
+                pinsBot.Add(pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id);
+            }
+
+            if (pinsTop.Count > 0)
+            {
+                pc.MakePartitionSet(pinsTop.ToArray(), 0);
+                pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60f, 0.5f));
+                pc.SetPartitionSetDrawHandle(0, true);
+            }
+            if (pinsBot.Count > 0)
+            {
+                pc.MakePartitionSet(pinsBot.ToArray(), 1);
+                pc.SetPartitionSetPosition(1, new Vector2((portalDir.Opposite().ToInt() + 1.5f) * 60f, 0.5f));
+                pc.SetPartitionSetDrawHandle(1, true);
+            }
             SetPlannedPinConfiguration(pc);
         }
 
@@ -298,7 +653,26 @@ namespace AS2.Algos.SingleSourceSP
             }
         }
 
-        private void SetPortalColor()
+        private void UpdateParentCounter(Direction d, PinConfiguration pc, int pSet)
+        {
+            if (HasNeighborAt(d) && pc.ReceivedBeepOnPartitionSet(pSet))
+                parentCounters[d.ToInt()].SetValue(parentCounters[d.ToInt()].GetCurrentValue() + 1);
+        }
+
+        private bool IsChild(Direction d)
+        {
+            return HasNeighborAt(d) && ((SingleSourceSPParticle)GetNeighborAt(d)).parent == d.Opposite();
+        }
+
+        private void Prune()
+        {
+            pruned.SetValue(true);
+            phase.SetValue(Phase.FINISHED);
+            parent.SetValue(Direction.NONE);
+            SetColor();
+        }
+
+        private void SetColor()
         {
             if (isSource.GetCurrentValue())
                 SetMainColor(sourceColor);
@@ -310,6 +684,10 @@ namespace AS2.Algos.SingleSourceSP
                 SetMainColor(sourcePortalColor);
             else if (onDestPortal.GetCurrentValue())
                 SetMainColor(destPortalColor);
+            else if (pruned.GetCurrentValue())
+                SetMainColor(ColorData.Particle_Black);
+            else
+                SetMainColor(Color.gray);
         }
     }
 

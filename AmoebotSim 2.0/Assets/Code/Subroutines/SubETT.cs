@@ -68,9 +68,10 @@ namespace AS2.Subroutines.ETT
         ParticleAttribute<bool> finished;       // Whether we are finished (happens when no beep is sent in the second round)
         ParticleAttribute<bool> terminationRound;   // Whether this is a round in which we send a termination beep
 
-        ParticleAttribute<Comparison>[] comparisons = new ParticleAttribute<Comparison>[6]; // Comparison results for the 6 directions, comparing OUT to IN
+        ParticleAttribute<Comparison>[] comparisons = new ParticleAttribute<Comparison>[7]; // Comparison results for the 6 directions, comparing OUT to IN. The 7th entry compares the sum at the split edge (|Q|) to 0
         ParticleAttribute<string> bits;         // String storing the up to 12 bits. For direction d with int representation i, character 2*i stores the bit of OUT - IN at direction d
-                                                // and character 2*i + 1 stores the bit of IN - OUT at direction d. A bit can be '0', '1' or '-' if it does not exist
+                                                // and character 2*i + 1 stores the bit of IN - OUT at direction d. A bit can be '0', '1' or '-' if it does not exist.
+                                                // The additional bit at position 12 is the sum bit reserved for amoebots that split their first and last edge (computing |Q|)
 
 
         public SubETT(Particle p) : base(p)
@@ -87,11 +88,11 @@ namespace AS2.Subroutines.ETT
             finished = algo.CreateAttributeBool(FindValidAttributeName("[ETT] Finished"), false);
             terminationRound = algo.CreateAttributeBool(FindValidAttributeName("[ETT] Term. Round"), false);
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 7; i++)
             {
                 comparisons[i] = algo.CreateAttributeEnum<Comparison>(FindValidAttributeName("[ETT] Comp." + i), Comparison.EQUAL);
             }
-            bits = algo.CreateAttributeString(FindValidAttributeName("[ETT] Bits"), "------------");
+            bits = algo.CreateAttributeString(FindValidAttributeName("[ETT] Bits"), "-------------");
         }
 
         public void Init(Direction[] nbrDirections, int markedEdge = -1, bool split = false)
@@ -112,11 +113,11 @@ namespace AS2.Subroutines.ETT
             becamePassive.SetValue(false);
             finished.SetValue(false);
             terminationRound.SetValue(false);
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 7; i++)
             {
                 comparisons[i].SetValue(Comparison.EQUAL);
             }
-            bits.SetValue("------------");
+            bits.SetValue("-------------");
         }
 
         public void SetupPinConfig(PinConfiguration pc)
@@ -220,11 +221,13 @@ namespace AS2.Subroutines.ETT
                 // Remaining special case
                 // We have to split: IN bit is determined by other partition sets
                 // This also overrides the bit flip due to a marked edge (which would have been wrong)
+                char sumBit = '-';
                 if (split.GetCurrentValue())
                 {
                     Direction d = neighbors[nNbrs - 1].GetCurrentValue();
                     int bit = pc.ReceivedBeepOnPartitionSet(13) ? 1 : 0;
                     bitsIN[d.ToInt()] = bit;
+                    sumBit = bit.ToString()[0];
                 }
 
                 // We now have the incoming and outgoing bits, continue by updating the subtraction
@@ -266,6 +269,9 @@ namespace AS2.Subroutines.ETT
                     b[dirInt * 2] = bitOUTminusIN.ToString()[0];
                     b[dirInt * 2 + 1] = bitINminusOUT.ToString()[0];
                 }
+                b[12] = sumBit;
+                if (sumBit > 0)
+                    comparisons[6].SetValue(Comparison.GREATER);
                 bits.SetValue(new string(b));
             }
             terminationRound.SetValue(!terminationRound.GetCurrentValue());
@@ -286,7 +292,31 @@ namespace AS2.Subroutines.ETT
             return bits.GetCurrentValue()[d.ToInt() * 2 + (outgoing ? 0 : 1)] == '1' ? 1 : 0;
         }
 
-        // TODO: Compute bits of the sum in the root amoebot
+        public Direction[] GetNeighborDirections()
+        {
+            int nNbrs = numNeighbors.GetCurrentValue();
+            Direction[] directions = new Direction[nNbrs];
+            for (int i = 0; i < nNbrs; i++)
+                directions[i] = neighbors[i].GetCurrentValue();
+            return directions;
+        }
+
+        public int GetSumBit()
+        {
+            if (split.GetCurrentValue())
+                return bits.GetCurrentValue()[12] == '1' ? 1 : 0;
+            return -1;
+        }
+
+        public Comparison GetComparisonResult(Direction d)
+        {
+            return comparisons[d.ToInt()].GetCurrentValue();
+        }
+
+        public Comparison GetSumComparisonResult()
+        {
+            return comparisons[6].GetCurrentValue();
+        }
     }
 
 } // namespace AS2.Subroutines.ETT
