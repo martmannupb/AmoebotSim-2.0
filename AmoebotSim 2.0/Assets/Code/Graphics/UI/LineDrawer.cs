@@ -17,7 +17,7 @@ namespace AS2.UI
     /// </para>
     /// <para>
     /// Call <see cref="Clear"/> to remove all currently displayed lines,
-    /// use <see cref="AddLine(Vector2, Vector2, Color, bool, float, float)"/>
+    /// use <see cref="AddLine(Vector2, Vector2, Color, bool, float, float, float)"/>
     /// to add lines, and use <see cref="SetTimer(float)"/> to clear all lines
     /// after a specific time.
     /// </para>
@@ -131,7 +131,10 @@ namespace AS2.UI
         /// <param name="arrow">Whether the line should have an arrow head or not.</param>
         /// <param name="width">The width factor of the line.</param>
         /// <param name="arrowWidth">The width factor of the arrow head.</param>
-        public void AddLine(Vector2 start, Vector2 end, Color color, bool arrow = false, float width = 1.0f, float arrowWidth = 1.0f)
+        /// <param name="zOffset">The z coordinate offset, used to define how multiple
+        /// lines are layered. Lines with smaller offset will be drawn on top. Arrows are
+        /// drawn on top of lines by default, with a Z distance of 1.</param>
+        public void AddLine(Vector2 start, Vector2 end, Color color, bool arrow = false, float width = 1.0f, float arrowWidth = 1.0f, float zOffset = 0.0f)
         {
             // Obtain GameObject with LineRenderer
             GameObject obj = GetLine();
@@ -148,9 +151,9 @@ namespace AS2.UI
 
             // Setup the line renderer for the given type of line
             if (arrow)
-                SetupArrowLine(startWorld, endWorld, lr, width, arrowWidth);
+                SetupArrowLine(startWorld, endWorld, lr, width, arrowWidth, zOffset);
             else
-                SetupLine(startWorld, endWorld, lr, width);
+                SetupLine(startWorld, endWorld, lr, width, zOffset);
 
             // Activate the line
             activeLines.Add(obj);
@@ -176,13 +179,14 @@ namespace AS2.UI
         /// <param name="end">The world coordinates of the line's end point.</param>
         /// <param name="lr">The LineRenderer that should display the line.</param>
         /// <param name="width">The width factor of the line.</param>
-        private void SetupLine(Vector2 start, Vector2 end, LineRenderer lr, float width = 1.0f)
+        /// <param name="zOffset">The Z value to add to the default of all points.</param>
+        private void SetupLine(Vector2 start, Vector2 end, LineRenderer lr, float width = 1.0f, float zOffset = 0.0f)
         {
             // Set the points
             lr.positionCount = 2;
             lr.SetPositions(new Vector3[] {
-                new Vector3(start.x, start.y, zLine),
-                new Vector3(end.x, end.y, zLine)
+                new Vector3(start.x, start.y, zLine + zOffset),
+                new Vector3(end.x, end.y, zLine + zOffset)
             });
 
             // Set width
@@ -202,7 +206,8 @@ namespace AS2.UI
         /// <param name="lr">The LineRenderer that should display the line.</param>
         /// <param name="width">The width factor of the line.</param>
         /// <param name="arrowWidth">The width factor of the arrow head.</param>
-        private void SetupArrowLine(Vector2 start, Vector2 end, LineRenderer lr, float width = 1.0f, float arrowWidth = 1.0f)
+        /// <param name="zOffset">The Z value to add to the default of all points.</param>
+        private void SetupArrowLine(Vector2 start, Vector2 end, LineRenderer lr, float width = 1.0f, float arrowWidth = 1.0f, float zOffset = 0.0f)
         {
             // Set the points
             Vector2 to = end - start;
@@ -215,10 +220,10 @@ namespace AS2.UI
             lr.positionCount = 4;
 
             lr.SetPositions(new Vector3[] {
-                new Vector3(start.x, start.y, zArrow),
-                new Vector3(s1.x, s1.y, zArrow),
-                new Vector3(s2.x, s2.y, zArrow),
-                new Vector3(end.x, end.y, zArrow) }
+                new Vector3(start.x, start.y, zArrow + zOffset),
+                new Vector3(s1.x, s1.y, zArrow + zOffset),
+                new Vector3(s2.x, s2.y, zArrow + zOffset),
+                new Vector3(end.x, end.y, zArrow + zOffset) }
             );
 
             // Set width
