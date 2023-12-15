@@ -109,14 +109,14 @@ namespace AS2.Algos.SingleSourceSP
             FINISHED
         }
 
-        [StatusInfo("Show Portal Graph")]
+        [StatusInfo("Show Portal Graph", "Draws the (implicit) portal graph during the first phase of the algorithm. The root portal is marked red, the destination portals are marked blue. If the root portal contains a destination, it is marked magenta.")]
         public static void ShowPortalGraph(AS2.Sim.ParticleSystem system, Particle selectedParticle)
         {
             AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
             ld.Clear();
 
             // Find portal direction
-            Direction pDir = Direction.NONE;
+            Direction pDir;
             SingleSourceSPParticle algo = (SingleSourceSPParticle)system.particles[0].algorithm;
             if (algo.phase == Phase.FINISHED || algo.phase == Phase.FINAL_PRUNE)
                 return;
@@ -231,11 +231,10 @@ namespace AS2.Algos.SingleSourceSP
                     currentPos += increment;
                 }
             }
-
             ld.SetTimer(20f);
         }
 
-        [StatusInfo("Show SP Tree")]
+        [StatusInfo("Show SP Tree", "Draws the parent edges of all amoebots as soon as they are available. This will only work during the second phase of the algorithm.")]
         public static void ShowTree(AS2.Sim.ParticleSystem system, Particle selectedParticle)
         {
             AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
@@ -252,16 +251,15 @@ namespace AS2.Algos.SingleSourceSP
                 Vector2 parent = pos + (Vector2)ParticleSystem_Utils.DirectionToVector(d) * 0.9f;
                 ld.AddLine(pos, parent, Color.cyan, true, 1.5f, 1.5f);
             }
-
             ld.SetTimer(20f);
         }
 
         // Declare attributes here
-        ParticleAttribute<Phase> phase;         // Current phase
-        ParticleAttribute<int> round;           // Round counter
+        ParticleAttribute<Phase> phase;                 // Current phase
+        ParticleAttribute<int> round;                   // Round counter
 
-        ParticleAttribute<bool> isSource;   // Source flag
-        ParticleAttribute<bool> isDest;     // Destination flag
+        ParticleAttribute<bool> isSource;               // Source flag
+        ParticleAttribute<bool> isDest;                 // Destination flag
 
         ParticleAttribute<Direction> portalAxisDir;     // The current portal axis (should be E, NNE or NNW)
         ParticleAttribute<bool> onRootPortal;           // Flag for root/source portal
@@ -339,7 +337,11 @@ namespace AS2.Algos.SingleSourceSP
             else if (phase == Phase.FINAL_PRUNE)
             {
                 // Hide bonds to indicate parents during last phase
-
+                foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                {
+                    if (d != parent && !IsChild(d))
+                        HideBond(d);
+                }
             }
             else
             {
@@ -665,6 +667,14 @@ namespace AS2.Algos.SingleSourceSP
             SetPlannedPinConfiguration(pc);
         }
 
+        /// <summary>
+        /// Sets up one circuit for each neighbor of a portal along
+        /// the given axis. The "top" partition set will have ID 0
+        /// and the "bottom" partition set will have ID 1. If there
+        /// is no neighbor in one of the directions, no partition set
+        /// will be created for that direction.
+        /// </summary>
+        /// <param name="portalDir">The direction of the portal axis.</param>
         private void SetupPortalNeighborCircuits(Direction portalDir)
         {
             PinConfiguration pc = GetContractedPinConfiguration();
@@ -707,6 +717,14 @@ namespace AS2.Algos.SingleSourceSP
             SetPlannedPinConfiguration(pc);
         }
 
+        /// <summary>
+        /// Sets the neighbor portal flags of this amoebot. Direction 1
+        /// indicates the "top" neighbor edge, direction 2 the "bottom"
+        /// neighbor edge. The direction will be unequal to
+        /// <see cref="Direction.NONE"/> if and only if this amoebot
+        /// is the unique amoebot with the edge to that neighboring portal.
+        /// </summary>
+        /// <param name="portalDir">The direction of the portal axis.</param>
         private void DeterminePortalNeighbors(Direction portalDir)
         {
             // Reset neighbor directions
@@ -760,17 +778,39 @@ namespace AS2.Algos.SingleSourceSP
             }
         }
 
+        /// <summary>
+        /// Increments the parent counter of the parent in
+        /// direction <paramref name="d"/> in case a beep
+        /// was received on the partition set with ID
+        /// <paramref name="pSet"/> and there is a neighbor
+        /// in that direction.
+        /// </summary>
+        /// <param name="d">The direction of the neighbor to update.</param>
+        /// <param name="pc">The pin configuration that may have received the beep.</param>
+        /// <param name="pSet">The partition set to check.</param>
         private void UpdateParentCounter(Direction d, PinConfiguration pc, int pSet)
         {
             if (HasNeighborAt(d) && pc.ReceivedBeepOnPartitionSet(pSet))
                 parentCounters[d.ToInt()].SetValue(parentCounters[d.ToInt()].GetCurrentValue() + 1);
         }
 
+        /// <summary>
+        /// Checks whether there is an amoebot in direction <paramref name="d"/>
+        /// which has its <see cref="parent"/> direction pointing at this amoebot.
+        /// </summary>
+        /// <param name="d">The direction to check.</param>
+        /// <returns><c>true</c> if and only if we have a shortest path tree
+        /// child in direction <paramref name="d"/>.</returns>
         private bool IsChild(Direction d)
         {
             return HasNeighborAt(d) && ((SingleSourceSPParticle)GetNeighborAt(d)).parent == d.Opposite();
         }
 
+        /// <summary>
+        /// Sets this amoebot's internal state to pruned. Hereafter,
+        /// the amoebot will not participate in the rest of the
+        /// algorithm. Also sets the correct color.
+        /// </summary>
         private void Prune()
         {
             pruned.SetValue(true);
@@ -779,6 +819,10 @@ namespace AS2.Algos.SingleSourceSP
             SetColor();
         }
 
+        /// <summary>
+        /// Sets the color of this amoebot according to its
+        /// current phase and state.
+        /// </summary>
         private void SetColor()
         {
             if (isSource.GetCurrentValue())

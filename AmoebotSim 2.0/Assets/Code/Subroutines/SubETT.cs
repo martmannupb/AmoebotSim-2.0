@@ -7,6 +7,9 @@ using AS2.Subroutines.PASC;
 namespace AS2.Subroutines.ETT
 {
 
+    /// <summary>
+    /// Set of possible comparison results.
+    /// </summary>
     public enum Comparison
     {
         LESS, EQUAL, GREATER
@@ -55,6 +58,41 @@ namespace AS2.Subroutines.ETT
     /// </item>
     /// </list>
     /// </para>
+    /// <para>
+    /// This is how the subroutine should be used:
+    /// <list type="bullet">
+    /// <item>
+    ///     Call <see cref="Init(Direction[], int, bool)"/> to setup the subroutine object for the
+    ///     given directions.
+    /// </item>
+    /// <item>
+    ///     Call <see cref="SetupPinConfig(PinConfiguration)"/> to construct all required
+    ///     partition sets for the next beep. The given pin configuration still has to be planned.
+    ///     The constructed partition sets should not be changed, otherwise <see cref="ActivateSend"/>
+    ///     might not work correctly.
+    /// </item>
+    /// <item>
+    ///     Call <see cref="ActivateSend"/> after setting up the pin configuration to send the next
+    ///     beep. In a termination round, this should be called by every participant. Otherwise, it
+    ///     should only be called by the splitting amoebots that should beep (usually the root).
+    ///     You can check the type of the current round using <see cref="IsTerminationRound"/>.
+    /// </item>
+    /// <item>
+    ///     In the activation immediately after <see cref="ActivateSend"/> has been called,
+    ///     <see cref="ActivateReceive"/> must be called. This will make the new bits and
+    ///     comparison results available or terminate the procedure.
+    /// </item>
+    /// <item>
+    ///     The procedure is finished as soon as <see cref="IsFinished"/> returns <c>true</c>.
+    ///     This method can be called immediately after <see cref="ActivateReceive"/>.
+    /// </item>
+    /// <item>
+    ///     The received bits and comparison results can be obtained from the various
+    ///     inspection methods, e.g., <see cref="GetComparisonResult(Direction)"/>,
+    ///     <see cref="GetDiffBit(Direction, bool)"/>.
+    /// </item>
+    /// </list>
+    /// </para>
     /// </summary>
     public class SubETT : Subroutine
     {
@@ -72,7 +110,6 @@ namespace AS2.Subroutines.ETT
         ParticleAttribute<string> bits;         // String storing the up to 12 bits. For direction d with int representation i, character 2*i stores the bit of OUT - IN at direction d
                                                 // and character 2*i + 1 stores the bit of IN - OUT at direction d. A bit can be '0', '1' or '-' if it does not exist.
                                                 // The additional bit at position 12 is the sum bit reserved for amoebots that split their first and last edge (computing |Q|)
-
 
         public SubETT(Particle p) : base(p)
         {
@@ -95,6 +132,17 @@ namespace AS2.Subroutines.ETT
             bits = algo.CreateAttributeString(FindValidAttributeName("[ETT] Bits"), "-------------");
         }
 
+        /// <summary>
+        /// Initializes the subroutine for the given directions.
+        /// </summary>
+        /// <param name="nbrDirections">The directions of all neighboring edges,
+        /// in counter-clockwise order. Each edge will be split into an outgoing
+        /// and an incoming edge.</param>
+        /// <param name="markedEdge">The index of the marked edge in the array
+        /// of edges. If this is <c>-1</c>, no edge will be marked.</param>
+        /// <param name="split">If <c>true</c>, do not connect the outgoing edge
+        /// of the first neighbor to the incoming edge of the last neighbor. This
+        /// splits the Euler cycle into an Euler tour if done by exactly one participant.</param>
         public void Init(Direction[] nbrDirections, int markedEdge = -1, bool split = false)
         {
             if (nbrDirections == null || nbrDirections.Length == 0 || nbrDirections.Length > 6)
@@ -120,6 +168,12 @@ namespace AS2.Subroutines.ETT
             bits.SetValue("-------------");
         }
 
+        /// <summary>
+        /// Sets up the required partition sets for the next
+        /// beep in the given pin configuration.
+        /// </summary>
+        /// <param name="pc">The pin configuration to be modified.
+        /// Still has to be planned afterwards.</param>
         public void SetupPinConfig(PinConfiguration pc)
         {
             int nNbrs = numNeighbors.GetCurrentValue();
@@ -140,6 +194,15 @@ namespace AS2.Subroutines.ETT
             }
         }
 
+        /// <summary>
+        /// Sends either a PASC or a termination beep, depending on what kind of
+        /// round this is. If called in a termination round, all participants
+        /// that became passive in the last iteration will send a beep to prevent
+        /// termination. In a PASC round, all participants that split the Euler
+        /// tour send a beep on their primary partition set. Special case: If
+        /// the first outgoing edge of a splitting participant is marked, it will
+        /// send a beep on its secondary partition set to count this edge.
+        /// </summary>
         public void ActivateSend()
         {
             if (terminationRound.GetCurrentValue())
@@ -168,6 +231,11 @@ namespace AS2.Subroutines.ETT
             }
         }
 
+        /// <summary>
+        /// Receives the beeps from the last <see cref="ActivateSend"/> call
+        /// and updates the comparison results as well as the type of round.
+        /// After this call, the next bits and comparison results are available.
+        /// </summary>
         public void ActivateReceive()
         {
             // If we became passive in the previous round, we
@@ -277,21 +345,51 @@ namespace AS2.Subroutines.ETT
             terminationRound.SetValue(!terminationRound.GetCurrentValue());
         }
 
+        /// <summary>
+        /// Checks whether the ETT procedure has finished.
+        /// </summary>
+        /// <returns><c>true</c> if and only if no termination
+        /// beep was received in the last termination round.</returns>
         public bool IsFinished()
         {
             return finished.GetCurrentValue();
         }
 
+        /// <summary>
+        /// Checks whether this round is a termination round.
+        /// If <c>true</c>, the next beep will be sent by all
+        /// participants that became passive to continue the
+        /// procedure with another iteration.
+        /// </summary>
+        /// <returns><c>true</c> if and only this round is
+        /// a termination round.</returns>
         public bool IsTerminationRound()
         {
             return terminationRound.GetCurrentValue();
         }
 
-        public int GetBit(Direction d, bool outgoing = true)
+        /// <summary>
+        /// Returns the last received bit of the given edge's
+        /// difference.
+        /// </summary>
+        /// <param name="d">The direction of the edge.</param>
+        /// <param name="outgoing">If <c>true</c>, return the bit of
+        /// the OUT - IN difference, otherwise return the bit of the
+        /// IN - OUT difference (which might not be valid if the number
+        /// turns out to be negative).</param>
+        /// <returns></returns>
+        public int GetDiffBit(Direction d, bool outgoing = true)
         {
             return bits.GetCurrentValue()[d.ToInt() * 2 + (outgoing ? 0 : 1)] == '1' ? 1 : 0;
         }
 
+        /// <summary>
+        /// Returns the neighbor directions with which the procedure was initialized.
+        /// This is a convenience method so that the directions don't have to be
+        /// stored in separate attributes again.
+        /// </summary>
+        /// <returns>An array containing exactly the directions given to
+        /// <see cref="Init(Direction[], int, bool)"/>.</returns>
         public Direction[] GetNeighborDirections()
         {
             int nNbrs = numNeighbors.GetCurrentValue();
@@ -301,6 +399,17 @@ namespace AS2.Subroutines.ETT
             return directions;
         }
 
+        /// <summary>
+        /// Returns the last received bit of the incoming edge
+        /// belonging to the last neighbor direction in case
+        /// this participant splits the cycle. This is exactly the
+        /// number of marked edges on the Euler tour and is usually
+        /// used to determine |Q|, in the notation of the paper.
+        /// </summary>
+        /// <returns>The last bit of the PASC result computing the
+        /// number of marked edges on the Euler tour. If this
+        /// participant does not split the tour, this will always
+        /// return <c>-1</c>.</returns>
         public int GetSumBit()
         {
             if (split.GetCurrentValue())
@@ -308,11 +417,28 @@ namespace AS2.Subroutines.ETT
             return -1;
         }
 
+        /// <summary>
+        /// Returns the difference comparison result belonging
+        /// to the given direction's edge. Note that this result
+        /// is always up to date with the latest received bits.
+        /// </summary>
+        /// <param name="d">The direction of the edge.</param>
+        /// <returns>The result of comparing OUT - IN to 0 on the
+        /// edge in direction <paramref name="d"/>. Note that to
+        /// get the result of IN - OUT, the comparison result just
+        /// has to be flipped.</returns>
         public Comparison GetComparisonResult(Direction d)
         {
             return comparisons[d.ToInt()].GetCurrentValue();
         }
 
+        /// <summary>
+        /// Returns the result of comparing the sum of all
+        /// marked edges to 0. This result is always up to
+        /// date with the latest received bits.
+        /// </summary>
+        /// <returns>The result of comparing the PASC sum
+        /// to 0. Will never be <see cref="Comparison.LESS"/>.</returns>
         public Comparison GetSumComparisonResult()
         {
             return comparisons[6].GetCurrentValue();
