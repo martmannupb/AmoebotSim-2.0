@@ -1208,6 +1208,7 @@ namespace AS2.Sim
         /// <para>
         /// See also <seealso cref="Expand(Direction)"/>,
         /// <seealso cref="ContractTail"/>,
+        /// <seealso cref="Contract(bool)"/>,
         /// <seealso cref="PullHandoverHead(Direction)"/>.
         /// </para>
         /// </summary>
@@ -1230,6 +1231,7 @@ namespace AS2.Sim
         /// <para>
         /// See also <seealso cref="Expand(Direction)"/>,
         /// <seealso cref="ContractHead"/>,
+        /// <seealso cref="Contract(bool)"/>,
         /// <seealso cref="PullHandoverTail(Direction)"/>.
         /// </para>
         /// </summary>
@@ -1239,6 +1241,29 @@ namespace AS2.Sim
             if (!CheckMove("Cannot schedule contraction movement during beep phase.", true))
                 return;
             particle.system.ContractParticleTail(particle);
+        }
+
+        /// <summary>
+        /// Contracts this particle into the grid node that is currently
+        /// occupied by the particle's head or tail, depending on
+        /// <paramref name="head"/>.
+        /// After the contraction, the head and tail will both occupy this
+        /// node. Only works in <see cref="ActivateMove"/>.
+        /// <para>Note that movements are only applied at the end of a round,
+        /// i.e., after the activation is over. This means that calling this
+        /// method will have no immediate effect.</para>
+        /// <para>
+        /// See also <seealso cref="ContractHead"/>, <seealso cref="ContractTail"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="head">If <c>true</c>, contract into the particle's head,
+        /// otherwise contract into the tail.</param>
+        public void Contract(bool head)
+        {
+            if (head)
+                ContractHead();
+            else
+                ContractTail();
         }
 
         /// <summary>
@@ -1335,6 +1360,31 @@ namespace AS2.Sim
             if (!CheckMove("Cannot schedule handover movement during beep phase.", true))
                 return;
             particle.system.PerformPullHandoverTail(particle, locDir);
+        }
+
+        /// <summary>
+        /// Wrapper for <see cref="PullHandoverHead(Direction)"/> and
+        /// <see cref="PullHandoverTail(Direction)"/> where the contraction
+        /// target is specified as parameter <paramref name="head"/>.
+        /// <para>Note that movements are only applied at the end of a round,
+        /// i.e., after the activation is over. This means that calling this
+        /// method will have no immediate effect.</para>
+        /// <para>
+        /// See also <seealso cref="PushHandover(Direction)"/>,
+        /// <seealso cref="PullHandoverHead(Direction)"/>,
+        /// <seealso cref="PullHandoverTail(Direction)"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="head">If <c>true</c>, perform a head contraction,
+        /// otherwise perform a tail contraction.</param>
+        /// <param name="locDir">The local direction relative to this particle's
+        /// head/tail from which the contracted neighbor particle should be pulled.</param>
+        public void PullHandover(bool head, Direction locDir)
+        {
+            if (head)
+                PullHandoverHead(locDir);
+            else
+                PullHandoverTail(locDir);
         }
 
 
