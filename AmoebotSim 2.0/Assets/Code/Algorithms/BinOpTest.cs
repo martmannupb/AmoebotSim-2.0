@@ -8,6 +8,38 @@ namespace AS2.Algos.BinOpTest
 
     public class BinOpTestParticle : ParticleAlgorithm
     {
+        // TODO: Find a way around the isActive flag?
+        [StatusInfo("Display Mult Progress", null, false)]
+        public static void StatusInfo(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            int x = 0;
+            string a = "a = ";
+            string b = "b = ";
+            string c = "c = ";
+            while (true)
+            {
+                if (system.TryGetParticleAt(new Vector2Int(x, 0), out Visuals.IParticleState particle))
+                {
+                    Particle part = (Particle)particle;
+                    part.isActive = true;
+                    BinOpTestParticle p = (BinOpTestParticle)part.algorithm;
+                    a += p.mult.Bit_A() ? '1' : '0';
+                    b += p.mult.Bit_B() ? '1' : '0';
+                    c += p.mult.Bit_C() ? '1' : '0';
+                    part.isActive = false;
+                    x += 1;
+                }
+                else
+                {
+                    Debug.Log(a);
+                    Debug.Log(b);
+                    Debug.Log(c);
+                    Debug.Log("\n");
+                    return;
+                }
+            }
+        }
+
         public enum Mode
         {
             MULT
@@ -25,12 +57,14 @@ namespace AS2.Algos.BinOpTest
         // Declare attributes here
         ParticleAttribute<bool> a;
         ParticleAttribute<bool> b;
+        ParticleAttribute<bool> c;
 
         ParticleAttribute<Direction> pred;
         ParticleAttribute<Direction> succ;
         ParticleAttribute<bool> isStart;
         ParticleAttribute<bool> isMSBA;
         ParticleAttribute<bool> isMSBB;
+        ParticleAttribute<bool> overflow;
 
         ParticleAttribute<int> round;
         ParticleAttribute<Mode> mode;
@@ -42,12 +76,14 @@ namespace AS2.Algos.BinOpTest
             // Initialize the attributes here
             a = CreateAttributeBool("a", false);
             b = CreateAttributeBool("b", false);
+            c = CreateAttributeBool("c", false);
 
             pred = CreateAttributeDirection("Pred", Direction.NONE);
             succ = CreateAttributeDirection("Succ", Direction.NONE);
             isStart = CreateAttributeBool("Start", false);
             isMSBA = CreateAttributeBool("MSB a", false);
             isMSBB = CreateAttributeBool("MSB b", false);
+            overflow = CreateAttributeBool("Overflow", false);
 
             round = CreateAttributeInt("Round", -2);
             mode = CreateAttributeEnum<Mode>("Mode", Mode.MULT);
@@ -157,7 +193,7 @@ namespace AS2.Algos.BinOpTest
             if (round == 0)
             {
                 // Initialization, round 0
-                mult.Init(a, b, isStart, isMSBA, isMSBB, pred, succ);
+                mult.Init(a, b, isStart, isMSBA, pred, succ);
                 PinConfiguration pc = GetContractedPinConfiguration();
                 mult.SetupPinConfig(pc);
                 SetPlannedPinConfiguration(pc);
@@ -166,9 +202,9 @@ namespace AS2.Algos.BinOpTest
             }
             else if (round == 1)
             {
-                // Round 1
+                // Run multiplication subroutine
                 mult.ActivateReceive();
-                if (mult.Finished())
+                if (mult.IsFinished())
                 {
                     round.SetValue(2);
                     return;
@@ -178,6 +214,18 @@ namespace AS2.Algos.BinOpTest
                 mult.SetupPinConfig(pc);
                 SetPlannedPinConfiguration(pc);
                 mult.ActivateSend();
+            }
+            else if (round == 2)
+            {
+                // Copy multiplication result
+                c.SetValue(mult.Bit_C());
+
+                overflow.SetValue(mult.HaveOverflow());
+                if (c.GetCurrentValue())
+                    SetMainColor(ColorData.Particle_Green);
+                else
+                    SetMainColor(ColorData.Particle_BlueDark);
+                round.SetValue(3);
             }
         }
     }
@@ -194,7 +242,14 @@ namespace AS2.Algos.BinOpTest
         {
             string binA = IntToBinary(a);
             string binB = IntToBinary(b);
+            string binATimesB = IntToBinary(a * b);
             int num = Mathf.Max(numParticles, binA.Length, binB.Length);
+
+            if (mode == BinOpTestParticle.Mode.MULT && num < binATimesB.Length)
+            {
+                Log.Warning("Not enough amoebots: Overflow will happen!");
+            }
+
             InitializationParticle p;
             for (int x = 0; x < num; x++)
             {
@@ -205,7 +260,9 @@ namespace AS2.Algos.BinOpTest
                     p.SetAttribute("b", true);
                 p.SetAttribute("mode", mode);
             }
-            Log.Debug("42 = " + IntToBinary(42));
+            Log.Debug(a + " = " + binA);
+            Log.Debug(b + " = " + binB);
+            Log.Debug(a + " * " + b + " = " + binATimesB);
         }
 
         private string IntToBinary(int num)
