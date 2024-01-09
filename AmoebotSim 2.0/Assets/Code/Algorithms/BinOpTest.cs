@@ -42,7 +42,7 @@ namespace AS2.Algos.BinOpTest
 
         public enum Mode
         {
-            MULT
+            MULT, DIV
         }
 
         // This is the display name of the algorithm (must be unique)
@@ -70,6 +70,7 @@ namespace AS2.Algos.BinOpTest
         ParticleAttribute<Mode> mode;
 
         SubMultiplication mult;
+        SubDivision div;
 
         public BinOpTestParticle(Particle p) : base(p)
         {
@@ -89,6 +90,7 @@ namespace AS2.Algos.BinOpTest
             mode = CreateAttributeEnum<Mode>("Mode", Mode.MULT);
 
             mult = new SubMultiplication(p);
+            div = new SubDivision(p);
 
             // Also, set the default initial color
             SetMainColor(ColorData.Particle_Blue);
@@ -185,6 +187,10 @@ namespace AS2.Algos.BinOpTest
                 {
                     ActivateMult();
                 }
+                else if (mode == Mode.DIV)
+                {
+                    ActivateDiv();
+                }
             }
         }
 
@@ -228,6 +234,47 @@ namespace AS2.Algos.BinOpTest
                 round.SetValue(3);
             }
         }
+
+        private void ActivateDiv()
+        {
+            if (round == 0)
+            {
+                // Initialization
+                div.Init(a, b, isStart, isMSBA, pred, succ);
+                PinConfiguration pc = GetContractedPinConfiguration();
+                div.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                div.ActivateSend();
+                round.SetValue(round + 1);
+            }
+            else if (round == 1)
+            {
+                // Run division subroutine
+                div.ActivateReceive();
+                if (div.IsFinished())
+                {
+                    round.SetValue(2);
+                    return;
+                }
+
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                div.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                div.ActivateSend();
+            }
+            else if (round == 2)
+            {
+                // Copy division results
+                a.SetValue(div.Bit_A());
+                c.SetValue(div.Bit_C());
+
+                if (c.GetCurrentValue())
+                    SetMainColor(ColorData.Particle_Green);
+                else
+                    SetMainColor(ColorData.Particle_BlueDark);
+                round.SetValue(3);
+            }
+        }
     }
 
     // Use this to implement a generation method for this algorithm
@@ -243,11 +290,17 @@ namespace AS2.Algos.BinOpTest
             string binA = IntToBinary(a);
             string binB = IntToBinary(b);
             string binATimesB = IntToBinary(a * b);
+            string binADivB = IntToBinary(a / b);
+            string binAModB = IntToBinary(a % b);
             int num = Mathf.Max(numParticles, binA.Length, binB.Length);
 
             if (mode == BinOpTestParticle.Mode.MULT && num < binATimesB.Length)
             {
                 Log.Warning("Not enough amoebots: Overflow will happen!");
+            }
+            else if (mode == BinOpTestParticle.Mode.DIV && a < b)
+            {
+                Log.Error("Binary division will not work if a < b");
             }
 
             InitializationParticle p;
@@ -262,7 +315,15 @@ namespace AS2.Algos.BinOpTest
             }
             Log.Debug(a + " = " + binA);
             Log.Debug(b + " = " + binB);
-            Log.Debug(a + " * " + b + " = " + binATimesB);
+            if (mode == BinOpTestParticle.Mode.MULT)
+            {
+                Log.Debug(a + " * " + b + " = " + binATimesB);
+            }
+            else if (mode == BinOpTestParticle.Mode.DIV)
+            {
+                Log.Debug(a + " / " + b + " = " + binADivB);
+                Log.Debug(a + " mod " + b + " = " + binAModB);
+            }
         }
 
         private string IntToBinary(int num)
