@@ -168,17 +168,19 @@ namespace AS2.Subroutines.BinaryOps
         {
             int round = Round();
             PinConfiguration pc = algo.GetCurrentPinConfiguration();
+            Direction predDir = PredDir();
+            Direction succDir = SuccDir();
+            int pSet1 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 0, algo.PinsPerEdge);
+            int pSet2 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 1, algo.PinsPerEdge);
             if (round == 0)
             {
                 // Receive token beep
-                Direction predDir = PredDir();
                 if (predDir != Direction.NONE && pc.GetPinAt(predDir, 0).PartitionSet.ReceivedBeep())
                 {
                     SetStateBit(bit_Token, true);
                 }
 
                 // Receive overflow beep
-                GetPsetIds(pc, out int pSet1, out int pSet2);
                 if (pc.ReceivedBeepOnPartitionSet(pSet2))
                 {
                     SetStateBit(bit_Overflow, true);
@@ -187,7 +189,6 @@ namespace AS2.Subroutines.BinaryOps
             else if (round == 1)
             {
                 // Check if there was a beep on circuit 2
-                GetPsetIds(pc, out int pSet1, out int pSet2);
                 if (pc.ReceivedBeepOnPartitionSet(pSet2))
                 {
                     // Start the iteration
@@ -214,7 +215,6 @@ namespace AS2.Subroutines.BinaryOps
                 // Receive carry bit and bit of b
                 bool beepCarry = false;
                 bool beepB = false;
-                Direction predDir = PredDir();
                 if (predDir != Direction.NONE)
                 {
                     beepCarry = pc.GetPinAt(predDir, 0).PartitionSet.ReceivedBeep();
@@ -257,24 +257,24 @@ namespace AS2.Subroutines.BinaryOps
             if (round == 0)
             {
                 // Establish two full chain circuits
-                MakePartitionSets(pc, predDir, succDir, 0, true);
-                MakePartitionSets(pc, predDir, succDir, 1, true);
+                BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 0, algo.PinsPerEdge, true);
+                BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 1, algo.PinsPerEdge, true);
             }
             else if (round == 1)
             {
                 // Circuit 1 is chain circuit for carry bits
                 // Connect iff the two bits of a and b are different
-                MakePartitionSets(pc, predDir, succDir, 0, GetStateBit(bit_B) ^ GetStateBit(bit_C));
+                BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 0, algo.PinsPerEdge, GetStateBit(bit_B) ^ GetStateBit(bit_C));
 
                 // Circuit 2 is singleton to transmit bits of b
-                MakePartitionSets(pc, predDir, succDir, 1, false);
+                BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 1, algo.PinsPerEdge, false);
             }
             else if (round == 2)
             {
                 // Circuit 1 becomes neighbor circuit (singleton)
-                MakePartitionSets(pc, predDir, succDir, 0, false);
+                BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 0, algo.PinsPerEdge, false);
                 // Circuit 2 becomes full chain for overflow signal
-                MakePartitionSets(pc, predDir, succDir, 1, true);
+                BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 1, algo.PinsPerEdge, true);
             }
         }
 
@@ -294,7 +294,10 @@ namespace AS2.Subroutines.BinaryOps
                 {
                     PinConfiguration pc = GetPlannedPC();
 
-                    GetPsetIds(pc, out int pSet1, out int pSet2);
+                    Direction predDir = PredDir();
+                    Direction succDir = SuccDir();
+                    int pSet1 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 0, algo.PinsPerEdge);
+                    int pSet2 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 1, algo.PinsPerEdge);
                     pc.SendBeepOnPartitionSet(pSet2);
                     if (GetStateBit(bit_A))
                         pc.SendBeepOnPartitionSet(pSet1);
@@ -354,7 +357,7 @@ namespace AS2.Subroutines.BinaryOps
                 if (GetStateBit(bit_Overflow))
                 {
                     PinConfiguration pc = GetPlannedPC();
-                    GetPsetIds(pc, out int pSet1, out int pSet2);
+                    int pSet2 = BinOpUtils.GetChainPSetID(pc, PredDir(), SuccDir(), 1, algo.PinsPerEdge);
                     pc.SendBeepOnPartitionSet(pSet2);
                 }
                 SetRound(0);
@@ -473,68 +476,6 @@ namespace AS2.Subroutines.BinaryOps
         private void SetRound(int round)
         {
             state.SetValue((state.GetCurrentValue() & ~3 | round));
-        }
-
-        /// <summary>
-        /// Helper for getting the partition set IDs of the connected chain circuits.
-        /// This is useful at the start and end of the chain, where one of the two
-        /// ends is not connected, so we cannot use the pin to find the partition set.
-        /// </summary>
-        /// <param name="pc">The pin configuration from which to get the partition set IDs.</param>
-        /// <param name="pSet1">The ID of the outer circuit's partition set.</param>
-        /// <param name="pSet2">The ID of the inner circuit's partition set.</param>
-        private void GetPsetIds(PinConfiguration pc, out int pSet1, out int pSet2)
-        {
-            Direction succDir = SuccDir();
-            Direction predDir = PredDir();
-
-            if (succDir != Direction.NONE)
-            {
-                pSet1 = pc.GetPinAt(succDir, algo.PinsPerEdge - 1).PartitionSet.Id;
-                pSet2 = pc.GetPinAt(succDir, algo.PinsPerEdge - 2).PartitionSet.Id;
-            }
-            else
-            {
-                pSet1 = pc.GetPinAt(predDir, 0).PartitionSet.Id;
-                pSet2 = pc.GetPinAt(predDir, 1).PartitionSet.Id;
-            }
-        }
-
-        /// <summary>
-        /// Sets up the outer or the inner circuit by connecting or
-        /// disconnecting the predecessor from the successor.
-        /// </summary>
-        /// <param name="pc">The pin configuration to be modified.</param>
-        /// <param name="predDir">The direction of the chain predecessor.</param>
-        /// <param name="succDir">The direction of the chain successor.</param>
-        /// <param name="offset">The pin distance from the outer circuit (only 0 and 1 are used).</param>
-        /// <param name="connected">Whether the pins of the predecessor and successor should be
-        /// connected. There will be no connection if the predecessor or successor direction
-        /// is <see cref="Direction.NONE"/>.</param>
-        private void MakePartitionSets(PinConfiguration pc, Direction predDir, Direction succDir, int offset, bool connected)
-        {
-            if (connected)
-            {
-                List<int> pins = new List<int>();
-                if (predDir != Direction.NONE)
-                    pins.Add(pc.GetPinAt(predDir, offset).Id);
-                if (succDir != Direction.NONE)
-                    pins.Add(pc.GetPinAt(succDir, algo.PinsPerEdge - 1 - offset).Id);
-                pc.MakePartitionSet(pins.ToArray(), pins[0]);
-            }
-            else
-            {
-                if (predDir != Direction.NONE)
-                {
-                    int id1 = pc.GetPinAt(predDir, offset).Id;
-                    pc.MakePartitionSet(new int[] { id1 }, id1);
-                }
-                if (succDir != Direction.NONE)
-                {
-                    int id2 = pc.GetPinAt(succDir, algo.PinsPerEdge - 1 - offset).Id;
-                    pc.MakePartitionSet(new int[] { id2 }, id2);
-                }
-            }
         }
 
         /// <summary>
