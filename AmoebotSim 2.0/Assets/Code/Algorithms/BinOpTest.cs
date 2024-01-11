@@ -42,7 +42,7 @@ namespace AS2.Algos.BinOpTest
 
         public enum Mode
         {
-            MULT, DIV
+            MULT, DIV, COMP
         }
 
         // This is the display name of the algorithm (must be unique)
@@ -69,8 +69,11 @@ namespace AS2.Algos.BinOpTest
         ParticleAttribute<int> round;
         ParticleAttribute<Mode> mode;
 
+        ParticleAttribute<SubComparison.ComparisonResult> compResult;
+
         SubMultiplication mult;
         SubDivision div;
+        SubComparison comp;
 
         public BinOpTestParticle(Particle p) : base(p)
         {
@@ -89,8 +92,11 @@ namespace AS2.Algos.BinOpTest
             round = CreateAttributeInt("Round", -2);
             mode = CreateAttributeEnum<Mode>("Mode", Mode.MULT);
 
+            compResult = CreateAttributeEnum<SubComparison.ComparisonResult>("Result", SubComparison.ComparisonResult.NONE);
+
             mult = new SubMultiplication(p);
             div = new SubDivision(p);
+            comp = new SubComparison(p);
 
             // Also, set the default initial color
             SetMainColor(ColorData.Particle_Blue);
@@ -191,6 +197,10 @@ namespace AS2.Algos.BinOpTest
                 {
                     ActivateDiv();
                 }
+                else if (mode == Mode.COMP)
+                {
+                    ActivateComp();
+                }
             }
         }
 
@@ -275,6 +285,41 @@ namespace AS2.Algos.BinOpTest
                 round.SetValue(3);
             }
         }
+
+        private void ActivateComp()
+        {
+            if (round == 0)
+            {
+                // Initialization, round 0
+                comp.Init(a, b, pred, succ);
+                PinConfiguration pc = GetContractedPinConfiguration();
+                comp.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                comp.ActivateSend();
+                round.SetValue(round + 1);
+            }
+            else if (round == 1)
+            {
+                // Run comparison subroutine
+                comp.ActivateReceive();
+                if (comp.IsFinished())
+                {
+                    round.SetValue(2);
+                    return;
+                }
+
+                PinConfiguration pc = GetCurrentPinConfiguration();
+                comp.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                comp.ActivateSend();
+            }
+            else if (round == 2)
+            {
+                // Store comparison result
+                compResult.SetValue(comp.Result());
+                round.SetValue(3);
+            }
+        }
     }
 
     // Use this to implement a generation method for this algorithm
@@ -290,8 +335,8 @@ namespace AS2.Algos.BinOpTest
             string binA = IntToBinary(a);
             string binB = IntToBinary(b);
             string binATimesB = IntToBinary(a * b);
-            string binADivB = IntToBinary(a / b);
-            string binAModB = IntToBinary(a % b);
+            string binADivB = IntToBinary(b > 0 ? a / b : 0);
+            string binAModB = IntToBinary(b > 0 ? a % b : 0);
             int num = Mathf.Max(numParticles, binA.Length, binB.Length);
 
             if (mode == BinOpTestParticle.Mode.MULT && num < binATimesB.Length)
