@@ -28,8 +28,8 @@ namespace AS2.Subroutines.BinaryOps
     ///     <c>b</c>. The highest-value 1-bit of <c>a</c> must be marked.
     /// </item>
     /// <item>
-    ///     Initialize using the <see cref="Init(bool, bool, bool, bool, Direction, Direction)"/> method.
-    ///     You must pass the bits <c>a</c> and <c>b</c>, the start of the chain, the marked MSB of <c>a</c>
+    ///     Initialize using the <see cref="Init(bool, bool, bool, Direction, Direction)"/> method.
+    ///     You must pass the bits <c>a</c> and <c>b</c>, the marked MSB of <c>a</c>
     ///     and the two directions. The start should have no predecessor and the end should have no successor.
     /// </item>
     /// <item>
@@ -128,9 +128,12 @@ namespace AS2.Subroutines.BinaryOps
         private const int bit_Overflow = 15;
         private const int bit_ShiftError = 16;
 
-        public SubMultiplication(Particle p) : base(p)
+        public SubMultiplication(Particle p, ParticleAttribute<int> stateAttr = null) : base(p)
         {
-            state = algo.CreateAttributeInt(FindValidAttributeName("[Mult] State"), 0);
+            if (stateAttr is null)
+                state = algo.CreateAttributeInt(FindValidAttributeName("[Mult] State"), 0);
+            else
+                state = stateAttr;
         }
 
         /// <summary>
@@ -139,21 +142,20 @@ namespace AS2.Subroutines.BinaryOps
         /// </summary>
         /// <param name="a">This amoebot's bit of <c>a</c>.</param>
         /// <param name="b">This amoebot's bit of <c>b</c>.</param>
-        /// <param name="start">Whether this amoebot is the start of <c>a</c>.</param>
         /// <param name="msbA">Whether this amoebot is the highest-value 1-bit of <c>a</c>.</param>
         /// <param name="predDir">The direction of the predecessor. Should be <see cref="Direction.NONE"/>
         /// only at the start of the chain.</param>
         /// <param name="succDir">The direction of the successor. Should be <see cref="Direction.NONE"/>
         /// only at the end of the chain.</param>
-        public void Init(bool a, bool b, bool start, bool msbA, Direction predDir, Direction succDir)
+        public void Init(bool a, bool b, bool msbA, Direction predDir, Direction succDir)
         {
             // Encode the starting information in the state
             state.SetValue(
                 0 |                     // Round
                 (a ? 4 : 0) |           // Bits of a, b and c (c is 0 initially)
                 (b ? 8 : 0) |
-                (start ? 32 : 0) |      // Token
-                (msbA ? 64 : 0) |       // MSB of a
+                (predDir == Direction.NONE ? 32 : 0) |  // Token
+                (msbA ? 64 : 0) |                       // MSB of a
                 (predDir != Direction.NONE ? (predDir.ToInt() << 7) : (6 << 7)) |   // Predecessor and successor direction
                 (succDir != Direction.NONE ? (succDir.ToInt() << 10) : (6 << 10)));
         }

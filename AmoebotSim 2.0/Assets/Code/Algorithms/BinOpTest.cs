@@ -8,41 +8,9 @@ namespace AS2.Algos.BinOpTest
 
     public class BinOpTestParticle : ParticleAlgorithm
     {
-        // TODO: Find a way around the isActive flag?
-        [StatusInfo("Display Mult Progress", null, false)]
-        public static void StatusInfo(AS2.Sim.ParticleSystem system, Particle selectedParticle)
-        {
-            int x = 0;
-            string a = "a = ";
-            string b = "b = ";
-            string c = "c = ";
-            while (true)
-            {
-                if (system.TryGetParticleAt(new Vector2Int(x, 0), out Visuals.IParticleState particle))
-                {
-                    Particle part = (Particle)particle;
-                    part.isActive = true;
-                    BinOpTestParticle p = (BinOpTestParticle)part.algorithm;
-                    a += p.mult.Bit_A() ? '1' : '0';
-                    b += p.mult.Bit_B() ? '1' : '0';
-                    c += p.mult.Bit_C() ? '1' : '0';
-                    part.isActive = false;
-                    x += 1;
-                }
-                else
-                {
-                    Debug.Log(a);
-                    Debug.Log(b);
-                    Debug.Log(c);
-                    Debug.Log("\n");
-                    return;
-                }
-            }
-        }
-
         public enum Mode
         {
-            MULT, DIV, COMP
+            MULT, DIV, COMP, ADD, SUB
         }
 
         // This is the display name of the algorithm (must be unique)
@@ -63,7 +31,6 @@ namespace AS2.Algos.BinOpTest
         ParticleAttribute<Direction> succ;
         ParticleAttribute<bool> isStart;
         ParticleAttribute<bool> isMSBA;
-        ParticleAttribute<bool> isMSBB;
         ParticleAttribute<bool> overflow;
 
         ParticleAttribute<int> round;
@@ -71,9 +38,7 @@ namespace AS2.Algos.BinOpTest
 
         ParticleAttribute<SubComparison.ComparisonResult> compResult;
 
-        SubMultiplication mult;
-        SubDivision div;
-        SubComparison comp;
+        SubBinOps binOps;
 
         public BinOpTestParticle(Particle p) : base(p)
         {
@@ -86,7 +51,6 @@ namespace AS2.Algos.BinOpTest
             succ = CreateAttributeDirection("Succ", Direction.NONE);
             isStart = CreateAttributeBool("Start", false);
             isMSBA = CreateAttributeBool("MSB a", false);
-            isMSBB = CreateAttributeBool("MSB b", false);
             overflow = CreateAttributeBool("Overflow", false);
 
             round = CreateAttributeInt("Round", -2);
@@ -94,9 +58,7 @@ namespace AS2.Algos.BinOpTest
 
             compResult = CreateAttributeEnum<SubComparison.ComparisonResult>("Result", SubComparison.ComparisonResult.NONE);
 
-            mult = new SubMultiplication(p);
-            div = new SubDivision(p);
-            comp = new SubComparison(p);
+            binOps = new SubBinOps(p);
 
             // Also, set the default initial color
             SetMainColor(ColorData.Particle_Blue);
@@ -140,184 +102,101 @@ namespace AS2.Algos.BinOpTest
                     succ.SetValue(Direction.E);
 
                 // Setup circuits to find MSBs
+                binOps.Init(SubBinOps.Mode.MSB, a, pred.GetCurrentValue(), succ.GetCurrentValue());
                 PinConfiguration pc = GetContractedPinConfiguration();
-                bool sendA = false;
-                bool sendB = false;
-                if (a)
-                {
-                    // Send beep backwards
-                    sendA = true;
-                }
-                else
-                {
-                    pc.MakePartitionSet(new int[] { pc.GetPinAt(Direction.W, 0).Id, pc.GetPinAt(Direction.E, 3).Id }, 0);
-                }
-
-                if (b)
-                {
-                    // Send beep backwards
-                    sendB = true;
-                }
-                else
-                {
-                    pc.MakePartitionSet(new int[] { pc.GetPinAt(Direction.W, 3).Id, pc.GetPinAt(Direction.E, 0).Id }, 2);
-                }
+                binOps.SetupPinConfig(pc);
                 SetPlannedPinConfiguration(pc);
-                if (sendA)
-                    pc.GetPinAt(Direction.W, 0).PartitionSet.SendBeep();
-                if (sendB)
-                    pc.GetPinAt(Direction.W, 3).PartitionSet.SendBeep();
+                binOps.ActivateSend();
 
                 round.SetValue(round + 1);
             }
             else if (round == -1)
             {
                 // Receive beep and determine whether we are the MSB
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                if (!pc.GetPinAt(Direction.E, 3).PartitionSet.ReceivedBeep())
-                {
-                    // Received no beep, check if we are the MSB
-                    isMSBA.SetValue(a || isStart);
-                }
-                if (!pc.GetPinAt(Direction.E, 0).PartitionSet.ReceivedBeep())
-                {
-                    // Received no beep, check if we are the MSB
-                    isMSBB.SetValue(b || isStart);
-                }
+                binOps.ActivateReceive();
+                isMSBA.SetValue(binOps.IsMSB());
 
                 round.SetValue(round + 1);
             }
-            else
+            else if (round == 0)
             {
+                // Initialize
                 if (mode == Mode.MULT)
                 {
-                    ActivateMult();
+                    binOps.Init(SubBinOps.Mode.MULT, a, pred, succ, b, isMSBA);
                 }
                 else if (mode == Mode.DIV)
                 {
-                    ActivateDiv();
+                    binOps.Init(SubBinOps.Mode.DIV, a, pred, succ, b, isMSBA);
                 }
                 else if (mode == Mode.COMP)
                 {
-                    ActivateComp();
+                    binOps.Init(SubBinOps.Mode.COMP, a, pred, succ, b);
                 }
-            }
-        }
+                else if (mode == Mode.ADD)
+                {
+                    binOps.Init(SubBinOps.Mode.ADD, a, pred, succ, b);
+                }
+                else if (mode == Mode.SUB)
+                {
+                    binOps.Init(SubBinOps.Mode.SUB, a, pred, succ, b);
+                }
 
-        private void ActivateMult()
-        {
-            if (round == 0)
-            {
-                // Initialization, round 0
-                mult.Init(a, b, isStart, isMSBA, pred, succ);
                 PinConfiguration pc = GetContractedPinConfiguration();
-                mult.SetupPinConfig(pc);
+                binOps.SetupPinConfig(pc);
                 SetPlannedPinConfiguration(pc);
-                mult.ActivateSend();
+                binOps.ActivateSend();
                 round.SetValue(round + 1);
             }
             else if (round == 1)
             {
-                // Run multiplication subroutine
-                mult.ActivateReceive();
-                if (mult.IsFinished())
+                // Run the subroutine
+                binOps.ActivateReceive();
+                if ((mode == Mode.ADD || mode == Mode.SUB) && binOps.IsFinishedOverflow()
+                    || (mode != Mode.ADD && mode != Mode.SUB) && binOps.IsFinished())
                 {
                     round.SetValue(2);
                     return;
                 }
 
                 PinConfiguration pc = GetCurrentPinConfiguration();
-                mult.SetupPinConfig(pc);
+                binOps.SetupPinConfig(pc);
                 SetPlannedPinConfiguration(pc);
-                mult.ActivateSend();
+                binOps.ActivateSend();
             }
             else if (round == 2)
             {
-                // Copy multiplication result
-                c.SetValue(mult.Bit_C());
-
-                overflow.SetValue(mult.HaveOverflow());
-                if (c.GetCurrentValue())
-                    SetMainColor(ColorData.Particle_Green);
-                else
-                    SetMainColor(ColorData.Particle_BlueDark);
-                round.SetValue(3);
-            }
-        }
-
-        private void ActivateDiv()
-        {
-            if (round == 0)
-            {
-                // Initialization
-                div.Init(a, b, isStart, isMSBA, pred, succ);
-                PinConfiguration pc = GetContractedPinConfiguration();
-                div.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
-                div.ActivateSend();
-                round.SetValue(round + 1);
-            }
-            else if (round == 1)
-            {
-                // Run division subroutine
-                div.ActivateReceive();
-                if (div.IsFinished())
+                // Subroutine has finished
+                if (mode == Mode.MULT)
                 {
-                    round.SetValue(2);
-                    return;
+                    c.SetValue(binOps.ResultBit());
+                    overflow.SetValue(binOps.HaveOverflow());
                 }
-
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                div.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
-                div.ActivateSend();
-            }
-            else if (round == 2)
-            {
-                // Copy division results
-                a.SetValue(div.Bit_A());
-                c.SetValue(div.Bit_C());
+                else if (mode == Mode.DIV)
+                {
+                    a.SetValue(binOps.RemainderBit());
+                }
+                else if (mode == Mode.COMP)
+                {
+                    compResult.SetValue(binOps.CompResult());
+                }
+                else if (mode == Mode.ADD)
+                {
+                    c.SetValue(binOps.ResultBit());
+                    overflow.SetValue(binOps.HaveOverflow());
+                }
+                else if (mode == Mode.SUB)
+                {
+                    c.SetValue(binOps.ResultBit());
+                    overflow.SetValue(binOps.HaveOverflow());
+                }
 
                 if (c.GetCurrentValue())
                     SetMainColor(ColorData.Particle_Green);
                 else
                     SetMainColor(ColorData.Particle_BlueDark);
-                round.SetValue(3);
-            }
-        }
 
-        private void ActivateComp()
-        {
-            if (round == 0)
-            {
-                // Initialization, round 0
-                comp.Init(a, b, pred, succ);
-                PinConfiguration pc = GetContractedPinConfiguration();
-                comp.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
-                comp.ActivateSend();
                 round.SetValue(round + 1);
-            }
-            else if (round == 1)
-            {
-                // Run comparison subroutine
-                comp.ActivateReceive();
-                if (comp.IsFinished())
-                {
-                    round.SetValue(2);
-                    return;
-                }
-
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                comp.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
-                comp.ActivateSend();
-            }
-            else if (round == 2)
-            {
-                // Store comparison result
-                compResult.SetValue(comp.Result());
-                round.SetValue(3);
             }
         }
     }
@@ -337,15 +216,21 @@ namespace AS2.Algos.BinOpTest
             string binATimesB = IntToBinary(a * b);
             string binADivB = IntToBinary(b > 0 ? a / b : 0);
             string binAModB = IntToBinary(b > 0 ? a % b : 0);
+            string binAPlusB = IntToBinary(a + b);
+            string binAMinusB = IntToBinary(a >= b ? a - b : 0);
             int num = Mathf.Max(numParticles, binA.Length, binB.Length);
 
-            if (mode == BinOpTestParticle.Mode.MULT && num < binATimesB.Length)
+            if (mode == BinOpTestParticle.Mode.MULT && num < binATimesB.Length || mode == BinOpTestParticle.Mode.ADD && num < binAPlusB.Length)
             {
                 Log.Warning("Not enough amoebots: Overflow will happen!");
             }
             else if (mode == BinOpTestParticle.Mode.DIV && a < b)
             {
                 Log.Error("Binary division will not work if a < b");
+            }
+            else if (mode == BinOpTestParticle.Mode.SUB && a < b)
+            {
+                Log.Warning("Subtraction: Overflow will happen due to a < b!");
             }
 
             InitializationParticle p;
@@ -368,6 +253,14 @@ namespace AS2.Algos.BinOpTest
             {
                 Log.Debug(a + " / " + b + " = " + binADivB);
                 Log.Debug(a + " mod " + b + " = " + binAModB);
+            }
+            else if (mode == BinOpTestParticle.Mode.ADD)
+            {
+                Log.Debug(a + " + " + b + " = " + binAPlusB);
+            }
+            else if (mode == BinOpTestParticle.Mode.SUB)
+            {
+                Log.Debug(a + " - " + b + " = " + binAMinusB);
             }
         }
 

@@ -6,16 +6,15 @@ using AS2.Sim;
 namespace AS2.Subroutines.BinaryOps
 {
     /// <summary>
-    /// Implements binary comparison for two numbers a, b
+    /// Implements binary subtraction for two numbers a, b
     /// stored in the same chain.
     /// <para>
-    /// Determines whether a <![CDATA[>]]> b, a <![CDATA[<]]> b
-    /// or a = b and makes the result available to all
-    /// amoebots on the chain.
+    /// Computes a new binary number <c>c := a - b</c> and optionally determines
+    /// whether an overflow occurred, i.e., the result was less than 0.
     /// </para>
     /// <para>
-    /// This procedure requires at least 2 pins and it always uses the
-    /// "outermost / leftmost" pins when traversing the chain. If an amoebot
+    /// This procedure requires at least 1 pin and it always uses the
+    /// "outermost / leftmost" pin when traversing the chain. If an amoebot
     /// occurs on the chain multiple times, its predecessor and successor directions
     /// must be different for all occurrences.
     /// </para>
@@ -50,12 +49,13 @@ namespace AS2.Subroutines.BinaryOps
     ///     continuing with <see cref="SetupPinConfig(PinConfiguration)"/> in some future round.
     /// </item>
     /// <item>
-    ///     Call <see cref="IsFinished"/> after <see cref="ActivateReceive"/> to check whether the
-    ///     comparison is finished.
+    ///     Call <see cref="IsFinishedSub"/> after <see cref="ActivateReceive"/> to check whether the
+    ///     subtraction is finished. Running another iteration after this, until <see cref="IsFinishedOverflow"/>
+    ///     returns <c>true</c>, will make the overflow result available.
     /// </item>
     /// <item>
-    ///     The comparison result is thereafter available through <see cref="Result"/> for each
-    ///     amoebot on the chain.
+    ///     The subtraction result <c>c</c> is thereafter available through <see cref="Bit_C"/>
+    ///     for each amoebot on the chain.
     /// </item>
     /// </list>
     /// </para>
@@ -65,52 +65,47 @@ namespace AS2.Subroutines.BinaryOps
     //  - Give the predecessor and successor direction
     // Round 0:
     //  Send:
-    //  - Establish chain circuit split at amoebots with unequal bits
-    //  - Last amoebot on the counter beeps unless its bits are unequal
+    //  - Establish subtraction chain circuit 1: Split where bits are unequal
+    //  - Amoebots with bits 0, 1 send beep to successor
     // Round 1:
     //  Receive:
-    //  - If we have unequal bits and receive a beep: Determine comparison result by the stored bits
-    //  - If we are the chain start and we receive the beep (equal bits): Set comparison result to equal
-    //  - If we are the chain end and we have unequal bits: Determine the comparison result
+    //  - Receive "carry" bit and compute addition result as a ^ b ^ carry
     //  Send:
-    //  - Setup full chain circuits 1 and 2
-    //  - Amoebot with comparison result sends beep pattern encoding the result
+    //  - Setup full chain circuit 1
+    //  - Amoebot at the end of the chain beeps if it had to forward a carry to non-existent successor
+    //      - It can determine this by its own bits a, b, c
     // Round 2:
     //  Receive:
-    //  - Receive comparison result on the two circuits
-    public class SubComparison : Subroutine
+    //  - Receive overflow bit on first circuit
+    public class SubSubtraction : Subroutine
     {
-        public enum ComparisonResult
-        {
-            NONE = 0,
-            EQUAL = 1,
-            GREATER = 2,
-            LESS = 3
-        }
 
         // This int represents the state of this amoebot
         // Since the standard int type is a 32-bit signed int, we use the
         // 32 bits to encode the entire state:
         // The lowest 2 bits represent the round counter (possible values 0, 1, 2)
-        // Bits 2, 3 store the bits of a and b
-        // Bits 4-6 store the direction of the predecessor (0-5 directions and 6 means no predecessor)
-        // Bits 7-9 store the direction of the successor
-        // Bit 10 is the termination flag
-        // Bits 11, 12 store the comparison result (<, >, =, NONE)
-        //                         1211      10      987         654         32   10
-        // xxxx xxxx xxxx xxxx xxx  xx       x       xxx         xxx         xx   xx
-        //                          Result   Term.   Succ. dir   Pred. dir   ba   Round
+        // Bits 2, 3, 4 store the bits of a, b and c
+        // Bits 5-7 store the direction of the predecessor (0-5 directions and 6 means no predecessor)
+        // Bits 8-10 store the direction of the successor
+        // Bits 11 and 12 are the termination flags for the subtraction and the overflow check
+        // Bit 13 stores the overflow result
+        //                         13         12              11        1098         765         432   10
+        // xxxx xxxx xxxx xxxx xx  x          x               x          xxx         xxx         xxx   xx
+        //                         Overflow   Overflow done   Sub done   Succ. dir   Pred. dir   cba   Round
         ParticleAttribute<int> state;
 
         // Bit index constants
         private const int bit_A = 2;
         private const int bit_B = 3;
-        private const int bit_Finished = 10;
+        private const int bit_C = 4;
+        private const int bit_FinishedSub = 11;
+        private const int bit_FinishedOverflow = 12;
+        private const int bit_Overflow = 13;
 
-        public SubComparison(Particle p, ParticleAttribute<int> stateAttr = null) : base(p)
+        public SubSubtraction(Particle p, ParticleAttribute<int> stateAttr = null) : base(p)
         {
             if (stateAttr is null)
-                state = algo.CreateAttributeInt(FindValidAttributeName("[Comp] State"), 0);
+                state = algo.CreateAttributeInt(FindValidAttributeName("[Sub] State"), 0);
             else
                 state = stateAttr;
         }
@@ -130,11 +125,10 @@ namespace AS2.Subroutines.BinaryOps
             // Encode the starting information in the state
             state.SetValue(
                 0 |                     // Round
-                (a ? 4 : 0) |           // Bits of a and b
+                (a ? 4 : 0) |           // Bits of a, b and c (c is initially 0)
                 (b ? 8 : 0) |
-                (predDir != Direction.NONE ? (predDir.ToInt() << 4) : (6 << 4)) |   // Predecessor and successor direction
-                (succDir != Direction.NONE ? (succDir.ToInt() << 7) : (6 << 7)) |
-                ((int)ComparisonResult.NONE << 11)  // Initial comparison result
+                (predDir != Direction.NONE ? (predDir.ToInt() << 5) : (6 << 5)) |   // Predecessor and successor direction
+                (succDir != Direction.NONE ? (succDir.ToInt() << 8) : (6 << 8))
                 );
         }
 
@@ -151,46 +145,21 @@ namespace AS2.Subroutines.BinaryOps
             Direction predDir = PredDir();
             Direction succDir = SuccDir();
             int pSet1 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 0, algo.PinsPerEdge);
-            int pSet2 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 1, algo.PinsPerEdge);
             if (round == 1)
             {
-                // Determine comparison result if we can
-                bool a = GetStateBit(bit_A);
-                bool b = GetStateBit(bit_B);
-                if (a ^ b)
-                {
-                    if (succDir == Direction.NONE)
-                    {
-                        // We determine the result (end of the chain)
-                        SetResult(a ? ComparisonResult.GREATER : ComparisonResult.LESS);
-                    }
-                    else
-                    {
-                        // We only determine the result if we received the beep
-                        if (pc.ReceivedBeepOnPartitionSet(pSet1))
-                        {
-                            SetResult(a ? ComparisonResult.GREATER : ComparisonResult.LESS);
-                        }
-                    }
-                }
-                else
-                {
-                    // We determine the result only if we are the start of the chain
-                    if (predDir == Direction.NONE && (succDir == Direction.NONE || pc.ReceivedBeepOnPartitionSet(pSet1)))
-                    {
-                        SetResult(ComparisonResult.EQUAL);
-                    }
-                }
+                // Receive carry and compute result bit
+                bool carry = predDir != Direction.NONE && pc.GetPinAt(predDir, 0).PartitionSet.ReceivedBeep();
+                SetStateBit(bit_C, GetStateBit(bit_A) ^ GetStateBit(bit_B) ^ carry);
+                SetStateBit(bit_FinishedSub, true);
             }
             else if (round == 2)
             {
-                // Receive comparison result from circuits
-                bool c1 = pc.ReceivedBeepOnPartitionSet(pSet1);
-                bool c2 = pc.ReceivedBeepOnPartitionSet(pSet2);
-                // The last case should never happen
-                ComparisonResult result = c1 && c2 ? ComparisonResult.EQUAL : (c1 ? ComparisonResult.GREATER : c2 ? ComparisonResult.LESS : ComparisonResult.NONE);
-                SetResult(result);
-                SetStateBit(bit_Finished, true);
+                // Receive overflow result
+                if (pSet1 != -1 && pc.ReceivedBeepOnPartitionSet(pSet1))
+                {
+                    SetStateBit(bit_Overflow, true);
+                }
+                SetStateBit(bit_FinishedOverflow, true);
             }
         }
 
@@ -209,14 +178,13 @@ namespace AS2.Subroutines.BinaryOps
             Direction succDir = SuccDir();
             if (round == 0)
             {
-                // Establish comparison circuit 1: Split for unequal bits
+                // Establish addition circuit 1: Split for unequal bits
                 BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 0, algo.PinsPerEdge, GetStateBit(bit_A) == GetStateBit(bit_B));
             }
             else if (round == 1)
             {
-                // Full chain circuits 1 and 2
+                // Full chain circuit 1
                 BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 0, algo.PinsPerEdge, true);
-                BinOpUtils.MakeChainCircuit(pc, predDir, succDir, 1, algo.PinsPerEdge, true);
             }
         }
 
@@ -230,33 +198,35 @@ namespace AS2.Subroutines.BinaryOps
         {
             int round = Round();
             PinConfiguration pc = GetPlannedPC();
+            Direction succDir = SuccDir();
             if (round == 0)
             {
-                // Chain end sends beep to predecessor if bits are equal
-                Direction predDir = PredDir();
-                if (SuccDir() == Direction.NONE && predDir != Direction.NONE && GetStateBit(bit_A) == GetStateBit(bit_B))
+                // Send beep to successor if both bits are 0, 1
+                if (!GetStateBit(bit_A) && GetStateBit(bit_B) && succDir != Direction.NONE)
                 {
-                    pc.GetPinAt(predDir, 0).PartitionSet.SendBeep();
+                    pc.GetPinAt(succDir, algo.PinsPerEdge - 1).PartitionSet.SendBeep();
                 }
                 SetRound(1);
             }
             else if (round == 1)
             {
-                // If we know the result, we send the beep
-                ComparisonResult result = Result();
-                if (result != ComparisonResult.NONE)
+                // End of the chain sends beep if it has sent a carry
+                if (succDir == Direction.NONE)
                 {
-                    Direction predDir = PredDir();
-                    Direction succDir = SuccDir();
-                    int pSet1 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 0, algo.PinsPerEdge);
-                    int pSet2 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 1, algo.PinsPerEdge);
-                    // a is greater: Circuit 1
-                    // b is greater: Circuit 2
-                    // a = b: Both circuits
-                    if (result == ComparisonResult.GREATER || result == ComparisonResult.EQUAL)
-                        pc.SendBeepOnPartitionSet(pSet1);
-                    if (result == ComparisonResult.LESS || result == ComparisonResult.EQUAL)
-                        pc.SendBeepOnPartitionSet(pSet2);
+                    // Our bits and addition result tell us what happened
+                    bool a = GetStateBit(bit_A);
+                    bool b = GetStateBit(bit_B);
+                    bool c = GetStateBit(bit_C);
+                    // Bits are 0, 1 (we sent the carry) or a == b and c was flipped to 1 by carry
+                    if (!a && b || ((a == b) && c))
+                    {
+                        SetStateBit(bit_Overflow, true);
+                        int pSet1 = BinOpUtils.GetChainPSetID(pc, PredDir(), succDir, 0, algo.PinsPerEdge);
+                        if (pSet1 != -1)
+                        {
+                            pc.SendBeepOnPartitionSet(pSet1);
+                        }
+                    }
                 }
                 SetRound(2);
             }
@@ -309,6 +279,14 @@ namespace AS2.Subroutines.BinaryOps
             return GetStateBit(bit_B);
         }
 
+        /// <summary>
+        /// This amoebot's bit of <c>c</c>.
+        /// </summary>
+        /// <returns>Whether this amoebot's bit of <c>c</c> is equal to <c>1</c>.</returns>
+        public bool Bit_C()
+        {
+            return GetStateBit(bit_C);
+        }
 
         /// <summary>
         /// Helper for reading the predecessor direction from the state integer.
@@ -316,7 +294,7 @@ namespace AS2.Subroutines.BinaryOps
         /// <returns>The direction of the chain predecessor.</returns>
         private Direction PredDir()
         {
-            int d = (state.GetCurrentValue() >> 4) & 7;
+            int d = (state.GetCurrentValue() >> 5) & 7;
             if (d == 6)
                 return Direction.NONE;
             else
@@ -329,7 +307,7 @@ namespace AS2.Subroutines.BinaryOps
         /// <returns>The direction of the chain successor.</returns>
         private Direction SuccDir()
         {
-            int d = (state.GetCurrentValue() >> 7) & 7;
+            int d = (state.GetCurrentValue() >> 8) & 7;
             if (d == 6)
                 return Direction.NONE;
             else
@@ -337,25 +315,37 @@ namespace AS2.Subroutines.BinaryOps
         }
 
         /// <summary>
-        /// Checks whether the procedure is finished. Should be called after
-        /// <see cref="ActivateReceive"/>.
+        /// Checks whether the subtraction procedure is finished. Should be called after
+        /// <see cref="ActivateReceive"/>. If an overflow should be detected, another
+        /// iteration has to be run.
         /// </summary>
-        /// <returns><c>true</c> if and only if the comparison procedure
+        /// <returns><c>true</c> if and only if the addition procedure
         /// has finished.</returns>
-        public bool IsFinished()
+        public bool IsFinishedSub()
         {
-            return GetStateBit(bit_Finished);
+            return GetStateBit(bit_FinishedSub);
         }
 
         /// <summary>
-        /// Returns the result of the comparison after the procedure
-        /// has finished.
+        /// Checks whether the procedure including overflow detection is finished.
+        /// Should be called after <see cref="ActivateReceive"/>.
         /// </summary>
-        /// <returns>The result of comparing <c>a</c> to <c>b</c>.</returns>
-        public ComparisonResult Result()
+        /// <returns><c>true</c> if and only if the overflow detection procedure
+        /// has finished.</returns>
+        public bool IsFinishedOverflow()
         {
-            int r = (state.GetCurrentValue() >> 11) & 3;
-            return (ComparisonResult)r;
+            return GetStateBit(bit_FinishedOverflow);
+        }
+
+        /// <summary>
+        /// Checks whether an overflow occurred during the subtraction.
+        /// Should only be called once the procedure has finished completely.
+        /// </summary>
+        /// <returns><c>true</c> if and only if a carry bit was sent beyond the
+        /// end of the chain.</returns>
+        public bool HaveOverflow()
+        {
+            return GetStateBit(bit_Overflow);
         }
 
         /// <summary>
@@ -365,16 +355,6 @@ namespace AS2.Subroutines.BinaryOps
         private void SetRound(int round)
         {
             state.SetValue((state.GetCurrentValue() & ~3 | round));
-        }
-
-        /// <summary>
-        /// Helper for setting the comparison result.
-        /// </summary>
-        /// <param name="result">The new value of the result.</param>
-        private void SetResult(ComparisonResult result)
-        {
-            int r = (int)result;
-            state.SetValue(state.GetCurrentValue() & ~(3 << 11) | (r << 11));
         }
 
         /// <summary>
