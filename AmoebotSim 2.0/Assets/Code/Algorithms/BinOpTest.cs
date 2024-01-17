@@ -174,7 +174,8 @@ namespace AS2.Algos.BinOpTest
                 }
                 else if (mode == Mode.DIV)
                 {
-                    a.SetValue(binOps.RemainderBit());
+                    a.SetValue(binOps.ResultBit());
+                    c.SetValue(binOps.RemainderBit());
                 }
                 else if (mode == Mode.COMP)
                 {
