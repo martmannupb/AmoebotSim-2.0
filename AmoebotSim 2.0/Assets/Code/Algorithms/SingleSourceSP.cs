@@ -83,7 +83,8 @@ namespace AS2.Algos.SingleSourceSP
     //  - Read the comparison result of the parent edge (unless we are the source)
     //      - If OUT - IN is GREATER than 0, our subtree contains a destination, so we do nothing
     //      - Otherwise, we must prune ourselves
-    //  - Finally, reset the pin configuration to singleton and terminate
+    //  - Finally, reset the pin configuration to singleton
+    // Round 5: Hide bonds and terminate
     public class SingleSourceSPParticle : ParticleAlgorithm
     {
         // This is the display name of the algorithm (must be unique)
@@ -332,15 +333,21 @@ namespace AS2.Algos.SingleSourceSP
         // The movement activation method
         public override void ActivateMove()
         {
-            if (phase == Phase.FINISHED)
-                return;
-            else if (phase == Phase.FINAL_PRUNE)
+            if (phase == Phase.FINAL_PRUNE || phase == Phase.FINISHED)
             {
                 // Hide bonds to indicate parents during last phase
+                Direction parent_ = parent.GetCurrentValue();
+                bool pruned_ = pruned.GetCurrentValue();
                 foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
                 {
-                    if (d != parent && !IsChild(d))
+                    if (pruned_ || d != parent_ && !IsChild(d))
                         HideBond(d);
+                }
+
+                if (round == 5)
+                {
+                    phase.SetValue(Phase.FINISHED);
+                    round.SetValue(round + 1);
                 }
             }
             else
@@ -644,7 +651,6 @@ namespace AS2.Algos.SingleSourceSP
                 }
                 SetColor();
                 SetPlannedPinConfiguration(GetContractedPinConfiguration());
-                phase.SetValue(Phase.FINISHED);
             }
             round.SetValue(round + 1);
         }
