@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using AS2.UI;
 using UnityEngine;
 
 namespace AS2.ShapeContainment
@@ -287,6 +288,56 @@ namespace AS2.ShapeContainment
                     Log.Warning("Failed to add edge to traversal");
                     return;
                 }
+            }
+        }
+
+        public void Draw(Vector2Int pos, int rotation = 0, int scale = 1)
+        {
+            if (scale < 1)
+                scale = 1;
+
+            LineDrawer ld = LineDrawer.Instance;
+            // Draw each edge
+            foreach (Edge e in edges)
+            {
+                Vector2Int n1 = nodes[e.u];
+                Vector2Int n2 = nodes[e.v];
+                if (rotation != 0)
+                {
+                    n1 = AmoebotFunctions.RotateVector(n1, rotation);
+                    n2 = AmoebotFunctions.RotateVector(n2, rotation);
+                }
+
+                n1 *= scale;
+                n2 *= scale;
+
+                ld.AddLine(n1 + pos, n2 + pos, Color.blue, false, 1, 1, -0.1f);
+            }
+            // "Fill" each face with some crossing lines
+            Color faceColor = new Color(0, 0.8f, 0);
+            foreach (Face f in faces)
+            {
+                Vector2Int n1 = nodes[f.u];
+                Vector2Int n2 = nodes[f.v];
+                Vector2Int n3 = nodes[f.w];
+                if (rotation != 0)
+                {
+                    n1 = AmoebotFunctions.RotateVector(n1, rotation);
+                    n2 = AmoebotFunctions.RotateVector(n2, rotation);
+                    n3 = AmoebotFunctions.RotateVector(n3, rotation);
+                }
+                n1 *= scale;
+                n2 *= scale;
+                n3 *= scale;
+                Vector2 mid12 = n1 + n2;
+                Vector2 mid13 = n1 + n3;
+                Vector2 mid23 = n2 + n3;
+                mid12 /= 2f;
+                mid13 /= 2f;
+                mid23 /= 2f;
+                ld.AddLine(n1, mid23, faceColor);
+                ld.AddLine(n2, mid13, faceColor);
+                ld.AddLine(n3, mid12, faceColor);
             }
         }
 
