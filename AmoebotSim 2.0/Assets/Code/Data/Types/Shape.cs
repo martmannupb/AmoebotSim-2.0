@@ -342,6 +342,47 @@ namespace AS2.ShapeContainment
         }
 
         /// <summary>
+        /// Checks whether this edge has any incident faces and returns
+        /// their respective third corner node.
+        /// </summary>
+        /// <param name="edge">The index of the edge to consider.</param>
+        /// <param name="cornerLeft">The index of the "left" face's corner node, or <c>-1</c>.</param>
+        /// <param name="cornerRight">The index of the "right" face's corner node, or <c>-1</c>.</param>
+        /// <returns><c>true</c> if and only if the given edge has an incident face.</returns>
+        public bool GetEdgeFaceCorners(int edge, out int cornerLeft, out int cornerRight)
+        {
+            Edge e = edges[edge];
+            cornerLeft = -1;
+            cornerRight = -1;
+
+            foreach (Face f in faces)
+            {
+                List<int> faceNodes = new List<int>() { f.u, f.v, f.w };
+                if (faceNodes.Contains(e.u) && faceNodes.Contains(e.v))
+                {
+                    // This face contains this edge!
+                    // Find the third node
+                    faceNodes.Remove(e.u);
+                    faceNodes.Remove(e.v);
+                    int w = faceNodes[0];
+                    // Find out whether it is the "left" or the "right" corner
+                    Vector2Int edgeVec = (Vector2Int)nodes[e.v] - nodes[e.u];
+                    Vector2Int splitVec = (Vector2Int)nodes[w] - nodes[e.u];
+                    if (AmoebotFunctions.RotateVector(edgeVec, 1) == splitVec)
+                    {
+                        cornerLeft = w;
+                    }
+                    else
+                    {
+                        cornerRight = w;
+                    }
+                }
+            }
+
+            return cornerLeft != -1 || cornerRight != -1;
+        }
+
+        /// <summary>
         /// Checks whether the shape contains the given edge
         /// in any direction.
         /// </summary>

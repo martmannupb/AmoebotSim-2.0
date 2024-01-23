@@ -1,11 +1,33 @@
 using AS2.ShapeContainment;
 using AS2.Sim;
 using AS2.UI;
+using AS2.Subroutines.ShapeConstruction;
 using UnityEngine;
 using static AS2.Constants;
 
 namespace AS2.Algos.ShapeConstruction
 {
+
+    /// <summary>
+    /// Test algorithm for the shape construction subroutine.
+    /// <para>
+    /// <b>Disclaimer: The save/load feature does not work for
+    /// this algorithm because it stores the target shape in a
+    /// static member. Always generate this algorithm from
+    /// Init Mode.</b>
+    /// </para>
+    /// </summary>
+    
+    // Round 0:
+    //  - Initialize subroutine
+    //  - Send first beeps
+    // Round 1:
+    //  Receive:
+    //  - Receive subroutine beeps
+    //  - If finished: Terminate
+    //  Send:
+    //  - Setup subroutine PC
+    //  - Send subroutine beeps
 
     public class ShapeConstructionParticle : ParticleAlgorithm
     {
@@ -18,17 +40,27 @@ namespace AS2.Algos.ShapeConstruction
         // If the algorithm has a special generation method, specify its full name here
         public static new string GenerationMethod => typeof(ShapeConstructionInitializer).FullName;
 
+        public static Shape shape;
+
         // Declare attributes here
+        ParticleAttribute<int> round;           // Round counter
         ParticleAttribute<bool> isRepr;         // Representative of the shape
         ParticleAttribute<int> rotation;        // Shape rotation
         ParticleAttribute<string> scale;        // Scale as binary number (LSB...MSB)
+        ParticleAttribute<int> scaleIndex;      // Index used to traverse the scale (replaced by binary counter in actual algorithm)
+
+        SubShapeConstruction shapeConstr;
 
         public ShapeConstructionParticle(Particle p) : base(p)
         {
             // Initialize the attributes here
+            round = CreateAttributeInt("Round", 0);
             isRepr = CreateAttributeBool("Representative", false);
             rotation = CreateAttributeInt("Rotation", 0);
             scale = CreateAttributeString("Scale", "1");
+            scaleIndex = CreateAttributeInt("Scale Index", 0);
+
+            shapeConstr = new SubShapeConstruction(p, shape);
 
             // Also, set the default initial color
             SetMainColor(Color.gray);
@@ -47,11 +79,11 @@ namespace AS2.Algos.ShapeConstruction
         }
 
         // Implement this method if the algorithm terminates at some point
-        //public override bool IsFinished()
-        //{
-        //    // Return true when this particle has terminated
-        //    return false;
-        //}
+        public override bool IsFinished()
+        {
+            // Return true when this particle has terminated
+            return round.GetValue() == 2;
+        }
 
         // The movement activation method
         public override void ActivateMove()
@@ -62,7 +94,62 @@ namespace AS2.Algos.ShapeConstruction
         // The beep activation method
         public override void ActivateBeep()
         {
-            // Implement the communication code here
+            if (round == 0)
+            {
+                shapeConstr.Init(isRepr.GetCurrentValue(), rotation.GetCurrentValue());
+
+                PinConfiguration pc = GetContractedPinConfiguration();
+                shapeConstr.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                shapeConstr.ActivateSend();
+
+                round.SetValue(1);
+            }
+            else if (round == 1)
+            {
+                shapeConstr.ActivateReceive();
+                
+                // Update color
+                if (shapeConstr.ElementType() == SubShapeConstruction.ShapeElement.NODE)
+                    SetMainColor(ColorData.Particle_Green);
+                else if (shapeConstr.ElementType() == SubShapeConstruction.ShapeElement.EDGE)
+                    SetMainColor(ColorData.Particle_Blue);
+                else if (shapeConstr.ElementType() == SubShapeConstruction.ShapeElement.FACE)
+                    SetMainColor(ColorData.Particle_Aqua);
+
+                if (shapeConstr.IsFinished())
+                {
+                    if (shapeConstr.IsSuccessful())
+                    {
+                        // TODO
+                    }
+                    else
+                    {
+                        SetMainColor(ColorData.Particle_Red);
+                    }
+                    round.SetValue(2);
+                    return;
+                }
+                
+                // Check if we have to reset the scale index
+                if (shapeConstr.ResetScaleCounter())
+                {
+                    scaleIndex.SetValue(0);
+                }
+
+                PinConfiguration pc = GetContractedPinConfiguration();
+                shapeConstr.SetupPinConfig(pc);
+                SetPlannedPinConfiguration(pc);
+                if (shapeConstr.NeedScaleBit())
+                {
+                    shapeConstr.ActivateSend(scale.GetValue()[scaleIndex.GetCurrentValue()] == '1', scaleIndex.GetCurrentValue() == scale.GetValue().Length - 1);
+                    scaleIndex.SetValue(scaleIndex.GetCurrentValue() + 1);
+                }
+                else
+                {
+                    shapeConstr.ActivateSend();
+                }
+            }
         }
     }
 
@@ -94,6 +181,11 @@ namespace AS2.Algos.ShapeConstruction
             if (!s.IsConsistent())
             {
                 Log.Warning("Shape is inconsistent!");
+            }
+            else
+            {
+                s.GenerateTraversal();
+                ShapeConstructionParticle.shape = s;
             }
 
             rotation = rotation % 6;
