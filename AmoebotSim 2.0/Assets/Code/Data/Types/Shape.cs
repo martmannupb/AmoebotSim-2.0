@@ -75,6 +75,20 @@ namespace AS2.ShapeContainment
 
         public List<int> traversal;
 
+        // Convex hull parameters f, d, b, a, c, e
+        private int[] convexHullParams = new int[6];
+        // We keep all of the possible inequality values ready to avoid computing them too often
+        // Also as binary strings
+        // First index: rotation
+        // Second index: Inequality left side
+        // a + b
+        // a + c
+        // b + d
+        // a + b + c
+        // a + b + c
+        private int[][] convexHullInequalities = new int[][] { new int[5], new int[5], new int[5], new int[5], new int[5], new int[5] };
+        private string[][] convexHullInequalityStrings = new string[][] { new string[5], new string[5], new string[5], new string[5], new string[5], new string[5] };
+
         /// <summary>
         /// Checks whether this shape is internally consistent.
         /// A shape is not consistent if it is empty, contains no origin, contains
@@ -292,6 +306,126 @@ namespace AS2.ShapeContainment
         }
 
         /// <summary>
+        /// Generates the convex hull of this shape and stores all of
+        /// its parameters. These include the side lengths a, b, c, d
+        /// and the sums a + b, a + c, b + d, a + b + c and a + b + d
+        /// for all 6 possible rotations, both as integers and as
+        /// binary strings.
+        /// </summary>
+        public void GenerateConvexHull()
+        {
+            // Find the minimum and maximum coordinates
+            Node node = nodes[0];
+            int minx = node.x;
+            int maxx = node.x;
+            int miny = node.y;
+            int maxy = node.y;
+            int minxy = node.x + node.y;
+            int maxxy = node.x + node.y;
+
+            foreach (Node n in nodes)
+            {
+                if (n.x < minx)
+                    minx = n.x;
+                if (n.x > maxx)
+                    maxx = n.x;
+                if (n.y < miny)
+                    miny = n.y;
+                if (n.y > maxy)
+                    maxy = n.y;
+                if (n.x + n.y < minxy)
+                    minxy = n.x + n.y;
+                if (n.x + n.y > maxxy)
+                    maxxy = n.x + n.y;
+            }
+
+            // Compute intersection points of the half-planes
+            //Vector2Int bottomLeft = new Vector2Int(minxy - miny, miny);
+            //Vector2Int bottomRight = new Vector2Int(maxx, miny);
+            //Vector2Int middleLeft = new Vector2Int(minx, minxy - minx);
+            //Vector2Int middleRight = new Vector2Int(maxx, maxxy - maxx);
+            //Vector2Int topLeft = new Vector2Int(minx, maxy);
+            //Vector2Int topRight = new Vector2Int(maxxy - maxy, maxy);
+            //int a = bottomRight.x - bottomLeft.x;
+            //int b = middleLeft.y - bottomLeft.y;
+            //int c = middleRight.y - bottomRight.y;
+            //int d = topLeft.y - middleLeft.y;
+            //int e = topRight.y - middleRight.y;
+            //int f = topRight.x - topLeft.x;
+
+            // Compute convex shape parameters
+            int a = maxx - (minxy - miny);
+            int b = minxy - minx - miny;
+            int c = maxxy - maxx - miny;
+            int d = maxy - (minxy - minx);
+            int e = maxy - (maxxy - maxx);
+            int f = maxxy - maxy - minx;
+
+            Log.Debug("a = " + a + ", b = " + b + ", c = " + c + ", d = " + d + ", e = " + e + ", f = " + f);
+
+            convexHullParams[0] = f;
+            convexHullParams[1] = d;
+            convexHullParams[2] = b;
+            convexHullParams[3] = a;
+            convexHullParams[4] = c;
+            convexHullParams[5] = e;
+
+            // Inequalities
+            for (int r = 0; r < 6; r++)
+            {
+                convexHullInequalities[r][0] = convexHullParams[(3 + 6 - r) % 6] + convexHullParams[(2 + 6 - r) % 6];   // a + b
+                convexHullInequalities[r][1] = convexHullParams[(3 + 6 - r) % 6] + convexHullParams[(4 + 6 - r) % 6];   // a + c
+                convexHullInequalities[r][2] = convexHullParams[(2 + 6 - r) % 6] + convexHullParams[(1 + 6 - r) % 6];   // b + d
+                convexHullInequalities[r][3] = convexHullInequalities[r][0] + convexHullParams[(4 + 6 - r) % 6];        // a + b + c
+                convexHullInequalities[r][4] = convexHullInequalities[r][0] + convexHullParams[(1 + 6 - r) % 6];        // a + b + d
+            }
+
+            for (int r = 0; r < 6; r++)
+            {
+                Debug.Log("r = " + r);
+                for (int i = 0; i < 5; i++)
+                {
+                    convexHullInequalityStrings[r][i] = IntToBinary(convexHullInequalities[r][i]);
+                    Debug.Log(convexHullInequalityStrings[r][i]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Provides the left side of the desired
+        /// inequality for the given rotation.
+        /// <para>
+        /// The inequalities are:
+        /// <list type="number">
+        /// <item>a + b</item>
+        /// <item>a + c</item>
+        /// <item>b + d</item>
+        /// <item>a + b + c</item>
+        /// <item>a + b + d</item>
+        /// </list>
+        /// </para>
+        /// </summary>
+        /// <param name="rotation">The rotation of the shape to consider.</param>
+        /// <param name="inequality">The index of the inequality.</param>
+        /// <returns>The left side's value of the desired inequality.</returns>
+        public int GetConvHullInequality(int rotation, int inequality)
+        {
+            return convexHullInequalities[rotation][inequality];
+        }
+
+        /// <summary>
+        /// Same as <see cref="GetConvHullInequality(int, int)"/> but returns
+        /// the value as a binary string.
+        /// </summary>
+        /// <param name="rotation">The rotation of the shape to consider.</param>
+        /// <param name="inequality">The index of the inequality.</param>
+        /// <returns>A binary string representation of the desired inequality.</returns>
+        public string GetConvHullInequalityString(int rotation, int inequality)
+        {
+            return convexHullInequalityStrings[rotation][inequality];
+        }
+
+        /// <summary>
         /// Draws the shape using the <see cref="LineDrawer"/> utility.
         /// Does not clear the line drawer or set a timer.
         /// </summary>
@@ -347,6 +481,55 @@ namespace AS2.ShapeContainment
                 ld.AddLine(n2, mid13, faceColor);
                 ld.AddLine(n3, mid12, faceColor);
             }
+
+
+
+            // Find the minimum and maximum coordinates
+            Node node = nodes[0];
+            int minx = node.x;
+            int maxx = node.x;
+            int miny = node.y;
+            int maxy = node.y;
+            int minxy = node.x + node.y;
+            int maxxy = node.x + node.y;
+
+            foreach (Node n in nodes)
+            {
+                if (n.x < minx)
+                    minx = n.x;
+                if (n.x > maxx)
+                    maxx = n.x;
+                if (n.y < miny)
+                    miny = n.y;
+                if (n.y > maxy)
+                    maxy = n.y;
+                if (n.x + n.y < minxy)
+                    minxy = n.x + n.y;
+                if (n.x + n.y > maxxy)
+                    maxxy = n.x + n.y;
+            }
+
+            // Compute intersection points of the half-planes
+            Vector2Int bottomLeft = new Vector2Int(minxy - miny, miny);
+            Vector2Int bottomRight = new Vector2Int(maxx, miny);
+            Vector2Int middleLeft = new Vector2Int(minx, minxy - minx);
+            Vector2Int middleRight = new Vector2Int(maxx, maxxy - maxx);
+            Vector2Int topLeft = new Vector2Int(minx, maxy);
+            Vector2Int topRight = new Vector2Int(maxxy - maxy, maxy);
+
+            bottomLeft = AmoebotFunctions.RotateVector(bottomLeft, rotation) * scale + pos;
+            bottomRight = AmoebotFunctions.RotateVector(bottomRight, rotation) * scale + pos;
+            middleLeft = AmoebotFunctions.RotateVector(middleLeft, rotation) * scale + pos;
+            middleRight = AmoebotFunctions.RotateVector(middleRight, rotation) * scale + pos;
+            topLeft = AmoebotFunctions.RotateVector(topLeft, rotation) * scale + pos;
+            topRight = AmoebotFunctions.RotateVector(topRight, rotation) * scale + pos;
+
+            ld.AddLine(bottomLeft, bottomRight, Color.cyan, false, 1.25f, 1, -0.5f);
+            ld.AddLine(bottomRight, middleRight, Color.cyan, false, 1.25f, 1, -0.5f);
+            ld.AddLine(middleRight, topRight, Color.cyan, false, 1.25f, 1, -0.5f);
+            ld.AddLine(topRight, topLeft, Color.cyan, false, 1.25f, 1, -0.5f);
+            ld.AddLine(topLeft, middleLeft, Color.cyan, false, 1.25f, 1, -0.5f);
+            ld.AddLine(middleLeft, bottomLeft, Color.cyan, false, 1.25f, 1, -0.5f);
         }
 
         /// <summary>
@@ -445,6 +628,21 @@ namespace AS2.ShapeContainment
                 }
             }
             return false;
+        }
+
+        private string IntToBinary(int num)
+        {
+            if (num == 0)
+                return "0";
+
+            string s = "";
+            while (num > 0)
+            {
+                s += (num & 1) > 0 ? '1' : '0';
+                num >>= 1;
+            }
+
+            return s;
         }
 
         /// <summary>
