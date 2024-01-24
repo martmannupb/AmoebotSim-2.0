@@ -40,6 +40,50 @@ namespace AS2.Algos.ShapeConstruction
         // If the algorithm has a special generation method, specify its full name here
         public static new string GenerationMethod => typeof(ShapeConstructionInitializer).FullName;
 
+        [StatusInfo("Display Shape", "Displays the target shape")]
+        public static void ShowShape(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            // Get rotation and scale from some amoebot
+            Particle p = system.particles[0];
+            ShapeConstructionParticle scp = (ShapeConstructionParticle)p.algorithm;
+            int rotation = scp.rotation.GetValue();
+            string scaleStr = scp.scale.GetValue();
+            int scale = 0;
+            int incr = 1;
+            for (int i = 0; i < scaleStr.Length; i++)
+            {
+                if (scaleStr[i] == '1')
+                    scale += incr;
+                incr *= 2;
+            }
+
+            LineDrawer.Instance.Clear();
+            shape.Draw(Vector2Int.zero, rotation, scale);
+            LineDrawer.Instance.SetTimer(20);
+        }
+
+        [StatusInfo("Display Traversal", "Displays the target shape's traversal")]
+        public static void ShowTraversal(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            // Get rotation and scale from some amoebot
+            Particle p = system.particles[0];
+            ShapeConstructionParticle scp = (ShapeConstructionParticle)p.algorithm;
+            int rotation = scp.rotation.GetValue();
+            string scaleStr = scp.scale.GetValue();
+            int scale = 0;
+            int incr = 1;
+            for (int i = 0; i < scaleStr.Length; i++)
+            {
+                if (scaleStr[i] == '1')
+                    scale += incr;
+                incr *= 2;
+            }
+
+            LineDrawer.Instance.Clear();
+            shape.DrawTraversal(Vector2Int.zero, rotation, scale);
+            LineDrawer.Instance.SetTimer(20);
+        }
+
         public static Shape shape;
 
         // Declare attributes here
@@ -121,7 +165,7 @@ namespace AS2.Algos.ShapeConstruction
                 {
                     if (shapeConstr.IsSuccessful())
                     {
-                        // TODO
+                        SetPlannedPinConfiguration(GetContractedPinConfiguration());
                     }
                     else
                     {

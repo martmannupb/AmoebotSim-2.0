@@ -8,32 +8,25 @@ using AS2.Subroutines.PASC;
 namespace AS2.Subroutines.ShapeConstruction
 {
     /// <summary>
-    /// Wrapper for several operations on a chain storing one or two binary counters.
+    /// Procedure for constructing a given shape after a placement, rotation
+    /// and scale have been determined. Works in any amoebot system and for
+    /// any shape.
     /// <para>
-    /// Implements MSB detection, comparison, addition, subtraction, multiplication
-    /// and division with remainder. Only one of these operations can be performed
-    /// at a time. This wrapper is implemented such that all subroutines share their
-    /// state attribute, making it very memory efficient.
-    /// </para>
-    /// <para>
-    /// This procedure requires at least 2 pins and it always uses the
-    /// "outermost / leftmost" pins when traversing the chain. If an amoebot
-    /// occurs on the chain multiple times, its predecessor and successor directions
-    /// must be different for all occurrences.
+    /// This is part of the shape containment algorithm suite, which uses
+    /// 4 pins per edge.
     /// </para>
     /// <para>
     /// <b>Usage</b>:
     /// <list type="bullet">
     /// <item>
-    ///     Establish a chain of amoebots such that each amoebot knows its predecessor and successor
-    ///     (except the start and end amoebots). Each amoebot should store a bit <c>a</c> and a bit
-    ///     <c>b</c> (if an operation for two counters is required).
+    ///     Determine a placement representative (placement of the shape's origin),
+    ///     let all amoebots know the rotation amount <c>m</c> and make the bits of
+    ///     the scale factor available somewhere, e.g., in a binary counter.
     /// </item>
     /// <item>
-    ///     Initialize using the <see cref="Init(SubBinOps.Mode, bool, Direction, Direction, bool, bool)"/> method.
-    ///     You must pass the mode of operation, the bit <c>a</c> and the two chain directions, plus the bit <c>b</c>
-    ///     and the marked MSB of <c>a</c> for some operations.
-    ///     The chain start should have no predecessor and the end should have no successor.
+    ///     Initialize using the <see cref="Init(bool, int)"/> method.
+    ///     You must pass the representative flag and the rotation amount. The bits
+    ///     of the scale are supplied as a stream during the procedure.
     /// </item>
     /// <item>
     ///     Create a pin configuration and call <see cref="SetupPinConfig(PinConfiguration)"/>, then
@@ -41,30 +34,73 @@ namespace AS2.Subroutines.ShapeConstruction
     ///     pin configuration changes.
     /// </item>
     /// <item>
-    ///     Call <see cref="ActivateSend"/> in the same round to start the procedure.
+    ///     Call <see cref="ActivateSend(bool, bool)"/> in the same round to start the procedure.
+    ///     The first call does not require any parameters.
     /// </item>
     /// <item>
     ///     After this, call <see cref="ActivateReceive"/>, <see cref="SetupPinConfig(PinConfiguration)"/>,
     ///     <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/> and
-    ///     <see cref="ActivateSend"/> in this order in every round.
+    ///     <see cref="ActivateSend(bool, bool)"/> in this order in every round.
+    /// </item>
+    /// <item>
+    ///     After calling <see cref="ActivateReceive"/>, call <see cref="ResetScaleCounter"/> to
+    ///     check whether the scale counter has to be reset. If <c>true</c>, the next bit required
+    ///     by the procedure is <b>the first bit of the scale</b> again. This is repeated for each
+    ///     edge of the target shape.
+    /// </item>
+    /// <item>
+    ///     Before calling <see cref="ActivateSend(bool, bool)"/>, call <see cref="NeedScaleBit"/>
+    ///     to check whether or not scale information has to be passed. If it returns <c>true</c>,
+    ///     some amoebot must pass the current scale bit as the first parameter so that it can be
+    ///     used by the procedure. Additionally, the <b>scale index must be increased</b> and the
+    ///     second parameter must be set to <c>true</c> if this is the last bit of the scale.
+    ///     It is allowed to set the second parameter to <c>true</c> in some later iteration
+    ///     instead as long as the scale bit remains <c>0</c>.
     /// </item>
     /// <item>
     ///     The procedure can be paused after each <see cref="ActivateReceive"/> call and resumed by
     ///     continuing with <see cref="SetupPinConfig(PinConfiguration)"/> in some future round.
     /// </item>
-    /// 
-    /// 
     /// <item>
     ///     Call <see cref="IsFinished"/> after <see cref="ActivateReceive"/> to check whether the
-    ///     procedure is finished. The result is thereafter available through one of the interface
-    ///     methods, such as <see cref="ResultBit"/>.
-    ///     If the operation has an optional overflow check (addition/subtraction) that you want
-    ///     to use, call <see cref="IsFinishedOverflow"/> instead.
+    ///     procedure is finished. If it returns <c>true</c>, call <see cref="IsSuccessful"/> to
+    ///     check whether the procedure was successful. If this is the case, you can access the
+    ///     element type and index via <see cref="ElementType"/> and <see cref="ElementIndex"/>.
     /// </item>
     /// </list>
     /// </para>
+    /// <para>
+    /// <b>Usage example:</b>
+    /// <code>
+    /// // Round n:
+    /// sub.Init(isRepresentative, rotation);
+    /// PinConfiguration pc = GetContractedPinConfiguration();
+    /// sub.SetupPinConfig(pc);
+    /// SetPlannedPinConfiguration(pc);
+    /// sub.ActivateSend();
+    /// // Go to round n+1
+    /// 
+    /// // Round n+1:
+    /// sub.ActivateReceive();
+    /// if (sub.IsFinished()) {
+    ///     // Check for success etc.
+    /// }
+    /// if (sub.ResetScaleCounter()) {
+    ///     // Reset the scale counter to the first bit
+    /// }
+    /// PinConfiguration pc = GetContractedPinConfiguration();
+    /// sub.SetupPinConfig(pc);
+    /// SetPlannedPinConfiguration(pc);
+    /// if (sub.NeedScaleBit()) {
+    ///     sub.ActivateSend(scaleBit, isLastBit);
+    ///     // Increment scaleBit
+    /// } else {
+    ///     sub.ActivateSend();
+    /// }
+    /// </code>
+    /// </para>
     /// </summary>
-    
+
     // Init:
     //  - Set representative
     //  - Set rotation
@@ -78,7 +114,7 @@ namespace AS2.Subroutines.ShapeConstruction
     //      - Determine direction and start point
     //  - Establish axis circuits for the edge direction and split at start point
     //  - Start point sends beep in edge direction
-    
+
     // Round 1:
     //  Receive:
     //  - Amoebots receiving the beep become participants of PASC and initialize their subroutine
@@ -89,7 +125,7 @@ namespace AS2.Subroutines.ShapeConstruction
     //  - Send first PASC beep
     //  - Send first bit of scale on first global circuit
     //  - Send beep on second global circuit if this is the scale's MSB
-    
+
     // Round 2:
     //  Receive:
     //  - Receive PASC beeps
@@ -105,7 +141,7 @@ namespace AS2.Subroutines.ShapeConstruction
     //      - Setup PASC and global circuits
     //      - Send next PASC and scale beeps
     //      - Stay in round 2
-    
+
     // Round 3:
     //  Receive:
     //  - Receive PASC cutoff beep
@@ -113,7 +149,7 @@ namespace AS2.Subroutines.ShapeConstruction
     //  - Categorize to edge or end node
     //  Send:
     //  - Setup global circuit and let edge end point beep if it was created successfully
-    
+
     // Round 4:
     //  Receive:
     //  - If no beep received: Terminate with failure
@@ -123,21 +159,21 @@ namespace AS2.Subroutines.ShapeConstruction
     //  - (Only get here if traversal is finished)
     //  - Setup face circuits
     //  - Boundary amoebots send beeps on face circuits
-    
+
     // Round 5:
     //  Receive:
     //  - If any face receives a beep: Store this information
     //  Send:
     //  - Setup global circuit
     //  - Send beep if face circuit has received beep
-    
+
     // Round 6:
     //  Receive:
     //  - If beep is received: Terminate with failure
     //  Send:
     //  - Setup face circuits again
     //  - Send beep for first face
-    
+
     // Round 7:
     //  Receive:
     //  - Assign face identifier if beep was received
@@ -829,6 +865,17 @@ namespace AS2.Subroutines.ShapeConstruction
         {
             int e = (state.GetCurrentValue() >> bit_Element) & 3;
             return (ShapeElement)e;
+        }
+
+        /// <summary>
+        /// Checks the index of the element this amoebot represents.
+        /// Use this in conjunction with <see cref="ElementType"/>.
+        /// </summary>
+        /// <returns>The index of this amoebot's shape element, if
+        /// it exists, otherwise <c>-1</c>.</returns>
+        public int ElementIndex()
+        {
+            return elementIndex.GetCurrentValue();
         }
 
         /// <summary>

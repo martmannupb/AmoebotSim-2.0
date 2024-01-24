@@ -291,6 +291,14 @@ namespace AS2.ShapeContainment
             }
         }
 
+        /// <summary>
+        /// Draws the shape using the <see cref="LineDrawer"/> utility.
+        /// Does not clear the line drawer or set a timer.
+        /// </summary>
+        /// <param name="pos">The origin position of the shape.</param>
+        /// <param name="rotation">The number of 60 degree counter-clockwise
+        /// rotations around the shape's origin.</param>
+        /// <param name="scale">The shape's scale factor.</param>
         public void Draw(Vector2Int pos, int rotation = 0, int scale = 1)
         {
             if (scale < 1)
@@ -338,6 +346,42 @@ namespace AS2.ShapeContainment
                 ld.AddLine(n1, mid23, faceColor);
                 ld.AddLine(n2, mid13, faceColor);
                 ld.AddLine(n3, mid12, faceColor);
+            }
+        }
+
+        /// <summary>
+        /// Draws the shape's traversal using the <see cref="LineDrawer"/> utility.
+        /// Does not clear the line drawer or set a timer.
+        /// </summary>
+        /// <param name="pos">The origin position of the shape.</param>
+        /// <param name="rotation">The number of 60 degree counter-clockwise
+        /// rotations around the shape's origin.</param>
+        /// <param name="scale">The shape's scale factor.</param>
+        public void DrawTraversal(Vector2Int pos, int rotation = 0, int scale = 1)
+        {
+            if (traversal is null)
+                return;
+
+            LineDrawer ld = LineDrawer.Instance;
+            int n = traversal.Count;
+            for (int i = 0; i < n; i++)
+            {
+                Edge e = edges[traversal[i]];
+                Vector2Int n1 = nodes[e.u];
+                Vector2Int n2 = nodes[e.v];
+                if (rotation != 0)
+                {
+                    n1 = AmoebotFunctions.RotateVector(n1, rotation);
+                    n2 = AmoebotFunctions.RotateVector(n2, rotation);
+                }
+                Vector2 to = n2 - n1;
+                n1 *= scale;
+                to *= (scale - 0.2f);
+
+                float frac = (float)i / n;
+                Color color = new Color(1.0f - frac, 1.0f - frac, frac);
+
+                ld.AddLine(n1 + pos, n1 + to + pos, color, true, 1, 1, -0.1f * (1.0f - frac));
             }
         }
 
