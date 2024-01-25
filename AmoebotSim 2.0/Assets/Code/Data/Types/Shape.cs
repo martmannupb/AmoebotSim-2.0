@@ -88,6 +88,10 @@ namespace AS2.ShapeContainment
         // a + b + c
         private int[][] convexHullInequalities = new int[][] { new int[5], new int[5], new int[5], new int[5], new int[5], new int[5] };
         private string[][] convexHullInequalityStrings = new string[][] { new string[5], new string[5], new string[5], new string[5], new string[5], new string[5] };
+        // Distances of the origin from the convex hull sides
+        // Order is f, d, b, a, c, e
+        private int[] convexHullDistances = new int[6];
+        private string[] convexHullDistanceStrings = new string[6];
 
         /// <summary>
         /// Checks whether this shape is internally consistent.
@@ -361,8 +365,6 @@ namespace AS2.ShapeContainment
             int e = maxy - (maxxy - maxx);
             int f = maxxy - maxy - minx;
 
-            Log.Debug("a = " + a + ", b = " + b + ", c = " + c + ", d = " + d + ", e = " + e + ", f = " + f);
-
             convexHullParams[0] = f;
             convexHullParams[1] = d;
             convexHullParams[2] = b;
@@ -382,12 +384,28 @@ namespace AS2.ShapeContainment
 
             for (int r = 0; r < 6; r++)
             {
-                Debug.Log("r = " + r);
                 for (int i = 0; i < 5; i++)
                 {
                     convexHullInequalityStrings[r][i] = IntToBinary(convexHullInequalities[r][i]);
-                    Debug.Log(convexHullInequalityStrings[r][i]);
                 }
+            }
+
+            // Distances between origin and bounding half-planes
+            int distA = -miny;
+            int distB = -minxy;
+            int distC = maxx;
+            int distD = -minx;
+            int distE = maxxy;
+            int distF = maxy;
+            convexHullDistances[0] = distF;
+            convexHullDistances[1] = distD;
+            convexHullDistances[2] = distB;
+            convexHullDistances[3] = distA;
+            convexHullDistances[4] = distC;
+            convexHullDistances[5] = distE;
+            for (int i = 0; i < 6; i++)
+            {
+                convexHullDistanceStrings[i] = IntToBinary(convexHullDistances[i]);
             }
         }
 
@@ -423,6 +441,31 @@ namespace AS2.ShapeContainment
         public string GetConvHullInequalityString(int rotation, int inequality)
         {
             return convexHullInequalityStrings[rotation][inequality];
+        }
+
+        /// <summary>
+        /// Provides the shape origin's distances to its sides.
+        /// The distances are ordered f, d, b, a, c, e.
+        /// </summary>
+        /// <param name="rotation">The rotation of the shape.</param>
+        /// <param name="side">The index of the desired side.</param>
+        /// <returns>The distance between the shape's origin and the specified side.</returns>
+        public int GetConvexHullDistance(int rotation, int side)
+        {
+            return convexHullDistances[(side + 6 - rotation) % 6];
+        }
+
+        /// <summary>
+        /// Same as <see cref="GetConvexHullDistance(int, int)"/> but returns
+        /// the value as a binary string.
+        /// </summary>
+        /// <param name="rotation">The rotation of the shape.</param>
+        /// <param name="side">The index of the desired side.</param>
+        /// <returns>The distance between the shape's origin and the specified side
+        /// as a binary string.</returns>
+        public string GetConvexHullDistanceString(int rotation, int side)
+        {
+            return convexHullDistanceStrings[(side + 6 - rotation) % 6];
         }
 
         /// <summary>
@@ -477,9 +520,9 @@ namespace AS2.ShapeContainment
                 mid12 /= 2f;
                 mid13 /= 2f;
                 mid23 /= 2f;
-                ld.AddLine(n1, mid23, faceColor);
-                ld.AddLine(n2, mid13, faceColor);
-                ld.AddLine(n3, mid12, faceColor);
+                ld.AddLine(n1 + pos, mid23 + pos, faceColor);
+                ld.AddLine(n2 + pos, mid13 + pos, faceColor);
+                ld.AddLine(n3 + pos, mid12 + pos, faceColor);
             }
 
 
