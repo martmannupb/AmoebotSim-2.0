@@ -242,16 +242,16 @@ namespace AS2.Subroutines.ShapeConstruction
         // SUB PASC
 
         Shape shape;
-        SubPASC pasc;
+        SubPASC2 pasc;
 
-        public SubShapeConstruction(Particle p, Shape shape, SubPASC pasc = null) : base(p)
+        public SubShapeConstruction(Particle p, Shape shape, SubPASC2 pasc = null) : base(p)
         {
             state = algo.CreateAttributeInt(FindValidAttributeName("[Shape Constr.] State"), 0);
             index = algo.CreateAttributeInt(FindValidAttributeName("[Shape Constr.] Index"), 0);
             elementIndex = algo.CreateAttributeInt(FindValidAttributeName("[Shape Constr.] Element"), -1);
             if (pasc is null)
             {
-                this.pasc = new SubPASC(p);
+                this.pasc = new SubPASC2(p);
             }
             else
             {
@@ -308,7 +308,12 @@ namespace AS2.Subroutines.ShapeConstruction
                     int edge = GetTraversalEdge();
                     bool leader = ElementType() == ShapeElement.NODE && elementIndex.GetCurrentValue() == shape.edges[edge].u;
                     Direction d = GetEdgeDirection(edge);
-                    pasc.Init(leader, leader ? Direction.NONE : d.Opposite(), d, algo.PinsPerEdge - 1, algo.PinsPerEdge - 2, 0, 1, 0, 1);
+
+                    List<Direction> predecessors = new List<Direction>();
+                    List<Direction> successors = new List<Direction>() { d };
+                    if (!leader)
+                        predecessors.Add(d.Opposite());
+                    pasc.Init(predecessors, successors, 0, 1, 0, 1, leader);
                 }
                 else
                 {
