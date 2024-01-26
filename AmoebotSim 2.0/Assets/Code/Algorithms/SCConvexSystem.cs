@@ -14,6 +14,12 @@ namespace AS2.Algos.SCConvexSystem
     /// Shape containment solution for the case of convex amoebot systems.
     /// Supports convex amoebot systems with at least 3 corners (the only
     /// other convex shapes being lines and points).
+    /// <para>
+    /// This algorithm can handle every valid shape unless it is so large
+    /// that the resulting left sides of the inequalities cannot be stored
+    /// on the outer boundary of the amoebot system, in which case the shape
+    /// would never fit into the system anyway.
+    /// </para>
     /// </summary>
 
     // PHASE 1: ESTABLISH SHAPE
@@ -88,6 +94,7 @@ namespace AS2.Algos.SCConvexSystem
 
 
     // PHASE 3: INEQUALITIES
+
     // Procedure:
     //  - Only the outer boundary amoebots participate, the inner amoebots establish a global circuit and wait for a synchronization beep
     //  - Compute R1,...,R5 by adding side lengths (rounds 7-8)
@@ -250,6 +257,7 @@ namespace AS2.Algos.SCConvexSystem
 
 
     // PHASE 4: HALF-PLANE INTERSECTION
+
     // We compute the half-plane distances and determine each of the six half-planes
     // At the end, we find the convex representation set and choose a unique representative
 
@@ -417,6 +425,18 @@ namespace AS2.Algos.SCConvexSystem
         // If the algorithm has a special generation method, specify its full name here
         public static new string GenerationMethod => typeof(SCConvexSystemInitializer).FullName;
 
+        // Could encode everything in 2 integers (not worth the effort (?))
+        // round: 0-36              +6
+        // predDir                  +3
+        // succDir                  +3
+        // shapeType                +3
+        // 11 bools                 +11
+        // 23 bits                  +23
+        // counter1: 0-6            +3
+        // counter2: 0-6            +3
+        // rotation: -1-5           +3
+        //                          58
+
         // Declare attributes here
         ParticleAttribute<int> round;
         ParticleAttribute<Direction> predDir;
@@ -439,9 +459,9 @@ namespace AS2.Algos.SCConvexSystem
         ParticleAttribute<bool>[] helperMSBs = new ParticleAttribute<bool>[6];          // MSB flags used for inequalities and side distances
         ParticleAttribute<bool>[] inequalityL = new ParticleAttribute<bool>[5];
 
-        ParticleAttribute<bool> bitK;   // Final (max) scale
-        ParticleAttribute<bool> bitK2;  // Intermediate (min) scale
-        ParticleAttribute<bool> bitK3;  // Temporary variable
+        ParticleAttribute<bool> bitK;       // Final (max) scale
+        ParticleAttribute<bool> bitK2;      // Intermediate (min) scale
+        ParticleAttribute<bool> bitK3;      // Temporary variable
         ParticleAttribute<int> rotation;    // The rotation of the maximum scale
 
         ParticleAttribute<bool> inCurrentHalfPlane;
@@ -1519,7 +1539,26 @@ namespace AS2.Algos.SCConvexSystem
             else
             {
                 int r = round.GetCurrentValue();
-                if (r >= 28 && r < 32)
+                // Inequality phase
+                if (r >= 7 && r < 22)
+                {
+                    // Outer boundary amoebots display scale bits (K and K2)
+                    if (MyCornerType() != CornerType.INNER)
+                    {
+                        bool k = bitK.GetCurrentValue();
+                        bool k2 = bitK2.GetCurrentValue();
+                        if (!k && !k2)
+                            SetMainColor(ColorData.Particle_BlueDark);
+                        else if (k && !k2)
+                            SetMainColor(ColorData.Particle_Green);
+                        else if (k2 && !k)
+                            SetMainColor(ColorData.Particle_Blue);
+                        else
+                            SetMainColor(ColorData.Particle_Aqua);
+                    }
+                }
+                // Half-plane intersection phase
+                else if (r >= 28 && r < 32)
                 {
                     if (representative.GetCurrentValue())
                         SetMainColor(Color.yellow);
@@ -1528,6 +1567,7 @@ namespace AS2.Algos.SCConvexSystem
                     else
                         SetMainColor(ColorData.Particle_Black);
                 }
+                // Shape construction phase
                 else if (r >= 32)
                 {
                     SubShapeConstruction.ShapeElement element = shapeConstr.ElementType();
@@ -1540,6 +1580,7 @@ namespace AS2.Algos.SCConvexSystem
                     else
                         SetMainColor(ColorData.Particle_Black);
                 }
+                // Any other phase
                 else
                 {
                     CornerType t = MyCornerType();
@@ -1860,6 +1901,7 @@ namespace AS2.Algos.SCConvexSystem
                 s.GenerateConvexHull();
                 AS2.UI.LineDrawer.Instance.Clear();
                 s.Draw(Vector2Int.zero);
+                s.DrawConvexHull(Vector2Int.zero);
                 AS2.UI.LineDrawer.Instance.SetTimer(30);
                 SCConvexSystemParticle.shape = s;
             }

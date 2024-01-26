@@ -525,54 +525,50 @@ namespace AS2.ShapeContainment
                 ld.AddLine(n3 + pos, mid12 + pos, faceColor);
             }
 
-
-
-            // Find the minimum and maximum coordinates
-            Node node = nodes[0];
-            int minx = node.x;
-            int maxx = node.x;
-            int miny = node.y;
-            int maxy = node.y;
-            int minxy = node.x + node.y;
-            int maxxy = node.x + node.y;
-
+            // Also draw the origin
             foreach (Node n in nodes)
             {
-                if (n.x < minx)
-                    minx = n.x;
-                if (n.x > maxx)
-                    maxx = n.x;
-                if (n.y < miny)
-                    miny = n.y;
-                if (n.y > maxy)
-                    maxy = n.y;
-                if (n.x + n.y < minxy)
-                    minxy = n.x + n.y;
-                if (n.x + n.y > maxxy)
-                    maxxy = n.x + n.y;
+                if (n.x == 0 && n.y == 0)
+                {
+                    ld.AddLine(n + pos, n + pos, Color.yellow, false, 1.55f, 1, -0.2f);
+                    break;
+                }
             }
+        }
 
-            // Compute intersection points of the half-planes
-            Vector2Int bottomLeft = new Vector2Int(minxy - miny, miny);
-            Vector2Int bottomRight = new Vector2Int(maxx, miny);
-            Vector2Int middleLeft = new Vector2Int(minx, minxy - minx);
-            Vector2Int middleRight = new Vector2Int(maxx, maxxy - maxx);
-            Vector2Int topLeft = new Vector2Int(minx, maxy);
-            Vector2Int topRight = new Vector2Int(maxxy - maxy, maxy);
+        /// <summary>
+        /// Draws the shape's convex hull using the <see cref="LineDrawer"/>
+        /// utility. Does not clear the line drawer or set a timer. Lines
+        /// are drawn on top of the base shape. Make sure to call
+        /// <see cref="GenerateConvexHull"/> before calling this.
+        /// </summary>
+        /// <param name="pos">The origin position of the shape.</param>
+        /// <param name="rotation">The number of 60 degree counter-clockwise
+        /// rotations around the shape's origin.</param>
+        /// <param name="scale">The shape's scale factor.</param>
+        public void DrawConvexHull(Vector2Int pos, int rotation = 0, int scale = 1)
+        {
+            if (scale < 1)
+                scale = 1;
 
-            bottomLeft = AmoebotFunctions.RotateVector(bottomLeft, rotation) * scale + pos;
-            bottomRight = AmoebotFunctions.RotateVector(bottomRight, rotation) * scale + pos;
-            middleLeft = AmoebotFunctions.RotateVector(middleLeft, rotation) * scale + pos;
-            middleRight = AmoebotFunctions.RotateVector(middleRight, rotation) * scale + pos;
-            topLeft = AmoebotFunctions.RotateVector(topLeft, rotation) * scale + pos;
-            topRight = AmoebotFunctions.RotateVector(topRight, rotation) * scale + pos;
+            LineDrawer ld = LineDrawer.Instance;
 
-            ld.AddLine(bottomLeft, bottomRight, Color.cyan, false, 1.25f, 1, -0.5f);
-            ld.AddLine(bottomRight, middleRight, Color.cyan, false, 1.25f, 1, -0.5f);
-            ld.AddLine(middleRight, topRight, Color.cyan, false, 1.25f, 1, -0.5f);
-            ld.AddLine(topRight, topLeft, Color.cyan, false, 1.25f, 1, -0.5f);
-            ld.AddLine(topLeft, middleLeft, Color.cyan, false, 1.25f, 1, -0.5f);
-            ld.AddLine(middleLeft, bottomLeft, Color.cyan, false, 1.25f, 1, -0.5f);
+            // f, d, b, a, c, e
+            Vector2Int bottomLeft = new Vector2Int(convexHullDistances[3] - convexHullDistances[2], -convexHullDistances[3]);
+            Vector2Int[] corners = new Vector2Int[6];
+            corners[0] = bottomLeft;
+            for (int i = 1; i < 6; i++)
+            {
+                corners[i] = corners[i - 1] + AmoebotFunctions.unitVectors[i - 1] * convexHullParams[(i + 2) % 6];
+            }
+            for (int i = 0; i < 6; i++)
+            {
+                corners[i] = AmoebotFunctions.RotateVector(corners[i], rotation) * scale + pos;
+            }
+            for (int i = 0; i < 6; i++)
+            {
+                ld.AddLine(corners[i], corners[(i + 1) % 6], Color.cyan, false, 1.25f, 1, -0.15f);
+            }
         }
 
         /// <summary>
