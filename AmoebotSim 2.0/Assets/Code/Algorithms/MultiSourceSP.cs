@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using AS2.Sim;
 using AS2.Subroutines.ETT;
+using AS2.Subroutines.PASC;
 using UnityEngine;
 using static AS2.Constants;
 
@@ -11,17 +12,21 @@ namespace AS2.Algos.MultiSourceSP
     /// Implements the (k, l)-SPF algorithm.
     /// </summary>
 
-    // SETUP PHASE
+    // PHASE 1: SETUP
+
     // Round 0:
     //  - Find out which amoebots represent portal edges and in which directions
     //  - Setup simple portal circuits for main direction
     //  - Source amoebots send beeps
+
     // Round 1:
     //  - Receive beeps to determine all source portals
     //  - Setup ETT for augmentation set computation
     //  - Start ETT
+
     // Round 2:
     //  - Continue running ETT until it is finished
+
     // Round 3:
     //  - ETT has finished: All amoebots know which edges have a non-zero result
     //  - Setup circuit for checking whether degree is >= 3:
@@ -29,18 +34,77 @@ namespace AS2.Algos.MultiSourceSP
     //      - If we have 1 neighbor, connect pin 0 to 1, 1 to 2 and 2 and 3 to 3
     //      - If we have 2 neighbors, connect pin 0 to 2, 1-3 to 3
     //  - The "leftmost" amoebot sends a beep on pin i, where i is the number of its own neighbors
+
     // Round 4:
     //  - Receive neighbor counting beep
     //      - If we have degree at least 3 (and are not already a source): Become an augmentation portal
     //  - Setup markers and portal circuit that is cut at each marker (one circuit for each side)
     //  - "Leftmost" amoebot of the portal sends beep (unless it is marked itself)
+
     // Round 5:
     //  - Marked amoebots receiving a beep from their "left" neighbor (or leftmost AND marked amoebots) remove their marker
-
-    //  - Setup neighbor circuits, beep on the circuit belonging to the parent
+    //  - Setup neighbor portal circuits, beep on the circuit belonging to the parent
     //      - One circuit for each neighboring region, only in Q' portals
+
     // Round 6:
     //  - Receive neighbor beeps and set parent direction
+
+
+    // PHASE 2: BASE CASE
+
+    // We first perform the line algorithm on each source portal
+    //  -> First the top side, then the bottom side
+
+    // We then perform the line + propagation step for each of the two portals,
+    // checking whether the portal exists and has sources first
+    //  -> If a portal does not exist or has no sources, we skip and wait for the other regions to finish
+    //  -> After this step, each region has 0, 1 or 2 shortest path trees
+
+    // Finally, we perform a merge step on each region
+    //  -> An actual merge procedure with PASC is only required if we have 2 trees, otherwise we just take
+    //      the one we already have or stay without a tree
+
+    // Round 7:
+    //  - If counter > 1, jump to round 11
+    //  - Setup directional portal circuits split at top/bottom markers (depending on counter value)
+    //  - Sources send beeps in both directions
+
+    // Round 8:
+    //  - Listen for directional beeps
+    //      - Non-sources that received only one beep save the source direction as parent direction
+    //      - Non-sources that received two beeps setup PASC for both directions (ending at top/bottom markers)
+    //      - Sources setup a PASC leader in each direction they received a beep from
+    //      - Initialize comparison to EQUAL
+    //      - Start PASC
+
+    // Round 9:
+    //  - Receive PASC beep
+    //      - Update comparison
+    //  - Setup global circuit
+    //  - Beep if we became passive in this round
+
+    // Round 10:
+    //  - If no beep on global circuit:
+    //      - Everybody is done
+    //      - Set parent direction based on comparison result
+    //      - Increment counter
+    //      - Go to round 7
+    //  - Otherwise:
+    //      - Setup PASC circuit and send beep
+    //      - Go to round 9
+
+    // Round 11:
+    //  TODO
+
+
+
+
+    // -- Do this later --
+    //  -> When deciding whether or not to perform second propagation and merge
+
+    //  - Setup regional circuits
+    //      - One circuit for each region
+    //  - Beep if the region is our parent, i.e., the region has two adjacent portals
 
     public class MultiSourceSPParticle : ParticleAlgorithm
     {
@@ -67,6 +131,7 @@ namespace AS2.Algos.MultiSourceSP
         enum Phase
         {
             SETUP,
+            BASE_CASE,
             FINAL_PRUNE,
             FINISHED
         }
@@ -93,7 +158,22 @@ namespace AS2.Algos.MultiSourceSP
         ParticleAttribute<bool> marker1;                // Whether we are marked for the first neighbor
         ParticleAttribute<bool> marker2;                // Whether we are marked for the second neighbor
 
+        ParticleAttribute<int> counter;                 // Generic counter used to perform multiple iterations of the same task
+        ParticleAttribute<Direction> parentTop1L;       // Parent directions (need 2 to store 2 trees for merge, but markers
+        ParticleAttribute<Direction> parentTop2L;       // need to split top and bottom as well as left and right sides...)
+        ParticleAttribute<Direction> parentTop1R;
+        ParticleAttribute<Direction> parentTop2R;
+        ParticleAttribute<Direction> parentBot1L;
+        ParticleAttribute<Direction> parentBot2L;
+        ParticleAttribute<Direction> parentBot1R;
+        ParticleAttribute<Direction> parentBot2R;
+        ParticleAttribute<bool> pasc1Participant;
+        ParticleAttribute<bool> pasc2Participant;
+        ParticleAttribute<Comparison> comparison;
+
         SubETT ett;
+        SubPASC2 pasc1;
+        SubPASC2 pasc2;
 
         public MultiSourceSPParticle(Particle p) : base(p)
         {
@@ -117,7 +197,22 @@ namespace AS2.Algos.MultiSourceSP
             marker1 = CreateAttributeBool("Marker 1", false);
             marker2 = CreateAttributeBool("Marker 2", false);
 
+            counter = CreateAttributeInt("Counter", 0);
+            parentTop1L = CreateAttributeDirection("Parent T1L", Direction.NONE);
+            parentTop2L = CreateAttributeDirection("Parent T2L", Direction.NONE);
+            parentTop1R = CreateAttributeDirection("Parent T1R", Direction.NONE);
+            parentTop2R = CreateAttributeDirection("Parent T2R", Direction.NONE);
+            parentBot1L = CreateAttributeDirection("Parent B1L", Direction.NONE);
+            parentBot2L = CreateAttributeDirection("Parent B2L", Direction.NONE);
+            parentBot1R = CreateAttributeDirection("Parent B1R", Direction.NONE);
+            parentBot2R = CreateAttributeDirection("Parent B2R", Direction.NONE);
+            pasc1Participant = CreateAttributeBool("PASC 1 Part.", false);
+            pasc2Participant = CreateAttributeBool("PASC 2 Part.", false);
+            comparison = CreateAttributeEnum<Comparison>("Comparison", Comparison.EQUAL);
+
             ett = new SubETT(p);
+            pasc1 = new SubPASC2(p);
+            pasc2 = new SubPASC2(p);
 
             // Also, set the default initial color
             SetMainColor(baseColor);
@@ -160,199 +255,414 @@ namespace AS2.Algos.MultiSourceSP
 
         private void ActivateSetupPhase()
         {
-            if (round == 0)
+            int r = round;
+            switch (r)
             {
-                // Find edge amoebots
-                DeterminePortalNeighbors(mainDir);
-                // Send source beeps on portal circuits
-                SetupSimplePortalCircuit(mainDir);
-                if (isSource)
-                {
-                    PinConfiguration pc = GetPlannedPinConfiguration();
-                    pc.SendBeepOnPartitionSet(0);
-                }
-                round.SetValue(round + 1);
-            }
-            else if (round == 1)
-            {
-                // Receive source beep to determine source portals
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                if (pc.ReceivedBeepOnPartitionSet(0))
-                {
-                    sourcePortal.SetValue(true);
-                }
-
-                // Setup ETT
-                // First collect the neighbor directions (order is important)
-                List<Direction> nbrDirs = new List<Direction>();
-                if (HasNeighborAt(mainDir))
-                    nbrDirs.Add(mainDir);
-                if (nbrPortalDir1 != Direction.NONE)
-                    nbrDirs.Add(nbrPortalDir1);
-                if (HasNeighborAt(mainDir.Opposite()))
-                    nbrDirs.Add(mainDir.Opposite());
-                if (nbrPortalDir2 != Direction.NONE)
-                    nbrDirs.Add(nbrPortalDir2);
-                // Mark the first edge if we are a dest portal representative
-                int markedIdx = IsQPortalMarker() ? 0 : -1;
-                // Split if we are the source portal representative
-                bool split = isLeader.GetCurrentValue();
-                ett.Init(nbrDirs.ToArray(), markedIdx, split);
-
-                pc = GetContractedPinConfiguration();
-                ett.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
-
-                if (isLeader.GetCurrentValue())
-                    ett.ActivateSend();
-
-                round.SetValue(round + 1);
-            }
-            else if (round == 2)
-            {
-                // Continue running ETT until it is finished
-                ett.ActivateReceive();
-
-                if (ett.IsFinished())
-                {
-                    round.SetValue(round + 1);
-                    return;
-                }
-
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                ett.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
-                if (ett.IsTerminationRound())
-                    ett.ActivateSend();
-                else
-                {
-                    if (isLeader)
-                        ett.ActivateSend();
-                }
-            }
-            else if (round == 3)
-            {
-                // Count how many portal neighbors we have
-                int numNbrs = 0;
-                if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) != Comparison.EQUAL)
-                    numNbrs++;
-                if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) != Comparison.EQUAL)
-                    numNbrs++;
-
-                SetupCountingCircuit(mainDir, numNbrs);
-
-                // "Leftmost" amoebot sends beep
-                if (!HasNeighborAt(mainDir.Opposite()))
-                {
-                    PinConfiguration pc = GetPlannedPinConfiguration();
-                    pc.GetPinAt(mainDir, PinsPerEdge - 1 - numNbrs).PartitionSet.SendBeep();
-                }
-
-                round.SetValue(round + 1);
-            }
-            else if (round == 4)
-            {
-                // Check whether our portal's degree is at least 3
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                if (pc.GetPinAt(mainDir, 0).PartitionSet.ReceivedBeep())
-                {
-                    augPortal.SetValue(true);
-                }
-
-                // Setup markers and marker circuit
-                if (IsOnQPrime())
-                {
-                    if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) != Comparison.EQUAL)
-                        marker1.SetValue(true);
-                    if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) != Comparison.EQUAL)
-                        marker2.SetValue(true);
-
-                    SetupMarkerCircuit(mainDir);
-
-                    // End of the portal sends beep on both circuits
-                    if (!HasNeighborAt(mainDir.Opposite()))
+                // PHASE 1: SETUP
+                case 0:
                     {
-                        pc = GetPlannedPinConfiguration();
-                        if (!marker1.GetCurrentValue())
-                            pc.GetPinAt(mainDir, PinsPerEdge - 1).PartitionSet.SendBeep();
-                        if (!marker2.GetCurrentValue())
-                            pc.GetPinAt(mainDir, 0).PartitionSet.SendBeep();
+                        // Find edge amoebots
+                        DeterminePortalNeighbors(mainDir);
+                        // Send source beeps on portal circuits
+                        SetupSimplePortalCircuit(mainDir);
+                        if (isSource)
+                        {
+                            PinConfiguration pc = GetPlannedPinConfiguration();
+                            pc.SendBeepOnPartitionSet(0);
+                        }
+                        round.SetValue(round + 1);
                     }
-                }
+                    break;
+                case 1:
+                    {
+                        // Receive source beep to determine source portals
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        if (pc.ReceivedBeepOnPartitionSet(0))
+                        {
+                            sourcePortal.SetValue(true);
+                        }
 
-                round.SetValue(round + 1);
+                        // Setup ETT
+                        // First collect the neighbor directions (order is important)
+                        List<Direction> nbrDirs = new List<Direction>();
+                        if (HasNeighborAt(mainDir))
+                            nbrDirs.Add(mainDir);
+                        if (nbrPortalDir1 != Direction.NONE)
+                            nbrDirs.Add(nbrPortalDir1);
+                        if (HasNeighborAt(mainDir.Opposite()))
+                            nbrDirs.Add(mainDir.Opposite());
+                        if (nbrPortalDir2 != Direction.NONE)
+                            nbrDirs.Add(nbrPortalDir2);
+                        // Mark the first edge if we are a dest portal representative
+                        int markedIdx = IsQPortalMarker() ? 0 : -1;
+                        // Split if we are the source portal representative
+                        bool split = isLeader.GetCurrentValue();
+                        ett.Init(nbrDirs.ToArray(), markedIdx, split);
+
+                        pc = GetContractedPinConfiguration();
+                        ett.SetupPinConfig(pc);
+                        SetPlannedPinConfiguration(pc);
+
+                        if (isLeader.GetCurrentValue())
+                            ett.ActivateSend();
+
+                        round.SetValue(round + 1);
+                    }
+                    break;
+                case 2:
+                    {
+                        // Continue running ETT until it is finished
+                        ett.ActivateReceive();
+
+                        if (ett.IsFinished())
+                        {
+                            round.SetValue(round + 1);
+                            return;
+                        }
+
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        ett.SetupPinConfig(pc);
+                        SetPlannedPinConfiguration(pc);
+                        if (ett.IsTerminationRound())
+                            ett.ActivateSend();
+                        else
+                        {
+                            if (isLeader)
+                                ett.ActivateSend();
+                        }
+                    }
+                    break;
+                case 3:
+                    {
+                        // Count how many portal neighbors we have
+                        int numNbrs = 0;
+                        if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) != Comparison.EQUAL)
+                            numNbrs++;
+                        if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) != Comparison.EQUAL)
+                            numNbrs++;
+
+                        SetupCountingCircuit(mainDir, numNbrs);
+
+                        // "Leftmost" amoebot sends beep
+                        if (!HasNeighborAt(mainDir.Opposite()))
+                        {
+                            PinConfiguration pc = GetPlannedPinConfiguration();
+                            pc.GetPinAt(mainDir, PinsPerEdge - 1 - numNbrs).PartitionSet.SendBeep();
+                        }
+
+                        round.SetValue(round + 1);
+                    }
+                    break;
+                case 4:
+                    {
+                        // Check whether our portal's degree is at least 3
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        if (pc.GetPinAt(mainDir, 0).PartitionSet.ReceivedBeep())
+                        {
+                            augPortal.SetValue(true);
+                        }
+
+                        // Setup markers and marker circuit
+                        if (IsOnQPrime())
+                        {
+                            if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) != Comparison.EQUAL)
+                                marker1.SetValue(true);
+                            if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) != Comparison.EQUAL)
+                                marker2.SetValue(true);
+
+                            SetupMarkerCircuit(mainDir);
+
+                            // End of the portal sends beep on both circuits
+                            if (!HasNeighborAt(mainDir.Opposite()))
+                            {
+                                pc = GetPlannedPinConfiguration();
+                                if (!marker1.GetCurrentValue())
+                                    pc.GetPinAt(mainDir, PinsPerEdge - 1).PartitionSet.SendBeep();
+                                if (!marker2.GetCurrentValue())
+                                    pc.GetPinAt(mainDir, 0).PartitionSet.SendBeep();
+                            }
+                        }
+
+                        round.SetValue(round + 1);
+                    }
+                    break;
+                case 5:
+                    {
+                        // Remove marker
+                        if (IsOnQPrime())
+                        {
+                            PinConfiguration pc = GetCurrentPinConfiguration();
+                            if (marker1)
+                            {
+                                if (!HasNeighborAt(mainDir.Opposite()) || pc.GetPinAt(mainDir.Opposite(), 0).PartitionSet.ReceivedBeep())
+                                    marker1.SetValue(false);
+                            }
+                            if (marker2)
+                            {
+                                if (!HasNeighborAt(mainDir.Opposite()) || pc.GetPinAt(mainDir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                                    marker2.SetValue(false);
+                            }
+                        }
+
+                        // Send beeps indicating parent portals
+                        SetupPortalNeighborCircuits(mainDir);
+                        if (nbrPortalDir1 != Direction.NONE || nbrPortalDir2 != Direction.NONE)
+                        {
+                            PinConfiguration pc = GetPlannedPinConfiguration();
+                            // Comparison result GREATER means that the edge indicates the parent
+                            if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) == Comparison.GREATER)
+                                pc.SendBeepOnPartitionSet(marker1.GetCurrentValue() ? 1 : 0);
+                            if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) == Comparison.GREATER)
+                                pc.SendBeepOnPartitionSet(marker2.GetCurrentValue() ? 3 : 2);
+                        }
+
+                        round.SetValue(round + 1);
+                    }
+                    break;
+                case 6:
+                    {
+                        // Receive parent beeps
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        // Only markers could have different results for sides L and R
+                        // Setting parentXX to true means that for the region in that direction, we are not the first/root portal
+                        if (nbrPortalDir1 == Direction.NONE || !marker1)
+                        {
+                            if (pc.ReceivedBeepOnPartitionSet(0))
+                            {
+                                parent1L.SetValue(true);
+                                parent1R.SetValue(true);
+                            }
+                        }
+                        else
+                        {
+                            if (pc.ReceivedBeepOnPartitionSet(0))
+                                parent1L.SetValue(true);
+                            if (pc.ReceivedBeepOnPartitionSet(1))
+                                parent1R.SetValue(true);
+                        }
+
+                        if (nbrPortalDir2 == Direction.NONE || !marker2)
+                        {
+                            if (pc.ReceivedBeepOnPartitionSet(2))
+                            {
+                                parent2L.SetValue(true);
+                                parent2R.SetValue(true);
+                            }
+                        }
+                        else
+                        {
+                            if (pc.ReceivedBeepOnPartitionSet(2))
+                                parent2L.SetValue(true);
+                            if (pc.ReceivedBeepOnPartitionSet(3))
+                                parent2R.SetValue(true);
+                        }
+
+                        round.SetValue(round + 1);
+                    }
+                    break;
+
+                // PHASE 2: BASE CASE
+                case 7:
+                    {
+                        // Line algorithm finished? => Continue
+                        if (counter > 1)
+                        {
+                            counter.SetValue(0);
+                            round.SetValue(11);
+                            break;
+                        }
+
+                        // Setup directional portal circuits and split at top or bottom markers and sources
+                        if (sourcePortal)
+                        {
+                            PinConfiguration pc = GetContractedPinConfiguration();
+                            SetupDirectionalPortalCircuit(pc, mainDir, isSource || (counter == 0 && marker1 || counter == 1 && marker2));
+                            SetPlannedPinConfiguration(pc);
+
+                            // Sources send beeps in both directions
+                            if (isSource)
+                            {
+                                pc.SendBeepOnPartitionSet(0);
+                                pc.SendBeepOnPartitionSet(3);
+                            }
+                        }
+                        round.SetValue(round + 1);
+                    }
+                    break;
+                case 8:
+                    {
+                        // Listen for directional beeps
+                        if (sourcePortal)
+                        {
+                            PinConfiguration pc = GetCurrentPinConfiguration();
+                            bool beepLeft = pc.GetPinAt(mainDir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+                            bool beepRight = pc.GetPinAt(mainDir, PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+                            if (isSource)
+                            {
+                                // Setup one PASC instance for each received beep
+                                if (beepLeft)
+                                {
+                                    pasc1.Init(null, new List<Direction>() { mainDir.Opposite() }, 0, 1, 0, 1, true);
+                                    pasc1Participant.SetValue(true);
+                                }
+
+                                if (beepRight)
+                                {
+                                    pasc2.Init(null, new List<Direction>() { mainDir }, 0, 1, 2, 3, true);
+                                    pasc2Participant.SetValue(true);
+                                }
+                            }
+                            else if (counter == 0 && marker1 || counter == 1 && marker2)
+                            {
+                                // Handle left and right side separately
+                                if (beepLeft)
+                                {
+                                    if (counter == 0)
+                                        parentTop1L.SetValue(mainDir.Opposite());
+                                    else
+                                        parentBot1L.SetValue(mainDir.Opposite());
+                                }
+
+                                if (beepRight)
+                                {
+                                    if (counter == 0)
+                                        parentTop1R.SetValue(mainDir.Opposite());
+                                    else
+                                        parentBot1R.SetValue(mainDir.Opposite());
+                                }
+                            }
+                            else
+                            {
+                                // Sources on both sides, setup two PASC instances
+                                if (beepLeft && beepRight)
+                                {
+                                    comparison.SetValue(Comparison.EQUAL);
+                                    pasc1.Init(new List<Direction>() { mainDir }, new List<Direction>() { mainDir.Opposite() }, 0, 1, 0, 1, false);
+                                    pasc2.Init(new List<Direction>() { mainDir.Opposite() }, new List<Direction>() { mainDir }, 0, 1, 2, 3, false);
+                                    pasc1Participant.SetValue(true);
+                                    pasc2Participant.SetValue(true);
+                                }
+                                // Only one side: Set that side as parent
+                                else if (beepLeft && !beepRight)
+                                {
+                                    if (counter == 0)
+                                        parentTop1L.SetValue(mainDir.Opposite());
+                                    else
+                                        parentBot1L.SetValue(mainDir.Opposite());
+                                }
+                                else if (beepRight && !beepLeft)
+                                {
+                                    if (counter == 0)
+                                        parentTop1L.SetValue(mainDir);
+                                    else
+                                        parentBot1L.SetValue(mainDir);
+                                }
+                            }
+
+                            // Start PASC
+                            bool runPasc1 = pasc1Participant.GetCurrentValue();
+                            bool runPasc2 = pasc2Participant.GetCurrentValue();
+                            if (runPasc1 || runPasc2)
+                            {
+                                if (runPasc1)
+                                    pasc1.SetupPC(pc);
+                                if (runPasc2)
+                                    pasc2.SetupPC(pc);
+                                SetPlannedPinConfiguration(pc);
+                                if (runPasc1)
+                                    pasc1.ActivateSend();
+                                if (runPasc2)
+                                    pasc2.ActivateSend();
+                            }
+                        }
+                        round.SetValue(round + 1);
+                    }
+                    break;
+                case 9:
+                    {
+                        // Receive PASC beeps
+                        if (pasc1Participant)
+                            pasc1.ActivateReceive();
+                        if (pasc2Participant)
+                            pasc2.ActivateReceive();
+
+                        // Update comparison
+                        if (!isSource && pasc1Participant && pasc2Participant)
+                        {
+                            bool b1 = pasc1.GetReceivedBit() != 0;
+                            bool b2 = pasc2.GetReceivedBit() != 0;
+                            if (b1 && !b2)
+                                comparison.SetValue(Comparison.GREATER);
+                            else if (b2 && !b1)
+                                comparison.SetValue(Comparison.LESS);
+                        }
+
+                        // Setup global circuit
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        pc.SetToGlobal(0);
+                        SetPlannedPinConfiguration(pc);
+
+                        // Beep if we became passive
+                        if (pasc1Participant && pasc1.BecamePassive() || pasc2Participant && pasc2.BecamePassive())
+                            pc.SendBeepOnPartitionSet(0);
+
+                        round.SetValue(round + 1);
+                    }
+                    break;
+                case 10:
+                    {
+                        // Listen for continuation beep on global circuit
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        if (pc.ReceivedBeepOnPartitionSet(0))
+                        {
+                            // Continue
+                            if (pasc1Participant || pasc2Participant)
+                            {
+                                pc.SetToSingleton();
+                                if (pasc1Participant)
+                                    pasc1.SetupPC(pc);
+                                if (pasc2Participant)
+                                    pasc2.SetupPC(pc);
+                                SetPlannedPinConfiguration(pc);
+                                if (pasc1Participant)
+                                    pasc1.ActivateSend();
+                                if (pasc2Participant)
+                                    pasc2.ActivateSend();
+                            }
+                            round.SetValue(9);
+                        }
+                        else
+                        {
+                            // Setup parent direction based on comparison result
+                            if (!isSource && pasc1Participant && pasc2Participant)
+                            {
+                                Direction pDir = comparison.GetCurrentValue() == Comparison.GREATER ? mainDir.Opposite() : mainDir;
+                                if (counter == 0)
+                                    parentTop1L.SetValue(pDir);
+                                else
+                                    parentBot1L.SetValue(pDir);
+                            }
+                            // Increment counter and do next iteration
+                            counter.SetValue(counter + 1);
+                            round.SetValue(7);
+                        }
+                    }
+                    break;
             }
-            else if (round == 5)
-            {
-                // Remove marker
-                if (IsOnQPrime())
-                {
-                    PinConfiguration pc = GetCurrentPinConfiguration();
-                    if (marker1)
-                    {
-                        if (!HasNeighborAt(mainDir.Opposite()) || pc.GetPinAt(mainDir.Opposite(), 0).PartitionSet.ReceivedBeep())
-                            marker1.SetValue(false);
-                    }
-                    if (marker2)
-                    {
-                        if (!HasNeighborAt(mainDir.Opposite()) || pc.GetPinAt(mainDir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep())
-                            marker2.SetValue(false);
-                    }
-                }
 
-                // Send beeps indicating parent portals
-                SetupPortalNeighborCircuits(mainDir);
-                if (nbrPortalDir1 != Direction.NONE || nbrPortalDir2 != Direction.NONE)
-                {
-                    PinConfiguration pc = GetPlannedPinConfiguration();
-                    // Comparison result GREATER means that the edge indicates the parent
-                    if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) == Comparison.GREATER)
-                        pc.SendBeepOnPartitionSet(marker1.GetCurrentValue() ? 1 : 0);
-                    if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) == Comparison.GREATER)
-                        pc.SendBeepOnPartitionSet(marker2.GetCurrentValue() ? 3 : 2);
-                }
+            // TODO: Do this later
+            // Setup region circuits and send beep if we are not the "root" of a region
+            //SetupRegionCircuits(mainDir);
+            //pc = GetPlannedPinConfiguration();
+            //if (parent1L.GetCurrentValue())
+            //    pc.SendBeepOnPartitionSet(0);
+            //else if (marker1 && parent1R.GetCurrentValue())
+            //    pc.SendBeepOnPartitionSet(1);
 
-                round.SetValue(round + 1);
-            }
-            else if (round == 6)
-            {
-                // Receive parent beeps
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                // Amoebots with neighbor portal edges could have different results for sides L and R
-                if (nbrPortalDir1 == Direction.NONE)
-                {
-                    if (pc.ReceivedBeepOnPartitionSet(0))
-                    {
-                        parent1L.SetValue(true);
-                        parent1R.SetValue(true);
-                    }
-                }
-                else
-                {
-                    if (pc.ReceivedBeepOnPartitionSet(0))
-                        parent1L.SetValue(true);
-                    if (pc.ReceivedBeepOnPartitionSet(1))
-                        parent1R.SetValue(true);
-                }
-
-                if (nbrPortalDir2 == Direction.NONE)
-                {
-                    if (pc.ReceivedBeepOnPartitionSet(2))
-                    {
-                        parent2L.SetValue(true);
-                        parent2R.SetValue(true);
-                    }
-                }
-                else
-                {
-                    if (pc.ReceivedBeepOnPartitionSet(2))
-                        parent2L.SetValue(true);
-                    if (pc.ReceivedBeepOnPartitionSet(3))
-                        parent2R.SetValue(true);
-                }
-
-                round.SetValue(round + 1);
-            }
+            //if (parent2L.GetCurrentValue())
+            //    pc.SendBeepOnPartitionSet(2);
+            //else if (marker2 && parent2R.GetCurrentValue())
+            //    pc.SendBeepOnPartitionSet(3);
 
             SetColor();
         }
@@ -379,13 +689,11 @@ namespace AS2.Algos.MultiSourceSP
         }
 
         /// <summary>
-        /// TODO
-        /// 
-        /// 
         /// Sets up one circuit for each side of a portal along
-        /// the given axis, split at each neighbor edge representative.
+        /// the given axis, split at each marker.
         /// The "top" partition set(s) will have IDs 0 (and 1)
         /// and the "bottom" partition set(s) will have IDs 2 (and 3).
+        /// Only markers have 2 partition sets on the marked side.
         /// </summary>
         /// <param name="portalDir">The direction of the portal axis.</param>
         private void SetupPortalNeighborCircuits(Direction portalDir)
@@ -415,6 +723,54 @@ namespace AS2.Algos.MultiSourceSP
                 // Have neighbor, split the two pins
                 pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id }, 2);
                 pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir, 0).Id }, 3);
+            }
+
+            SetPlannedPinConfiguration(pc);
+        }
+
+        /// <summary>
+        /// Sets up one circuit for each region. Markers will have
+        /// two circuits per marked side. The partition set ID(s) will
+        /// be 0 (and 1) for the top region and 2 (and 3) for the bottom region.
+        /// Amoebots outside of Q' simply set up a global circuit with ID 0.
+        /// </summary>
+        /// <param name="portalDir">The direction of the portal axis.</param>
+        private void SetupRegionCircuits(Direction portalDir)
+        {
+            PinConfiguration pc = GetContractedPinConfiguration();
+
+            int[] pinsTop = new int[] { pc.GetPinAt(portalDir, PinsPerEdge - 1).Id, pc.GetPinAt(portalDir.Rotate60(1), 0).Id, pc.GetPinAt(portalDir.Rotate60(2), 0).Id, pc.GetPinAt(portalDir.Opposite(), 0).Id };
+            int[] pinsBot = new int[] { pc.GetPinAt(portalDir, 0).Id, pc.GetPinAt(portalDir.Rotate60(-1), 0).Id, pc.GetPinAt(portalDir.Rotate60(-2), 0).Id, pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id };
+
+            if (!IsOnQPrime())
+            {
+                pc.SetToGlobal(0);
+            }
+            else
+            {
+                if (marker1.GetCurrentValue())
+                {
+                    pc.MakePartitionSet(new int[] { pinsTop[3] }, 0);
+                    pc.MakePartitionSet(new int[] { pinsTop[0], pinsTop[1], pinsTop[2] }, 1);
+                    pc.SetPartitionSetPosition(1, new Vector2((portalDir.ToInt() + 1) * 60f, 0.6f));
+                }
+                else
+                {
+                    pc.MakePartitionSet(pinsTop, 0);
+                    pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60f, 0.5f));
+                }
+
+                if (marker2.GetCurrentValue())
+                {
+                    pc.MakePartitionSet(new int[] { pinsBot[3] }, 2);
+                    pc.MakePartitionSet(new int[] { pinsBot[0], pinsBot[1], pinsBot[2] }, 3);
+                    pc.SetPartitionSetPosition(3, new Vector2((portalDir.ToInt() - 1) * 60f, 0.6f));
+                }
+                else
+                {
+                    pc.MakePartitionSet(pinsBot, 2);
+                    pc.SetPartitionSetPosition(2, new Vector2((portalDir.ToInt() - 1.5f) * 60f, 0.5f));
+                }
             }
 
             SetPlannedPinConfiguration(pc);
@@ -483,6 +839,39 @@ namespace AS2.Algos.MultiSourceSP
                 pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id, pc.GetPinAt(portalDir, 0).Id }, 1);
             }
             SetPlannedPinConfiguration(pc);
+        }
+
+        /// <summary>
+        /// Sets up two portal circuits along the given axis such that
+        /// there is a "top" and a "bottom" circuit. If the circuit is
+        /// no split, the partition sets have IDs 0 and 2, otherwise
+        /// they have 0 and 1 for outgoing and incoming top and
+        /// 2 and 3 for incoming and outgoing bottom.
+        /// </summary>
+        /// <param name="pc">The pin configuration to be modified.</param>
+        /// <param name="portalDir">The portal direction.</param>
+        /// <param name="split">Whether the circuit should be split here.</param>
+        private void SetupDirectionalPortalCircuit(PinConfiguration pc, Direction portalDir, bool split)
+        {
+            int pinTopOut = pc.GetPinAt(portalDir.Opposite(), 0).Id;
+            int pinTopIn = pc.GetPinAt(portalDir, PinsPerEdge - 1).Id;
+            int pinBotOut = pc.GetPinAt(portalDir, 0).Id;
+            int pinBotIn = pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id;
+
+            if (split)
+            {
+                pc.MakePartitionSet(new int[] { pinTopOut }, 0);
+                pc.MakePartitionSet(new int[] { pinTopIn }, 1);
+                pc.MakePartitionSet(new int[] { pinBotIn }, 2);
+                pc.MakePartitionSet(new int[] { pinBotOut }, 3);
+            }
+            else
+            {
+                pc.MakePartitionSet(new int[] { pinTopOut, pinTopIn }, 0);
+                pc.MakePartitionSet(new int[] { pinBotOut, pinBotIn }, 2);
+                pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60, 0.5f));
+                pc.SetPartitionSetPosition(2, new Vector2((portalDir.ToInt() - 1.5f) * 60, 0.5f));
+            }
         }
 
         /// <summary>
