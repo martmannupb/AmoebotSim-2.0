@@ -20,6 +20,12 @@ namespace AS2.Algos.SCConvexSystem
     /// on the outer boundary of the amoebot system, in which case the shape
     /// would never fit into the system anyway.
     /// </para>
+    /// <para>
+    /// <b>Disclaimer: The save/load feature does not work for
+    /// this algorithm because it stores the target shape in a
+    /// static member. Always generate this algorithm from
+    /// Init Mode.</b>
+    /// </para>
     /// </summary>
 
     // PHASE 1: ESTABLISH SHAPE

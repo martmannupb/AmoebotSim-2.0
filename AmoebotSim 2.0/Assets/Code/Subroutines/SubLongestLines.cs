@@ -19,7 +19,10 @@ namespace AS2.Subroutines.LongestLines
     /// <b>Usage:</b>
     /// <list type="bullet">
     /// <item>
-    ///     Initialize by calling <see cref="Init"/>.
+    ///     Initialize by calling <see cref="Init"/>. You can provide
+    ///     <see cref="SubPASC2"/> instances to avoid creating new ones if
+    ///     they are not used at the same time as this subroutine. After the
+    ///     longest line detection is finished, the instances can be reused.
     /// </item>
     /// <item>
     ///     Call <see cref="SetupPC(PinConfiguration)"/> followed by
