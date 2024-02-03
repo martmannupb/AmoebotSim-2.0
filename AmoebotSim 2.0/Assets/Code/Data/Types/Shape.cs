@@ -706,6 +706,70 @@ namespace AS2.ShapeContainment
             }
             return null;
         }
+
+        /// <summary>
+        /// Generates a parallelogram shape with the given width and height
+        /// (at least one must be greater 0). Also generates a traversal
+        /// path for the shape.
+        /// </summary>
+        /// <param name="width">The width of the parallelogram.</param>
+        /// <param name="height">The height of the parallelogram.</param>
+        /// <returns>A parallelogram shape with a traversal path.</returns>
+        public static Shape GenParallelogram(int width, int height)
+        {
+            Shape p = new Shape();
+
+            // For simplicity with indices
+            width += 1;
+            height += 1;
+
+            int idx = 0;
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    // Add node
+                    p.nodes.Add(new Node(x, y));
+
+                    int idxBelow = -1;
+                    int idxLeft = -1;
+                    int idxAbove = -1;
+
+                    // Add edges
+                    // Down
+                    if (y > 0)
+                    {
+                        idxBelow = idx - 1;
+                        p.edges.Add(new Edge(idxBelow, idx));
+                    }
+                    // Left
+                    if (x > 0)
+                    {
+                        idxLeft = idx - height;
+                        // Same level
+                        p.edges.Add(new Edge(idxLeft, idx));
+                        // Up
+                        if (y < height - 1)
+                        {
+                            idxAbove = idxLeft + 1;
+                            p.edges.Add(new Edge(idxAbove, idx));
+                        }
+                    }
+
+                    // Add faces
+                    if (idxBelow != -1 && idxLeft != -1)
+                        p.faces.Add(new Face(idxBelow, idx, idxLeft));
+                    if (idxLeft != -1 && idxAbove != -1)
+                        p.faces.Add(new Face(idxLeft, idx, idxAbove));
+
+                    idx++;
+                }
+            }
+
+            p.GenerateTraversal();
+
+            return p;
+        }
     }
 
 } // namespace AS2.ShapeContainment
