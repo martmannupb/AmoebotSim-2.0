@@ -3,7 +3,7 @@ using static AS2.Constants;
 using AS2.Sim;
 using AS2.ShapeContainment;
 using AS2.Subroutines.BinaryOps;
-using AS2.Subroutines.LeaderElection;
+using AS2.Subroutines.LeaderElectionSC;
 using AS2.Subroutines.LongestLines;
 using AS2.Subroutines.PASC;
 using AS2.Subroutines.ParallelogramContainment;
@@ -324,7 +324,7 @@ namespace AS2.Algos.SCConvexShapes
         private const int msb_shapeS = 21;
 
         SubBinOps binops;
-        SubLeaderElection leaderElection;
+        SubLeaderElectionSC leaderElection;
         SubLongestLines ll;
         SubPASC2 pasc1;
         SubParallelogram parallelogram;
@@ -371,7 +371,7 @@ namespace AS2.Algos.SCConvexShapes
             pasc1 = new SubPASC2(p);
             ll = new SubLongestLines(p, pasc1);
             parallelogram = new SubParallelogram(p, pasc1);
-            leaderElection = new SubLeaderElection(p);
+            leaderElection = new SubLeaderElectionSC(p);
             shapeConstr = new SubShapeConstruction(p, shape, pasc1);
 
             // Also, set the default initial color
@@ -749,9 +749,9 @@ namespace AS2.Algos.SCConvexShapes
                 case 20:
                     {
                         // Setup leader election on valid placements
-                        leaderElection.Init(0, true, 3, validPlacement);
+                        leaderElection.Init(validPlacement, true);
                         PinConfiguration pc = GetContractedPinConfiguration();
-                        pc.SetToGlobal(0);
+                        leaderElection.SetupPC(pc);
                         SetPlannedPinConfiguration(pc);
                         leaderElection.ActivateSend();
                         round.SetValue(21);
