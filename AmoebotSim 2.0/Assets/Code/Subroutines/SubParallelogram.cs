@@ -5,7 +5,7 @@ using AS2.Sim;
 using AS2.Subroutines.PASC;
 using AS2.Subroutines.BinStateHelpers;
 
-namespace AS2.Subroutines.ParallelogramContainment
+namespace AS2.Subroutines.ConvexShapeContainment
 {
     /// <summary>
     /// Shape containment check for parallelograms. Finds all valid
@@ -822,4 +822,4 @@ namespace AS2.Subroutines.ParallelogramContainment
         }
     }
 
-} // namespace AS2.Subroutines.ParallelogramContainment
+} // namespace AS2.Subroutines.ConvexShapeContainment

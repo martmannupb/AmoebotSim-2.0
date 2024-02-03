@@ -6,7 +6,7 @@ using AS2.Subroutines.BinaryOps;
 using AS2.Subroutines.LeaderElectionSC;
 using AS2.Subroutines.LongestLines;
 using AS2.Subroutines.PASC;
-using AS2.Subroutines.ParallelogramContainment;
+using AS2.Subroutines.ConvexShapeContainment;
 using AS2.Subroutines.ShapeConstruction;
 
 namespace AS2.Algos.SCConvexShapes
@@ -19,6 +19,13 @@ namespace AS2.Algos.SCConvexShapes
     /// this algorithm because it stores the target shape in a
     /// static member. Always generate this algorithm from
     /// Init Mode.</b>
+    /// </para>
+    /// <para>
+    /// If the amoebot system is so small that the longest lines cannot
+    /// store the scaled shape parameters, the algorithm will not work
+    /// correctly. A rough estimate of sufficient size is that the longest
+    /// line should have length at least log(its own length) +
+    /// log(diameter of the shape).
     /// </para>
     /// </summary>
 
@@ -826,10 +833,13 @@ namespace AS2.Algos.SCConvexShapes
         /// detect a shape of our current type.</returns>
         private int NumShapeParams()
         {
+            // Triangle needs 1, parallelogram 2
             if (shapeType < ShapeType.TRAPEZOID)
                 return (int)shapeType + 1;
             else if (shapeType == ShapeType.TRAPEZOID)
                 return (int)shapeType;
+            // Pentagon needs 5, hexagon needs 6
+            // TODO: Some hexagons only need 3
             else
                 return (int)shapeType + 2;
         }
