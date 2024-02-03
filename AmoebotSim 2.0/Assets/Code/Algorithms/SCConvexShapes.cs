@@ -3,8 +3,11 @@ using static AS2.Constants;
 using AS2.Sim;
 using AS2.ShapeContainment;
 using AS2.Subroutines.BinaryOps;
+using AS2.Subroutines.LeaderElection;
 using AS2.Subroutines.LongestLines;
 using AS2.Subroutines.PASC;
+using AS2.Subroutines.ParallelogramContainment;
+using AS2.Subroutines.ShapeConstruction;
 
 namespace AS2.Algos.SCConvexShapes
 {
@@ -119,7 +122,8 @@ namespace AS2.Algos.SCConvexShapes
     //  - If containment check is finished:
     //      - Success:
     //          - Store valid placements and rotation
-    //          - Jump to round 19
+    //          - Copy scale R into L for the shape construction
+    //          - Jump to round 20
     //      - Failure:
     //          - Increment rotation
     //          - Go to round 6
@@ -175,7 +179,7 @@ namespace AS2.Algos.SCConvexShapes
     //  - If binop is finished:
     //      - If L = M:
     //          - Setup two global circuits and beep on first one
-    //          - Go to round 20
+    //          - Go to round 15
     //      - Else:
     //          - Set counter to 0
     //          - Go to round 16
@@ -190,9 +194,10 @@ namespace AS2.Algos.SCConvexShapes
     //      - Go to round 18
 
     // Round 16:
-    //  - If counter > number of parameters:
+    //  - If counter > number of parameters * 2:
     //      - Set rotation to 0
-    //      - Go to round 18
+    //      - Setup two global circuits and beep on the second
+    //      - Go to round 15
     //  - Else:
     //      - Init binop to compute M * parameter or MSB
     //      - Start binop
@@ -234,13 +239,42 @@ namespace AS2.Algos.SCConvexShapes
     // Round 21:
     //  - If leader election is finished:
     //      - Setup shape construction subroutine for leader and scale L
+    //      - Markers at counter starts
 
     // Round 22:
+    //  - Continue running shape construction
     //  - If shape construction is finished:
     //      - Terminate with success
+    //  - If scale reset:
+    //      - Set marker to counter start
+    //      - Go to round 23
+    //  - Else:
+    //      - Continue running (maybe with scale bit)
+    //      - Forward marker
+
+    // Round 23:
+    //  - Send next bit of shape construction
+    //  - Forward marker
+    //  - Go back to round 22
 
     public class SCConvexShapesParticle : ParticleAlgorithm
     {
+        [StatusInfo("Draw Shape", "Draws the target shape at the selected amoebot.")]
+        public static void DrawShape(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            AS2.UI.LineDrawer.Instance.Clear();
+            if (shape is null)
+                return;
+
+            Vector2Int pos = Vector2Int.zero;
+            if (selectedParticle != null)
+                pos = selectedParticle.Head();
+
+            shape.Draw(pos);
+
+            AS2.UI.LineDrawer.Instance.SetTimer(20);
+        }
+
         public enum ShapeType
         {
             TRIANGLE = 0,
@@ -264,7 +298,10 @@ namespace AS2.Algos.SCConvexShapes
 
         // Rotation / generic counter
         ParticleAttribute<int> rotation;
+        ParticleAttribute<int> finalRotation;
         ParticleAttribute<bool> marker;
+        ParticleAttribute<bool> validPlacement;
+        ParticleAttribute<bool> finished;
         
         // Stores 26 bits
         // 3 bits for binary counter L, R, M
@@ -287,8 +324,11 @@ namespace AS2.Algos.SCConvexShapes
         private const int msb_shapeS = 21;
 
         SubBinOps binops;
+        SubLeaderElection leaderElection;
         SubLongestLines ll;
         SubPASC2 pasc1;
+        SubParallelogram parallelogram;
+        SubShapeConstruction shapeConstr;
 
         // Static data set by the generation method
         public static Shape shape;
@@ -321,12 +361,18 @@ namespace AS2.Algos.SCConvexShapes
             // Initialize the attributes here
             round = CreateAttributeInt("Round", 0);
             rotation = CreateAttributeInt("Rotation", 0);
+            finalRotation = CreateAttributeInt("Final Rotation", -1);
             marker = CreateAttributeBool("Marker", false);
             bitStorage = CreateAttributeInt("Bits", 0);
+            validPlacement = CreateAttributeBool("Valid placement", false);
+            finished = CreateAttributeBool("Finished", false);
 
             binops = new SubBinOps(p);
             pasc1 = new SubPASC2(p);
             ll = new SubLongestLines(p, pasc1);
+            parallelogram = new SubParallelogram(p, pasc1);
+            leaderElection = new SubLeaderElection(p);
+            shapeConstr = new SubShapeConstruction(p, shape, pasc1);
 
             // Also, set the default initial color
             SetMainColor(ColorData.Particle_Black);
@@ -340,11 +386,11 @@ namespace AS2.Algos.SCConvexShapes
         //}
 
         // Implement this method if the algorithm terminates at some point
-        //public override bool IsFinished()
-        //{
-        //    // Return true when this particle has terminated
-        //    return false;
-        //}
+        public override bool IsFinished()
+        {
+            // Return true when this particle has terminated
+            return finished;
+        }
 
         // The movement activation method
         public override void ActivateMove()
@@ -355,6 +401,8 @@ namespace AS2.Algos.SCConvexShapes
         // The beep activation method
         public override void ActivateBeep()
         {
+            if (finished)
+                return;
             switch (round)
             {
                 // FIND LONGEST LINES
@@ -439,32 +487,46 @@ namespace AS2.Algos.SCConvexShapes
                     }
                     break;
                 case 3:
+                case 16:    // From binary search, have to do almost the same computation
                     {
                         if (rotation > NumShapeParams() * 2)
                         {
                             rotation.SetValue(0);
+
                             PinConfiguration pc = GetContractedPinConfiguration();
-                            pc.SetToGlobal(0);
-                            SetPlannedPinConfiguration(pc);
-                            pc.SendBeepOnPartitionSet(0);
-                            round.SetValue(5);
+                            if (round == 3)
+                            {
+                                pc.SetToGlobal(0);
+                                SetPlannedPinConfiguration(pc);
+                                pc.SendBeepOnPartitionSet(0);
+                                round.SetValue(5);
+                            }
+                            else if (round == 16)
+                            {
+                                SetupGlobalCircuits(pc);
+                                SetPlannedPinConfiguration(pc);
+                                pc.SendBeepOnPartitionSet(1);
+                                round.SetValue(15);
+                            }
                         }
                         else
                         {
                             // Initialize and start binop to compute R * parameter or MSB
-                            InitBinOpsShapeParam(false);
+                            // In binary search, start binop to compute M * parameter or MSB
+                            InitBinOpsShapeParam(round == 16);
                             round.SetValue(round + 1);
                         }
                     }
                     break;
                 case 4:
+                case 17:    // From binary search
                     {
                         // Run binops and write result bits/MSBs
                         if (RunBinOpsShapeParam())
                         {
                             // Increment counter and repeat
                             rotation.SetValue(rotation + 1);
-                            round.SetValue(3);
+                            round.SetValue(round - 1);
                         }
                     }
                     break;
@@ -482,19 +544,275 @@ namespace AS2.Algos.SCConvexShapes
                 // CHECK LARGEST SCALE
 
                 case 6:
+                case 18:    // From binary search, need to perform containment check too
                     {
-                        if (rotation > 5)
+                        if (rotation >= NumRotations())
                         {
-                            // Continue with next step
                             rotation.SetValue(0);
-                            round.SetValue(8);
+                            if (round == 6)
+                            {
+                                // Continue with next step
+                                round.SetValue(8);
+                            }
+                            else if (round == 18)
+                            {
+                                // Set R := M
+                                if (ll.IsOnMaxLine())
+                                {
+                                    Bit_R = Bit_M;
+                                    MSB_R = MSB_M;
+                                }
+                                round.SetValue(10);
+                            }
                         }
                         else
                         {
                             // Check next rotation
                             // Init containment check
-                            // TODO.....
+                            StartShapeContainmentCheck();
+                            
+                            round.SetValue(round + 1);
                         }
+                    }
+                    break;
+                case 7:
+                case 9:     // (From scale 1 check)
+                case 19:    // From binary search
+                    {
+                        parallelogram.ActivateReceive();
+                        if (parallelogram.IsFinished())
+                        {
+                            if (parallelogram.Success())
+                            {
+                                // Always store valid positions and rotation, also reset rotation
+                                validPlacement.SetValue(parallelogram.IsRepresentative());
+                                finalRotation.SetValue(rotation);
+                                rotation.SetValue(0);
+
+                                if (round == 7)
+                                {
+                                    // Copy scale R into L
+                                    if (ll.IsOnMaxLine())
+                                    {
+                                        Bit_L = Bit_R;
+                                        MSB_L = MSB_R;
+                                    }
+                                    round.SetValue(20);
+                                }
+                                else if (round == 9)
+                                    round.SetValue(10);
+                                else if (round == 19)
+                                {
+                                    // Set L := M
+                                    if (ll.IsOnMaxLine())
+                                    {
+                                        Bit_L = Bit_M;
+                                        MSB_L = MSB_M;
+                                    }
+                                    round.SetValue(10);
+                                }
+                            }
+                            else
+                            {
+                                // Always increment rotation
+                                rotation.SetValue(rotation + 1);
+                                // Go to previous round (7 -> 6, 9 -> 8, 19 -> 18)
+                                round.SetValue(round - 1);
+                            }
+                        }
+                        else
+                        {
+                            PinConfiguration pc = GetContractedPinConfiguration();
+                            parallelogram.SetupPC(pc);
+                            SetPlannedPinConfiguration(pc);
+                            parallelogram.ActivateSend();
+                        }
+                    }
+                    break;
+
+                // CHECK SCALE 1
+
+                case 8:
+                    {
+                        if (rotation >= NumRotations())
+                        {
+                            // Terminate with failure
+                            finished.SetValue(true);
+                            SetMainColor(ColorData.Particle_Red);
+                        }
+                        else
+                        {
+                            // Check next rotation
+                            // Init containment check
+                            StartShapeContainmentCheck(false);
+
+                            round.SetValue(9);
+                        }
+                    }
+                    break;
+
+                // BINARY SEARCH
+
+                case 10:
+                    {
+                        // Start adding L + R
+                        InitBinOpsSearch();
+                        // Split: Counters go to round 11, others to round 15 with 2 global circuits
+                        if (ll.IsOnMaxLine())
+                        {
+                            round.SetValue(11);
+                        }
+                        else
+                        {
+                            PinConfiguration pc = GetContractedPinConfiguration();
+                            SetupGlobalCircuits(pc);
+                            SetPlannedPinConfiguration(pc);
+                            round.SetValue(15);
+                        }
+
+                    }
+                    break;
+                case 11:
+                case 13:
+                case 14:
+                    {
+                        // All 3 rounds wait for binary operations to finish
+                        // Just the reaction when it is finished differs
+                        bool isFinished = RunBinOps();
+                        if (isFinished)
+                        {
+                            if (round == 11)
+                            {
+                                // Store result in M
+                                Bit_M = binops.ResultBit();
+                                round.SetValue(12);
+                            }
+                            else if (round == 13)
+                            {
+                                // Store MSB of M
+                                MSB_M = binops.IsMSB();
+
+                                // Setup binary operation for comparing L to M
+                                InitBinOpsSearch(false, true);
+                                round.SetValue(14);
+                            }
+                            else if (round == 14)
+                            {
+                                if (binops.CompResult() == SubComparison.ComparisonResult.EQUAL)
+                                {
+                                    PinConfiguration pc = GetContractedPinConfiguration();
+                                    SetupGlobalCircuits(pc);
+                                    SetPlannedPinConfiguration(pc);
+                                    pc.SendBeepOnPartitionSet(0);
+                                    round.SetValue(15);
+                                }
+                                else
+                                {
+                                    rotation.SetValue(0);
+                                    round.SetValue(16);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case 12:
+                    {
+                        // Shift each bit of M one position backwards
+                        Direction d = ll.GetMaxDir();
+                        Bit_M = HasNeighborAt(d) && ((SCConvexShapesParticle)GetNeighborAt(d)).GetBitM();
+
+                        // Setup binary operation for finding MSB of M
+                        InitBinOpsSearch(true);
+                        round.SetValue(13);
+                    }
+                    break;
+                case 15: // WAIT round
+                    {
+                        // Wait for beep on global circuits
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        if (pc.ReceivedBeepOnPartitionSet(0))
+                        {
+                            round.SetValue(20);
+                        }
+                        else if (pc.ReceivedBeepOnPartitionSet(1))
+                        {
+                            round.SetValue(18);
+                        }
+                    }
+                    break;
+
+                // CONTAINMENT CHECK
+                // (All handled similarly to other rounds)
+
+                // SHAPE CONSTRUCTION
+
+                case 20:
+                    {
+                        // Setup leader election on valid placements
+                        leaderElection.Init(0, true, 3, validPlacement);
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        pc.SetToGlobal(0);
+                        SetPlannedPinConfiguration(pc);
+                        leaderElection.ActivateSend();
+                        round.SetValue(21);
+                    }
+                    break;
+                case 21:
+                    {
+                        leaderElection.ActivateReceive();
+                        if (leaderElection.IsFinished())
+                        {
+                            // Setup shape construction
+                            marker.SetValue(ll.IsOnMaxLine() && !HasNeighborAt(ll.GetMaxDir().Opposite()));
+                            shapeConstr.Init(leaderElection.IsLeader(), finalRotation);
+                            ActivateShapeConstrSend(false);
+                            round.SetValue(22);
+                        }
+                        else
+                        {
+                            SetPlannedPinConfiguration(GetCurrentPinConfiguration());
+                            leaderElection.ActivateSend();
+                        }
+                    }
+                    break;
+                case 22:
+                    {
+                        shapeConstr.ActivateReceive();
+
+                        SubShapeConstruction.ShapeElement t = shapeConstr.ElementType();
+                        if (t == SubShapeConstruction.ShapeElement.NODE)
+                            SetMainColor(ColorData.Particle_Green);
+                        else if (t == SubShapeConstruction.ShapeElement.EDGE)
+                            SetMainColor(ColorData.Particle_Blue);
+                        else if (t == SubShapeConstruction.ShapeElement.FACE)
+                            SetMainColor(ColorData.Particle_Aqua);
+                        else
+                            SetMainColor(ColorData.Particle_Black);
+
+                        if (shapeConstr.IsFinished())
+                        {
+                            finished.SetValue(true);
+                            SetPlannedPinConfiguration(GetContractedPinConfiguration());
+                        }
+                        else
+                        {
+                            if (shapeConstr.ResetScaleCounter())
+                            {
+                                // Set marker to start
+                                marker.SetValue(ll.IsOnMaxLine() && !HasNeighborAt(ll.GetMaxDir().Opposite()));
+                                round.SetValue(23);
+                            }
+                            else
+                            {
+                                ActivateShapeConstrSend();
+                            }
+                        }
+                    }
+                    break;
+                case 23:
+                    {
+                        ActivateShapeConstrSend();
+                        round.SetValue(22);
                     }
                     break;
             }
@@ -531,6 +849,24 @@ namespace AS2.Algos.SCConvexShapes
                 m = Mathf.Max(m, shapeParams[i].Length);
             }
             return m;
+        }
+
+        /// <summary>
+        /// Determines how many rotations have to be checked for the
+        /// current shape type. Triangles need only two rotations,
+        /// parallelograms need only 3 rotations, other shapes need
+        /// all six rotations to be checked.
+        /// </summary>
+        /// <returns>The number of rotations to be checked for the
+        /// current shape type.</returns>
+        private int NumRotations()
+        {
+            if (shapeType == ShapeType.TRIANGLE)
+                return 2;
+            else if (shapeType == ShapeType.PARALLELOGRAM)
+                return 3;
+            else
+                return 6;
         }
 
         /// <summary>
@@ -598,6 +934,59 @@ namespace AS2.Algos.SCConvexShapes
         }
 
         /// <summary>
+        /// Helper starting binary addition of L and R,
+        /// MSB detection of M or comparison of L to M.
+        /// </summary>
+        /// <param name="findMSB">Whether the MSB detection
+        /// should be initialized rather than addition.</param>
+        /// <param name="compare">Whether the comparison should be
+        /// initialized rather than addition.</param>
+        private void InitBinOpsSearch(bool findMSB = false, bool compare = false)
+        {
+            if (!ll.IsOnMaxLine())
+                return;
+
+            Direction d = ll.GetMaxDir();
+            Direction opp = d.Opposite();
+            bool pred = HasNeighborAt(opp);
+            bool succ = HasNeighborAt(d);
+            if (findMSB)
+                binops.Init(SubBinOps.Mode.MSB, Bit_M, pred ? opp : Direction.NONE, succ ? d : Direction.NONE);
+            else if (compare)
+                binops.Init(SubBinOps.Mode.COMP, Bit_L, pred ? opp : Direction.NONE, succ ? d : Direction.NONE, Bit_M);
+            else
+                binops.Init(SubBinOps.Mode.ADD, Bit_L, pred ? opp : Direction.NONE, succ ? d : Direction.NONE, Bit_R);
+            
+            PinConfiguration pc = GetContractedPinConfiguration();
+            binops.SetupPinConfig(pc);
+            SetPlannedPinConfiguration(pc);
+            binops.ActivateSend();
+        }
+
+        /// <summary>
+        /// Helper for running any binary operation subroutine.
+        /// Calls the receive and send activations.
+        /// </summary>
+        /// <returns><c>true</c> as soon as the subroutine
+        /// is finished.</returns>
+        private bool RunBinOps()
+        {
+            if (!ll.IsOnMaxLine())
+                return false;
+
+            binops.ActivateReceive();
+            if (binops.IsFinished())
+                return true;
+
+            PinConfiguration pc = GetContractedPinConfiguration();
+            binops.SetupPinConfig(pc);
+            SetPlannedPinConfiguration(pc);
+            binops.ActivateSend();
+
+            return false;
+        }
+
+        /// <summary>
         /// Helper running the binary operations on shape parameters.
         /// Activates the binops routine and writes the multiplication
         /// or MSB result when it is finished. Sets up the pin configuration
@@ -609,8 +998,7 @@ namespace AS2.Algos.SCConvexShapes
             if (!ll.IsOnMaxLine())
                 return false;
 
-            binops.ActivateReceive();
-            if (binops.IsFinished())
+            if (RunBinOps())
             {
                 int idx = rotation.GetCurrentValue();
                 int n = NumShapeParams();
@@ -629,12 +1017,80 @@ namespace AS2.Algos.SCConvexShapes
                 return true;
             }
 
-            PinConfiguration pc = GetContractedPinConfiguration();
-            binops.SetupPinConfig(pc);
-            SetPlannedPinConfiguration(pc);
-            binops.ActivateSend();
-
             return false;
+        }
+
+        /// <summary>
+        /// Helper to initialize and start the shape containment subroutine
+        /// for the correct shape type.
+        /// </summary>
+        private void StartShapeContainmentCheck(bool useScaledShapeBits = true)
+        {
+            Direction counterPred = Direction.NONE;
+            Direction counterSucc = Direction.NONE;
+            if (ll.IsOnMaxLine())
+            {
+                Direction maxDir = ll.GetMaxDir();
+                if (HasNeighborAt(maxDir.Opposite()))
+                    counterPred = maxDir.Opposite();
+                if (HasNeighborAt(maxDir))
+                    counterSucc = maxDir;
+
+                if (shapeType == ShapeType.PARALLELOGRAM)
+                    parallelogram.Init(Direction.E, Direction.NNE, rotation, true, counterPred, counterSucc,
+                        useScaledShapeBits ? ScaledShapeBit(0) : ShapeBit(0), useScaledShapeBits ? ScaledShapeBit(1) : ShapeBit(1),
+                        useScaledShapeBits ? ScaledShapeMSB(0) : ShapeMSB(0), useScaledShapeBits ? ScaledShapeMSB(1) : ShapeMSB(1));
+            }
+            else
+            {
+                if (shapeType == ShapeType.PARALLELOGRAM)
+                    parallelogram.Init(Direction.E, Direction.NNE, rotation, true);
+            }
+            PinConfiguration pc = GetContractedPinConfiguration();
+            parallelogram.SetupPC(pc);
+            SetPlannedPinConfiguration(pc);
+            parallelogram.ActivateSend();
+        }
+
+        /// <summary>
+        /// Helper setting up two global circuits on
+        /// partition sets 0 and 1.
+        /// </summary>
+        /// <param name="pc">The pin configuration to modify.</param>
+        private void SetupGlobalCircuits(PinConfiguration pc)
+        {
+            bool[] inverted = new bool[] { false, false, false, true, true, true };
+            pc.SetStarConfig(0, inverted, 0);
+            pc.SetStarConfig(1, inverted, 1);
+        }
+
+        /// <summary>
+        /// Helper for activating the send part of the shape construction
+        /// subroutine. Sets up the pin configuration and sends the beep,
+        /// using the scale bit and MSB if required. Also moves the marker
+        /// ahead by one position if a scale bit is needed.
+        /// </summary>
+        /// <param name="checkNeedScaleBit">Whether the scale bit
+        /// should be checked.</param>
+        private void ActivateShapeConstrSend(bool checkNeedScaleBit = true)
+        {
+            PinConfiguration pc = GetContractedPinConfiguration();
+            shapeConstr.SetupPinConfig(pc);
+            SetPlannedPinConfiguration(pc);
+
+            if (checkNeedScaleBit && shapeConstr.NeedScaleBit())
+            {
+                shapeConstr.ActivateSend(marker.GetCurrentValue() && Bit_L, marker.GetCurrentValue() && MSB_L);
+                if (ll.IsOnMaxLine())
+                {
+                    Direction d = ll.GetMaxDir().Opposite();
+                    marker.SetValue(HasNeighborAt(d) && ((SCConvexShapesParticle)GetNeighborAt(d)).marker);
+                }
+            }
+            else
+            {
+                shapeConstr.ActivateSend();
+            }
         }
 
         // Bit helpers
@@ -658,6 +1114,15 @@ namespace AS2.Algos.SCConvexShapes
         {
             get { return GetStateBit(bit_counter + 2); }
             set { SetStateBit(bit_counter + 2, value); }
+        }
+
+        /// <summary>
+        /// Helper to get the bit of M from a neighboring amoebot.
+        /// </summary>
+        /// <returns>The currently stored bit of M.</returns>
+        public bool GetBitM()
+        {
+            return ((bitStorage.GetValue() >> (bit_counter + 2)) & 1) > 0;
         }
 
         // Binary counter MSBs
@@ -751,9 +1216,16 @@ namespace AS2.Algos.SCConvexShapes
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(SCConvexShapesParticle.ShapeType shapeType = SCConvexShapesParticle.ShapeType.PARALLELOGRAM, int a = 3, int d = 2, int numAmoebots = 150, float holeProb = 0.25f, bool fillHoles = false, bool prioritizeInner = false, float lambda = 0.1f)
+        public void Generate(SCConvexShapesParticle.ShapeType shapeType = SCConvexShapesParticle.ShapeType.PARALLELOGRAM, int a = 3, int d = 2, int numAmoebots = 150, float holeProb = 0.1f, bool fillHoles = false, bool prioritizeInner = true, float lambda = 0.25f)
         {
             SCConvexShapesParticle.shapeType = shapeType;
+            if (shapeType == SCConvexShapesParticle.ShapeType.PARALLELOGRAM)
+            {
+                SCConvexShapesParticle.shape = Shape.GenParallelogram(a, d);
+                AS2.UI.LineDrawer.Instance.Clear();
+                SCConvexShapesParticle.shape.Draw(Vector2Int.zero);
+                AS2.UI.LineDrawer.Instance.SetTimer(15);
+            }
             string str_a = IntToBinary(a);
             string str_d = IntToBinary(d);
             SCConvexShapesParticle.shapeParams[0] = str_a;
@@ -767,8 +1239,10 @@ namespace AS2.Algos.SCConvexShapes
 
         private string IntToBinary(int num)
         {
-            string s = "";
+            if (num == 0)
+                return "0";
 
+            string s = "";
             while (num > 0)
             {
                 s += (num & 1) > 0 ? '1' : '0';
