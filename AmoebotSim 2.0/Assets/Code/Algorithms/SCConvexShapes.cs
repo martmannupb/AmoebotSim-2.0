@@ -282,15 +282,6 @@ namespace AS2.Algos.SCConvexShapes
             AS2.UI.LineDrawer.Instance.SetTimer(20);
         }
 
-        public enum ShapeType
-        {
-            TRIANGLE = 0,
-            PARALLELOGRAM = 1,
-            TRAPEZOID = 2,
-            PENTAGON = 3,
-            HEXAGON = 4
-        }
-
         // This is the display name of the algorithm (must be unique)
         public static new string Name => "SC Convex Shapes";
 
@@ -313,55 +304,63 @@ namespace AS2.Algos.SCConvexShapes
         // Stores 26 bits
         // 3 bits for binary counter L, R, M
         // 3 MSBs for binary counter
-        // 5 shape parameter bits
-        // 5 shape parameter MSBs
-        // 5 scaled shape parameter bits
-        // 5 scaled shape parameter MSBs
-        //            25  24  23  22  21    20  19  18  17  16    15  14  13       12  11  10  9   8     7   6   5   4   3     2   1   0
-        // xxxx xx    x   x   x   x   x     x   x   x   x   x     x   x   x        x   x   x   x   x     x   x   x   x   x     x   x   x
-        //            Scaled shape MSBs     Shape MSBs            Counter MSBs     Scaled shape bits     Shape bits            Counter bits
+        // 6 shape parameter bits
+        // 6 shape parameter MSBs
+        // 6 scaled shape parameter bits
+        // 6 scaled shape parameter MSBs
+        //       29  28  27  26  25  24    23  22  21  20  19  18    17  16  15       14  13  12  11  10  9     8   7   6   5   4   3     2   1   0
+        // xx    x   x   x   x   x   x     x   x   x   x   x   x     x   x   x        x   x   x   x   x   x     x   x   x   x   x   x     x   x   x
+        //       Scaled shape MSBs         Shape MSBs                Counter MSBs     Scaled shape bits         Shape bits                Counter bits
         ParticleAttribute<int> bitStorage;
 
         // Bit index constants
         private const int bit_counter = 0;
         private const int bit_shape = 3;
-        private const int bit_shapeS = 8;
-        private const int msb_counter = 13;
-        private const int msb_shape = 16;
-        private const int msb_shapeS = 21;
+        private const int bit_shapeS = 9;
+        private const int msb_counter = 15;
+        private const int msb_shape = 18;
+        private const int msb_shapeS = 24;
 
         SubBinOps binops;
         SubLeaderElectionSC leaderElection;
         SubLongestLines ll;
         SubPASC2 pasc1;
         SubParallelogram parallelogram;
+        SubMergingAlgo mergeAlgo;
+        SubConvexShapeContainment containment;
         SubShapeConstruction shapeConstr;
 
         // Static data set by the generation method
         public static Shape shape;
         public static ShapeType shapeType;
+        public static bool hexNeedsPentagon;        // Whether the hexagon requires a pentagon check
+        public static Direction shapeDirectionW;    // The 2 (3) directions determining the orientation of the shape
+        public static Direction shapeDirectionH1;   // 3 are needed for hexagons
+        public static Direction shapeDirectionH2;   // H2 must always be a trapezoid direction for hexagons
+
         /// <summary>
-        /// Shape parameters as binary strings in the order a, d, c, a' = a + c, b.
+        /// Shape parameters as binary strings in the order a, d, c, a' = a + c, a + 1, b = d2.
         /// <para>
         /// The shape type determines which parameters will be used:
         /// <list type="bullet">
         /// <item>
-        ///     <b>Triangle:</b> Only a is used
+        ///     <b>Triangle:</b> Only a is used.
         /// </item>
         /// <item>
-        ///     <b>Parallelogram and trapezoid:</b> Only a (width) and d (height) are used
+        ///     <b>Parallelogram and trapezoid:</b> Only a (width) and d (height) are used.
         /// </item>
         /// <item>
-        ///     <b>Pentagon:</b> a, d, c and a' are used
+        ///     <b>Pentagon:</b> a, d, c, a' and a + 1 are used (a + 1 only for scale 1).
         /// </item>
         /// <item>
-        ///     <b>Hexagon:</b> All parameters are used. a and d describe the first trapezoid
-        ///     while a and b are used for the other trapezoid or a, b, d and a' for the pentagon
+        ///     <b>Hexagon:</b> All parameters are used. If the shape contains a pentagon,
+        ///     it uses the pentagon parameters and a, b for the trapezoid. Otherwise, it will
+        ///     use a and d for the first trapezoid and a and c for the second.
         /// </item>
         /// </list>
         /// </para>
         /// </summary>
-        public static string[] shapeParams = new string[5];
+        public static string[] shapeParams = new string[6];
 
         public SCConvexShapesParticle(Particle p) : base(p)
         {
@@ -378,6 +377,8 @@ namespace AS2.Algos.SCConvexShapes
             pasc1 = new SubPASC2(p);
             ll = new SubLongestLines(p, pasc1);
             parallelogram = new SubParallelogram(p, pasc1);
+            mergeAlgo = new SubMergingAlgo(p, pasc1);
+            containment = new SubConvexShapeContainment(p, parallelogram, mergeAlgo);
             leaderElection = new SubLeaderElectionSC(p);
             shapeConstr = new SubShapeConstruction(p, shape, pasc1);
 
@@ -586,13 +587,13 @@ namespace AS2.Algos.SCConvexShapes
                 case 9:     // (From scale 1 check)
                 case 19:    // From binary search
                     {
-                        parallelogram.ActivateReceive();
-                        if (parallelogram.IsFinished())
+                        containment.ActivateReceive();
+                        if (containment.IsFinished())
                         {
-                            if (parallelogram.Success())
+                            if (containment.Success())
                             {
                                 // Always store valid positions and rotation, also reset rotation
-                                validPlacement.SetValue(parallelogram.IsRepresentative());
+                                validPlacement.SetValue(containment.IsRepresentative());
                                 finalRotation.SetValue(rotation);
                                 rotation.SetValue(0);
 
@@ -630,9 +631,9 @@ namespace AS2.Algos.SCConvexShapes
                         else
                         {
                             PinConfiguration pc = GetContractedPinConfiguration();
-                            parallelogram.SetupPC(pc);
+                            containment.SetupPC(pc);
                             SetPlannedPinConfiguration(pc);
-                            parallelogram.ActivateSend();
+                            containment.ActivateSend();
                         }
                     }
                     break;
@@ -836,17 +837,20 @@ namespace AS2.Algos.SCConvexShapes
             // Triangle needs 1, parallelogram 2
             if (shapeType < ShapeType.TRAPEZOID)
                 return (int)shapeType + 1;
+            // Trapezoid needs 2
             else if (shapeType == ShapeType.TRAPEZOID)
-                return (int)shapeType;
-            // Pentagon needs 5, hexagon needs 6
-            // TODO: Some hexagons only need 3
+                return 2;
+            // Pentagon needs 5
+            else if (shapeType == ShapeType.PENTAGON)
+                return 5;
+            // Hexagon may need 6 or 3
             else
-                return (int)shapeType + 2;
+                return hexNeedsPentagon ? 6 : 3;
         }
 
         /// <summary>
         /// Helper to compute the maximum number of bits of any used
-        /// shape parameter.
+        /// base shape parameter.
         /// </summary>
         /// <returns>The maximum length of a binary shape parameter
         /// used by our shape type.</returns>
@@ -908,9 +912,9 @@ namespace AS2.Algos.SCConvexShapes
         /// <summary>
         /// Helper starting binary operations on shape parameters.
         /// Sets up the binops utils on the counters and starts either
-        /// a MULT or an MSB operation. The current rotation counter
+        /// a MULT, an ADD or an MSB operation. The current rotation counter
         /// indicates the index of the shape parameter and whether
-        /// a multiplication or MSB detection is required.
+        /// a multiplication, addition or MSB detection is required.
         /// </summary>
         /// <param name="useM">Whether the binary search middle value
         /// M should be used for multiplication. If <c>false</c>, R
@@ -929,8 +933,29 @@ namespace AS2.Algos.SCConvexShapes
             int i = idx % n;
             if (idx < n)
             {
-                // Multiplication
-                binops.Init(SubBinOps.Mode.MULT, ShapeBit(i), pred ? opp : Direction.NONE, succ ? d : Direction.NONE, useM ? Bit_M : Bit_R, ShapeMSB(i));
+                if (i < 4 || shapeType == ShapeType.HEXAGON && hexNeedsPentagon && i < 5)
+                {
+                    // Multiplication
+                    bool bitA, msbA;
+                    if (i == 4)
+                    {
+                        // The 5th multiplication must compute k*d2 and not k*(a + 1) (only hexagons with pentagon part)
+                        bitA = ShapeBit(5);
+                        msbA = ShapeMSB(5);
+                    }
+                    else
+                    {
+                        bitA = ShapeBit(i);
+                        msbA = ShapeMSB(i);
+                    }
+                    binops.Init(SubBinOps.Mode.MULT, bitA, pred ? opp : Direction.NONE, succ ? d : Direction.NONE, useM ? Bit_M : Bit_R, msbA);
+                }
+                else
+                {
+                    // This only occurs for pentagons or hexagons that need a pentagon: Compute k*a + 1
+                    // Bit of the second operand is 1 for the counter start and 0 for everything else
+                    binops.Init(SubBinOps.Mode.ADD, ScaledShapeBit(0), pred ? opp : Direction.NONE, succ ? d : Direction.NONE, !pred);
+                }
             }
             else
             {
@@ -1015,8 +1040,18 @@ namespace AS2.Algos.SCConvexShapes
                 int i = idx % n;
                 if (idx < n)
                 {
-                    // Multiplication
-                    SetScaledShapeBit(i, binops.ResultBit());
+                    if (i < 4 || shapeType == ShapeType.HEXAGON && hexNeedsPentagon && i < 5)
+                    {
+                        // Multiplication
+                        // Make sure the result of k*d2 ends up in the right location
+                        SetScaledShapeBit(i < 4 ? i : 5, binops.ResultBit());
+                    }
+                    else
+                    {
+                        // This only occurs for pentagons and hexagons that need a pentagon
+                        // We write the bit of k*a + 1
+                        SetScaledShapeBit(4, binops.ResultBit());
+                    }
                 }
                 else
                 {
@@ -1046,20 +1081,26 @@ namespace AS2.Algos.SCConvexShapes
                 if (HasNeighborAt(maxDir))
                     counterSucc = maxDir;
 
-                if (shapeType == ShapeType.PARALLELOGRAM)
-                    parallelogram.Init(Direction.E, Direction.NNE, rotation, true, counterPred, counterSucc,
-                        useScaledShapeBits ? ScaledShapeBit(0) : ShapeBit(0), useScaledShapeBits ? ScaledShapeBit(1) : ShapeBit(1),
-                        useScaledShapeBits ? ScaledShapeMSB(0) : ShapeMSB(0), useScaledShapeBits ? ScaledShapeMSB(1) : ShapeMSB(1));
+                bool[] _bits = new bool[6];
+                bool[] _msbs = new bool[6];
+                for (int i = 0; i < 6; i++)
+                {
+                    _bits[i] = useScaledShapeBits ? ScaledShapeBit(i) : ShapeBit(i);
+                    _msbs[i] = useScaledShapeBits ? ScaledShapeMSB(i) : ShapeMSB(i);
+                }
+
+                containment.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, hexNeedsPentagon, shapeDirectionH2,
+                    counterPred, counterSucc, _bits[0], _msbs[0], _bits[1], _msbs[1], _bits[2], _msbs[2], _bits[3], _msbs[3], _bits[4], _msbs[4],
+                    _bits[5], _msbs[5]);
             }
             else
             {
-                if (shapeType == ShapeType.PARALLELOGRAM)
-                    parallelogram.Init(Direction.E, Direction.NNE, rotation, true);
+                containment.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, hexNeedsPentagon, shapeDirectionH2);
             }
             PinConfiguration pc = GetContractedPinConfiguration();
-            parallelogram.SetupPC(pc);
+            containment.SetupPC(pc);
             SetPlannedPinConfiguration(pc);
-            parallelogram.ActivateSend();
+            containment.ActivateSend();
         }
 
         /// <summary>
@@ -1226,20 +1267,88 @@ namespace AS2.Algos.SCConvexShapes
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(SCConvexShapesParticle.ShapeType shapeType = SCConvexShapesParticle.ShapeType.PARALLELOGRAM, int a = 3, int d = 2, int numAmoebots = 150, float holeProb = 0.1f, bool fillHoles = false, bool prioritizeInner = true, float lambda = 0.25f)
+        public void Generate(ShapeType shapeType = ShapeType.PARALLELOGRAM, int a = 3, int d = 2, int c = 1, int b = 2,
+            int numAmoebots = 150, float holeProb = 0.1f, bool fillHoles = false, bool prioritizeInner = true, float lambda = 0.25f)
         {
             SCConvexShapesParticle.shapeType = shapeType;
-            if (shapeType == SCConvexShapesParticle.ShapeType.PARALLELOGRAM)
+            SCConvexShapesParticle.shapeDirectionW = Direction.E;
+            SCConvexShapesParticle.shapeDirectionH1 = Direction.NNE;
+            SCConvexShapesParticle.shapeDirectionH2 = Direction.SSE;
+            if (shapeType == ShapeType.TRIANGLE)
             {
-                SCConvexShapesParticle.shape = Shape.GenParallelogram(a, d);
-                AS2.UI.LineDrawer.Instance.Clear();
-                SCConvexShapesParticle.shape.Draw(Vector2Int.zero);
-                AS2.UI.LineDrawer.Instance.SetTimer(15);
+                SCConvexShapesParticle.shape = Shape.GenSimpleConvexShape(a, a, 0);
             }
+            else if (shapeType == ShapeType.PARALLELOGRAM)
+            {
+                SCConvexShapesParticle.shape = Shape.GenSimpleConvexShape(a, d, d);
+            }
+            else if (shapeType == ShapeType.TRAPEZOID)
+            {
+                SCConvexShapesParticle.shape = Shape.GenSimpleConvexShape(a, d, 0);
+            }
+            else if (shapeType == ShapeType.PENTAGON)
+            {
+                SCConvexShapesParticle.shape = Shape.GenSimpleConvexShape(a, d, c);
+            }
+            else if (shapeType == ShapeType.HEXAGON)
+            {
+                SCConvexShapesParticle.shape = Shape.GenHexagon(a, d, c, b);
+                // Find out whether the hexagon consists of two trapezoids or a pentagon and a hexagon
+                if (c == b)
+                {
+                    // Two trapezoids
+                    SCConvexShapesParticle.hexNeedsPentagon = false;
+                    // Write b into c to simplify handling of shape parameters
+                    c = b;
+                    a = a + c;
+                }
+                else
+                {
+                    SCConvexShapesParticle.hexNeedsPentagon = true;
+                    int e = b + d - c;
+                    int f = a + c - d;
+                    if (c < b)
+                    {
+                        // Pentagon is lower side
+                        SCConvexShapesParticle.shapeDirectionH1 = Direction.SSE;
+                        SCConvexShapesParticle.shapeDirectionH2 = Direction.NNE;
+                        // Compute the shape parameters
+                        int tmpB = b;
+                        int tmpD = d;
+
+                        a = d + f;
+                        d = tmpB;
+                        c = e - tmpD;
+                        b = tmpD;
+                    }
+                    else
+                    {
+                        // Pentagon is upper side
+                        a = a + c;
+                        c = c - b;
+                    }
+                }
+            }
+
+            AS2.UI.LineDrawer.Instance.Clear();
+            SCConvexShapesParticle.shape.Draw(Vector2Int.zero);
+            AS2.UI.LineDrawer.Instance.SetTimer(15);
+
             string str_a = IntToBinary(a);
             string str_d = IntToBinary(d);
+            string str_c = IntToBinary(c);
+            string str_a2 = IntToBinary(a + c);
+            string str_a3 = IntToBinary(a + 1);
+            string str_d2 = IntToBinary(b);
+            Log.Debug("Parameters: " + a + ", " + d + ", " + c + ", " + (a + c) + ", " + (a + 1) + ", " + b);
+            Log.Debug("Parameters: " + str_a + ", " + str_d + ", " + str_c + ", " + str_a2 + ", " + str_a3 + ", " + str_d2);
+
             SCConvexShapesParticle.shapeParams[0] = str_a;
             SCConvexShapesParticle.shapeParams[1] = str_d;
+            SCConvexShapesParticle.shapeParams[2] = str_c;
+            SCConvexShapesParticle.shapeParams[3] = str_a2;
+            SCConvexShapesParticle.shapeParams[4] = str_a3;
+            SCConvexShapesParticle.shapeParams[5] = str_d2;
 
             foreach (Vector2Int pos in GenerateRandomConnectedPositions(Vector2Int.zero, numAmoebots, holeProb, fillHoles, null, true, prioritizeInner, lambda))
             {

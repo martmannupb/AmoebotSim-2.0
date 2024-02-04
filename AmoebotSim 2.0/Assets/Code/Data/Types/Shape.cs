@@ -143,7 +143,7 @@ namespace AS2.ShapeContainment
                     Edge e2 = edges[j];
                     if (e1.u == e2.u && e1.v == e2.v || e1.u == e2.v && e1.v == e2.u)
                     {
-                        Log.Warning("Shape has duplicate edge");
+                        Log.Warning("Shape has duplicate edge: (" + nodes[e1.u].x + ", " + nodes[e1.u].y + ") -- (" + nodes[e1.v].x + ", " + nodes[e1.v].y + ")");
                         return false;
                     }
                 }
@@ -178,7 +178,7 @@ namespace AS2.ShapeContainment
 
                 if (!AmoebotFunctions.AreNodesNeighbors(nodes[e.u], nodes[e.v]))
                 {
-                    Log.Warning("Shape has invalid edge");
+                    Log.Warning("Shape has invalid edge: (" + nodes[e.u].x + ", " + nodes[e.u].y + ") -/- (" + nodes[e.v].x + ", " + nodes[e.v].y + ")");
                     return false;
                 }
             }
@@ -708,28 +708,51 @@ namespace AS2.ShapeContainment
         }
 
         /// <summary>
-        /// Generates a parallelogram shape with the given width and height
-        /// (at least one must be greater 0). Also generates a traversal
-        /// path for the shape.
+        /// Generates a triangle, parallelogram, trapezoid or pentagon shape
+        /// with the given side lengths. <paramref name="a"/> is the base side
+        /// length, <paramref name="d"/> is the height and <paramref name="c"/>
+        /// is the length of the part that is cut off from the pentagon.
+        /// Set <paramref name="d"/> = <paramref name="a"/> and
+        /// <paramref name="c"/> = 0 to get a triangle.
+        /// Set <paramref name="c"/> = 0 to get a trapezoid and
+        /// <paramref name="c"/> = <paramref name="d"/> to get
+        /// a parallelogram.
+        /// <para>
+        /// Also generates a traversal path for the shape.
+        /// </para>
         /// </summary>
-        /// <param name="width">The width of the parallelogram.</param>
-        /// <param name="height">The height of the parallelogram.</param>
-        /// <returns>A parallelogram shape with a traversal path.</returns>
-        public static Shape GenParallelogram(int width, int height)
+        /// <param name="a">The base side length of the shape.</param>
+        /// <param name="d">The height of the shape. Must not be larger
+        /// than <paramref name="a"/>.</param>
+        /// <param name="c">The side length of the triangle that is
+        /// cut off on the right side. Must not be larger than
+        /// <paramref name="d"/> and less than <paramref name="a"/>.</param>
+        /// <returns>A convex shape with a traversal path.</returns>
+        public static Shape GenSimpleConvexShape(int a, int d, int c)
         {
-            Shape p = new Shape();
+            Shape s = new Shape();
 
-            // For simplicity with indices
-            width += 1;
-            height += 1;
-
-            int idx = 0;
-            for (int x = 0; x < width; x++)
+            if (a < 1 || d < 0 || c < 0 || a + c - d < 0)
             {
-                for (int y = 0; y < height; y++)
+                Log.Error("Invalid shape parameters");
+                return null;
+            }
+            
+            // For simplicity with indices
+            a += 1;
+            d += 1;
+            c += 1;
+
+            int f = a + c - d - 1;
+            int idx = 0;
+            int lastLineLength = -1;
+            for (int x = 0; x < a; x++)
+            {
+                int len = x < f ? d : (d - (x - f));
+                for (int y = 0; y < len; y++)
                 {
                     // Add node
-                    p.nodes.Add(new Node(x, y));
+                    s.nodes.Add(new Node(x, y));
 
                     int idxBelow = -1;
                     int idxLeft = -1;
@@ -740,35 +763,184 @@ namespace AS2.ShapeContainment
                     if (y > 0)
                     {
                         idxBelow = idx - 1;
-                        p.edges.Add(new Edge(idxBelow, idx));
+                        s.edges.Add(new Edge(idxBelow, idx));
                     }
                     // Left
                     if (x > 0)
                     {
-                        idxLeft = idx - height;
+                        idxLeft = idx - lastLineLength;
                         // Same level
-                        p.edges.Add(new Edge(idxLeft, idx));
+                        s.edges.Add(new Edge(idxLeft, idx));
                         // Up
-                        if (y < height - 1)
+                        if (y < lastLineLength - 1)
                         {
                             idxAbove = idxLeft + 1;
-                            p.edges.Add(new Edge(idxAbove, idx));
+                            s.edges.Add(new Edge(idxAbove, idx));
                         }
                     }
 
                     // Add faces
                     if (idxBelow != -1 && idxLeft != -1)
-                        p.faces.Add(new Face(idxBelow, idx, idxLeft));
+                        s.faces.Add(new Face(idxBelow, idx, idxLeft));
                     if (idxLeft != -1 && idxAbove != -1)
-                        p.faces.Add(new Face(idxLeft, idx, idxAbove));
+                        s.faces.Add(new Face(idxLeft, idx, idxAbove));
 
                     idx++;
                 }
+                lastLineLength = len;
             }
 
-            p.GenerateTraversal();
+            if (s.IsConsistent())
+                s.GenerateTraversal();
+            else
+            {
+                Log.Error("Shape generation failed: Shape is inconsistent");
+                return null;
+            }
 
-            return p;
+            return s;
+        }
+
+        /// <summary>
+        /// Generates a hexagon shape from the given side length parameters.
+        /// Also generates a traversal path for the shape.
+        /// </summary>
+        /// <param name="a">The base side length of the shape.</param>
+        /// <param name="d">The "top left" side length.</param>
+        /// <param name="c">The "bottom right" side length.</param>
+        /// <param name="b">The "bottom left" side length.</param>
+        /// <returns>A hexagon shape with a traversal path.</returns>
+        public static Shape GenHexagon(int a, int d, int c, int b)
+        {
+            Shape s = new Shape();
+
+            if (a < 0 || d < 0 || c < 0 || b < 0)
+            {
+                Log.Error("Invalid shape parameters");
+                return null;
+            }
+
+            int e = b + d - c;
+            int f = a + c - d;
+            int middleLength = e <= d ? a + b : d + f;
+
+            // For simplicity with indices
+            middleLength += 1;
+            int[] middleIndices = new int[middleLength];
+            b += 1;
+            d += 1;
+
+            int idx = 0;
+            int lastLineLengthTop = -1;
+            int lastLineLengthBot = -1;
+            for (int x = 0; x < middleLength; x++)
+            {
+                // Top side first
+                int lenTop = x < f ? d : (d - (x - f));
+                for (int y = 0; y < lenTop; y++)
+                {
+                    // Add node
+                    s.nodes.Add(new Node(x, y));
+                    if (y == 0)
+                        middleIndices[x] = idx;
+
+                    int idxBelow = -1;
+                    int idxLeft = -1;
+                    int idxAbove = -1;
+
+                    // Add edges
+                    // Down
+                    if (y > 0)
+                    {
+                        idxBelow = idx - 1;
+                        s.edges.Add(new Edge(idxBelow, idx));
+                    }
+                    // Left
+                    if (x > 0)
+                    {
+                        idxLeft = y == 0 ? middleIndices[x - 1] : idx - (lastLineLengthTop + lastLineLengthBot) + 1;
+                        // Same level
+                        s.edges.Add(new Edge(idxLeft, idx));
+                        // Up
+                        if (y < lastLineLengthTop - 1)
+                        {
+                            idxAbove = idxLeft + 1;
+                            s.edges.Add(new Edge(idxAbove, idx));
+                        }
+                    }
+
+                    // Add faces
+                    if (idxBelow != -1 && idxLeft != -1)
+                        s.faces.Add(new Face(idxBelow, idx, idxLeft));
+                    if (idxLeft != -1 && idxAbove != -1)
+                        s.faces.Add(new Face(idxLeft, idx, idxAbove));
+
+                    idx++;
+                }
+
+                // Now bottom side (everything is mirrored)
+                int lenBot = x < a ? b : (b - (x - a));
+                for (int z = 0; z > -lenBot; z--)
+                {
+                    if (z != 0)
+                    {
+                        // Add node
+                        s.nodes.Add(new Node(x - z, z));
+
+                        int idxBelow = -1;
+                        int idxLeft = -1;
+                        int idxAbove = -1;
+
+                        // Add edges
+                        // Down
+                        idxBelow = z == -1 ? middleIndices[x] : (idx - 1);
+                        s.edges.Add(new Edge(idxBelow, idx));
+                        // Left
+                        if (x > 0)
+                        {
+                            idxLeft = idx - (lastLineLengthBot + lenTop) + 1;
+                            // Same level
+                            s.edges.Add(new Edge(idxLeft, idx));
+                            // Up
+                            if (z > -lastLineLengthBot + 1)
+                            {
+                                idxAbove = idxLeft + 1;
+                                s.edges.Add(new Edge(idxAbove, idx));
+                            }
+                        }
+
+                        // Add faces
+                        if (idxBelow != -1 && idxLeft != -1)
+                            s.faces.Add(new Face(idxBelow, idx, idxLeft));
+                        if (idxLeft != -1 && idxAbove != -1)
+                            s.faces.Add(new Face(idxLeft, idx, idxAbove));
+
+                        idx++;
+                    }
+                    else if (x > 0)
+                    {
+                        // Special case: First layer below the middle line
+                        int myIdx = middleIndices[x];
+                        // Add one edge and one face
+                        int prev = middleIndices[x - 1];
+                        int nbrBot = prev + lastLineLengthTop;
+                        s.edges.Add(new Edge(myIdx, nbrBot));
+                        s.faces.Add(new Face(prev, nbrBot, myIdx));
+                    }
+                }
+                lastLineLengthTop = lenTop;
+                lastLineLengthBot = lenBot;
+            }
+
+            if (s.IsConsistent())
+                s.GenerateTraversal();
+            else
+            {
+                Log.Error("Shape generation failed: Shape is inconsistent");
+                return null;
+            }
+
+            return s;
         }
     }
 
