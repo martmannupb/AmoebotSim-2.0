@@ -27,6 +27,15 @@ namespace AS2.Algos.SCConvexShapes
     /// line should have length at least log(its own length) +
     /// log(diameter of the shape).
     /// </para>
+    /// <para>
+    /// This algorithm uses a binary search combined with a parallelogram
+    /// or merging subroutine as a containment check. A slight modification
+    /// allows the algorithm to divide its maximum line length by the longest
+    /// line in the target shape first to get a smaller upper bound on the
+    /// scale factor, reducing the number of containment checks in practice.
+    /// Additionally, fewer rotations are tested for triangles and parallelograms
+    /// since they are rotationally symmetric.
+    /// </para>
     /// </summary>
 
     // Algorithm plan:
@@ -88,16 +97,16 @@ namespace AS2.Algos.SCConvexShapes
     //      - Set counter to 0
     //      - SPLIT:
     //          - Counters go to round 3
-    //          - Others go to round 5 and setup global circuit
+    //          - Others go to round 5 and setup 2 global circuits
     //  - Else:
     //      - Marker writes current bits and MSBs to shape parameter counters
     //      - Marker moves one position ahead
     //      - Increment counter
 
     // Round 3:
-    //  - If counter > number of parameters to compute (*2 because of MSBs):
+    //  - If counter > number of parameters to compute (*2 + 3 because of MSBs and longest line check):
     //      - Set rotation to 0
-    //      - Setup global circuit and beep
+    //      - Setup 2 global circuits and beep on first
     //      - Go to round 5
     //  - Else:
     //      - Init binop to compute R * parameter or MSB
@@ -304,22 +313,22 @@ namespace AS2.Algos.SCConvexShapes
         // Stores 26 bits
         // 3 bits for binary counter L, R, M
         // 3 MSBs for binary counter
-        // 6 shape parameter bits
+        // 6 shape parameter bits + 1 bit of longest line length
         // 6 shape parameter MSBs
         // 6 scaled shape parameter bits
         // 6 scaled shape parameter MSBs
-        //       29  28  27  26  25  24    23  22  21  20  19  18    17  16  15       14  13  12  11  10  9     8   7   6   5   4   3     2   1   0
-        // xx    x   x   x   x   x   x     x   x   x   x   x   x     x   x   x        x   x   x   x   x   x     x   x   x   x   x   x     x   x   x
-        //       Scaled shape MSBs         Shape MSBs                Counter MSBs     Scaled shape bits         Shape bits                Counter bits
+        //      30  29  28  27  26  25    24  23  22  21  20  19    18  17  16       15  14  13  12  11  10    9   8   7   6   5   4   3     2   1   0
+        // x    x   x   x   x   x   x     x   x   x   x   x   x     x   x   x        x   x   x   x   x   x     x   x   x   x   x   x   x     x   x   x
+        //      Scaled shape MSBs         Shape MSBs                Counter MSBs     Scaled shape bits         Shape bits                Counter bits
         ParticleAttribute<int> bitStorage;
 
         // Bit index constants
         private const int bit_counter = 0;
         private const int bit_shape = 3;
-        private const int bit_shapeS = 9;
-        private const int msb_counter = 15;
-        private const int msb_shape = 18;
-        private const int msb_shapeS = 24;
+        private const int bit_shapeS = 10;
+        private const int msb_counter = 16;
+        private const int msb_shape = 19;
+        private const int msb_shapeS = 25;
 
         SubBinOps binops;
         SubLeaderElectionSC leaderElection;
@@ -340,6 +349,7 @@ namespace AS2.Algos.SCConvexShapes
 
         /// <summary>
         /// Shape parameters as binary strings in the order a, d, c, a' = a + c, a + 1, b = d2.
+        /// The last entry is the length of the longest line in the shape.
         /// <para>
         /// The shape type determines which parameters will be used:
         /// <list type="bullet">
@@ -360,7 +370,7 @@ namespace AS2.Algos.SCConvexShapes
         /// </list>
         /// </para>
         /// </summary>
-        public static string[] shapeParams = new string[6];
+        public static string[] shapeParams = new string[7];
 
         public SCConvexShapesParticle(Particle p) : base(p)
         {
@@ -474,7 +484,7 @@ namespace AS2.Algos.SCConvexShapes
                             else
                             {
                                 PinConfiguration pc = GetContractedPinConfiguration();
-                                pc.SetToGlobal(0);
+                                SetupGlobalCircuits(pc);
                                 SetPlannedPinConfiguration(pc);
                                 round.SetValue(5);
                             }
@@ -497,14 +507,18 @@ namespace AS2.Algos.SCConvexShapes
                 case 3:
                 case 16:    // From binary search, have to do almost the same computation
                     {
-                        if (rotation > NumShapeParams() * 2)
+                        int n = NumShapeParams() * 2;
+                        // In first phase: Add 3 rounds to perform longest line check
+                        if (round == 3)
+                            n += 3;
+                        if (rotation > n)
                         {
                             rotation.SetValue(0);
 
                             PinConfiguration pc = GetContractedPinConfiguration();
                             if (round == 3)
                             {
-                                pc.SetToGlobal(0);
+                                SetupGlobalCircuits(pc);
                                 SetPlannedPinConfiguration(pc);
                                 pc.SendBeepOnPartitionSet(0);
                                 round.SetValue(5);
@@ -530,11 +544,23 @@ namespace AS2.Algos.SCConvexShapes
                 case 17:    // From binary search
                     {
                         // Run binops and write result bits/MSBs
-                        if (RunBinOpsShapeParam())
+                        if (RunBinOpsShapeParam(out bool terminate))
                         {
-                            // Increment counter and repeat
-                            rotation.SetValue(rotation + 1);
-                            round.SetValue(round - 1);
+                            // We may have to terminate during the first phase
+                            if (terminate)
+                            {
+                                PinConfiguration pc = GetContractedPinConfiguration();
+                                SetupGlobalCircuits(pc);
+                                SetPlannedPinConfiguration(pc);
+                                pc.SendBeepOnPartitionSet(1);
+                                round.SetValue(5);
+                            }
+                            else
+                            {
+                                // Increment counter and repeat
+                                rotation.SetValue(rotation + 1);
+                                round.SetValue(round - 1);
+                            }
                         }
                     }
                     break;
@@ -542,7 +568,13 @@ namespace AS2.Algos.SCConvexShapes
                     {
                         // Wait for beep on global circuit
                         PinConfiguration pc = GetCurrentPinConfiguration();
-                        if (pc.ReceivedBeepOnPartitionSet(0))
+                        if (pc.ReceivedBeepOnPartitionSet(1))
+                        {
+                            // Terminate with failure
+                            finished.SetValue(true);
+                            SetMainColor(ColorData.Particle_Red);
+                        }
+                        else if (pc.ReceivedBeepOnPartitionSet(0))
                         {
                             round.SetValue(6);
                         }
@@ -850,7 +882,7 @@ namespace AS2.Algos.SCConvexShapes
 
         /// <summary>
         /// Helper to compute the maximum number of bits of any used
-        /// base shape parameter.
+        /// base shape parameter. Includes the longest line length.
         /// </summary>
         /// <returns>The maximum length of a binary shape parameter
         /// used by our shape type.</returns>
@@ -862,6 +894,7 @@ namespace AS2.Algos.SCConvexShapes
             {
                 m = Mathf.Max(m, shapeParams[i].Length);
             }
+            m = Mathf.Max(m, shapeParams[6].Length);
             return m;
         }
 
@@ -906,6 +939,10 @@ namespace AS2.Algos.SCConvexShapes
                         SetShapeMSB(i, true);
                     }
                 }
+                // Also write longest line bit
+                string ll = shapeParams[6];
+                if (idx < ll.Length)
+                    SetShapeBit(6, ll[idx] == '1');
             }
         }
 
@@ -928,39 +965,75 @@ namespace AS2.Algos.SCConvexShapes
             Direction opp = d.Opposite();
             bool pred = HasNeighborAt(opp);
             bool succ = HasNeighborAt(d);
+            Direction dirPred = pred ? opp : Direction.NONE;
+            Direction dirSucc = succ ? d : Direction.NONE;
             int idx = rotation.GetCurrentValue();
-            int n = NumShapeParams();
-            int i = idx % n;
-            if (idx < n)
+
+            // In the first phase, we use the first 3 operations to:
+            //  - Compare R to the longest line length S
+            //  - Compute R' := R / S
+            //  - Find the MSB of R' and set R := R'
+            bool firstPhaseSpecial = false;
+            if (!useM)
             {
-                if (i < 4 || shapeType == ShapeType.HEXAGON && hexNeedsPentagon && i < 5)
+                if (idx > 2)
+                    idx -= 3;
+                else
+                    firstPhaseSpecial = true;
+            }
+            if (firstPhaseSpecial)
+            {
+                if (idx == 0)
                 {
-                    // Multiplication
-                    bool bitA, msbA;
-                    if (i == 4)
-                    {
-                        // The 5th multiplication must compute k*d2 and not k*(a + 1) (only hexagons with pentagon part)
-                        bitA = ShapeBit(5);
-                        msbA = ShapeMSB(5);
-                    }
-                    else
-                    {
-                        bitA = ShapeBit(i);
-                        msbA = ShapeMSB(i);
-                    }
-                    binops.Init(SubBinOps.Mode.MULT, bitA, pred ? opp : Direction.NONE, succ ? d : Direction.NONE, useM ? Bit_M : Bit_R, msbA);
+                    // Compare S to R
+                    binops.Init(SubBinOps.Mode.COMP, ShapeBit(6), dirPred, dirSucc, Bit_R);
+                }
+                else if (idx == 1)
+                {
+                    // Compute R / S
+                    binops.Init(SubBinOps.Mode.DIV, Bit_R, dirPred, dirSucc, ShapeBit(6), MSB_R);
                 }
                 else
                 {
-                    // This only occurs for pentagons or hexagons that need a pentagon: Compute k*a + 1
-                    // Bit of the second operand is 1 for the counter start and 0 for everything else
-                    binops.Init(SubBinOps.Mode.ADD, ScaledShapeBit(0), pred ? opp : Direction.NONE, succ ? d : Direction.NONE, !pred);
+                    // Find MSB of R
+                    binops.Init(SubBinOps.Mode.MSB, Bit_R, dirPred, dirSucc);
                 }
             }
             else
             {
-                // MSB
-                binops.Init(SubBinOps.Mode.MSB, ScaledShapeBit(i), pred ? opp : Direction.NONE, succ ? d : Direction.NONE);
+                int n = NumShapeParams();
+                int i = idx % n;
+                if (idx < n)
+                {
+                    if (i < 4 || shapeType == ShapeType.HEXAGON && hexNeedsPentagon && i < 5)
+                    {
+                        // Multiplication
+                        bool bitA, msbA;
+                        if (i == 4)
+                        {
+                            // The 5th multiplication must compute k*d2 and not k*(a + 1) (only hexagons with pentagon part)
+                            bitA = ShapeBit(5);
+                            msbA = ShapeMSB(5);
+                        }
+                        else
+                        {
+                            bitA = ShapeBit(i);
+                            msbA = ShapeMSB(i);
+                        }
+                        binops.Init(SubBinOps.Mode.MULT, bitA, dirPred, dirSucc, useM ? Bit_M : Bit_R, msbA);
+                    }
+                    else
+                    {
+                        // This only occurs for pentagons or hexagons that need a pentagon: Compute k*a + 1
+                        // Bit of the second operand is 1 for the counter start and 0 for everything else
+                        binops.Init(SubBinOps.Mode.ADD, ScaledShapeBit(0), dirPred, dirSucc, !pred);
+                    }
+                }
+                else
+                {
+                    // MSB
+                    binops.Init(SubBinOps.Mode.MSB, ScaledShapeBit(i), dirPred, dirSucc);
+                }
             }
             PinConfiguration pc = GetContractedPinConfiguration();
             binops.SetupPinConfig(pc);
@@ -1027,36 +1100,79 @@ namespace AS2.Algos.SCConvexShapes
         /// or MSB result when it is finished. Sets up the pin configuration
         /// and sends beep if it is not finished.
         /// </summary>
+        /// <param name="terminate">Whether we have to terminate prematurely
+        /// during the first phase because the longest shape line is too long.</param>
         /// <returns><c>true</c> if and only if the binops routine is finished.</returns>
-        private bool RunBinOpsShapeParam()
+        private bool RunBinOpsShapeParam(out bool terminate)
         {
+            terminate = false;
             if (!ll.IsOnMaxLine())
                 return false;
 
             if (RunBinOps())
             {
                 int idx = rotation.GetCurrentValue();
-                int n = NumShapeParams();
-                int i = idx % n;
-                if (idx < n)
+
+                // Special case in first 3 rounds of first phase
+                // In the first phase, we use the first 3 operations to:
+                //  - Compare R to the longest line length S
+                //  - Compute R' := R / S
+                //  - Find the MSB of R' and set R := R'
+                bool firstPhaseSpecial = false;
+                if (round.GetCurrentValue() < 5)
                 {
-                    if (i < 4 || shapeType == ShapeType.HEXAGON && hexNeedsPentagon && i < 5)
+                    if (idx > 2)
+                        idx -= 3;
+                    else
+                        firstPhaseSpecial = true;
+                }
+                if (firstPhaseSpecial)
+                {
+                    if (idx == 0)
                     {
-                        // Multiplication
-                        // Make sure the result of k*d2 ends up in the right location
-                        SetScaledShapeBit(i < 4 ? i : 5, binops.ResultBit());
+                        // Check comparison result
+                        if (binops.CompResult() == SubComparison.ComparisonResult.GREATER)
+                        {
+                            // Terminate due to longest shape line being longer than longest line in the system
+                            terminate = true;
+                        }
+                    }
+                    else if (idx == 1)
+                    {
+                        // Store bit of R / S
+                        Bit_R = binops.ResultBit();
+                        MSB_R = false;
                     }
                     else
                     {
-                        // This only occurs for pentagons and hexagons that need a pentagon
-                        // We write the bit of k*a + 1
-                        SetScaledShapeBit(4, binops.ResultBit());
+                        // Store MSB of R
+                        MSB_R = binops.IsMSB();
                     }
                 }
                 else
                 {
-                    // MSB
-                    SetScaledShapeMSB(i, binops.IsMSB());
+                    int n = NumShapeParams();
+                    int i = idx % n;
+                    if (idx < n)
+                    {
+                        if (i < 4 || shapeType == ShapeType.HEXAGON && hexNeedsPentagon && i < 5)
+                        {
+                            // Multiplication
+                            // Make sure the result of k*d2 ends up in the right location
+                            SetScaledShapeBit(i < 4 ? i : 5, binops.ResultBit());
+                        }
+                        else
+                        {
+                            // This only occurs for pentagons and hexagons that need a pentagon
+                            // We write the bit of k*a + 1
+                            SetScaledShapeBit(4, binops.ResultBit());
+                        }
+                    }
+                    else
+                    {
+                        // MSB
+                        SetScaledShapeMSB(i, binops.IsMSB());
+                    }
                 }
 
                 return true;
@@ -1274,6 +1390,7 @@ namespace AS2.Algos.SCConvexShapes
             SCConvexShapesParticle.shapeDirectionW = Direction.E;
             SCConvexShapesParticle.shapeDirectionH1 = Direction.NNE;
             SCConvexShapesParticle.shapeDirectionH2 = Direction.SSE;
+            int longestLine = a;
             if (shapeType == ShapeType.TRIANGLE)
             {
                 SCConvexShapesParticle.shape = Shape.GenSimpleConvexShape(a, a, 0);
@@ -1281,6 +1398,7 @@ namespace AS2.Algos.SCConvexShapes
             else if (shapeType == ShapeType.PARALLELOGRAM)
             {
                 SCConvexShapesParticle.shape = Shape.GenSimpleConvexShape(a, d, d);
+                longestLine = Mathf.Max(a, d);
             }
             else if (shapeType == ShapeType.TRAPEZOID)
             {
@@ -1289,10 +1407,12 @@ namespace AS2.Algos.SCConvexShapes
             else if (shapeType == ShapeType.PENTAGON)
             {
                 SCConvexShapesParticle.shape = Shape.GenSimpleConvexShape(a, d, c);
+                longestLine = Mathf.Max(a, d);
             }
             else if (shapeType == ShapeType.HEXAGON)
             {
                 SCConvexShapesParticle.shape = Shape.GenHexagon(a, d, c, b);
+                longestLine = Mathf.Max(a + Mathf.Min(b, c), b + Mathf.Min(a, d), c + Mathf.Min(a, b + d - c));
                 // Find out whether the hexagon consists of two trapezoids or a pentagon and a hexagon
                 if (c == b)
                 {
@@ -1306,7 +1426,6 @@ namespace AS2.Algos.SCConvexShapes
                 {
                     SCConvexShapesParticle.hexNeedsPentagon = true;
                     int e = b + d - c;
-                    int f = a + c - d;
                     if (c < b)
                     {
                         // Pentagon is lower side
@@ -1316,7 +1435,7 @@ namespace AS2.Algos.SCConvexShapes
                         int tmpB = b;
                         int tmpD = d;
 
-                        a = d + f;
+                        a = a + c;
                         d = tmpB;
                         c = e - tmpD;
                         b = tmpD;
@@ -1324,7 +1443,7 @@ namespace AS2.Algos.SCConvexShapes
                     else
                     {
                         // Pentagon is upper side
-                        a = a + c;
+                        a = a + b;
                         c = c - b;
                     }
                 }
@@ -1340,8 +1459,7 @@ namespace AS2.Algos.SCConvexShapes
             string str_a2 = IntToBinary(a + c);
             string str_a3 = IntToBinary(a + 1);
             string str_d2 = IntToBinary(b);
-            Log.Debug("Parameters: " + a + ", " + d + ", " + c + ", " + (a + c) + ", " + (a + 1) + ", " + b);
-            Log.Debug("Parameters: " + str_a + ", " + str_d + ", " + str_c + ", " + str_a2 + ", " + str_a3 + ", " + str_d2);
+            string str_ll = IntToBinary(longestLine);
 
             SCConvexShapesParticle.shapeParams[0] = str_a;
             SCConvexShapesParticle.shapeParams[1] = str_d;
@@ -1349,6 +1467,7 @@ namespace AS2.Algos.SCConvexShapes
             SCConvexShapesParticle.shapeParams[3] = str_a2;
             SCConvexShapesParticle.shapeParams[4] = str_a3;
             SCConvexShapesParticle.shapeParams[5] = str_d2;
+            SCConvexShapesParticle.shapeParams[6] = str_ll;
 
             foreach (Vector2Int pos in GenerateRandomConnectedPositions(Vector2Int.zero, numAmoebots, holeProb, fillHoles, null, true, prioritizeInner, lambda))
             {

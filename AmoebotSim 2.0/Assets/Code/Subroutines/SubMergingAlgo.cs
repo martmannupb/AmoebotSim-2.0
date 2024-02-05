@@ -24,16 +24,34 @@ namespace AS2.Subroutines.ConvexShapeContainment
     /// <summary>
     /// Shape containment check for triangles, trapezoids and pentagons.
     /// Finds all valid placements for the given shape extending in the
-    /// given directions for two side lengths given in a binary counter,
+    /// given directions for the side lengths given in a binary counter,
     /// rotated by the specified amount.
     /// <para>
     /// It is assumed that the counter storing the side lengths consists of at
-    /// least two amoebots (the start must not be equal to the end point).
+    /// least two amoebots (the start must not be equal to the end point) and
+    /// each amoebot only stores one bit (only single occurrences).
     /// </para>
     /// <para>
     /// This is part of the shape containment algorithm suite, which uses
     /// 4 pins per edge. This subroutine sometimes uses all pins on one side.
     /// </para>
+    /// <para>
+    /// <b>Usage:</b> Same as for <see cref="SubParallelogram"/>.
+    /// </para>
+    /// <para>
+    /// The "merging algorithm" applied by this subroutine is modified in
+    /// such a way that it has a much shorter runtime in practice (but not
+    /// asymptotically). The two phases of a merge step (elimination distance
+    /// check and then comparison) are done at the same time since all amoebots
+    /// in Q and Q' have access to all required bits to do the comparison
+    /// during the elimination step. Additionally, only amoebots in Q or Q'
+    /// that have at least one candidate as a predecessor participate because
+    /// all others do not contribute anything. Finally, the "leftmost" amoebot
+    /// in Q or Q' always runs its elimination distance check and becomes passive.
+    /// Its successor is the left end point of the first pair. This ensures that
+    /// "lingering" candidates at the start of a segment are eliminated quickly.
+    /// </para>
+    /// </summary>
 
     // Round plan:
 
@@ -207,7 +225,6 @@ namespace AS2.Subroutines.ConvexShapeContainment
     // Round 8:
     //  Send:
     //  - Send PASC beep on participating segments
-    //  - Also establish segment circuit, split at single remaining amoebot in Q, Q' and let it beep towards dw^-1
     //  Receive *:
     //  - Receive PASC beep
     //      - Set flag for left/right pair partner if we are in Q or Q'
@@ -384,6 +401,33 @@ namespace AS2.Subroutines.ConvexShapeContainment
                 pasc2 = pascInstance2;
         }
 
+        /// <summary>
+        /// Initializes the subroutine. Assumes that a binary counter stores
+        /// the shape parameters as well as their MSBs. Each amoebot on the
+        /// counter can only store one bit.
+        /// </summary>
+        /// <param name="shapeType">The kind of shape to be tested. Parallelograms
+        /// and hexagons are not supported.</param>
+        /// <param name="dirW">The main direction of the shape (line a).</param>
+        /// <param name="dirH">The secondary direction of the shape (line d).</param>
+        /// <param name="rotation">The number of 60 degree counter-clockwise rotations
+        /// to be applied before testing the shape.</param>
+        /// <param name="controlColor">Whether the subroutine should control the
+        /// amoebot's color to display status information.</param>
+        /// <param name="counterPred">The direction of the counter predecessor if
+        /// this amoebot is on a counter.</param>
+        /// <param name="counterSucc">The direction of the counter successor if
+        /// this amoebot is on a counter.</param>
+        /// <param name="bitA">This amoebot's bit of the shape parameter a.</param>
+        /// <param name="msbA">Whether this amoebot holds the MSB of shape parameter a.</param>
+        /// <param name="bitD">This amoebot's bit of the shape parameter d.</param>
+        /// <param name="msbD">Whether this amoebot holds the MSB of shape parameter d.</param>
+        /// <param name="bitC">This amoebot's bit of the shape parameter c.</param>
+        /// <param name="msbC">Whether this amoebot holds the MSB of shape parameter c.</param>
+        /// <param name="bitA2">This amoebot's bit of the shape parameter a' = a + c.</param>
+        /// <param name="msbA2">Whether this amoebot holds the MSB of shape parameter a' = a + c.</param>
+        /// <param name="bitA3">This amoebot's bit of the shape parameter a + 1.</param>
+        /// <param name="msbA3">Whether this amoebot holds the MSB of shape parameter a + 1.</param>
         public void Init(ShapeType shapeType, Direction dirW, Direction dirH, int rotation, bool controlColor = false,
             Direction counterPred = Direction.NONE, Direction counterSucc = Direction.NONE,
             bool bitA = false, bool msbA = false, bool bitD = false, bool msbD = false,
@@ -446,6 +490,11 @@ namespace AS2.Subroutines.ConvexShapeContainment
             SetColor();
         }
 
+        /// <summary>
+        /// The first half of the subroutine activation. Must be called
+        /// in the round immediately after <see cref="ActivateSend"/>
+        /// was called.
+        /// </summary>
         public void ActivateReceive()
         {
             if (finished.GetCurrentValue())
@@ -620,31 +669,31 @@ namespace AS2.Subroutines.ConvexShapeContainment
                         {
                             pasc1.ActivateReceive();
                             // Find out whether we participate in PASC 1 and setup the instance
+                            // Bit 1 means we are right nbr, bit 0 means we are left nbr, if the partner exists
                             bool q = inQ.GetCurrentValue() || inQ2.GetCurrentValue();
                             bool pascBit = pasc1.GetReceivedBit() > 0;
                             bool nbrL = haveNbrL.GetCurrentValue();
                             bool nbrR = haveNbrR.GetCurrentValue();
-                            bool inPair = q && (pascBit && nbrR || !pascBit && nbrL);
+                            bool inPair = q && (!pascBit && nbrR || pascBit && nbrL);
                             Direction d = directionW.GetValue();
                             if (q)
                             {
                                 // Amoebots in Q or Q' determine whether they are the left or right side of a pair
-                                // (Special case: Lonely amoebot without a left or right partner runs PASC as well)
-                                inPasc1.SetValue(inPair || !nbrL && !nbrR);
+                                // (Special case: Leftmost amoebot runs PASC as well)
+                                inPasc1.SetValue(inPair || !nbrL);
                                 if (inPair)
-                                    pairLeftSide.SetValue(pascBit);
+                                    pairLeftSide.SetValue(!pascBit);
                             }
                             else
                             {
-                                // Other amoebots participate if they have a right neighbor in Q or Q' and they are
-                                // between a pair or have received the special activation bit
-                                PinConfiguration pc = algo.GetCurrentPinConfiguration();
-                                inPasc1.SetValue(nbrR && (pascBit || pc.GetPinAt(d, 0).PartitionSet.ReceivedBeep()));
+                                // Other amoebots participate if they have a right neighbor in Q or Q'
+                                // and have received a 0-bit
+                                inPasc1.SetValue(nbrR && !pascBit);
                             }
                             if (inPasc1.GetCurrentValue())
                             {
                                 // Setup the PASC instance
-                                bool leader = q && ((inPair && !pairLeftSide.GetCurrentValue()) || (!nbrL && !nbrR));
+                                bool leader = q && (inPair && !pairLeftSide.GetCurrentValue() || !nbrL);
                                 pasc1.Init(leader ? null : new List<Direction>() { d }, new List<Direction>() { d.Opposite() }, 0, 1, 0, 1, leader);
                                 comp1.SetValue(ComparisonResult.EQUAL);
                                 comp2.SetValue(ComparisonResult.EQUAL);
@@ -763,11 +812,11 @@ namespace AS2.Subroutines.ConvexShapeContainment
                 case 12:
                     {
                         // Receive beep from left end point
-                        // Retire if we received the beep or did not send the beep or we are the only amoebot in Q, Q'
+                        // Retire if we received the beep or did not send the beep or we are the leftmost amoebot in Q, Q'
                         if (inPasc1.GetCurrentValue() && (inQ.GetCurrentValue() || inQ2.GetCurrentValue()))
                         {
                             bool retire = false;
-                            if (!haveNbrL.GetCurrentValue() && !haveNbrR.GetCurrentValue())
+                            if (!haveNbrL.GetCurrentValue())
                                 retire = true;
                             else if (pairLeftSide.GetCurrentValue())
                             {
@@ -796,6 +845,12 @@ namespace AS2.Subroutines.ConvexShapeContainment
             SetColor();
         }
 
+        /// <summary>
+        /// Sets up the pin configuration required for the
+        /// <see cref="ActivateSend"/> call. The pin configuration
+        /// is not planned by this method.
+        /// </summary>
+        /// <param name="pc">The pin configuration to modify.</param>
         public void SetupPC(PinConfiguration pc)
         {
             if (finished.GetCurrentValue())
@@ -841,16 +896,10 @@ namespace AS2.Subroutines.ConvexShapeContainment
                     break;
                 case 8:
                     {
-                        // Participating segments setup PASC circuit and one extra circuit
+                        // Participating segments setup PASC circuit
                         if (inMerge.GetCurrentValue())
                         {
                             pasc1.SetupPC(pc);
-                            Direction d = directionW.GetValue();
-                            if (!((inQ.GetCurrentValue() || inQ2.GetCurrentValue()) && !haveNbrL.GetCurrentValue() && !haveNbrR.GetCurrentValue()))
-                            {
-                                pc.MakePartitionSet(new int[] { pc.GetPinAt(d, 0).Id, pc.GetPinAt(d.Opposite(), 3).Id }, 4);
-                                pc.SetPartitionSetPosition(4, new Vector2((d.ToInt() - 1.5f) * 60, 0.6f));
-                            }
                         }
                     }
                     break;
@@ -890,6 +939,11 @@ namespace AS2.Subroutines.ConvexShapeContainment
             }
         }
 
+        /// <summary>
+        /// The second half of the subroutine activation. Before this
+        /// can be called, the pin configuration set up by
+        /// <see cref="SetupPC(PinConfiguration)"/> must be planned.
+        /// </summary>
         public void ActivateSend()
         {
             if (finished.GetCurrentValue())
@@ -1006,12 +1060,6 @@ namespace AS2.Subroutines.ConvexShapeContainment
                         if (inMerge.GetCurrentValue())
                         {
                             pasc1.ActivateSend();
-                            // Lonely amoebot in Q, Q' sends beep on extra circuit
-                            if ((inQ.GetCurrentValue() || inQ2.GetCurrentValue()) && !haveNbrL.GetCurrentValue() && !haveNbrR.GetCurrentValue())
-                            {
-                                PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                                pc.GetPinAt(directionW.GetValue().Opposite(), 3).PartitionSet.SendBeep();
-                            }
                         }
                     }
                     break;
@@ -1045,7 +1093,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
                 case 10:
                     {
                         PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                        // Right end point of pair (or lonely amoebot in Q, Q') sends bit of e(q) on the line circuit
+                        // Right end point of pair (or leftmost amoebot in Q, Q') sends bit of e(q) on the line circuit
                         if (inPasc1.GetCurrentValue() && pasc1.IsLeader() && storedBit1.GetCurrentValue())
                         {
                             pc.GetPinAt(directionW.GetValue().Opposite(), 0).PartitionSet.SendBeep();

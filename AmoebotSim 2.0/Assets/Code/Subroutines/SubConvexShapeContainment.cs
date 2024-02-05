@@ -12,6 +12,18 @@ namespace AS2.Subroutines.ConvexShapeContainment
     /// Wrapper for all convex shape containment subroutines.
     /// Handles all types of convex shapes and finds all valid
     /// placements for the given rotation and side lengths.
+    /// <para>
+    /// It is assumed that the counter storing the side lengths consists of at
+    /// least two amoebots (the start must not be equal to the end point) and
+    /// each amoebot only stores one bit (only single occurrences).
+    /// </para>
+    /// <para>
+    /// This is part of the shape containment algorithm suite, which uses
+    /// 4 pins per edge. This subroutine sometimes uses all pins on one side.
+    /// </para>
+    /// <para>
+    /// <b>Usage:</b> Same as for <see cref="SubParallelogram"/>.
+    /// </para>
     /// </summary>
     public class SubConvexShapeContainment : Subroutine
     {
@@ -79,6 +91,44 @@ namespace AS2.Subroutines.ConvexShapeContainment
                 mergeAlgo = mergingAlgoInstance;
         }
 
+        /// <summary>
+        /// Initializes the subroutine. Assumes that a binary counter stores
+        /// all shape parameters as well as their MSBs. Each amoebot on the
+        /// counter can only store one bit.
+        /// </summary>
+        /// <param name="shapeType">The type of convex shape to be tested.
+        /// Hexagons require a special treatment because they are composed
+        /// of a trapezoid and another shape, which might be a trapezoid or
+        /// a pentagon.</param>
+        /// <param name="dirW">The main direction of the shape (line a).</param>
+        /// <param name="dirH">The secondary direction of the shape (line d).
+        /// For hexagons, this always belongs to the pentagon if applicable.</param>
+        /// <param name="rotation">The number of 60 degree counter-clockwise rotations
+        /// to be applied before testing the shape.</param>
+        /// <param name="controlColor">Whether the subroutine should control the
+        /// amoebot's color to display status information.</param>
+        /// <param name="startHexWithPentagon">If the shape is a hexagon, set this
+        /// flag if the hexagon requires a pentagon to be checked.</param>
+        /// <param name="dirH2">If the shape is a hexagon, this is the secondary
+        /// direction of the trapezoid that is checked second.</param>
+        /// <param name="counterPred">The direction of the counter predecessor if
+        /// this amoebot is on a counter.</param>
+        /// <param name="counterSucc">The direction of the counter successor if
+        /// this amoebot is on a counter.</param>
+        /// <param name="bitA">This amoebot's bit of the shape parameter a.</param>
+        /// <param name="msbA">Whether this amoebot holds the MSB of shape parameter a.</param>
+        /// <param name="bitD">This amoebot's bit of the shape parameter d.</param>
+        /// <param name="msbD">Whether this amoebot holds the MSB of shape parameter d.</param>
+        /// <param name="bitC">This amoebot's bit of the shape parameter c.</param>
+        /// <param name="msbC">Whether this amoebot holds the MSB of shape parameter c.</param>
+        /// <param name="bitA2">This amoebot's bit of the shape parameter a' = a + c.</param>
+        /// <param name="msbA2">Whether this amoebot holds the MSB of shape parameter a' = a + c.</param>
+        /// <param name="bitA3">This amoebot's bit of the shape parameter a + 1.</param>
+        /// <param name="msbA3">Whether this amoebot holds the MSB of shape parameter a + 1.</param>
+        /// <param name="bitD2">This amoebot's bit of the shape parameter b (used for the
+        /// trapezoid check of a hexagon).</param>
+        /// <param name="msbD2">Whether this amoebot holds the MSB of shape parameter b (used
+        /// for the trapezoid check of a hexagon).</param>
         public void Init(ShapeType shapeType, Direction dirW, Direction dirH, int rotation, bool controlColor = false,
             bool startHexWithPentagon = false, Direction dirH2 = Direction.NONE,
             Direction counterPred = Direction.NONE, Direction counterSucc = Direction.NONE,
@@ -123,6 +173,11 @@ namespace AS2.Subroutines.ConvexShapeContainment
             }
         }
 
+        /// <summary>
+        /// The first half of the subroutine activation. Must be called
+        /// in the round immediately after <see cref="ActivateSend"/>
+        /// was called.
+        /// </summary>
         public void ActivateReceive()
         {
             if (finished.GetCurrentValue())
@@ -200,6 +255,12 @@ namespace AS2.Subroutines.ConvexShapeContainment
             }
         }
 
+        /// <summary>
+        /// Sets up the pin configuration required for the
+        /// <see cref="ActivateSend"/> call. The pin configuration
+        /// is not planned by this method.
+        /// </summary>
+        /// <param name="pc">The pin configuration to modify.</param>
         public void SetupPC(PinConfiguration pc)
         {
             if (finished.GetCurrentValue())
@@ -218,6 +279,11 @@ namespace AS2.Subroutines.ConvexShapeContainment
                 mergeAlgo.SetupPC(pc);
         }
 
+        /// <summary>
+        /// The second half of the subroutine activation. Before this
+        /// can be called, the pin configuration set up by
+        /// <see cref="SetupPC(PinConfiguration)"/> must be planned.
+        /// </summary>
         public void ActivateSend()
         {
             if (finished.GetCurrentValue())
