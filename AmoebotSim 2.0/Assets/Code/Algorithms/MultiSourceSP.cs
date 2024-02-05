@@ -64,12 +64,12 @@ namespace AS2.Algos.MultiSourceSP
     //  -> An actual merge procedure with PASC is only required if we have 2 trees, otherwise we just take
     //      the one we already have or stay without a tree
 
-    // Round 7:
-    //  - If counter > 1, jump to round 11
+    // Round 0:
+    //  - If counter > 1, jump to round 4
     //  - Setup directional portal circuits split at top/bottom markers (depending on counter value)
     //  - Sources send beeps in both directions
 
-    // Round 8:
+    // Round 1:
     //  - Listen for directional beeps
     //      - Non-sources that received only one beep save the source direction as parent direction
     //      - Non-sources that received two beeps setup PASC for both directions (ending at top/bottom markers)
@@ -77,23 +77,23 @@ namespace AS2.Algos.MultiSourceSP
     //      - Initialize comparison to EQUAL
     //      - Start PASC
 
-    // Round 9:
+    // Round 2:
     //  - Receive PASC beep
     //      - Update comparison
     //  - Setup global circuit
     //  - Beep if we became passive in this round
 
-    // Round 10:
+    // Round 3:
     //  - If no beep on global circuit:
     //      - Everybody is done
     //      - Set parent direction based on comparison result
     //      - Increment counter
-    //      - Go to round 7
+    //      - Go to round 0
     //  - Otherwise:
     //      - Setup PASC circuit and send beep
-    //      - Go to round 9
+    //      - Go to round 2
 
-    // Round 11:
+    // Round 4:
     //  TODO
 
 
@@ -138,6 +138,20 @@ namespace AS2.Algos.MultiSourceSP
 
         private const Direction mainDir = Direction.E;  // The main direction defining the orientation of the portals
 
+        class Instance
+        {
+            public ParticleAttribute<bool> incidentPortalIsParent;
+            public ParticleAttribute<Direction> parentDir1;
+            public ParticleAttribute<Direction> parentDir2;
+
+            public Instance(ParticleAlgorithm algo, int idx)
+            {
+                incidentPortalIsParent = algo.CreateAttributeBool("Portal Parent [" + idx + "]", false);
+                parentDir1 = algo.CreateAttributeDirection("Parent Dir 1 [" + idx + "]", Direction.NONE);
+                parentDir2 = algo.CreateAttributeDirection("Parent Dir 2 [" + idx + "]", Direction.NONE);
+            }
+        }
+
         // Declare attributes here
         ParticleAttribute<Phase> phase;                 // Current phase
         ParticleAttribute<int> round;                   // Round counter
@@ -150,6 +164,10 @@ namespace AS2.Algos.MultiSourceSP
         ParticleAttribute<bool> augPortal;              // Whether we are on a portal in the augmentation set
         ParticleAttribute<Direction> nbrPortalDir1;     // Direction of the first neighbor portal edge (mainDir + 60 or mainDir + 120 or NONE)
         ParticleAttribute<Direction> nbrPortalDir2;     // Direction of the second neighbor portal edge (mainDir - 60 or mainDir - 120 or NONE)
+
+        Instance[] instances = new Instance[4];         // Instances store state information for the possible 4 incident regions
+                                                        // A marker can be part of up to 4 regions simultaneously
+        ParticleAttribute<int> numInstances;            // Stores how many instances are currently active
 
         ParticleAttribute<bool> parent1L;               // Whether the "top left" portal neighbor is a portal parent
         ParticleAttribute<bool> parent1R;               // Whether the "top right" portal neighbor is a portal parent
@@ -189,6 +207,10 @@ namespace AS2.Algos.MultiSourceSP
             augPortal = CreateAttributeBool("Augmentation Portal", false);
             nbrPortalDir1 = CreateAttributeDirection("Nbr Portal Dir 1", Direction.NONE);
             nbrPortalDir2 = CreateAttributeDirection("Nbr Portal Dir 2", Direction.NONE);
+
+            for (int i = 0; i < 4; i++)
+                instances[i] = new Instance(this, i);
+            numInstances = CreateAttributeInt("Num Instances", 1);
 
             parent1L = CreateAttributeBool("Parent 1 L", false);
             parent1R = CreateAttributeBool("Parent 1 R", false);
@@ -249,6 +271,9 @@ namespace AS2.Algos.MultiSourceSP
             {
                 case Phase.SETUP:
                     ActivateSetupPhase();
+                    break;
+                case Phase.BASE_CASE:
+                    ActivateBaseCase();
                     break;
             }
         }
@@ -456,19 +481,27 @@ namespace AS2.Algos.MultiSourceSP
                             if (pc.ReceivedBeepOnPartitionSet(3))
                                 parent2R.SetValue(true);
                         }
-
-                        round.SetValue(round + 1);
+                        phase.SetValue(Phase.BASE_CASE);
+                        round.SetValue(0);
                     }
                     break;
+            }
 
-                // PHASE 2: BASE CASE
-                case 7:
+            SetColor();
+        }
+
+        private void ActivateBaseCase()
+        {
+            int r = round;
+            switch (r)
+            {
+                case 0:
                     {
                         // Line algorithm finished? => Continue
                         if (counter > 1)
                         {
                             counter.SetValue(0);
-                            round.SetValue(11);
+                            round.SetValue(4);
                             break;
                         }
 
@@ -489,7 +522,7 @@ namespace AS2.Algos.MultiSourceSP
                         round.SetValue(round + 1);
                     }
                     break;
-                case 8:
+                case 1:
                     {
                         // Listen for directional beeps
                         if (sourcePortal)
@@ -578,7 +611,7 @@ namespace AS2.Algos.MultiSourceSP
                         round.SetValue(round + 1);
                     }
                     break;
-                case 9:
+                case 2:
                     {
                         // Receive PASC beeps
                         if (pasc1Participant)
@@ -609,7 +642,7 @@ namespace AS2.Algos.MultiSourceSP
                         round.SetValue(round + 1);
                     }
                     break;
-                case 10:
+                case 3:
                     {
                         // Listen for continuation beep on global circuit
                         PinConfiguration pc = GetCurrentPinConfiguration();
@@ -629,7 +662,7 @@ namespace AS2.Algos.MultiSourceSP
                                 if (pasc2Participant)
                                     pasc2.ActivateSend();
                             }
-                            round.SetValue(9);
+                            round.SetValue(2);
                         }
                         else
                         {
@@ -644,7 +677,7 @@ namespace AS2.Algos.MultiSourceSP
                             }
                             // Increment counter and do next iteration
                             counter.SetValue(counter + 1);
-                            round.SetValue(7);
+                            round.SetValue(0);
                         }
                     }
                     break;
