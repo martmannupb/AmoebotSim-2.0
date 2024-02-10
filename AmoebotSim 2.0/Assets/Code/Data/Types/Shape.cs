@@ -649,6 +649,198 @@ namespace AS2.ShapeContainment
         }
 
         /// <summary>
+        /// Returns the length of a longest straight line in this shape.
+        /// Length is measured in number of edges.
+        /// </summary>
+        /// <returns>The length of a longest line in this shape.</returns>
+        public int GetLongestLineLength()
+        {
+            // Find bounding rectangle/parallelogram
+            int xmin = nodes[0].x;
+            int xmax = xmin;
+            int ymin = nodes[0].y;
+            int ymax = ymin;
+            for (int i = 1; i < nodes.Count; i++)
+            {
+                int x = nodes[i].x;
+                int y = nodes[i].y;
+                if (x < xmin)
+                    xmin = x;
+                if (x > xmax)
+                    xmax = x;
+                if (y < ymin)
+                    ymin = y;
+                if (y > ymax)
+                    ymax = y;
+            }
+
+            // Build a matrix out of this parallelogram and enter the node indices
+            int sizeX = xmax - xmin + 1;
+            int sizeY = ymax - ymin + 1;
+            int[][] nodeMat = new int[sizeX][];
+            for (int i = 0; i < sizeX; i++)
+            {
+                nodeMat[i] = new int[sizeY];
+                for (int j = 0; j < sizeY; j++)
+                {
+                    nodeMat[i][j] = -1;
+                }
+            }
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                int x = nodes[i].x - xmin;
+                int y = nodes[i].y - ymin;
+                nodeMat[x][y] = i;
+            }
+
+            // Build an adjacency matrix
+            bool[][] adj = new bool[nodes.Count][];
+            for (int i = 0; i < nodes.Count; i++)
+                adj[i] = new bool[nodes.Count];
+            foreach (Edge e in edges)
+            {
+                adj[e.u][e.v] = true;
+                adj[e.v][e.u] = true;
+            }
+
+            // Now use these data structures to compute the longest line length on all 3 axes
+            int longest = 0;
+            int[] nodeStatus = new int[nodes.Count];    // 0: Not visited, 1: visited on X, 2: visited on Y, 4: visited on Z
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                int len = 0;
+                int x = nodes[i].x - xmin;
+                int y = nodes[i].y - ymin;
+
+                // Check X
+                if ((nodeStatus[i] & 1) == 0)
+                {
+                    // Go left
+                    int xx = x - 1;
+                    int lastNbr = i;
+                    while (xx >= 0)
+                    {
+                        int nbr = nodeMat[xx][y];
+                        if (nbr != -1 && adj[lastNbr][nbr])
+                        {
+                            len++;
+                            lastNbr = nbr;
+                            nodeStatus[nbr] += 1;
+                        }
+                        else
+                            break;
+                        xx--;
+                    }
+                    // Go right
+                    xx = x + 1;
+                    lastNbr = i;
+                    while (xx < sizeX)
+                    {
+                        int nbr = nodeMat[xx][y];
+                        if (nbr != -1 && adj[lastNbr][nbr])
+                        {
+                            len++;
+                            lastNbr = nbr;
+                            nodeStatus[nbr] += 1;
+                        }
+                        else
+                            break;
+                        xx++;
+                    }
+                    longest = Mathf.Max(longest, len);
+                    nodeStatus[i] += 1;
+                }
+
+                // Check Y
+                if ((nodeStatus[i] & 2) == 0)
+                {
+                    len = 0;
+                    // Go down
+                    int yy = y - 1;
+                    int lastNbr = i;
+                    while (yy >= 0)
+                    {
+                        int nbr = nodeMat[x][yy];
+                        if (nbr != -1 && adj[lastNbr][nbr])
+                        {
+                            len++;
+                            lastNbr = nbr;
+                            nodeStatus[nbr] += 2;
+                        }
+                        else
+                            break;
+                        yy--;
+                    }
+                    // Go up
+                    yy = y + 1;
+                    lastNbr = i;
+                    while (yy < sizeY)
+                    {
+                        int nbr = nodeMat[x][yy];
+                        if (nbr != -1 && adj[lastNbr][nbr])
+                        {
+                            len++;
+                            lastNbr = nbr;
+                            nodeStatus[nbr] += 2;
+                        }
+                        else
+                            break;
+                        yy++;
+                    }
+                    longest = Mathf.Max(longest, len);
+                    nodeStatus[i] += 2;
+                }
+
+                // Check Z
+                if ((nodeStatus[i] & 4) == 0)
+                {
+                    len = 0;
+                    // Go left/up
+                    int xx = x - 1;
+                    int yy = y + 1;
+                    int lastNbr = i;
+                    while (x >= 0 && yy < sizeY)
+                    {
+                        int nbr = nodeMat[xx][yy];
+                        if (nbr != -1 && adj[lastNbr][nbr])
+                        {
+                            len++;
+                            lastNbr = nbr;
+                            nodeStatus[nbr] += 4;
+                        }
+                        else
+                            break;
+                        xx--;
+                        yy++;
+                    }
+                    // Go right/down
+                    xx = x + 1;
+                    yy = y - 1;
+                    lastNbr = i;
+                    while (xx < sizeX && yy >= 0)
+                    {
+                        int nbr = nodeMat[xx][yy];
+                        if (nbr != -1 && adj[lastNbr][nbr])
+                        {
+                            len++;
+                            lastNbr = nbr;
+                            nodeStatus[nbr] += 4;
+                        }
+                        else
+                            break;
+                        xx++;
+                        yy--;
+                    }
+                    longest = Mathf.Max(longest, len);
+                    nodeStatus[i] += 4;
+                }
+            }
+
+
+            return longest;
+        }
+
+        /// <summary>
         /// Checks whether the shape contains the given edge
         /// in any direction.
         /// </summary>
