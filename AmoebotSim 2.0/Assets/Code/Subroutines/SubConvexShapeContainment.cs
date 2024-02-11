@@ -29,9 +29,9 @@ namespace AS2.Subroutines.ConvexShapeContainment
     {
 
         // State:
-        //     30         29      28         27        26       25      24       23      22        21      2018    1715    1412     119      876     543        210      
-        // x   x          x       x          x         x        x       x        x       x         x       xxx     xxx     xxx      xxx      xxx     xxx        xxx
-        //     Send Hex   Color   Finished   Success   MSB d2   MSB a   Bit d2   Bit a   Hex 1/2   Valid   Succ.   Pred.   Dir h2   Dir h1   Dir w   Rotation   Shape
+        // 31          30         29      28         27        26       25      24       23      22        21      2018    1715    1412     119      876     543        210      
+        // x           x          x       x          x         x        x       x        x       x         x       xxx     xxx     xxx      xxx      xxx     xxx        xxx
+        // Excluded    Send Hex   Color   Finished   Success   MSB d2   MSB a   Bit d2   Bit a   Hex 1/2   Valid   Succ.   Pred.   Dir h2   Dir h1   Dir w   Rotation   Shape
         ParticleAttribute<int> state;
 
         BinAttributeEnum<ShapeType> shapeType;      // The type of the considered shape
@@ -51,6 +51,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
         BinAttributeBool finished;                  // Whether the containment check has finished
         BinAttributeBool color;                     // Whether the subroutine should control the color
         BinAttributeBool sendHex;                   // Whether we have to send / receive the hexagon intersection beep
+        BinAttributeBool excluded;                  // Whether we are excluded from being a valid placement
 
         SubPASC2 sharedPasc;
         SubParallelogram parallelogram;
@@ -77,6 +78,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
             finished = new BinAttributeBool(state, 28);
             color = new BinAttributeBool(state, 29);
             sendHex = new BinAttributeBool(state, 30);
+            excluded = new BinAttributeBool(state, 31);
 
             if (parallelogramInstance is null && mergingAlgoInstance is null)
                 sharedPasc = new SubPASC2(p);
@@ -107,6 +109,8 @@ namespace AS2.Subroutines.ConvexShapeContainment
         /// to be applied before testing the shape.</param>
         /// <param name="controlColor">Whether the subroutine should control the
         /// amoebot's color to display status information.</param>
+        /// <param name="excluded">Whether this amoebot should be excluded from
+        /// being a valid placement.</param>
         /// <param name="startHexWithPentagon">If the shape is a hexagon, set this
         /// flag if the hexagon requires a pentagon to be checked.</param>
         /// <param name="dirH2">If the shape is a hexagon, this is the secondary
@@ -129,7 +133,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
         /// trapezoid check of a hexagon).</param>
         /// <param name="msbD2">Whether this amoebot holds the MSB of shape parameter b (used
         /// for the trapezoid check of a hexagon).</param>
-        public void Init(ShapeType shapeType, Direction dirW, Direction dirH, int rotation, bool controlColor = false,
+        public void Init(ShapeType shapeType, Direction dirW, Direction dirH, int rotation, bool controlColor = false, bool excluded = false,
             bool startHexWithPentagon = false, Direction dirH2 = Direction.NONE,
             Direction counterPred = Direction.NONE, Direction counterSucc = Direction.NONE,
             bool bitA = false, bool msbA = false, bool bitD = false, bool msbD = false,
@@ -141,6 +145,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
             this.shapeType.SetValue(shapeType);
             this.rotation.SetValue(rotation);
             this.color.SetValue(controlColor);
+            this.excluded.SetValue(excluded);
             this.directionW.SetValue(dirW);
             this.directionH1.SetValue(dirH);
             this.directionH2.SetValue(dirH2);
@@ -153,23 +158,23 @@ namespace AS2.Subroutines.ConvexShapeContainment
 
             if (shapeType == ShapeType.TRIANGLE)
             {
-                mergeAlgo.Init(shapeType, dirW, dirH, rotation, controlColor, counterPred, counterSucc, bitA, msbA);
+                mergeAlgo.Init(shapeType, dirW, dirH, rotation, controlColor, excluded, counterPred, counterSucc, bitA, msbA);
             }
             else if (shapeType == ShapeType.PARALLELOGRAM)
             {
-                parallelogram.Init(dirW, dirH, rotation, controlColor, counterPred, counterSucc, bitA, bitD, msbA, msbD);
+                parallelogram.Init(dirW, dirH, rotation, controlColor, excluded, counterPred, counterSucc, bitA, bitD, msbA, msbD);
             }
             else if (shapeType == ShapeType.TRAPEZOID)
             {
-                mergeAlgo.Init(shapeType, dirW, dirH, rotation, controlColor, counterPred, counterSucc, bitA, msbA, bitD, msbD);
+                mergeAlgo.Init(shapeType, dirW, dirH, rotation, controlColor, excluded, counterPred, counterSucc, bitA, msbA, bitD, msbD);
             }
             else if (shapeType == ShapeType.PENTAGON || shapeType == ShapeType.HEXAGON && startHexWithPentagon)
             {
-                mergeAlgo.Init(ShapeType.PENTAGON, dirW, dirH, rotation, controlColor, counterPred, counterSucc, bitA, msbA, bitD, msbD, bitC, msbC, bitA2, msbA2, bitA3, msbA3);
+                mergeAlgo.Init(ShapeType.PENTAGON, dirW, dirH, rotation, controlColor, excluded, counterPred, counterSucc, bitA, msbA, bitD, msbD, bitC, msbC, bitA2, msbA2, bitA3, msbA3);
             }
             else if (shapeType == ShapeType.HEXAGON && !startHexWithPentagon)
             {
-                mergeAlgo.Init(ShapeType.TRAPEZOID, dirW, dirH, rotation, controlColor, counterPred, counterSucc, bitA, msbA, bitD, msbD);
+                mergeAlgo.Init(ShapeType.TRAPEZOID, dirW, dirH, rotation, controlColor, excluded, counterPred, counterSucc, bitA, msbA, bitD, msbD);
             }
         }
 
@@ -242,7 +247,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
                             valid.SetValue(mergeAlgo.IsRepresentative());
                             hexHalfDone.SetValue(true);
                             int rot = rotation.GetValue();
-                            mergeAlgo.Init(ShapeType.TRAPEZOID, directionW.GetValue(), directionH2.GetValue(), rot, color.GetValue(), directionPred.GetValue(), directionSucc.GetValue(), bitA.GetValue(), msbA.GetValue(), bitD2.GetValue(), msbD2.GetValue());
+                            mergeAlgo.Init(ShapeType.TRAPEZOID, directionW.GetValue(), directionH2.GetValue(), rot, color.GetValue(), !valid.GetCurrentValue() || excluded.GetValue(), directionPred.GetValue(), directionSucc.GetValue(), bitA.GetValue(), msbA.GetValue(), bitD2.GetValue(), msbD2.GetValue());
                         }
                     }
                     else

@@ -314,9 +314,9 @@ namespace AS2.Subroutines.ConvexShapeContainment
         // xxxx xxxx x   xx        xx        xxx     xxx     xxx     xxx     xxx     xxxx
         //               Comp. 2   Comp. 1   Succ.   Pred.   Dir h   Dir w   Shape   Round
         ParticleAttribute<int> state1;
-        //        27      26        25         24        23                 22 21 20  19       18          17         16       15       14      13   12   11          10            9  8  7  6  5        4  3  2  1  0
-        // xxxx   x       x         x          x         x                  x  x  x   x        x           x          x        x        x       x    x    x           x             x  x  x  x  x        x  x  x  x  x
-        //        Color   Success   Finished   Carry 2   Carry 1   Tmp bits 3  2  1   Pair L   Nbr Right   Nbr Left   PASC 2   PASC 1   Merge   Q'   Q    Candidate   Marker   MSBs a3 a2 c  d  a   Bits a3 a2 c  d  a
+        //       28         27      26        25         24        23                 22 21 20  19       18          17         16       15       14      13   12   11          10            9  8  7  6  5        4  3  2  1  0
+        // xxx   x          x       x         x          x         x                  x  x  x   x        x           x          x        x        x       x    x    x           x             x  x  x  x  x        x  x  x  x  x
+        //       Excluded   Color   Success   Finished   Carry 2   Carry 1   Tmp bits 3  2  1   Pair L   Nbr Right   Nbr Left   PASC 2   PASC 1   Merge   Q'   Q    Candidate   Marker   MSBs a3 a2 c  d  a   Bits a3 a2 c  d  a
         ParticleAttribute<int> state2;
 
         // Binary state wrappers
@@ -349,6 +349,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
         BinAttributeBool finished;                          // Whether the procedure has finished
         BinAttributeBool success;                           // Whether the procedure has finished successfully
         BinAttributeBool color;                             // Whether we should control the amoebot's color
+        BinAttributeBool excluded;                          // Whether we are excluded from being a placement candidate
 
         SubPASC2 pasc1;
         SubPASC2 pasc2;
@@ -390,6 +391,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
             finished = new BinAttributeBool(state2, 25);
             success = new BinAttributeBool(state2, 26);
             color = new BinAttributeBool(state2, 27);
+            excluded = new BinAttributeBool(state2, 28);
 
             if (pascInstance1 is null)
                 pasc1 = new SubPASC2(p);
@@ -414,6 +416,8 @@ namespace AS2.Subroutines.ConvexShapeContainment
         /// to be applied before testing the shape.</param>
         /// <param name="controlColor">Whether the subroutine should control the
         /// amoebot's color to display status information.</param>
+        /// <param name="excluded">Whether this amoebot should be excluded from
+        /// being a valid placement.</param>
         /// <param name="counterPred">The direction of the counter predecessor if
         /// this amoebot is on a counter.</param>
         /// <param name="counterSucc">The direction of the counter successor if
@@ -428,7 +432,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
         /// <param name="msbA2">Whether this amoebot holds the MSB of shape parameter a' = a + c.</param>
         /// <param name="bitA3">This amoebot's bit of the shape parameter a + 1.</param>
         /// <param name="msbA3">Whether this amoebot holds the MSB of shape parameter a + 1.</param>
-        public void Init(ShapeType shapeType, Direction dirW, Direction dirH, int rotation, bool controlColor = false,
+        public void Init(ShapeType shapeType, Direction dirW, Direction dirH, int rotation, bool controlColor = false, bool excluded = false,
             Direction counterPred = Direction.NONE, Direction counterSucc = Direction.NONE,
             bool bitA = false, bool msbA = false, bool bitD = false, bool msbD = false,
             bool bitC = false, bool msbC = false, bool bitA2 = false, bool msbA2 = false, bool bitA3 = false, bool msbA3 = false)
@@ -452,6 +456,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
             directionH.SetValue(dirH);
 
             color.SetValue(controlColor);
+            this.excluded.SetValue(excluded);
             directionPred.SetValue(counterPred);
             directionSucc.SetValue(counterSucc);
 
@@ -526,7 +531,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
                                 if (r == 0)
                                 {
                                     // Set candidate flag
-                                    candidate.SetValue(comp1.GetCurrentValue() != ComparisonResult.LESS);
+                                    candidate.SetValue(comp1.GetCurrentValue() != ComparisonResult.LESS && !excluded.GetValue());
                                     // Prepare for second check
                                     SetupSecondDistanceCheck();
                                 }
@@ -577,7 +582,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
                         if (r == 2)
                         {
                             // Set candidate flag and setup next distance check
-                            candidate.SetValue(comp1.GetCurrentValue() != ComparisonResult.LESS);
+                            candidate.SetValue(comp1.GetCurrentValue() != ComparisonResult.LESS && !excluded.GetValue());
                             SetupSecondDistanceCheck();
                         }
                         else

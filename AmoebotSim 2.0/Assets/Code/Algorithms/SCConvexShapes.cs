@@ -1205,13 +1205,13 @@ namespace AS2.Algos.SCConvexShapes
                     _msbs[i] = useScaledShapeBits ? ScaledShapeMSB(i) : ShapeMSB(i);
                 }
 
-                containment.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, hexNeedsPentagon, shapeDirectionH2,
+                containment.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, false, hexNeedsPentagon, shapeDirectionH2,
                     counterPred, counterSucc, _bits[0], _msbs[0], _bits[1], _msbs[1], _bits[2], _msbs[2], _bits[3], _msbs[3], _bits[4], _msbs[4],
                     _bits[5], _msbs[5]);
             }
             else
             {
-                containment.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, hexNeedsPentagon, shapeDirectionH2);
+                containment.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, false, hexNeedsPentagon, shapeDirectionH2);
             }
             PinConfiguration pc = GetContractedPinConfiguration();
             containment.SetupPC(pc);

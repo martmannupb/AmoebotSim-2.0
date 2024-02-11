@@ -111,9 +111,9 @@ namespace AS2.Subroutines.ConvexShapeContainment
     //      - Split at invalid line points
     //      - Amoebots without neighbor in direction a send beep
     //  - Setup second circuits along direction a (complete)
-    //      - Valid line points send beep
+    //      - Valid line points (*that are not excluded*) send beep
     //  - Setup a global circuit
-    //      - Valid line points send beep
+    //      - Valid line points (*not excluded*) send beep
 
     // Round 4:
     //  Send:
@@ -203,9 +203,10 @@ namespace AS2.Subroutines.ConvexShapeContainment
         // 1 bit for success flag
         // 1 bit for finished flag
         // 1 bit for color control flag
-        //     30      29         28        27               26           25           24           23       22      21      20  19 1817          1614   1311   108     7 5     4  0
-        // x   x       x          x         x                x            x            x            x        x       x       x   x   xx           xxx    xxx    xxx     xxx     xxxx
-        //     Color   Finished   Success   Representative   Seg. limit   Valid seg.   Valid line   Marker   MSB d   MSB a   d   a   Comparison   Succ   Pred   Dir d   Dir a   Round
+        // 1 bit for excluded flag (this amoebot cannot be a valid placement)
+        // 31         30      29         28        27               26           25           24           23       22      21      20  19 1817          1614   1311   108     7 5     4  0
+        // x          x       x          x         x                x            x            x            x        x       x       x   x   xx           xxx    xxx    xxx     xxx     xxxx
+        // Excluded   Color   Finished   Success   Representative   Seg. limit   Valid seg.   Valid line   Marker   MSB d   MSB a   d   a   Comparison   Succ   Pred   Dir d   Dir a   Round
         ParticleAttribute<int> state;
 
         // Binary state wrappers
@@ -227,6 +228,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
         BinAttributeBool success;
         BinAttributeBool finished;
         BinAttributeBool controlColor;
+        BinAttributeBool excluded;
 
         SubPASC2 pasc;
 
@@ -252,6 +254,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
             success = new BinAttributeBool(state, 28);
             finished = new BinAttributeBool(state, 29);
             controlColor = new BinAttributeBool(state, 30);
+            excluded = new BinAttributeBool(state, 31);
 
             if (pasc_instance is null)
             {
@@ -274,6 +277,8 @@ namespace AS2.Subroutines.ConvexShapeContainment
         /// by which the shape should be rotated around its origin.</param>
         /// <param name="controlColor">Whether the subroutine should control the
         /// amoebot color to visualize its progress.</param>
+        /// <param name="excluded">Whether this amoebot should be excluded from
+        /// being a valid placement.</param>
         /// <param name="counterPred">The predecessor direction of the counter.
         /// Should be <see cref="Direction.NONE"/> for the counter start and amoebots
         /// that are not on the counter.</param>
@@ -288,7 +293,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
         /// is on the counter.</param>
         /// <param name="msbD">Whether this is the MSB of <c>d</c> if the amoebot
         /// is on the counter.</param>
-        public void Init(Direction dirA, Direction dirD, int rotation, bool controlColor = false, Direction counterPred = Direction.NONE, Direction counterSucc = Direction.NONE,
+        public void Init(Direction dirA, Direction dirD, int rotation, bool controlColor = false, bool excluded = false, Direction counterPred = Direction.NONE, Direction counterSucc = Direction.NONE,
             bool bitA = false, bool bitD = false, bool msbA = false, bool msbD = false)
         {
             state.SetValue(0);
@@ -301,6 +306,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
             }
 
             this.controlColor.SetValue(controlColor);
+            this.excluded.SetValue(excluded);
 
             direction_a.SetValue(dirA);
             direction_d.SetValue(dirD);
@@ -358,9 +364,9 @@ namespace AS2.Subroutines.ConvexShapeContainment
                                     if (valid_line_on_segment.GetValue())
                                     {
                                         if (segment_limit.GetCurrentValue())
-                                            is_representative.SetValue(comparison.GetValue() != ComparisonResult.LESS);
+                                            is_representative.SetValue(comparison.GetValue() != ComparisonResult.LESS && !excluded.GetValue());
                                         else
-                                            is_representative.SetValue(comparison.GetValue() == ComparisonResult.GREATER);
+                                            is_representative.SetValue(comparison.GetValue() == ComparisonResult.GREATER && !excluded.GetValue());
                                     }
                                     round.SetValue(8);
                                 }
@@ -435,9 +441,9 @@ namespace AS2.Subroutines.ConvexShapeContainment
                             else
                             {
                                 if (segment_limit.GetValue())
-                                    is_representative.SetValue(comparison.GetCurrentValue() != ComparisonResult.LESS);
+                                    is_representative.SetValue(comparison.GetCurrentValue() != ComparisonResult.LESS && !excluded.GetValue());
                                 else
-                                    is_representative.SetValue(comparison.GetCurrentValue() == ComparisonResult.GREATER);
+                                    is_representative.SetValue(comparison.GetCurrentValue() == ComparisonResult.GREATER && !excluded.GetValue());
                                 marker.SetValue(false);
                             }
                         }
@@ -619,10 +625,14 @@ namespace AS2.Subroutines.ConvexShapeContainment
                     {
                         PinConfiguration pc = algo.GetPlannedPinConfiguration();
                         // Valid line points send beep on first line circuit and global circuit
+                        // (but only if they are not excluded)
                         if (valid_line.GetCurrentValue())
                         {
-                            pc.SendBeepOnPartitionSet(0);
-                            pc.SendBeepOnPartitionSet(2);
+                            if (!excluded.GetCurrentValue())
+                            {
+                                pc.SendBeepOnPartitionSet(0);
+                                pc.SendBeepOnPartitionSet(2);
+                            }
 
                             // Amoebots with no neighbor in direction a send beep on second line circuit
                             Direction dirA = direction_a.GetValue();

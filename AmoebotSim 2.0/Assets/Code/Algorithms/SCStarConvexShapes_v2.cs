@@ -9,11 +9,19 @@ using AS2.Subroutines.PASC;
 using AS2.Subroutines.ConvexShapeContainment;
 using AS2.Subroutines.ShapeConstruction;
 
-namespace AS2.Algos.SCStarConvexShapes
+namespace AS2.Algos.SCStarConvexShapes_v2
 {
 
     /// <summary>
     /// Shape containment solution for star convex shapes.
+    /// This is the same algorithm as <see cref="Algos.SCStarConvexShapes.SCStarConvexShapesParticle"/>,
+    /// except that the rotation and shape loops are swapped:
+    /// We check all shapes for each rotation first instead of
+    /// checking all rotations for each shape. This means that
+    /// we have to compute the shape parameters more often but
+    /// the overall runtime will be much shorter because positive
+    /// checks can be aborted sooner and negative checks will
+    /// produce invalid placements faster.
     /// <para>
     /// <b>Disclaimer: The save/load feature does not work for
     /// this algorithm because it stores the target shape in a
@@ -55,15 +63,16 @@ namespace AS2.Algos.SCStarConvexShapes
     //      - If M = L:
     //          - Construct the final shape and finish
     //      - Containment check:
-    //          - For i = 0,...,numShapes - 1:
-    //              - Compute the shape parameters scaled by M
-    //              - For each rotation r = 0,...,5 for which candidates still exist:
+    //          - For rotation r = 0,...5:
+    //              - For i = 0,...,numShapes -1:
+    //                  - Compute the shape parameters scaled by M
     //                  - Run the containment check for r, M and intersect the solution set with the current one
-    //              - Establish global circuits to transmit existence of valid placements for each rotation
-    //              - If no rotations are valid anymore:
-    //                  - Cancel the check for this scale with failure (R := M)
-    //          - If there are still valid placements for some rotation:
-    //              - End the check for this scale with success (L := M)
+    //                  - If no positions are valid anymore:
+    //                      - Go to next rotation
+    //              - If there are valid placements for this rotation:
+    //                  - End the check for this scale with success (L := M)
+    //          - If there are no valid placements for any rotation:
+    //              - Cancel the check for this scale with failure (R := M)
 
     // Round overview:
 
@@ -78,7 +87,7 @@ namespace AS2.Algos.SCStarConvexShapes
     //  - If subroutine is finished:
     //      - Setup left and right side of the binary search
     //          - Left := 1, Right := length of longest line
-    //      - Set rotation/counter to 0
+    //      - Set counter to 0
     //      - Place marker at counter start(s)
     //      - Go to round 2
     //  - Else:
@@ -97,6 +106,8 @@ namespace AS2.Algos.SCStarConvexShapes
     //      - Marker writes current counter value to shape parameter index
     //      - Marker moves one position ahead
     //      - Increment counter
+
+    // Rounds 3 and 4 are for running binary operations
 
     // Round 3:
     //  - If counter > 3:
@@ -120,196 +131,186 @@ namespace AS2.Algos.SCStarConvexShapes
     // Round 5 (WAIT):
     //  - Wait for beep on global circuits
     //      - First circuit beep: Setup next phase
-    //          - Set shape index to 0
-    //          - Set all valid placement flags to true
-    //          - Then go to round 6
+    //          - Go to round 6
     //      - Second circuit beep:
-    //          - Set all valid placement flags to true
-    //          - Set rotation to 0
-    //          - Go to round 9
+    //          - Go to round 10
+    //      - Third circuit beep:
+    //          - Go to round 16
     //  - If beep on fourth global circuit: Terminate with failure
 
 
     // CHECK LARGEST SCALE
 
-    // Round 6:
-    //  - If shape idx >= num shapes:
-    //      - We found a valid placement: Go to final shape construction
-    //      - Also: Store rotation and valid placements for later (in any case)
-    //      - Go to round 33
-    //  - Else:
-    //      - Set counter to 0
-    //      - SPLIT:
-    //          - Counters go to round 7
-    //          - Others go to round 5 and setup 4 global circuits
+    // Rounds 6-11 implement the whole containment check for all rotations of a given scale
 
-    // Round 7 (similar to 3):
+    // Round 6:
+    //  - If rotation > 5:
+    //      - We found no valid placement:
+    //          - Continue with scale 1 (first phase) -> Round 12
+    //          - Terminate with failure (second phase)
+    //          - Set R := M and continue binary search (third phase) -> Round 18
+    //  - Else:
+    //      - Set shape counter to 0
+    //      - Reset valid placement flag to true
+    //      - Go to round 7
+
+    // Round 7:
+    //  - If shape counter >= number of shapes:
+    //      - We have found a valid placement for all shapes:
+    //          - Store the placement's rotation and representatives
+    //          - Go to shape construction (first phase) -> Round 30
+    //          - Continue with binary search (second phase) -> Round 18
+    //          - Set L := M and continue binary search (third phase) -> Round 18
+    //  - Else:
+    //      - Set counter := 0 (not rotation!)
+    //      - Start shape parameter computation (SPLIT):
+    //      - Counter amoebots go to round 8
+    //      - Others go to waiting round (5 or 23)
+
+    // Round 8 (similar to 3):
     //  - If counter >= 2 * (number of shape params):
-    //      - Setup 4 global circuits and beep on second
-    //      - Go to round 5
+    //      - Setup 4 global circuits and beep on second / third
+    //      - Go to waiting round (5 or 23)
     //  - Else:
     //      - Init binop to compute current scaled shape parameter, using scale M
     //      - Start binop
-    //      - Go to round 8
+    //      - Go to round 9
 
-    // Round 8 (similar to 4):
+    // Round 9 (similar to 4):
     //  - Continue binop
     //  - If binop is finished:
     //      - Store result based on counter
     //      - Increment counter
-    //      - Go to round 7
-
-    // Round 9:
-    //  - If rotation > 5:
-    //      - Setup 4 global circuits
-    //      - Valid placements of rotations 0-3 beep
-    //      - Go to round 11
-    //  - Else:
-    //      - Init containment check for current rotation and scaled parameters
-    //      - Start containment check
-    //      - Go to round 10
+    //      - Go back to round 8
 
     // Round 10:
-    //  - If containment check is finished:
-    //      - Store valid placements in their rotation
-    //      - Increment rotation
-    //          - Find the next rotation for which we still have valid placements, else set it to 6
-    //      - Go to round 9
-    //  - Else:
-    //      - Continue running
+    //  - Start containment check for current shape, scale and rotation
+    //  - Go to round 11
 
     // Round 11:
-    //  - Receive beeps on global circuits 0-3
-    //      - Update valid placement existence flags
-    //  - Setup global circuits again, let valid placements for rotations 4, 5 beep
-    //  - Go to round 12
-
-    // Round 12:
-    //  - Receive beeps on global circuits 0-1
-    //      - Update valid placement existence flags
-    //  - (We now know the result of the containment check for this shape)
-    //  - Success:
-    //      - Increment shape counter
-    //      - Go to round 6
-    //  - Failure (no valid placements left):
-    //      - Just go to next phase (largest scale check failed)
-    //      - Reset all the valid placement flags
-    //      - Reset shape index to 0
-    //      - Assign M := L
-    //      - Go to round 13
+    //  - If containment check is finished:
+    //      - If successful:
+    //          - Update valid placements
+    //          - Increment shape counter
+    //          - Go to round 7
+    //      - Else:
+    //          - Increment rotation
+    //          - Go to round 6
+    //  - Else:
+    //      - Continue running
 
 
     // CHECK SCALE 1
 
-    // Rounds 13-19 are almost the same as 6-12
+    // Rounds 12-17 are almost the same as 6-11
     // These are the differences:
 
-    // Round 13 (6):
-    //  - When finished, we just continue with the next phase instead of going to the shape construction
-    //      - ???????????
-
-    // Round 14 (7):
-    //  - When finished, beep on third circuit instead of second
-
-    // Round 19 (12):
+    // Round 12 (6):
     //  - Failure means that we terminate with a negative result immediately
+
+    // Round 13 (7):
+    //  - When finished, we just continue with the next phase
+    //  - Round 18
+
+    // Round 14 (8):
+    //  - When finished, beep on third circuit instead of second
 
 
     // BINARY SEARCH
 
-    // Round 20:
+    // Round 18:
     //  - Initialize and start binop for computing M := L + R
     //  - SPLIT:
-    //      - Counter amoebots go to round 21
-    //      - Other amoebots setup 4 global circuits and go to round 25
+    //      - Counter amoebots go to round 19
+    //      - Other amoebots setup 4 global circuits and go to round 23
 
-    // Round 21:
+    // Round 19:
     //  - If binop is finished:
     //      - Store result in M
-    //      - Go to round 22
+    //      - Go to round 20
     //  - Else:
     //      - Continue running
 
-    // Round 22:
+    // Round 20:
     //  - Shift each bit of M one position backwards
     //  - Setup binop for finding MSB of M
 
-    // Round 23:
+    // Round 21:
     //  - If binop is finished:
     //      - Store MSB of M
     //      - Setup and start binop for comparing L to M
     //  - Else:
     //      - Continue running
 
-    // Round 24:
+    // Round 22:
     //  - If binop is finished:
     //      - If L = M:
     //          - Setup 4 global circuits and beep on first one
-    //          - Go to round 25
+    //          - Go to round 23
     //      - Else:
     //          - Set counter to 0
     //          - Setup 4 global circuits and beep on second one
-    //          - Go to round 25
+    //          - Go to round 23
     //  - Else:
     //      - Continue running
 
-    // Round 25 (WAIT):
+    // Round 23 (WAIT):
     //  - Listen on 4 global circuits
     //  - If beep on first circuit:
     //      - Found solution, go to shape construction
-    //      - Go to round ?????????
+    //      - Go to round 30
     //  - If beep on second circuit:
     //      - Start containment check procedure for next scale factor
-    //      - Go to round 26
+    //      - Go to round 24
     //  - If beep on third circuit:
     //      - Start containment check procedure for next shape
-    //      - Go to round 29
+    //      - Go to round 28
+
 
     // CONTAINMENT CHECK
 
-    // Rounds 26-32 are almost the same as 6-12
+    // Rounds 24-29 are almost the same as 6-11
     // These are the differences:
 
-    // Round 26 (6):
-    //  - We split by going to round 25 instead of 5
-    //  - When finished, we assign L := M and go back to round 20
+    // Round 24 (6):
+    //  - Failure means we assign R := M and go back to round 18
 
-    // Round 27 (7):
+    // Round 25 (7):
+    //  - When finished, we assign L := M and go back to round 18
+
+    // Round 26 (8):
     //  - When finished, beep on third circuit instead of second
-
-    // Round 32 (12):
-    //  - Failure means we assign R := M and go back to round 20
 
 
     // SHAPE CONSTRUCTION
 
-    // Round 33:
+    // Round 30:
     //  - Setup leader election on valid placements
     //      - But use entire system
 
-    // Round 34:
+    // Round 31:
     //  - If leader election is finished:
     //      - Setup shape construction subroutine for leader and scale L
     //      - Markers at counter starts
 
-    // Round 35:
+    // Round 32:
     //  - Continue running shape construction
     //  - If shape construction is finished:
     //      - Terminate with success
     //  - If scale reset:
     //      - Set marker to counter start
-    //      - Go to round 36
+    //      - Go to round 33
     //  - Else:
     //      - Continue running (maybe with scale bit)
     //      - Forward marker
 
-    // Round 36:
+    // Round 33:
     //  - Send next bit of shape construction
     //  - Forward marker
-    //  - Go back to round 35
+    //  - Go back to round 32
 
 
-    public class SCStarConvexShapesParticle : ParticleAlgorithm
+    public class SCStarConvexShapes_v2Particle : ParticleAlgorithm
     {
 
         /// <summary>
@@ -354,36 +355,35 @@ namespace AS2.Algos.SCStarConvexShapes
         }
 
         // This is the display name of the algorithm (must be unique)
-        public static new string Name => "SC Star Convex Shapes";
+        public static new string Name => "SC Star Convex Shapes V2";
 
         // Specify the number of pins (may be 0)
         public override int PinsPerEdge => 4;
 
         // If the algorithm has a special generation method, specify its full name here
-        public static new string GenerationMethod => typeof(SCStarConvexShapesInitializer).FullName;
+        public static new string GenerationMethod => typeof(SCStarConvexShapes_v2Initializer).FullName;
 
         // Declare attributes here
         ParticleAttribute<int> round;
 
-        // Rotation / generic counter
         ParticleAttribute<int> rotation;
+        ParticleAttribute<int> counter;         // Generic counter
         ParticleAttribute<int> finalRotation;
+        ParticleAttribute<bool> finalPlacement;
+        ParticleAttribute<bool> validPlacement;
         ParticleAttribute<int> shapeIdx;        // The index of the constituent shape we are testing
         ParticleAttribute<int> paramIdx;        // The index of the shape parameter bit for our counter position
         ParticleAttribute<bool> marker;
-        ParticleAttribute<bool> validPlacement;
         ParticleAttribute<bool> finished;
         
-        // Stores 24 bits
+        // Stores 18 bits
         // 3 bits for binary counter L, R, M
         // 3 MSBs for binary counter
         // 6 scaled shape parameter bits
         // 6 scaled shape parameter MSBs
-        // 6 valid placement flags
-        // 6 valid placement existence flags
-        //       29  28  27  26  25  24   23  22  21  20  19  18    17  16  15  14  13  12    11  10  9      8   7   6   5   4   3    2   1   0
-        // xxx   x   x   x   x   x   x    x   x   x   x   x   x     x   x   x   x   x   x     x   x   x      x   x   x   x   x   x    x   x   x
-        //       Placement exists         Valid placement           Scaled shape MSBs         Counter MSBs   Scaled shape bits        Counter bits
+        //                      17  16  15  14  13  12    11  10  9      8   7   6   5   4   3    2   1   0
+        // xxxx xxxx xxxx xxx   x   x   x   x   x   x     x   x   x      x   x   x   x   x   x    x   x   x
+        //                      Scaled shape MSBs         Counter MSBs   Scaled shape bits        Counter bits
         ParticleAttribute<int> bitStorage;
 
         // Bit index constants
@@ -391,8 +391,6 @@ namespace AS2.Algos.SCStarConvexShapes
         private const int bit_shape = 3;
         private const int msb_counter = 9;
         private const int msb_shape = 12;
-        private const int bit_valid = 18;
-        private const int bit_placement_exists = 24;
 
         SubBinOps binops;
         SubLeaderElectionSC leaderElection;
@@ -409,18 +407,20 @@ namespace AS2.Algos.SCStarConvexShapes
         public static string longestLine;           // The length of the target shape's longest line in binary
         public static int longestParameter;         // The number of bits in the longest shape parameter
 
-        public SCStarConvexShapesParticle(Particle p) : base(p)
+        public SCStarConvexShapes_v2Particle(Particle p) : base(p)
         {
             // Initialize the attributes here
             round = CreateAttributeInt("Round", 0);
             rotation = CreateAttributeInt("Rotation", 0);
+            counter = CreateAttributeInt("Counter", 0);
             finalRotation = CreateAttributeInt("Final Rotation", -1);
+            finalPlacement = CreateAttributeBool("Final placement", false);
+            validPlacement = CreateAttributeBool("Valid placement", false);
             shapeIdx = CreateAttributeInt("Shape Index", 0);
             paramIdx = CreateAttributeInt("Param Index", -1);
             marker = CreateAttributeBool("Marker", false);
             bitStorage = CreateAttributeInt("Bits", 0);
 
-            validPlacement = CreateAttributeBool("Valid placement", false);
             finished = CreateAttributeBool("Finished", false);
 
             binops = new SubBinOps(p);
@@ -496,8 +496,8 @@ namespace AS2.Algos.SCStarConvexShapes
                                     marker.SetValue(true);
                                 }
                             }
-                            // Set counter/rotation to 0 and go to next phase
-                            rotation.SetValue(0);
+                            // Set counter to 0 and go to next phase
+                            counter.SetValue(0);
                             round.SetValue(round + 1);
                         }
                         else
@@ -514,16 +514,10 @@ namespace AS2.Algos.SCStarConvexShapes
 
                 case 2:
                     {
-                        if (rotation >= longestParameter)
+                        if (counter >= longestParameter)
                         {
                             // Done setting up shape parameter indices
-                            rotation.SetValue(0);
-                            // Set all valid placement flags to true in preparation for the first containment check
-                            for (int i = 0; i < 6; i++)
-                            {
-                                SetValidPlacement(i, true);
-                                SetPlacementExists(i, true);
-                            }
+                            counter.SetValue(0);
                             marker.SetValue(false);
                             // Split here
                             if (ll.IsOnMaxLine())
@@ -540,34 +534,34 @@ namespace AS2.Algos.SCStarConvexShapes
                         {
                             // Marker writes shape parameter index
                             if (marker)
-                                paramIdx.SetValue(rotation);
+                                paramIdx.SetValue(counter);
                             // Marker moves one position ahead
                             if (ll.IsOnMaxLine())
                             {
                                 Direction d = ll.GetMaxDir().Opposite();
-                                marker.SetValue(HasNeighborAt(d) && ((SCStarConvexShapesParticle)GetNeighborAt(d)).marker);
+                                marker.SetValue(HasNeighborAt(d) && ((SCStarConvexShapes_v2Particle)GetNeighborAt(d)).marker);
                             }
                             // Increment counter
-                            rotation.SetValue(rotation + 1);
+                            counter.SetValue(counter + 1);
                         }
                     }
                     break;
                 case 3:
-                case 7:     // From check for scale R
+                case 8:     // From check for scale R
                 case 14:    // From check for scale 1
-                case 27:    // From check for scale M
+                case 26:    // From check for scale M
                     {
                         // 3 binary operations to setup longest line comparison in setup phase
                         int n = (round == 3) ? 3 : (2 * NumShapeParams());
-                        if (rotation >= n)
+                        if (counter >= n)
                         {
                             // Done with binary operations, send signal to continue
                             PinConfiguration pc = GetContractedPinConfiguration();
                             SetupGlobalCircuits(pc);
                             SetPlannedPinConfiguration(pc);
-                            pc.SendBeepOnPartitionSet(round == 3 ? 0 : (round == 7 ? 1 : 2));
-                            rotation.SetValue(0);
-                            round.SetValue(round <= 14 ? 5 : 25);
+                            pc.SendBeepOnPartitionSet(round == 3 ? 0 : (round == 8 ? 1 : 2));
+                            counter.SetValue(0);
+                            round.SetValue(round <= 14 ? 5 : 23);
                         }
                         else
                         {
@@ -578,9 +572,9 @@ namespace AS2.Algos.SCStarConvexShapes
                     }
                     break;
                 case 4:
-                case 8:     // From check for scale R
+                case 9:     // From check for scale R
                 case 15:    // From check for scale 1
-                case 28:    // From check for scale M
+                case 27:    // From check for scale M
                     {
                         // Run binops and write result bits/MSBs
                         if (RunBinOpsShapeParam(out bool terminate))
@@ -597,7 +591,7 @@ namespace AS2.Algos.SCStarConvexShapes
                             else
                             {
                                 // Increment counter and repeat
-                                rotation.SetValue(rotation + 1);
+                                counter.SetValue(counter + 1);
                                 round.SetValue(round - 1);
                             }
                         }
@@ -619,28 +613,12 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                         else if (pc.ReceivedBeepOnPartitionSet(1))
                         {
-                            // Initialize containment check for scale R
-                            // Use the first rotation for which there are still valid placements
-                            int r = 0;
-                            for (; r < 6; r++)
-                            {
-                                if (PlacementExists(r))
-                                    break;
-                            }
-                            rotation.SetValue(r);
-                            round.SetValue(9);
+                            // Go to containment check for scale R
+                            round.SetValue(10);
                         }
                         else if (pc.ReceivedBeepOnPartitionSet(2))
                         {
-                            // Initialize containment check for scale 1
-                            // Use the first rotation for which there are still valid placements
-                            int r = 0;
-                            for (; r < 6; r++)
-                            {
-                                if (PlacementExists(r))
-                                    break;
-                            }
-                            rotation.SetValue(r);
+                            // Go to containment check for scale 1
                             round.SetValue(16);
                         }
                     }
@@ -649,47 +627,85 @@ namespace AS2.Algos.SCStarConvexShapes
                 // CHECK LARGEST SCALE
 
                 case 6:
-                case 13:    // Start of containment check, same for checking scale 1
-                case 26:    // Same for check during binary search
+                case 12:    // Start of containment check, same for checking scale 1
+                case 24:    // Same for check during binary search
+                    {
+                        if (rotation > 5)
+                        {
+                            // We found no valid placement for this scale
+                            rotation.SetValue(0);
+                            if (round == 6)
+                            {
+                                // Check for R failed: Just go to next phase
+                                // Reset valid placement flag to true
+                                validPlacement.SetValue(true);
+                                // Set M := L for next check
+                                if (ll.IsOnMaxLine())
+                                {
+                                    Bit_M = Bit_L;
+                                    MSB_M = MSB_L;
+                                }
+                                round.SetValue(12);
+                            }
+                            else if (round == 12)
+                            {
+                                // Check for scale 1 failed: Terminate
+                                SetMainColor(ColorData.Particle_Red);
+                                finished.SetValue(true);
+                            }
+                            else if (round == 24)
+                            {
+                                // Check for scale M failed: Update R
+                                Bit_R = Bit_M;
+                                MSB_R = MSB_M;
+                                round.SetValue(18);
+                            }
+                        }
+                        else
+                        {
+                            // Continue by checking next rotation
+                            shapeIdx.SetValue(0);
+                            validPlacement.SetValue(true);
+                            round.SetValue(round + 1);
+                        }
+                    }
+                    break;
+                case 7:
+                case 13:    // Scale 1 check
+                case 25:    // Scale M check
                     {
                         if (shapeIdx >= constituents.Length)
                         {
                             // We found a valid placement: Store the result
-                            // Find the lowest valid rotation and remember the valid placements
-                            int r = 0;
-                            for (; r < 6; r++)
-                            {
-                                if (PlacementExists(r))
-                                    break;
-                            }
-                            finalRotation.SetValue(r);
-                            validPlacement.SetValue(IsValidPlacement(r));
-                            if (round == 6)
+                            finalPlacement.SetValue(validPlacement);
+                            finalRotation.SetValue(rotation);
+
+                            if (round == 7)
                             {
                                 // Found a valid placement for scale R!
                                 // Go to final shape construction
                                 Bit_L = Bit_R;
                                 MSB_L = MSB_R;
-                                round.SetValue(33);
+                                round.SetValue(30);
                             }
                             else if (round == 13)
                             {
                                 // Found a valid placement for scale 1
                                 // Just continue with the next phase
-                                round.SetValue(20);
+                                round.SetValue(18);
                             }
-                            else if (round == 26)
+                            else if (round == 25)
                             {
                                 // Found a valid placement for scale M
                                 Bit_L = Bit_M;
                                 MSB_L = MSB_M;
-                                round.SetValue(20);
+                                round.SetValue(18);
                             }
                         }
                         else
                         {
                             // Start containment check for the current shape
-                            rotation.SetValue(0);
+                            counter.SetValue(0);
                             // Split
                             if (ll.IsOnMaxLine())
                                 round.SetValue(round + 1);
@@ -698,62 +714,43 @@ namespace AS2.Algos.SCStarConvexShapes
                                 PinConfiguration pc = GetContractedPinConfiguration();
                                 SetupGlobalCircuits(pc);
                                 SetPlannedPinConfiguration(pc);
-                                round.SetValue(round <= 13 ? 5 : 25);
+                                round.SetValue(round <= 13 ? 5 : 23);
                             }
-                        }
-                    }
-                    break;
-                case 9:
-                case 16:    // From check for scale 1
-                case 29:    // From check for scale M
-                    {
-                        if (rotation > 5)
-                        {
-                            // We have finished checking the rotations, now transmit which placements still exist
-                            PinConfiguration pc = GetContractedPinConfiguration();
-                            SetupGlobalCircuits(pc);
-                            SetPlannedPinConfiguration(pc);
-                            for (int i = 0; i < 4; i++)
-                            {
-                                if (IsValidPlacement(i))
-                                    pc.SendBeepOnPartitionSet(i);
-                            }
-                            round.SetValue(round + 2);
-                        }
-                        else
-                        {
-                            // Init containment check for current rotation and scaled parameters
-                            StartShapeContainmentCheck();
-
-                            round.SetValue(round + 1);
                         }
                     }
                     break;
                 case 10:
-                case 17:    // From check for scale 1
-                case 30:    // From check for scale M
+                case 16:    // Scale 1 check
+                case 28:    // Scale M check
+                    {
+                        // Init containment check for current rotation and scaled parameters
+                        StartShapeContainmentCheck();
+
+                        round.SetValue(round + 1);
+                    }
+                    break;
+                case 11:
+                case 17:    // Scale 1 check
+                case 29:    // Scale M check
                     {
                         containment.ActivateReceive();
                         if (containment.IsFinished())
                         {
-                            // Store the valid placements for the current rotation
-                            bool valid = containment.IsRepresentative();
-                            SetValidPlacement(rotation, valid && IsValidPlacement(rotation));
-                            if (IsValidPlacement(rotation))
-                                SetMainColor(ColorData.Particle_Green);
-                            else
-                                SetMainColor(ColorData.Particle_Black);
-
-                            // Increment rotation
-                            // Find the next rotation for which we still have valid placements
-                            int r = rotation + 1;
-                            for (; r < 6; r++)
+                            if (containment.Success())
                             {
-                                if (PlacementExists(r))
-                                    break;
+                                // Update valid placements
+                                validPlacement.SetValue(containment.IsRepresentative());
+                                // Continue with next shape
+                                shapeIdx.SetValue(shapeIdx + 1);
+                                round.SetValue(round - 4);
                             }
-                            rotation.SetValue(r);
-                            round.SetValue(round - 1);
+                            else
+                            {
+                                // Increment rotation and start again
+                                rotation.SetValue(rotation + 1);
+                                round.SetValue(round - 5);
+                            }
+
                         }
                         else
                         {
@@ -764,97 +761,12 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                     }
                     break;
-                case 11:
-                case 18:    // From check for scale 1
-                case 31:    // From check for scale M
-                    {
-                        // Receive beeps on global circuits 0-3
-                        // and update valid placement existence flags
-                        PinConfiguration pc = GetCurrentPinConfiguration();
-                        for (int i = 0; i < 4; i++)
-                        {
-                            if (!pc.ReceivedBeepOnPartitionSet(i))
-                                SetPlacementExists(i, false);
-                        }
-                        // Setup the same circuits and beep for rotations 4 and 5
-                        SetPlannedPinConfiguration(pc);
-                        if (IsValidPlacement(4))
-                            pc.SendBeepOnPartitionSet(0);
-                        if (IsValidPlacement(5))
-                            pc.SendBeepOnPartitionSet(1);
-                        round.SetValue(round + 1);
-                    }
-                    break;
-                case 12:
-                case 19:    // From check for scale 1
-                case 32:    // From check for scale M
-                    {
-                        // Receive beeps on global circuits 0, 1
-                        // and update valid placement existence flags
-                        PinConfiguration pc = GetCurrentPinConfiguration();
-                        if (!pc.ReceivedBeepOnPartitionSet(0))
-                            SetPlacementExists(4, false);
-                        if (!pc.ReceivedBeepOnPartitionSet(1))
-                            SetPlacementExists(5, false);
-                        // Check whether there are still any valid placements
-                        bool success = false;
-                        for (int r = 0; r < 6; r++)
-                        {
-                            if (PlacementExists(r))
-                            {
-                                success = true;
-                                break;
-                            }
-                        }
-                        if (success)
-                        {
-                            // Increment shape counter and continue with next check
-                            shapeIdx.SetValue(shapeIdx + 1);
-                            round.SetValue(round - 6);
-                        }
-                        else
-                        {
-                            // No valid placements left!
-                            if (round == 12)
-                            {
-                                // Check for R failed: Just go to next phase
-                                // Ret all valid placement flags to true
-                                for (int i = 0; i < 6; i++)
-                                {
-                                    SetValidPlacement(i, true);
-                                    SetPlacementExists(i, true);
-                                }
-                                shapeIdx.SetValue(0);
-                                // Set M := L for next check
-                                if (ll.IsOnMaxLine())
-                                {
-                                    Bit_M = Bit_L;
-                                    MSB_M = MSB_L;
-                                }
-                                round.SetValue(round + 1);
-                            }
-                            else if (round == 19)
-                            {
-                                // Check for scale 1 failed: Terminate
-                                SetMainColor(ColorData.Particle_Red);
-                                finished.SetValue(true);
-                            }
-                            else if (round == 32)
-                            {
-                                // Check for scale M failed: Update R
-                                Bit_R = Bit_M;
-                                MSB_R = MSB_M;
-                                round.SetValue(20);
-                            }
-                        }
-                    }
-                    break;
 
-                // CHECK FOR SCALE 1 (rounds 13-19)
+                // CHECK FOR SCALE 1 (rounds 12-17)
 
                 // BINARY SEARCH
 
-                case 20:
+                case 18:
                     {
                         // Start adding L + R
                         InitBinOpsSearch();
@@ -868,26 +780,26 @@ namespace AS2.Algos.SCStarConvexShapes
                             PinConfiguration pc = GetContractedPinConfiguration();
                             SetupGlobalCircuits(pc);
                             SetPlannedPinConfiguration(pc);
-                            round.SetValue(25);
+                            round.SetValue(23);
                         }
                     }
                     break;
+                case 19:
                 case 21:
-                case 23:
-                case 24:
+                case 22:
                     {
                         // All 3 rounds wait for binary operations to finish
                         // Just the reaction when it is finished differs
                         bool isFinished = RunBinOps();
                         if (isFinished)
                         {
-                            if (round == 21)
+                            if (round == 19)
                             {
                                 // Store result in M
                                 Bit_M = binops.ResultBit();
                                 round.SetValue(round + 1);
                             }
-                            else if (round == 23)
+                            else if (round == 21)
                             {
                                 // Store MSB of M
                                 MSB_M = binops.IsMSB();
@@ -896,8 +808,9 @@ namespace AS2.Algos.SCStarConvexShapes
                                 InitBinOpsSearch(false, true);
                                 round.SetValue(round + 1);
                             }
-                            else if (round == 24)
+                            else if (round == 22)
                             {
+                                counter.SetValue(0);
                                 // Go to waiting round and let amoebots know whether we are finished or
                                 // have to start the next containment check
                                 PinConfiguration pc = GetContractedPinConfiguration();
@@ -912,55 +825,51 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                     }
                     break;
-                case 22:
+                case 20:
                     {
                         // Shift each bit of M one position backwards
                         Direction d = ll.GetMaxDir();
-                        Bit_M = HasNeighborAt(d) && ((SCStarConvexShapesParticle)GetNeighborAt(d)).GetBitM();
+                        Bit_M = HasNeighborAt(d) && ((SCStarConvexShapes_v2Particle)GetNeighborAt(d)).GetBitM();
 
                         // Setup binary operation for finding MSB of M
                         InitBinOpsSearch(true);
                         round.SetValue(round + 1);
                     }
                     break;
-                case 25: // WAIT round
+                case 23: // WAIT round
                     {
                         // Wait for beep on global circuits
                         PinConfiguration pc = GetCurrentPinConfiguration();
                         if (pc.ReceivedBeepOnPartitionSet(0))
                         {
                             // Finished: Go to shape construction
-                            round.SetValue(33);
+                            round.SetValue(30);
                         }
                         else if (pc.ReceivedBeepOnPartitionSet(1))
                         {
                             // Start next containment check
                             shapeIdx.SetValue(0);
                             rotation.SetValue(0);
-                            for (int r = 0; r < 6; r++)
-                            {
-                                SetValidPlacement(r, true);
-                                SetPlacementExists(r, true);
-                            }
-                            round.SetValue(26);
+                            round.SetValue(24);
                         }
                         else if (pc.ReceivedBeepOnPartitionSet(2))
                         {
-                            // Start next check for current rotation
-                            round.SetValue(29);
+                            // Start next check for current shape
+                            round.SetValue(28);
                         }
                     }
                     break;
 
                 // CONTAINMENT CHECK IN BINARY SEARCH
+                // Rounds 24-29
                 // Uses almost the same code as before
 
                 // SHAPE CONSTRUCTION
 
-                case 33:
+                case 30:
                     {
                         // Setup leader election on valid placements
-                        leaderElection.Init(validPlacement.GetCurrentValue(), true);
+                        leaderElection.Init(finalPlacement.GetCurrentValue(), true);
                         PinConfiguration pc = GetContractedPinConfiguration();
                         leaderElection.SetupPC(pc);
                         SetPlannedPinConfiguration(pc);
@@ -968,7 +877,7 @@ namespace AS2.Algos.SCStarConvexShapes
                         round.SetValue(round + 1);
                     }
                     break;
-                case 34:
+                case 31:
                     {
                         leaderElection.ActivateReceive();
                         if (leaderElection.IsFinished())
@@ -986,7 +895,7 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                     }
                     break;
-                case 35:
+                case 32:
                     {
                         shapeConstr.ActivateReceive();
 
@@ -1020,7 +929,7 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                     }
                     break;
-                case 36:
+                case 33:
                     {
                         ActivateShapeConstrSend();
                         round.SetValue(round - 1);
@@ -1072,7 +981,7 @@ namespace AS2.Algos.SCStarConvexShapes
             bool succ = HasNeighborAt(d);
             Direction dirPred = pred ? opp : Direction.NONE;
             Direction dirSucc = succ ? d : Direction.NONE;
-            int idx = rotation.GetCurrentValue();
+            int idx = counter.GetCurrentValue();
 
             // In the first phase, we use the first 3 operations to:
             //  - Compare R to the longest line length S
@@ -1197,7 +1106,7 @@ namespace AS2.Algos.SCStarConvexShapes
 
             if (RunBinOps())
             {
-                int idx = rotation.GetCurrentValue();
+                int idx = counter.GetCurrentValue();
 
                 // Special case in first 3 rounds of first phase
                 // In the first phase, we use the first 3 operations to:
@@ -1280,12 +1189,12 @@ namespace AS2.Algos.SCStarConvexShapes
                     _msbs[i] = useScaledShapeBits ? ScaledShapeMSB(i) : ShapeParamMSB(shapeParam);
                 }
 
-                containment.Init(shapeType, shapeInfo.directionW, shapeInfo.directionH, rotation, true, !IsValidPlacement(rotation), false, Direction.NONE,
+                containment.Init(shapeType, shapeInfo.directionW, shapeInfo.directionH, rotation, true, !validPlacement.GetCurrentValue(), false, Direction.NONE,
                     counterPred, counterSucc, _bits[0], _msbs[0], _bits[1], _msbs[1], _bits[2], _msbs[2], _bits[3], _msbs[3], _bits[4], _msbs[4]);
             }
             else
             {
-                containment.Init(shapeType, shapeInfo.directionW, shapeInfo.directionH, rotation, true, !IsValidPlacement(rotation));
+                containment.Init(shapeType, shapeInfo.directionW, shapeInfo.directionH, rotation, true, !validPlacement.GetCurrentValue());
             }
             PinConfiguration pc = GetContractedPinConfiguration();
             containment.SetupPC(pc);
@@ -1325,7 +1234,7 @@ namespace AS2.Algos.SCStarConvexShapes
                 if (ll.IsOnMaxLine())
                 {
                     Direction d = ll.GetMaxDir().Opposite();
-                    marker.SetValue(HasNeighborAt(d) && ((SCStarConvexShapesParticle)GetNeighborAt(d)).marker);
+                    marker.SetValue(HasNeighborAt(d) && ((SCStarConvexShapes_v2Particle)GetNeighborAt(d)).marker);
                 }
             }
             else
@@ -1396,16 +1305,6 @@ namespace AS2.Algos.SCStarConvexShapes
             return GetStateBit(msb_shape + idx);
         }
 
-        private bool IsValidPlacement(int rot)
-        {
-            return GetStateBit(bit_valid + rot);
-        }
-
-        private bool PlacementExists(int rot)
-        {
-            return GetStateBit(bit_placement_exists + rot);
-        }
-
         // Shape bit, MSB and valid flag setters
         private void SetScaledShapeBit(int idx, bool value)
         {
@@ -1415,16 +1314,6 @@ namespace AS2.Algos.SCStarConvexShapes
         private void SetScaledShapeMSB(int idx, bool value)
         {
             SetStateBit(msb_shape + idx, value);
-        }
-
-        private void SetValidPlacement(int rot, bool value)
-        {
-            SetStateBit(bit_valid + rot, value);
-        }
-
-        private void SetPlacementExists(int rot, bool value)
-        {
-            SetStateBit(bit_placement_exists + rot, value);
         }
 
         /// <summary>
@@ -1477,7 +1366,7 @@ namespace AS2.Algos.SCStarConvexShapes
 
     // Use this to implement a generation method for this algorithm
     // Its class name must be specified as the algorithm's GenerationMethod
-    public class SCStarConvexShapesInitializer : InitializationMethod
+    public class SCStarConvexShapes_v2Initializer : InitializationMethod
     {
         /// <summary>
         /// Container for reading in star convex shape descriptions.
@@ -1502,7 +1391,7 @@ namespace AS2.Algos.SCStarConvexShapes
             public Constituent[] constituents;
         }
 
-        public SCStarConvexShapesInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
+        public SCStarConvexShapes_v2Initializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
@@ -1519,8 +1408,8 @@ namespace AS2.Algos.SCStarConvexShapes
                 Log.Error("Shape is not consistent!");
 
             // Process the information and give it to the algorithm class
-            SCStarConvexShapesParticle.shape = container.shape;
-            SCStarConvexShapesParticle.constituents = new SCStarConvexShapesParticle.ShapeInfo[container.constituents.Length];
+            SCStarConvexShapes_v2Particle.shape = container.shape;
+            SCStarConvexShapes_v2Particle.constituents = new SCStarConvexShapes_v2Particle.ShapeInfo[container.constituents.Length];
             int longestParam = 0;
             for (int i = 0; i < container.constituents.Length; i++)
             {
@@ -1531,10 +1420,10 @@ namespace AS2.Algos.SCStarConvexShapes
                 string a2 = IntToBinary(cont.a2);
                 string a3 = IntToBinary(cont.a3);
                 longestParam = Mathf.Max(longestParam, a.Length, d.Length, c.Length, a2.Length, a3.Length);
-                SCStarConvexShapesParticle.constituents[i] = new SCStarConvexShapesParticle.ShapeInfo(cont.shapeType, cont.directionW, cont.directionH, a, d, c, a2, a3);
+                SCStarConvexShapes_v2Particle.constituents[i] = new SCStarConvexShapes_v2Particle.ShapeInfo(cont.shapeType, cont.directionW, cont.directionH, a, d, c, a2, a3);
             }
-            SCStarConvexShapesParticle.longestParameter = longestParam;
-            SCStarConvexShapesParticle.longestLine = IntToBinary(container.shape.GetLongestLineLength());
+            SCStarConvexShapes_v2Particle.longestParameter = longestParam;
+            SCStarConvexShapes_v2Particle.longestLine = IntToBinary(container.shape.GetLongestLineLength());
 
             // Draw the shape
             AS2.UI.LineDrawer.Instance.Clear();
@@ -1564,4 +1453,4 @@ namespace AS2.Algos.SCStarConvexShapes
         }
     }
 
-} // namespace AS2.Algos.SCStarConvexShapes
+} // namespace AS2.Algos.SCStarConvexShapes_v2
