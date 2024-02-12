@@ -1422,8 +1422,9 @@ namespace AS2.Algos.SCStarConvexShapes_v2
                 longestParam = Mathf.Max(longestParam, a.Length, d.Length, c.Length, a2.Length, a3.Length);
                 SCStarConvexShapes_v2Particle.constituents[i] = new SCStarConvexShapes_v2Particle.ShapeInfo(cont.shapeType, cont.directionW, cont.directionH, a, d, c, a2, a3);
             }
-            SCStarConvexShapes_v2Particle.longestParameter = longestParam;
-            SCStarConvexShapes_v2Particle.longestLine = IntToBinary(container.shape.GetLongestLineLength());
+            string ll_str = IntToBinary(container.shape.GetLongestLineLength());
+            SCStarConvexShapes_v2Particle.longestLine = ll_str;
+            SCStarConvexShapes_v2Particle.longestParameter = Mathf.Max(longestParam, ll_str.Length);
 
             // Draw the shape
             AS2.UI.LineDrawer.Instance.Clear();

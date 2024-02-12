@@ -1,0 +1,123 @@
+{
+    "shape": {
+        "nodes": [
+            {
+                "x": 0,
+                "y": 0
+            },
+            {
+                "x": 1,
+                "y": 0
+            },
+            {
+                "x": 0,
+                "y": 1
+            },
+            {
+                "x": -1,
+                "y": 1
+            },
+            {
+                "x": -1,
+                "y": 0
+            },
+            {
+                "x": 0,
+                "y": -1
+            },
+            {
+                "x": 1,
+                "y": -1
+            }
+        ],
+        "edges": [
+            {
+                "u": 0,
+                "v": 1
+            },
+            {
+                "u": 0,
+                "v": 2
+            },
+            {
+                "u": 0,
+                "v": 3
+            },
+            {
+                "u": 0,
+                "v": 4
+            },
+            {
+                "u": 0,
+                "v": 5
+            },
+            {
+                "u": 0,
+                "v": 6
+            }
+        ],
+        "faces": []
+    },
+    "constituents": [
+        {
+            "shapeType": 1,
+            "directionW": 0,
+            "directionH": 2,
+            "a": 1,
+            "d": 0,
+            "c": 0,
+            "a2": 0,
+            "a3": 0
+        },
+        {
+            "shapeType": 1,
+            "directionW": 2,
+            "directionH": 4,
+            "a": 1,
+            "d": 0,
+            "c": 0,
+            "a2": 0,
+            "a3": 0
+        },
+        {
+            "shapeType": 1,
+            "directionW": 4,
+            "directionH": 6,
+            "a": 1,
+            "d": 0,
+            "c": 0,
+            "a2": 0,
+            "a3": 0
+        },
+        {
+            "shapeType": 1,
+            "directionW": 6,
+            "directionH": 8,
+            "a": 1,
+            "d": 0,
+            "c": 0,
+            "a2": 0,
+            "a3": 0
+        },
+        {
+            "shapeType": 1,
+            "directionW": 8,
+            "directionH": 10,
+            "a": 1,
+            "d": 0,
+            "c": 0,
+            "a2": 0,
+            "a3": 0
+        },
+        {
+            "shapeType": 1,
+            "directionW": 10,
+            "directionH": 0,
+            "a": 1,
+            "d": 0,
+            "c": 0,
+            "a2": 0,
+            "a3": 0
+        }
+    ]
+}

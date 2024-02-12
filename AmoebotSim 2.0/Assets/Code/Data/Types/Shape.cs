@@ -799,7 +799,7 @@ namespace AS2.ShapeContainment
                     int xx = x - 1;
                     int yy = y + 1;
                     int lastNbr = i;
-                    while (x >= 0 && yy < sizeY)
+                    while (xx >= 0 && yy < sizeY)
                     {
                         int nbr = nodeMat[xx][yy];
                         if (nbr != -1 && adj[lastNbr][nbr])
@@ -835,7 +835,6 @@ namespace AS2.ShapeContainment
                     nodeStatus[i] += 4;
                 }
             }
-
 
             return longest;
         }
