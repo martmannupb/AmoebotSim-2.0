@@ -72,6 +72,7 @@ namespace AS2.Algos.MultiSourceSP
     // Round 1:
     //  - Listen for directional beeps
     //      - Non-sources that received only one beep save the source direction as parent direction
+    //          - If we are the secondary portal of a region, we store the parent direction as the *secondary* direction
     //      - Non-sources that received two beeps setup PASC for both directions (ending at top/bottom markers)
     //      - Sources setup a PASC leader in each direction they received a beep from
     //      - Initialize comparison to EQUAL
@@ -93,7 +94,24 @@ namespace AS2.Algos.MultiSourceSP
     //      - Setup PASC circuit and send beep
     //      - Go to round 2
 
+    // Find out which of the following propagation routines we have to run in our region
+
     // Round 4:
+    //  - Setup 2 regional circuits
+    //  - Sources in primary portal beep on first circuit if the region is "below" the portal
+    //      - Beep on second circuit otherwise
+
+    // Round 5:
+    //  - Receive beeps on regional circuits
+    //      - Remember whether we have received a beep and for which direction
+    //  - Keep the 2 regional circuits
+    //  - Sources beep again, this time for secondary portal
+
+    // Round 6:
+    //  - Receive regional circuit beeps again
+    //      - Store results
+
+    // Round 7:
     //  TODO
 
 
@@ -143,12 +161,20 @@ namespace AS2.Algos.MultiSourceSP
             public ParticleAttribute<bool> incidentPortalIsParent;
             public ParticleAttribute<Direction> parentDir1;
             public ParticleAttribute<Direction> parentDir2;
+            public ParticleAttribute<bool> regionHasPrimaryPortalSource;
+            public ParticleAttribute<bool> primaryPortalIsAbove;
+            public ParticleAttribute<bool> regionHasSecondaryPortalSource;
+            public ParticleAttribute<bool> secondaryPortalIsAbove;
 
             public Instance(ParticleAlgorithm algo, int idx)
             {
                 incidentPortalIsParent = algo.CreateAttributeBool("Portal Parent [" + idx + "]", false);
                 parentDir1 = algo.CreateAttributeDirection("Parent Dir 1 [" + idx + "]", Direction.NONE);
                 parentDir2 = algo.CreateAttributeDirection("Parent Dir 2 [" + idx + "]", Direction.NONE);
+                regionHasPrimaryPortalSource = algo.CreateAttributeBool("Primary Portal Src [" + idx + "]", false);
+                primaryPortalIsAbove = algo.CreateAttributeBool("Primary Portal Above [" + idx + "]", false);
+                regionHasSecondaryPortalSource = algo.CreateAttributeBool("Secondary Portal Src [" + idx + "]", false);
+                secondaryPortalIsAbove = algo.CreateAttributeBool("Secondary Portal Above [" + idx + "]", false);
             }
         }
 
@@ -169,22 +195,10 @@ namespace AS2.Algos.MultiSourceSP
                                                         // A marker can be part of up to 4 regions simultaneously
         ParticleAttribute<int> numInstances;            // Stores how many instances are currently active
 
-        ParticleAttribute<bool> parent1L;               // Whether the "top left" portal neighbor is a portal parent
-        ParticleAttribute<bool> parent1R;               // Whether the "top right" portal neighbor is a portal parent
-        ParticleAttribute<bool> parent2L;               // Whether the "bottom left" portal neighbor is a portal parent
-        ParticleAttribute<bool> parent2R;               // Whether the "bottom right" portal neighbor is a portal parent
         ParticleAttribute<bool> marker1;                // Whether we are marked for the first neighbor
         ParticleAttribute<bool> marker2;                // Whether we are marked for the second neighbor
 
         ParticleAttribute<int> counter;                 // Generic counter used to perform multiple iterations of the same task
-        ParticleAttribute<Direction> parentTop1L;       // Parent directions (need 2 to store 2 trees for merge, but markers
-        ParticleAttribute<Direction> parentTop2L;       // need to split top and bottom as well as left and right sides...)
-        ParticleAttribute<Direction> parentTop1R;
-        ParticleAttribute<Direction> parentTop2R;
-        ParticleAttribute<Direction> parentBot1L;
-        ParticleAttribute<Direction> parentBot2L;
-        ParticleAttribute<Direction> parentBot1R;
-        ParticleAttribute<Direction> parentBot2R;
         ParticleAttribute<bool> pasc1Participant;
         ParticleAttribute<bool> pasc2Participant;
         ParticleAttribute<Comparison> comparison;
@@ -212,22 +226,10 @@ namespace AS2.Algos.MultiSourceSP
                 instances[i] = new Instance(this, i);
             numInstances = CreateAttributeInt("Num Instances", 1);
 
-            parent1L = CreateAttributeBool("Parent 1 L", false);
-            parent1R = CreateAttributeBool("Parent 1 R", false);
-            parent2L = CreateAttributeBool("Parent 2 L", false);
-            parent2R = CreateAttributeBool("Parent 2 R", false);
             marker1 = CreateAttributeBool("Marker 1", false);
             marker2 = CreateAttributeBool("Marker 2", false);
 
             counter = CreateAttributeInt("Counter", 0);
-            parentTop1L = CreateAttributeDirection("Parent T1L", Direction.NONE);
-            parentTop2L = CreateAttributeDirection("Parent T2L", Direction.NONE);
-            parentTop1R = CreateAttributeDirection("Parent T1R", Direction.NONE);
-            parentTop2R = CreateAttributeDirection("Parent T2R", Direction.NONE);
-            parentBot1L = CreateAttributeDirection("Parent B1L", Direction.NONE);
-            parentBot2L = CreateAttributeDirection("Parent B2L", Direction.NONE);
-            parentBot1R = CreateAttributeDirection("Parent B1R", Direction.NONE);
-            parentBot2R = CreateAttributeDirection("Parent B2R", Direction.NONE);
             pasc1Participant = CreateAttributeBool("PASC 1 Part.", false);
             pasc2Participant = CreateAttributeBool("PASC 2 Part.", false);
             comparison = CreateAttributeEnum<Comparison>("Comparison", Comparison.EQUAL);
@@ -414,19 +416,27 @@ namespace AS2.Algos.MultiSourceSP
                 case 5:
                     {
                         // Remove marker
+                        // And setup number of used instances according to marker state
                         if (IsOnQPrime())
                         {
+                            int nInst = 2;
                             PinConfiguration pc = GetCurrentPinConfiguration();
                             if (marker1)
                             {
                                 if (!HasNeighborAt(mainDir.Opposite()) || pc.GetPinAt(mainDir.Opposite(), 0).PartitionSet.ReceivedBeep())
                                     marker1.SetValue(false);
+                                else
+                                    nInst++;
                             }
                             if (marker2)
                             {
                                 if (!HasNeighborAt(mainDir.Opposite()) || pc.GetPinAt(mainDir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep())
                                     marker2.SetValue(false);
+                                else
+                                    nInst++;
                             }
+
+                            numInstances.SetValue(nInst);
                         }
 
                         // Send beeps indicating parent portals
@@ -435,10 +445,21 @@ namespace AS2.Algos.MultiSourceSP
                         {
                             PinConfiguration pc = GetPlannedPinConfiguration();
                             // Comparison result GREATER means that the edge indicates the parent
+                            int pSet = 0;
                             if (nbrPortalDir1 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir1) == Comparison.GREATER)
-                                pc.SendBeepOnPartitionSet(marker1.GetCurrentValue() ? 1 : 0);
+                            {
+                                // Marker sends only to the second instance
+                                if (marker1.GetCurrentValue())
+                                    pSet++;
+                                pc.SendBeepOnPartitionSet(pSet);
+                            }
+                            pSet++;
                             if (nbrPortalDir2 != Direction.NONE && ett.GetComparisonResult(nbrPortalDir2) == Comparison.GREATER)
-                                pc.SendBeepOnPartitionSet(marker2.GetCurrentValue() ? 3 : 2);
+                            {
+                                if (marker2.GetCurrentValue())
+                                    pSet++;
+                                pc.SendBeepOnPartitionSet(pSet);
+                            }
                         }
 
                         round.SetValue(round + 1);
@@ -446,41 +467,18 @@ namespace AS2.Algos.MultiSourceSP
                     break;
                 case 6:
                     {
-                        // Receive parent beeps
-                        PinConfiguration pc = GetCurrentPinConfiguration();
-                        // Only markers could have different results for sides L and R
-                        // Setting parentXX to true means that for the region in that direction, we are not the first/root portal
-                        if (nbrPortalDir1 == Direction.NONE || !marker1)
+                        // Portal amoebots receive parent beeps
+                        if (numInstances > 1)
                         {
-                            if (pc.ReceivedBeepOnPartitionSet(0))
+                            PinConfiguration pc = GetCurrentPinConfiguration();
+                            // Have one partition set for each instance
+                            for (int i = 0; i < numInstances; i++)
                             {
-                                parent1L.SetValue(true);
-                                parent1R.SetValue(true);
+                                if (pc.ReceivedBeepOnPartitionSet(i))
+                                    instances[i].incidentPortalIsParent.SetValue(true);
                             }
-                        }
-                        else
-                        {
-                            if (pc.ReceivedBeepOnPartitionSet(0))
-                                parent1L.SetValue(true);
-                            if (pc.ReceivedBeepOnPartitionSet(1))
-                                parent1R.SetValue(true);
                         }
 
-                        if (nbrPortalDir2 == Direction.NONE || !marker2)
-                        {
-                            if (pc.ReceivedBeepOnPartitionSet(2))
-                            {
-                                parent2L.SetValue(true);
-                                parent2R.SetValue(true);
-                            }
-                        }
-                        else
-                        {
-                            if (pc.ReceivedBeepOnPartitionSet(2))
-                                parent2L.SetValue(true);
-                            if (pc.ReceivedBeepOnPartitionSet(3))
-                                parent2R.SetValue(true);
-                        }
                         phase.SetValue(Phase.BASE_CASE);
                         round.SetValue(0);
                     }
@@ -547,21 +545,23 @@ namespace AS2.Algos.MultiSourceSP
                             }
                             else if (counter == 0 && marker1 || counter == 1 && marker2)
                             {
-                                // Handle left and right side separately
                                 if (beepLeft)
                                 {
-                                    if (counter == 0)
-                                        parentTop1L.SetValue(mainDir.Opposite());
+                                    int i = counter == 0 ? 0 : (marker1 ? 2 : 1);
+                                    // If this instance represents a secondary portal, we store the parent direction as secondary direction
+                                    if (instances[i].incidentPortalIsParent)
+                                        instances[i].parentDir2.SetValue(mainDir.Opposite());
                                     else
-                                        parentBot1L.SetValue(mainDir.Opposite());
+                                        instances[i].parentDir1.SetValue(mainDir.Opposite());
                                 }
 
                                 if (beepRight)
                                 {
-                                    if (counter == 0)
-                                        parentTop1R.SetValue(mainDir.Opposite());
+                                    int i = counter == 0 ? 1 : (marker1 ? 3 : 2);
+                                    if (instances[i].incidentPortalIsParent)
+                                        instances[i].parentDir2.SetValue(mainDir);
                                     else
-                                        parentBot1R.SetValue(mainDir.Opposite());
+                                        instances[i].parentDir1.SetValue(mainDir);
                                 }
                             }
                             else
@@ -578,17 +578,28 @@ namespace AS2.Algos.MultiSourceSP
                                 // Only one side: Set that side as parent
                                 else if (beepLeft && !beepRight)
                                 {
-                                    if (counter == 0)
-                                        parentTop1L.SetValue(mainDir.Opposite());
+                                    int i = counter == 0 ? 0 : (marker1 ? 2 : 1);
+                                    // If this instance represents a secondary portal, we store the parent direction as secondary direction
+                                    if (instances[i].incidentPortalIsParent)
+                                        instances[i].parentDir2.SetValue(mainDir.Opposite());
                                     else
-                                        parentBot1L.SetValue(mainDir.Opposite());
+                                        instances[i].parentDir1.SetValue(mainDir.Opposite());
                                 }
                                 else if (beepRight && !beepLeft)
                                 {
-                                    if (counter == 0)
-                                        parentTop1L.SetValue(mainDir);
+                                    int i = 0;
+                                    if (marker1)
+                                        i++;
+                                    if (counter != 0)
+                                    {
+                                        i++;
+                                        if (marker2)
+                                            i++;
+                                    }
+                                    if (instances[i].incidentPortalIsParent)
+                                        instances[i].parentDir2.SetValue(mainDir);
                                     else
-                                        parentBot1L.SetValue(mainDir);
+                                        instances[i].parentDir1.SetValue(mainDir);
                                 }
                             }
 
@@ -670,15 +681,97 @@ namespace AS2.Algos.MultiSourceSP
                             if (!isSource && pasc1Participant && pasc2Participant)
                             {
                                 Direction pDir = comparison.GetCurrentValue() == Comparison.GREATER ? mainDir.Opposite() : mainDir;
-                                if (counter == 0)
-                                    parentTop1L.SetValue(pDir);
+                                int i = counter == 0 ? 0 : (marker1 ? 2 : 1);
+                                if (instances[i].incidentPortalIsParent)
+                                    instances[i].parentDir2.SetValue(pDir);
                                 else
-                                    parentBot1L.SetValue(pDir);
+                                    instances[i].parentDir1.SetValue(pDir);
                             }
                             // Increment counter and do next iteration
                             counter.SetValue(counter + 1);
                             round.SetValue(0);
                         }
+                    }
+                    break;
+                case 4:
+                    {
+                        // Setup 2 circuits for each region
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        SetupRegionCircuits(pc, mainDir);
+                        SetPlannedPinConfiguration(pc);
+
+                        // Sources on primary portal beep on first circuit if the region is "below" the portal
+                        if (isSource)
+                        {
+                            for (int i = 0; i < numInstances; i++)
+                            {
+                                if (!instances[i].incidentPortalIsParent)
+                                {
+                                    if (i > 1 || i > 0 && !marker1)
+                                        pc.SendBeepOnPartitionSet(2 * i);
+                                    else
+                                        pc.SendBeepOnPartitionSet(2 * i + 1);
+                                }
+                            }
+                        }
+
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 5:
+                    {
+                        // Receive source beeps on the regional circuits
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        for (int i = 0; i < numInstances; i++)
+                        {
+                            if (pc.ReceivedBeepOnPartitionSet(2 * i))
+                            {
+                                instances[i].regionHasPrimaryPortalSource.SetValue(true);
+                                instances[i].primaryPortalIsAbove.SetValue(true);
+                            }
+                            else if (pc.ReceivedBeepOnPartitionSet(2 * i + 1))
+                            {
+                                instances[i].regionHasPrimaryPortalSource.SetValue(true);
+                                instances[i].primaryPortalIsAbove.SetValue(false);
+                            }
+                        }
+
+                        // Send beeps like before but for secondary portal
+                        SetPlannedPinConfiguration(pc);
+                        if (isSource)
+                        {
+                            for (int i = 0; i < numInstances; i++)
+                            {
+                                if (instances[i].incidentPortalIsParent)
+                                {
+                                    if (i > 1 || i > 0 && !marker1)
+                                        pc.SendBeepOnPartitionSet(2 * i);
+                                    else
+                                        pc.SendBeepOnPartitionSet(2 * i + 1);
+                                }
+                            }
+                        }
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 6:
+                    {
+                        // Receive source beeps from secondary portal
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        for (int i = 0; i < numInstances; i++)
+                        {
+                            if (pc.ReceivedBeepOnPartitionSet(2 * i))
+                            {
+                                instances[i].regionHasSecondaryPortalSource.SetValue(true);
+                                instances[i].secondaryPortalIsAbove.SetValue(true);
+                            }
+                            else if (pc.ReceivedBeepOnPartitionSet(2 * i + 1))
+                            {
+                                instances[i].regionHasSecondaryPortalSource.SetValue(true);
+                                instances[i].secondaryPortalIsAbove.SetValue(false);
+                            }
+                        }
+                        round.SetValue(r + 1);
                     }
                     break;
             }
@@ -724,89 +817,147 @@ namespace AS2.Algos.MultiSourceSP
         /// <summary>
         /// Sets up one circuit for each side of a portal along
         /// the given axis, split at each marker.
-        /// The "top" partition set(s) will have IDs 0 (and 1)
-        /// and the "bottom" partition set(s) will have IDs 2 (and 3).
-        /// Only markers have 2 partition sets on the marked side.
+        /// The partition set IDs correspond to the instance indices.
         /// </summary>
         /// <param name="portalDir">The direction of the portal axis.</param>
         private void SetupPortalNeighborCircuits(Direction portalDir)
         {
             PinConfiguration pc = GetContractedPinConfiguration();
-            if (nbrPortalDir1 == Direction.NONE || !marker1.GetCurrentValue())
+
+            // Setup first partition set with ID 0
+            int id = 0;
+            pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), 0).Id }, id);
+            int pin2 = pc.GetPinAt(portalDir, PinsPerEdge - 1).Id;
+            // Connect if we are not a marker
+            if (!marker1.GetCurrentValue())
             {
-                // No neighbor edge, simply connect
-                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), 0).Id, pc.GetPinAt(portalDir, PinsPerEdge - 1).Id }, 0);
-                pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60f, 0.5f));
+                pc.GetPartitionSet(id).AddPin(pin2);
+                pc.SetPartitionSetPosition(id, new Vector2((portalDir.ToInt() + 1.5f) * 60f, 0.5f));
             }
             else
             {
-                // Have neighbor, split the two pins
-                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), 0).Id }, 0);
-                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir, PinsPerEdge - 1).Id }, 1);
+                // Split
+                id++;
+                pc.MakePartitionSet(new int[] { pin2 }, 1);
             }
 
-            if (nbrPortalDir2 == Direction.NONE || !marker2.GetCurrentValue())
+            id++;
+            // Same for the other half
+            pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id }, id);
+            pin2 = pc.GetPinAt(portalDir, 0).Id;
+            // Connect if we are not a marker
+            if (!marker2.GetCurrentValue())
             {
-                // No neighbor edge, simply connect
-                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id, pc.GetPinAt(portalDir, 0).Id }, 2);
-                pc.SetPartitionSetPosition(2, new Vector2((portalDir.Opposite().ToInt() + 1.5f) * 60f, 0.5f));
+                pc.GetPartitionSet(id).AddPin(pin2);
+                pc.SetPartitionSetPosition(id, new Vector2((portalDir.Opposite().ToInt() + 1.5f) * 60f, 0.5f));
             }
             else
             {
-                // Have neighbor, split the two pins
-                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id }, 2);
-                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir, 0).Id }, 3);
+                // Split
+                id++;
+                pc.MakePartitionSet(new int[] { pin2 }, id);
             }
 
             SetPlannedPinConfiguration(pc);
         }
 
         /// <summary>
-        /// Sets up one circuit for each region. Markers will have
-        /// two circuits per marked side. The partition set ID(s) will
-        /// be 0 (and 1) for the top region and 2 (and 3) for the bottom region.
-        /// Amoebots outside of Q' simply set up a global circuit with ID 0.
+        /// Sets up two circuits for each region. The partition set IDs
+        /// will be 2i and 2i + 1 for instance i.
         /// </summary>
+        /// <param name="pc">The pin configuration to modify.</param>
         /// <param name="portalDir">The direction of the portal axis.</param>
-        private void SetupRegionCircuits(Direction portalDir)
+        private void SetupRegionCircuits(PinConfiguration pc, Direction portalDir)
         {
-            PinConfiguration pc = GetContractedPinConfiguration();
-
-            int[] pinsTop = new int[] { pc.GetPinAt(portalDir, PinsPerEdge - 1).Id, pc.GetPinAt(portalDir.Rotate60(1), 0).Id, pc.GetPinAt(portalDir.Rotate60(2), 0).Id, pc.GetPinAt(portalDir.Opposite(), 0).Id };
-            int[] pinsBot = new int[] { pc.GetPinAt(portalDir, 0).Id, pc.GetPinAt(portalDir.Rotate60(-1), 0).Id, pc.GetPinAt(portalDir.Rotate60(-2), 0).Id, pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id };
-
-            if (!IsOnQPrime())
+            if (numInstances == 1)
             {
-                pc.SetToGlobal(0);
+                // Simply setup two star configs
+                bool[] inverted = new bool[6];
+                int d = portalDir.ToInt();
+                for (int i = 0; i < 3; i++)
+                    inverted[(d + 3 + i) % 6] = true;
+                pc.SetStarConfig(0, inverted, 0);
+                pc.SetStarConfig(1, inverted, 1);
             }
             else
             {
-                if (marker1.GetCurrentValue())
-                {
-                    pc.MakePartitionSet(new int[] { pinsTop[3] }, 0);
-                    pc.MakePartitionSet(new int[] { pinsTop[0], pinsTop[1], pinsTop[2] }, 1);
-                    pc.SetPartitionSetPosition(1, new Vector2((portalDir.ToInt() + 1) * 60f, 0.6f));
-                }
-                else
-                {
-                    pc.MakePartitionSet(pinsTop, 0);
-                    pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60f, 0.5f));
-                }
+                // Setup 8 partition sets (worst case, 4 instances)
+                // Top left
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), 1).Id, pc.GetPinAt(portalDir.Rotate60(2), 0).Id }, 0);
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), 0).Id, pc.GetPinAt(portalDir.Rotate60(2), 1).Id }, 1);
+                // Top right
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir, PinsPerEdge - 2).Id, pc.GetPinAt(portalDir.Rotate60(1), 0).Id }, 2);
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir, PinsPerEdge - 1).Id, pc.GetPinAt(portalDir.Rotate60(1), 1).Id }, 3);
+                // Bottom left
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id, pc.GetPinAt(portalDir.Rotate60(-2), PinsPerEdge - 1).Id }, 4);
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 2).Id, pc.GetPinAt(portalDir.Rotate60(-2), PinsPerEdge - 2).Id }, 5);
+                // Bottom right
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir, 0).Id, pc.GetPinAt(portalDir.Rotate60(-1), PinsPerEdge - 1).Id }, 6);
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir, 1).Id, pc.GetPinAt(portalDir.Rotate60(-1), PinsPerEdge - 2).Id }, 7);
 
-                if (marker2.GetCurrentValue())
+                // Merge partition sets if necessary
+                if (!marker2)
                 {
-                    pc.MakePartitionSet(new int[] { pinsBot[3] }, 2);
-                    pc.MakePartitionSet(new int[] { pinsBot[0], pinsBot[1], pinsBot[2] }, 3);
-                    pc.SetPartitionSetPosition(3, new Vector2((portalDir.ToInt() - 1) * 60f, 0.6f));
+                    pc.GetPartitionSet(4).AddPins(pc.GetPartitionSet(6).GetPinIds());
+                    pc.GetPartitionSet(5).AddPins(pc.GetPartitionSet(7).GetPinIds());
                 }
-                else
+                if (!marker1)
                 {
-                    pc.MakePartitionSet(pinsBot, 2);
-                    pc.SetPartitionSetPosition(2, new Vector2((portalDir.ToInt() - 1.5f) * 60f, 0.5f));
+                    pc.GetPartitionSet(0).AddPins(pc.GetPartitionSet(2).GetPinIds());
+                    pc.GetPartitionSet(1).AddPins(pc.GetPartitionSet(3).GetPinIds());
+                    // Shift other partition sets
+                    if (marker2)
+                    {
+                        pc.MakePartitionSet(pc.GetPartitionSet(4).GetPinIds(), 2);
+                        pc.MakePartitionSet(pc.GetPartitionSet(5).GetPinIds(), 3);
+                        pc.MakePartitionSet(pc.GetPartitionSet(6).GetPinIds(), 4);
+                        pc.MakePartitionSet(pc.GetPartitionSet(7).GetPinIds(), 5);
+                    }
+                    else
+                    {
+                        pc.MakePartitionSet(pc.GetPartitionSet(4).GetPinIds(), 2);
+                        pc.MakePartitionSet(pc.GetPartitionSet(5).GetPinIds(), 3);
+                    }
                 }
             }
 
-            SetPlannedPinConfiguration(pc);
+
+
+            //int[] pinsTop = new int[] { pc.GetPinAt(portalDir, PinsPerEdge - 1).Id, pc.GetPinAt(portalDir.Rotate60(1), 0).Id, pc.GetPinAt(portalDir.Rotate60(2), 0).Id, pc.GetPinAt(portalDir.Opposite(), 0).Id };
+            //int[] pinsBot = new int[] { pc.GetPinAt(portalDir, 0).Id, pc.GetPinAt(portalDir.Rotate60(-1), 0).Id, pc.GetPinAt(portalDir.Rotate60(-2), 0).Id, pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id };
+
+            //if (!IsOnQPrime())
+            //{
+            //    pc.SetToGlobal(0);
+            //}
+            //else
+            //{
+            //    if (marker1.GetCurrentValue())
+            //    {
+            //        pc.MakePartitionSet(new int[] { pinsTop[3] }, 0);
+            //        pc.MakePartitionSet(new int[] { pinsTop[0], pinsTop[1], pinsTop[2] }, 1);
+            //        pc.SetPartitionSetPosition(1, new Vector2((portalDir.ToInt() + 1) * 60f, 0.6f));
+            //    }
+            //    else
+            //    {
+            //        pc.MakePartitionSet(pinsTop, 0);
+            //        pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60f, 0.5f));
+            //    }
+
+            //    if (marker2.GetCurrentValue())
+            //    {
+            //        pc.MakePartitionSet(new int[] { pinsBot[3] }, 2);
+            //        pc.MakePartitionSet(new int[] { pinsBot[0], pinsBot[1], pinsBot[2] }, 3);
+            //        pc.SetPartitionSetPosition(3, new Vector2((portalDir.ToInt() - 1) * 60f, 0.6f));
+            //    }
+            //    else
+            //    {
+            //        pc.MakePartitionSet(pinsBot, 2);
+            //        pc.SetPartitionSetPosition(2, new Vector2((portalDir.ToInt() - 1.5f) * 60f, 0.5f));
+            //    }
+            //}
+
+            //SetPlannedPinConfiguration(pc);
         }
 
         /// <summary>
@@ -877,7 +1028,7 @@ namespace AS2.Algos.MultiSourceSP
         /// <summary>
         /// Sets up two portal circuits along the given axis such that
         /// there is a "top" and a "bottom" circuit. If the circuit is
-        /// no split, the partition sets have IDs 0 and 2, otherwise
+        /// not split, the partition sets have IDs 0 and 2, otherwise
         /// they have 0 and 1 for outgoing and incoming top and
         /// 2 and 3 for incoming and outgoing bottom.
         /// </summary>
