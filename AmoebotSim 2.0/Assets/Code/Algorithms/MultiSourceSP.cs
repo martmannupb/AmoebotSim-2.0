@@ -110,19 +110,69 @@ namespace AS2.Algos.MultiSourceSP
     // Round 6:
     //  - Receive regional circuit beeps again
     //      - Store results
+    //  - Set counter to 0
+
+    // Propagation
 
     // Round 7:
-    //  TODO
+    //  - If counter >= 2:
+    //      - Finished with the two propagations, go to merge step
+    //      - TODO: Round-----------------------------------------
+    //  - Else:
+    //      - Establish global circuit
+    //      - Beep if we have to perform a propagation for the current counter (0 = first, 1 = second portal if it exists)
+    //      - Go to round 8
 
+    // Round 8:
+    //  - Receive beep on global circuit
+    //  - If no beep: Increment counter and go to round 7
+    //  - Else:
+    //      - If we don't have to run the propagation: Establish global circuit and wait
+    //      - Initialize and start propagation subroutine based on current counter
 
+    // Round 9:
+    //  - Receive propagation subroutine beep
+    //  - Setup global circuit
+    //  - Beep if propagation is not finished yet
 
+    // Round 10:
+    //  - Receive beep on global circuit
+    //  - If there was a beep:
+    //      - Continue running propagation subroutine (unless it is finished)
+    //      - Go back to round 9
+    //  - Else:
+    //      - Setup PASC circuit on the portal/region tree and send beep
 
-    // -- Do this later --
-    //  -> When deciding whether or not to perform second propagation and merge
+    // Round 11:
+    //  - Receive PASC beep
+    //  - Set region color
+    //  - Set counter2 to 0
+    //  - Go to round 12
 
-    //  - Setup regional circuits
-    //      - One circuit for each region
-    //  - Beep if the region is our parent, i.e., the region has two adjacent portals
+    // Round 12:
+    //  - If counter2 >= 2:
+    //      - Finished with second phase of propagation
+    //      - Increment counter
+    //      - Go to round 7
+    //  - Else:
+    //      - Continue propagation subroutine (1-SPF part) if the region color matches counter2
+    //      - Other amoebots establish global circuit
+
+    // Round 13 (similar to 9):
+    //  - Receive propagation subroutine beep
+    //  - Setup global circuit
+    //  - Beep if propagation is not finished yet
+
+    // Round 14 (similar to 10):
+    //  - Receive beep on global circuit
+    //  - If there was a beep:
+    //      - Continue running propagation subroutine (only if we are in the right region)
+    //      - Go back to round 13
+    //  - Else:
+    //      - Increment counter2
+    //      - Go to round 12
+
+    // TODO
 
     public class MultiSourceSPParticle : ParticleAlgorithm
     {
@@ -771,24 +821,17 @@ namespace AS2.Algos.MultiSourceSP
                                 instances[i].secondaryPortalIsAbove.SetValue(false);
                             }
                         }
+                        counter.SetValue(0);
                         round.SetValue(r + 1);
+                    }
+                    break;
+                case 7:
+                    {
+
                     }
                     break;
             }
 
-            // TODO: Do this later
-            // Setup region circuits and send beep if we are not the "root" of a region
-            //SetupRegionCircuits(mainDir);
-            //pc = GetPlannedPinConfiguration();
-            //if (parent1L.GetCurrentValue())
-            //    pc.SendBeepOnPartitionSet(0);
-            //else if (marker1 && parent1R.GetCurrentValue())
-            //    pc.SendBeepOnPartitionSet(1);
-
-            //if (parent2L.GetCurrentValue())
-            //    pc.SendBeepOnPartitionSet(2);
-            //else if (marker2 && parent2R.GetCurrentValue())
-            //    pc.SendBeepOnPartitionSet(3);
 
             SetColor();
         }
