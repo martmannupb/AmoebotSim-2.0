@@ -209,19 +209,21 @@ namespace AS2.Algos.ShapeConstruction
         {
             // Read the shape
             Shape s;
+            ShapeContainer sc;
             if (fromFile)
             {
-                s = Shape.ReadFromJson(FilePaths.path_shapes + shape);
+                sc = ShapeContainer.ReadFromJson(FilePaths.path_shapes + shape);
             }
             else
             {
-                s = JsonUtility.FromJson<Shape>(shape);
+                sc = JsonUtility.FromJson<ShapeContainer>(shape);
             }
-            if (s is null)
+            if (sc is null || sc.shape is null)
             {
                 Log.Error("Failed to read shape");
                 return;
             }
+            s = sc.shape;
             if (!s.IsConsistent())
             {
                 Log.Warning("Shape is inconsistent!");

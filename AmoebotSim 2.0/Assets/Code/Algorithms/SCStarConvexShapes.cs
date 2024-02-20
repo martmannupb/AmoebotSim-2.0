@@ -1479,29 +1479,6 @@ namespace AS2.Algos.SCStarConvexShapes
     // Its class name must be specified as the algorithm's GenerationMethod
     public class SCStarConvexShapesInitializer : InitializationMethod
     {
-        /// <summary>
-        /// Container for reading in star convex shape descriptions.
-        /// </summary>
-        [System.Serializable]
-        public class StarConvexShapeContainer
-        {
-            [System.Serializable]
-            public class Constituent
-            {
-                public ShapeType shapeType = ShapeType.TRIANGLE;
-                public Direction directionW = Direction.NONE;
-                public Direction directionH = Direction.NONE;
-                public int a = 0;
-                public int d = 0;
-                public int c = 0;
-                public int a2 = 0;
-                public int a3 = 0;
-            }
-
-            public Shape shape;
-            public Constituent[] constituents;
-        }
-
         public SCStarConvexShapesInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         // This method implements the system generation
@@ -1510,8 +1487,7 @@ namespace AS2.Algos.SCStarConvexShapes
             int numAmoebots = 150, float holeProb = 0.1f, bool fillHoles = false, bool prioritizeInner = true, float lambda = 0.25f)
         {
             // Read the given shape from its file
-            string json = System.IO.File.ReadAllText(FilePaths.path_shapes + shapeFile);
-            StarConvexShapeContainer container = JsonUtility.FromJson<StarConvexShapeContainer>(json);
+            ShapeContainer container = ShapeContainer.ReadFromJson(FilePaths.path_shapes + shapeFile);
             // Check whether it is consistent
             if (container.shape.IsConsistent())
                 container.shape.GenerateTraversal();
@@ -1524,7 +1500,7 @@ namespace AS2.Algos.SCStarConvexShapes
             int longestParam = 0;
             for (int i = 0; i < container.constituents.Length; i++)
             {
-                StarConvexShapeContainer.Constituent cont = container.constituents[i];
+                ShapeContainer.Constituent cont = container.constituents[i];
                 string a = IntToBinary(cont.a);
                 string d = IntToBinary(cont.d);
                 string c = IntToBinary(cont.c);

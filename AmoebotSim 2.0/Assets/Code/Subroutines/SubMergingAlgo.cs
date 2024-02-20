@@ -4,22 +4,10 @@ using UnityEngine;
 using AS2.Sim;
 using AS2.Subroutines.BinStateHelpers;
 using AS2.Subroutines.PASC;
+using AS2.ShapeContainment;
 
 namespace AS2.Subroutines.ConvexShapeContainment
 {
-
-    /// <summary>
-    /// Types of convex shape that can be checked
-    /// by a containment procedure.
-    /// </summary>
-    public enum ShapeType
-    {
-        TRIANGLE = 0,
-        PARALLELOGRAM = 1,
-        TRAPEZOID = 2,
-        PENTAGON = 3,
-        HEXAGON = 4
-    }
 
     /// <summary>
     /// Shape containment check for triangles, trapezoids and pentagons.

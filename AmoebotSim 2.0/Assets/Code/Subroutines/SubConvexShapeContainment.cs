@@ -4,6 +4,7 @@ using UnityEngine;
 using AS2.Sim;
 using AS2.Subroutines.BinStateHelpers;
 using AS2.Subroutines.PASC;
+using AS2.ShapeContainment;
 
 namespace AS2.Subroutines.ConvexShapeContainment
 {

@@ -1883,33 +1883,33 @@ namespace AS2.Algos.SCConvexSystem
             string shape = "shape2.json", bool fromFile = true)
         {
             // Read the shape
-            Shape s;
+            ShapeContainer sc;
             if (fromFile)
             {
-                s = Shape.ReadFromJson(FilePaths.path_shapes + shape);
+                sc = ShapeContainer.ReadFromJson(FilePaths.path_shapes + shape);
             }
             else
             {
-                s = JsonUtility.FromJson<Shape>(shape);
+                sc = JsonUtility.FromJson<ShapeContainer>(shape);
             }
-            if (s is null)
+            if (sc is null || sc.shape is null)
             {
                 Log.Error("Failed to read shape");
                 return;
             }
-            if (!s.IsConsistent())
+            if (!sc.shape.IsConsistent())
             {
                 Log.Warning("Shape is inconsistent!");
             }
             else
             {
-                s.GenerateTraversal();
-                s.GenerateConvexHull();
+                sc.shape.GenerateTraversal();
+                sc.shape.GenerateConvexHull();
                 AS2.UI.LineDrawer.Instance.Clear();
-                s.Draw(Vector2Int.zero);
-                s.DrawConvexHull(Vector2Int.zero);
+                sc.shape.Draw(Vector2Int.zero);
+                sc.shape.DrawConvexHull(Vector2Int.zero);
                 AS2.UI.LineDrawer.Instance.SetTimer(30);
-                SCConvexSystemParticle.shape = s;
+                SCConvexSystemParticle.shape = sc.shape;
             }
 
             // Construct the system
