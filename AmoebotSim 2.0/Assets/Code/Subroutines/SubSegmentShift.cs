@@ -22,8 +22,40 @@ namespace AS2.Subroutines.SegmentShift
     /// If multiple instances are used, they are designed to terminate at
     /// the same time, i.e., they synchronize and wait for each other automatically.
     /// </para>
+    /// <para>
+    /// It is assumed that the counter storing the side lengths consists of at
+    /// least two amoebots (the start must not be equal to the end point).
+    /// </para>
+    /// <para>
+    /// This is part of the shape containment algorithm suite, which uses
+    /// 4 pins per edge. This subroutine sometimes uses all pins if multiple
+    /// instances run simultaneously.
+    /// </para>
+    /// <para>
+    /// <b>Usage:</b>
+    /// <list type="bullet">
+    /// <item>
+    ///     Initialize by calling <see cref="Init(bool, Direction, int, int, int, Direction, Direction, bool, bool)"/>.
+    ///     This assumes you have set up a binary counter storing the shift distance and its MSB as well as the highlighted segments.
+    /// </item>
+    /// <item>
+    ///     Run <see cref="SetupPC(PinConfiguration)"/>, then <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/>
+    ///     and <see cref="ActivateSend"/> to start the procedure.
+    /// </item>
+    /// <item>
+    ///     In the round immediately following a <see cref="ActivateSend"/> call, <see cref="ActivateReceive"/>
+    ///     must be called. There can be an arbitrary break until the next pin configuration setup and
+    ///     <see cref="ActivateSend"/> call. Continue this until the procedure is finished.
+    /// </item>
+    /// <item>
+    ///     You can call <see cref="IsFinished"/> immediately after <see cref="ActivateReceive"/> to check
+    ///     whether the procedure is finished. If it is, you can determine the new segments by calling
+    ///     <see cref="IsOnNewSegment"/>.
+    /// </item>
+    /// </list>
+    /// </para>
     /// </summary>
-    
+
     // Round plan:
 
     // Init:
@@ -168,9 +200,9 @@ namespace AS2.Subroutines.SegmentShift
         // xxxx x   x     x     x             xxx         xxx         xxx         xxxxx    xxxxx    xxxxx
         //          MSB   Bit   Highlight 1   Succ. dir   Pred. dir   Shift dir   PSet 3   PSet 2   PSet 1
         ParticleAttribute<int> state1;
-        // 18         17            16      15        14      13        12            11     10      9        87        65        4   0
-        // x          x             x       x         x       x         x             x      x       x        xx        xx        xxxxx
-        // Finished   Participant   End 2   Start 2   End 1   Start 1   Highlight 2   Last   First   Marker   Comp. 2   Comp. 1   Round
+        //                  19         18           17            16      15        14      13        12            11     10      9        87        65        4   0
+        // xxxx xxxx xxxx   x          x            x             x       x         x       x         x             x      x       x        xx        xx        xxxxx
+        //                  Finished   PASC part.   Participant   End 2   Start 2   End 1   Start 1   Highlight 2   Last   First   Marker   Comp. 2   Comp. 1   Round
         ParticleAttribute<int> state2;
 
         BinAttributeInt pSet1;                                      // 3 partition set IDs
@@ -195,6 +227,7 @@ namespace AS2.Subroutines.SegmentShift
         BinAttributeBool isStartNew;                                // Start and end flags for output segment
         BinAttributeBool isEndNew;
         BinAttributeBool participant;                               // Participant flag (we may only have one or two segments)
+        BinAttributeBool pascParticipant;                           // PASC participant flag (only part of the max. segment participates)
         BinAttributeBool finished;                                  // Finished flag
 
         SubPASC2 pasc;
@@ -226,7 +259,8 @@ namespace AS2.Subroutines.SegmentShift
             isStartNew = new BinAttributeBool(state2, 15);
             isEndNew = new BinAttributeBool(state2, 16);
             participant = new BinAttributeBool(state2, 17);
-            finished = new BinAttributeBool(state2, 18);
+            pascParticipant = new BinAttributeBool(state2, 18);
+            finished = new BinAttributeBool(state2, 19);
 
             if (pasc is null)
                 this.pasc = new SubPASC2(p);
@@ -234,6 +268,33 @@ namespace AS2.Subroutines.SegmentShift
                 this.pasc = pasc;
         }
 
+        /// <summary>
+        /// Initializes the subroutine. Assumes that a binary counter stores
+        /// the shifting distance <c>k</c> with its MSB. Each amoebot on the
+        /// counter can only store one bit. On each maximal amoebot segment along
+        /// the shifting direction, the middle highlighted segments must have length
+        /// at least <c>k - 1</c>.
+        /// </summary>
+        /// <param name="highlighted">Whether this amoebot is part of a highlighted
+        /// segment that should be shifted.</param>
+        /// <param name="shiftDir">The direction in which the highlighted segments
+        /// should be shifted.</param>
+        /// <param name="pSet1">The first partition set ID to use. Should be different
+        /// for each parallel instance of the subroutine.</param>
+        /// <param name="pSet2">The second partition set ID to use. Should be different
+        /// for each parallel instance of the subroutine.</param>
+        /// <param name="pSet3">The third partition set ID to use. Should be <b>the same</b>
+        /// for each parallel instance of the subroutine.</param>
+        /// <param name="counterPred">The predecessor direction of the counter.
+        /// Should be <see cref="Direction.NONE"/> for the counter start and amoebots
+        /// that are not on the counter.</param>
+        /// <param name="counterSucc">The successor direction of the counter.
+        /// Should be <see cref="Direction.NONE"/> for the counter end and amoebots
+        /// that are not on the counter.</param>
+        /// <param name="distanceBit">If the amoebot is on the counter, stores the bit
+        /// of the distance <c>k</c>.</param>
+        /// <param name="distanceMSB">Whether this is the MSB of <c>k</c> if the amoebot
+        /// is on the counter.</param>
         public void Init(bool highlighted, Direction shiftDir, int pSet1, int pSet2, int pSet3,
             Direction counterPred = Direction.NONE, Direction counterSucc = Direction.NONE, bool distanceBit = false, bool distanceMSB = false)
         {
@@ -251,6 +312,11 @@ namespace AS2.Subroutines.SegmentShift
             this.distanceMSB.SetValue(distanceMSB);
         }
 
+        /// <summary>
+        /// The first half of the subroutine activation. Must be called
+        /// in the round immediately after <see cref="ActivateSend"/>
+        /// was called.
+        /// </summary>
         public void ActivateReceive()
         {
             int r = round.GetCurrentValue();
@@ -277,13 +343,15 @@ namespace AS2.Subroutines.SegmentShift
                 case 2:
                     {
                         // Receive beeps from other segments to identify first/middle/last segments
-                        if (isStart.GetCurrentValue() || isEnd.GetCurrentValue())
+                        bool start = isStart.GetCurrentValue();
+                        bool end = isEnd.GetCurrentValue();
+                        if (start || end)
                         {
                             PinConfiguration pc = algo.GetCurrentPinConfiguration();
                             Direction pred = shiftDir.GetCurrentValue();
-                            if (!pc.GetPinAt(pred, 1).PartitionSet.ReceivedBeep())
+                            if (start && !pc.GetPinAt(pred, 1).PartitionSet.ReceivedBeep())
                                 firstSegment.SetValue(true);
-                            if (!pc.GetPinAt(pred.Opposite(), algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                            if (end && !pc.GetPinAt(pred.Opposite(), algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep())
                                 lastSegment.SetValue(true);
                         }
                     }
@@ -305,7 +373,9 @@ namespace AS2.Subroutines.SegmentShift
                         round.SetValue(r + 1);
                     }
                     break;
-                case 4:
+                case 4:     // First segment
+                case 13:    // Middle segments
+                case 22:    // Last segment
                     {
                         // Receive chain and global circuit beeps
                         PinConfiguration pc = algo.GetCurrentPinConfiguration();
@@ -318,33 +388,51 @@ namespace AS2.Subroutines.SegmentShift
                                 finished.SetValue(true);
                                 break;
                             }
+                            else if (r == 13)
+                            {
+                                // No middle segments: Go to last segment phase
+                                round.SetValue(22);
+                                break;
+                            }
                         }
                         else
                         {
                             // This segment has to participate if it has received a beep on the chain circuit
-                            participant.SetValue(pc.ReceivedBeepOnPartitionSet(pSet1.GetCurrentValue()));
+                            bool participate = pc.ReceivedBeepOnPartitionSet(pSet1.GetCurrentValue());
+                            participant.SetValue(participate);
+                            if (!participate)
+                                pascParticipant.SetValue(false);
                         }
                         round.SetValue(r + 1);
                     }
                     break;
-                case 5:
+                case 5:     // Start point of first segment
+                case 9:     // End point of first segment
+                case 14:    // Start of middle segments
+                case 18:    // End of middle segments
+                case 23:    // Start of last segment
+                case 27:    // End of last segment
                     {
                         // Receive PASC activation beep
                         if (participant.GetCurrentValue())
                         {
                             PinConfiguration pc = algo.GetCurrentPinConfiguration();
-                            bool leader = firstSegment.GetCurrentValue() && isStart.GetCurrentValue();
+                            bool leader = IsNextPASCLeader();
                             Direction pred = shiftDir.GetCurrentValue();
                             if (leader || pc.GetPinAt(pred.Opposite(), algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep())
                             {
                                 // Initialize PASC
+                                pascParticipant.SetValue(true);
                                 pasc.Init(leader ? null : new List<Direction>() { pred.Opposite() }, new List<Direction>() { pred }, 0, 1, pSet1.GetCurrentValue(), pSet2.GetCurrentValue(), leader);
-                                comp1.SetValue(ComparisonResult.EQUAL);
+                                if (r == 5 || r == 14 || r == 23)
+                                    comp1.SetValue(ComparisonResult.EQUAL);
+                                else
+                                    comp2.SetValue(ComparisonResult.EQUAL);
                             }
                             else
                             {
                                 // Do not participate
-                                participant.SetValue(false);
+                                pascParticipant.SetValue(false);
                             }
                         }
                         // Set the marker to the counter start
@@ -352,7 +440,12 @@ namespace AS2.Subroutines.SegmentShift
                         round.SetValue(r + 1);
                     }
                     break;
-                case 6:
+                case 6:     // Start point of first segment
+                case 10:    // End point of first segment
+                case 15:    // Start of middle segments
+                case 19:    // End of middle segments
+                case 24:    // Start of last segment
+                case 28:    // End of last segment
                     {
                         PinConfiguration pc = algo.GetCurrentPinConfiguration();
                         // Marker receives beep and moves forward
@@ -368,25 +461,27 @@ namespace AS2.Subroutines.SegmentShift
                         bool distBit = pc.ReceivedBeepOnPartitionSet(0);
                         bool distMSB = pc.ReceivedBeepOnPartitionSet(1);
                         bool pascContinue = pc.ReceivedBeepOnPartitionSet(2);
-                        if (participant.GetCurrentValue())
+                        // Have to update a different result based on current segment part
+                        BinAttributeEnum<ComparisonResult> comp = r == 6 || r == 15 || r == 24 ? comp1 : comp2;
+                        if (pascParticipant.GetCurrentValue())
                         {
                             // Update comparison result
                             bool pascBit = pasc.GetReceivedBit() > 0;
                             if (pascBit && !distBit)
-                                comp1.SetValue(ComparisonResult.GREATER);
+                                comp.SetValue(ComparisonResult.GREATER);
                             else if (distBit && !pascBit)
-                                comp1.SetValue(ComparisonResult.LESS);
+                                comp.SetValue(ComparisonResult.LESS);
                         }
                         if (!pascContinue)
                         {
                             // PASC is finished everywhere
                             // Participants update comparison result
-                            if (participant.GetCurrentValue())
+                            if (pascParticipant.GetCurrentValue())
                             {
                                 if (!distMSB)
                                 {
                                     // Received no MSB although PASC is finished: Comparison result is always LESS
-                                    comp1.SetValue(ComparisonResult.LESS);
+                                    comp.SetValue(ComparisonResult.LESS);
                                 }
                                 // Become new segment start or end point
                                 EvaluateCompResult();
@@ -394,40 +489,73 @@ namespace AS2.Subroutines.SegmentShift
                             // Reset the marker to the counter start
                             marker.SetValue(succDir.GetValue() != Direction.NONE && pred == Direction.NONE);
                             // Continue with next iteration
-                            round.SetValue(9);
+                            round.SetValue(r + 3);
                         }
                         else if (distMSB)
                         {
                             // We received only the MSB beep => Start PASC cutoff
-                            round.SetValue(8);
+                            round.SetValue(r + 2);
                         }
                     }
                     break;
-                case 7:
+                case 7:     // Start point of first segment
+                case 11:    // End point of first segment
+                case 16:    // Start of middle segments
+                case 20:    // End of middle segments
+                case 25:    // Start of last segment
+                case 29:    // End of last segment
                     {
                         // Participants receive PASC beep
-                        if (participant.GetCurrentValue())
+                        if (pascParticipant.GetCurrentValue())
                             pasc.ActivateReceive();
                     }
                     break;
-                case 8:
+                case 8:     // Start point of first segment
+                case 12:    // End point of first segment
+                case 17:    // Start of middle segment
+                case 21:    // End of middle segments
+                case 26:    // Start of last segment
+                case 30:    // End of last segment
                     {
                         // Participants receive PASC cutoff beep
-                        if (participant.GetCurrentValue())
+                        if (pascParticipant.GetCurrentValue())
                         {
                             pasc.ReceiveCutoffBeep();
                             // Update comparison result
                             if (pasc.GetReceivedBit() > 0)
-                                comp1.SetValue(ComparisonResult.GREATER);
+                            {
+                                // Have to update a different result based on current segment part
+                                BinAttributeEnum<ComparisonResult> comp = r == 8 || r == 17 || r == 26 ? comp1 : comp2;
+                                comp.SetValue(ComparisonResult.GREATER);
+                            }
                             // Become new segment start or end point
                             EvaluateCompResult();
                         }
-                        round.SetValue(9);
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 31:
+                    {
+                        // Determine final new segments by beeps and start/end points, then terminate
+                        if (isStartNew.GetCurrentValue() || isEndNew.GetCurrentValue())
+                            highlightNew.SetValue(true);
+                        else
+                        {
+                            PinConfiguration pc = algo.GetCurrentPinConfiguration();
+                            highlightNew.SetValue(pc.ReceivedBeepOnPartitionSet(pSet1.GetCurrentValue()));
+                        }
+                        finished.SetValue(true);
                     }
                     break;
             }
         }
 
+        /// <summary>
+        /// Sets up the pin configuration required for the
+        /// <see cref="ActivateSend"/> call. The pin configuration
+        /// is not planned by this method.
+        /// </summary>
+        /// <param name="pc">The pin configuration to modify.</param>
         public void SetupPC(PinConfiguration pc)
         {
             int r = round.GetCurrentValue();
@@ -445,41 +573,74 @@ namespace AS2.Subroutines.SegmentShift
                         SetupChainCircuits(pc, isStart.GetCurrentValue() || isEnd.GetCurrentValue());
                     }
                     break;
-                case 4:
+                case 4:     // First segment
+                case 13:    // Middle segments
+                case 22:    // Last segment
                     {
                         // Setup one fully connected chain circuit and a global circuit
                         SetupChainAndGlobalCircuits(pc);
                     }
                     break;
-                case 5:
+                case 5:     // Start point of first segment
+                case 9:     // End point of first segment
+                case 14:    // Start of middle segments
+                case 18:    // End of middle segments
+                case 23:    // Start of last segment
+                case 27:    // End of last segment
                     {
                         // Setup chain circuits split at the next PASC leader
-                        SetupChainCircuits(pc, firstSegment.GetCurrentValue() && isStart.GetCurrentValue());
+                        SetupChainCircuits(pc, IsNextPASCLeader());
                     }
                     break;
-                case 6:
+                case 6:     // Start point of first segment
+                case 10:    // End point of first segment
+                case 15:    // Start of middle segments
+                case 19:    // End of middle segments
+                case 24:    // Start of last segment
+                case 28:    // End of last segment
                     {
                         // Participants setup PASC circuit
-                        if (participant.GetCurrentValue())
+                        if (pascParticipant.GetCurrentValue())
                             pasc.SetupPC(pc);
                     }
                     break;
-                case 7:
+                case 7:     // Start point of first segment
+                case 11:    // End point of first segment
+                case 16:    // Start of middle segments
+                case 20:    // End of middle segments
+                case 25:    // Start of last segment
+                case 29:    // End of last segment
                     {
                         // Setup 3 global circuits
                         SetupGlobalCircuits(pc);
                     }
                     break;
-                case 8:
+                case 8:     // Start point of first segment
+                case 12:    // End point of first segment
+                case 17:    // Start of middle segment
+                case 21:    // End of middle segments
+                case 26:    // Start of last segment
+                case 30:    // End of last segment
                     {
                         // Participants setup PASC cutoff circuit
-                        if (participant.GetCurrentValue())
+                        if (pascParticipant.GetCurrentValue())
                             pasc.SetupCutoffCircuit(pc);
+                    }
+                    break;
+                case 31:
+                    {
+                        // Setup chain circuit split at the new segment start and end points
+                        SetupChainCircuits(pc, isStartNew.GetCurrentValue() || isEndNew.GetCurrentValue());
                     }
                     break;
             }
         }
 
+        /// <summary>
+        /// The second half of the subroutine activation. Before this
+        /// can be called, the pin configuration set up by
+        /// <see cref="SetupPC(PinConfiguration)"/> must be planned.
+        /// </summary>
         public void ActivateSend()
         {
             int r = round.GetCurrentValue();
@@ -532,10 +693,12 @@ namespace AS2.Subroutines.SegmentShift
                         round.SetValue(r + 1);
                     }
                     break;
-                case 4:
+                case 4:     // First segment
+                case 13:    // Middle segments
+                case 22:    // Last segment
                     {
                         // First segment start point sends beep on both circuits
-                        if (isStart.GetCurrentValue() && firstSegment.GetCurrentValue())
+                        if (IsNextPASCLeader())
                         {
                             PinConfiguration pc = algo.GetPlannedPinConfiguration();
                             pc.SendBeepOnPartitionSet(pSet1.GetCurrentValue());
@@ -543,25 +706,40 @@ namespace AS2.Subroutines.SegmentShift
                         }
                     }
                     break;
-                case 5:
+                case 5:     // Start point of first segment
+                case 9:     // End point of first segment
+                case 14:    // Start of middle segments
+                case 18:    // End of middle segments
+                case 23:    // Start of last segment
+                case 27:    // End of last segment
                     {
                         // Next PASC leaders send beep to predecessor
-                        if (firstSegment.GetCurrentValue() && isStart.GetCurrentValue())
+                        if (IsNextPASCLeader())
                         {
                             PinConfiguration pc = algo.GetPlannedPinConfiguration();
                             pc.GetPinAt(shiftDir.GetCurrentValue(), 0).PartitionSet.SendBeep();
                         }
                     }
                     break;
-                case 6:
+                case 6:     // Start point of first segment
+                case 10:    // End point of first segment
+                case 15:    // Start of middle segments
+                case 19:    // End of middle segments
+                case 24:    // Start of last segment
+                case 28:    // End of last segment
                     {
                         // PASC participants send beep
-                        if (participant.GetCurrentValue())
+                        if (pascParticipant.GetCurrentValue())
                             pasc.ActivateSend();
                         round.SetValue(r + 1);
                     }
                     break;
-                case 7:
+                case 7:     // Start point of first segment
+                case 11:    // End point of first segment
+                case 16:    // Start of middle segments
+                case 20:    // End of middle segments
+                case 25:    // Start of last segment
+                case 29:    // End of last segment
                     {
                         PinConfiguration pc = algo.GetPlannedPinConfiguration();
                         // Marker sends beeps on different circuits
@@ -585,20 +763,61 @@ namespace AS2.Subroutines.SegmentShift
                         }
 
                         // PASC participants that became passive send beep on third global circuit
-                        if (participant.GetCurrentValue() && pasc.BecamePassive())
+                        if (pascParticipant.GetCurrentValue() && pasc.BecamePassive())
                             pc.SendBeepOnPartitionSet(2);
 
                         round.SetValue(r - 1);
                     }
                     break;
-                case 8:
+                case 8:     // Start point of first segment
+                case 12:    // End point of first segment
+                case 17:    // Start of middle segment
+                case 21:    // End of middle segments
+                case 26:    // Start of last segment
+                case 30:    // End of last segment
                     {
                         // Participants send PASC cutoff beep
-                        if (participant.GetCurrentValue())
+                        if (pascParticipant.GetCurrentValue())
                             pasc.SendCutoffBeep();
                     }
                     break;
+                case 31:
+                    {
+                        // Let new start and end points beep inward
+                        bool start = isStartNew.GetCurrentValue();
+                        bool end = isEndNew.GetCurrentValue();
+                        if (start ^ end)
+                        {
+                            PinConfiguration pc = algo.GetPlannedPinConfiguration();
+                            Direction pred = shiftDir.GetCurrentValue();
+                            if (start)
+                                pc.GetPinAt(pred.Opposite(), algo.PinsPerEdge - 1).PartitionSet.SendBeep();
+                            if (end)
+                                pc.GetPinAt(pred, 0).PartitionSet.SendBeep();
+                        }
+                    }
+                    break;
             }
+        }
+
+        /// <summary>
+        /// Checks whether the procedure is finished.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the shifted
+        /// segments have been identified.</returns>
+        public bool IsFinished()
+        {
+            return finished.GetCurrentValue();
+        }
+
+        /// <summary>
+        /// Checks whether this amoebot is on a shifted segment.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the procedure has
+        /// finished and this amoebot is on one of the shifted segments.</returns>
+        public bool IsOnNewSegment()
+        {
+            return IsFinished() && highlightNew.GetCurrentValue();
         }
 
         /// <summary>
@@ -608,11 +827,65 @@ namespace AS2.Subroutines.SegmentShift
         /// </summary>
         private void EvaluateCompResult()
         {
-            // If the result is EQUAL: We are the new start point!
-            if (comp1.GetCurrentValue() == ComparisonResult.EQUAL)
-                isStartNew.SetValue(true);
+            int r = round.GetCurrentValue();
+            // Must await result from end point first: Only update in end point rounds
+            if (r == 10 || r == 12 || r == 19 || r == 21 || r == 28 || r == 30)
+            {
+                ComparisonResult startRes = comp1.GetCurrentValue();
+                ComparisonResult endRes = comp2.GetCurrentValue();
+                // If the result for the start point is EQUAL: We are the new start point!
+                if (startRes == ComparisonResult.EQUAL)
+                    isStartNew.SetValue(true);
+                // Same for the end point
+                if (endRes == ComparisonResult.EQUAL)
+                    isEndNew.SetValue(true);
+
+                // Special logic for max. segment start
+                if (!algo.HasNeighborAt(shiftDir.GetCurrentValue()))
+                {
+                    // Become start point if start has moved past but end has not
+                    if (startRes == ComparisonResult.LESS && endRes != ComparisonResult.LESS)
+                        isStartNew.SetValue(true);
+
+                    // Special case for later segments:
+                    // If the start point reached us but the end point has not, we only become the start point
+                    // (We might have been the end point due to a previous shifting operation)
+                    if (startRes == ComparisonResult.EQUAL && endRes == ComparisonResult.GREATER)
+                        isEndNew.SetValue(false);
+                }
+            }
         }
 
+        /// <summary>
+        /// Helper determining whether this amoebot is a PASC leader
+        /// in the next/current PASC phase.
+        /// </summary>
+        /// <returns><c>true</c> for the start/end points of the
+        /// first/middle/last segment(s) in the appropriate rounds.</returns>
+        private bool IsNextPASCLeader()
+        {
+            int r = round.GetCurrentValue();
+            if (r < 9)
+                return firstSegment.GetCurrentValue() && isStart.GetCurrentValue();
+            else if (r < 13)
+                return firstSegment.GetCurrentValue() && isEnd.GetCurrentValue();
+            else if (r < 18)
+                return isStart.GetCurrentValue() && !firstSegment.GetCurrentValue() && !lastSegment.GetCurrentValue();
+            else if (r < 22)
+                return isEnd.GetCurrentValue() && !firstSegment.GetCurrentValue() && !lastSegment.GetCurrentValue();
+            else if (r < 27)
+                return lastSegment.GetCurrentValue() && isStart.GetCurrentValue();
+            else
+                return lastSegment.GetCurrentValue() && isEnd.GetCurrentValue();
+        }
+
+        /// <summary>
+        /// Sets up two chain circuits that can be split at arbitrary positions.
+        /// If it is not split here, the two partition sets will have IDs
+        /// ID1 and ID2.
+        /// </summary>
+        /// <param name="pc">The pin configuration to modify.</param>
+        /// <param name="split">Whether the chain circuits should be split here.</param>
         private void SetupChainCircuits(PinConfiguration pc, bool split)
         {
             if (!split)
@@ -626,6 +899,12 @@ namespace AS2.Subroutines.SegmentShift
             }
         }
 
+        /// <summary>
+        /// Sets up a connected chain circuit using only the outside pin and a
+        /// global circuit on the two inside pins. The chain circuit uses partition set
+        /// ID1 and the global circuit uses ID3.
+        /// </summary>
+        /// <param name="pc">The pin configuration to modify.</param>
         private void SetupChainAndGlobalCircuits(PinConfiguration pc)
         {
             // Connect the chain circuit on the "outside"
