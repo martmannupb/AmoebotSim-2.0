@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AS2.Sim;
 using AS2.UI;
 using AS2.ShapeContainment;
@@ -34,6 +35,7 @@ namespace AS2.Algos.SnowflakeTest
         // Declare attributes here
         ParticleAttribute<int> round;
         ParticleAttribute<bool> onCounter;
+        ParticleAttribute<int> counterIndex;
         ParticleAttribute<bool> scaleBit;
         ParticleAttribute<bool> scaleMSB;
 
@@ -48,6 +50,7 @@ namespace AS2.Algos.SnowflakeTest
             // Initialize the attributes here
             round = CreateAttributeInt("Round", 0);
             onCounter = CreateAttributeBool("On Counter", false);
+            counterIndex = CreateAttributeInt("Counter Index", -1);
             scaleBit = CreateAttributeBool("Scale Bit", false);
             scaleMSB = CreateAttributeBool("Scale MSB", false);
 
@@ -59,11 +62,12 @@ namespace AS2.Algos.SnowflakeTest
 
         // Implement this if the particles require special initialization
         // The parameters will be converted to particle attributes for initialization
-        public void Init(bool onCounter = false, bool scaleBit = false, bool scaleMSB = false)
+        public void Init(bool onCounter = false, bool scaleBit = false, bool scaleMSB = false, int counterIndex = -1)
         {
             this.onCounter.SetValue(onCounter);
             this.scaleBit.SetValue(scaleBit);
             this.scaleMSB.SetValue(scaleMSB);
+            this.counterIndex.SetValue(counterIndex);
         }
 
         // Implement this method if the algorithm terminates at some point
@@ -100,6 +104,12 @@ namespace AS2.Algos.SnowflakeTest
         {
             nPlaced = 0;
 
+            if (scale < 1)
+            {
+                Log.Error("Scale must be >= 1");
+                scale = 1;
+            }
+
             // Read the shape
             Shape s;
             ShapeContainer sc;
@@ -128,18 +138,46 @@ namespace AS2.Algos.SnowflakeTest
             }
 
             // Compute snowflake data
-            // TODO
-            //  - Find all arm lengths and sort them in ascending order
-            //  - Replace actual arm lengths with indices for this list
-            //  - Compute string representations of all line lengths
-            //  - Find the largest parameter (longest binary encoding)
-
-            if (scale < 1)
+            SnowflakeInfo snowflakeInfo = new SnowflakeInfo();
+            // Find all occurring arm lengths and sort them in ascending order
+            List<int> armLengths = new List<int>();
+            for (int i = 0; i < sc.dependencyTree.Length; i++)
             {
-                Log.Error("Scale must be >= 1");
-                scale = 1;
+                foreach (int l in sc.dependencyTree[i].arms)
+                {
+                    if (l > 0 && !armLengths.Contains(l))
+                        armLengths.Add(l);
+                }
             }
+            armLengths.Sort();
+
+            // Replace all actual arm lengths with indices in the list
+            for (int i = 0; i < sc.dependencyTree.Length; i++)
+            {
+                for (int j = 0; j < 6; j++)
+                {
+                    int l = sc.dependencyTree[i].arms[j];
+                    if (l == 0)
+                        sc.dependencyTree[i].arms[j] = -1;
+                    else
+                        sc.dependencyTree[i].arms[j] = armLengths.FindIndex(a => a == l);
+                }
+            }
+
+            // Compute string representations of all line lengths
+            string[] armLengthsStr = new string[armLengths.Count];
+            for (int i = 0; i < armLengths.Count; i++)
+            {
+                armLengthsStr[i] = IntToBinary(armLengths[i]);
+            }
+
+            // Find the longest parameter string and store all data in the snowflake info container
+            snowflakeInfo.longestParameter = armLengths.Count > 0 ? armLengthsStr[armLengths.Count - 1].Length : 0;
+            snowflakeInfo.armLengths = armLengths.ToArray();
+            snowflakeInfo.armLengthsStr = armLengthsStr;
+            snowflakeInfo.nodes = sc.dependencyTree;
             SnowflakeTestParticle.scaleFactor = scale;
+            SnowflakeTestParticle.snowflakeInfo = snowflakeInfo;
 
             // Place amoebot system
             foreach (Vector2Int v in GenerateRandomConnectedPositions(Vector2Int.zero, numAmoebots, holeProb, fillHoles))
@@ -194,9 +232,10 @@ namespace AS2.Algos.SnowflakeTest
                 }
             }
 
-            // Place the counter
+            // Place the counter (must have length at least 1!)
+            // Also set counter index
             string scaleStr = IntToBinary(scale);
-            for (int x = 0; x < scaleStr.Length; x++)
+            for (int x = 0; x < Mathf.Max(scaleStr.Length, 2, snowflakeInfo.longestParameter); x++)
             {
                 InitializationParticle p;
                 Vector2Int pos = new Vector2Int(x, 0);
@@ -206,8 +245,15 @@ namespace AS2.Algos.SnowflakeTest
                     nPlaced++;
                 }
                 p.SetAttribute("onCounter", true);
-                p.SetAttribute("scaleBit", scaleStr[x] == '1');
-                p.SetAttribute("scaleMSB", x == scaleStr.Length - 1);
+                if (x < scaleStr.Length)
+                {
+                    p.SetAttribute("scaleBit", scaleStr[x] == '1');
+                    p.SetAttribute("scaleMSB", x == scaleStr.Length - 1);
+                }
+                if (x < snowflakeInfo.longestParameter)
+                {
+                    p.SetAttribute("counterIndex", x);
+                }
             }
 
             Log.Debug("Generated system has " + nPlaced + " amoebots");
