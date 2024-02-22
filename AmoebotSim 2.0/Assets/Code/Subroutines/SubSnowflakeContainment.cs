@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using AS2.Sim;
 using AS2.ShapeContainment;
+using AS2.Subroutines.BinStateHelpers;
+using AS2.Subroutines.PASC;
 
 namespace AS2.Subroutines.SnowflakeContainment
 {
@@ -361,21 +363,27 @@ namespace AS2.Subroutines.SnowflakeContainment
     //  - Receive last two rotation beeps and update final result
     //  - Terminate with success or failure (based on whether there are any valid rotations left)
 
-
-
     public class SubSnowflakeContainment : Subroutine
     {
+        enum ComparisonResult
+        {
+            EQUAL = 0,
+            LESS = 1,
+            GREATER = 2
+        }
 
         // Round: int (0-22)                                    + 5
-        // (Scaled) arm length bits:
-        //  Bit field, +32 for every 32 arm lengths             + 32 * (A / 32)
         // Arm length MSB: bool                                 + 1
         // Counter index: int (0-31)                            + 5
         // Counter flag: bool                                   + 1
+
+        // (Scaled) arm length bits:
+        //  Bit field, +32 for every 32 arm lengths             + 32 * (A / 32)
         // 6 * num arm lengths comparison results
         //  2 bits per result                                   + 6 * 2 * A
         // 6 * num nodes placement flags
         //  1 bit per flag                                      + 6 * N
+
         // Generic counter: int (0-255)                         + 8
         // Dependency tree idx: int (0-255)                     + 8
         // Direction/Rotation index: int (0-5)                  + 3
@@ -384,6 +392,7 @@ namespace AS2.Subroutines.SnowflakeContainment
         // PASC participant flag 6 times: bool                  + 6
         // Elimination segment flag 6 times: bool               + 6
         // Comparison results for the 6 segments                + 6 * 2
+
         // Counter data
         //  Predecessor: Direction                              + 3
         //  Successor: Direction                                + 3
@@ -395,11 +404,268 @@ namespace AS2.Subroutines.SnowflakeContainment
         // Final valid placement flags: bool                    + 6
         // Finished flag                                        + 1
 
+
+        //       28         27  22            21              20 16         15        14          13         12 10    9 7     6         5        4   0
+        // xxx   x          xxxxxx            x               xxxxx         x         x           x           xxx     xxx     x         x        xxxxx
+        //       Finished   Final rotations   Control color   Counter Idx   Arm MSB   Scale MSB   Scale Bit   Succ.   Pred.   Counter   Marker   Round
+        ParticleAttribute<int> state1;
+
+        //     30  25          24  19     18 16       15     8   7      0
+        // x   xxxxxx          xxxxxx      xxx        xxxxxxxx   xxxxxxxx
+        //     Cand. Segment   Candidate   Rot. Idx   Node Idx   Gen. Counter
+        ParticleAttribute<int> state2;
+
+        //             23             12   11   6          5    0
+        // xxxx xxxx   xx xx xx xx xx xx   xxxxxx          xxxxxx
+        //             Comp.               Elim. Segment   PASC Part.
+        ParticleAttribute<int> state3;
+
+        // One bit for each scaled arm length, add one extra int each 32 lengths (stored in bit fields of size 32)
+        ParticleAttribute<int>[] statesArmLengthBits;
+        // 6 bits for the 6 rotations of each node, stored tightly in size 32 bit fields
+        ParticleAttribute<int>[] statesNodePlacements;
+        // 6 comparison results for the rotations of each arm length
+        ParticleAttribute<int>[] statesArmLengthComparisons;
+
+        BinAttributeInt round;                              // Round counter
+
+        BinAttributeBool controlColor;                      // Control amoebot color flag
+        BinAttributeBool onCounter;                         // Whether we are on a binary counter
+        BinAttributeDirection counterPred;                  // Counter predecessor and successor directions
+        BinAttributeDirection counterSucc;
+        BinAttributeBool scaleBit;                          // Our bit of the scale factor (on the counter)
+        BinAttributeBool scaleMSB;                          // Whether we hold the scale's MSB (on the counter)
+        BinAttributeBool armLengthMSB;                      // Whether we hold the scaled arm length MSB (on the counter)
+        BinAttributeInt counterIndex;                       // Our position on the counter (only up to arm length MSB) up to 31
+
+        BinAttributeBool marker;                            // Marker flag for the counter
+
+        BinAttributeInt genericCounter;                     // A generic counter (distance, number of arm lengths etc.) up to 255
+        BinAttributeInt nodeIndex;                          // A counter for the node indices in the topological ordering up to 255
+        BinAttributeInt rotationIndex;                      // A counter for the rotation up to 5
+
+        BinAttributeBitField candidate;                     // Candidate flags for the 6 rotations, used to compute the valid placements for each node
+        BinAttributeBitField onCandidateSegment;            // Indicators for the 6 rotations whether there is a candidate on this segment
+        BinAttributeBitField pascParticipant;               // PASC participation flags for the 6 rotations
+        BinAttributeBitField eliminationSegment;            // Elimination segment flags for the 6 rotations
+        BinAttributeEnum<ComparisonResult>[] comparisons = new BinAttributeEnum<ComparisonResult>[6];   // Temporary comparison results for the 6 rotations
+
+        BinAttributeBitField[] armLengthBits;               // Bit fields storing the scaled arm length bits (32 bits, get extra entries every 32 arm lengths)
+        BinAttributeBitField[] nodePlacements;              // Bit fields storing the valid placement flags for all nodes and rotations (same principle as above)
+        BinAttributeEnum<ComparisonResult>[] armLengthComparisons;  // Comparison results for all scaled arm lengths in all 6 directions
+
+        BinAttributeBool finished;                          // Whether the procedure is finished
+        BinAttributeBitField finalRotations;                // The 6 rotations for which we found valid placements
+        //BinAttributeBitField finalPlacements;               // Indicators for which of the 6 rotations we are a valid placement
+
+        SubPASC2[] pasc = new SubPASC2[6];
+
+
         SnowflakeInfo snowflakeInfo;
 
         public SubSnowflakeContainment(Particle p, SnowflakeInfo snowflakeInfo) : base(p)
         {
             this.snowflakeInfo = snowflakeInfo;
+
+            state1 = algo.CreateAttributeInt(FindValidAttributeName("[SFC] State 1"), 0);
+            state2 = algo.CreateAttributeInt(FindValidAttributeName("[SFC] State 2"), 0);
+            state3 = algo.CreateAttributeInt(FindValidAttributeName("[SFC] State 3"), 0);
+
+            // Variable attributes
+            int numArmLengths = snowflakeInfo.armLengths.Length;
+            int numNodes = snowflakeInfo.nodes.Length;
+
+            int numArmLengthBitFields = (numArmLengths / 32) + (numArmLengths % 32 > 0 ? 1 : 0);
+            statesArmLengthBits = new ParticleAttribute<int>[numArmLengthBitFields];
+            armLengthBits = new BinAttributeBitField[numArmLengthBitFields];
+            for (int i = 0; i < numArmLengthBitFields; i++)
+            {
+                statesArmLengthBits[i] = algo.CreateAttributeInt(FindValidAttributeName("[SFC] Arm Bits_" + i + "_"), 0);
+                armLengthBits[i] = new BinAttributeBitField(statesArmLengthBits[i], 0, 32);
+            }
+
+            int numNodePlacementBitFields = (6 * numNodes / 32) + ((6 * numNodes) % 32 > 0 ? 1 : 0);
+            statesNodePlacements = new ParticleAttribute<int>[numNodePlacementBitFields];
+            nodePlacements = new BinAttributeBitField[numNodePlacementBitFields];
+            for (int i = 0; i < numNodePlacementBitFields; i++)
+            {
+                statesNodePlacements[i] = algo.CreateAttributeInt(FindValidAttributeName("[SFC] Node Bits_" + i + "_"), 0);
+                nodePlacements[i] = new BinAttributeBitField(statesNodePlacements[i], 0, 32);
+            }
+
+            int numComparisonBits = 2 * 6 * numArmLengths;
+            int numComparisonStates = (numComparisonBits / 32) + (numComparisonBits % 32 > 0 ? 1 : 0);
+            statesArmLengthComparisons = new ParticleAttribute<int>[numComparisonStates];
+            for (int i = 0; i < numComparisonStates; i++)
+            {
+                statesArmLengthComparisons[i] = algo.CreateAttributeInt(FindValidAttributeName("[SFC] Arm Comps_" + i + "_"), 0);
+            }
+            armLengthComparisons = new BinAttributeEnum<ComparisonResult>[6 * numArmLengths];
+            for (int i = 0; i < 6 * numArmLengths; i++)
+            {
+                int stateIdx = i / 16;
+                int stateOffset = 2 * (i % 16);
+                armLengthComparisons[i] = new BinAttributeEnum<ComparisonResult>(statesArmLengthComparisons[stateIdx], stateOffset, 2);
+            }
+
+            // State 1 binary attributes
+            round = new BinAttributeInt(state1, 0, 5);
+            marker = new BinAttributeBool(state1, 5);
+            onCounter = new BinAttributeBool(state1, 6);
+            counterPred = new BinAttributeDirection(state1, 7);
+            counterSucc = new BinAttributeDirection(state1, 10);
+            scaleBit = new BinAttributeBool(state1, 13);
+            scaleMSB = new BinAttributeBool(state1, 14);
+            armLengthMSB = new BinAttributeBool(state1, 15);
+            counterIndex = new BinAttributeInt(state1, 16, 5);
+            controlColor = new BinAttributeBool(state1, 21);
+            finalRotations = new BinAttributeBitField(state1, 22, 6);
+            finished = new BinAttributeBool(state1, 28);
+
+            // State 2 binary attributes
+            genericCounter = new BinAttributeInt(state2, 0, 8);
+            nodeIndex = new BinAttributeInt(state2, 8, 8);
+            rotationIndex = new BinAttributeInt(state2, 16, 3);
+            candidate = new BinAttributeBitField(state2, 19, 6);
+            onCandidateSegment = new BinAttributeBitField(state2, 25, 6);
+
+            // State 3 binary attributes
+            pascParticipant = new BinAttributeBitField(state3, 0, 6);
+            eliminationSegment = new BinAttributeBitField(state3, 6, 6);
+            for (int i = 0; i < 6; i++)
+            {
+                comparisons[i] = new BinAttributeEnum<ComparisonResult>(state3, 12 + 2 * i, 2);
+            }
+        }
+
+        public void Init(bool controlColor = false,
+            // Counter setup
+            bool onCounter = false, int counterIndex = 0, Direction counterPred = Direction.NONE, Direction counterSucc = Direction.NONE,
+            bool scaleBit = false, bool scaleMSB = false, bool armLengthMSB = false)
+        {
+            // Reset entire state
+            state1.SetValue(0);
+            state2.SetValue(0);
+            state3.SetValue(0);
+            foreach (ParticleAttribute<int> a in statesArmLengthBits)
+                a.SetValue(0);
+            foreach (ParticleAttribute<int> a in statesNodePlacements)
+                a.SetValue(0);
+            foreach (ParticleAttribute<int> a in statesArmLengthComparisons)
+                a.SetValue(0);
+
+            this.controlColor.SetValue(controlColor);
+            if (onCounter)
+            {
+                this.onCounter.SetValue(onCounter);
+                this.counterIndex.SetValue(counterIndex);
+                this.counterPred.SetValue(counterPred);
+                this.counterSucc.SetValue(counterSucc);
+                this.scaleBit.SetValue(scaleBit);
+                this.scaleMSB.SetValue(scaleMSB);
+                this.armLengthMSB.SetValue(armLengthMSB);
+            }
+        }
+
+        // Helpers for complex binary data access
+
+        /// <summary>
+        /// Helper for reading the stored scaled arm length bit from the
+        /// array of bit fields.
+        /// </summary>
+        /// <param name="armIdx">The index of the arm length.</param>
+        /// <returns>The stored bit value of the arm length with
+        /// index <paramref name="armIdx"/>.</returns>
+        private bool GetScaledArmLengthBit(int armIdx)
+        {
+            int fieldIdx = armIdx / 32;
+            int offset = armIdx % 32;
+            return armLengthBits[fieldIdx].GetCurrentValue(offset);
+        }
+
+        /// <summary>
+        /// Helper for reading the base arm length bit at this position
+        /// in the counter.
+        /// </summary>
+        /// <param name="armIdx">The index of the arm.</param>
+        /// <returns>The bit of the arm length with index <paramref name="armIdx"/>
+        /// at the position matching our counter position.</returns>
+        private bool GetArmLengthBit(int armIdx)
+        {
+            return snowflakeInfo.armLengthsStr[armIdx][counterIndex.GetCurrentValue()] == '1';
+        }
+
+        /// <summary>
+        /// Helper for reading a valid placement flag from the
+        /// array of bit fields.
+        /// </summary>
+        /// <param name="nodeIdx">The index of the node.</param>
+        /// <param name="rotation">The rotation of the node's shape to check.</param>
+        /// <returns><c>true</c> if and only if we are a valid placement of
+        /// the shape with node index <paramref name="nodeIdx"/> at
+        /// rotation <paramref name="rotation"/>.</returns>
+        private bool GetNodePlacement(int nodeIdx, int rotation)
+        {
+            int idx = nodeIdx * 6 + rotation;
+            int fieldIdx = idx / 32;
+            int offset = idx % 32;
+            return nodePlacements[fieldIdx].GetCurrentValue(offset);
+        }
+
+        /// <summary>
+        /// Helper for reading an arm length comparison result from
+        /// the array.
+        /// </summary>
+        /// <param name="armIdx">The index of the arm length.</param>
+        /// <param name="rotation">The rotation of the arm to check.</param>
+        /// <returns>The result of comparing our maximal segment in the
+        /// direction indicated by <paramref name="rotation"/> to the
+        /// scaled length of the arm with index <paramref name="armIdx"/>.</returns>
+        private ComparisonResult GetArmLengthComp(int armIdx, int rotation)
+        {
+            int idx = armIdx * 6 + rotation;
+            return armLengthComparisons[idx].GetCurrentValue();
+        }
+
+        /// <summary>
+        /// Helper for writing the stored arm length bit in the
+        /// array of bit fields.
+        /// </summary>
+        /// <param name="armIdx">The index of the arm length.</param>
+        /// <param name="value">The new value of the stored bit.</param>
+        private void SetScaledArmLengthBit(int armIdx, bool value)
+        {
+            int fieldIdx = armIdx / 32;
+            int offset = armIdx % 32;
+            armLengthBits[fieldIdx].SetValue(offset, value);
+        }
+
+        /// <summary>
+        /// Helper for writing a valid placement flag in the
+        /// array of bit fields.
+        /// </summary>
+        /// <param name="nodeIdx">The index of the node.</param>
+        /// <param name="rotation">The rotation of the node's shape to set.</param>
+        /// <param name="value">The new value of the placement flag.</param>
+        private void SetNodePlacement(int nodeIdx, int rotation, bool value)
+        {
+            int idx = nodeIdx * 6 + rotation;
+            int fieldIdx = idx / 32;
+            int offset = idx % 32;
+            nodePlacements[fieldIdx].SetValue(offset, value);
+        }
+
+        /// <summary>
+        /// Helper for writing an arm length comparison result to
+        /// the array.
+        /// </summary>
+        /// <param name="armIdx">The index of the arm length.</param>
+        /// <param name="rotation">The rotation of the arm to set.</param>
+        /// <param name="value">The new comparison result to write.</param>
+        private void SetArmLengthComp(int armIdx, int rotation, ComparisonResult value)
+        {
+            int idx = armIdx * 6 + rotation;
+            armLengthComparisons[idx].SetValue(value);
         }
     }
 

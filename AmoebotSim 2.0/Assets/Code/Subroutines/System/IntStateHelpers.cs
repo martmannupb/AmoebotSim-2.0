@@ -202,4 +202,85 @@ namespace AS2.Subroutines.BinStateHelpers
         }
     }
 
+    /// <summary>
+    /// Binary encoded attribute for arrays of up to 32 bool values.
+    /// Each bool is represented by a single bit. If the given start index
+    /// is greater than 0, the maximum number of bits is reduced
+    /// </summary>
+    public class BinAttributeBitField : BinAttribute<bool>
+    {
+        protected int length;
+        /// <summary>
+        /// <inheritdoc cref="BinAttribute{T}.BinAttribute(ParticleAttribute{int}, int)"/>
+        /// </summary>
+        /// <param name="attr"><inheritdoc cref="BinAttribute{T}.BinAttribute(ParticleAttribute{int}, int)" path="/param[@name='attr']"/></param>
+        /// <param name="idx"><inheritdoc cref="BinAttribute{T}.BinAttribute(ParticleAttribute{int}, int)" path="/param[@name='idx']"/></param>
+        /// <param name="length">The number of bits in the array.</param>
+        public BinAttributeBitField(ParticleAttribute<int> attr, int idx, int length) : base(attr, idx)
+        {
+            this.length = length;
+        }
+
+        /// <summary>
+        /// Returns the value from the beginning of the
+        /// current round.
+        /// </summary>
+        /// <param name="index">The index of the bit to return.</param>
+        /// <returns>The bit value at index <paramref name="index"/>
+        /// decoded from the int's snapshot value.</returns>
+        public bool GetValue(int index)
+        {
+            return ((attr.GetValue() >> (idx + index)) & 1) > 0;
+        }
+
+        /// <summary>
+        /// Returns the latest value.
+        /// </summary>
+        /// <returns>The value at index <paramref name="index"/>
+        /// decoded from the int's latest value.</returns>
+        /// <param name="index">The index of the bit to return.</param>
+        public bool GetCurrentValue(int index)
+        {
+            return ((attr.GetCurrentValue() >> (idx + index)) & 1) > 0;
+        }
+
+        /// <summary>
+        /// Writes a new value to the state integer.
+        /// </summary>
+        /// <param name="index">The index of the bit to be written.</param>
+        /// <param name="value">The new value to be written.</param>
+        public void SetValue(int index, bool value)
+        {
+            attr.SetValue((attr.GetCurrentValue() & ~(1 << (idx + index))) | ((value ? 1 : 0) << (idx + index)));
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// Uses the default index 0.
+        /// </summary>
+        public override bool GetValue()
+        {
+            return GetValue(0);
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// Uses the default index 0.
+        /// </summary>
+        public override bool GetCurrentValue()
+        {
+            return GetCurrentValue(0);
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// Uses the default index 0.
+        /// </summary>
+        /// <param name="value"><inheritdoc/></param>
+        public override void SetValue(bool value)
+        {
+            SetValue(0, value);
+        }
+    }
+
 } // namespace AS2.Subroutines.BinStateHelpers
