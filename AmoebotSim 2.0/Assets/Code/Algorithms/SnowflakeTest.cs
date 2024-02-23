@@ -12,6 +12,12 @@ namespace AS2.Algos.SnowflakeTest
 
     /// <summary>
     /// Simple algorithm for testing the snowflake containment check.
+    /// <para>
+    /// <b>Disclaimer: The save/load feature does not work for
+    /// this algorithm because it stores the target shape in a
+    /// static member. Always generate this algorithm from
+    /// Init Mode.</b>
+    /// </para>
     /// </summary>
     public class SnowflakeTestParticle : ParticleAlgorithm
     {
@@ -38,6 +44,7 @@ namespace AS2.Algos.SnowflakeTest
         ParticleAttribute<int> counterIndex;
         ParticleAttribute<bool> scaleBit;
         ParticleAttribute<bool> scaleMSB;
+        ParticleAttribute<bool>[] validPlacement;
 
         public static Shape snowflake;
         public static int scaleFactor;
@@ -53,6 +60,12 @@ namespace AS2.Algos.SnowflakeTest
             counterIndex = CreateAttributeInt("Counter Index", -1);
             scaleBit = CreateAttributeBool("Scale Bit", false);
             scaleMSB = CreateAttributeBool("Scale MSB", false);
+
+            validPlacement = new ParticleAttribute<bool>[6];
+            for (int i = 0; i < 6; i++)
+            {
+                validPlacement[i] = CreateAttributeBool("Valid Placement " + i, false);
+            }
 
             snowflakeCheck = new SubSnowflakeContainment(p, snowflakeInfo);
 
@@ -71,11 +84,11 @@ namespace AS2.Algos.SnowflakeTest
         }
 
         // Implement this method if the algorithm terminates at some point
-        //public override bool IsFinished()
-        //{
-        //    // Return true when this particle has terminated
-        //    return false;
-        //}
+        public override bool IsFinished()
+        {
+            // Return true when this particle has terminated
+            return round > 1;
+        }
 
         // The movement activation method
         public override void ActivateMove()
@@ -86,7 +99,42 @@ namespace AS2.Algos.SnowflakeTest
         // The beep activation method
         public override void ActivateBeep()
         {
-            // Implement the communication code here
+            int r = round.GetValue();
+            switch (r)
+            {
+                case 0:
+                    {
+                        snowflakeCheck.Init(true, onCounter && counterIndex.GetValue() != -1, Mathf.Max(0, counterIndex),
+                            onCounter && HasNeighborAt(Direction.W) && ((SnowflakeTestParticle)GetNeighborAt(Direction.W)).onCounter ? Direction.W : Direction.NONE,
+                            onCounter && HasNeighborAt(Direction.E) && ((SnowflakeTestParticle)GetNeighborAt(Direction.E)).onCounter ? Direction.E : Direction.NONE, scaleBit, scaleMSB);
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        snowflakeCheck.SetupPC(pc);
+                        SetPlannedPinConfiguration(pc);
+                        snowflakeCheck.ActivateSend();
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 1:
+                    {
+                        snowflakeCheck.ActivateReceive();
+
+                        if (snowflakeCheck.IsFinished())
+                        {
+                            for (int i = 0; i < 6; i++)
+                            {
+                                if (snowflakeCheck.IsRepresentative(i))
+                                    validPlacement[i].SetValue(true);
+                            }
+                            round.SetValue(r + 1);
+                        }
+
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        snowflakeCheck.SetupPC(pc);
+                        SetPlannedPinConfiguration(pc);
+                        snowflakeCheck.ActivateSend();
+                    }
+                    break;
+            }
         }
     }
 
@@ -233,9 +281,11 @@ namespace AS2.Algos.SnowflakeTest
             }
 
             // Place the counter (must have length at least 1!)
-            // Also set counter index
+            // The counter must be able to store the longest line of the scaled shape
+            // Also set counter index for amoebots storing the base arm lengths
+            int longestLineScaled = scale * sc.shape.GetLongestLineLength();
             string scaleStr = IntToBinary(scale);
-            for (int x = 0; x < Mathf.Max(scaleStr.Length, 2, snowflakeInfo.longestParameter); x++)
+            for (int x = 0; x < Mathf.Max(scaleStr.Length, 2, snowflakeInfo.longestParameter, longestLineScaled + 1); x++)
             {
                 InitializationParticle p;
                 Vector2Int pos = new Vector2Int(x, 0);

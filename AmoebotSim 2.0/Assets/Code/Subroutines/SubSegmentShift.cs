@@ -331,7 +331,7 @@ namespace AS2.Subroutines.SegmentShift
                             PinConfiguration pc = algo.GetCurrentPinConfiguration();
                             Direction pred = shiftDir.GetCurrentValue();
                             Direction succ = pred.Opposite();
-                            if (!algo.HasNeighborAt(pred) || pc.GetPinAt(pred, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                            if (!algo.HasNeighborAt(pred) || pc.GetPinAt(pred, 1).PartitionSet.ReceivedBeep())
                                 // Received beep from segment predecessor or have no predecessor
                                 isStart.SetValue(true);
                             if (!algo.HasNeighborAt(succ) || pc.GetPinAt(succ, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep())
@@ -653,7 +653,7 @@ namespace AS2.Subroutines.SegmentShift
                         {
                             PinConfiguration pc = algo.GetPlannedPinConfiguration();
                             pc.GetPinAt(shiftDir.GetCurrentValue(), 0).PartitionSet.SendBeep();
-                            pc.GetPinAt(shiftDir.GetCurrentValue().Opposite(), 0).PartitionSet.SendBeep();
+                            pc.GetPinAt(shiftDir.GetCurrentValue().Opposite(), algo.PinsPerEdge - 2).PartitionSet.SendBeep();
                         }
                         round.SetValue(r + 1);
                     }
@@ -911,7 +911,7 @@ namespace AS2.Subroutines.SegmentShift
             Direction pred = shiftDir.GetCurrentValue();
             Direction succ = pred.Opposite();
             pc.MakePartitionSet(new int[] { pc.GetPinAt(pred, 0).Id, pc.GetPinAt(succ, algo.PinsPerEdge - 1).Id }, pSet1.GetCurrentValue());
-            pc.SetPartitionSetPosition(pSet1.GetCurrentValue(), new Vector2((succ.ToInt() + 1.5f) * 60, 0.8f));
+            pc.SetPartitionSetPosition(pSet1.GetCurrentValue(), new Vector2((succ.ToInt() + 1.5f) * 60, 0.6f));
 
             // Setup global circuit using both "inside" pins
             int[] pins = new int[12];

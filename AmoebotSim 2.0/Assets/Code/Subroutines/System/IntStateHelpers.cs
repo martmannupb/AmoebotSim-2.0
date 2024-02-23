@@ -16,8 +16,8 @@ namespace AS2.Subroutines.BinStateHelpers
     /// <typeparam name="T">The type of value represented by the attribute.</typeparam>
     public abstract class BinAttribute<T>
     {
-        protected ParticleAttribute<int> attr;
-        protected int idx;
+        public readonly ParticleAttribute<int> attr;
+        public readonly int idx;
 
         /// <summary>
         /// Creates a new attribute wrapper referencing the
@@ -209,7 +209,9 @@ namespace AS2.Subroutines.BinStateHelpers
     /// </summary>
     public class BinAttributeBitField : BinAttribute<bool>
     {
-        protected int length;
+        public readonly int length;
+        protected int bit_mask;
+
         /// <summary>
         /// <inheritdoc cref="BinAttribute{T}.BinAttribute(ParticleAttribute{int}, int)"/>
         /// </summary>
@@ -219,6 +221,13 @@ namespace AS2.Subroutines.BinStateHelpers
         public BinAttributeBitField(ParticleAttribute<int> attr, int idx, int length) : base(attr, idx)
         {
             this.length = length;
+            int b = 1;
+            bit_mask = 0;
+            for (int i = 0; i < length; i++)
+            {
+                bit_mask |= b;
+                b <<= 1;
+            }
         }
 
         /// <summary>
@@ -252,6 +261,27 @@ namespace AS2.Subroutines.BinStateHelpers
         public void SetValue(int index, bool value)
         {
             attr.SetValue((attr.GetCurrentValue() & ~(1 << (idx + index))) | ((value ? 1 : 0) << (idx + index)));
+        }
+
+        /// <summary>
+        /// Returns the logical OR of all stored bits for the value
+        /// at the beginning of the round.
+        /// </summary>
+        /// <returns><c>true</c> if and only if any of the stored bits
+        /// are <c>true</c> at the beginning of the round.</returns>
+        public bool GetOr()
+        {
+            return ((attr.GetValue() >> idx) & bit_mask) > 0;
+        }
+
+        /// <summary>
+        /// Returns the logical OR of all latest stored bits.
+        /// </summary>
+        /// <returns><c>true</c> if and only if any of the latest
+        /// stored bits are <c>true</c>.</returns>
+        public bool GetCurrentOr()
+        {
+            return ((attr.GetCurrentValue() >> idx) & bit_mask) > 0;
         }
 
         /// <summary>
