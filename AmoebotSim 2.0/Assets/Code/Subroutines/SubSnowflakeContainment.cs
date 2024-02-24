@@ -584,7 +584,7 @@ namespace AS2.Subroutines.SnowflakeContainment
             else
                 this.binop = binop;
             for (int i = 0; i < 6; i++)
-                segmentShift[i] = new SubSegmentShift(p, pasc[i]);
+                segmentShift[i] = new SubSegmentShift(p, this.pasc[i]);
         }
 
         /// <summary>
@@ -1763,7 +1763,7 @@ namespace AS2.Subroutines.SnowflakeContainment
         /// </summary>
         /// <returns>An array with <c>true</c> entries for the rotations at
         /// which we are not a valid placement.</returns>
-        public bool[] GetInvalidPlacementRotations()
+        private bool[] GetInvalidPlacementRotations()
         {
             bool[] dirs = new bool[6];
 

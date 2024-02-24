@@ -30,11 +30,27 @@ namespace AS2.Algos.SnowflakeTest
         // If the algorithm has a special generation method, specify its full name here
         public static new string GenerationMethod => typeof(SnowflakeTestInitializer).FullName;
 
-        [StatusInfo("Display Shape", "Displays the target shape")]
+        [StatusInfo("Display Shape", "Displays the target shape at the selecetd location")]
         public static void ShowShape(AS2.Sim.ParticleSystem system, Particle selectedParticle)
         {
             LineDrawer.Instance.Clear();
-            snowflake.Draw(selectedParticle is null ? Vector2Int.zero : selectedParticle.Head(), 0, scaleFactor);
+            int rotation = 0;
+            if (!(selectedParticle is null))
+            {
+                SnowflakeTestParticle p = (SnowflakeTestParticle)selectedParticle.algorithm;
+                if (p.IsFinished())
+                {
+                    for (int r = 0; r < 6; r++)
+                    {
+                        if (p.validPlacement[r])
+                        {
+                            rotation = r;
+                            break;
+                        }
+                    }
+                }
+            }
+            snowflake.Draw(selectedParticle is null ? Vector2Int.zero : selectedParticle.Head(), rotation, scaleFactor);
             LineDrawer.Instance.SetTimer(20);
         }
 
