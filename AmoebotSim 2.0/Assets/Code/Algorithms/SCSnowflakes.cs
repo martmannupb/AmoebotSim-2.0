@@ -1243,12 +1243,17 @@ namespace AS2.Algos.SCSnowflakes
     // Its class name must be specified as the algorithm's GenerationMethod
     public class SCSnowflakesInitializer : InitializationMethod
     {
+        private int nPlaced;
+
         public SCSnowflakesInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(string shape = "snowflake.json", bool fromFile = true, bool isStarConvex = false, int numAmoebots = 250, float holeProb = 0.3f, bool fillHoles = false)
+        public void Generate(string shape = "snowflake.json", bool fromFile = true, bool isStarConvex = false, int numAmoebots = 250, bool fillShape = true, int scale = 1, int rotation = 0,
+            float holeProb = 0.3f, bool fillHoles = false)
         {
+            nPlaced = 0;
+
             // Read the shape
             Shape s;
             ShapeContainer sc;
@@ -1327,12 +1332,86 @@ namespace AS2.Algos.SCSnowflakes
             foreach (Vector2Int v in GenerateRandomConnectedPositions(Vector2Int.zero, numAmoebots, holeProb, fillHoles))
             {
                 AddParticle(v);
+                nPlaced++;
             }
+
+            // Fill up positions of the shape
+            if (fillShape)
+            {
+                if (scale < 1)
+                {
+                    Log.Warning("Scale must be >= 1");
+                    scale = 1;
+                }
+                rotation = rotation % 6;
+                if (rotation < 0)
+                {
+                    rotation += 6;
+                }
+
+                if (scale == 1)
+                {
+                    foreach (Shape.Node node in s.nodes)
+                    {
+                        TryPlaceParticle(AmoebotFunctions.RotateVector(node, rotation));
+                    }
+                }
+                else
+                {
+                    // Fill edges
+                    foreach (Shape.Edge edge in s.edges)
+                    {
+                        Vector2Int n1 = s.nodes[edge.u];
+                        Vector2Int n2 = s.nodes[edge.v];
+                        n1 = AmoebotFunctions.RotateVector(n1, rotation);
+                        n2 = AmoebotFunctions.RotateVector(n2, rotation);
+                        Vector2Int to = n2 - n1;
+                        n1 *= scale;
+                        for (int i = 0; i < scale + 1; i++)
+                        {
+                            TryPlaceParticle(n1 + i * to);
+                        }
+                    }
+
+                    // Fill faces
+                    foreach (Shape.Face face in s.faces)
+                    {
+                        Vector2Int n1 = s.nodes[face.u];
+                        Vector2Int n2 = s.nodes[face.v];
+                        Vector2Int n3 = s.nodes[face.w];
+                        n1 = AmoebotFunctions.RotateVector(n1, rotation);
+                        n2 = AmoebotFunctions.RotateVector(n2, rotation);
+                        n3 = AmoebotFunctions.RotateVector(n3, rotation);
+                        Vector2Int to1 = n2 - n1;
+                        Vector2Int to2 = n3 - n1;
+                        n1 *= scale;
+                        for (int i = 1; i < scale - 1; i++)
+                        {
+                            Vector2Int start = n1 + i * to1;
+                            for (int j = 1; j < scale - i; j++)
+                            {
+                                TryPlaceParticle(start + j * to2);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Log.Debug("Generated system has " + nPlaced + " amoebots");
 
             // Draw shape preview
             LineDrawer.Instance.Clear();
-            s.Draw(Vector2Int.zero, 0, 1);
+            s.Draw(Vector2Int.zero, rotation, scale);
             LineDrawer.Instance.SetTimer(20);
+        }
+
+        private void TryPlaceParticle(Vector2Int pos)
+        {
+            if (!TryGetParticleAt(pos, out _))
+            {
+                InitializationParticle p = AddParticle(pos);
+                nPlaced++;
+            }
         }
 
         private string IntToBinary(int num)
