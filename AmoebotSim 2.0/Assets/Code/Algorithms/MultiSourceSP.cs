@@ -16,11 +16,13 @@ namespace AS2.Algos.MultiSourceSP
 
     // Round 0:
     //  - Find out which amoebots represent portal edges and in which directions
+    //      - Also find the root portal
     //  - Setup simple portal circuits for main direction
     //  - Source amoebots send beeps
+    //  - Leader sends beep on a different circuit
 
     // Round 1:
-    //  - Receive beeps to determine all source portals
+    //  - Receive beeps to determine all source portals and the root portal
     //  - Setup ETT for augmentation set computation
     //  - Start ETT
 
@@ -55,7 +57,7 @@ namespace AS2.Algos.MultiSourceSP
     // We first perform the line algorithm on each source portal
     //  -> First the top side, then the bottom side
 
-    // We then perform the line + propagation step for each of the two portals,
+    // We then perform the propagation step for each of the two portals,
     // checking whether the portal exists and has sources first
     //  -> If a portal does not exist or has no sources, we skip and wait for the other regions to finish
     //  -> After this step, each region has 0, 1 or 2 shortest path trees
@@ -63,6 +65,8 @@ namespace AS2.Algos.MultiSourceSP
     // Finally, we perform a merge step on each region
     //  -> An actual merge procedure with PASC is only required if we have 2 trees, otherwise we just take
     //      the one we already have or stay without a tree
+
+    // Line algorithm (0-3)
 
     // Round 0:
     //  - If counter > 1, jump to round 4
@@ -94,7 +98,7 @@ namespace AS2.Algos.MultiSourceSP
     //      - Setup PASC circuit and send beep
     //      - Go to round 2
 
-    // Find out which of the following propagation routines we have to run in our region
+    // Find out which of the following propagation routines we have to run in our region (4-6)
 
     // Round 4:
     //  - Setup 2 regional circuits
@@ -112,7 +116,21 @@ namespace AS2.Algos.MultiSourceSP
     //      - Store results
     //  - Set counter to 0
 
-    // Propagation
+    // Coloring of the regions (for later, rounds 7-TODO)
+
+    // Round 7:
+    //  - Setup coloring PASC circuit
+    //  - Leader sends one beep
+
+    // Round 8:
+    //  - Receive PASC beep
+    //  - Set coloring based on received bit
+
+
+
+
+
+    // Propagation (8-TODO)
 
     // Round 7:
     //  - If counter >= 2:
@@ -215,6 +233,7 @@ namespace AS2.Algos.MultiSourceSP
             public ParticleAttribute<bool> primaryPortalIsAbove;
             public ParticleAttribute<bool> regionHasSecondaryPortalSource;
             public ParticleAttribute<bool> secondaryPortalIsAbove;
+            public ParticleAttribute<bool> colored;
 
             public Instance(ParticleAlgorithm algo, int idx)
             {
@@ -225,6 +244,7 @@ namespace AS2.Algos.MultiSourceSP
                 primaryPortalIsAbove = algo.CreateAttributeBool("Primary Portal Above [" + idx + "]", false);
                 regionHasSecondaryPortalSource = algo.CreateAttributeBool("Secondary Portal Src [" + idx + "]", false);
                 secondaryPortalIsAbove = algo.CreateAttributeBool("Secondary Portal Above [" + idx + "]", false);
+                colored = algo.CreateAttributeBool("Colored [" + idx + "]", false);
             }
         }
 
@@ -237,6 +257,7 @@ namespace AS2.Algos.MultiSourceSP
         ParticleAttribute<bool> isDest;                 // Destination flag
 
         ParticleAttribute<bool> sourcePortal;           // Whether we are on a portal with a source
+        ParticleAttribute<bool> rootPortal;             // Whether we are on the root portal
         ParticleAttribute<bool> augPortal;              // Whether we are on a portal in the augmentation set
         ParticleAttribute<Direction> nbrPortalDir1;     // Direction of the first neighbor portal edge (mainDir + 60 or mainDir + 120 or NONE)
         ParticleAttribute<Direction> nbrPortalDir2;     // Direction of the second neighbor portal edge (mainDir - 60 or mainDir - 120 or NONE)
@@ -268,6 +289,7 @@ namespace AS2.Algos.MultiSourceSP
             isDest = CreateAttributeBool("Destination", false);
 
             sourcePortal = CreateAttributeBool("Source Portal", false);
+            rootPortal = CreateAttributeBool("Root Portal", false);
             augPortal = CreateAttributeBool("Augmentation Portal", false);
             nbrPortalDir1 = CreateAttributeDirection("Nbr Portal Dir 1", Direction.NONE);
             nbrPortalDir2 = CreateAttributeDirection("Nbr Portal Dir 2", Direction.NONE);
@@ -341,11 +363,13 @@ namespace AS2.Algos.MultiSourceSP
                         // Find edge amoebots
                         DeterminePortalNeighbors(mainDir);
                         // Send source beeps on portal circuits
-                        SetupSimplePortalCircuit(mainDir);
+                        SetupSimplePortalCircuits(mainDir, 2);
                         if (isSource)
                         {
                             PinConfiguration pc = GetPlannedPinConfiguration();
                             pc.SendBeepOnPartitionSet(0);
+                            if (isLeader)
+                                pc.SendBeepOnPartitionSet(1);
                         }
                         round.SetValue(round + 1);
                     }
@@ -357,6 +381,8 @@ namespace AS2.Algos.MultiSourceSP
                         if (pc.ReceivedBeepOnPartitionSet(0))
                         {
                             sourcePortal.SetValue(true);
+                            if (pc.ReceivedBeepOnPartitionSet(1))
+                                rootPortal.SetValue(true);
                         }
 
                         // Setup ETT
@@ -827,33 +853,56 @@ namespace AS2.Algos.MultiSourceSP
                     break;
                 case 7:
                     {
-
+                        // Setup coloring circuit and send beep
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        SetupColoringCircuit(pc, mainDir);
+                        SetPlannedPinConfiguration(pc);
+                        pasc1.ActivateSend();
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 8:
+                    {
+                        pasc1.ActivateReceive();
+                        if (pasc1.GetReceivedBit() > 0)
+                        {
+                            if (IsOnQPrime())
+                                SetMainColor(ColorData.Particle_Purple);
+                            else
+                                SetMainColor(ColorData.Particle_Red);
+                        }
+                        else
+                        {
+                            if (IsOnQPrime())
+                                SetMainColor(ColorData.Particle_Orange);
+                            else    
+                                SetMainColor(ColorData.Particle_Blue);
+                        }
                     }
                     break;
             }
 
-
-            SetColor();
+            if (r < 7)
+                SetColor();
         }
 
 
         // Helpers
 
         /// <summary>
-        /// Sets up a simple circuit connecting all pins along the given axis
-        /// into partition set 0.
+        /// Sets up simple circuits connecting all amoebots along the given axis
+        /// on circuits with partition sets 0 up to 3.
         /// </summary>
         /// <param name="portalDir">The direction of the portal axis.</param>
-        private void SetupSimplePortalCircuit(Direction portalDir)
+        /// <param name="numCircuits">The number of circuits to set up.</param>
+        private void SetupSimplePortalCircuits(Direction portalDir, int numCircuits = 1)
         {
             PinConfiguration pc = GetContractedPinConfiguration();
-            int[] pinIds = new int[PinsPerEdge * 2];
-            for (int i = 0; i < PinsPerEdge; i++)
+            Direction dirOpp = portalDir.Opposite();
+            for (int i = 0; i < numCircuits; i++)
             {
-                pinIds[2 * i] = pc.GetPinAt(portalDir, i).Id;
-                pinIds[2 * i + 1] = pc.GetPinAt(portalDir.Opposite(), i).Id;
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(portalDir, PinsPerEdge - 1 - i).Id, pc.GetPinAt(dirOpp, i).Id }, i);
             }
-            pc.MakePartitionSet(pinIds, 0);
             SetPlannedPinConfiguration(pc);
         }
 
@@ -963,44 +1012,6 @@ namespace AS2.Algos.MultiSourceSP
                     }
                 }
             }
-
-
-
-            //int[] pinsTop = new int[] { pc.GetPinAt(portalDir, PinsPerEdge - 1).Id, pc.GetPinAt(portalDir.Rotate60(1), 0).Id, pc.GetPinAt(portalDir.Rotate60(2), 0).Id, pc.GetPinAt(portalDir.Opposite(), 0).Id };
-            //int[] pinsBot = new int[] { pc.GetPinAt(portalDir, 0).Id, pc.GetPinAt(portalDir.Rotate60(-1), 0).Id, pc.GetPinAt(portalDir.Rotate60(-2), 0).Id, pc.GetPinAt(portalDir.Opposite(), PinsPerEdge - 1).Id };
-
-            //if (!IsOnQPrime())
-            //{
-            //    pc.SetToGlobal(0);
-            //}
-            //else
-            //{
-            //    if (marker1.GetCurrentValue())
-            //    {
-            //        pc.MakePartitionSet(new int[] { pinsTop[3] }, 0);
-            //        pc.MakePartitionSet(new int[] { pinsTop[0], pinsTop[1], pinsTop[2] }, 1);
-            //        pc.SetPartitionSetPosition(1, new Vector2((portalDir.ToInt() + 1) * 60f, 0.6f));
-            //    }
-            //    else
-            //    {
-            //        pc.MakePartitionSet(pinsTop, 0);
-            //        pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60f, 0.5f));
-            //    }
-
-            //    if (marker2.GetCurrentValue())
-            //    {
-            //        pc.MakePartitionSet(new int[] { pinsBot[3] }, 2);
-            //        pc.MakePartitionSet(new int[] { pinsBot[0], pinsBot[1], pinsBot[2] }, 3);
-            //        pc.SetPartitionSetPosition(3, new Vector2((portalDir.ToInt() - 1) * 60f, 0.6f));
-            //    }
-            //    else
-            //    {
-            //        pc.MakePartitionSet(pinsBot, 2);
-            //        pc.SetPartitionSetPosition(2, new Vector2((portalDir.ToInt() - 1.5f) * 60f, 0.5f));
-            //    }
-            //}
-
-            //SetPlannedPinConfiguration(pc);
         }
 
         /// <summary>
@@ -1099,6 +1110,35 @@ namespace AS2.Algos.MultiSourceSP
                 pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60, 0.5f));
                 pc.SetPartitionSetPosition(2, new Vector2((portalDir.ToInt() - 1.5f) * 60, 0.5f));
             }
+        }
+
+        /// <summary>
+        /// Sets up a PASC circuit that can be used to color adjacent regions
+        /// differently. Letting the leader send a beep will make each region
+        /// receive the same bit, with adjacent regions receiving different bits.
+        /// Amoebots on a portal will always receive the same bit as the region
+        /// "below" them.
+        /// </summary>
+        /// <param name="pc">The pin configuration to modify.</param>
+        /// <param name="portalDir">The portal direction.</param>
+        private void SetupColoringCircuit(PinConfiguration pc, Direction portalDir)
+        {
+            List<Direction> predecessors = new List<Direction>();
+            List<Direction> successors = new List<Direction>();
+            Direction nbrDir = portalDir.Opposite();
+            foreach (int d in new int[] { 1, 2, 4, 5 })
+            {
+                Direction dir = portalDir.Rotate60(d);
+                if (HasNeighborAt(dir))
+                {
+                    if (d < 4)
+                        predecessors.Add(dir);
+                    else
+                        successors.Add(dir);
+                }
+            }
+            pasc1.Init(predecessors, successors, 0, PinsPerEdge - 1, 0, 1, isLeader, IsOnQPrime(), nbrDir, HasNeighborAt(nbrDir), HasNeighborAt(portalDir));
+            pasc1.SetupPC(pc);
         }
 
         /// <summary>
