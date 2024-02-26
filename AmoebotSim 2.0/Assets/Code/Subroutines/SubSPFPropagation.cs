@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using AS2.Sim;
+using AS2.Subroutines.BinStateHelpers;
 
 namespace AS2.Subroutines.SPFPropagation
 {
@@ -141,31 +142,174 @@ namespace AS2.Subroutines.SPFPropagation
 
     public class SubSPFPropagation : Subroutine
     {
-        // Round counter: int (0-7)                     + 3
-        // Ignore directions: bool[6]                   + 6
-        // Portal direction: Direction                  + 3
-        // Initial parent direction: Direction          + 3
-        // New parent direction: Direction              + 3
-        // Instance index: int (0-3)                    + 2 (used to find unique partition set IDs)
-
-        // Source region is portal: bool                + 1
-        // Portal flag: bool                            + 1
-        // Source flag: bool                            + 1
-        // Source region flag: bool                     + 1
-        // Region points down: bool                     + 1
-        // Visible region flag: bool                    + 1
-        // Received two beeps flag: bool                + 1
-        // On PASC axis flag: bool                      + 1
-        // Finished flag: bool                          + 1
-
-        // 28         27                 26         25        24            23              22       21          20                    1918            1715           1412           119          8    3        2 0
-        // x          x                  x          x         x             x               x        x           x                      xx             xxx            xxx            xxx          xxxxxx        xxx
-        // Finished   PASC participant   Two axes   Visible   Region down   Source region   Source   On portal   Source region portal   Instance idx   Parent dir 2   Parent dir 1   Portal dir   Ignore dirs   Round
+        //     30         29      28 27            26         25        24            23              22       21          20                    1918            1715           1412           119          8    3        2 0
+        // x   x          x       x  x             x          x         x             x               x        x           x                      xx             xxx            xxx            xxx          xxxxxx        xxx
+        //     Finished   Color   PASC axis 1, 2   Two axes   Visible   Region down   Source region   Source   On portal   Source region portal   Instance idx   Parent dir 2   Parent dir 1   Portal dir   Ignore dirs   Round
         ParticleAttribute<int> state;
+
+        BinAttributeInt round;                          // Round counter (0-7)
+        BinAttributeBitField ignoreDirections;          // In which directions we should ignore neighbors
+        BinAttributeDirection portalDir;                // The main portal direction
+        BinAttributeDirection parentDir1;               // Our original parent direction (in the source region)
+        BinAttributeDirection parentDir2;               // Our new parent direction (both regions)
+        BinAttributeInt instanceIndex;                  // The index of this instance (used to obtain unique partition set IDs, 0-3)
+        BinAttributeBool sourceRegionIsPortal;          // Whether the source region is just the portal
+        BinAttributeBool onPortal;                      // Whether we are on the portal separating the two regions
+        BinAttributeBool isSource;                      // Whether we are a source
+        BinAttributeBool inSourceRegion;                // Whether we are in the source region
+        BinAttributeBool regionPointsDown;              // Whether the target region points "down" from the portal
+        BinAttributeBool inVisibleRegion;               // Whether we are in the visible region of the portal
+        BinAttributeBool onTwoAxes;                     // Whether we received beeps from two source portal amoebots
+        BinAttributeBitField onPascAxis;                // Whether we are on an axis that should forward PASC beeps (two possible axes)
+        BinAttributeBool controlColor;                  // Whether we should control the amoebot color
+        BinAttributeBool finished;                      // Whether we are finished
 
         public SubSPFPropagation(Particle p) : base(p)
         {
             state = algo.CreateAttributeInt(FindValidAttributeName("[Prop] State"), 0);
+
+            round = new BinAttributeInt(state, 0, 3);
+            ignoreDirections = new BinAttributeBitField(state, 3, 6);
+            portalDir = new BinAttributeDirection(state, 9);
+            parentDir1 = new BinAttributeDirection(state, 12);
+            parentDir2 = new BinAttributeDirection(state, 15);
+            instanceIndex = new BinAttributeInt(state, 18, 2);
+            sourceRegionIsPortal = new BinAttributeBool(state, 20);
+            onPortal = new BinAttributeBool(state, 21);
+            isSource = new BinAttributeBool(state, 22);
+            inSourceRegion = new BinAttributeBool(state, 23);
+            regionPointsDown = new BinAttributeBool(state, 24);
+            inVisibleRegion = new BinAttributeBool(state, 25);
+            onTwoAxes = new BinAttributeBool(state, 26);
+            onPascAxis = new BinAttributeBitField(state, 27, 2);
+            controlColor = new BinAttributeBool(state, 29);
+            finished = new BinAttributeBool(state, 30);
+        }
+
+        public void Init(Direction portalDir, int instanceIndex, bool onPortal, bool isSource, bool regionPointsDown, bool sourceRegionIsPortal,
+            bool controlColor = false, List<Direction> ignoreDirections = null, bool inSourceRegion = false, Direction parentDir1 = Direction.NONE)
+        {
+            state.SetValue(0);
+            this.portalDir.SetValue(portalDir);
+            this.instanceIndex.SetValue(instanceIndex);
+            this.onPortal.SetValue(onPortal);
+            this.isSource.SetValue(isSource);
+            this.regionPointsDown.SetValue(regionPointsDown);
+            this.sourceRegionIsPortal.SetValue(sourceRegionIsPortal);
+            this.controlColor.SetValue(controlColor);
+            if (!(ignoreDirections is null))
+            {
+                foreach (Direction d in ignoreDirections)
+                    this.ignoreDirections.SetValue(d.ToInt(), true);
+            }
+            this.inSourceRegion.SetValue(inSourceRegion);
+            this.parentDir1.SetValue(parentDir1);
+        }
+
+        public void ActivateReceive()
+        {
+            int r = round.GetCurrentValue();
+            switch (r)
+            {
+
+            }
+            SetColor();
+        }
+
+        public void SetupPC(PinConfiguration pc)
+        {
+            int r = round.GetCurrentValue();
+            switch (r)
+            {
+                case 0:
+                    {
+                        // Establish axis circuits in the lower region
+                        if (!inSourceRegion.GetCurrentValue() && !onPortal.GetCurrentValue())
+                            SetupAxisCircuit(pc);
+                    }
+                    break;
+            }
+            SetColor();
+        }
+
+        public void ActivateSend()
+        {
+            int r = round.GetCurrentValue();
+            switch (r)
+            {
+                case 0:
+                    {
+                        // Portal amoebots send beep on the axis circuits
+                        if (onPortal.GetCurrentValue())
+                        {
+                            Direction dirDown1 = DirUp1().Opposite();
+                            Direction dirDown2 = DirUp2().Opposite();
+                            PinConfiguration pc = algo.GetPlannedPinConfiguration();
+                            if (!ignoreDirections.GetCurrentValue(dirDown1.ToInt()))
+                                pc.GetPinAt(dirDown1, 0).PartitionSet.SendBeep();
+                            if (!ignoreDirections.GetCurrentValue(dirDown2.ToInt()))
+                                pc.GetPinAt(dirDown2, 0).PartitionSet.SendBeep();
+                        }
+                    }
+                    break;
+            }
+            SetColor();
+        }
+
+        private void SetColor()
+        {
+            // TODO
+        }
+
+        private void SetupAxisCircuit(PinConfiguration pc, bool split1 = false, bool split2 = false)
+        {
+            if (split1 && split2)
+                return;
+            
+            Direction dirUp1 = DirUp1();
+            Direction dirUp2 = DirUp2();
+            Direction dirDown1 = dirUp1.Opposite();
+            Direction dirDown2 = dirUp2.Opposite();
+
+            int idx = instanceIndex.GetCurrentValue();
+            if (!split1 && !ignoreDirections.GetCurrentValue(dirUp1.ToInt()) && !ignoreDirections.GetCurrentValue(dirDown1.ToInt()))
+            {
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(dirUp1, algo.PinsPerEdge - 1).Id, pc.GetPinAt(dirDown1, 0).Id }, 2 * idx);
+                pc.SetPartitionSetPosition(2 * idx, new Vector2((dirUp1.ToInt() + 1.5f) * 60, 0.5f));
+            }
+            if (!split2 && !ignoreDirections.GetCurrentValue(dirUp2.ToInt()) && !ignoreDirections.GetCurrentValue(dirDown2.ToInt()))
+            {
+                pc.MakePartitionSet(new int[] { pc.GetPinAt(dirUp2, algo.PinsPerEdge - 1).Id, pc.GetPinAt(dirDown2, 0).Id }, 2 * idx + 1);
+                pc.SetPartitionSetPosition(2 * idx + 1, new Vector2((dirUp2.ToInt() + 1.5f) * 60, 0.5f));
+            }
+        }
+
+        /// <summary>
+        /// Helper computing the "left up" direction in the
+        /// target region pointing towards the portal.
+        /// </summary>
+        /// <returns>The "left" direction that points towards the portal
+        /// from the target region.</returns>
+        private Direction DirUp1()
+        {
+            if (regionPointsDown.GetCurrentValue())
+                return portalDir.GetCurrentValue().Rotate60(2);
+            else
+                return portalDir.GetCurrentValue().Rotate60(-1);
+        }
+
+        /// <summary>
+        /// Helper computing the "right up" direction in the
+        /// target region pointing towards the portal.
+        /// </summary>
+        /// <returns>The "right" direction that points towards the portal
+        /// from the target region.</returns>
+        private Direction DirUp2()
+        {
+            if (regionPointsDown.GetCurrentValue())
+                return portalDir.GetCurrentValue().Rotate60(1);
+            else
+                return portalDir.GetCurrentValue().Rotate60(-2);
         }
     }
 

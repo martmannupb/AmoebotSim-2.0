@@ -4,6 +4,7 @@ using AS2.Subroutines.ETT;
 using AS2.Subroutines.PASC;
 using UnityEngine;
 using static AS2.Constants;
+using AS2.Subroutines.SPFPropagation;
 
 namespace AS2.Algos.MultiSourceSP
 {
@@ -226,6 +227,9 @@ namespace AS2.Algos.MultiSourceSP
             public ParticleAttribute<bool> primaryPortalIsAbove;
             public ParticleAttribute<bool> regionHasSecondaryPortalSource;
             public ParticleAttribute<bool> secondaryPortalIsAbove;
+            public ParticleAttribute<bool> runPropagation;
+
+            public SubSPFPropagation prop;
 
             public Instance(ParticleAlgorithm algo, int idx)
             {
@@ -236,6 +240,7 @@ namespace AS2.Algos.MultiSourceSP
                 primaryPortalIsAbove = algo.CreateAttributeBool("Primary Portal Above [" + idx + "]", false);
                 regionHasSecondaryPortalSource = algo.CreateAttributeBool("Secondary Portal Src [" + idx + "]", false);
                 secondaryPortalIsAbove = algo.CreateAttributeBool("Secondary Portal Above [" + idx + "]", false);
+                runPropagation = algo.CreateAttributeBool("Run Propagation [" + idx + "]", false);
             }
         }
 
@@ -287,7 +292,10 @@ namespace AS2.Algos.MultiSourceSP
             nbrPortalDir2 = CreateAttributeDirection("Nbr Portal Dir 2", Direction.NONE);
 
             for (int i = 0; i < 4; i++)
+            {
                 instances[i] = new Instance(this, i);
+                instances[i].prop = new SubSPFPropagation(p);
+            }
             numInstances = CreateAttributeInt("Num Instances", 1);
 
             marker1 = CreateAttributeBool("Marker 1", false);
@@ -883,8 +891,12 @@ namespace AS2.Algos.MultiSourceSP
                                 if (counter == 0 && (instances[i].regionHasPrimaryPortalSource || instances[i].regionHasSecondaryPortalSource) ||
                                     counter == 1 && (instances[i].regionHasPrimaryPortalSource && instances[i].regionHasSecondaryPortalSource))
                                 {
+                                    instances[i].runPropagation.SetValue(true);
                                     pc.SendBeepOnPartitionSet(0);
-                                    break;
+                                }
+                                else
+                                {
+                                    instances[i].runPropagation.SetValue(false);
                                 }
                             }
                             round.SetValue(r + 1);
@@ -903,7 +915,86 @@ namespace AS2.Algos.MultiSourceSP
                         }
                         else
                         {
-                            // Initialize and start propagation subroutine or go start waiting
+                            // Initialize and start propagation subroutine or start waiting
+                            pc.SetToSingleton();
+                            for (int i = 0; i < numInstances; i++)
+                            {
+                                if (instances[i].runPropagation)
+                                {
+                                    // Find out if we are on the right portal
+                                    bool onPortal = false;
+                                    bool primaryPortal = counter == 0 && instances[i].regionHasPrimaryPortalSource;
+                                    if (IsOnQPrime())
+                                    {
+                                        if (primaryPortal && !instances[i].incidentPortalIsParent || !primaryPortal && instances[i].incidentPortalIsParent)
+                                        {
+                                            onPortal = true;
+                                        }
+                                    }
+
+                                    // Check whether the portal is above or not
+                                    bool portalIsAbove = primaryPortal && instances[i].primaryPortalIsAbove || !primaryPortal && instances[i].secondaryPortalIsAbove;
+
+                                    // Find the directions which we should ignore
+                                    List<Direction> ignoreDirs = new List<Direction>();
+                                    foreach (Direction d in DirectionHelpers.Iterate60(Direction.E, 6))
+                                    {
+                                        if (!HasNeighborAt(d))
+                                            ignoreDirs.Add(d);
+                                    }
+                                    // Ignore more directions if we are on a portal
+                                    if (IsOnQPrime())
+                                    {
+                                        if (onPortal && portalIsAbove || !onPortal && !portalIsAbove)
+                                        {
+                                            // Ignore the two top directions
+                                            ignoreDirs.Add(mainDir.Rotate60(1));
+                                            ignoreDirs.Add(mainDir.Rotate60(2));
+                                        }
+                                        else
+                                        {
+                                            // Ignore the two bottom directions
+                                            ignoreDirs.Add(mainDir.Rotate60(-1));
+                                            ignoreDirs.Add(mainDir.Rotate60(-2));
+                                        }
+
+                                        // If we are a marker, we have to remove more directions
+                                        if (marker1 && i == 0)
+                                        {
+                                            ignoreDirs.Add(mainDir);
+                                            ignoreDirs.Add(mainDir.Rotate60(1));
+                                        }
+                                        else if (marker1 && i == 1)
+                                        {
+                                            ignoreDirs.Add(mainDir.Opposite());
+                                            ignoreDirs.Add(mainDir.Rotate60(2));
+                                        }
+                                        else if (marker2 && i == (marker1 ? 2 : 1))
+                                        {
+                                            ignoreDirs.Add(mainDir);
+                                            ignoreDirs.Add(mainDir.Rotate60(-1));
+                                        }
+                                        else if (marker2 && i == (marker1 ? 3 : 2))
+                                        {
+                                            ignoreDirs.Add(mainDir.Opposite());
+                                            ignoreDirs.Add(mainDir.Rotate60(-2));
+                                        }
+                                    }
+
+                                    instances[i].prop.Init(mainDir, i, onPortal, onPortal && isSource, portalIsAbove, true, true, ignoreDirs, onPortal,
+                                        // Parent direction is only set on the main portal for non-sources
+                                        // The direction is either the primary or the secondary direction, based on which portal we are to the region
+                                        onPortal && !isSource ? (instances[i].incidentPortalIsParent ? instances[i].parentDir2 : instances[i].parentDir1) : Direction.NONE);
+                                    instances[i].prop.SetupPC(pc);
+                                }
+                            }
+                            SetPlannedPinConfiguration(pc);
+                            for (int i = 0; i < numInstances; i++)
+                            {
+                                if (instances[i].runPropagation)
+                                    instances[i].prop.ActivateSend();
+                            }
+                            round.SetValue(r + 1);
                         }
                     }
                     break;
