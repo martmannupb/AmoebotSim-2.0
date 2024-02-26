@@ -116,7 +116,7 @@ namespace AS2.Algos.MultiSourceSP
     //      - Store results
     //  - Set counter to 0
 
-    // Coloring of the regions (for later, rounds 7-TODO)
+    // Coloring of the regions (for later, rounds 7-8)
 
     // Round 7:
     //  - Setup coloring PASC circuit
@@ -128,67 +128,60 @@ namespace AS2.Algos.MultiSourceSP
 
 
 
+    // Propagation (9-TODO)
 
-
-    // Propagation (8-TODO)
-
-    // Round 7:
+    // Round 9:
     //  - If counter >= 2:
     //      - Finished with the two propagations, go to merge step
     //      - TODO: Round-----------------------------------------
     //  - Else:
     //      - Establish global circuit
     //      - Beep if we have to perform a propagation for the current counter (0 = first, 1 = second portal if it exists)
-    //      - Go to round 8
+    //      - Go to round 10
 
-    // Round 8:
+    // Round 10:
     //  - Receive beep on global circuit
-    //  - If no beep: Increment counter and go to round 7
+    //  - If no beep: Increment counter and go to round 9
     //  - Else:
     //      - If we don't have to run the propagation: Establish global circuit and wait
     //      - Initialize and start propagation subroutine based on current counter
 
-    // Round 9:
+    // Round 11:
     //  - Receive propagation subroutine beep
     //  - Setup global circuit
     //  - Beep if propagation is not finished yet
 
-    // Round 10:
+    // Round 12:
     //  - Receive beep on global circuit
     //  - If there was a beep:
     //      - Continue running propagation subroutine (unless it is finished)
-    //      - Go back to round 9
+    //      - Go back to round 11
     //  - Else:
-    //      - Setup PASC circuit on the portal/region tree and send beep
+    //      - Set counter2 to 0
+    //      - Go to round 13
 
-    // Round 11:
-    //  - Receive PASC beep
-    //  - Set region color
-    //  - Set counter2 to 0
-    //  - Go to round 12
-
-    // Round 12:
+    // Round 13:
     //  - If counter2 >= 2:
     //      - Finished with second phase of propagation
     //      - Increment counter
-    //      - Go to round 7
+    //      - Go to round 9
     //  - Else:
     //      - Continue propagation subroutine (1-SPF part) if the region color matches counter2
     //      - Other amoebots establish global circuit
 
-    // Round 13 (similar to 9):
+    // Round 14 (similar to 11):
     //  - Receive propagation subroutine beep
     //  - Setup global circuit
     //  - Beep if propagation is not finished yet
 
-    // Round 14 (similar to 10):
+    // Round 15 (similar to 12):
     //  - Receive beep on global circuit
     //  - If there was a beep:
     //      - Continue running propagation subroutine (only if we are in the right region)
-    //      - Go back to round 13
+    //      - Go back to round 14
     //  - Else:
     //      - Increment counter2
-    //      - Go to round 12
+    //      - Go to round 13
 
     // TODO
 
@@ -233,7 +226,6 @@ namespace AS2.Algos.MultiSourceSP
             public ParticleAttribute<bool> primaryPortalIsAbove;
             public ParticleAttribute<bool> regionHasSecondaryPortalSource;
             public ParticleAttribute<bool> secondaryPortalIsAbove;
-            public ParticleAttribute<bool> colored;
 
             public Instance(ParticleAlgorithm algo, int idx)
             {
@@ -244,7 +236,6 @@ namespace AS2.Algos.MultiSourceSP
                 primaryPortalIsAbove = algo.CreateAttributeBool("Primary Portal Above [" + idx + "]", false);
                 regionHasSecondaryPortalSource = algo.CreateAttributeBool("Secondary Portal Src [" + idx + "]", false);
                 secondaryPortalIsAbove = algo.CreateAttributeBool("Secondary Portal Above [" + idx + "]", false);
-                colored = algo.CreateAttributeBool("Colored [" + idx + "]", false);
             }
         }
 
@@ -268,6 +259,7 @@ namespace AS2.Algos.MultiSourceSP
 
         ParticleAttribute<bool> marker1;                // Whether we are marked for the first neighbor
         ParticleAttribute<bool> marker2;                // Whether we are marked for the second neighbor
+        ParticleAttribute<bool> regionColor;            // Flag for the region color. On portals, this is the color of the "lower" region
 
         ParticleAttribute<int> counter;                 // Generic counter used to perform multiple iterations of the same task
         ParticleAttribute<bool> pasc1Participant;
@@ -300,6 +292,7 @@ namespace AS2.Algos.MultiSourceSP
 
             marker1 = CreateAttributeBool("Marker 1", false);
             marker2 = CreateAttributeBool("Marker 2", false);
+            regionColor = CreateAttributeBool("Region Color", false);
 
             counter = CreateAttributeInt("Counter", 0);
             pasc1Participant = CreateAttributeBool("PASC 1 Part.", false);
@@ -864,19 +857,53 @@ namespace AS2.Algos.MultiSourceSP
                 case 8:
                     {
                         pasc1.ActivateReceive();
-                        if (pasc1.GetReceivedBit() > 0)
+                        regionColor.SetValue(pasc1.GetReceivedBit() > 0);
+                        round.SetValue(r + 1);
+                    }
+                    break;
+
+                // Propagation start
+                case 9:
+                    {
+                        if (counter >= 2)
                         {
-                            if (IsOnQPrime())
-                                SetMainColor(ColorData.Particle_Purple);
-                            else
-                                SetMainColor(ColorData.Particle_Red);
+                            // Both propagations are finished, go to next step
+                            // TODO
                         }
                         else
                         {
-                            if (IsOnQPrime())
-                                SetMainColor(ColorData.Particle_Orange);
-                            else    
-                                SetMainColor(ColorData.Particle_Blue);
+                            // Establish a global circuit and beep if we have to perform a propagation in any of our regions
+                            PinConfiguration pc = GetContractedPinConfiguration();
+                            pc.SetToGlobal(0);
+                            SetPlannedPinConfiguration(pc);
+                            for (int i = 0; i < numInstances; i++)
+                            {
+                                // First iteration: Always handle a source portal
+                                // Second iteration: Only necessary if we have two source portals in the region
+                                if (counter == 0 && (instances[i].regionHasPrimaryPortalSource || instances[i].regionHasSecondaryPortalSource) ||
+                                    counter == 1 && (instances[i].regionHasPrimaryPortalSource && instances[i].regionHasSecondaryPortalSource))
+                                {
+                                    pc.SendBeepOnPartitionSet(0);
+                                    break;
+                                }
+                            }
+                            round.SetValue(r + 1);
+                        }
+                    }
+                    break;
+                case 10:
+                    {
+                        // Receive beep on global circuit
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        if (!pc.ReceivedBeepOnPartitionSet(0))
+                        {
+                            // No beep: Increment counter and go back
+                            counter.SetValue(counter + 1);
+                            round.SetValue(r - 1);
+                        }
+                        else
+                        {
+                            // Initialize and start propagation subroutine or go start waiting
                         }
                     }
                     break;
