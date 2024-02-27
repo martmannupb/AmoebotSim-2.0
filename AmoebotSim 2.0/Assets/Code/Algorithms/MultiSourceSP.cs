@@ -267,6 +267,7 @@ namespace AS2.Algos.MultiSourceSP
         ParticleAttribute<bool> regionColor;            // Flag for the region color. On portals, this is the color of the "lower" region
 
         ParticleAttribute<int> counter;                 // Generic counter used to perform multiple iterations of the same task
+        ParticleAttribute<int> counter2;                // Generic counter used to distinguish between different colored regions
         ParticleAttribute<bool> pasc1Participant;
         ParticleAttribute<bool> pasc2Participant;
         ParticleAttribute<Comparison> comparison;
@@ -303,6 +304,7 @@ namespace AS2.Algos.MultiSourceSP
             regionColor = CreateAttributeBool("Region Color", false);
 
             counter = CreateAttributeInt("Counter", 0);
+            counter2 = CreateAttributeInt("Counter 2", 0);
             pasc1Participant = CreateAttributeBool("PASC 1 Part.", false);
             pasc2Participant = CreateAttributeBool("PASC 2 Part.", false);
             comparison = CreateAttributeEnum<Comparison>("Comparison", Comparison.EQUAL);
@@ -996,6 +998,64 @@ namespace AS2.Algos.MultiSourceSP
                             }
                             round.SetValue(r + 1);
                         }
+                    }
+                    break;
+                case 11:
+                    {
+                        // Receive propagation beep
+                        // Check whether the first propagation phase is finished
+                        bool finished = true;
+                        for (int i = 0; i < numInstances; i++)
+                        {
+                            if (instances[i].runPropagation)
+                            {
+                                instances[i].prop.ActivateReceive();
+                                if (!instances[i].prop.IsFirstPhaseFinished())
+                                    finished = false;
+                            }
+                        }
+
+                        // Setup a global circuit and beep if we are not finished yet
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        pc.SetToGlobal(0);
+                        SetPlannedPinConfiguration(pc);
+                        if (!finished)
+                            pc.SendBeepOnPartitionSet(0);
+
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 12:
+                    {
+                        // Receive beep on global circuit
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+
+                        // Continue running the propagation algorithm if there was a beep
+                        if (pc.ReceivedBeepOnPartitionSet(0))
+                        {
+                            pc.SetToSingleton();
+                            for (int i = 0; i < numInstances; i++)
+                            {
+                                if (instances[i].runPropagation && !instances[i].prop.IsFirstPhaseFinished())
+                                    instances[i].prop.SetupPC(pc);
+                            }
+
+                            SetPlannedPinConfiguration(pc);
+
+                            for (int i = 0; i < numInstances; i++)
+                            {
+                                if (instances[i].runPropagation && !instances[i].prop.IsFirstPhaseFinished())
+                                    instances[i].prop.ActivateSend();
+                            }
+                            round.SetValue(r - 1);
+                        }
+                        // Otherwise, go to the next phase for the first region color
+                        else
+                        {
+                            counter2.SetValue(0);
+                            round.SetValue(r + 1);
+                        }
+
                     }
                     break;
             }
