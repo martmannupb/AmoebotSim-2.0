@@ -183,19 +183,26 @@ namespace AS2.Subroutines.PASC
         /// <param name="pc">The pin configuration to be modified.
         /// This will only modify the pins and partition sets
         /// specified for this subroutine.</param>
-        public void SetupPC(PinConfiguration pc)
+        /// <param name="invertedDirections">Directions in which the
+        /// pin offsets should be inverted. This can be used to adjust
+        /// the "side" on which the beeps are sent if the specified default
+        /// pins are used for something else in some directions.</param>
+        public void SetupPC(PinConfiguration pc, List<Direction> invertedDirections = null)
         {
-            SetupPinConfig(pc, false);
+            SetupPinConfig(pc, false, invertedDirections);
         }
 
-        private void SetupPinConfig(PinConfiguration pc, bool cutoff = false)
+        private void SetupPinConfig(PinConfiguration pc, bool cutoff = false, List<Direction> invertedDirections = null)
         {
-            int pin1 = Pin1;
-            int pin2 = Pin2;
-            int pin1Rev = algo.PinsPerEdge - 1 - pin1;
-            int pin2Rev = algo.PinsPerEdge - 1 - pin2;
+            int pin1Orig = Pin1;
+            int pin2Orig = Pin2;
+            int pin1RevOrig = algo.PinsPerEdge - 1 - pin1Orig;
+            int pin2RevOrig = algo.PinsPerEdge - 1 - pin2Orig;
             int pSet1 = PSet1;
             int pSet2 = PSet2;
+
+            if (invertedDirections is null)
+                invertedDirections = new List<Direction>();
 
             bool havePartitionSets = false;
 
@@ -212,7 +219,6 @@ namespace AS2.Subroutines.PASC
                 if (t == NbrType.NONE)
                     continue;
 
-
                 // If cutoff: Active amoebots do not connect predecessor
                 if (cutoff && Active && t == NbrType.PREDECESSOR)
                     continue;
@@ -224,8 +230,19 @@ namespace AS2.Subroutines.PASC
                     firstSuccDir = dir;
                 if (t == NbrType.NEIGHBOR && firstNbrDir == Direction.NONE)
                     firstNbrDir = dir;
-
+                
                 // Determine which pins to add
+                int pin1 = pin1Orig;
+                int pin2 = pin2Orig;
+                int pin1Rev = pin1RevOrig;
+                int pin2Rev = pin2RevOrig;
+                if (invertedDirections.Contains(dir))
+                {
+                    pin1 = pin1RevOrig;
+                    pin2 = pin2RevOrig;
+                    pin1Rev = pin1Orig;
+                    pin2Rev = pin2Orig;
+                }
                 int pinPrimary;
                 int pinSecondary;
                 if (t == NbrType.SUCCESSOR)
@@ -267,16 +284,16 @@ namespace AS2.Subroutines.PASC
 
             // Place partition sets nicely
             Direction placeDir = firstPredDir != Direction.NONE ? firstPredDir : (firstSuccDir != Direction.NONE ? firstSuccDir : firstNbrDir);
-            if (placeDir == firstSuccDir)
+            if ((placeDir == firstSuccDir && !invertedDirections.Contains(placeDir)) || (placeDir != firstSuccDir && invertedDirections.Contains(placeDir)))
             {
-                pin1Rev = pin1;
-                pin2Rev = pin2;
+                pin1RevOrig = pin1Orig;
+                pin2RevOrig = pin2Orig;
             }
             if (pc.GetPartitionSet(pSet1).GetPins().Length > 1 && placeDir != Direction.NONE)
             {
                 float pinsPerEdgeFactor = ((algo.PinsPerEdge - 1) / 2.0f);
-                float primaryPin = (pin1Rev - pinsPerEdgeFactor) / pinsPerEdgeFactor;
-                float secondaryPin = (pin2Rev - pinsPerEdgeFactor) / pinsPerEdgeFactor;
+                float primaryPin = (pin1RevOrig - pinsPerEdgeFactor) / pinsPerEdgeFactor;
+                float secondaryPin = (pin2RevOrig - pinsPerEdgeFactor) / pinsPerEdgeFactor;
                 float maxAngle = 45.0f - 90.0f / (algo.PinsPerEdge + 1);
                 pc.SetPartitionSetPosition(pSet1, new Vector2(placeDir.ToInt() * 60.0f + primaryPin * maxAngle, 0.7f));
                 pc.SetPartitionSetPosition(pSet2, new Vector2(placeDir.ToInt() * 60.0f + secondaryPin * maxAngle, 0.7f));
@@ -290,9 +307,13 @@ namespace AS2.Subroutines.PASC
         /// <param name="pc">The pin configuration to be modified.
         /// This will only modify the pins and partition sets
         /// specified for this subroutine.</param>
-        public void SetupCutoffCircuit(PinConfiguration pc)
+        /// <param name="invertedDirections">Directions in which the
+        /// pin offsets should be inverted. This can be used to adjust
+        /// the "side" on which the beeps are sent if the specified default
+        /// pins are used for something else in some directions.</param>
+        public void SetupCutoffCircuit(PinConfiguration pc, List<Direction> invertedDirections = null)
         {
-            SetupPinConfig(pc, true);
+            SetupPinConfig(pc, true, invertedDirections);
         }
 
         /// <summary>
