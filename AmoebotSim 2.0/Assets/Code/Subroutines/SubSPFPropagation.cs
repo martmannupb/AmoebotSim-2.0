@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using AS2.Sim;
 using AS2.Subroutines.BinStateHelpers;
+using AS2.Subroutines.PASC;
 
 namespace AS2.Subroutines.SPFPropagation
 {
@@ -68,9 +69,8 @@ namespace AS2.Subroutines.SPFPropagation
 
     // Round 1:
     //  Send:
-    //  - Establish axis circuits and a regional circuit
-    //  - Amoebots in the visible region that received two beeps send reply on axis and regional circuit
-    //      - Even split the axis circuits to minimize the number of amoebots participating in the next phase
+    //  - Establish a regional circuit
+    //  - Amoebots in the visible region that received two beeps send reply on the regional circuit
     //  Receive:
     //  - If no beep on the regional circuit: Go to second phase
     //  - Else:
@@ -142,59 +142,92 @@ namespace AS2.Subroutines.SPFPropagation
 
     public class SubSPFPropagation : Subroutine
     {
-        //     30         29      28 27            26         25        24            23              22       21          20                    1918            1715           1412           119          8    3        2 0
-        // x   x          x       x  x             x          x         x             x               x        x           x                      xx             xxx            xxx            xxx          xxxxxx        xxx
-        //     Finished   Color   PASC axis 1, 2   Two axes   Visible   Region down   Source region   Source   On portal   Source region portal   Instance idx   Parent dir 2   Parent dir 1   Portal dir   Ignore dirs   Round
-        ParticleAttribute<int> state;
+        enum ComparisonResult
+        {
+            EQUAL = 0,
+            GREATER = 1,
+            LESS = 2
+        }
+
+        //     30         29      28         27        26                   25                    24              23       22             21            20                    1918            1715           1412           119          8    3        2 0
+        // x   x          x       x          x         x                    x                     x               x        x              x             x                      xx             xxx            xxx            xxx          xxxxxx        xxx
+        //     Finished   Color   Two axes   Visible   Region below other   Region below source   Source region   Source   Other portal   Main portal   Source region portal   Instance idx   Parent dir 2   Parent dir 1   Portal dir   Ignore dirs   Round
+        ParticleAttribute<int> state1;
+
+        //                                 76           5    0
+        // xxxx xxxx xxxx xxxx xxxx xxxx   xx           xxxxxx
+        //                                 Comparison   Child directions
+        ParticleAttribute<int> state2;
 
         BinAttributeInt round;                          // Round counter (0-7)
         BinAttributeBitField ignoreDirections;          // In which directions we should ignore neighbors
-        BinAttributeDirection portalDir;                // The main portal direction
+        BinAttributeDirection portalDir;                // The main portal direction (always points "right", the propagation always heads "down")
         BinAttributeDirection parentDir1;               // Our original parent direction (in the source region)
         BinAttributeDirection parentDir2;               // Our new parent direction (both regions)
         BinAttributeInt instanceIndex;                  // The index of this instance (used to obtain unique partition set IDs, 0-3)
         BinAttributeBool sourceRegionIsPortal;          // Whether the source region is just the portal
-        BinAttributeBool onPortal;                      // Whether we are on the portal separating the two regions
+        BinAttributeBool onMainPortal;                  // Whether we are on the portal separating the two regions
+        BinAttributeBool onOtherPortal;                 // Whether we are on a portal ending one of the two regions
         BinAttributeBool isSource;                      // Whether we are a source
         BinAttributeBool inSourceRegion;                // Whether we are in the source region
-        BinAttributeBool regionPointsDown;              // Whether the target region points "down" from the portal
+        BinAttributeBool regionBelowSourcePortal;       // Whether the target region is "below" the source region's boundary portal
+                                                        // So the source region's boundary portal knows how to restrict its pins
+                                                        // This is only necessary if the source region is not the main portal itself
+        BinAttributeBool regionBelowOtherPortal;        // Whether the target region is "below" the target region's boundary portal
+                                                        // Same as above for the target region, but this is always applicable
         BinAttributeBool inVisibleRegion;               // Whether we are in the visible region of the portal
         BinAttributeBool onTwoAxes;                     // Whether we received beeps from two source portal amoebots
-        BinAttributeBitField onPascAxis;                // Whether we are on an axis that should forward PASC beeps (two possible axes)
         BinAttributeBool controlColor;                  // Whether we should control the amoebot color
         BinAttributeBool finished;                      // Whether we are finished
 
-        public SubSPFPropagation(Particle p) : base(p)
-        {
-            state = algo.CreateAttributeInt(FindValidAttributeName("[Prop] State"), 0);
+        BinAttributeBitField childDirections;           // Directions in which we have children
+        BinAttributeEnum<ComparisonResult> comparison;  // Result of the PASC comparison
 
-            round = new BinAttributeInt(state, 0, 3);
-            ignoreDirections = new BinAttributeBitField(state, 3, 6);
-            portalDir = new BinAttributeDirection(state, 9);
-            parentDir1 = new BinAttributeDirection(state, 12);
-            parentDir2 = new BinAttributeDirection(state, 15);
-            instanceIndex = new BinAttributeInt(state, 18, 2);
-            sourceRegionIsPortal = new BinAttributeBool(state, 20);
-            onPortal = new BinAttributeBool(state, 21);
-            isSource = new BinAttributeBool(state, 22);
-            inSourceRegion = new BinAttributeBool(state, 23);
-            regionPointsDown = new BinAttributeBool(state, 24);
-            inVisibleRegion = new BinAttributeBool(state, 25);
-            onTwoAxes = new BinAttributeBool(state, 26);
-            onPascAxis = new BinAttributeBitField(state, 27, 2);
-            controlColor = new BinAttributeBool(state, 29);
-            finished = new BinAttributeBool(state, 30);
+        SubPASC2 pasc;
+
+        public SubSPFPropagation(Particle p, SubPASC2 pasc = null) : base(p)
+        {
+            state1 = algo.CreateAttributeInt(FindValidAttributeName("[Prop] State 1"), 0);
+            state2 = algo.CreateAttributeInt(FindValidAttributeName("[Prop] State 2"), 0);
+
+            round = new BinAttributeInt(state1, 0, 3);
+            ignoreDirections = new BinAttributeBitField(state1, 3, 6);
+            portalDir = new BinAttributeDirection(state1, 9);
+            parentDir1 = new BinAttributeDirection(state1, 12);
+            parentDir2 = new BinAttributeDirection(state1, 15);
+            instanceIndex = new BinAttributeInt(state1, 18, 2);
+            sourceRegionIsPortal = new BinAttributeBool(state1, 20);
+            onMainPortal = new BinAttributeBool(state1, 21);
+            onOtherPortal = new BinAttributeBool(state1, 22);
+            isSource = new BinAttributeBool(state1, 23);
+            inSourceRegion = new BinAttributeBool(state1, 24);
+            regionBelowSourcePortal = new BinAttributeBool(state1, 25);
+            regionBelowOtherPortal = new BinAttributeBool(state1, 26);
+            inVisibleRegion = new BinAttributeBool(state1, 27);
+            onTwoAxes = new BinAttributeBool(state1, 28);
+            controlColor = new BinAttributeBool(state1, 29);
+            finished = new BinAttributeBool(state1, 30);
+
+            childDirections = new BinAttributeBitField(state2, 0, 6);
+            comparison = new BinAttributeEnum<ComparisonResult>(state2, 6, 2);
+
+            if (pasc is null)
+                this.pasc = new SubPASC2(p);
+            else
+                this.pasc = pasc;
         }
 
-        public void Init(Direction portalDir, int instanceIndex, bool onPortal, bool isSource, bool regionPointsDown, bool sourceRegionIsPortal,
+        public void Init(Direction portalDir, int instanceIndex, bool onMainPortal, bool onOtherPortal, bool isSource, bool regionBelowSourcePortal, bool regionBelowOtherPortal, bool sourceRegionIsPortal,
             bool controlColor = false, List<Direction> ignoreDirections = null, bool inSourceRegion = false, Direction parentDir1 = Direction.NONE)
         {
-            state.SetValue(0);
+            state1.SetValue(0);
             this.portalDir.SetValue(portalDir);
             this.instanceIndex.SetValue(instanceIndex);
-            this.onPortal.SetValue(onPortal);
+            this.onMainPortal.SetValue(onMainPortal);
+            this.onOtherPortal.SetValue(onOtherPortal);
             this.isSource.SetValue(isSource);
-            this.regionPointsDown.SetValue(regionPointsDown);
+            this.regionBelowSourcePortal.SetValue(regionBelowSourcePortal);
+            this.regionBelowOtherPortal.SetValue(regionBelowOtherPortal);
             this.sourceRegionIsPortal.SetValue(sourceRegionIsPortal);
             this.controlColor.SetValue(controlColor);
             if (!(ignoreDirections is null))
@@ -214,7 +247,7 @@ namespace AS2.Subroutines.SPFPropagation
                 case 0:
                     {
                         // Lower region amoebots listen for the axis beeps
-                        if (!inSourceRegion.GetCurrentValue() && !onPortal.GetCurrentValue())
+                        if (!inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue())
                         {
                             PinConfiguration pc = algo.GetCurrentPinConfiguration();
                             Direction dirUp1 = DirUp1();
@@ -252,13 +285,7 @@ namespace AS2.Subroutines.SPFPropagation
                         }
                         else
                         {
-                            // Mark amoebots that have to participate in the PASC procedure
-                            Direction dirDown1 = DirUp1().Opposite();
-                            Direction dirDown2 = DirUp2().Opposite();
-                            if (pc.GetPinAt(dirDown1, 0).PartitionSet.ReceivedBeep())
-                                onPascAxis.SetValue(0, true);
-                            if (pc.GetPinAt(dirDown2, 0).PartitionSet.ReceivedBeep())
-                                onPascAxis.SetValue(1, true);
+                            // Move on to the PASC procedure
                             round.SetValue(r + 1);
                         }
                     }
@@ -266,44 +293,98 @@ namespace AS2.Subroutines.SPFPropagation
                 case 2:
                     {
                         // Amoebots in the source region and on the portal receive parent beep and setup PASC
-                        bool portal = onPortal.GetCurrentValue();
+                        bool portal = onMainPortal.GetCurrentValue();
                         bool source = isSource.GetCurrentValue();
                         if (inSourceRegion.GetCurrentValue() || portal)
                         {
                             PinConfiguration pc = algo.GetCurrentPinConfiguration();
                             Direction pDir = portalDir.GetCurrentValue();
-                            bool down = regionPointsDown.GetCurrentValue();
+                            bool down = regionBelowSourcePortal.GetCurrentValue();
 
                             // Find directions from where we received beeps
                             List<Direction> childDirs = new List<Direction>();
+                            Direction parent = parentDir1.GetCurrentValue();
                             for (int d = 0; d < 6; d++)
                             {
-                                if (ignoreDirections.GetCurrentValue(d))
+                                Direction dir = DirectionHelpers.Cardinal(d);
+                                if (ignoreDirections.GetCurrentValue(d) || dir == parent)
                                     continue;
 
-                                Direction dir = DirectionHelpers.Cardinal(d);
                                 int pin = algo.PinsPerEdge - 1;
                                 // Portal amoebots have to use other pins
-                                if (portal)
+                                if (portal && sourceRegionIsPortal.GetCurrentValue() || onOtherPortal.GetCurrentValue())
                                 {
                                     if (dir == pDir && down || dir == pDir.Opposite() && !down)
                                         pin = 0;
                                 }
                                 if (pc.GetPinAt(dir, pin).PartitionSet.ReceivedBeep())
+                                {
+                                    childDirections.SetValue(d, true);
                                     childDirs.Add(dir);
+                                }
                             }
 
                             // If we are not a source, add the parent direction
                             List<Direction> parentDirs = null;
                             if (!source)
                             {
-                                Direction parent = parentDir1.GetCurrentValue();
                                 if (!ignoreDirections.GetCurrentValue(parent.ToInt()))
                                     parentDirs = new List<Direction>() { parent };
                             }
 
                             // Initialize PASC accordingly
-                            // TODO: Add a "mirror" parameter to the PASC subroutine to enable pin offsets to be flipped for certain directions
+                            int idx = instanceIndex.GetCurrentValue();
+                            pasc.Init(parentDirs, childDirs, 0, 1, 2 * idx, 2 * idx + 1, source);
+                        }
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 3:
+                    {
+                        // Receive PASC beep
+                        if (inSourceRegion.GetCurrentValue() || onMainPortal.GetCurrentValue())
+                        {
+                            pasc.ActivateReceive();
+                        }
+                        // Receive axis beeps and update comparison result
+                        if (onTwoAxes.GetCurrentValue())
+                        {
+                            PinConfiguration pc = algo.GetCurrentPinConfiguration();
+                            Direction dirUp1 = DirUp1();
+                            Direction dirUp2 = DirUp2();
+
+                            bool beep1 = pc.GetPinAt(dirUp1, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+                            bool beep2 = pc.GetPinAt(dirUp2, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+
+                            if (beep1 && !beep2)
+                                comparison.SetValue(ComparisonResult.GREATER);
+                            else if (!beep1 && beep2)
+                                comparison.SetValue(ComparisonResult.LESS);
+                        }
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 4:
+                    {
+                        // Receive beep on regional circuit
+                        PinConfiguration pc = algo.GetCurrentPinConfiguration();
+                        if (!pc.ReceivedBeepOnPartitionSet(instanceIndex.GetCurrentValue() + 8))
+                        {
+                            // No beep: Finished with PASC
+                            // Use comparison result to set the new parent direction
+                            if (onTwoAxes.GetCurrentValue())
+                            {
+                                if (comparison.GetCurrentValue() != ComparisonResult.GREATER)
+                                    parentDir2.SetValue(DirUp1());
+                                else
+                                    parentDir2.SetValue(DirUp2());
+                            }
+                            round.SetValue(r + 1);
+                        }
+                        else
+                        {
+                            // Repeat
+                            round.SetValue(r - 1);
                         }
                     }
                     break;
@@ -319,26 +400,75 @@ namespace AS2.Subroutines.SPFPropagation
                 case 0:
                     {
                         // Establish axis circuits in the lower region
-                        if (!inSourceRegion.GetCurrentValue() && !onPortal.GetCurrentValue())
+                        if (!inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue())
                             SetupAxisCircuit(pc);
                     }
                     break;
                 case 1:
                     {
-                        // Setup axis circuits for the reply beep (amoebots on 2 axes split)
-                        if (inVisibleRegion.GetCurrentValue())
-                        {
-                            bool split = onTwoAxes.GetCurrentValue();
-                            SetupAxisCircuit(pc, split, split);
-                        }
-
-                        // Also setup a regional circuits (using the two center pins)
+                        // Setup a regional circuit (using the two center pins)
                         SetupRegionalCircuit(pc);
                     }
                     break;
                 case 2:
                     {
                         // Do nothing (require singleton PC as input!)
+                    }
+                    break;
+                case 3:
+                    {
+                        if (inSourceRegion.GetCurrentValue() || onMainPortal.GetCurrentValue())
+                        {
+                            // Amoebots on a portal may have to invert some directions
+                            List<Direction> invertDirs = new List<Direction>();
+                            bool mainPortal = onMainPortal.GetCurrentValue();
+                            bool otherPortal = onOtherPortal.GetCurrentValue();
+                            if (mainPortal && sourceRegionIsPortal.GetCurrentValue() || otherPortal)
+                            {
+                                Direction pDir = portalDir.GetCurrentValue();
+                                bool down = regionBelowSourcePortal.GetCurrentValue();
+                                bool source = isSource.GetCurrentValue();
+                                foreach (Direction dir in new Direction[] { pDir, pDir.Opposite() })
+                                {
+                                    if (!source && dir == parentDir1.GetCurrentValue())
+                                    {
+                                        if (dir == pDir && down || dir == pDir.Opposite() && !down)
+                                            invertDirs.Add(dir);
+                                    }
+                                    else if (childDirections.GetCurrentValue(dir.ToInt()))
+                                    {
+                                        if (dir == pDir && !down || dir == pDir.Opposite() && down)
+                                            invertDirs.Add(dir);
+                                    }
+
+                                }
+                            }
+
+                            pasc.SetupPC(pc, invertDirs);
+
+                            // Portal amoebots have to connect their secondary partition sets downwards
+                            if (mainPortal || otherPortal)
+                            {
+                                Direction dirDown1 = DirUp1().Opposite();
+                                Direction dirDown2 = DirUp2().Opposite();
+                                int idx = 2 * instanceIndex.GetCurrentValue() + 1;
+                                if (!ignoreDirections.GetCurrentValue(dirDown1.ToInt()))
+                                    pc.GetPartitionSet(idx).AddPin(pc.GetPinAt(dirDown1, 0).Id);
+                                if (!ignoreDirections.GetCurrentValue(dirDown2.ToInt()))
+                                    pc.GetPartitionSet(idx).AddPin(pc.GetPinAt(dirDown2, 0).Id);
+                            }
+                        }
+                        // Setup axis circuits to forward the PASC beeps
+                        if (onTwoAxes.GetCurrentValue())
+                        {
+                            SetupAxisCircuit(pc);
+                        }
+                    }
+                    break;
+                case 4:
+                    {
+                        // Setup a regional circuit
+                        SetupRegionalCircuit(pc);
                     }
                     break;
             }
@@ -353,7 +483,7 @@ namespace AS2.Subroutines.SPFPropagation
                 case 0:
                     {
                         // Portal amoebots send beep on the axis circuits
-                        if (onPortal.GetCurrentValue())
+                        if (onMainPortal.GetCurrentValue())
                         {
                             Direction dirDown1 = DirUp1().Opposite();
                             Direction dirDown2 = DirUp2().Opposite();
@@ -367,20 +497,18 @@ namespace AS2.Subroutines.SPFPropagation
                     break;
                 case 1:
                     {
-                        // Amoebots that received two beeps now reply on the axis circuits and the regional circuit
+                        // Amoebots that received two beeps now reply on the regional circuit
                         if (onTwoAxes.GetCurrentValue())
                         {
                             PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                            pc.GetPinAt(DirUp1(), algo.PinsPerEdge - 1).PartitionSet.SendBeep();
-                            pc.GetPinAt(DirUp2(), algo.PinsPerEdge - 1).PartitionSet.SendBeep();
                             pc.SendBeepOnPartitionSet(instanceIndex.GetCurrentValue() + 8);
                         }
                     }
                     break;
                 case 2:
                     {
-                        // All non-source amoebots in the source region and the portal beep towards their parent
-                        bool portal = onPortal.GetCurrentValue();
+                        // All non-source amoebots in the source region and the main portal beep towards their parent
+                        bool portal = onMainPortal.GetCurrentValue();
                         if ((inSourceRegion.GetCurrentValue() || portal) && !isSource.GetCurrentValue())
                         {
                             PinConfiguration pc = algo.GetPlannedPinConfiguration();
@@ -390,14 +518,33 @@ namespace AS2.Subroutines.SPFPropagation
 
                             int pin = 0;
                             // Portal amoebots have to use other pins
-                            if (portal)
+                            if (portal && sourceRegionIsPortal.GetCurrentValue() || onOtherPortal.GetCurrentValue())
                             {
                                 Direction pDir = portalDir.GetCurrentValue();
-                                bool down = regionPointsDown.GetCurrentValue();
+                                bool down = regionBelowSourcePortal.GetCurrentValue();
                                 if (d == pDir && !down || d == pDir.Opposite() && down)
                                     pin = algo.PinsPerEdge - 1;
                             }
                             pc.GetPinAt(d, pin).PartitionSet.SendBeep();
+                        }
+                    }
+                    break;
+                case 3:
+                    {
+                        // Send PASC beep
+                        if (inSourceRegion.GetCurrentValue() || onMainPortal.GetCurrentValue())
+                        {
+                            pasc.ActivateSend();
+                        }
+                    }
+                    break;
+                case 4:
+                    {
+                        // PASC participants beep if they became passive
+                        if ((inSourceRegion.GetCurrentValue() || onMainPortal.GetCurrentValue()) && pasc.BecamePassive())
+                        {
+                            PinConfiguration pc = algo.GetPlannedPinConfiguration();
+                            pc.SendBeepOnPartitionSet(instanceIndex.GetCurrentValue() + 8);
                         }
                     }
                     break;
@@ -423,7 +570,7 @@ namespace AS2.Subroutines.SPFPropagation
             //    algo.SetMainColor(ColorData.Particle_Red);
             //else if (onPortal.GetCurrentValue())
             //    algo.SetMainColor(ColorData.Particle_Orange);
-            if (isSource.GetCurrentValue() || onPortal.GetCurrentValue())
+            if (isSource.GetCurrentValue() || onMainPortal.GetCurrentValue())
                 return;
 
             if (onTwoAxes.GetCurrentValue())
@@ -469,16 +616,18 @@ namespace AS2.Subroutines.SPFPropagation
 
         /// <summary>
         /// Sets up a circuit that connects the entire region. The partition set
-        /// ID is the instance index + 8.
+        /// ID is the instance index + 8. This might not be setup correctly if
+        /// the amoebot has no neighbors in this region
         /// </summary>
         /// <param name="pc">The pin configuration to modify.</param>
         private void SetupRegionalCircuit(PinConfiguration pc)
         {
             List<int> pins = new List<int>();
-            // Have to be careful if we are on the portal and the portal itself is the source region
-            bool restrictPins = sourceRegionIsPortal.GetCurrentValue() && onPortal.GetCurrentValue();
             Direction pDir = portalDir.GetCurrentValue();
-            bool pointsDown = regionPointsDown.GetCurrentValue();
+            // Have to be careful if we are on a portal that bounds a region
+            bool sourceRegion = inSourceRegion.GetCurrentValue();
+            bool restrictPins = onOtherPortal.GetCurrentValue() || sourceRegionIsPortal.GetCurrentValue() && onMainPortal.GetCurrentValue();
+            bool restrictUpwards = restrictPins && (sourceRegion && regionBelowSourcePortal.GetCurrentValue() || !sourceRegion && regionBelowOtherPortal.GetCurrentValue());
             for (int d = 0; d < 6; d++)
             {
                 if (ignoreDirections.GetCurrentValue(d))
@@ -486,13 +635,13 @@ namespace AS2.Subroutines.SPFPropagation
                 Direction dir = DirectionHelpers.Cardinal(d);
                 if (restrictPins && dir == pDir)
                 {
-                    // Only use the "right" pin
-                    pins.Add(pc.GetPinAt(dir, pointsDown ? 1 : algo.PinsPerEdge - 2).Id);
+                    // Restrict the "right" pin
+                    pins.Add(pc.GetPinAt(dir, restrictUpwards ? 1 : algo.PinsPerEdge - 2).Id);
                 }
                 else if (restrictPins && dir == pDir.Opposite())
                 {
-                    // Only use the "left" pin
-                    pins.Add(pc.GetPinAt(dir, pointsDown ? algo.PinsPerEdge - 2 : 1).Id);
+                    // Restrict the "left" pin
+                    pins.Add(pc.GetPinAt(dir, restrictUpwards ? algo.PinsPerEdge - 2 : 1).Id);
                 }
                 else
                 {
@@ -501,36 +650,28 @@ namespace AS2.Subroutines.SPFPropagation
                     pins.Add(pc.GetPinAt(dir, algo.PinsPerEdge - 2).Id);
                 }
             }
-            
-            pc.MakePartitionSet(pins.ToArray(), instanceIndex.GetCurrentValue() + 8);
+            if (pins.Count > 0)
+                pc.MakePartitionSet(pins.ToArray(), instanceIndex.GetCurrentValue() + 8);
         }
 
         /// <summary>
-        /// Helper computing the "left up" direction in the
-        /// target region pointing towards the portal.
+        /// Helper computing the "left up" direction relative to the main portal.
         /// </summary>
-        /// <returns>The "left" direction that points towards the portal
-        /// from the target region.</returns>
+        /// <returns>The "left" direction that points towards the main
+        /// portal from the target region.</returns>
         private Direction DirUp1()
         {
-            if (regionPointsDown.GetCurrentValue())
-                return portalDir.GetCurrentValue().Rotate60(2);
-            else
-                return portalDir.GetCurrentValue().Rotate60(-1);
+            return portalDir.GetCurrentValue().Rotate60(2);
         }
 
         /// <summary>
-        /// Helper computing the "right up" direction in the
-        /// target region pointing towards the portal.
+        /// Helper computing the "right up" direction relative to the main portal.
         /// </summary>
-        /// <returns>The "right" direction that points towards the portal
-        /// from the target region.</returns>
+        /// <returns>The "right" direction that points towards the main
+        /// portal from the target region.</returns>
         private Direction DirUp2()
         {
-            if (regionPointsDown.GetCurrentValue())
-                return portalDir.GetCurrentValue().Rotate60(1);
-            else
-                return portalDir.GetCurrentValue().Rotate60(-2);
+            return portalDir.GetCurrentValue().Rotate60(1);
         }
     }
 

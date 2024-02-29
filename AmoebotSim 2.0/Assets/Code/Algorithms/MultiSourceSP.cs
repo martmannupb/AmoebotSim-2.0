@@ -923,19 +923,23 @@ namespace AS2.Algos.MultiSourceSP
                             {
                                 if (instances[i].runPropagation)
                                 {
-                                    // Find out if we are on the right portal
-                                    bool onPortal = false;
+                                    // Find out if we are on the main portal
+                                    bool onMainPortal = false;
+                                    bool onOtherPortal = false;
                                     bool primaryPortal = counter == 0 && instances[i].regionHasPrimaryPortalSource;
+
                                     if (IsOnQPrime())
                                     {
                                         if (primaryPortal && !instances[i].incidentPortalIsParent || !primaryPortal && instances[i].incidentPortalIsParent)
                                         {
-                                            onPortal = true;
+                                            onMainPortal = true;
                                         }
+                                        else
+                                            onOtherPortal = true;
                                     }
 
-                                    // Check whether the portal is above or not
-                                    bool portalIsAbove = primaryPortal && instances[i].primaryPortalIsAbove || !primaryPortal && instances[i].secondaryPortalIsAbove;
+                                    // Check in which direction the propagation should go
+                                    bool propagationDown = primaryPortal && instances[i].primaryPortalIsAbove || !primaryPortal && instances[i].secondaryPortalIsAbove;
 
                                     // Find the directions which we should ignore
                                     List<Direction> ignoreDirs = new List<Direction>();
@@ -944,10 +948,15 @@ namespace AS2.Algos.MultiSourceSP
                                         if (!HasNeighborAt(d))
                                             ignoreDirs.Add(d);
                                     }
+
                                     // Ignore more directions if we are on a portal
+                                    // Also, if we are on a portal, find out whether this region is above or below the portal
+                                    bool sourcePortalAbove = true;  // In the base case, this is always true because the main portal is the source region boundary portal
+                                    // If we are not on the main portal, the orientation of this instance tells us whether the region is above or below the portal
+                                    bool targetPortalAbove = onOtherPortal && (i > 1 || i == 1 && !marker1);
                                     if (IsOnQPrime())
                                     {
-                                        if (onPortal && portalIsAbove || !onPortal && !portalIsAbove)
+                                        if (onMainPortal && propagationDown || onOtherPortal && targetPortalAbove)
                                         {
                                             // Ignore the two top directions
                                             ignoreDirs.Add(mainDir.Rotate60(1));
@@ -983,10 +992,13 @@ namespace AS2.Algos.MultiSourceSP
                                         }
                                     }
 
-                                    instances[i].prop.Init(mainDir, i, onPortal, onPortal && isSource, portalIsAbove, true, true, ignoreDirs, onPortal,
+                                    instances[i].prop.Init(propagationDown ? mainDir : mainDir.Opposite(), i, onMainPortal, onOtherPortal, onMainPortal && isSource, sourcePortalAbove,
+                                        // We have to flip this result if the propagation goes up due to the flipped portal direction
+                                        onOtherPortal && (targetPortalAbove ^ (!propagationDown)),
+                                        true, true, ignoreDirs, onMainPortal,
                                         // Parent direction is only set on the main portal for non-sources
                                         // The direction is either the primary or the secondary direction, based on which portal we are to the region
-                                        onPortal && !isSource ? (instances[i].incidentPortalIsParent ? instances[i].parentDir2 : instances[i].parentDir1) : Direction.NONE);
+                                        onMainPortal && !isSource ? (instances[i].incidentPortalIsParent ? instances[i].parentDir2 : instances[i].parentDir1) : Direction.NONE);
                                     instances[i].prop.SetupPC(pc);
                                 }
                             }
