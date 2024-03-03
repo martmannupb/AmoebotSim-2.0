@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using AS2.Sim;
+using AS2.Subroutines.BinStateHelpers;
 
 namespace AS2.Subroutines.PASC
 {
@@ -15,6 +16,9 @@ namespace AS2.Subroutines.PASC
     /// Takes O(log(m)) iterations to deactivate all particles. In the process,
     /// each particle pi receives the distance to p0 (= i) in binary, with bits
     /// arriving in increasing order.
+    /// </para>
+    /// <para>
+    /// <b>Disclaimer:</b> Only works if the number of pins per edge is at most 5.
     /// </para>
     /// <para>
     /// Setup:<br/>
@@ -75,31 +79,38 @@ namespace AS2.Subroutines.PASC
     /// </summary>
     public class SubPASC : Subroutine
     {
+        //     30           29               28          2724        2320       19 15         14 10         9   5         4   0
+        // x   x            x                x           xxxx        xxxx       xxxxx         xxxxx         xxxxx         xxxxx
+        //     Last bit 1   Became passive   Is active   Sec. PSet   Pri. PSet  Succ. Pin 2   Succ. Pin 1   Pred. Pin 2   Pred. Pin 1
+        ParticleAttribute<int> state;
 
-        // We need no leader attribute because the leader has no predecessor => Its pred indices are -1
-        ParticleAttribute<int> predPrimaryPin;          // Pin indices are directionIdx * PinsPerEdge + offset (need no direction attribute this way)
-        ParticleAttribute<int> predSecondaryPin;
-        ParticleAttribute<int> succPrimaryPin;
-        ParticleAttribute<int> succSecondaryPin;
-        ParticleAttribute<int> primaryPSetID;           // Partition set IDs so that multiple PASC instances do not interfere
-        ParticleAttribute<int> secondaryPSetID;
+        private static readonly int invalidPin = 31;
 
-        ParticleAttribute<bool> isActive;
-        ParticleAttribute<bool> becamePassive;          // Whether we became passive in the last round
-        ParticleAttribute<bool> lastBitIs1;             // Whether the last received bit was a 1
+        // We need no leader attribute because the leader has no predecessor => Its pred indices are the invalid pin value
+        BinAttributeInt predPrimaryPin;          // Pin indices are directionIdx * PinsPerEdge + offset (need no direction attribute this way)
+        BinAttributeInt predSecondaryPin;
+        BinAttributeInt succPrimaryPin;
+        BinAttributeInt succSecondaryPin;
+        BinAttributeInt primaryPSetID;           // Partition set IDs so that multiple PASC instances do not interfere
+        BinAttributeInt secondaryPSetID;
+
+        BinAttributeBool isActive;
+        BinAttributeBool becamePassive;          // Whether we became passive in the last round
+        BinAttributeBool lastBitIs1;             // Whether the last received bit was a 1
 
         public SubPASC(Particle p) : base(p)
         {
-            predPrimaryPin = algo.CreateAttributeInt(FindValidAttributeName("[PASC] Pin Pred P"), -1);
-            predSecondaryPin = algo.CreateAttributeInt(FindValidAttributeName("[PASC] Pin Pred S"), -1);
-            succPrimaryPin = algo.CreateAttributeInt(FindValidAttributeName("[PASC] Pin Succ P"), -1);
-            succSecondaryPin = algo.CreateAttributeInt(FindValidAttributeName("[PASC] Pin Succ S"), -1);
-            primaryPSetID = algo.CreateAttributeInt(FindValidAttributeName("[PASC] Primary PSet"), -1);
-            secondaryPSetID = algo.CreateAttributeInt(FindValidAttributeName("[PASC] Secondary PSet"), -1);
+            state = algo.CreateAttributeInt(FindValidAttributeName("[PASC] State"), 0);
 
-            isActive = algo.CreateAttributeBool(FindValidAttributeName("[PASC] Active"), false);
-            becamePassive = algo.CreateAttributeBool(FindValidAttributeName("[PASC] Became passive"), false);
-            lastBitIs1 = algo.CreateAttributeBool(FindValidAttributeName("[PASC] Last Bit 1"), false);
+            predPrimaryPin = new BinAttributeInt(state, 0, 5);
+            predSecondaryPin = new BinAttributeInt(state, 5, 5);
+            succPrimaryPin = new BinAttributeInt(state, 10, 5);
+            succSecondaryPin = new BinAttributeInt(state, 15, 5);
+            primaryPSetID = new BinAttributeInt(state, 20, 4);
+            secondaryPSetID = new BinAttributeInt(state, 24, 4);
+            isActive = new BinAttributeBool(state, 28);
+            becamePassive = new BinAttributeBool(state, 29);
+            lastBitIs1 = new BinAttributeBool(state, 30);
         }
 
         /// <summary>
@@ -112,8 +123,8 @@ namespace AS2.Subroutines.PASC
         /// <param name="predSecondaryPin">The secondary pin's offset in predecessor direction.</param>
         /// <param name="succPrimaryPin">The primary pin's offset in successor direction.</param>
         /// <param name="succSecondaryPin">The secondary pin's offset in successor direction.</param>
-        /// <param name="primaryPSet">The partition set ID to use for the primary circuit.</param>
-        /// <param name="secondaryPSet">The partition set ID to use for the secondary circuit.</param>
+        /// <param name="primaryPSet">The partition set ID to use for the primary circuit. Must be at most 15.</param>
+        /// <param name="secondaryPSet">The partition set ID to use for the secondary circuit. Must be at most 15.</param>
         /// <param name="active">Whether this particle should start active.</param>
         public void Init(bool isLeader, Direction predDir, Direction succDir,
             int predPrimaryPin, int predSecondaryPin, int succPrimaryPin, int succSecondaryPin,
@@ -124,8 +135,8 @@ namespace AS2.Subroutines.PASC
             int succDirInt = succDir.ToInt();
             if (isLeader)
             {
-                this.predPrimaryPin.SetValue(-1);
-                this.predSecondaryPin.SetValue(-1);
+                this.predPrimaryPin.SetValue(invalidPin);
+                this.predSecondaryPin.SetValue(invalidPin);
             }
             else
             {
@@ -134,8 +145,8 @@ namespace AS2.Subroutines.PASC
             }
             if (succDir == Direction.NONE)
             {
-                this.succPrimaryPin.SetValue(-1);
-                this.succSecondaryPin.SetValue(-1);
+                this.succPrimaryPin.SetValue(invalidPin);
+                this.succSecondaryPin.SetValue(invalidPin);
             }
             else
             {
@@ -168,7 +179,7 @@ namespace AS2.Subroutines.PASC
             // TODO: Could simplify this by storing the pin IDs directly
 
 
-            if (predPrimaryPin.GetCurrentValue() == -1
+            if (predPrimaryPin.GetCurrentValue() == invalidPin
                 // Cutoff: Active particles do not connect their predecessor to their successor
                 || cutoff && isActive.GetCurrentValue())
             {
@@ -177,7 +188,7 @@ namespace AS2.Subroutines.PASC
                 pc.MakePartitionSet(new int[] { pc.GetPinAt(succDir, succPrimaryPin.GetCurrentValue() % algo.PinsPerEdge).Id }, primaryPSetID.GetCurrentValue());
                 pc.MakePartitionSet(new int[] { pc.GetPinAt(succDir, succSecondaryPin.GetCurrentValue() % algo.PinsPerEdge).Id }, secondaryPSetID.GetCurrentValue());
             }
-            else if (succPrimaryPin.GetCurrentValue() == -1)
+            else if (succPrimaryPin.GetCurrentValue() == invalidPin)
             {
                 // We have no successor => Only need predecessor pins
                 int pSetPrimary = primaryPSetID.GetCurrentValue();
@@ -241,7 +252,7 @@ namespace AS2.Subroutines.PASC
         {
             // If we became passive in the previous round, we
             // did not become passive in this round
-            if (becamePassive)
+            if (becamePassive.GetCurrentValue())
                 becamePassive.SetValue(false);
 
             // Check where we have received a beep
@@ -260,7 +271,7 @@ namespace AS2.Subroutines.PASC
             else if (beepOnSecondary)
             {
                 // If we are active and received a beep on the secondary circuit: Become passive
-                if (isActive)
+                if (isActive.GetCurrentValue())
                 {
                     isActive.SetValue(false);
                     becamePassive.SetValue(true);
@@ -330,7 +341,7 @@ namespace AS2.Subroutines.PASC
         /// has no predecessor.</returns>
         public bool IsLeader()
         {
-            return predPrimaryPin.GetCurrentValue() == -1;
+            return predPrimaryPin.GetCurrentValue() == invalidPin;
         }
 
         /// <summary>
