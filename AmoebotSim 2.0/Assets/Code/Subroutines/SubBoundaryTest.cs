@@ -27,10 +27,10 @@ namespace AS2.Subroutines.BoundaryTest
     /// </item>
     /// <item>
     ///     You can call <see cref="IsFinished"/> immediately after <see cref="ActivateReceive"/> to check
-    ///     whether the procedure is finished. If it is, you can check whether the amoebot is on the outer or inner boundary using
-    ///     <see cref="OnOuterBoundary"/> and <see cref="OnInnerBoundary"/>, find the leader of the outer boundary with
-    ///     <see cref="IsOuterBoundaryLeader"/> and find the outer boundary predecessor and successor directions with
-    ///     <see cref="OuterBoundaryPredecessor"/> and <see cref="OuterBoundarySuccessor"/>.
+    ///     whether the procedure is finished. If it is, you can find the number of boundaries an amoebot is
+    ///     part of using <see cref="NumBoundaries"/> and get boundary information with <see cref="IsBoundaryLeader(int)"/>,
+    ///     <see cref="IsOuterBoundary(int)"/>, <see cref="GetBoundaryPredecessor(int)"/> and
+    ///     <see cref="GetBoundarySuccessor(int)"/>.
     /// </item>
     /// </list>
     /// </para>
@@ -682,41 +682,82 @@ namespace AS2.Subroutines.BoundaryTest
         }
 
         /// <summary>
-        /// Gets the predecessor direction on the outer boundary.
+        /// Finds the number of boundaries this amoebot is on. If m is
+        /// the number of boundaries, the boundary indices are 0,...,m-1.
         /// </summary>
-        /// <returns>The direction pointing from this amoebot to its
-        /// predecessor in a clockwise traversal of the outer boundary.
-        /// Will be <see cref="Direction.NONE"/> if this amoebot is not
-        /// part of the outer boundary or the procedure is not finished.</returns>
-        public Direction OuterBoundaryPredecessor()
+        /// <returns>The number of boundaries this amoebot is a part
+        /// of, or <c>0</c> if the procedure is not finished yet.</returns>
+        public int NumBoundaries()
         {
-            if (!IsFinished())
-                return Direction.NONE;
-            for (int i = 0; i < numBoundaries.GetValue(); i++)
-            {
-                if (!innerBoundary.GetCurrentValue(i))
-                    return boundaryDirs[2 * i].GetCurrentValue();
-            }
-            return Direction.NONE;
+            return IsFinished() ? numBoundaries.GetCurrentValue() : 0;
         }
 
         /// <summary>
-        /// Gets the successor direction on the outer boundary.
+        /// Checks whether this amoebot is the leader of the
+        /// indicated boundary.
         /// </summary>
+        /// <param name="idx">The boundary index to check.</param>
+        /// <returns><c>true</c> if and only if the procedure is
+        /// finished and this amoebot is the leader of the boundary
+        /// with index <paramref name="idx"/>.</returns>
+        public bool IsBoundaryLeader(int idx)
+        {
+            return IsFinished() && boundaryCandidate.GetCurrentValue(idx);
+        }
+
+        /// <summary>
+        /// Checks whether the boundary with the given index is
+        /// the outer boundary.
+        /// </summary>
+        /// <param name="idx">The boundary index to check.</param>
+        /// <returns><c>true</c> if and only if the procedure is
+        /// finished and the boundary with index <paramref name="idx"/>
+        /// of this amoebot is the outer boundary.</returns>
+        public bool IsOuterBoundary(int idx)
+        {
+            return IsFinished() && !innerBoundary.GetCurrentValue(idx);
+        }
+
+        /// <summary>
+        /// Gets the predecessor direction on the given boundary.
+        /// </summary>
+        /// <param name="idx">The boundary index to check.</param>
         /// <returns>The direction pointing from this amoebot to its
-        /// successor in a clockwise traversal of the outer boundary.
-        /// Will be <see cref="Direction.NONE"/> if this amoebot is not
-        /// part of the outer boundary or the procedure is not finished.</returns>
-        public Direction OuterBoundarySuccessor()
+        /// predecessor in a clockwise traversal of the boundary with
+        /// index <paramref name="idx"/>.
+        /// Will be <see cref="Direction.NONE"/> if this amoebot does not
+        /// have this boundary or the procedure is not finished.</returns>
+        public Direction GetBoundaryPredecessor(int idx)
         {
             if (!IsFinished())
                 return Direction.NONE;
-            for (int i = 0; i < numBoundaries.GetValue(); i++)
-            {
-                if (!innerBoundary.GetCurrentValue(i))
-                    return boundaryDirs[2 * i + 1].GetCurrentValue();
-            }
-            return Direction.NONE;
+            return boundaryDirs[2 * idx].GetCurrentValue();
+        }
+
+        /// <summary>
+        /// Gets the successor direction on the given boundary.
+        /// </summary>
+        /// <param name="idx">The boundary index to check.</param>
+        /// <returns>The direction pointing from this amoebot to its
+        /// successor in a clockwise traversal of the boundary with
+        /// index <paramref name="idx"/>.
+        /// Will be <see cref="Direction.NONE"/> if this amoebot does not
+        /// have this boundary or the procedure is not finished.</returns>
+        public Direction GetBoundarySuccessor(int idx)
+        {
+            if (!IsFinished())
+                return Direction.NONE;
+            return boundaryDirs[2 * idx + 1].GetCurrentValue();
+        }
+
+        /// <summary>
+        /// Checks whether an inner boundary was found during the procedure.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the procedure is finished and
+        /// there is at least one inner boundary in the system.</returns>
+        public bool InnerBoundaryExists()
+        {
+            return IsFinished() && innerBoundaryExists.GetCurrentValue();
         }
 
         private void SetColor()
