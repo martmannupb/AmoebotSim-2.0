@@ -38,7 +38,28 @@ namespace AS2.Subroutines.BinaryOps
                 if (succDir != Direction.NONE)
                     pins.Add(pc.GetPinAt(succDir, pinsPerEdge - 1 - offset).Id);
                 if (pins.Count > 0)
+                {
                     pc.MakePartitionSet(pins.ToArray(), pins[0]);
+                    if (pins.Count > 1)
+                    {
+                        float angle;
+                        float dist;
+                        float fac = (pinsPerEdge - 1) / 2f;
+                        dist = -(offset - fac) / fac;
+                        if (predDir == succDir)
+                        {
+                            angle = predDir.ToInt() * 60f;
+                            dist = (1.0f - Mathf.Abs(dist)) * 0.5f + 0.25f;
+                        }
+                        else
+                        {
+                            angle = (predDir.ToInt() - predDir.DistanceTo(succDir, true) / 4f) * 60f;
+                            dist *= 0.5f;
+                            dist += dist < 0 ? -0.25f : (dist > 0 ? 0.25f : 0);
+                        }
+                        pc.SetPartitionSetPosition(pins[0], new Vector2(angle, dist));
+                    }
+                }
             }
             else
             {
