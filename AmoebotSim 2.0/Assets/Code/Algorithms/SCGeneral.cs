@@ -7,6 +7,7 @@ using AS2.ShapeContainment;
 using AS2.Subroutines.BinaryOps;
 using AS2.Subroutines.BoundaryTest;
 using AS2.Subroutines.LongestLines;
+using AS2.Subroutines.ConvexShapeContainment;
 using AS2.Subroutines.PASC;
 
 namespace AS2.Algos.SCGeneral
@@ -65,7 +66,7 @@ namespace AS2.Algos.SCGeneral
     //                  - If M^2 = n: Set N := M and break out of the binary search (go to step 5)
     //                  - Else if M^2 < n: Set L := M
     //                  - Else: Set R := M
-    //  (In case (b), we will have N = Floor(sqrt(n)) on the outer boundary now)
+    //  (In case (b), we will have N = Floor(sqrt(n)) on the outer boundary now, stored in M)
     //  5. Linear search
     //      5.1. Triangle containment check: If the target shape has at least one face
     //          - Run the triangle containment check for scale K and two rotations
@@ -134,6 +135,7 @@ namespace AS2.Algos.SCGeneral
 
     // Round 3:
     //  - If counter >= 3:
+    //      - Set K := R
     //      - Setup 4 global circuits and beep on first
     //      - Go to round 5
     //  - Else:
@@ -161,29 +163,30 @@ namespace AS2.Algos.SCGeneral
     //              - Setup and start boundary test subroutine
     //              - Go to round 6
     //          - Else:
-    //              - Go to binary search (round ????????????????????)
-
-
+    //              - Go to binary search (round 12)
     //      - Beep on second:
     //          - (Binary search finished)
-    //          - (a) Go to final shape construction (round 36)
-    //          - (b) Go to linear search (round 30)
+    //          - (a) Set K := M
+    //          - (b) M now holds the value N = Floor(sqrt(n))
+    //          - Go to linear search (round ??????????????????)
     //      - Beep on third:
-    //          - (Binary search continues)
-    //          - (a) Go to round 24
-    //          - (b) Go to round 26
+    //          - (Binary search continues, only case (a))
+    //          - (a) Go to round 26
+
+
+    // TODO
     //      - Beep on fourth:
     //          - (Linear search decrement and comparison are finished)
     //          - Go to round 30
 
-    
+
     // 3. Setup the outer boundary
 
     // Round 6:
     //  - Run boundary test subroutine
     //  - If finished:
     //      - If the shape has a hole and there are no inner boundaries:
-    //          - Set K <= sqrt(n) flag and go to step 4 (round ?????????????????????????????)
+    //          - Set K <= sqrt(n) flag and go to step 4 (round 12)
     //      - Else:
     //          - Store outer boundary parameters
     //          - Start point sends beep to end point
@@ -229,11 +232,234 @@ namespace AS2.Algos.SCGeneral
     //      - If there was no beep on the first circuit:
     //          - (Computation of n is finished)
     //          - Write L := 1 and R := n to the outer boundary counter
-    //          - Go to the binary search phase (round ?????????????????????????)
+    //              - Also write K := n
+    //          - Go to the binary search phase (round 20)
     //      - Current marker writes received PASC bit (second circuit)
     //      - If the bit was 1: Marker becomes new MSB, old MSB removes itself
     //  - Marker moves forward
     //  - Send PASC beeps
+
+
+    // 4. Binary search
+    // 4.1. Check right bound R
+
+    // Rounds 12-15 run the entire triangle containment check
+
+    // Round 12 (Start of triangle containment check):
+    //  - Init triangle containment check subroutine for rotation 0
+    //      - Scale R, 1 or M
+    //  - Start running
+    //  - Go to round 13
+
+    // Round 13:
+    //  - Run triangle containment check routine
+    //  - If finished:
+    //      - Success:
+    //          - If we checked R: Set K := R and go to step 5 (round ?????????????????????????)
+    //          - If we checked 1: Move on to actual binary search (round 20)
+    //          - If we checked M: Set L := M and proceed with next iteration
+    //          - Other cases apply in other phases
+    //      - Go to round 14
+
+    // Rounds 14/15:
+    //  - Same as rounds 12/13
+    //  - But use rotation 1 instead
+    //  - When finished:
+    //      - Success is same as above
+    //      - Failure:
+    //          - If we checked R: Just go to test for L (round round 16)
+    //          - If we checked 1: Terminate with failure
+    //          - If we checked M: Set R := M and proceed with next iteration
+
+    // 4.2 Check left bound L = 1
+
+    // Rounds 16-19:
+    //  - Same as rounds 12-15
+    //  - But use scale 1 instead
+    //  - If the check is not successful:
+    //      - Terminate with failure in both cases
+
+    // 4.3 Binary search procedure
+
+    // Round 20:
+    //  - Init and start binop to compute M := L + R
+    //      - (a) On all longest lines
+    //      - (b) On outer boundary
+    //  - Split:
+    //      - Non-counter amoebots go to round 5 with 4 global circuits
+
+    // Round 21:
+    //  - Run binop
+    //  - If finished:
+    //      - Go to round 22
+    //      - (b): Let outer boundary amoebots send bits of M to predecessor
+
+    // Round 22:
+    //  - Shift each bit of M one position to the left
+    //  - Init and start binop for finding MSB of M
+    //      - (a) On all longest lines
+    //      - (b) On outer boundary
+
+    // Round 23:
+    //  - Run binop
+    //  - If finished:
+    //      - Go to round 24
+
+    // Round 24:
+    //  - Init and start binop for comparing L to M
+
+    // Round 25:
+    //  - Run binop
+    //  - If finished:
+    //      - If L == M:
+    //          - Setup 4 global circuits, beep on second, go to round 5
+    //      - Else:
+    //          - (a) Setup 4 global circuits, beep on third, go to round 5
+    //          - (b) Go to round 30 (start square root check)
+
+    // Rounds 26-29:
+    //  - Same as rounds 12-15 / 16-19
+    //  - Use scale M
+    //  - When finished:
+    //      - Success:
+    //          - Set L := M
+    //      - Failure:
+    //          - Set R := M
+    //      - Go back to round 20
+
+    // Round 30 (b):
+    //  - Start binop for computing M^2
+
+    // Round 31:
+    //  - Run binop
+    //  - If finished:
+    //      - Go to round 32
+
+    // Round 32:
+    //  - Start binop for comparing M^2 to n (transfer bits directly from the previous subroutine)
+
+    // Round 33:
+    //  - Run binop
+    //  - If finished:
+    //      - If M^2 = n: Set N := M, setup 4 global circuits, beep on second and go to round 5
+    //      - Else:
+    //          - If M^2 < n: Set L := M
+    //          - If M^2 > n: Set R := M
+    //          - Go back to round 20
+
+
+    // 5. Linear Search
+
+    // Before the loop, we place a marker spawn on the longest lines at distance K
+    //  The marker spawn creates markers for the shift procedure in case K <= sqrt(n)
+    // The following 5 rounds implement the PASC procedure with cutoff and can be reused later
+
+    // Round 34 (PASC setup):
+    //  - Init PASC on all longest lines
+    //  - Reset comparison results
+    //  - Place marker at line counter start
+    //  - Send first PASC beep
+    //  - Go to next round
+
+    // Round 35:
+    //  - Receive PASC beep
+    //  - Setup 3 global circuits
+    //  - Marker sends bit and MSB of K on first 2 circuits
+    //  - PASC participants that became passive beep on third circuit
+
+    // Round 36:
+    //  - Receive on 3 global circuits
+    //  - PASC participants update comparison results
+    //  - If PASC is finished:
+    //      - If MSB beep:
+    //          - Already have correct result
+    //      - Else:
+    //          - Set all comparison results to LESS
+    //          - Also remember this fact (can be useful for early cutoff)!
+    //      - Go to round 38
+    //  - Else:
+    //      - If MSB beep:
+    //          - Start PASC cutoff
+    //          - Go to round 37
+    //      - Else:
+    //          - Send PASC beeps again
+    //          - Go back to round 35
+
+    // Round 37:
+    //  - Receive PASC cutoff
+    //  - Update comparison results
+    //  - Go to evaluation (round 38)
+
+    // Round 38 (PASC evaluation):
+    //  - Remove marker
+    //  - Amoebots with result EQUAL set marker spawn flags
+    //  - Go to round 39
+
+
+    // 5.1. Triangle containment check (and loop start)
+
+    // Round 39:
+    //  - If the target shape has faces:
+    //      - Reset valid face flags
+    //      - Start triangle containment check (go to round 40)
+    //  - Else:
+    //      - Go to step 5.2. (round 44)
+
+    // Rounds 40-43 (similar to 12-15):
+    //  - Run triangle check for scale K
+    //  - Store valid placements for both rotations
+    //      - Also: Store success for first check
+    //      - If both rotations were unsuccessful, skip this entire scale and go to step 5.7. (round ????????????????????)
+
+    // 5.2. K <= sqrt(n) update
+    
+    // Round 44:
+    //  - If K <= sqrt(n) flag is set: Skip this step (go to step 5.3., round 46)
+    //  - Init comparison result to EQUAL
+    //  - Place markers at line starts and outer boundary start
+    //  - Setup 4 global circuits
+    //  - Line markers send bit and MSB of K on first 2 circuits
+    //  - Boundary marker sends bit and MSB of M (= N) on second 2 circuits
+    //  - Go to round 45
+
+    // Round 45:
+    //  - Receive beeps on all 4 global circuits
+    //  - Update comparison result based on bits
+    //  - If one of the MSBs is reached:
+    //      - Update final comparison result (if only one MSB is reached: The other number is GREATER)
+    //      - If K <= M: Set the flag
+    //      - Reset markers
+    //      - Go to round 46
+    //  - Else:
+    //      - Move markers forward
+    //      - Keep the 4 global circuits and send the same beeps again
+
+    // 5.3. Initialize candidate sets
+
+    // Rounds 46-50 (PASC, similar to 34-38):
+    //  - Every amoebot becomes a candidate for every rotation
+    //  - Remove invalid faces for the first node of the traversal
+    //  - If K <= sqrt(n):
+    //      - Go to step 5.4. (round ????????????????????)
+    //  - Else:
+    //      - Setup PASC on all 6 axes
+    //      - When finished:
+    //          - PASC finished and no MSB: No amoebot has enough space, skip this scale
+    //              - Go to step 5.7 (round ???????????????????)
+    //          - Eliminate candidates based on the result
+    //          - Setup global circuit and let candidates beep
+    //          - Go to round 51
+
+    // Round 51:
+    //  - Listen for beep on global circuit
+    //  - If no beep: Skip this scale
+    //      - Go to step 5.7. (round ????????????????)
+    //  - Else:
+    //      - TODO
+
+
+
+
 
     public class SCGeneralParticle : ParticleAlgorithm
     {
@@ -245,6 +471,35 @@ namespace AS2.Algos.SCGeneral
 
         // If the algorithm has a special generation method, specify its full name here
         public static new string GenerationMethod => typeof(SCGeneralInitializer).FullName;
+
+        [StatusInfo("Display Shape", "Displays the target shape at the selecetd location.")]
+        public static void ShowShape(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            LineDrawer.Instance.Clear();
+            shape.Draw(selectedParticle is null ? Vector2Int.zero : selectedParticle.Head(), 0, 1);
+            LineDrawer.Instance.SetTimer(20);
+        }
+
+        [StatusInfo("Draw Spanning Tree", "Displays the parent directions making up the spanning tree.")]
+        public static void DrawSpanningTree(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            LineDrawer.Instance.Clear();
+            
+            foreach (Particle p in system.particles)
+            {
+                SCGeneralParticle algo = (SCGeneralParticle)p.algorithm;
+                Direction dir = algo.parentDir.GetValue();
+                if (dir != Direction.NONE)
+                {
+                    Vector2Int pos = p.Head();
+                    Vector2 to = ParticleSystem_Utils.DirectionToVector(dir);
+                    to *= 0.85f;
+                    LineDrawer.Instance.AddLine(pos, pos + to, Color.blue, true, 2.5f, 2f);
+                }
+            }
+
+            LineDrawer.Instance.SetTimer(20);
+        }
 
         // Declare attributes here
         ParticleAttribute<int> round;                           // Round counter
@@ -260,17 +515,19 @@ namespace AS2.Algos.SCGeneral
         private const int M = 1;
         private const int R = 2;
         private const int K = 3;
-        ParticleAttribute<bool>[] boundaryBits = new ParticleAttribute<bool>[9];    // Array storing 3 bits for each outer boundary occurrence
-        ParticleAttribute<bool>[] boundaryMSBs = new ParticleAttribute<bool>[9];    // Array storing 3 MSBs for each outer boundary occurrence
+        ParticleAttribute<bool>[] boundaryBits = new ParticleAttribute<bool>[12];   // Array storing 4 bits for each outer boundary occurrence
+        ParticleAttribute<bool>[] boundaryMSBs = new ParticleAttribute<bool>[12];   // Array storing 4 MSBs for each outer boundary occurrence
         ParticleAttribute<bool> belowSqrt;                      // Whether our scale is at most sqrt(n)
         ParticleAttribute<Direction> parentDir;                 // Our parent direction in the spanning tree
         ParticleAttribute<int> numPascETT;                      // How many PASC instances we have to run during the ETT
 
 
-        SubBinOps binops;
+        SubBinOps[] binops = new SubBinOps[3];
+        SubBinOps binop;
         SubBoundaryTest boundaryTest;
         SubLongestLines ll;
         SubPASC[] pasc = new SubPASC[6];
+        SubMergingAlgo triangleCheck;
 
         public static Shape shape;                      // The target shape
         public static string longestLineStr;            // String representation of the length of the longest line in the target shape
@@ -301,11 +558,14 @@ namespace AS2.Algos.SCGeneral
             parentDir = CreateAttributeDirection("Parent", Direction.NONE);
             numPascETT = CreateAttributeInt("Num PASC ETT", 0);
 
-            binops = new SubBinOps(p);
-            boundaryTest = new SubBoundaryTest(p);
+            for (int i = 0; i < binops.Length; i++)
+                binops[i] = new SubBinOps(p);
+            binop = binops[0];
             ll = new SubLongestLines(p);
             for (int i = 0; i < 6; i++)
                 pasc[i] = new SubPASC(p);
+            boundaryTest = new SubBoundaryTest(p, pasc);
+            triangleCheck = new SubMergingAlgo(p);
 
             // Also, set the default initial color
             SetMainColor(ColorData.Particle_Black);
@@ -436,6 +696,9 @@ namespace AS2.Algos.SCGeneral
                         if (ctr >= 3)
                         {
                             // Finished initial counter setup
+                            // Store K := R
+                            bits[K].SetValue(bits[R]);
+                            msbs[K].SetValue(msbs[R]);
                             PinConfiguration pc = GetContractedPinConfiguration();
                             for (int i = 0; i < 4; i++)
                                 SetupGlobalCircuit(pc, i, i);
@@ -453,37 +716,37 @@ namespace AS2.Algos.SCGeneral
                             if (ctr == 0)
                             {
                                 // Compare longest line length (stored in M) to R
-                                binops.Init(SubBinOps.Mode.COMP, bits[M].GetValue(), pred, succ, bits[R].GetValue());
+                                binop.Init(SubBinOps.Mode.COMP, bits[M].GetValue(), pred, succ, bits[R].GetValue());
                             }
                             else if (ctr == 1)
                             {
                                 // Compute R / M
-                                binops.Init(SubBinOps.Mode.DIV, bits[R].GetValue(), pred, succ, bits[M].GetValue(), msbs[R].GetValue());
+                                binop.Init(SubBinOps.Mode.DIV, bits[R].GetValue(), pred, succ, bits[M].GetValue(), msbs[R].GetValue());
                             }
                             else if (ctr == 2)
                             {
                                 // Find MSB of R
-                                binops.Init(SubBinOps.Mode.MSB, bits[R].GetValue(), pred, succ);
+                                binop.Init(SubBinOps.Mode.MSB, bits[R].GetValue(), pred, succ);
                             }
                             PinConfiguration pc = GetContractedPinConfiguration();
-                            binops.SetupPinConfig(pc);
+                            binop.SetupPinConfig(pc);
                             SetPlannedPinConfiguration(pc);
-                            binops.ActivateSend();
+                            binop.ActivateSend();
                             round.SetValue(r + 1);
                         }
                     }
                     break;
                 case 4:
                     {
-                        binops.ActivateReceive();
-                        if (binops.IsFinished())
+                        binop.ActivateReceive();
+                        if (binop.IsFinished())
                         {
                             // Store result based on counter
                             int ctr = counter.GetValue();
                             if (ctr == 0)
                             {
                                 // If s > R: Terminate
-                                if (binops.CompResult() == SubComparison.ComparisonResult.GREATER)
+                                if (binop.CompResult() == SubComparison.ComparisonResult.GREATER)
                                 {
                                     PinConfiguration pc = GetContractedPinConfiguration();
                                     for (int i = 0; i < 4; i++)
@@ -497,12 +760,12 @@ namespace AS2.Algos.SCGeneral
                             else if (ctr == 1)
                             {
                                 // Store result of R / s in R
-                                bits[R].SetValue(binops.ResultBit());
+                                bits[R].SetValue(binop.ResultBit());
                             }
                             else if (ctr == 2)
                             {
                                 // Store MSB of R
-                                msbs[R].SetValue(binops.IsMSB());
+                                msbs[R].SetValue(binop.IsMSB());
                             }
                             counter.SetValue(ctr + 1);
                             round.SetValue(r - 1);
@@ -510,9 +773,9 @@ namespace AS2.Algos.SCGeneral
                         else
                         {
                             PinConfiguration pc = GetContractedPinConfiguration();
-                            binops.SetupPinConfig(pc);
+                            binop.SetupPinConfig(pc);
                             SetPlannedPinConfiguration(pc);
-                            binops.ActivateSend();
+                            binop.ActivateSend();
                         }
                     }
                     break;
@@ -545,30 +808,33 @@ namespace AS2.Algos.SCGeneral
                             }
                             else
                             {
-                                // Go directly to binary search
-                                // TODO
+                                // Go directly to binary search (triangle case)
+                                belowSqrt.SetValue(true);
+                                round.SetValue(12);
                             }
                         }
-                        //else if (beep1)
-                        //{
-                        //    // Binary search finished
-                        //    if (shapeIsStarConvex)
-                        //        // Go to final shape construction
-                        //        round.SetValue(36);
-                        //    else
-                        //        // Go to linear search
-                        //        round.SetValue(30);
-                        //}
-                        //else if (beep2)
-                        //{
-                        //    // Binary search continues
-                        //    if (shapeIsStarConvex)
-                        //        // Test the shape directly
-                        //        round.SetValue(24);
-                        //    else
-                        //        // Test the triangle
-                        //        round.SetValue(26);
-                        //}
+                        else if (beep1)
+                        {
+                            // Binary search finished
+                            // (a) Set K := M
+                            if (belowSqrt)
+                            {
+                                if (ll.IsOnMaxLine())
+                                {
+                                    bits[K].SetValue(bits[M]);
+                                    msbs[K].SetValue(msbs[M]);
+                                }
+                            }
+                            // (b) M now holds the value N = Floor(sqrt(n))
+                            // - Go to linear search (round ??????????????????)
+                            // TODO
+                        }
+                        else if (beep2)
+                        {
+                            // Binary search continues, only case (a)
+                            // Test the triangle
+                            round.SetValue(26);
+                        }
                         //else if (beep3)
                         //{
                         //    // Linear search decrement and comparison are finished
@@ -576,8 +842,6 @@ namespace AS2.Algos.SCGeneral
                         //}
                     }
                     break;
-
-
 
 
                 // 3. Setup the outer boundary
@@ -592,8 +856,8 @@ namespace AS2.Algos.SCGeneral
                             {
                                 // No need for outer boundary setup, go to step 4
                                 belowSqrt.SetValue(true);
-                                // TODO
-                                round.SetValue(42);
+                                // Start binary search (triangle case)
+                                round.SetValue(12);
                             }
                             else
                             {
@@ -764,7 +1028,7 @@ namespace AS2.Algos.SCGeneral
                                 if (outerBoundaryDirs[2 * i].GetValue() == Direction.NONE)
                                 {
                                     markerIdx.SetValue(i + 1);
-                                    boundaryMSBs[3 * i + R].SetValue(true);
+                                    boundaryMSBs[4 * i + R].SetValue(true);
                                     break;
                                 }
                             }
@@ -821,16 +1085,22 @@ namespace AS2.Algos.SCGeneral
                                 {
                                     if (outerBoundaryDirs[2 * i].GetValue() == Direction.NONE)
                                     {
-                                        boundaryBits[3 * i + L].SetValue(true);
-                                        boundaryMSBs[3 * i + L].SetValue(true);
+                                        boundaryBits[4 * i + L].SetValue(true);
+                                        boundaryMSBs[4 * i + L].SetValue(true);
                                         break;
                                     }
                                 }
                             }
 
-                            // Go to binary search phase
-                            // TODO
-                            round.SetValue(42);
+                            // Set K := R (= n)
+                            for (int i = 0; i < numOuterBoundaryOccurrences; i++)
+                            {
+                                boundaryBits[4 * i + K].SetValue(boundaryBits[4 * i + R].GetCurrentValue());
+                                boundaryMSBs[4 * i + K].SetValue(boundaryMSBs[4 * i + R].GetCurrentValue());
+                            }
+
+                            // Go to binary search phase (non-triangle case)
+                            round.SetValue(20);
                             break;
                         }
                         else if (pc.ReceivedBeepOnPartitionSet(1))
@@ -842,8 +1112,8 @@ namespace AS2.Algos.SCGeneral
                             // Current marker writes the received PASC bit and MSB
                             if (markerIdx > 0)
                             {
-                                boundaryBits[3 * (markerIdx - 1) + R].SetValue(true);
-                                boundaryMSBs[3 * (markerIdx - 1) + R].SetValue(true);
+                                boundaryBits[4 * (markerIdx - 1) + R].SetValue(true);
+                                boundaryMSBs[4 * (markerIdx - 1) + R].SetValue(true);
                             }
                         }
 
@@ -870,6 +1140,316 @@ namespace AS2.Algos.SCGeneral
                         round.SetValue(r - 1);
                     }
                     break;
+
+
+                // 4. Binary Search
+                // 4.1. Check right bound R
+                // 4.2. Check left bound L = 1
+
+                // Rounds 12-15 run the entire triangle containment check
+
+                case 12:    // 12 and 14: Scale R check
+                case 14:
+                case 16:    // 16 and 18: Scale L check
+                case 18:
+                case 26:    // 26 and 28: Scale M check
+                case 28:
+                    {
+                        // Init triangle containment check for rotation 0/1
+                        int rot = r == 12 || r == 16 || r == 26 ? 0 : 1;
+                        if (ll.IsOnMaxLine())
+                        {
+                            int scaleIdx = r < 16 ? R : (r < 26 ? L : M);
+                            bool scaleBit = bits[scaleIdx].GetCurrentValue();
+                            bool scaleMSB = msbs[scaleIdx].GetCurrentValue();
+                            Direction succ = ll.GetMaxDir();
+                            Direction pred = succ.Opposite();
+                            succ = HasNeighborAt(succ) ? succ : Direction.NONE;
+                            pred = HasNeighborAt(pred) ? pred : Direction.NONE;
+                            triangleCheck.Init(ShapeType.TRIANGLE, Direction.E, Direction.NNE, rot, true, false, pred, succ, scaleBit, scaleMSB);
+                        }
+                        else
+                        {
+                            triangleCheck.Init(ShapeType.TRIANGLE, Direction.E, Direction.NNE, rot, true);
+                        }
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        triangleCheck.SetupPC(pc);
+                        SetPlannedPinConfiguration(pc);
+                        triangleCheck.ActivateSend();
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 13:    // 13 and 15: Scale R check
+                case 15:
+                case 17:    // 17 and 19: Scale L check
+                case 19:
+                case 27:    // 27 and 29: Scale M check
+                case 29:
+                    {
+                        triangleCheck.ActivateReceive();
+                        if (triangleCheck.IsFinished())
+                        {
+                            if (triangleCheck.Success())
+                            {
+                                if (r <= 15)
+                                {
+                                    // Checked R successfully: Set K := R and go to linear search (round ??????????????????????????)
+                                    if (ll.IsOnMaxLine())
+                                    {
+                                        bits[K].SetValue(bits[R]);
+                                        msbs[K].SetValue(msbs[R]);
+                                    }
+                                    round.SetValue(42);
+                                }
+                                else if (r <= 19)
+                                {
+                                    // Checked L successfully: Move on to rest of the binary search
+                                    round.SetValue(20);
+                                }
+                                else
+                                {
+                                    // Checked M successfully: Set L := M and go back to binary search start
+                                    bits[L].SetValue(bits[M]);
+                                    msbs[L].SetValue(msbs[M]);
+                                    round.SetValue(20);
+                                }
+                            }
+                            else
+                            {
+                                if (r <= 17 || r == 27)
+                                {
+                                    // Check for rotation 0 failed, go to next one
+                                    // OR finished check for R with failure, just move on to check for L
+                                    round.SetValue(r + 1);
+                                }
+                                else if (r == 19)
+                                {
+                                    // Finished check for L with failure: Terminate
+                                    SetMainColor(ColorData.Particle_Red);
+                                    finished.SetValue(true);
+                                    break;
+                                }
+                                else if (r == 29)
+                                {
+                                    // Finished check for M with failure: Set R := M and go back to binary search start
+                                    bits[R].SetValue(bits[M]);
+                                    msbs[R].SetValue(msbs[M]);
+                                    round.SetValue(20);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            PinConfiguration pc = GetContractedPinConfiguration();
+                            triangleCheck.SetupPC(pc);
+                            SetPlannedPinConfiguration(pc);
+                            triangleCheck.ActivateSend();
+                        }
+                    }
+                    break;
+
+                // 4.3. Binary search procedure
+
+                case 20:    // M := L + R
+                case 22:    // Get shifted M and find MSB
+                case 24:    // Compare L to M
+                case 30:    // Compute M^2
+                case 32:    // Compare M^2 to n
+                    {
+                        if (belowSqrt && ll.IsOnMaxLine() || !belowSqrt && boundaryTest.OnOuterBoundary())
+                        {
+                            bool onOuterBoundary = !belowSqrt;
+                            if (r == 20)
+                            {
+                                // Compute M := L + R
+                                StartBinOp(onOuterBoundary, SubBinOps.Mode.ADD, L, R);
+                            }
+                            else if (r == 22)
+                            {
+                                // Get shifted bits
+                                bool bit1 = false;
+                                if (onOuterBoundary)
+                                {
+                                    // Receive from beep
+                                    PinConfiguration pc = GetCurrentPinConfiguration();
+                                    for (int i = 0; i < numOuterBoundaryOccurrences; i++)
+                                    {
+                                        Direction succ = outerBoundaryDirs[2 * i + 1];
+                                        bool bit = succ != Direction.NONE && pc.GetPinAt(succ, PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+                                        boundaryBits[4 * i + M].SetValue(bit);
+                                        bit1 = bit1 || bit;
+                                    }
+                                }
+                                else
+                                {
+                                    // Get from successor
+                                    Direction succ = ll.GetMaxDir();
+                                    bit1 = succ != Direction.NONE && HasNeighborAt(succ) && ((SCGeneralParticle)GetNeighborAt(succ)).bits[M].GetValue();
+                                    bits[M].SetValue(bit1);
+                                }
+
+                                // Update color to show current M
+                                bool leader = onOuterBoundary && boundaryTest.IsOuterBoundaryLeader();
+                                if (bit1 && leader)
+                                    SetMainColor(ColorData.Particle_Aqua);
+                                else if (bit1 && !leader)
+                                    SetMainColor(new Color(1, 1, 0));
+                                else if (!bit1 && leader)
+                                    SetMainColor(ColorData.Particle_Green);
+                                else
+                                    SetMainColor(ColorData.Particle_Blue);
+
+                                // Start binary operation for finding MSB of M
+                                StartBinOp(onOuterBoundary, SubBinOps.Mode.MSB, M);
+                            }
+                            else if (r == 24)
+                            {
+                                // Compare L to R
+                                StartBinOp(onOuterBoundary, SubBinOps.Mode.COMP, L, M);
+                            }
+                            else if (r == 30)
+                            {
+                                // Compute M^2
+                                StartBinOp(true, SubBinOps.Mode.MULT, M, M, M);
+                            }
+                            else if (r == 32)
+                            {
+                                // Compare M^2 to n (using bits of previous binop)
+                                StartBinOp(true, SubBinOps.Mode.COMP, -1, K);
+                            }
+                            round.SetValue(r + 1);
+                        }
+                        else
+                        {
+                            // Non-counter amoebots go to round 5 and wait
+                            PinConfiguration pc = GetContractedPinConfiguration();
+                            for (int i = 0; i < 4; i++)
+                                SetupGlobalCircuit(pc, i, i);
+                            SetPlannedPinConfiguration(pc);
+                            round.SetValue(5);
+                        }
+                    }
+                    break;
+                case 21:    // M := L + R
+                case 23:    // MSB of M
+                case 25:    // Compare L to M
+                case 31:    // M^2
+                case 33:    // Compare M^2 to n
+                    {
+                        // This code is only run by the counter amoebots
+                        binops[0].ActivateReceive();
+                        bool onOuterBoundary = !belowSqrt;
+                        if (onOuterBoundary)
+                        {
+                            for (int i = 1; i < numOuterBoundaryOccurrences; i++)
+                                binops[i].ActivateReceive();
+                        }
+                        // All binary ops instances finish at the same time
+                        if (binops[0].IsFinished())
+                        {
+                            if (r == 21)
+                            {
+                                if (onOuterBoundary)
+                                {
+                                    // Let amoebots send bits of M to predecessor
+                                    PinConfiguration pc = GetContractedPinConfiguration();
+                                    SetPlannedPinConfiguration(pc);
+                                    for (int i = 0; i < numOuterBoundaryOccurrences; i++)
+                                    {
+                                        Direction pred = outerBoundaryDirs[2 * i];
+                                        if (binops[i].ResultBit() && pred != Direction.NONE)
+                                        {
+                                            pc.GetPinAt(pred, 0).PartitionSet.SendBeep();
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    // Store bit
+                                    bits[M].SetValue(binop.ResultBit());
+                                }
+                            }
+                            else if (r == 23)
+                            {
+                                // Set MSB
+                                if (onOuterBoundary)
+                                {
+                                    for (int i = 0; i < numOuterBoundaryOccurrences; i++)
+                                    {
+                                        boundaryMSBs[4 * i + M].SetValue(binops[i].IsMSB());
+                                    }
+                                }
+                                else
+                                {
+                                    msbs[M].SetValue(binop.IsMSB());
+                                }
+                            }
+                            else if (r == 25)
+                            {
+                                // All binary op instances have the same result
+                                SubComparison.ComparisonResult comp = binop.CompResult();
+                                if (comp == SubComparison.ComparisonResult.EQUAL || !onOuterBoundary)
+                                {
+                                    // L = M: Binary search finished
+                                    // OR not on outer boundary: Send beep on third circuit
+                                    PinConfiguration pc = GetContractedPinConfiguration();
+                                    for (int i = 0; i < 4; i++)
+                                        SetupGlobalCircuit(pc, i, i);
+                                    SetPlannedPinConfiguration(pc);
+                                    pc.SendBeepOnPartitionSet(comp == SubComparison.ComparisonResult.EQUAL ? 1 : 2);
+                                    round.SetValue(5);
+                                    break;
+                                }
+                                else
+                                {
+                                    // Start square root check
+                                    round.SetValue(30);
+                                    break;
+                                }
+                            }
+                            else if (r == 31)
+                            {
+                                // Just computed M^2, result is stored in binops, continue
+                            }
+                            else if (r == 33)
+                            {
+                                // Compared M^2 to n
+                                SubComparison.ComparisonResult comp = binop.CompResult();
+                                if (comp == SubComparison.ComparisonResult.EQUAL)
+                                {
+                                    // M^2 = n: Found exactly the square root, finish binary search
+                                    PinConfiguration pc = GetContractedPinConfiguration();
+                                    for (int i = 0; i < 4; i++)
+                                        SetupGlobalCircuit(pc, i, i);
+                                    SetPlannedPinConfiguration(pc);
+                                    pc.SendBeepOnPartitionSet(1);
+                                    round.SetValue(5);
+                                    break;
+                                }
+                                else
+                                {
+                                    // M^2 < n or M^2 > n, set L := M or R := M
+                                    int idx = comp == SubComparison.ComparisonResult.LESS ? L : R;
+                                    for (int i = 0; i < numOuterBoundaryOccurrences; i++)
+                                    {
+                                        boundaryBits[4 * i + idx].SetValue(boundaryBits[4 * i + M]);
+                                        boundaryMSBs[4 * i + idx].SetValue(boundaryMSBs[4 * i + M]);
+                                    }
+                                    // Continue with next iteration
+                                    round.SetValue(20);
+                                    break;
+                                }
+                            }
+                            round.SetValue(r + 1);
+                        }
+                        else
+                        {
+                            ActivateBinopsSend(onOuterBoundary);
+                        }
+                    }
+                    break;
+
+                // (b) Rounds 30-33 implement the square root check
             }
         }
 
@@ -891,6 +1471,70 @@ namespace AS2.Algos.SCGeneral
         }
 
         /// <summary>
+        /// Helper for initializing and starting the binary operation
+        /// subroutine(s). Already sets up the pin configuration and
+        /// activates all active binary ops instances.
+        /// </summary>
+        /// <param name="onOuterBoundary">Whether the binary operation should
+        /// be run on the outer boundary.</param>
+        /// <param name="mode">The binary operation mode.</param>
+        /// <param name="bitIndex1">The index of the first input bit. If <c>-1</c>, the
+        /// result bit of the previous binary operation will be used.</param>
+        /// <param name="bitIndex2">The index of the second input bit. If <c>-1</c>, the
+        /// result bit of the previous binary operation will be used.</param>
+        /// <param name="msbIndex">The index of the input MSB.</param>
+        private void StartBinOp(bool onOuterBoundary, SubBinOps.Mode mode, int bitIndex1, int bitIndex2 = 0, int msbIndex = 0)
+        {
+            if (!onOuterBoundary)
+            {
+                // Setup only one subroutine instance
+                Direction succ = ll.GetMaxDir();
+                Direction pred = succ.Opposite();
+                succ = HasNeighborAt(succ) ? succ : Direction.NONE;
+                pred = HasNeighborAt(pred) ? pred : Direction.NONE;
+                binop.Init(mode, bitIndex1 == -1 ? binop.ResultBit() : bits[bitIndex1].GetCurrentValue(), pred, succ,
+                    bitIndex2 == -1 ? binop.ResultBit() : bits[bitIndex2].GetCurrentValue(), msbs[msbIndex].GetCurrentValue());
+            }
+            else
+            {
+                // Setup one instance per boundary occurrence
+                for (int i = 0; i < numOuterBoundaryOccurrences; i++)
+                {
+                    Direction pred = outerBoundaryDirs[2 * i];
+                    Direction succ = outerBoundaryDirs[2 * i + 1];
+                    binops[i].Init(mode, bitIndex1 == -1 ? binops[i].ResultBit() : boundaryBits[4 * i + bitIndex1].GetCurrentValue(), pred, succ,
+                        bitIndex2 == -1 ? binops[i].ResultBit() : boundaryBits[4 * i + bitIndex2].GetCurrentValue(), boundaryMSBs[4 * i + msbIndex].GetCurrentValue());
+                }
+            }
+            ActivateBinopsSend(onOuterBoundary);
+        }
+
+        /// <summary>
+        /// Helper for activating the binary operation subroutine(s).
+        /// Sets up the pin configuration and activates all active
+        /// binary ops instances.
+        /// </summary>
+        /// <param name="onOuterBoundary">Whether the binary operation should
+        /// be run on the outer boundary.</param>
+        private void ActivateBinopsSend(bool onOuterBoundary)
+        {
+            PinConfiguration pc = GetContractedPinConfiguration();
+            binops[0].SetupPinConfig(pc);
+            if (onOuterBoundary)
+            {
+                for (int i = 1; i < numOuterBoundaryOccurrences; i++)
+                    binops[i].SetupPinConfig(pc);
+            }
+            SetPlannedPinConfiguration(pc);
+            binops[0].ActivateSend();
+            if (onOuterBoundary)
+            {
+                for (int i = 1; i < numOuterBoundaryOccurrences; i++)
+                    binops[i].ActivateSend();
+            }
+        }
+
+        /// <summary>
         /// Sets up a global circuit using the given pin offset.
         /// </summary>
         /// <param name="pc">The pin configuration to modify.</param>
@@ -900,6 +1544,7 @@ namespace AS2.Algos.SCGeneral
         {
             bool[] inverted = new bool[] { false, false, false, true, true, true };
             pc.SetStarConfig(offset, inverted, pSet);
+            pc.SetPartitionSetColor(pSet, ColorData.Circuit_Colors[offset]);
         }
 
         /// <summary>
