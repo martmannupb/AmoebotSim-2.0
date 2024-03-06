@@ -840,6 +840,69 @@ namespace AS2.ShapeContainment
         }
 
         /// <summary>
+        /// Computes a matrix storing the incident faces of all nodes.
+        /// The matrix has the dimensions N x 6, where N is the number of nodes.
+        /// A <c>true</c> entry at position (i, j) marks an incident face of node
+        /// i with relative rotation j. The rotation j means that the two sides
+        /// of the face extend in cardinal directions j and j + 1.
+        /// <para>
+        /// <code>
+        ///    _______
+        ///   /\     /\
+        ///  /  \ 1 /  \
+        /// /  2 \ / 0  \
+        /// ----- X -----
+        /// \  3 / \ 5  /
+        ///  \  / 4 \  /
+        ///   \/     \/
+        ///    -------
+        /// </code>
+        /// </para>
+        /// </summary>
+        /// <returns>A matrix of dimensions N x 6 storing the incident face
+        /// directions for all nodes.</returns>
+        public bool[,] GetIncidentFaceMatrix()
+        {
+            bool[,] matrix = new bool[nodes.Count, 6];
+
+            foreach (Face face in faces)
+            {
+                int[] idx = new int[] { face.u, face.v, face.w };
+                Node[] nds = new Node[] { nodes[face.u], nodes[face.v], nodes[face.w] };
+                // Find out which node is the "tip" that points up or down
+                int tipIdx = nds[0].y == nds[1].y ? 2 : (nds[0].y == nds[2].y ? 1 : 0);
+                // Find the other two indices
+                int otherIdx1 = tipIdx != 0 ? 0 : 1;
+                int otherIdx2 = tipIdx != 2 ? 2 : 1;
+                // Make sure 1 is the left corner and 2 is the right one
+                if (nds[otherIdx1].x > nds[otherIdx2].x)
+                {
+                    int tmp = otherIdx1;
+                    otherIdx1 = otherIdx2;
+                    otherIdx2 = tmp;
+                }
+                // Find out whether the tip points up or down
+                // then fill in the correct face directions
+                if (nds[tipIdx].y > nds[otherIdx1].y)
+                {
+                    // Triangle points up
+                    matrix[idx[otherIdx1], 0] = true;
+                    matrix[idx[otherIdx2], 2] = true;
+                    matrix[idx[tipIdx], 4] = true;
+                }
+                else
+                {
+                    // Triangle points down
+                    matrix[idx[otherIdx1], 5] = true;
+                    matrix[idx[otherIdx2], 3] = true;
+                    matrix[idx[tipIdx], 1] = true;
+                }
+            }
+
+            return matrix;
+        }
+
+        /// <summary>
         /// Checks whether the shape contains the given edge
         /// in any direction.
         /// </summary>
