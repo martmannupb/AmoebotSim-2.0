@@ -2189,7 +2189,7 @@ namespace AS2.Algos.SCGeneral
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(string shape = "shape_test_general.json", bool fromFile = true, int numAmoebots = 250, bool fillShape = true, int scale = 1, int rotation = 0,
+        public void Generate(string shape = "shape_test_general.json", bool fromFile = true, bool drawTraversal = true, int numAmoebots = 250, bool fillShape = true, int scale = 1, int rotation = 0,
             float holeProb = 0.3f, bool fillHoles = false)
         {
             nPlaced = 0;
@@ -2224,9 +2224,15 @@ namespace AS2.Algos.SCGeneral
 
             SCGeneralParticle.longestLineStr = IntToBinary(s.GetLongestLineLength());
             SCGeneralParticle.shapeHasFaces = s.faces.Count > 0;
-            // TODO: Set traversal nodes and edge directions
+            SCGeneralParticle.shapeHasHoles = s.HasLoop();
             SCGeneralParticle.incidentFaceMatrix = s.GetIncidentFaceMatrix();
             SCGeneralParticle.shapeHasHoles = false;
+            // Generate traversal nodes and edge directions
+            // We need a start point with incident edges at an angle if the shape does not have any faces
+            s.GeneratePostmanTraversal(s.faces.Count == 0, out List<int> traversalNodes, out List<Direction> traversalDirections, out Direction distanceCheckDir);
+            SCGeneralParticle.traversalNodes = traversalNodes.ToArray();
+            SCGeneralParticle.traversalDirs = traversalDirections.ToArray();
+            SCGeneralParticle.distanceCheckDir = distanceCheckDir;
 
             // Place amoebot system
             foreach (Vector2Int v in GenerateRandomConnectedPositions(Vector2Int.zero, numAmoebots, holeProb, fillHoles))
@@ -2236,19 +2242,18 @@ namespace AS2.Algos.SCGeneral
             }
 
             // Fill up positions of the shape
+            if (scale < 1)
+            {
+                Log.Warning("Scale must be >= 1");
+                scale = 1;
+            }
+            rotation = rotation % 6;
+            if (rotation < 0)
+            {
+                rotation += 6;
+            }
             if (fillShape)
             {
-                if (scale < 1)
-                {
-                    Log.Warning("Scale must be >= 1");
-                    scale = 1;
-                }
-                rotation = rotation % 6;
-                if (rotation < 0)
-                {
-                    rotation += 6;
-                }
-
                 if (scale == 1)
                 {
                     foreach (Shape.Node node in s.nodes)
@@ -2299,9 +2304,26 @@ namespace AS2.Algos.SCGeneral
 
             Log.Debug("Generated system has " + nPlaced + " amoebots");
 
-            // Draw shape preview
+            // Draw shape preview and traversal
             LineDrawer.Instance.Clear();
             s.Draw(Vector2Int.zero, rotation, scale);
+            if (drawTraversal)
+            {
+                int n = traversalNodes.Count - 1;
+                for (int i = 0; i < n; i++)
+                {
+                    Vector2Int start = s.nodes[traversalNodes[i]];
+                    Vector2Int end = s.nodes[traversalNodes[i + 1]];
+                    start = AmoebotFunctions.RotateVector(start, rotation);
+                    end = AmoebotFunctions.RotateVector(end, rotation);
+                    start *= scale;
+                    end *= scale;
+                    float frac = (float)i / Mathf.Max(1, n - 1);
+                    Color color = new Color(frac, frac, frac);
+                    float width = 3f - 2.5f * frac;
+                    LineDrawer.Instance.AddLine(start, end, color, true, width, width, -0.1f * frac);
+                }
+            }
             LineDrawer.Instance.SetTimer(20);
         }
 

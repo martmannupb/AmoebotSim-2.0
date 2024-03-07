@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using AS2.Sim;
 using AS2.UI;
 using UnityEngine;
 
@@ -900,6 +901,651 @@ namespace AS2.ShapeContainment
             }
 
             return matrix;
+        }
+
+        /// <summary>
+        /// Checks whether the shape contains a loop of edges.
+        /// This is useful for checking whether the shape has a hole,
+        /// if it does not have any faces.
+        /// </summary>
+        /// <returns><c>true</c> if and only if the shape graph has a loop.</returns>
+        public bool HasLoop()
+        {
+            if (faces.Count > 0)
+                return true;
+
+            // Build an adjacency list for easy checking
+            // Each entry at index u is an edge incident to u of the form
+            // (e, v), where e is the edge index and v the incident node
+            List<Vector2Int>[] adj = new List<Vector2Int>[nodes.Count];
+            for (int i = 0; i < nodes.Count; i++)
+                adj[i] = new List<Vector2Int>();
+
+            for (int i = 0; i < edges.Count; i++)
+            {
+                Edge e = edges[i];
+                adj[e.u].Add(new Vector2Int(i, e.v));
+                adj[e.v].Add(new Vector2Int(i, e.u));
+            }
+
+            // Use a DFS starting at the origin and try to find a node that we have already visited
+            bool[] visitedNodes = new bool[nodes.Count];
+            bool[] visitedEdges = new bool[edges.Count];
+            Stack<int> stack = new Stack<int>();
+            stack.Push(0);
+            visitedNodes[0] = true;
+            while (stack.Count > 0)
+            {
+                int current = stack.Peek();
+                // Find incident node via edge that has not been visited yet
+                bool foundNbr = false;
+                foreach (Vector2Int nbrEdge in adj[current])
+                {
+                    int edge = nbrEdge.x;
+                    int nbr = nbrEdge.y;
+                    if (!visitedEdges[edge])
+                    {
+                        if (visitedNodes[nbr])
+                            // Found a cycle!
+                            return true;
+                        // Found no cycle here
+                        visitedEdges[edge] = true;
+                        visitedNodes[nbr] = true;
+                        stack.Push(nbr);
+                        foundNbr = true;
+                        break;
+                    }
+                }
+                if (!foundNbr)
+                {
+                    // Have exhausted this node
+                    stack.Pop();
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Generates a traversal path of the shape that visits every edge
+        /// at least once and tries to be as short as possible. The path will
+        /// always end at the origin.
+        /// </summary>
+        /// <param name="startPointWithAngle">Whether the start node of the path
+        /// should be a node with incident edges on at least two axes.</param>
+        /// <param name="postmanTraversal">The list of nodes in the order in which
+        /// they are visited.</param>
+        /// <param name="edgeDirections">The directions of the edges in the
+        /// traversal.</param>
+        /// <param name="angleDir">The direction of an extra edge at the start node
+        /// in case <paramref name="startPointWithAngle"/> is <c>true</c>.</param>
+        public void GeneratePostmanTraversal(bool startPointWithAngle, out List<int> postmanTraversal, out List<Direction> edgeDirections, out Direction angleDir)
+        {
+            postmanTraversal = new List<int>();
+            edgeDirections = new List<Direction>();
+            angleDir = Direction.NONE;
+
+            // First, we build an adjacency matrix and find all odd nodes (and suitable start points)
+            // The adjacency matrix stores edge IDs
+            float tStart = Time.realtimeSinceStartup;
+            int[,] adj = new int[nodes.Count, nodes.Count];
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                for (int j = 0; j < nodes.Count; j++)
+                    adj[i, j] = -1;
+            }
+            System.Func<int, int, bool> Adj = (int i, int j) => { return i <= j ? adj[i, j] != -1 : adj[j, i] != -1; };
+            System.Func<int, int, int> AdjEdge = (int i, int j) => { return i <= j ? adj[i, j] : adj[j, i]; };
+            System.Action<int, int, int> SetAdj = (int i, int j, int value) => {
+                if (i <= j)
+                    adj[i, j] = value;
+                else
+                    adj[j, i] = value;
+            };
+            bool[] oddNodeFlags = new bool[nodes.Count];
+            bool[] startPointFlags = new bool[nodes.Count];
+            int[] nodeAxes = new int[nodes.Count];  // 0 means no axis found, 1, 2, 3 indicate a found edge on one of the 3 axes
+            for (int i = 0; i < edges.Count; i++)
+            {
+                Edge e = edges[i];
+                SetAdj(e.u, e.v, i);
+                oddNodeFlags[e.u] ^= true;
+                oddNodeFlags[e.v] ^= true;
+                Direction dir = ParticleSystem_Utils.VectorToDirection((Vector2Int)nodes[e.v] - nodes[e.u]);
+                int axis = dir == Direction.E || dir == Direction.W ? 1 : (dir == Direction.NNE || dir == Direction.SSW ? 2 : 3);
+                foreach (int j in new int[] { e.u, e.v })
+                {
+                    if (!startPointFlags[j])
+                    {
+                        if (nodeAxes[j] == 0)
+                            nodeAxes[j] = axis;
+                        else if (nodeAxes[j] != axis)
+                            startPointFlags[j] = true;
+                    }
+                }
+            }
+
+            List<int> oddNodes = new List<int>();
+            List<int> startPoints = new List<int>();
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                if (oddNodeFlags[i])
+                    oddNodes.Add(i);
+                if (startPointFlags[i])
+                    startPoints.Add(i);
+            }
+            Log.Debug("Built adjacency matrix and found odd nodes and start points in " + (Time.realtimeSinceStartup - tStart) + "s");
+            tStart = Time.realtimeSinceStartup;
+
+            if (startPointWithAngle && startPoints.Count == 0)
+            {
+                Log.Error("Error: Shape has no suitable start point.");
+                return;
+            }
+
+            // Build distance matrix using Floyd-Warshall algorithm if there are any odd nodes
+            int[,] dist = new int[nodes.Count, nodes.Count];
+            System.Func<int, int, int> Dist = (int i, int j) => { return i <= j ? dist[i, j] : dist[j, i]; };
+            System.Action<int, int, int> SetDist = (int i, int j, int value) => {
+                if (i <= j)
+                    dist[i, j] = value;
+                else
+                    dist[j, i] = value;
+            };
+            // Initialize distances (use very large value/infinity for unknown distances)
+            for (int i = 0; i < nodes.Count - 1; i++)
+            {
+                for (int j = i + 1; j < nodes.Count; j++)
+                {
+                    int d = Adj(i, j) ? 1 : 99999;
+                    SetDist(i, j, d);
+                }
+            }
+            if (oddNodes.Count > 0)
+            {
+                for (int n = 0; n < nodes.Count; n++)
+                {
+                    for (int i = 0; i < nodes.Count - 1; i++)
+                    {
+                        for (int j = i + 1; j < nodes.Count; j++)
+                        {
+                            int curDist = Dist(i, j);
+                            int newDist = Dist(i, n) + Dist(n, j);
+                            if (newDist < curDist)
+                                SetDist(i, j, newDist);
+                        }
+                    }
+                }
+                //string s = "Nodes: ";
+                //for (int i = 0; i < nodes.Count; i++)
+                //    s += i + ": " + (Vector2Int)nodes[i] + ",   ";
+                //Log.Debug(s);
+                //s = "Distances:\n     ";
+                //for (int i = 0; i < nodes.Count; i++)
+                //    s += string.Format("{0,4}", i) + " ";
+                //s += "\n";
+                //for (int i = 0; i < nodes.Count; i++)
+                //{
+                //    s += string.Format("{0,4}", i) + " ";
+                //    for (int j = 0; j < nodes.Count; j++)
+                //    {
+                //        s += string.Format("{0,4}", Dist(i, j)) + " ";
+                //    }
+                //    s += "\n";
+                //}
+                //s += "\n";
+                //Log.Debug(s);
+            }
+            Log.Debug("Built distance matrix in " + (Time.realtimeSinceStartup - tStart) + "s");
+            tStart = Time.realtimeSinceStartup;
+
+            // Compute a matching for the whole graph, removing all odd nodes
+            int bestCost;
+            List<Vector2Int> bestMatching = PostmanMatching(oddNodes, Dist, out bestCost);
+            Log.Debug("Initial (Euler tour) matching cost: " + bestCost);
+            // Now, try finding other matchings by choosing two odd nodes as start and end points
+            int startNode = 0;
+            int endNode = 0;
+            int prependStartNodeIdx = -1;   // We may have to prepend a path from an even start node to some odd node at the very end
+            if (!startPointWithAngle)
+            {
+                // No restriction on the start points
+                if (oddNodeFlags[0])
+                {
+                    // Origin is odd
+                    //Log.Debug("Origin is odd");
+                    // Compute matching for every choice of start point (other odd node)
+                    for (int j = 1; j < oddNodes.Count; j++)
+                    {
+                        List<int> reducedOddNodes = new List<int>(oddNodes);
+                        reducedOddNodes.RemoveAt(j);
+                        reducedOddNodes.RemoveAt(0);
+                        List<Vector2Int> matching = PostmanMatching(reducedOddNodes, Dist, out int cost);
+                        //Log.Debug("Using start node " + (Vector2Int)nodes[oddNodes[j]] + ", found matching with cost " + cost + " (distance " + Dist(0, oddNodes[j]) + ")");
+                        if (cost < bestCost)
+                        {
+                            bestCost = cost;
+                            bestMatching = matching;
+                            startNode = oddNodes[j];
+                        }
+                    }
+                }
+                else
+                {
+                    // Origin is even
+                    //Log.Debug("Origin is even");
+                    // Compute matching for every pair of odd nodes as start and end point and find the cheapest one
+                    for (int i = 0; i < oddNodes.Count - 1; i++)
+                    {
+                        for (int j = i + 1; j < oddNodes.Count; j++)
+                        {
+                            List<int> reducedOddNodes = new List<int>(oddNodes);
+                            reducedOddNodes.RemoveAt(j);
+                            reducedOddNodes.RemoveAt(i);
+                            List<Vector2Int> matching = PostmanMatching(reducedOddNodes, Dist, out int cost);
+                            // Need to add the path from one of the two to the origin
+                            int disti = Dist(oddNodes[i], 0);
+                            int distj = Dist(oddNodes[j], 0);
+                            int addDistance = Mathf.Min(disti, distj);
+                            //Log.Debug("Using start node " + (Vector2Int)nodes[oddNodes[i]] + " and end node " + (Vector2Int)nodes[oddNodes[j]] + ", found matching with cost " + cost + " (plus " + addDistance + " = " + (cost + addDistance) + ")");
+                            cost += addDistance;
+                            if (cost < bestCost)
+                            {
+                                bestCost = cost;
+                                bestMatching = matching;
+                                if (disti <= distj)
+                                {
+                                    startNode = oddNodes[j];
+                                    endNode = oddNodes[i];
+                                }
+                                else
+                                {
+                                    startNode = oddNodes[i];
+                                    endNode = oddNodes[j];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Start point is restricted
+                // First, try the full Euler tour, starting at a valid start node, and just add the path to the origin
+                // This is the best solution to start with
+                int minDist = 99999;
+                int bestStartNode = -1;
+                for (int i = 0; i < startPoints.Count; i++)
+                {
+                    int d = Dist(0, startPoints[i]);
+                    if (d < minDist)
+                    {
+                        minDist = d;
+                        bestStartNode = startPoints[i];
+                    }
+                }
+                bestCost += minDist;
+                startNode = bestStartNode;
+                endNode = bestStartNode;
+                Log.Debug("Starting solution: Start at " + (Vector2Int)nodes[startNode] + " and end at " + (Vector2Int)nodes[endNode] + ", cost: " + bestCost);
+
+                // Now check all odd starting points with any odd end points
+                bool haveOddStartPoint = false;
+                for (int i = 0; i < startPoints.Count; i++)
+                {
+                    if (!oddNodeFlags[startPoints[i]])
+                        continue;
+                    haveOddStartPoint = true;
+
+                    for (int j = 0; j < oddNodes.Count; j++)
+                    {
+                        if (startPoints[i] == oddNodes[j])
+                            continue;
+                        // We only have to check this path once if the end point is also a valid start point
+                        bool endIsStartPoint = startPoints.Contains(oddNodes[j]);
+                        if (endIsStartPoint && oddNodes[j] < startPoints[i])
+                            continue;
+
+                        int oddIdx = oddNodes.IndexOf(startPoints[i]);
+                        List<int> reducedOddNodes = new List<int>(oddNodes);
+                        reducedOddNodes.RemoveAt(j > oddIdx ? j : oddIdx);
+                        reducedOddNodes.RemoveAt(j > oddIdx ? oddIdx : j);
+                        List<Vector2Int> matching = PostmanMatching(reducedOddNodes, Dist, out int cost);
+
+                        // Need to add the path from one end point to the origin
+                        int addDistance = Dist(oddNodes[j], 0);
+                        bool reverse = false;
+                        if (endIsStartPoint)
+                        {
+                            int distStart = Dist(oddNodes[oddIdx], 0);
+                            if (distStart < addDistance)
+                            {
+                                addDistance = distStart;
+                                reverse = true;
+                            }
+                        }
+
+                        //Log.Debug("Using start node " + (Vector2Int)nodes[startPoints[i]] + " and end node " + (Vector2Int)nodes[oddNodes[j]] + ", found matching with cost " + cost + " (plus " + addDistance + " = " + (cost + addDistance) + ")");
+                        cost += addDistance;
+                        if (cost < bestCost)
+                        {
+                            bestCost = cost;
+                            bestMatching = matching;
+                            if (reverse)
+                            {
+                                startNode = oddNodes[j];
+                                endNode = startPoints[i];
+                            }
+                            else
+                            {
+                                startNode = startPoints[i];
+                                endNode = oddNodes[j];
+                            }
+                        }
+                    }
+                }
+
+                // Extra case: We have no odd start points and the origin is odd
+                if (!haveOddStartPoint && oddNodeFlags[0])
+                {
+                    // Check all pairs starting at the origin and going to some other odd node, then add the path to the closest valid start node
+                    for (int j = 1; j < oddNodes.Count; j++)
+                    {
+                        List<int> reducedOddNodes = new List<int>(oddNodes);
+                        reducedOddNodes.RemoveAt(j);
+                        reducedOddNodes.RemoveAt(0);
+                        List<Vector2Int> matching = PostmanMatching(reducedOddNodes, Dist, out int cost);
+                        // Now find closest start point
+                        int addDistance = 999999;
+                        int start = -1;
+                        for (int i = 0; i < startPoints.Count; i++)
+                        {
+                            int d = Dist(oddNodes[j], startPoints[i]);
+                            if (d < addDistance)
+                            {
+                                addDistance = d;
+                                start = startPoints[i];
+                            }
+                        }
+                        //Log.Debug("Using start node (origin) and end node " + (Vector2Int)nodes[oddNodes[j]] + ", found matching with cost " + cost + " (plus " + addDistance + " = " + (cost + addDistance) + " for path to " + (Vector2Int)nodes[start] + ")");
+                        cost += addDistance;
+                        if (cost < bestCost)
+                        {
+                            bestCost = cost;
+                            bestMatching = matching;
+                            startNode = oddNodes[j];
+                            endNode = 0;
+                            prependStartNodeIdx = start;
+                        }
+                    }
+                }
+            }
+            Log.Debug("Found matching in " + (Time.realtimeSinceStartup - tStart) + "s");
+            Log.Debug("Best matching cost: " + bestCost + ", start node: " + startNode + " " + (Vector2Int)nodes[startNode] + ", end node: " + endNode + " " + (Vector2Int)nodes[endNode] + (prependStartNodeIdx == -1 ? "" :( ", prepend node: " + prependStartNodeIdx + " " + (Vector2Int)nodes[prependStartNodeIdx])));
+            tStart = Time.realtimeSinceStartup;
+
+            // Construct an Euler tour (or path) from the matching
+            // Treat the pairs of matched nodes like edges
+            Stack<int> stack = new Stack<int>();
+            bool[] usedEdges = new bool[edges.Count + bestMatching.Count];
+            List<int> traversalNodes = new List<int>();
+            stack.Push(endNode);
+            while (stack.Count > 0)
+            {
+                int current = stack.Peek();
+                // Find an unused edge or matching pair
+                bool foundEdge = false;
+                for (int nbr = 0; nbr < nodes.Count; nbr++)
+                {
+                    int edge = AdjEdge(current, nbr);
+                    if (edge != -1 && !usedEdges[edge])
+                    {
+                        usedEdges[edge] = true;
+                        stack.Push(nbr);
+                        foundEdge = true;
+                        break;
+                    }
+                }
+                if (foundEdge)
+                    continue;
+
+                // Found no edge, check matching pairs
+                for (int i = 0; i < bestMatching.Count; i++)
+                {
+                    if (usedEdges[edges.Count + i])
+                        continue;
+                    Vector2Int pair = bestMatching[i];
+                    int nbr = -1;
+                    if (current == pair.x)
+                        nbr = pair.y;
+                    else if (current == pair.y)
+                        nbr = pair.x;
+                    if (nbr != -1)
+                    {
+                        usedEdges[edges.Count + i] = true;
+                        stack.Push(nbr);
+                        foundEdge = true;
+                        break;
+                    }
+                }
+
+                if (!foundEdge)
+                {
+                    // Still no edge, this node is finished
+                    stack.Pop();
+                    traversalNodes.Add(current);
+                }
+            }
+            Log.Debug("Found Euler path in " + (Time.realtimeSinceStartup - tStart) + "s");
+
+            // Found Euler path, now turn it into an actual traversal
+            postmanTraversal.Add(traversalNodes[0]);
+            for (int i = 0; i < traversalNodes.Count - 1; i++)
+            {
+                int current = traversalNodes[i];
+                int next = traversalNodes[i + 1];
+                int edge = AdjEdge(current, next);
+                if (edge != -1)
+                {
+                    // This step is a regular edge
+                    edgeDirections.Add(ParticleSystem_Utils.VectorToDirection((Vector2Int)nodes[next] - nodes[current]));
+                    postmanTraversal.Add(next);
+                }
+                else
+                {
+                    // This step is a path, we have to insert a shortest path between current and next
+                    List<int> shortestPath = FindShortestPath(current, next, Dist);
+                    for (int j = 0; j < shortestPath.Count - 1; j++)
+                    {
+                        current = shortestPath[j];
+                        next = shortestPath[j + 1];
+                        edgeDirections.Add(ParticleSystem_Utils.VectorToDirection((Vector2Int)nodes[next] - nodes[current]));
+                        postmanTraversal.Add(next);
+                    }
+                }
+            }
+
+            // Finally, add the optional last path towards the origin node and first path towards the Euler start node
+            if (endNode != 0)
+            {
+                List<int> shortestPath = FindShortestPath(endNode, 0, Dist);
+                for (int j = 0; j < shortestPath.Count - 1; j++)
+                {
+                    int current = shortestPath[j];
+                    int next = shortestPath[j + 1];
+                    edgeDirections.Add(ParticleSystem_Utils.VectorToDirection((Vector2Int)nodes[next] - nodes[current]));
+                    postmanTraversal.Add(next);
+                }
+            }
+            if (prependStartNodeIdx != -1)
+            {
+                List<int> shortestPath = FindShortestPath(startNode, prependStartNodeIdx, Dist);
+                for (int j = 0; j < shortestPath.Count - 1; j++)
+                {
+                    int current = shortestPath[j];
+                    int previous = shortestPath[j + 1];
+                    edgeDirections.Insert(0, ParticleSystem_Utils.VectorToDirection((Vector2Int)nodes[current] - nodes[previous]));
+                    postmanTraversal.Insert(0, previous);
+                }
+            }
+            //string s = "Traversal nodes and edges:\n";
+            //for (int i = 0; i < postmanTraversal.Count; i++)
+            //    s += (Vector2Int)nodes[postmanTraversal[i]] + (i < edgeDirections.Count ? "  " + edgeDirections[i] + "  " : "");
+            //Log.Debug(s);
+
+            // Find the extra edge
+            Direction firstEdgeDir = ParticleSystem_Utils.VectorToDirection((Vector2Int)nodes[postmanTraversal[1]] - nodes[postmanTraversal[0]]);
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                if (Adj(i, postmanTraversal[0]))
+                {
+                    Direction edgeDir = ParticleSystem_Utils.VectorToDirection((Vector2Int)nodes[i] - nodes[postmanTraversal[0]]);
+                    if (edgeDir != firstEdgeDir && edgeDir != firstEdgeDir.Opposite())
+                    {
+                        angleDir = edgeDir;
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper generating a matching of odd nodes such that the paths
+        /// between pairs of matched nodes do not intersect. Is not guaranteed
+        /// to be optimal due to the use of a greedy heuristic.
+        /// </summary>
+        /// <param name="oddNodes">The indices of the odd nodes to be matched.
+        /// Must have an even number of nodes.</param>
+        /// <param name="Dist">The distance function.</param>
+        /// <param name="totalCost">The total length of the paths between
+        /// matched nodes.</param>
+        /// <returns>A list of pairs of matched nodes.</returns>
+        private List<Vector2Int> PostmanMatching(List<int> oddNodes, Func<int, int, int> Dist, out int totalCost)
+        {
+            List<Vector2Int> pairs = new List<Vector2Int>();
+            totalCost = 0;
+            if (oddNodes.Count == 0 || oddNodes.Count % 2 == 1)
+                return pairs;
+
+            // Greedily remove pairs with shortest distance
+            oddNodes = new List<int>(oddNodes);
+            while (oddNodes.Count > 0)
+            {
+                Vector2Int pair = new Vector2Int(-1, -1);
+                int shortestDist = 999999;
+                int ix = -1;
+                int jx = -1;
+                for (int i = 0; i < oddNodes.Count - 1; i++)
+                {
+                    for (int j = i + 1; j < oddNodes.Count; j++)
+                    {
+                        int nodei = oddNodes[i];
+                        int nodej = oddNodes[j];
+                        int dist = Dist(nodei, nodej);
+                        if (dist < shortestDist)
+                        {
+                            shortestDist = dist;
+                            pair.x = nodei;
+                            pair.y = nodej;
+                            ix = i;
+                            jx = j;
+                        }
+                    }
+                }
+                pairs.Add(pair);
+                totalCost += shortestDist;
+                oddNodes.RemoveAt(jx);
+                oddNodes.RemoveAt(ix);
+            }
+
+            // Now try to optimize by removing "crosses":
+            //  If there are two paths from A to B and C to D that share an edge, the paths from A to C(D) and B to D(C) are shorter because they do not include that edge
+            bool foundImprovement = true;
+            while (foundImprovement)
+            {
+                foundImprovement = false;
+                for (int i = 0; i < pairs.Count - 1; i++)
+                {
+                    for (int j = i + 1; j < pairs.Count; j++)
+                    {
+                        Vector2Int p1 = pairs[i];
+                        Vector2Int p2 = pairs[j];
+                        int dist = Dist(p1.x, p1.y) + Dist(p2.x, p2.y);
+                        int dist1 = Dist(p1.x, p2.x) + Dist(p1.y, p2.y);
+                        int dist2 = Dist(p1.x, p2.y) + Dist(p1.y, p2.x);
+                        if (dist1 < dist || dist2 < dist)
+                        {
+                            //string m = "Found improvement: " + p1 + ", " + p2 + ";  ";
+                            foundImprovement = true;
+                            if (dist1 <= dist2)
+                            {
+                                pairs[i] = new Vector2Int(p1.x, p2.x);
+                                pairs[j] = new Vector2Int(p1.y, p2.y);
+                                totalCost += dist1 - dist;
+                                //m += p1.x + " -> " + p2.x + " and " + p1.y + " -> " + p2.y + ", removing cost of " + (dist - dist1);
+                            }
+                            else
+                            {
+                                pairs[i] = new Vector2Int(p1.x, p2.y);
+                                pairs[j] = new Vector2Int(p1.y, p2.x);
+                                totalCost += dist2 - dist;
+                                //m += p1.x + " -> " + p2.y + " and " + p1.y + " -> " + p2.x + ", removing cost of " + (dist - dist2);
+                            }
+                            //Log.Debug(m);
+                        }
+                    }
+                }
+            }
+
+            //string s ="Found pairs with total cost " + totalCost + ":\n";
+            //foreach (Vector2Int v in pairs)
+            //    s += v + ":  " + (Vector2Int)nodes[v.x] + " --> " + (Vector2Int)nodes[v.y] + "\n";
+            //Log.Debug(s);
+
+            return pairs;
+        }
+
+        /// <summary>
+        /// Helper finding a shortest path between two given nodes.
+        /// </summary>
+        /// <param name="start">The index of the start node.</param>
+        /// <param name="end">The index of the end node.</param>
+        /// <param name="Dist">The distance function.</param>
+        /// <returns>A list of adjacent nodes that starts at
+        /// <paramref name="start"/> and ends at <paramref name="end"/>
+        /// and has minimum length.</returns>
+        private List<int> FindShortestPath(int start, int end, Func<int, int, int> Dist)
+        {
+            List<int> path = new List<int>();
+
+            path.Add(start);
+            int current = start;
+            while (current != end)
+            {
+                // Find a node adjacent to current that is closer to end
+                int dist = Dist(current, end);
+                bool foundNbr = false;
+                for (int nbr = 0; nbr < nodes.Count; nbr++)
+                {
+                    if (Dist(current, nbr) == 1 && Dist(nbr, end) < dist)
+                    {
+                        foundNbr = true;
+                        current = nbr;
+                        break;
+                    }
+                }
+                if (!foundNbr)
+                {
+                    Log.Error("Could not find shortest path between nodes " + (Vector2Int)nodes[start] + " and " + (Vector2Int)nodes[end]);
+                    return path;
+                }
+                else
+                {
+                    path.Add(current);
+                }
+            }
+
+            return path;
         }
 
         /// <summary>
