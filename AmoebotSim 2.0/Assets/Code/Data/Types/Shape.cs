@@ -1190,12 +1190,10 @@ namespace AS2.ShapeContainment
                 Log.Debug("Starting solution: Start at " + (Vector2Int)nodes[startNode] + " and end at " + (Vector2Int)nodes[endNode] + ", cost: " + bestCost);
 
                 // Now check all odd starting points with any odd end points
-                bool haveOddStartPoint = false;
                 for (int i = 0; i < startPoints.Count; i++)
                 {
                     if (!oddNodeFlags[startPoints[i]])
                         continue;
-                    haveOddStartPoint = true;
 
                     for (int j = 0; j < oddNodes.Count; j++)
                     {
@@ -1245,8 +1243,8 @@ namespace AS2.ShapeContainment
                     }
                 }
 
-                // Extra case: We have no odd start points and the origin is odd
-                if (!haveOddStartPoint && oddNodeFlags[0])
+                // Extra case: The origin is odd
+                if (oddNodeFlags[0])
                 {
                     // Check all pairs starting at the origin and going to some other odd node, then add the path to the closest valid start node
                     for (int j = 1; j < oddNodes.Count; j++)
