@@ -6,9 +6,11 @@ using static AS2.Constants;
 using AS2.ShapeContainment;
 using AS2.Subroutines.BinaryOps;
 using AS2.Subroutines.BoundaryTest;
+using AS2.Subroutines.LeaderElectionSC;
 using AS2.Subroutines.LongestLines;
 using AS2.Subroutines.ConvexShapeContainment;
 using AS2.Subroutines.PASC;
+using AS2.Subroutines.ShapeConstruction;
 
 namespace AS2.Algos.SCGeneral
 {
@@ -449,7 +451,7 @@ namespace AS2.Algos.SCGeneral
 
     // Rounds 47-51 (PASC, similar to 34-38):
     //  - Else:
-    //      - Setup PASC on all 6 axes
+    //      - Setup PASC on all 6 axes, where the beep was received
     //      - When finished:
     //          - PASC finished and no MSB: No amoebot has enough space, skip this scale
     //              - Go to step 5.7 (round 70)
@@ -527,7 +529,7 @@ namespace AS2.Algos.SCGeneral
 
     // Rounds 63-67 (PASC, similar to 34-38):
     //  - Setup PASC where a beep was received on the axis circuits
-    //      - Candidates that sent the beeps become leaders
+    //      - Candidates that received the beeps become leaders
     //  - When finished:
     //      - Amoebots with result EQUAL become new candidates, PASC leaders retire
     //      - Go to round 61
@@ -577,46 +579,35 @@ namespace AS2.Algos.SCGeneral
     // 6. Shape construction
 
     // Round 73:
-    //  - Setup 4 global circuits, let candidates of first 4 rotations beep
-    //  - Go to round 74
-
-    // Round 74:
-    //  - Receive on first 4 global circuits
-    //      - If any beep: Choose the final rotation and go to round 76
-    //  - Else:
-    //      - Send candidate beeps for the last 2 rotations
-
-    // Round 75:
-    //  - Receive beeps for the last 2 rotations
-    //  - Choose the final rotation and go to round 76
-
-    // Round 76:
-    //  - Setup leader election on valid placements
+    //  - Setup leader election on remaining candidates
     //      - Use entire system
 
-    // Round 77:
+    // Round 74:
     //  - Run leader election
     //  - If leader election is finished:
-    //      - Setup shape construction subroutine for leader and scale K
+    //      - Let the leader select a random valid rotation
+    //      - Setup 3 global circuits and let the leader send the bits of the chosen rotation
+
+    // Round 75:
+    //  - Receive bits of the chosen rotation
+    //  - Setup shape construction subroutine for leader and scale K
     //      - Place markers at counter starts
 
-    // Round 78:
+    // Round 76:
     //  - Continue running shape construction
     //  - If shape construction is finished:
     //      - Terminate with success
     //  - If scale reset:
     //      - Set marker to counter start
-    //      - Go to round 79
+    //      - Go to round 77
     //  - Else:
     //      - Continue running (maybe with scale bit)
     //      - Forward marker
 
-    // Round 79:
+    // Round 77:
     //  - Send next bit of shape construction
     //  - Forward marker
-    //  - Go back to round 78
-
-
+    //  - Go back to round 76
 
     public class SCGeneralParticle : ParticleAlgorithm
     {
@@ -692,13 +683,17 @@ namespace AS2.Algos.SCGeneral
         ParticleAttribute<bool> trianglePlacement1;             // Flag for valid triangle placements with rotation 1
         ParticleAttribute<bool>[] candidate = new ParticleAttribute<bool>[6];       // Candidate flags for the 6 rotations
         ParticleAttribute<bool>[] newCandidate = new ParticleAttribute<bool>[6];    // Moved candidate flags for the 6 rotations
+        ParticleAttribute<bool> visited;                        // Flag for amoebots visited during the traversal for K <= sqrt(n) (just for visualization)
 
         SubBinOps[] binops = new SubBinOps[3];
         SubBinOps binop;
         SubBoundaryTest boundaryTest;
+        SubLeaderElectionSC leaderElection;
         SubLongestLines ll;
         SubPASC[] pasc = new SubPASC[6];
+        SubPASC2 sharedPasc;
         SubMergingAlgo triangleCheck;
+        SubShapeConstruction shapeConstruction;
 
         public static Shape shape;                      // The target shape
         public static string longestLineStr;            // String representation of the length of the longest line in the target shape
@@ -743,15 +738,19 @@ namespace AS2.Algos.SCGeneral
                 candidate[i] = CreateAttributeBool("Candidate " + i, false);
             for (int i = 0; i < 6; i++)
                 newCandidate[i] = CreateAttributeBool("New Candidate " + i, false);
+            visited = CreateAttributeBool("Visited", false);
 
             for (int i = 0; i < binops.Length; i++)
                 binops[i] = new SubBinOps(p);
             binop = binops[0];
-            ll = new SubLongestLines(p);
+            sharedPasc = new SubPASC2(p);
+            leaderElection = new SubLeaderElectionSC(p);
+            ll = new SubLongestLines(p, sharedPasc);
             for (int i = 0; i < 6; i++)
                 pasc[i] = new SubPASC(p);
             boundaryTest = new SubBoundaryTest(p, pasc);
-            triangleCheck = new SubMergingAlgo(p);
+            triangleCheck = new SubMergingAlgo(p, sharedPasc);
+            shapeConstruction = new SubShapeConstruction(p, shape, sharedPasc);
 
             // Also, set the default initial color
             SetMainColor(ColorData.Particle_Black);
@@ -979,7 +978,7 @@ namespace AS2.Algos.SCGeneral
                             SetMainColor(ColorData.Particle_Red);
                             finished.SetValue(true);
                         }
-                        else if (beep0)
+                        else if (beep0 && !beep3)
                         {
                             // Setup next phase
                             if (!shapeHasFaces)
@@ -1025,11 +1024,22 @@ namespace AS2.Algos.SCGeneral
                             // Test the triangle
                             round.SetValue(26);
                         }
-                        //else if (beep3)
-                        //{
-                        //    // Linear search decrement and comparison are finished
-                        //    round.SetValue(30);
-                        //}
+                        else if (beep3)
+                        {
+                            // Linear search decrement is finished
+                            if (!beep0)
+                            {
+                                // No beep on first circuits means K = 0
+                                SetMainColor(ColorData.Particle_Red);
+                                finished.SetValue(true);
+                                return;
+                            }
+                            else
+                            {
+                                // Continue with the next scale
+                                round.SetValue(39);
+                            }
+                        }
                     }
                     break;
 
@@ -1660,7 +1670,11 @@ namespace AS2.Algos.SCGeneral
                 // Rounds 34-38 implement the PASC procedure and distance check with distance K
 
                 case 34:    // PASC setup
+                case 47:    // Angle distance check before first edge
+                case 55:    // Distance check before edge traversal
+                case 63:    // Edge traversal
                     {
+                        PinConfiguration pc = GetCurrentPinConfiguration();
                         if (r == 34)
                         {
                             // Setup PASC on all longest lines in the system
@@ -1673,16 +1687,56 @@ namespace AS2.Algos.SCGeneral
                                 pasc[0].Init(leader, pred, succ, PinsPerEdge - 1, PinsPerEdge - 2, 0, 1, 0, 1);
                                 comparison[0].SetValue(ComparisonResult.EQUAL);
                                 pascParticipant[0].SetValue(true);
-
-                                // Place marker at the counter start
-                                lineMarker.SetValue(leader);
                             }
                             else
                                 pascParticipant[0].SetValue(false);
                         }
+                        else if (r == 47 || r == 55)
+                        {
+                            // Setup PASC on all axes where the activation beep was received
+                            int d = r == 47 ? distanceCheckDir.ToInt() : traversalDirs[counter].ToInt();
+                            for (int i = 0; i < 6; i++)
+                            {
+                                Direction dir = DirectionHelpers.Cardinal((i + d) % 6);
+                                Direction pred = HasNeighborAt(dir) && pc.GetPinAt(dir, 0).PartitionSet.ReceivedBeep() ? dir : Direction.NONE;
+                                Direction succ = candidate[i] || pc.GetPinAt(dir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep() ? dir.Opposite() : Direction.NONE;
+                                if (pred != Direction.NONE || succ != Direction.NONE)
+                                {
+                                    bool leader = pred == Direction.NONE;
+                                    pasc[i].Init(leader, pred, succ, PinsPerEdge - 1, PinsPerEdge - 2, 0, 1, 2 * i, 2 * i + 1);
+                                    comparison[i].SetValue(ComparisonResult.EQUAL);
+                                    pascParticipant[i].SetValue(true);
+                                }
+                                else
+                                    pascParticipant[i].SetValue(false);
+                            }
+                        }
+                        else if (r == 63)
+                        {
+                            // Setup PASC on the axes where the activation beep was received, using the candidate as leader
+                            int d = traversalDirs[counter].ToInt();
+                            for (int i = 0; i < 6; i++)
+                            {
+                                Direction dir = DirectionHelpers.Cardinal((i + d) % 6);
+                                Direction pred = pc.GetPinAt(dir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep() ? dir.Opposite() : Direction.NONE;
+                                Direction succ = pc.GetPinAt(dir, 0).PartitionSet.ReceivedBeep() ? dir : Direction.NONE;
+                                if (pred != Direction.NONE || succ != Direction.NONE)
+                                {
+                                    bool leader = pred == Direction.NONE;
+                                    pasc[i].Init(leader, pred, succ, PinsPerEdge - 1, PinsPerEdge - 2, 0, 1, 2 * i, 2 * i + 1);
+                                    comparison[i].SetValue(ComparisonResult.EQUAL);
+                                    pascParticipant[i].SetValue(true);
+                                }
+                                else
+                                    pascParticipant[i].SetValue(false);
+                            }
+                        }
+
+                        // Place marker at the counter start
+                        lineMarker.SetValue(ll.IsOnMaxLine() && !HasNeighborAt(ll.GetMaxDir().Opposite()));
 
                         // Start the new PASC subroutines
-                        PinConfiguration pc = GetContractedPinConfiguration();
+                        pc = GetContractedPinConfiguration();
                         for (int i = 0; i < 6; i++)
                         {
                             if (pascParticipant[i].GetCurrentValue())
@@ -1699,6 +1753,9 @@ namespace AS2.Algos.SCGeneral
                     }
                     break;
                 case 35:
+                case 48:
+                case 56:
+                case 64:
                     {
                         // Receive all PASC beeps
                         bool becamePassive = false;
@@ -1730,6 +1787,9 @@ namespace AS2.Algos.SCGeneral
                     }
                     break;
                 case 36:
+                case 49:
+                case 57:
+                case 65:
                     {
                         // Receive the 3 global circuit beeps
                         PinConfiguration pc = GetCurrentPinConfiguration();
@@ -1767,7 +1827,7 @@ namespace AS2.Algos.SCGeneral
                         {
                             // PASC is finished
                             pascFinishedBeforeCounter.SetValue(pascFinishedFirst);
-                            round.SetValue(38);
+                            round.SetValue(r + 2);
                         }
                         else
                         {
@@ -1787,7 +1847,7 @@ namespace AS2.Algos.SCGeneral
                                     if (pascParticipant[i])
                                         pasc[i].SendCutoffBeep();
                                 }
-                                round.SetValue(37);
+                                round.SetValue(r + 1);
                             }
                             else
                             {
@@ -1803,12 +1863,15 @@ namespace AS2.Algos.SCGeneral
                                     if (pascParticipant[i])
                                         pasc[i].ActivateSend();
                                 }
-                                round.SetValue(35);
+                                round.SetValue(r - 1);
                             }
                         }
                     }
                     break;
                 case 37:
+                case 50:
+                case 58:
+                case 66:
                     {
                         // Receive PASC cutoff and update comparison results
                         for (int i = 0; i < 6; i++)
@@ -1824,6 +1887,9 @@ namespace AS2.Algos.SCGeneral
                     }
                     break;
                 case 38:    // PASC evaluation
+                case 51:    // Angle distance check before first edge
+                case 59:    // Distance check before edge traversal
+                case 67:    // Edge traversal
                     {
                         lineMarker.SetValue(false);
                         if (r == 38)
@@ -1832,6 +1898,80 @@ namespace AS2.Algos.SCGeneral
                             if (pascParticipant[0] && comparison[0].GetValue() == ComparisonResult.EQUAL)
                                 markerSpawn.SetValue(true);
                             round.SetValue(r + 1);
+                        }
+                        else if (r == 51 || r == 59)
+                        {
+                            // Eliminate candidates based on comparison result
+                            for (int i = 0; i < 6; i++)
+                            {
+                                if (pascParticipant[i] && candidate[i] && comparison[i].GetValue() == ComparisonResult.LESS)
+                                    candidate[i].SetValue(false);
+                            }
+                            if (pascFinishedBeforeCounter)
+                            {
+                                // No candidate has enough space, skip this scale (go to step 5.7.)
+                                round.SetValue(70);
+                            }
+                            else
+                            {
+                                if (r == 51)    // Angle distance check
+                                {
+                                    // Setup global circuit and let remaining candidates beep
+                                    PinConfiguration pc = GetContractedPinConfiguration();
+                                    pc.SetToGlobal(0);
+                                    SetPlannedPinConfiguration(pc);
+                                    for (int i = 0; i < 6; i++)
+                                    {
+                                        if (candidate[i].GetCurrentValue())
+                                        {
+                                            pc.SendBeepOnPartitionSet(0);
+                                            break;
+                                        }
+                                    }
+                                }
+                                else if (r == 59)   // Edge traversal distance check
+                                {
+                                    // Establish axis circuits, split at candidates with comparison result EQUAL
+                                    PinConfiguration pc = GetContractedPinConfiguration();
+                                    bool[] split = new bool[6];
+                                    int d = traversalDirs[counter].ToInt();
+                                    for (int i = 0; i < 6; i++)
+                                    {
+                                        if (candidate[i].GetCurrentValue() && comparison[i].GetValue() == ComparisonResult.EQUAL)
+                                        {
+                                            split[(i + d) % 6] = true;
+                                        }
+                                    }
+                                    SetupAxisCircuits(pc, split);
+                                    SetPlannedPinConfiguration(pc);
+                                    // Let these candidates beep and retire
+                                    for (int i = 0; i < 6; i++)
+                                    {
+                                        int dir = (i + d) % 6;
+                                        if (split[dir])
+                                        {
+                                            pc.GetPinAt(DirectionHelpers.Cardinal(dir), 0).PartitionSet.SendBeep();
+                                            candidate[i].SetValue(false);
+                                        }
+                                    }
+                                }
+                                round.SetValue(r + 1);
+                            }
+                        }
+                        else if (r == 67)
+                        {
+                            // Amoebots with result EQUAL become new candidates, PASC leaders retire
+                            for (int i = 0; i < 6; i++)
+                            {
+                                if (pascParticipant[i])
+                                {
+                                    if (pasc[i].IsLeader())
+                                        candidate[i].SetValue(false);
+                                    else if (comparison[i].GetValue() == ComparisonResult.EQUAL)
+                                        newCandidate[i].SetValue(true);
+                                }
+                            }
+                            round.SetValue(61);
                         }
                     }
                     break;
@@ -1884,7 +2024,7 @@ namespace AS2.Algos.SCGeneral
                             {
                                 for (int i = 0; i < numOuterBoundaryOccurrences; i++)
                                 {
-                                    if (outerBoundaryDirs[i].GetValue() == Direction.NONE)
+                                    if (outerBoundaryDirs[2 * i].GetValue() == Direction.NONE)
                                     {
                                         markerIdx.SetValue(i + 1);
                                         break;
@@ -1947,7 +2087,7 @@ namespace AS2.Algos.SCGeneral
                                 markerIdx.SetValue(0);
                                 for (int i = 0; i < numOuterBoundaryOccurrences; i++)
                                 {
-                                    Direction pred = outerBoundaryDirs[i].GetValue();
+                                    Direction pred = outerBoundaryDirs[2 * i].GetValue();
                                     if (pred != Direction.NONE)
                                     {
                                         // Have to look up predecessor's marker index and successor direction to find the right marker position
@@ -1990,27 +2130,418 @@ namespace AS2.Algos.SCGeneral
                         else
                         {
                             // Need to run the distance limitation for all candidates that still exist
-                            bool[] split = new bool[6];
-                            int d = distanceCheckDir.ToInt();
+                            PinConfiguration pc = GetContractedPinConfiguration();
+                            SetupCandidateAxisCircuits(pc, distanceCheckDir.ToInt());
+                            round.SetValue(r + 1);
+                        }
+                    }
+                    break;
+                case 52:
+                    {
+                        // Listen for beep on global circuit sent by remaining candidates
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        if (!pc.ReceivedBeepOnPartitionSet(0))
+                        {
+                            // Received no beep: No candidates left, skip to step 5.7.
+                            round.SetValue(70);
+                        }
+                        else
+                        {
+                            // Go to traversal
+                            counter.SetValue(0);
+                            round.SetValue(r + 1);
+                        }
+                    }
+                    break;
+
+                // 5.4./5.5. Shape traversal
+
+                case 53:
+                    {
+                        if (counter >= traversalDirs.Length)
+                        {
+                            // Finished traversal with surviving candidates
+                            // Go to shape construction
+                            round.SetValue(73);
+                        }
+                        else
+                        {
+                            // Continue with next edge traversal
+                            if (belowSqrt)
+                            {
+                                // Place marker at the marker spawn
+                                lineMarker.SetValue(markerSpawn);
+                                // Setup global circuit and let the marker beep
+                                PinConfiguration pc = GetContractedPinConfiguration();
+                                SetupGlobalCircuit(pc, 0, 0);
+                                SetPlannedPinConfiguration(pc);
+                                if (markerSpawn)
+                                    pc.SendBeepOnPartitionSet(0);
+                                round.SetValue(r + 1);
+                            }
+                            else
+                            {
+                                // Setup directional circuits and let candidates beep on the axis circuits for the new movement direction
+                                PinConfiguration pc = GetContractedPinConfiguration();
+                                SetupCandidateAxisCircuits(pc, traversalDirs[counter].ToInt());
+                                round.SetValue(r + 2);
+                            }
+                        }
+                    }
+                    break;
+                case 54:    // Simple edge traversal
+                    {
+                        // Receive beep on global circuit
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        // Set visited flag
+                        for (int i = 0; i < 6; i++)
+                        {
+                            if (candidate[i])
+                            {
+                                visited.SetValue(true);
+                                break;
+                            }
+                        }
+                        if (pc.ReceivedBeepOnPartitionSet(0))
+                        {
+                            // Move candidates by one step
+                            int edgeDir = traversalDirs[counter].ToInt();
                             for (int i = 0; i < 6; i++)
                             {
-                                if (candidate[i].GetCurrentValue())
-                                    split[(i + d) % 6] = true;
+                                int d = (edgeDir + i + 3) % 6;
+                                Direction dir = DirectionHelpers.Cardinal(d);
+                                candidate[i].SetValue(HasNeighborAt(dir) && ((SCGeneralParticle)GetNeighborAt(dir)).candidate[i]);
                             }
-                            PinConfiguration pc = GetContractedPinConfiguration();
-                            SetupAxisCircuits(pc, split);
+                            // Move marker one step down the counter
+                            if (ll.IsOnMaxLine())
+                            {
+                                Direction dir = ll.GetMaxDir();
+                                bool hasMarker = HasNeighborAt(dir) && ((SCGeneralParticle)GetNeighborAt(dir)).lineMarker;
+                                lineMarker.SetValue(hasMarker);
+                                // Marker beeps on global circuit if it has not reached the counter's end yet
+                                if (hasMarker && HasNeighborAt(dir.Opposite()))
+                                {
+                                    SetPlannedPinConfiguration(pc);
+                                    pc.SendBeepOnPartitionSet(0);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Edge traversal is over
+                            lineMarker.SetValue(false);
+                            round.SetValue(68);
+                        }
+                    }
+                    break;
+                case 60:    // Edge traversal for K > sqrt(n)
+                    {
+                        // Receive beep on axis circuits, indicating first candidate's traversal ending exactly at boundaries
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        int d = traversalDirs[counter].ToInt();
+                        for (int i = 0; i < 6; i++)
+                        {
+                            Direction dir = DirectionHelpers.Cardinal((i + d) % 6);
+                            if (!HasNeighborAt(dir) && pc.GetPinAt(dir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                                newCandidate[i].SetValue(true);
+                        }
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 61:
+                    {
+                        // Establish global and directional circuits, split at candidates that still need to be moved
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        SetupGlobalCircuit(pc, 1, 6);
+                        SetupCandidateAxisCircuits(pc, traversalDirs[counter].ToInt());
+                        // Also beep on global circuit if we are a candidate
+                        for (int i = 0; i < 6; i++)
+                        {
+                            if (candidate[i])
+                            {
+                                pc.SendBeepOnPartitionSet(6);
+                                break;
+                            }
+                        }
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 62:
+                    {
+                        // Receive global and axis beeps
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        if (!pc.ReceivedBeepOnPartitionSet(6))
+                        {
+                            // No beep on the global circuit means all candidates have been shifted
+                            round.SetValue(r + 6);
+                        }
+                        else
+                        {
+                            // Establish axis circuits again, split at candidates, but let boundary amoebots that received a beep send a reply
+                            bool[] sendBeep = new bool[6];
+                            for (int i = 0; i < 6; i++)
+                            {
+                                Direction dir = DirectionHelpers.Cardinal(i);
+                                if (!HasNeighborAt(dir) && pc.GetPinAt(dir.Opposite(), PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                                    sendBeep[(i + 3) % 6] = true;
+                            }
+                            pc.SetToSingleton();
+                            int d = traversalDirs[counter].ToInt();
+                            SetupCandidateAxisCircuits(pc, d, false);
                             SetPlannedPinConfiguration(pc);
                             for (int i = 0; i < 6; i++)
                             {
-                                if (candidate[i].GetCurrentValue())
-                                    pc.GetPinAt(DirectionHelpers.Cardinal((i + d) % 6), 0).PartitionSet.SendBeep();
+                                if (sendBeep[i])
+                                    pc.GetPinAt(DirectionHelpers.Cardinal(i), PinsPerEdge - 1).PartitionSet.SendBeep();
                             }
                             round.SetValue(r + 1);
                         }
                     }
                     break;
+                case 68:    // Traversals merge here again
+                    {
+                        // Turn new candidates into normal candidates
+                        if (!belowSqrt)
+                        {
+                            for (int i = 0; i < 6; i++)
+                            {
+                                candidate[i].SetValue(newCandidate[i]);
+                                newCandidate[i].SetValue(false);
+                            }
+                        }
+
+                        RemoveInvalidFaces(traversalNodes[counter + 1]);
+
+                        // Let remaining candidates beep on global circuit
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        SetupGlobalCircuit(pc, 0, 0);
+                        SetPlannedPinConfiguration(pc);
+                        for (int i = 0; i < 6; i++)
+                        {
+                            if (candidate[i].GetCurrentValue())
+                            {
+                                pc.SendBeepOnPartitionSet(0);
+                                break;
+                            }
+                        }
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 69:
+                    {
+                        // Beep on global circuit means there are still candidates left
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        if (!pc.ReceivedBeepOnPartitionSet(0))
+                        {
+                            // No candidates, skip this scale (step 5.7.)
+                            round.SetValue(70);
+                        }
+                        else
+                        {
+                            // Have candidates left, repeat for the next edge
+                            counter.SetValue(counter + 1);
+                            round.SetValue(53);
+                        }
+                        // Reset visited state
+                        visited.SetValue(false);
+                    }
+                    break;
+
+                // 5.7. Decrement K
+
+                case 70:
+                    {
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        // Split by line counters and others
+                        if (ll.IsOnMaxLine())
+                        {
+                            // Move the marker spawn by one position
+                            Direction succ = ll.GetMaxDir();
+                            Direction pred = succ.Opposite();
+                            bool hasSuccessor = HasNeighborAt(succ);
+                            bool hasPredecessor = HasNeighborAt(pred);
+                            markerSpawn.SetValue(hasSuccessor && hasPredecessor && ((SCGeneralParticle)GetNeighborAt(succ)).markerSpawn);
+
+                            // Start binary operation for decrementing K
+                            succ = hasSuccessor ? succ : Direction.NONE;
+                            pred = hasPredecessor ? pred : Direction.NONE;
+                            binop.Init(SubBinOps.Mode.SUB, bits[K], pred, succ, !hasPredecessor);
+                            binop.SetupPinConfig(pc);
+                            SetPlannedPinConfiguration(pc);
+                            binop.ActivateSend();
+                            round.SetValue(r + 1);
+                        }
+                        else
+                        {
+                            for (int i = 0; i < 4; i++)
+                                SetupGlobalCircuit(pc, i, i);
+                            SetPlannedPinConfiguration(pc);
+                            round.SetValue(5);
+                        }
+                    }
+                    break;
+                case 71:
+                case 72:
+                    {
+                        binop.ActivateReceive();
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        if (binop.IsFinished())
+                        {
+                            if (r == 71)
+                            {
+                                // Store new K
+                                bits[K].SetValue(binop.ResultBit());
+                                // Start binop to find MSB of K
+                                Direction succ = ll.GetMaxDir();
+                                Direction pred = succ.Opposite();
+                                succ = HasNeighborAt(succ) ? succ : Direction.NONE;
+                                pred = HasNeighborAt(pred) ? pred : Direction.NONE;
+                                binop.Init(SubBinOps.Mode.MSB, bits[K].GetCurrentValue(), pred, succ);
+                                round.SetValue(r + 1);
+                            }
+                            else
+                            {
+                                // Store MSB of K
+                                msbs[K].SetValue(binop.IsMSB());
+                                // Setup 4 global circuits and beep on fourth
+                                // Let non-zero bits of K beep on first
+                                for (int i = 0; i < 4; i++)
+                                    SetupGlobalCircuit(pc, i, i);
+                                SetPlannedPinConfiguration(pc);
+                                pc.SendBeepOnPartitionSet(3);
+                                if (bits[K])
+                                    pc.SendBeepOnPartitionSet(0);
+                                round.SetValue(5);
+                                break;
+                            }
+                        }
+                        binop.SetupPinConfig(pc);
+                        SetPlannedPinConfiguration(pc);
+                        binop.ActivateSend();
+                    }
+                    break;
+
+                // 6. Shape Construction
+
+                case 73:
+                    {
+                        // Setup leader election on remaining candidates
+                        bool cand = false;
+                        for (int i = 0; i < 6; i++)
+                        {
+                            if (candidate[i])
+                            {
+                                cand = true;
+                                break;
+                            }
+                        }
+                        leaderElection.Init(cand, true);
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        leaderElection.SetupPC(pc);
+                        SetPlannedPinConfiguration(pc);
+                        leaderElection.ActivateSend();
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 74:
+                    {
+                        leaderElection.ActivateReceive();
+                        PinConfiguration pc = GetContractedPinConfiguration();
+                        if (leaderElection.IsFinished())
+                        {
+                            // Setup 3 global circuits
+                            for (int i = 0; i < 3; i++)
+                                SetupGlobalCircuit(pc, i, i);
+                            SetPlannedPinConfiguration(pc);
+
+                            // Let the leader select a random valid rotation and broadcast it
+                            if (leaderElection.IsLeader())
+                            {
+                                List<int> rotations = new List<int>();
+                                for (int i = 0; i < 6; i++)
+                                {
+                                    if (candidate[i])
+                                        rotations.Add(i);
+                                }
+                                int rotation = rotations[Random.Range(0, rotations.Count)];
+                                if ((rotation & 1) > 0)
+                                    pc.SendBeepOnPartitionSet(0);
+                                if ((rotation & 2) > 0)
+                                    pc.SendBeepOnPartitionSet(1);
+                                if ((rotation & 4) > 0)
+                                    pc.SendBeepOnPartitionSet(2);
+                            }
+                            round.SetValue(r + 1);
+                        }
+                        else
+                        {
+                            leaderElection.SetupPC(pc);
+                            SetPlannedPinConfiguration(pc);
+                            leaderElection.ActivateSend();
+                        }
+                    }
+                    break;
+                case 75:
+                    {
+                        // Receive the selected rotation
+                        PinConfiguration pc = GetCurrentPinConfiguration();
+                        int rotation = 0;
+                        if (pc.ReceivedBeepOnPartitionSet(0))
+                            rotation += 1;
+                        if (pc.ReceivedBeepOnPartitionSet(1))
+                            rotation += 2;
+                        if (pc.ReceivedBeepOnPartitionSet(2))
+                            rotation += 4;
+
+                        // Setup shape construction
+                        lineMarker.SetValue(ll.IsOnMaxLine() && !HasNeighborAt(ll.GetMaxDir().Opposite()));
+                        shapeConstruction.Init(leaderElection.IsLeader(), rotation);
+                        ActivateShapeConstrSend(false);
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 76:
+                    {
+                        shapeConstruction.ActivateReceive();
+
+                        SubShapeConstruction.ShapeElement t = shapeConstruction.ElementType();
+                        if (t == SubShapeConstruction.ShapeElement.NODE)
+                            SetMainColor(ColorData.Particle_Green);
+                        else if (t == SubShapeConstruction.ShapeElement.EDGE)
+                            SetMainColor(ColorData.Particle_Blue);
+                        else if (t == SubShapeConstruction.ShapeElement.FACE)
+                            SetMainColor(ColorData.Particle_Aqua);
+                        else
+                            SetMainColor(ColorData.Particle_Black);
+
+                        if (shapeConstruction.IsFinished())
+                        {
+                            finished.SetValue(true);
+                            SetPlannedPinConfiguration(GetContractedPinConfiguration());
+                        }
+                        else
+                        {
+                            if (shapeConstruction.ResetScaleCounter())
+                            {
+                                // Set marker to start
+                                lineMarker.SetValue(ll.IsOnMaxLine() && !HasNeighborAt(ll.GetMaxDir().Opposite()));
+                                round.SetValue(r + 1);
+                            }
+                            else
+                            {
+                                ActivateShapeConstrSend();
+                            }
+                        }
+                    }
+                    break;
+                case 77:
+                    {
+                        ActivateShapeConstrSend();
+                        round.SetValue(r - 1);
+                    }
+                    break;
             }
-            if (r > 33)
+            if (r > 33 && r < 73)
                 SetLinearSearchColor();
         }
 
@@ -2023,8 +2554,37 @@ namespace AS2.Algos.SCGeneral
 
             if (markerSpawn.GetCurrentValue())
                 SetMainColor(ColorData.Particle_Orange);
+            else if (lineMarker.GetCurrentValue())
+                SetMainColor(new Color(1, 1, 0));
             else
-                SetMainColor(ColorData.Particle_Black);
+            {
+                bool cand = false;
+                for (int i = 0; i < 6; i++)
+                {
+                    if (candidate[i].GetCurrentValue())
+                    {
+                        cand = true;
+                        break;
+                    }
+                }
+                bool newCand = false;
+                for (int i = 0; i < 6; i++)
+                {
+                    if (newCandidate[i].GetCurrentValue())
+                    {
+                        newCand = true;
+                        break;
+                    }
+                }
+                if (cand)
+                    SetMainColor(ColorData.Particle_Green);
+                else if (newCand)
+                    SetMainColor(ColorData.Particle_Blue);
+                else if (visited.GetCurrentValue())
+                    SetMainColor(ColorData.Particle_Blue);
+                else
+                    SetMainColor(ColorData.Particle_Black);
+            }
         }
 
         /// <summary>
@@ -2035,6 +2595,8 @@ namespace AS2.Algos.SCGeneral
         /// to eliminate the candidates.</param>
         private void RemoveInvalidFaces(int nodeIdx)
         {
+            if (!shapeHasFaces)
+                return;
             if (!trianglePlacement0.GetValue())
             {
                 // Can eliminate faces with tip pointing up where we are the lower left corner
@@ -2143,6 +2705,35 @@ namespace AS2.Algos.SCGeneral
         }
 
         /// <summary>
+        /// Helper for activating the send part of the shape construction
+        /// subroutine. Sets up the pin configuration and sends the beep,
+        /// using the scale bit and MSB if required. Also moves the marker
+        /// ahead by one position if a scale bit is needed.
+        /// </summary>
+        /// <param name="checkNeedScaleBit">Whether the scale bit
+        /// should be checked.</param>
+        private void ActivateShapeConstrSend(bool checkNeedScaleBit = true)
+        {
+            PinConfiguration pc = GetContractedPinConfiguration();
+            shapeConstruction.SetupPinConfig(pc);
+            SetPlannedPinConfiguration(pc);
+
+            if (checkNeedScaleBit && shapeConstruction.NeedScaleBit())
+            {
+                shapeConstruction.ActivateSend(lineMarker.GetCurrentValue() && bits[K], lineMarker.GetCurrentValue() && msbs[K]);
+                if (ll.IsOnMaxLine())
+                {
+                    Direction d = ll.GetMaxDir().Opposite();
+                    lineMarker.SetValue(HasNeighborAt(d) && ((SCGeneralParticle)GetNeighborAt(d)).lineMarker.GetValue());
+                }
+            }
+            else
+            {
+                shapeConstruction.ActivateSend();
+            }
+        }
+
+        /// <summary>
         /// Sets up a global circuit using the given pin offset.
         /// </summary>
         /// <param name="pc">The pin configuration to modify.</param>
@@ -2174,6 +2765,36 @@ namespace AS2.Algos.SCGeneral
                     Direction d = DirectionHelpers.Cardinal(i);
                     pc.MakePartitionSet(new int[] { pc.GetPinAt(d, 0).Id, pc.GetPinAt(d.Opposite(), PinsPerEdge - 1).Id }, i);
                     pc.SetPartitionSetPosition(i, new Vector2((d.ToInt() - 1.5f) * 60, 0.4f));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper that sets up axis circuits, splits them for candidates
+        /// in the given direction and lets these candidates send beeps.
+        /// Sets the planned pin configuration to send the beeps.
+        /// </summary>
+        /// <param name="pc">The pin configuration to modify and plan.</param>
+        /// <param name="direction">The direction in which to send the
+        /// beep for rotation 0.</param>
+        /// <param name="sendBeep">Whether to plan the given pin configuration
+        /// and send beeps.</param>
+        private void SetupCandidateAxisCircuits(PinConfiguration pc, int direction, bool sendBeep = true)
+        {
+            bool[] split = new bool[6];
+            for (int i = 0; i < 6; i++)
+            {
+                if (candidate[i].GetCurrentValue())
+                    split[(i + direction) % 6] = true;
+            }
+            SetupAxisCircuits(pc, split);
+            if (sendBeep)
+            {
+                SetPlannedPinConfiguration(pc);
+                for (int i = 0; i < 6; i++)
+                {
+                    if (candidate[i].GetCurrentValue())
+                        pc.GetPinAt(DirectionHelpers.Cardinal((i + direction) % 6), 0).PartitionSet.SendBeep();
                 }
             }
         }
@@ -2226,7 +2847,6 @@ namespace AS2.Algos.SCGeneral
             SCGeneralParticle.shapeHasFaces = s.faces.Count > 0;
             SCGeneralParticle.shapeHasHoles = s.HasLoop();
             SCGeneralParticle.incidentFaceMatrix = s.GetIncidentFaceMatrix();
-            SCGeneralParticle.shapeHasHoles = false;
             // Generate traversal nodes and edge directions
             // We need a start point with incident edges at an angle if the shape does not have any faces
             s.GeneratePostmanTraversal(s.faces.Count == 0, out List<int> traversalNodes, out List<Direction> traversalDirections, out Direction distanceCheckDir);
