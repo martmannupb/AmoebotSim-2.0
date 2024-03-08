@@ -2048,15 +2048,20 @@ namespace AS2.Algos.SCGeneral
                         bool bitN = pc.ReceivedBeepOnPartitionSet(2);
                         bool msbN = pc.ReceivedBeepOnPartitionSet(3);
 
-                        // Update comparison result (either based on bits or on MSBs
-                        if (bitK && !bitN || !msbK && msbN)
+                        // Update comparison result
+                        if (bitK && !bitN)
                             comparison[0].SetValue(ComparisonResult.GREATER);
-                        else if (!bitK && bitN || msbK && !msbN)
+                        else if (!bitK && bitN)
                             comparison[0].SetValue(ComparisonResult.LESS);
 
                         // Finish if one of the MSBs is reached
                         if (msbK || msbN)
                         {
+                            // Have to update the result again
+                            if (!msbK && msbN)
+                                comparison[0].SetValue(ComparisonResult.GREATER);
+                            else if (msbK && !msbN)
+                                comparison[0].SetValue(ComparisonResult.LESS);
                             // Set flag based on result
                             belowSqrt.SetValue(comparison[0].GetCurrentValue() != ComparisonResult.GREATER);
                             // Reset markers
