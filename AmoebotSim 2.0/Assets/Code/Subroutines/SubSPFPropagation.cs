@@ -111,7 +111,7 @@ namespace AS2.Subroutines.SPFPropagation
     // Round 5:
     //  Send:
     //  - Setup a regional circuit
-    //  - Let amoebots outside the visible region beep on the global circuit
+    //  - Let amoebots outside the visible region beep on the regional circuit
     //  - Also let amoebots in the visible region beep in the direction of neighbors that might not be visible
     //  Receive:
     //  - If there is no beep on the global circuit: Terminate
