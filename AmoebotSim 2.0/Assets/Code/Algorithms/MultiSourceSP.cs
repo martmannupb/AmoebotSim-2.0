@@ -168,7 +168,6 @@ namespace AS2.Algos.MultiSourceSP
     //      - Go to round 9
     //  - Else:
     //      - Continue propagation subroutine (1-SPF part) if the region color matches counter2
-    //      - Other amoebots establish global circuit
 
     // Round 14 (similar to 11):
     //  - Receive propagation subroutine beep
@@ -181,6 +180,7 @@ namespace AS2.Algos.MultiSourceSP
     //      - Continue running propagation subroutine (only if we are in the right region)
     //      - Go back to round 14
     //  - Else:
+    //      - Store the computed parent directions (make sure that the correct direction is set!)
     //      - Increment counter2
     //      - Go to round 13
 
@@ -196,6 +196,39 @@ namespace AS2.Algos.MultiSourceSP
 
         // If the algorithm has a special generation method, specify its full name here
         public static new string GenerationMethod => typeof(MultiSourceSPInitializer).FullName;
+
+        [StatusInfo("Show Parent Edges", "Draws the parent edges of all amoebots as soon as they are available. Blue edges are with respect to the region's primary portal, red edges with respect to the secondary portal.")]
+        public static void ShowTree(AS2.Sim.ParticleSystem system, Particle selectedParticle)
+        {
+            AS2.UI.LineDrawer ld = AS2.UI.LineDrawer.Instance;
+            ld.Clear();
+
+            foreach (Particle p in system.particles)
+            {
+                MultiSourceSPParticle algo = (MultiSourceSPParticle)p.algorithm;
+                Vector2Int pos = p.Head();
+                for (int i = 0; i < algo.numInstances.GetValue(); i++)
+                {
+                    Direction p1 = algo.instances[i].parentDir1.GetValue();
+                    Direction p2 = algo.instances[i].parentDir2.GetValue();
+                    if (p1 != Direction.NONE)
+                    {
+                        Vector2 to = (Vector2)ParticleSystem_Utils.DirectionToVector(p1);
+                        Vector2 parent = pos + to * 0.95f;
+                        Vector2 offset = (Vector2)(ParticleSystem_Utils.DirectionToVector(p1.Rotate60(4)) + ParticleSystem_Utils.DirectionToVector(p1.Rotate60(5))) * 0.075f;
+                        ld.AddLine(pos + to * 0.1f + offset, parent + offset, Color.blue, true, 1, 1);
+                    }
+                    if (p2 != Direction.NONE)
+                    {
+                        Vector2 to = (Vector2)ParticleSystem_Utils.DirectionToVector(p2);
+                        Vector2 parent = pos + to * 0.95f;
+                        Vector2 offset = (Vector2)(ParticleSystem_Utils.DirectionToVector(p2.Rotate60(4)) + ParticleSystem_Utils.DirectionToVector(p2.Rotate60(5))) * 0.075f;
+                        ld.AddLine(pos + to * 0.1f - offset, parent - offset, Color.red, true, 0.8f, 0.8f, -0.1f);
+                    }
+                }
+            }
+            ld.SetTimer(30f);
+        }
 
         // Colors
         static readonly Color baseColor = Color.gray;
@@ -276,8 +309,12 @@ namespace AS2.Algos.MultiSourceSP
         SubPASC2 pasc1;
         SubPASC2 pasc2;
 
+        Vector2Int pos;
+
         public MultiSourceSPParticle(Particle p) : base(p)
         {
+            pos = p.Head();
+
             // Initialize the attributes here
             phase = CreateAttributeEnum<Phase>("Phase", Phase.SETUP);
             round = CreateAttributeInt("Round", 0);
@@ -879,6 +916,7 @@ namespace AS2.Algos.MultiSourceSP
                         {
                             // Both propagations are finished, go to next step
                             // TODO
+                            round.SetValue(42);
                         }
                         else
                         {
@@ -1013,17 +1051,24 @@ namespace AS2.Algos.MultiSourceSP
                     }
                     break;
                 case 11:
+                case 14:
                     {
                         // Receive propagation beep
                         // Check whether the first propagation phase is finished
                         bool finished = true;
+                        List<int> activeInstances = r == 14 ? ActiveInstances() : null;
                         for (int i = 0; i < numInstances; i++)
                         {
-                            if (instances[i].runPropagation)
+                            if (instances[i].runPropagation && (r != 14 || activeInstances.Contains(i)))
                             {
-                                instances[i].prop.ActivateReceive();
-                                if (!instances[i].prop.IsFirstPhaseFinished())
-                                    finished = false;
+                                if (r == 11 && !instances[i].prop.IsFirstPhaseFinished() ||
+                                    r == 14 && !instances[i].prop.IsFinished())
+                                {
+                                    instances[i].prop.ActivateReceive();
+                                    if (r == 11 && !instances[i].prop.IsFirstPhaseFinished() ||
+                                        r == 14 && !instances[i].prop.IsFinished())
+                                        finished = false;
+                                }
                             }
                         }
 
@@ -1038,9 +1083,11 @@ namespace AS2.Algos.MultiSourceSP
                     }
                     break;
                 case 12:
+                case 15:
                     {
                         // Receive beep on global circuit
                         PinConfiguration pc = GetCurrentPinConfiguration();
+                        List<int> activeInstances = r == 15 ? ActiveInstances() : null;
 
                         // Continue running the propagation algorithm if there was a beep
                         if (pc.ReceivedBeepOnPartitionSet(0))
@@ -1048,7 +1095,9 @@ namespace AS2.Algos.MultiSourceSP
                             pc.SetToSingleton();
                             for (int i = 0; i < numInstances; i++)
                             {
-                                if (instances[i].runPropagation && !instances[i].prop.IsFirstPhaseFinished())
+                                if (instances[i].runPropagation &&
+                                    (r == 12 && !instances[i].prop.IsFirstPhaseFinished() ||
+                                    r == 15 && activeInstances.Contains(i) && !instances[i].prop.IsFinished()))
                                     instances[i].prop.SetupPC(pc);
                             }
 
@@ -1056,18 +1105,74 @@ namespace AS2.Algos.MultiSourceSP
 
                             for (int i = 0; i < numInstances; i++)
                             {
-                                if (instances[i].runPropagation && !instances[i].prop.IsFirstPhaseFinished())
+                                if (instances[i].runPropagation &&
+                                    (r == 12 && !instances[i].prop.IsFirstPhaseFinished() ||
+                                    r == 15 && activeInstances.Contains(i) && !instances[i].prop.IsFinished()))
                                     instances[i].prop.ActivateSend();
                             }
                             round.SetValue(r - 1);
                         }
                         // Otherwise, go to the next phase for the first region color
+                        // (Or repeat the procedure for the second region color)
                         else
                         {
-                            counter2.SetValue(0);
+                            if (r == 12)
+                            {
+                                counter2.SetValue(0);
+                                round.SetValue(r + 1);
+                            }
+                            else
+                            {
+                                // Store the computed parent direction
+                                // Parent 1 is with respect to the primary portal of our region, parent 2 to the secondary portal
+                                // This only has to be done if we are not on the current main portal
+                                bool q = IsOnQPrime();
+                                foreach (int i in activeInstances)
+                                {
+                                    bool primaryPortal = counter == 0 && instances[i].regionHasPrimaryPortalSource;
+                                    if (q && (primaryPortal && !instances[i].incidentPortalIsParent || !primaryPortal && instances[i].incidentPortalIsParent))
+                                        continue;
+                                    Direction parent = instances[i].prop.Parent();
+                                    if (!primaryPortal)
+                                        instances[i].parentDir2.SetValue(parent);
+                                    else
+                                        instances[i].parentDir1.SetValue(parent);
+                                }
+                                counter2.SetValue(counter2 + 1);
+                                round.SetValue(13);
+                            }
+                        }
+                    }
+                    break;
+                case 13:
+                    {
+                        if (counter2 >= 2)
+                        {
+                            // The second phase of the propagation is finished for all regions
+                            // Go back to propagation start (may have to repeat everything for the second portal)
+                            counter.SetValue(counter + 1);
+                            SetColor();     // Reset the colors too
+                            round.SetValue(9);
+                        }
+                        else
+                        {
+                            // Continue running propagation where the region color matches
+                            // Counter 2 = 0: Non-colored regions, counter 2 = 1: Colored regions
+                            PinConfiguration pc = GetContractedPinConfiguration();
+                            List<int> activeInstances = ActiveInstances();
+                            foreach (int i in activeInstances)
+                            {
+                                instances[i].prop.SetupPC(pc);
+                            }
+
+                            SetPlannedPinConfiguration(pc);
+
+                            foreach (int i in activeInstances)
+                            {
+                                instances[i].prop.ActivateSend();
+                            }
                             round.SetValue(r + 1);
                         }
-
                     }
                     break;
             }
@@ -1412,6 +1517,25 @@ namespace AS2.Algos.MultiSourceSP
         private bool IsOnQPrime()
         {
             return sourcePortal.GetCurrentValue() || augPortal.GetCurrentValue();
+        }
+
+        private List<int> ActiveInstances()
+        {
+            int n = numInstances.GetCurrentValue();
+            int ctr = counter2.GetCurrentValue();
+            bool onPortal = IsOnQPrime();
+            List<int> active = new List<int>();
+
+            for (int i = 0; i < n; i++)
+            {
+                bool regionIsColored = regionColor.GetCurrentValue();
+                if (onPortal)
+                    regionIsColored ^= (i == 0 || i == 1 && marker1.GetCurrentValue());
+                if (instances[i].runPropagation && (ctr == 0 && !regionIsColored || ctr == 1 && regionIsColored))
+                    active.Add(i);
+            }
+
+            return active;
         }
 
         /// <summary>

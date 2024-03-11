@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using AS2.Sim;
 using AS2.Subroutines.BinStateHelpers;
+using AS2.Subroutines.ETT;
 using AS2.Subroutines.PASC;
+using AS2.Subroutines.SingleSourceSP;
 
 namespace AS2.Subroutines.SPFPropagation
 {
@@ -112,9 +114,9 @@ namespace AS2.Subroutines.SPFPropagation
     //  Send:
     //  - Setup a regional circuit
     //  - Let amoebots outside the visible region beep on the regional circuit
-    //  - Also let amoebots in the visible region beep in the direction of neighbors that might not be visible
+    //  - Also let amoebots in the visible region beep in all directions
     //  Receive:
-    //  - If there is no beep on the global circuit: Terminate
+    //  - If there is no beep on the regional circuit: Terminate
     //  - Else:
     //      - Let non-visible amoebots identify their visible neighbors
     //      - Also identify the start points for the 1-SPF subroutine and initialize it
@@ -184,8 +186,9 @@ namespace AS2.Subroutines.SPFPropagation
         BinAttributeEnum<ComparisonResult> comparison;  // Result of the PASC comparison
 
         SubPASC2 pasc;
+        Sub1SPF singleSourceSPF;
 
-        public SubSPFPropagation(Particle p, SubPASC2 pasc = null) : base(p)
+        public SubSPFPropagation(Particle p, SubPASC2 pasc = null, SubETT ett = null) : base(p)
         {
             state1 = algo.CreateAttributeInt(FindValidAttributeName("[Prop] State 1"), 0);
             state2 = algo.CreateAttributeInt(FindValidAttributeName("[Prop] State 2"), 0);
@@ -215,12 +218,14 @@ namespace AS2.Subroutines.SPFPropagation
                 this.pasc = new SubPASC2(p);
             else
                 this.pasc = pasc;
+            singleSourceSPF = new Sub1SPF(p, ett);
         }
 
         public void Init(Direction portalDir, int instanceIndex, bool onMainPortal, bool onOtherPortal, bool isSource, bool regionBelowSourcePortal, bool regionBelowOtherPortal, bool sourceRegionIsPortal,
             bool controlColor = false, List<Direction> ignoreDirections = null, bool inSourceRegion = false, Direction parentDir1 = Direction.NONE)
         {
             state1.SetValue(0);
+            state2.SetValue(0);
             this.portalDir.SetValue(portalDir);
             this.instanceIndex.SetValue(instanceIndex);
             this.onMainPortal.SetValue(onMainPortal);
@@ -234,6 +239,12 @@ namespace AS2.Subroutines.SPFPropagation
             {
                 foreach (Direction d in ignoreDirections)
                     this.ignoreDirections.SetValue(d.ToInt(), true);
+            }
+            // Also add non-existent neighbors to ignored directions
+            for (int i = 0; i < 6; i++)
+            {
+                if (!this.ignoreDirections.GetCurrentValue(i) && !algo.HasNeighborAt(DirectionHelpers.Cardinal(i)))
+                    this.ignoreDirections.SetValue(i, true);
             }
             this.inSourceRegion.SetValue(inSourceRegion);
             this.parentDir1.SetValue(parentDir1);
@@ -252,8 +263,8 @@ namespace AS2.Subroutines.SPFPropagation
                             PinConfiguration pc = algo.GetCurrentPinConfiguration();
                             Direction dirUp1 = DirUp1();
                             Direction dirUp2 = DirUp2();
-                            bool beep1 = pc.GetPinAt(dirUp1, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
-                            bool beep2 = pc.GetPinAt(dirUp2, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+                            bool beep1 = !ignoreDirections.GetCurrentValue(dirUp1.ToInt()) && pc.GetPinAt(dirUp1, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+                            bool beep2 = !ignoreDirections.GetCurrentValue(dirUp2.ToInt()) && pc.GetPinAt(dirUp2, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
 
                             // We are in the visible region if we received at least one beep
                             if (beep1 || beep2)
@@ -353,8 +364,8 @@ namespace AS2.Subroutines.SPFPropagation
                             Direction dirUp1 = DirUp1();
                             Direction dirUp2 = DirUp2();
 
-                            bool beep1 = pc.GetPinAt(dirUp1, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
-                            bool beep2 = pc.GetPinAt(dirUp2, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+                            bool beep1 = !ignoreDirections.GetCurrentValue(dirUp1.ToInt()) && pc.GetPinAt(dirUp1, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
+                            bool beep2 = !ignoreDirections.GetCurrentValue(dirUp2.ToInt()) && pc.GetPinAt(dirUp2, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
 
                             if (beep1 && !beep2)
                                 comparison.SetValue(ComparisonResult.GREATER);
@@ -388,6 +399,118 @@ namespace AS2.Subroutines.SPFPropagation
                         }
                     }
                     break;
+                case 5:
+                    {
+                        PinConfiguration pc = algo.GetCurrentPinConfiguration();
+                        // Terminate if there was no beep on the regional circuit
+                        if (!pc.ReceivedBeepOnPartitionSet(instanceIndex.GetCurrentValue() + 8))
+                        {
+                            finished.SetValue(true);
+                            break;
+                        }
+                        // Let non-visible amoebots identify their visible neighbors and initialize the 1-SPF subroutine
+                        if (!inVisibleRegion.GetCurrentValue() && !inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue())
+                        {
+                            bool[] visibleNbrs = new bool[6];
+                            bool[] nonVisibleNbrs = new bool[6];
+                            bool hasVisibleNbr = false;
+                            for (int i = 0; i < 6; i++)
+                            {
+                                if (!ignoreDirections.GetCurrentValue(i))
+                                {
+                                    if (pc.GetPinAt(DirectionHelpers.Cardinal(i), algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep())
+                                    {
+                                        visibleNbrs[i] = true;
+                                        hasVisibleNbr = true;
+                                    }
+                                    else
+                                        nonVisibleNbrs[i] = true;
+                                }
+                            }
+
+                            // Find out whether we are the source of this non-visible region
+                            bool source = false;
+                            if (hasVisibleNbr)
+                            {
+                                // Only the 4 directions closer to the main portal are of interest
+                                Direction up1 = DirUp1();
+                                Direction up2 = DirUp2();
+                                Direction side1 = up1.Rotate60(1);
+                                Direction side2 = up2.Rotate60(-1);
+                                int up1i = up1.ToInt();
+                                int up2i = up2.ToInt();
+                                int side1i = side1.ToInt();
+                                int side2i = side2.ToInt();
+                                // If one of the two "up" neighbors is visible and the other one is not part of the invisible region,
+                                // we are the source and can choose the visible neighbor as parent
+                                if (visibleNbrs[up1i] || visibleNbrs[up2i])
+                                {
+                                    if (visibleNbrs[up1i] && !nonVisibleNbrs[up2i])
+                                    {
+                                        source = true;
+                                        parentDir2.SetValue(up1);
+                                    }
+                                    else if (visibleNbrs[up2i] && !nonVisibleNbrs[up1i])
+                                    {
+                                        source = true;
+                                        parentDir2.SetValue(up2);
+                                    }
+                                }
+                                // Else: If one of the two "side" neighbors is visible and the corresponding "top" neighbor on that side
+                                // is not part of the same invisible region, we are the source and choose that visible neighbor
+                                else if (visibleNbrs[side1i] || visibleNbrs[side2i])
+                                {
+                                    if (visibleNbrs[side1i] && !nonVisibleNbrs[up1i])
+                                    {
+                                        source = true;
+                                        parentDir2.SetValue(side1);
+                                    }
+                                    else if (visibleNbrs[side2i] && !nonVisibleNbrs[up2i])
+                                    {
+                                        source = true;
+                                        parentDir2.SetValue(side2);
+                                    }
+                                }
+                            }
+                            // Now collect the directions we have to ignore
+                            List<Direction> ignoreDirs = new List<Direction>();
+                            for (int i = 0; i < 6; i++)
+                            {
+                                if (ignoreDirections.GetCurrentValue(i) || visibleNbrs[i])
+                                    ignoreDirs.Add(DirectionHelpers.Cardinal(i));
+                            }
+
+                            // Finally, initialize the subroutine
+                            singleSourceSPF.Init(source, !source, controlColor.GetCurrentValue(), ignoreDirs);
+                        }
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 6:
+                    {
+                        if (!inVisibleRegion.GetCurrentValue() && !inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue())
+                            singleSourceSPF.ActivateReceive();
+                        round.SetValue(r + 1);
+                    }
+                    break;
+                case 7:
+                    {
+                        PinConfiguration pc = algo.GetCurrentPinConfiguration();
+                        // No beep on regional circuit: Subroutine has finished
+                        if (!pc.ReceivedBeepOnPartitionSet(instanceIndex.GetCurrentValue() + 8))
+                        {
+                            // Set parent direction and terminate
+                            if (!inVisibleRegion.GetCurrentValue() && !inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue() && parentDir2.GetCurrentValue() == Direction.NONE)
+                                parentDir2.SetValue(singleSourceSPF.Parent());
+                            finished.SetValue(true);
+                        }
+                        // Else: Continue running
+                        else
+                        {
+                            round.SetValue(r - 1);
+                        }
+                    }
+                    break;
             }
             SetColor();
         }
@@ -405,6 +528,9 @@ namespace AS2.Subroutines.SPFPropagation
                     }
                     break;
                 case 1:
+                case 4:
+                case 5:
+                case 7:
                     {
                         // Setup a regional circuit (using the two center pins)
                         SetupRegionalCircuit(pc);
@@ -465,10 +591,10 @@ namespace AS2.Subroutines.SPFPropagation
                         }
                     }
                     break;
-                case 4:
+                case 6:
                     {
-                        // Setup a regional circuit
-                        SetupRegionalCircuit(pc);
+                        if (!inVisibleRegion.GetCurrentValue() && !inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue())
+                            singleSourceSPF.SetupPC(pc);
                     }
                     break;
             }
@@ -548,6 +674,41 @@ namespace AS2.Subroutines.SPFPropagation
                         }
                     }
                     break;
+                case 5:
+                    {
+                        // Amoebots outside the visible region beep on the regional circuit
+                        PinConfiguration pc = algo.GetPlannedPinConfiguration();
+                        if (!inVisibleRegion.GetCurrentValue() && !inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue())
+                        {
+                            pc.SendBeepOnPartitionSet(instanceIndex.GetCurrentValue() + 8);
+                        }
+                        // Amoebots in the visible region beep in all directions with neighbors
+                        else if (inVisibleRegion.GetCurrentValue())
+                        {
+                            for (int i = 0; i < 6; i++)
+                            {
+                                if (!ignoreDirections.GetCurrentValue(i))
+                                    pc.GetPinAt(DirectionHelpers.Cardinal(i), 0).PartitionSet.SendBeep();
+                            }
+                        }
+                    }
+                    break;
+                case 6:
+                    {
+                        if (!inVisibleRegion.GetCurrentValue() && !inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue())
+                            singleSourceSPF.ActivateSend();
+                    }
+                    break;
+                case 7:
+                    {
+                        // Beep on regional circuit if 1-SPF is not finished yet
+                        if (!inVisibleRegion.GetCurrentValue() && !inSourceRegion.GetCurrentValue() && !onMainPortal.GetCurrentValue() && !singleSourceSPF.IsFinished())
+                        {
+                            PinConfiguration pc = algo.GetPlannedPinConfiguration();
+                            pc.SendBeepOnPartitionSet(instanceIndex.GetCurrentValue() + 8);
+                        }
+                    }
+                    break;
             }
             SetColor();
         }
@@ -563,8 +724,32 @@ namespace AS2.Subroutines.SPFPropagation
             return round.GetCurrentValue() > 4;
         }
 
+        /// <summary>
+        /// Checks whether the propagation routine is finished.
+        /// </summary>
+        /// <returns><c>true</c> if and only if we are finished with
+        /// both phases of the propagation routine.</returns>
+        public bool IsFinished()
+        {
+            return finished.GetCurrentValue();
+        }
+
+        /// <summary>
+        /// Gets the parent direction produced by the propagation procedure.
+        /// </summary>
+        /// <returns>The direction of this amoebot's parent after
+        /// the propagation.</returns>
+        public Direction Parent()
+        {
+            return IsFinished() ? parentDir2.GetCurrentValue() : Direction.NONE;
+        }
+
         private void SetColor()
         {
+            // Let subroutine control the color in the second phase
+            if (!controlColor.GetCurrentValue() || round.GetCurrentValue() >= 5)
+                return;
+
             // Don't set color for portals and sources because they might differ between regions
             //if (isSource.GetCurrentValue())
             //    algo.SetMainColor(ColorData.Particle_Red);
@@ -617,7 +802,9 @@ namespace AS2.Subroutines.SPFPropagation
         /// <summary>
         /// Sets up a circuit that connects the entire region. The partition set
         /// ID is the instance index + 8. This might not be setup correctly if
-        /// the amoebot has no neighbors in this region
+        /// the amoebot has no neighbors in this region. The circuit uses the
+        /// middle 2 pins for amoebots outside a portal and the middle pin closer
+        /// to the region for amoebots on a bounding portal.
         /// </summary>
         /// <param name="pc">The pin configuration to modify.</param>
         private void SetupRegionalCircuit(PinConfiguration pc)

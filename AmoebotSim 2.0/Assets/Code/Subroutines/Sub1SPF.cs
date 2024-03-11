@@ -86,8 +86,11 @@ namespace AS2.Subroutines.SingleSourceSP
     //  Send:
     //  - Select one of the neighbors with parent counter 2 as parent
     //  - Send beep to that neighbor in singleton pin configuration
+    //  - Also setup global circuit and let all non-pruned non-destination amoebots (except the source) beep
     //  Receive:
-    //  - Receive beeps from children
+    //  - Receive beeps from children and global beep
+    //  - If there was no global beep:
+    //      - Terminate immediately (This means the tree is already finished and the following ETT would not prune anything)
     //  - Amoebots without parent or children prune themselves and go to round 7
     //  - Initialize ETT again, but using the parent and children instead of portals
 
@@ -134,9 +137,9 @@ namespace AS2.Subroutines.SingleSourceSP
         // Destination   Source   Nbr Portal 2   Nbr Portal 1   Parent counters               Ignored directions   Dir counter   Round
         ParticleAttribute<int> state1;
 
-        //                                 7               6          5        4             3               2 0
-        // xxxx xxxx xxxx xxxx xxxx xxxx   x               x          x        x             x               xxx
-        //                                 Control color   Finished   Pruned   Dest portal   Source portal   Parent dir
+        //                               9   8              7               6          5        4             3               2 0
+        // xxxx xxxx xxxx xxxx xxxx xx   x   x              x               x          x        x             x               xxx
+        //                               Man. update 1, 0   Control color   Finished   Pruned   Dest portal   Source portal   Parent dir
         ParticleAttribute<int> state2;
 
         BinAttributeInt round;              // Round counter
@@ -154,10 +157,13 @@ namespace AS2.Subroutines.SingleSourceSP
         BinAttributeBool pruned;            // Whether we were pruned
         BinAttributeBool finished;          // Whether the procedure has finished
         BinAttributeBool controlColor;      // Whether we should control the amoebot color
+        BinAttributeBool manualCtrUpdate0;  // Whether we have to update our parent counter result based on our neighbor edge
+        BinAttributeBool manualCtrUpdate1;  // (this might be necessary if we cannot setup a proper neighbor portal circuit due to ignored directions)
+        
 
         SubETT ett;
 
-        public Sub1SPF(Particle p) : base(p)
+        public Sub1SPF(Particle p, SubETT ett = null) : base(p)
         {
             state1 = algo.CreateAttributeInt(FindValidAttributeName("[SPF] State 1"), 0);
             state2 = algo.CreateAttributeInt(FindValidAttributeName("[SPF] State 2"), 0);
@@ -179,10 +185,25 @@ namespace AS2.Subroutines.SingleSourceSP
             pruned = new BinAttributeBool(state2, 5);
             finished = new BinAttributeBool(state2, 6);
             controlColor = new BinAttributeBool(state2, 7);
+            manualCtrUpdate0 = new BinAttributeBool(state2, 8);
+            manualCtrUpdate1 = new BinAttributeBool(state2, 9);
 
-            ett = new SubETT(p);
+            if (ett is null)
+                this.ett = new SubETT(p);
+            else
+                this.ett = ett;
         }
 
+        /// <summary>
+        /// Initializes the subroutine.
+        /// </summary>
+        /// <param name="isSource">Whether this amoebot is the source. Exactly one
+        /// amoebot in the component running this subroutine must be the source.</param>
+        /// <param name="isDest">Whether this amoebot is a destination.</param>
+        /// <param name="controlColor">Whether the subroutine should control
+        /// the amoebot's color.</param>
+        /// <param name="ignoreDirections">The directions in which neighbors should
+        /// be ignored.</param>
         public void Init(bool isSource, bool isDest, bool controlColor = false, List<Direction> ignoreDirections = null)
         {
             state1.SetValue(0);
@@ -222,9 +243,10 @@ namespace AS2.Subroutines.SingleSourceSP
         /// in the round immediately after <see cref="ActivateSend"/>
         /// was called.
         /// </summary>
-
         public void ActivateReceive()
         {
+            if (finished.GetCurrentValue())
+                return;
             int r = round.GetCurrentValue();
             switch (r)
             {
@@ -285,12 +307,40 @@ namespace AS2.Subroutines.SingleSourceSP
                         int ctr = dirCounter.GetCurrentValue();
                         if (!onSourcePortal.GetCurrentValue())
                         {
+                            // Special case: We could not setup a proper neighbor circuit for one of the sides
+                            //  => We have to update manually using the neighbor edges
+                            List<int> manualCheckDirs = new List<int>();
                             PinConfiguration pc = algo.GetCurrentPinConfiguration();
                             Direction dir = DirectionHelpers.Cardinal(ctr);
-                            UpdateParentCounter(dir.Rotate60(1), pc, 0);
-                            UpdateParentCounter(dir.Rotate60(2), pc, 0);
-                            UpdateParentCounter(dir.Rotate60(-1), pc, 1);
-                            UpdateParentCounter(dir.Rotate60(-2), pc, 1);
+                            Direction nbr1 = nbrPortal1.GetCurrentValue();
+                            Direction nbr2 = nbrPortal2.GetCurrentValue();
+                            if (!manualCtrUpdate0.GetCurrentValue())
+                            {
+                                UpdateParentCounter(dir.Rotate60(1), pc, 0);
+                                UpdateParentCounter(dir.Rotate60(2), pc, 0);
+                            }
+                            else if (nbr1 != Direction.NONE && ett.GetComparisonResult(nbr1) == Comparison.GREATER)
+                            {
+                                manualCheckDirs.Add((ctr + 1) % 6);
+                                manualCheckDirs.Add((ctr + 2) % 6);
+                            }
+
+                            if (!manualCtrUpdate1.GetCurrentValue())
+                            {
+                                UpdateParentCounter(dir.Rotate60(-1), pc, 1);
+                                UpdateParentCounter(dir.Rotate60(-2), pc, 1);
+                            }
+                            else if (nbr2 != Direction.NONE && ett.GetComparisonResult(nbr2) == Comparison.GREATER)
+                            {
+                                manualCheckDirs.Add((ctr + 5) % 6);
+                                manualCheckDirs.Add((ctr + 4) % 6);
+                            }
+
+                            foreach (int c in manualCheckDirs)
+                            {
+                                if (!ignoreDirs.GetCurrentValue(c))
+                                    parentCounters[c].SetValue(parentCounters[c].GetCurrentValue() + 1);
+                            }
                         }
 
                         // Reset values specific to this direction
@@ -298,6 +348,8 @@ namespace AS2.Subroutines.SingleSourceSP
                         onDestPortal.SetValue(isDest.GetCurrentValue());
                         nbrPortal1.SetValue(Direction.NONE);
                         nbrPortal2.SetValue(Direction.NONE);
+                        manualCtrUpdate0.SetValue(false);
+                        manualCtrUpdate1.SetValue(false);
 
                         if (ctr == 2)
                         {
@@ -315,6 +367,13 @@ namespace AS2.Subroutines.SingleSourceSP
                 case 3:
                     {
                         PinConfiguration pc = algo.GetCurrentPinConfiguration();
+                        // Receive global beep
+                        if (!pc.ReceivedBeepOnPartitionSet(1))
+                        {
+                            // No global beep means we are finished already
+                            finished.SetValue(true);
+                        }
+
                         // Receive child beeps
                         bool[] children = new bool[6];
                         bool hasChild = false;
@@ -411,9 +470,10 @@ namespace AS2.Subroutines.SingleSourceSP
         /// is not planned by this method.
         /// </summary>
         /// <param name="pc">The pin configuration to modify.</param>
-
         public void SetupPC(PinConfiguration pc)
         {
+            if (finished.GetCurrentValue())
+                return;
             int r = round.GetCurrentValue();
             switch (r)
             {
@@ -440,7 +500,7 @@ namespace AS2.Subroutines.SingleSourceSP
                     break;
                 case 3:
                     {
-                        pc.SetToSingleton();
+                        SetupGlobalCircuit(pc, 1, 1);
                     }
                     break;
                 case 6:
@@ -457,9 +517,10 @@ namespace AS2.Subroutines.SingleSourceSP
         /// can be called, the pin configuration set up by
         /// <see cref="SetupPC(PinConfiguration)"/> must be planned.
         /// </summary>
-
         public void ActivateSend()
         {
+            if (finished.GetCurrentValue())
+                return;
             int r = round.GetCurrentValue();
             switch (r)
             {
@@ -500,10 +561,12 @@ namespace AS2.Subroutines.SingleSourceSP
                             Direction nbr2 = nbrPortal2.GetCurrentValue();
                             if (nbr1 != Direction.NONE || nbr2 != Direction.NONE)
                             {
+                                // Special case: We could not setup a neighbor portal circuit for a side
+                                //  => Then, we have to update manually and send no beep
                                 PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                                if (nbr1 != Direction.NONE && ett.GetComparisonResult(nbr1) == Comparison.GREATER)
+                                if (nbr1 != Direction.NONE && ett.GetComparisonResult(nbr1) == Comparison.GREATER && !manualCtrUpdate0.GetCurrentValue())
                                     pc.SendBeepOnPartitionSet(0);
-                                if (nbr2 != Direction.NONE && ett.GetComparisonResult(nbr2) == Comparison.GREATER)
+                                if (nbr2 != Direction.NONE && ett.GetComparisonResult(nbr2) == Comparison.GREATER && !manualCtrUpdate1.GetCurrentValue())
                                     pc.SendBeepOnPartitionSet(1);
                             }
                         }
@@ -511,6 +574,7 @@ namespace AS2.Subroutines.SingleSourceSP
                     break;
                 case 3:
                     {
+                        PinConfiguration pc = algo.GetPlannedPinConfiguration();
                         // Select a neighbor with parent counter 3 as parent and send beep
                         if (!isSource.GetCurrentValue())
                         {
@@ -524,9 +588,12 @@ namespace AS2.Subroutines.SingleSourceSP
                             }
                             if (parentDir.GetCurrentValue() != Direction.NONE)
                             {
-                                PinConfiguration pc = algo.GetPlannedPinConfiguration();
                                 pc.GetPinAt(parentDir.GetCurrentValue(), 0).PartitionSet.SendBeep();
                             }
+
+                            // Additionally, let non-pruned, non-destination amoebots beep on global circuit
+                            if (!pruned.GetCurrentValue() && !isDest.GetCurrentValue())
+                                pc.SendBeepOnPartitionSet(1);
                         }
                     }
                     break;
@@ -703,18 +770,23 @@ namespace AS2.Subroutines.SingleSourceSP
         /// <param name="pSet">The partition set ID.</param>
         private void SetupGlobalCircuit(PinConfiguration pc, int offset, int pSet)
         {
-            bool[] inverted = new bool[] { false, false, false, true, true, true };
-            pc.SetStarConfig(offset, inverted, pSet);
+            List<int> pins = new List<int>();
+            for (int i = 0; i < 6; i++)
+            {
+                if (!ignoreDirs.GetCurrentValue(i))
+                    pins.Add(pc.GetPinAt(DirectionHelpers.Cardinal(i), i < 3 ? offset : algo.PinsPerEdge - 1 - offset).Id);
+            }
+            pc.MakePartitionSet(pins.ToArray(), pSet);
             pc.SetPartitionSetColor(pSet, ColorData.Circuit_Colors[offset]);
         }
-
 
         /// <summary>
         /// Sets up one circuit for each neighbor of a portal along
         /// the given axis. The "top" partition set will have ID 0
         /// and the "bottom" partition set will have ID 1. If there
         /// is no neighbor in one of the directions, no partition set
-        /// will be created for that direction.
+        /// will be created for that direction. Also, if no partition set
+        /// can be created, the corresponding manual update flag is set.
         /// </summary>
         /// <param name="pc">The pin configuration to modify.</param>
         /// <param name="portalDir">The direction of the portal axis.</param>
@@ -722,24 +794,26 @@ namespace AS2.Subroutines.SingleSourceSP
         {
             List<int> pinsTop = new List<int>();
             List<int> pinsBot = new List<int>();
+            bool nbrInPortalDir = !ignoreDirs.GetCurrentValue(portalDir.ToInt());
+            bool nbrOppPortalDir = !ignoreDirs.GetCurrentValue((portalDir.ToInt() + 3) % 6);
             // Top right
-            if (!ignoreDirs.GetCurrentValue((portalDir.ToInt() + 1) % 6))
+            if (nbrInPortalDir && !ignoreDirs.GetCurrentValue((portalDir.ToInt() + 1) % 6))
             {
                 pinsTop.Add(pc.GetPinAt(portalDir, algo.PinsPerEdge - 1).Id);
             }
             // Top left
-            if (!ignoreDirs.GetCurrentValue((portalDir.ToInt() + 2) % 6))
+            if (nbrOppPortalDir && !ignoreDirs.GetCurrentValue((portalDir.ToInt() + 2) % 6))
             {
                 pinsTop.Add(pc.GetPinAt(portalDir.Opposite(), 0).Id);
             }
 
             // Bottom right
-            if (!ignoreDirs.GetCurrentValue((portalDir.ToInt() + 5) % 6))
+            if (nbrInPortalDir && !ignoreDirs.GetCurrentValue((portalDir.ToInt() + 5) % 6))
             {
                 pinsBot.Add(pc.GetPinAt(portalDir, 0).Id);
             }
             // Bottom left
-            if (!ignoreDirs.GetCurrentValue((portalDir.ToInt() + 4) % 6))
+            if (nbrOppPortalDir && !ignoreDirs.GetCurrentValue((portalDir.ToInt() + 4) % 6))
             {
                 pinsBot.Add(pc.GetPinAt(portalDir.Opposite(), algo.PinsPerEdge - 1).Id);
             }
@@ -750,12 +824,16 @@ namespace AS2.Subroutines.SingleSourceSP
                 pc.SetPartitionSetPosition(0, new Vector2((portalDir.ToInt() + 1.5f) * 60f, 0.5f));
                 pc.SetPartitionSetDrawHandle(0, true);
             }
+            else
+                manualCtrUpdate0.SetValue(true);
             if (pinsBot.Count > 0)
             {
                 pc.MakePartitionSet(pinsBot.ToArray(), 1);
                 pc.SetPartitionSetPosition(1, new Vector2((portalDir.Opposite().ToInt() + 1.5f) * 60f, 0.5f));
                 pc.SetPartitionSetDrawHandle(1, true);
             }
+            else
+                manualCtrUpdate1.SetValue(true);
         }
     }
 
