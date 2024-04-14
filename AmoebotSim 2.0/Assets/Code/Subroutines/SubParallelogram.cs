@@ -5,10 +5,10 @@ using AS2.Sim;
 using AS2.Subroutines.PASC;
 using AS2.Subroutines.BinStateHelpers;
 
-namespace AS2.Subroutines.ConvexShapeContainment
+namespace AS2.Subroutines.ConvexShapePlacementSearch
 {
     /// <summary>
-    /// Shape containment check for parallelograms. Finds all valid
+    /// Valid placement search for parallelograms. Finds all valid
     /// placements for a parallelogram extending in the two given
     /// directions for two side lengths given in a binary counter,
     /// rotated by the specified amount.
@@ -832,4 +832,4 @@ namespace AS2.Subroutines.ConvexShapeContainment
         }
     }
 
-} // namespace AS2.Subroutines.ConvexShapeContainment
+} // namespace AS2.Subroutines.ConvexShapePlacementSearch

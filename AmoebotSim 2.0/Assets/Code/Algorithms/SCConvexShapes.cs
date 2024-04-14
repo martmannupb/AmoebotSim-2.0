@@ -6,7 +6,7 @@ using AS2.Subroutines.BinaryOps;
 using AS2.Subroutines.LeaderElectionSC;
 using AS2.Subroutines.LongestLines;
 using AS2.Subroutines.PASC;
-using AS2.Subroutines.ConvexShapeContainment;
+using AS2.Subroutines.ConvexShapePlacementSearch;
 using AS2.Subroutines.ShapeConstruction;
 
 namespace AS2.Algos.SCConvexShapes
@@ -29,10 +29,10 @@ namespace AS2.Algos.SCConvexShapes
     /// </para>
     /// <para>
     /// This algorithm uses a binary search combined with a parallelogram
-    /// or merging subroutine as a containment check. A slight modification
+    /// or merging subroutine as a placement search. A slight modification
     /// allows the algorithm to divide its maximum line length by the longest
     /// line in the target shape first to get a smaller upper bound on the
-    /// scale factor, reducing the number of containment checks in practice.
+    /// scale factor, reducing the number of placement searches in practice.
     /// Additionally, fewer rotations are tested for triangles and parallelograms
     /// since they are rotationally symmetric.
     /// </para>
@@ -44,13 +44,13 @@ namespace AS2.Algos.SCConvexShapes
     //  - Write all required shape parameters to the counter(s)                                 Round 1-2
     //  - Compute all scaled shape parameters using scale R                                     Rounds 3-4 (round 5 is for waiting amoebots)
     //  - For rotation m = 0,...,5:                                                             Round 6
-    //      - Run shape containment check with m, R                                             Round 7
+    //      - Run placement search with m, R                                                    Round 7
     //      - If successful:
     //          - Store rotation and valid placements
     //          - Jump to shape construction
     //  - (Do not compute scaled parameters again since scale is 1)
     //  - For rotation m = 0,...,5:                                                             Round 8
-    //      - Run shape containment check with m, L = 1                                         Round 9
+    //      - Run placement search with m, L = 1                                                Round 9
     //      - If successful: Continue with next phase
     //  - If not successful: Terminate with failure
     //  - Binary search:                                                                        Round 10
@@ -59,7 +59,7 @@ namespace AS2.Algos.SCConvexShapes
     //          - Go to shape construction phase
     //      - Compute all scaled shape parameters using scale M                                 Rounds 15-17
     //      - For rotation m = 0,...,5:                                                         Round 18
-    //          - Run shape containment check with m, M                                         Rounds 18-19
+    //          - Run placement search with m, M                                                Rounds 18-19
     //          - If successful:
     //              - Set L := M
     //              - Store rotation and valid placements
@@ -131,11 +131,11 @@ namespace AS2.Algos.SCConvexShapes
     //      - Reset rotation to 0
     //      - Go to round 8
     //  - Else:
-    //      - Init containment check for current rotation and scaled parameters
-    //      - Start containment check
+    //      - Init placement search for current rotation and scaled parameters
+    //      - Start placement search
 
     // Round 7:
-    //  - If containment check is finished:
+    //  - If placement search is finished:
     //      - Success:
     //          - Store valid placements and rotation
     //          - Copy scale R into L for the shape construction
@@ -152,11 +152,11 @@ namespace AS2.Algos.SCConvexShapes
     //  - If rotation > 5:
     //      - Terminate with failure
     //  - Else:
-    //      - Init containment check for current rotation and non-scaled parameters
-    //      - Start containment check
+    //      - Init placement search for current rotation and non-scaled parameters
+    //      - Start placement search
 
     // Round 9:
-    //  - If containment check is finished:
+    //  - If placement search is finished:
     //      - Success:
     //          - Store valid placements and rotation
     //          - Go to round 10
@@ -225,17 +225,17 @@ namespace AS2.Algos.SCConvexShapes
     //      - Increment counter
     //      - Go to round 16
 
-    // CONTAINMENT CHECK
+    // PLACEMENT SEARCH
 
     // Round 18:
     //  - If rotation > 5:
     //      - Set R := M
     //      - Go to round 10
     //  - Else:
-    //      - Start containment check for current rotation and M
+    //      - Start placement search for current rotation and M
 
     // Round 19:
-    //  - If containment check is finished:
+    //  - If placement search is finished:
     //      - Success:
     //          - Set L := M
     //          - Store valid positions and rotation
@@ -336,7 +336,7 @@ namespace AS2.Algos.SCConvexShapes
         SubPASC2 pasc1;
         SubParallelogram parallelogram;
         SubMergingAlgo mergeAlgo;
-        SubConvexShapeContainment containment;
+        SubConvexShapePlacementSearch placementSearch;
         SubShapeConstruction shapeConstr;
 
         // Static data set by the generation method
@@ -388,7 +388,7 @@ namespace AS2.Algos.SCConvexShapes
             ll = new SubLongestLines(p, pasc1);
             parallelogram = new SubParallelogram(p, pasc1);
             mergeAlgo = new SubMergingAlgo(p, pasc1);
-            containment = new SubConvexShapeContainment(p, parallelogram, mergeAlgo);
+            placementSearch = new SubConvexShapePlacementSearch(p, parallelogram, mergeAlgo);
             leaderElection = new SubLeaderElectionSC(p);
             shapeConstr = new SubShapeConstruction(p, shape, pasc1);
 
@@ -584,7 +584,7 @@ namespace AS2.Algos.SCConvexShapes
                 // CHECK LARGEST SCALE
 
                 case 6:
-                case 18:    // From binary search, need to perform containment check too
+                case 18:    // From binary search, need to perform placement search too
                     {
                         if (rotation >= NumRotations())
                         {
@@ -608,8 +608,8 @@ namespace AS2.Algos.SCConvexShapes
                         else
                         {
                             // Check next rotation
-                            // Init containment check
-                            StartShapeContainmentCheck();
+                            // Init placement search
+                            StartValidPlacementSearch();
                             
                             round.SetValue(round + 1);
                         }
@@ -619,13 +619,13 @@ namespace AS2.Algos.SCConvexShapes
                 case 9:     // (From scale 1 check)
                 case 19:    // From binary search
                     {
-                        containment.ActivateReceive();
-                        if (containment.IsFinished())
+                        placementSearch.ActivateReceive();
+                        if (placementSearch.IsFinished())
                         {
-                            if (containment.Success())
+                            if (placementSearch.Success())
                             {
                                 // Always store valid positions and rotation, also reset rotation
-                                validPlacement.SetValue(containment.IsRepresentative());
+                                validPlacement.SetValue(placementSearch.IsRepresentative());
                                 finalRotation.SetValue(rotation);
                                 rotation.SetValue(0);
 
@@ -663,9 +663,9 @@ namespace AS2.Algos.SCConvexShapes
                         else
                         {
                             PinConfiguration pc = GetContractedPinConfiguration();
-                            containment.SetupPC(pc);
+                            placementSearch.SetupPC(pc);
                             SetPlannedPinConfiguration(pc);
-                            containment.ActivateSend();
+                            placementSearch.ActivateSend();
                         }
                     }
                     break;
@@ -683,8 +683,8 @@ namespace AS2.Algos.SCConvexShapes
                         else
                         {
                             // Check next rotation
-                            // Init containment check
-                            StartShapeContainmentCheck(false);
+                            // Init placement search
+                            StartValidPlacementSearch(false);
 
                             round.SetValue(9);
                         }
@@ -781,7 +781,7 @@ namespace AS2.Algos.SCConvexShapes
                     }
                     break;
 
-                // CONTAINMENT CHECK
+                // PLACEMENT SEARCH
                 // (All handled similarly to other rounds)
 
                 // SHAPE CONSTRUCTION
@@ -1182,10 +1182,10 @@ namespace AS2.Algos.SCConvexShapes
         }
 
         /// <summary>
-        /// Helper to initialize and start the shape containment subroutine
+        /// Helper to initialize and start the placement search subroutine
         /// for the correct shape type.
         /// </summary>
-        private void StartShapeContainmentCheck(bool useScaledShapeBits = true)
+        private void StartValidPlacementSearch(bool useScaledShapeBits = true)
         {
             Direction counterPred = Direction.NONE;
             Direction counterSucc = Direction.NONE;
@@ -1205,18 +1205,18 @@ namespace AS2.Algos.SCConvexShapes
                     _msbs[i] = useScaledShapeBits ? ScaledShapeMSB(i) : ShapeMSB(i);
                 }
 
-                containment.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, false, hexNeedsPentagon, shapeDirectionH2,
+                placementSearch.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, false, hexNeedsPentagon, shapeDirectionH2,
                     counterPred, counterSucc, _bits[0], _msbs[0], _bits[1], _msbs[1], _bits[2], _msbs[2], _bits[3], _msbs[3], _bits[4], _msbs[4],
                     _bits[5], _msbs[5]);
             }
             else
             {
-                containment.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, false, hexNeedsPentagon, shapeDirectionH2);
+                placementSearch.Init(shapeType, shapeDirectionW, shapeDirectionH1, rotation, true, false, hexNeedsPentagon, shapeDirectionH2);
             }
             PinConfiguration pc = GetContractedPinConfiguration();
-            containment.SetupPC(pc);
+            placementSearch.SetupPC(pc);
             SetPlannedPinConfiguration(pc);
-            containment.ActivateSend();
+            placementSearch.ActivateSend();
         }
 
         /// <summary>

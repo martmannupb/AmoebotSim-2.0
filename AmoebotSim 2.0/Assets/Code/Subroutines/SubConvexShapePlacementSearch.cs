@@ -6,11 +6,11 @@ using AS2.Subroutines.BinStateHelpers;
 using AS2.Subroutines.PASC;
 using AS2.ShapeContainment;
 
-namespace AS2.Subroutines.ConvexShapeContainment
+namespace AS2.Subroutines.ConvexShapePlacementSearch
 {
 
     /// <summary>
-    /// Wrapper for all convex shape containment subroutines.
+    /// Wrapper for all convex shape placement search subroutines.
     /// Handles all types of convex shapes and finds all valid
     /// placements for the given rotation and side lengths.
     /// <para>
@@ -26,7 +26,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
     /// <b>Usage:</b> Same as for <see cref="SubParallelogram"/>.
     /// </para>
     /// </summary>
-    public class SubConvexShapeContainment : Subroutine
+    public class SubConvexShapePlacementSearch : Subroutine
     {
 
         // State:
@@ -48,8 +48,8 @@ namespace AS2.Subroutines.ConvexShapeContainment
         BinAttributeBool bitD2;
         BinAttributeBool msbA;
         BinAttributeBool msbD2;
-        BinAttributeBool success;                   // Whether the containment check was successful
-        BinAttributeBool finished;                  // Whether the containment check has finished
+        BinAttributeBool success;                   // Whether the placement search was successful
+        BinAttributeBool finished;                  // Whether the placement search has finished
         BinAttributeBool color;                     // Whether the subroutine should control the color
         BinAttributeBool sendHex;                   // Whether we have to send / receive the hexagon intersection beep
         BinAttributeBool excluded;                  // Whether we are excluded from being a valid placement
@@ -58,7 +58,7 @@ namespace AS2.Subroutines.ConvexShapeContainment
         SubParallelogram parallelogram;
         SubMergingAlgo mergeAlgo;
 
-        public SubConvexShapeContainment(Particle p, SubParallelogram parallelogramInstance = null, SubMergingAlgo mergingAlgoInstance = null) : base(p)
+        public SubConvexShapePlacementSearch(Particle p, SubParallelogram parallelogramInstance = null, SubMergingAlgo mergingAlgoInstance = null) : base(p)
         {
             state = algo.CreateAttributeInt(FindValidAttributeName("[CSC] State"), 0);
 
@@ -346,4 +346,4 @@ namespace AS2.Subroutines.ConvexShapeContainment
         }
     }
 
-} // namespace AS2.Subroutines.ConvexShapeContainment
+} // namespace AS2.Subroutines.ConvexShapePlacementSearch

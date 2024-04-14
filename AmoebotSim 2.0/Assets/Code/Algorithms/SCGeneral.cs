@@ -8,7 +8,7 @@ using AS2.Subroutines.BinaryOps;
 using AS2.Subroutines.BoundaryTest;
 using AS2.Subroutines.LeaderElectionSC;
 using AS2.Subroutines.LongestLines;
-using AS2.Subroutines.ConvexShapeContainment;
+using AS2.Subroutines.ConvexShapePlacementSearch;
 using AS2.Subroutines.PASC;
 using AS2.Subroutines.ShapeConstruction;
 
@@ -45,11 +45,11 @@ namespace AS2.Algos.SCGeneral
     //              - Then write binary search limits L := 1 and R := n to the outer boundary counter
     //  4. Binary search
     //      4.1. Check right bound R
-    //          - (a) Run containment check for triangle at scale R (two rotations!)
+    //          - (a) Run placement search for triangle at scale R (two rotations!)
     //              - Success: Set K := R and go to step 5
     //          - (b) Skip
     //      4.2. Check left bound L = 1
-    //          - (a) Run containment check for triangle at scale L (two rotations!)
+    //          - (a) Run placement search for triangle at scale L (two rotations!)
     //              - Failure: Terminate with failure
     //          - (b) Skip
     //      4.3. Binary search between L and R
@@ -60,7 +60,7 @@ namespace AS2.Algos.SCGeneral
     //                  - (b) Set N := M
     //                  - Go to step 5
     //          4.3.2. Check for value M
-    //              - (a) Run containment check for triangle at scale M (two rotations!) (keep track of which rotations matched)
+    //              - (a) Run placement search for triangle at scale M (two rotations!) (keep track of which rotations matched)
     //                  - If successful: If one rotation matched and the other did not, only try the matching rotation next time
     //                      - Set L := M
     //                  - If not successful: Set R := M
@@ -70,8 +70,8 @@ namespace AS2.Algos.SCGeneral
     //                  - Else: Set R := M
     //  (In case (b), we will have N = Floor(sqrt(n)) on the outer boundary now, stored in M)
     //  5. Linear search
-    //      5.1. Triangle containment check: If the target shape has at least one face
-    //          - Run the triangle containment check for scale K and two rotations
+    //      5.1. Triangle placement search: If the target shape has at least one face
+    //          - Run the triangle placement search for scale K and two rotations
     //          - Store the valid placements
     //      5.2. If K <= sqrt(n) flag is not set:
     //          - Compare K to N
@@ -245,16 +245,16 @@ namespace AS2.Algos.SCGeneral
     // 4. Binary search
     // 4.1. Check right bound R
 
-    // Rounds 12-15 run the entire triangle containment check
+    // Rounds 12-15 run the entire triangle placement search
 
-    // Round 12 (Start of triangle containment check):
-    //  - Init triangle containment check subroutine for rotation 0
+    // Round 12 (Start of triangle placement search):
+    //  - Init triangle placement search subroutine for rotation 0
     //      - Scale R, 1 or M
     //  - Start running
     //  - Go to round 13
 
     // Round 13:
-    //  - Run triangle containment check routine
+    //  - Run triangle placement search routine
     //  - If finished:
     //      - Success:
     //          - If we checked R: Set K := R and go to step 5 (round 34)
@@ -399,12 +399,12 @@ namespace AS2.Algos.SCGeneral
     //  - Go to round 39
 
 
-    // 5.1. Triangle containment check (and loop start)
+    // 5.1. Triangle placement search (and loop start)
 
     // Round 39:
     //  - If the target shape has faces:
     //      - Reset valid face flags
-    //      - Start triangle containment check (go to round 40)
+    //      - Start triangle placement search (go to round 40)
     //  - Else:
     //      - Go to step 5.2. (round 44)
 
@@ -1346,7 +1346,7 @@ namespace AS2.Algos.SCGeneral
                 // 4.1. Check right bound R
                 // 4.2. Check left bound L = 1
 
-                // Rounds 12-15 run the entire triangle containment check
+                // Rounds 12-15 run the entire triangle placement search
 
                 case 12:    // 12 and 14: Scale R check
                 case 14:
@@ -1357,7 +1357,7 @@ namespace AS2.Algos.SCGeneral
                 case 40:    // 40 and 42: Scale K check
                 case 42:
                     {
-                        // Init triangle containment check for rotation 0/1
+                        // Init triangle placement search for rotation 0/1
                         int rot = r == 12 || r == 16 || r == 26 || r == 40 ? 0 : 1;
                         if (ll.IsOnMaxLine())
                         {
@@ -1976,11 +1976,11 @@ namespace AS2.Algos.SCGeneral
                     }
                     break;
 
-                // 5.1. Triangle containment check (and loop start)
+                // 5.1. Triangle placement search (and loop start)
 
                 case 39:
                     {
-                        // Start triangle containment check if the shape has faces
+                        // Start triangle placement search if the shape has faces
                         if (shapeHasFaces)
                         {
                             trianglePlacement0.SetValue(false);

@@ -205,7 +205,7 @@ namespace AS2.Algos.ShapeConstruction
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(string shape = "shape.json", bool fromFile = true, int rotation = 0, int scale = 1, int numAmoebots = 50, bool fillShape = true, float holeProb = 0.3f, bool fillHoles = false)
+        public void Generate(string shape = "shape1.json", bool fromFile = true, int rotation = 0, int scale = 1, int numAmoebots = 50, bool fillShape = true, float holeProb = 0.3f, bool fillHoles = false)
         {
             // Read the shape
             Shape s;

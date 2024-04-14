@@ -8,10 +8,10 @@ using AS2.Subroutines.BinaryOps;
 using AS2.Subroutines.BinStateHelpers;
 using AS2.Subroutines.LeaderElectionSC;
 using AS2.Subroutines.LongestLines;
-using AS2.Subroutines.ConvexShapeContainment;
+using AS2.Subroutines.ConvexShapePlacementSearch;
 using AS2.Subroutines.PASC;
 using AS2.Subroutines.ShapeConstruction;
-using AS2.Subroutines.SnowflakeContainment;
+using AS2.Subroutines.SnowflakePlacementSearch;
 
 
 namespace AS2.Algos.SCSnowflakes
@@ -53,14 +53,14 @@ namespace AS2.Algos.SCSnowflakes
     //      - Determine MSB of R'
     //  3. Binary search (always do this)
     //      3.1. Check largest scale R'
-    //          - (a) Run containment check for the input shape at scale R'
+    //          - (a) Run placement search for the input shape at scale R'
     //              - If successful: Go to final shape construction with this scale
-    //          - (b) Run containment check for the triangle with scale R' (two rotations!)
+    //          - (b) Run placement search for the triangle with scale R' (two rotations!)
     //              - If successful: Go to next phase with R' as start scale
     //      3.2. Check smallest scale 1
-    //          - (a) Run containment check for the input shape at scale 1
+    //          - (a) Run placement search for the input shape at scale 1
     //              - If not successful: Terminate with failure
-    //          - (b) Run containment check for the triangle with scale 1 (two rotations!)
+    //          - (b) Run placement search for the triangle with scale 1 (two rotations!)
     //              - If not successful: Terminate with failure
     //      3.3. Binary search between L and R
     //          3.3.1. Compute next scale and check termination condition
@@ -68,9 +68,9 @@ namespace AS2.Algos.SCSnowflakes
     //              - If M = L:
     //                  - (a) Go to final shape construction with scale M
     //                  - (b) Go to linear search with start scale M
-    //          3.3.2. Containment check for scale M
-    //              - (a) Run containment check for input shape at scale M
-    //              - (b) Run containment check for the triangle with scale M, using at most two rotations
+    //          3.3.2. Placement search for scale M
+    //              - (a) Run placement search for input shape at scale M
+    //              - (b) Run placement search for the triangle with scale M, using at most two rotations
     //                  - Keep track of which rotations last matched
     //              - If successful:
     //                  - (a) Store valid placements and rotations
@@ -79,7 +79,7 @@ namespace AS2.Algos.SCSnowflakes
     //              - If not successful:
     //                  - Set R := M
     //  4. Linear search (only case b)
-    //      - Run containment check for the input shape at scale M
+    //      - Run placement search for the input shape at scale M
     //      - If successful: Store valid placements and go to shape construction with scale M
     //      - If not successful:
     //          - Compute M <- M - 1 and find MSB
@@ -171,10 +171,10 @@ namespace AS2.Algos.SCSnowflakes
     // 3. Binary search
     // 3.1. Check largest scale R
 
-    // Rounds 6-7 and 8-11 run the entire containment check procedure for cases (a) and (b)
+    // Rounds 6-7 and 8-11 run the entire placement search procedure for cases (a) and (b)
 
-    // Round 6 (Start of (a) containment check):
-    //  - Init snowflake containment check subroutine
+    // Round 6 (Start of (a) placement search):
+    //  - Init snowflake placement search subroutine
     //      - Scale R, 1 or M
     //  - Start running
     //  - Go to round 7
@@ -192,15 +192,15 @@ namespace AS2.Algos.SCSnowflakes
     //  - Else:
     //      - Continue running
 
-    // Round 8 (Start of (b) containment check):
+    // Round 8 (Start of (b) placement search):
     //  - If rotation 0 is still viable:
-    //      - Init triangle containment check subroutine
+    //      - Init triangle placement search subroutine
     //          - Scale R, 1 or M
     //      - Start running
     //      - Go to round 9
 
     // Round 9:
-    //  - Run triangle containment check routine
+    //  - Run triangle placement search routine
     //  - If finished:
     //      - Store success/failure
     //      - Go to round 10
@@ -272,7 +272,7 @@ namespace AS2.Algos.SCSnowflakes
 
     // Rounds 30-31:
     //  - Same as rounds 6-7
-    //  - Run containment check for shape at scale M
+    //  - Run placement search for shape at scale M
     //  - If successful:
     //      - Store valid rotations and placements
     //      - Go to shape construction phase with scale M (round 36)
@@ -384,7 +384,7 @@ namespace AS2.Algos.SCSnowflakes
 
         SubBinOps binops;
         SubPASC2[] pasc = new SubPASC2[3];  // Shared PASC instances
-        SubSnowflakeContainment snowflakeCheck;
+        SubSnowflakePlacementSearch snowflakeCheck;
         SubMergingAlgo triangleCheck;
         SubLeaderElectionSC leaderElection;
         SubLongestLines ll;
@@ -416,7 +416,7 @@ namespace AS2.Algos.SCSnowflakes
             ll = new SubLongestLines(p, pasc[0], pasc[1], pasc[2]);
             leaderElection = new SubLeaderElectionSC(p);
             binops = new SubBinOps(p);
-            snowflakeCheck = new SubSnowflakeContainment(p, snowflakeInfo, binops, pasc);
+            snowflakeCheck = new SubSnowflakePlacementSearch(p, snowflakeInfo, binops, pasc);
             triangleCheck = new SubMergingAlgo(p, pasc[0], pasc[1]);
             shapeConstr = new SubShapeConstruction(p, snowflake, pasc[0]);
 
@@ -691,7 +691,7 @@ namespace AS2.Algos.SCSnowflakes
 
                 // 3. Binary search
 
-                case 6:     // Start of snowflake containment check (a)
+                case 6:     // Start of snowflake placement search (a)
                 case 12:    // Check scale 1 (= L)
                 case 24:    // Check scale M
                 case 30:    // Check scale M during linear search
@@ -802,7 +802,7 @@ namespace AS2.Algos.SCSnowflakes
                         }
                     }
                     break;
-                case 8:     // Start of triangle containment check
+                case 8:     // Start of triangle placement search
                 case 10:    // Scale R (second rotation)
                 case 14:    // Scale 1
                 case 16:    // Scale 1 (second rotation)
@@ -817,7 +817,7 @@ namespace AS2.Algos.SCSnowflakes
                             // First case but first rotation is not valid
                             rot = 1;
                         
-                        // Init triangle containment check
+                        // Init triangle placement search
                         if (ll.IsOnMaxLine())
                         {
                             int scaleIdx = r < 14 ? R : (r < 26 ? L : M);
@@ -1249,7 +1249,7 @@ namespace AS2.Algos.SCSnowflakes
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(string shape = "snowflake.json", bool fromFile = true, bool isStarConvex = false, int numAmoebots = 250, bool fillShape = true, int scale = 1, int rotation = 0,
+        public void Generate(string shape = "snowflake_1.json", bool fromFile = true, bool isStarConvex = false, int numAmoebots = 250, bool fillShape = true, int scale = 1, int rotation = 0,
             float holeProb = 0.3f, bool fillHoles = false)
         {
             nPlaced = 0;

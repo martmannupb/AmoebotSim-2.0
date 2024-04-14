@@ -6,7 +6,7 @@ using AS2.Subroutines.BinaryOps;
 using AS2.Subroutines.LeaderElectionSC;
 using AS2.Subroutines.LongestLines;
 using AS2.Subroutines.PASC;
-using AS2.Subroutines.ConvexShapeContainment;
+using AS2.Subroutines.ConvexShapePlacementSearch;
 using AS2.Subroutines.ShapeConstruction;
 
 namespace AS2.Algos.SCStarConvexShapes
@@ -29,10 +29,10 @@ namespace AS2.Algos.SCStarConvexShapes
     /// </para>
     /// <para>
     /// This algorithm uses a binary search combined with a parallelogram
-    /// or merging subroutine as a containment check. A slight modification
+    /// or merging subroutine as a placement search. A slight modification
     /// allows the algorithm to divide its maximum line length by the longest
     /// line in the target shape first to get a smaller upper bound on the
-    /// scale factor, reducing the number of containment checks in practice.
+    /// scale factor, reducing the number of placement searches in practice.
     /// </para>
     /// <para>
     /// The implementation is almost the same as that of the convex shapes
@@ -46,19 +46,19 @@ namespace AS2.Algos.SCStarConvexShapes
     //      - Terminate with failure if k < m
     //  - Move a marker along each counter and let each amoebot store its position for the shape parameter indices
     //      - Instead of storing the numbers themselves, just store the index to avoid writing the numbers every time the constituent shape changes
-    //  - Run the containment check for R
+    //  - Run the placement search for R
     //      - If successful: Construct the final shape and finish
-    //  - Run the containment check for L = 1
+    //  - Run the placement search for L = 1
     //      - If not successful: Terminate with failure
     //  - Binary search:
     //      - Compute M := (L + R) / 2
     //      - If M = L:
     //          - Construct the final shape and finish
-    //      - Containment check:
+    //      - Placement search:
     //          - For i = 0,...,numShapes - 1:
     //              - Compute the shape parameters scaled by M
     //              - For each rotation r = 0,...,5 for which candidates still exist:
-    //                  - Run the containment check for r, M and intersect the solution set with the current one
+    //                  - Run the placement search for r, M and intersect the solution set with the current one
     //              - Establish global circuits to transmit existence of valid placements for each rotation
     //              - If no rotations are valid anymore:
     //                  - Cancel the check for this scale with failure (R := M)
@@ -165,12 +165,12 @@ namespace AS2.Algos.SCStarConvexShapes
     //      - Valid placements of rotations 0-3 beep
     //      - Go to round 11
     //  - Else:
-    //      - Init containment check for current rotation and scaled parameters
-    //      - Start containment check
+    //      - Init placement search for current rotation and scaled parameters
+    //      - Start placement search
     //      - Go to round 10
 
     // Round 10:
-    //  - If containment check is finished:
+    //  - If placement search is finished:
     //      - Store valid placements in their rotation
     //      - Increment rotation
     //          - Find the next rotation for which we still have valid placements, else set it to 6
@@ -187,7 +187,7 @@ namespace AS2.Algos.SCStarConvexShapes
     // Round 12:
     //  - Receive beeps on global circuits 0-1
     //      - Update valid placement existence flags
-    //  - (We now know the result of the containment check for this shape)
+    //  - (We now know the result of the placement search for this shape)
     //  - Success:
     //      - Increment shape counter
     //      - Go to round 6
@@ -257,15 +257,15 @@ namespace AS2.Algos.SCStarConvexShapes
     //  - Listen on 4 global circuits
     //  - If beep on first circuit:
     //      - Found solution, go to shape construction
-    //      - Go to round ?????????
+    //      - Go to round 33
     //  - If beep on second circuit:
-    //      - Start containment check procedure for next scale factor
+    //      - Start placement search procedure for next scale factor
     //      - Go to round 26
     //  - If beep on third circuit:
-    //      - Start containment check procedure for next shape
+    //      - Start placement search procedure for next shape
     //      - Go to round 29
 
-    // CONTAINMENT CHECK
+    // PLACEMENT SEARCH
 
     // Rounds 26-32 are almost the same as 6-12
     // These are the differences:
@@ -313,7 +313,7 @@ namespace AS2.Algos.SCStarConvexShapes
     {
 
         /// <summary>
-        /// Container for information required to run the containment check
+        /// Container for information required to run the placement search
         /// of a constituent shape. The shape parameters are given in the
         /// order a, d, c, a', a+1
         /// </summary>
@@ -400,7 +400,7 @@ namespace AS2.Algos.SCStarConvexShapes
         SubPASC2 pasc1;
         SubParallelogram parallelogram;
         SubMergingAlgo mergeAlgo;
-        SubConvexShapeContainment containment;
+        SubConvexShapePlacementSearch placementSearch;
         SubShapeConstruction shapeConstr;
 
         // Static data set by the generation method
@@ -428,7 +428,7 @@ namespace AS2.Algos.SCStarConvexShapes
             ll = new SubLongestLines(p, pasc1);
             parallelogram = new SubParallelogram(p, pasc1);
             mergeAlgo = new SubMergingAlgo(p, pasc1);
-            containment = new SubConvexShapeContainment(p, parallelogram, mergeAlgo);
+            placementSearch = new SubConvexShapePlacementSearch(p, parallelogram, mergeAlgo);
             leaderElection = new SubLeaderElectionSC(p);
             shapeConstr = new SubShapeConstruction(p, shape, pasc1);
 
@@ -518,7 +518,7 @@ namespace AS2.Algos.SCStarConvexShapes
                         {
                             // Done setting up shape parameter indices
                             rotation.SetValue(0);
-                            // Set all valid placement flags to true in preparation for the first containment check
+                            // Set all valid placement flags to true in preparation for the first placement search
                             for (int i = 0; i < 6; i++)
                             {
                                 SetValidPlacement(i, true);
@@ -619,7 +619,7 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                         else if (pc.ReceivedBeepOnPartitionSet(1))
                         {
-                            // Initialize containment check for scale R
+                            // Initialize placement search for scale R
                             // Use the first rotation for which there are still valid placements
                             int r = 0;
                             for (; r < 6; r++)
@@ -632,7 +632,7 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                         else if (pc.ReceivedBeepOnPartitionSet(2))
                         {
-                            // Initialize containment check for scale 1
+                            // Initialize placement search for scale 1
                             // Use the first rotation for which there are still valid placements
                             int r = 0;
                             for (; r < 6; r++)
@@ -649,7 +649,7 @@ namespace AS2.Algos.SCStarConvexShapes
                 // CHECK LARGEST SCALE
 
                 case 6:
-                case 13:    // Start of containment check, same for checking scale 1
+                case 13:    // Start of placement search, same for checking scale 1
                 case 26:    // Same for check during binary search
                     {
                         if (shapeIdx >= constituents.Length)
@@ -688,7 +688,7 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                         else
                         {
-                            // Start containment check for the current shape
+                            // Start placement search for the current shape
                             rotation.SetValue(0);
                             // Split
                             if (ll.IsOnMaxLine())
@@ -722,8 +722,8 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                         else
                         {
-                            // Init containment check for current rotation and scaled parameters
-                            StartShapeContainmentCheck();
+                            // Init placement search for current rotation and scaled parameters
+                            StartValidPlacementSearch();
 
                             round.SetValue(round + 1);
                         }
@@ -733,11 +733,11 @@ namespace AS2.Algos.SCStarConvexShapes
                 case 17:    // From check for scale 1
                 case 30:    // From check for scale M
                     {
-                        containment.ActivateReceive();
-                        if (containment.IsFinished())
+                        placementSearch.ActivateReceive();
+                        if (placementSearch.IsFinished())
                         {
                             // Store the valid placements for the current rotation
-                            bool valid = containment.IsRepresentative();
+                            bool valid = placementSearch.IsRepresentative();
                             SetValidPlacement(rotation, valid && IsValidPlacement(rotation));
                             if (IsValidPlacement(rotation))
                                 SetMainColor(ColorData.Particle_Green);
@@ -758,9 +758,9 @@ namespace AS2.Algos.SCStarConvexShapes
                         else
                         {
                             PinConfiguration pc = GetContractedPinConfiguration();
-                            containment.SetupPC(pc);
+                            placementSearch.SetupPC(pc);
                             SetPlannedPinConfiguration(pc);
-                            containment.ActivateSend();
+                            placementSearch.ActivateSend();
                         }
                     }
                     break;
@@ -899,7 +899,7 @@ namespace AS2.Algos.SCStarConvexShapes
                             else if (round == 24)
                             {
                                 // Go to waiting round and let amoebots know whether we are finished or
-                                // have to start the next containment check
+                                // have to start the next placement search
                                 PinConfiguration pc = GetContractedPinConfiguration();
                                 SetupGlobalCircuits(pc);
                                 SetPlannedPinConfiguration(pc);
@@ -934,7 +934,7 @@ namespace AS2.Algos.SCStarConvexShapes
                         }
                         else if (pc.ReceivedBeepOnPartitionSet(1))
                         {
-                            // Start next containment check
+                            // Start next placement search
                             shapeIdx.SetValue(0);
                             rotation.SetValue(0);
                             for (int r = 0; r < 6; r++)
@@ -952,7 +952,7 @@ namespace AS2.Algos.SCStarConvexShapes
                     }
                     break;
 
-                // CONTAINMENT CHECK IN BINARY SEARCH
+                // PLACEMENT SEARCH IN BINARY SEARCH
                 // Uses almost the same code as before
 
                 // SHAPE CONSTRUCTION
@@ -1252,12 +1252,12 @@ namespace AS2.Algos.SCStarConvexShapes
         }
 
         /// <summary>
-        /// Helper to initialize and start the shape containment subroutine
+        /// Helper to initialize and start the placement search subroutine
         /// for the correct constituent shape.
         /// </summary>
         /// <param name="useScaledShapeBits">Whether the scaled shape bits or
         /// the scale 1 shape bits should be used.</param>
-        private void StartShapeContainmentCheck(bool useScaledShapeBits = true)
+        private void StartValidPlacementSearch(bool useScaledShapeBits = true)
         {
             Direction counterPred = Direction.NONE;
             Direction counterSucc = Direction.NONE;
@@ -1280,17 +1280,17 @@ namespace AS2.Algos.SCStarConvexShapes
                     _msbs[i] = useScaledShapeBits ? ScaledShapeMSB(i) : ShapeParamMSB(shapeParam);
                 }
 
-                containment.Init(shapeType, shapeInfo.directionW, shapeInfo.directionH, rotation, true, !IsValidPlacement(rotation), false, Direction.NONE,
+                placementSearch.Init(shapeType, shapeInfo.directionW, shapeInfo.directionH, rotation, true, !IsValidPlacement(rotation), false, Direction.NONE,
                     counterPred, counterSucc, _bits[0], _msbs[0], _bits[1], _msbs[1], _bits[2], _msbs[2], _bits[3], _msbs[3], _bits[4], _msbs[4]);
             }
             else
             {
-                containment.Init(shapeType, shapeInfo.directionW, shapeInfo.directionH, rotation, true, !IsValidPlacement(rotation));
+                placementSearch.Init(shapeType, shapeInfo.directionW, shapeInfo.directionH, rotation, true, !IsValidPlacement(rotation));
             }
             PinConfiguration pc = GetContractedPinConfiguration();
-            containment.SetupPC(pc);
+            placementSearch.SetupPC(pc);
             SetPlannedPinConfiguration(pc);
-            containment.ActivateSend();
+            placementSearch.ActivateSend();
         }
 
         /// <summary>
@@ -1483,7 +1483,7 @@ namespace AS2.Algos.SCStarConvexShapes
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(string shapeFile = "starConvexShape.json",
+        public void Generate(string shapeFile = "star_convex_1.json",
             int numAmoebots = 150, float holeProb = 0.1f, bool fillHoles = false, bool prioritizeInner = true, float lambda = 0.25f)
         {
             // Read the given shape from its file

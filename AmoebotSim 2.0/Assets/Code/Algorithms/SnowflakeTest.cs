@@ -5,13 +5,13 @@ using AS2.ShapeContainment;
 using UnityEngine;
 using static AS2.Constants;
 
-using AS2.Subroutines.SnowflakeContainment;
+using AS2.Subroutines.SnowflakePlacementSearch;
 
 namespace AS2.Algos.SnowflakeTest
 {
 
     /// <summary>
-    /// Simple algorithm for testing the snowflake containment check.
+    /// Simple algorithm for testing the snowflake placement search.
     /// <para>
     /// <b>Disclaimer: The save/load feature does not work for
     /// this algorithm because it stores the target shape in a
@@ -66,7 +66,7 @@ namespace AS2.Algos.SnowflakeTest
         public static int scaleFactor;
         public static SnowflakeInfo snowflakeInfo;
 
-        SubSnowflakeContainment snowflakeCheck;
+        SubSnowflakePlacementSearch snowflakeCheck;
 
         public SnowflakeTestParticle(Particle p) : base(p)
         {
@@ -83,7 +83,7 @@ namespace AS2.Algos.SnowflakeTest
                 validPlacement[i] = CreateAttributeBool("Valid Placement " + i, false);
             }
 
-            snowflakeCheck = new SubSnowflakeContainment(p, snowflakeInfo);
+            snowflakeCheck = new SubSnowflakePlacementSearch(p, snowflakeInfo);
 
             // Also, set the default initial color
             SetMainColor(ColorData.Particle_Black);

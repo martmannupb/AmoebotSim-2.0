@@ -8,11 +8,11 @@ using AS2.Subroutines.BinStateHelpers;
 using AS2.Subroutines.PASC;
 using AS2.Subroutines.SegmentShift;
 
-namespace AS2.Subroutines.SnowflakeContainment
+namespace AS2.Subroutines.SnowflakePlacementSearch
 {
 
     /// <summary>
-    /// Container class storing all information required by the containment check
+    /// Container class storing all information required by the placement search
     /// for snowflake shapes.
     /// </summary>
     public class SnowflakeInfo
@@ -41,12 +41,12 @@ namespace AS2.Subroutines.SnowflakeContainment
     }
 
     /// <summary>
-    /// Containment check procedure for snowflake shapes.
+    /// Valid placement search procedure for snowflake shapes.
     /// <para>
     /// The snowflake must be described by a <see cref="SnowflakeInfo"/> instance.
     /// The instance contains a dependency graph as well as a list of arm lengths
     /// that occur in the shape. This allows us to drastically reduce the runtime
-    /// of the containment check because we can check all 6 rotations at the same
+    /// of the placement search because we can check all 6 rotations at the same
     /// time and minimize the number of distance checks.
     /// </para>
     /// <para>
@@ -426,7 +426,7 @@ namespace AS2.Subroutines.SnowflakeContainment
     //  - Receive last two rotation beeps and update final result
     //  - Terminate with success or failure (based on whether there are any valid rotations left)
 
-    public class SubSnowflakeContainment : Subroutine
+    public class SubSnowflakePlacementSearch : Subroutine
     {
         enum ComparisonResult
         {
@@ -494,7 +494,7 @@ namespace AS2.Subroutines.SnowflakeContainment
 
         SnowflakeInfo snowflakeInfo;
 
-        public SubSnowflakeContainment(Particle p, SnowflakeInfo snowflakeInfo,
+        public SubSnowflakePlacementSearch(Particle p, SnowflakeInfo snowflakeInfo,
             SubBinOps binop = null, SubPASC2[] pasc = null) : base(p)
         {
             this.snowflakeInfo = snowflakeInfo;
@@ -1938,4 +1938,4 @@ namespace AS2.Subroutines.SnowflakeContainment
         }
     }
 
-} // namespace AS2.Subroutines.SnowflakeContainment
+} // namespace AS2.Subroutines.SnowflakePlacementSearch

@@ -6,11 +6,11 @@ using AS2.Subroutines.BinStateHelpers;
 using AS2.Subroutines.PASC;
 using AS2.ShapeContainment;
 
-namespace AS2.Subroutines.ConvexShapeContainment
+namespace AS2.Subroutines.ConvexShapePlacementSearch
 {
 
     /// <summary>
-    /// Shape containment check for triangles, trapezoids and pentagons.
+    /// Valid placement search for triangles, trapezoids and pentagons.
     /// Finds all valid placements for the given shape extending in the
     /// given directions for the side lengths given in a binary counter,
     /// rotated by the specified amount.
@@ -1434,4 +1434,4 @@ namespace AS2.Subroutines.ConvexShapeContainment
         }
     }
 
-} // namespace AS2.Subroutines.ConvexShapeContainment
+} // namespace AS2.Subroutines.ConvexShapePlacementSearch
