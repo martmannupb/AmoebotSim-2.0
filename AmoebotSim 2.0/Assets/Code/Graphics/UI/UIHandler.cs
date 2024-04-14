@@ -190,11 +190,6 @@ namespace AS2.UI
                 // Back
                 Button_StepBackPressed();
             }
-            if (Input.GetKeyDown(KeyCode.H))
-            {
-                // Toggle UI visibility
-                ToggleUI();
-            }
             // Shift + ...
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
@@ -217,6 +212,11 @@ namespace AS2.UI
                 {
                     // Frame system
                     Button_FrameSystemPressed();
+                }
+                if (Input.GetKeyDown(KeyCode.H))
+                {
+                    // Toggle UI visibility
+                    ToggleUI();
                 }
                 if (Input.GetKeyDown(KeyCode.V))
                 {
