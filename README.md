@@ -1,6 +1,6 @@
 # AmoebotSim 2.0 Repository
 
-**Implementation: On The Shape Containment Problem within the Amoebot Model with Reconfigurable Circuits**
+**Implementation for the Master's Thesis: On The Shape Containment Problem within the Amoebot Model with Reconfigurable Circuits, written by Matthias Artmann**
 
 This branch contains the program code belonging to the thesis, consisting of implementations of the major algorithms in the *AmoebotSim 2.0* simulation environment and a helper script for creating input shapes.
 
