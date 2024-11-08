@@ -38,7 +38,7 @@ namespace AS2.Subroutines.PASC
     /// </para>
     /// <para>
     /// Usage:<br/>
-    /// After initializing the subroutine, call <see cref="SetupPC(PinConfiguration)"/>
+    /// After initializing the subroutine, call <see cref="SetupPC(PinConfiguration, List{Direction})"/>
     /// to make each amoebot establish its partition sets. This does not plan the pin
     /// configuration yet, in the case that other changes are required. You can then call
     /// <see cref="ActivateSend"/> (after planning the pin configuration) to send the beeps.
@@ -62,10 +62,10 @@ namespace AS2.Subroutines.PASC
     /// may be shorter than the PASC result (i.e., the compared sequence has a lower most
     /// significant bit than the number of PASC iterations), you can perform a cutoff to
     /// save a few rounds as follows:<br/>
-    /// Instead of calling <see cref="SetupPC(PinConfiguration)"/>, call
-    /// <see cref="SetupCutoffCircuit(PinConfiguration)"/> and plan the resulting pin
-    /// configuration. This will setup a circuit where all active non-leader amoebots
-    /// disconnect their predecessors. After planning the pin configuration, call
+    /// Instead of calling <see cref="SetupPC(PinConfiguration, List{Direction})"/>, call
+    /// <see cref="SetupCutoffCircuit(PinConfiguration, List{Direction})"/> and plan the
+    /// resulting pin configuration. This will setup a circuit where all active non-leader
+    /// amoebots disconnect their predecessors. After planning the pin configuration, call
     /// <see cref="SendCutoffBeep"/> instead of <see cref="ActivateSend"/> (but call
     /// it on all amoebots, not just the leader). This will make the active non-leader
     /// amoebots send a beep to their successor on both circuits, causing all amoebots
@@ -79,7 +79,7 @@ namespace AS2.Subroutines.PASC
     /// <see cref="ActivateReceive"/>. The result of <see cref="GetReceivedBit"/> will be
     /// <c>1</c> if the amoebot has received the cutoff bit, and <c>0</c> otherwise.<br/>
     /// Afterwards, it is still possible to continue the PASC procedure where it was
-    /// interrupted, starting with <see cref="SetupPC(PinConfiguration)"/>.
+    /// interrupted, starting with <see cref="SetupPC(PinConfiguration, List{Direction})"/>.
     /// </para>
     /// </summary>
     public class SubPASC2 : Subroutine
@@ -381,7 +381,7 @@ namespace AS2.Subroutines.PASC
         /// cutoff beep that is received by all amoebots that will
         /// receive at least one 1-bit in a future PASC iteration.
         /// Must only be called after the final pin configuration
-        /// setup by <see cref="SetupCutoffCircuit(PinConfiguration)"/>
+        /// setup by <see cref="SetupCutoffCircuit(PinConfiguration, List{Direction})"/>
         /// has been planned.
         /// </summary>
         public void SendCutoffBeep()
