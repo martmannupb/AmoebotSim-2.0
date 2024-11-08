@@ -45,7 +45,7 @@ namespace AS2.UI
         private void Start()
         {
             // Set References
-            uiHandler = FindObjectOfType<UIHandler>();
+            uiHandler = FindAnyObjectByType<UIHandler>();
             if (uiHandler == null) Log.Error("Could not find UIHandler.");
             // Init
             settingsPanel.SetActive(false);
