@@ -6,17 +6,17 @@ After [installing Unity](unity.md), you can setup the simulator project.
 
 ### 1. Import the Project
 
-- Clone the repository (https://git.cs.uni-paderborn.de/padalkin/amoebotsim2.0) into a new folder
+- Clone the repository (https://git.cs.uni-paderborn.de/martmann/amoebotsim2.0) into a new folder
 	- **Using the command line:**
-		- Run `git clone https://git.cs.uni-paderborn.de/padalkin/amoebotsim2.0.git`
-		- If you get the error message `warning: remote HEAD refers to nonexistent ref, unable to checkout.`:
-			- Navigate into the cloned repository (this will now only contain the `.git/` directory)
+		- Run `git clone https://git.cs.uni-paderborn.de/martmann/amoebotsim2.0`
+		- If you get the error message `warning: remote HEAD refers to nonexistent ref, unable to checkout.` or the repository is empty:
+			- Navigate into the cloned repository (this may now only contain the `.git/` directory)
 			- Run `git checkout master`
 			- Now, the repository should be set up correctly (it should contain at least the `AmoebotSim 2.0/` directory)
 	- **Using Visual Studio:**
 		- Open a new instance of Visual Studio and select "Clone a repository"
 			<img src="~/images/vs_clone_repo.png" alt="Clone a repository in Visual Studio" title="Clone a repository in Visual Studio" width="300"/>
-		- Enter the link `https://git.cs.uni-paderborn.de/padalkin/amoebotsim2.0.git` and choose a location for the repository, then click "Clone"
+		- Enter the link `https://git.cs.uni-paderborn.de/martmann/amoebotsim2.0` and choose a location for the repository, then click "Clone"
 		- Visual Studio should now clone the repository and display the git window
 			<img src="~/images/vs_git.png" alt="The Git window of Visual Studio" title="The Git window of Visual Studio" width="300"/>
 		- Open the repository in your file browser and check if it contains the `AmoebotSim 2.0/` directory
@@ -25,7 +25,7 @@ After [installing Unity](unity.md), you can setup the simulator project.
 				<img src="~/images/vs_git_checkout.png" alt="Checkout origin/master" title="Checkout origin/master" width="400"/>
 			- You can ignore the files created in `.vs/`
 - Add the project to Unity Hub
-	- Open Unity Hub and select "Open" > "Add project from disk" in the "Projects" tab
+	- Open Unity Hub and select "Add" > "Add project from disk" in the "Projects" tab
 		<img src="~/images/unity_add_project.png" alt="Add project from disk" title="Add project from disk" width="400"/>
 	- Find the folder containing the repository, select the subfolder `AmoebotSim 2.0/` and click "Add project"
 	- The project should now be listed in Unity Hub with the correct Editor version number next to it
@@ -36,6 +36,9 @@ After [installing Unity](unity.md), you can setup the simulator project.
 
 ### 2. Test the Project
 - When the project has finished loading, you should see the Unity Editor interface:
+	> [!NOTE]
+	> The screenshots show an older Unity version's UI. There may be minor differences.
+
 	![Unity Editor Interface](~/images/editor_overview.png "The Unity Editor Interface")
 	The Editor is explained in more detail in the [User Guide](~/user_guide/home.md).
 - To run the simulator, you may have to open the correct *Scene* first

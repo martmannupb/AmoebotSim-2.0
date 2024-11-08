@@ -973,7 +973,7 @@ namespace AS2.Visuals
         /// <param name="pSet">The partition set whose lines should be added.</param>
         /// <param name="posPartitionSet1">The global position of the
         /// partition set handle in the particle's head.</param>
-        /// <param name="posPartitionSet1">The global position of the
+        /// <param name="posPartitionSet2">The global position of the
         /// partition set handle in the particle's tail.</param>
         /// <param name="delayed">Whether the partition set and its lines should
         /// be displayed after a delay.</param>
