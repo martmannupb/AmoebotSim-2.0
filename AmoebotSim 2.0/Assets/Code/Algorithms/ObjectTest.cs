@@ -54,6 +54,8 @@ namespace AS2.Algos.ObjectTest
                 Expand(Direction.E);
                 return;
 
+                /* Amoebot expands away from an object to test anchor functionality for objects
+
                 // Find a direction into which we can expand
                 Direction objDir = Direction.NONE;
                 for (int i = 0; i < 6; i++)
@@ -81,6 +83,8 @@ namespace AS2.Algos.ObjectTest
                             MarkBond(d);
                     Expand(objDir);
                 }
+
+                */
             }
             else
             {

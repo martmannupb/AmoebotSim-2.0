@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -170,6 +171,16 @@ namespace AS2
         }
 
         public static bool operator !=(CellRect lhs, CellRect rhs) => !(lhs == rhs);
+
+        public override bool Equals(object obj)
+        {
+            return obj is CellRect rect && this == (CellRect)obj;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(minX, minY, maxX, maxY);
+        }
 
 
 
