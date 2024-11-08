@@ -53,8 +53,10 @@ namespace AS2.Visuals
         /// particle is not moving.</returns>
         public static Material GetPinBorderMaterial(int pinsPerSide, ViewType viewType)
         {
-            if (viewType == ViewType.Hexagonal && pinBorderHexMaterials.ContainsKey(pinsPerSide)) return pinBorderHexMaterials[pinsPerSide];
-            if (viewType == ViewType.HexagonalCirc && pinBorderHexCircMaterials.ContainsKey(pinsPerSide)) return pinBorderHexCircMaterials[pinsPerSide];
+            if (viewType == ViewType.Hexagonal && pinBorderHexMaterials.TryGetValue(pinsPerSide, out Material m1))
+                return m1;
+            if (viewType == ViewType.HexagonalCirc && pinBorderHexCircMaterials.TryGetValue(pinsPerSide, out Material m2))
+                return m2;
 
             // Create Material
             Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
@@ -97,8 +99,10 @@ namespace AS2.Visuals
         /// <paramref name="viewType"/>.</returns>
         public static Material GetHexagonWithPinsMaterial(int pinsPerSide, ViewType viewType)
         {
-            if (viewType == ViewType.Hexagonal && hexagonMaterials.ContainsKey(pinsPerSide)) return hexagonMaterials[pinsPerSide];
-            if (viewType == ViewType.HexagonalCirc && hexagonCircMaterials.ContainsKey(pinsPerSide)) return hexagonCircMaterials[pinsPerSide];
+            if (viewType == ViewType.Hexagonal && hexagonMaterials.TryGetValue(pinsPerSide, out Material m1))
+                return m1;
+            if (viewType == ViewType.HexagonalCirc && hexagonCircMaterials.TryGetValue(pinsPerSide, out Material m2))
+                return m2;
 
             // Create Material
             Material hexMat = MaterialDatabase.material_hexagonal_particleCombined;
@@ -142,17 +146,25 @@ namespace AS2.Visuals
         {
             if(viewType == ViewType.Hexagonal)
             {
-                if (isTex1 && omit3Pins && pinBorderTextures3Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins1[pinsPerSide];
-                if (isTex1 && !omit3Pins && pinBorderTextures5Pins1.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins1[pinsPerSide];
-                if (!isTex1 && omit3Pins && pinBorderTextures3Pins2.ContainsKey(pinsPerSide)) return pinBorderTextures3Pins2[pinsPerSide];
-                if (!isTex1 && !omit3Pins && pinBorderTextures5Pins2.ContainsKey(pinsPerSide)) return pinBorderTextures5Pins2[pinsPerSide];
+                if (isTex1 && omit3Pins && pinBorderTextures3Pins1.TryGetValue(pinsPerSide, out Texture2D t1))
+                    return t1;
+                if (isTex1 && !omit3Pins && pinBorderTextures5Pins1.TryGetValue(pinsPerSide, out Texture2D t2))
+                    return t2;
+                if (!isTex1 && omit3Pins && pinBorderTextures3Pins2.TryGetValue(pinsPerSide, out Texture2D t3))
+                    return t3;
+                if (!isTex1 && !omit3Pins && pinBorderTextures5Pins2.TryGetValue(pinsPerSide, out Texture2D t4))
+                    return t4;
             }
             else if(viewType == ViewType.HexagonalCirc)
             {
-                if (isTex1 && omit3Pins && pinBorderCircTextures3Pins1.ContainsKey(pinsPerSide)) return pinBorderCircTextures3Pins1[pinsPerSide];
-                if (isTex1 && !omit3Pins && pinBorderCircTextures5Pins1.ContainsKey(pinsPerSide)) return pinBorderCircTextures5Pins1[pinsPerSide];
-                if (!isTex1 && omit3Pins && pinBorderCircTextures3Pins2.ContainsKey(pinsPerSide)) return pinBorderCircTextures3Pins2[pinsPerSide];
-                if (!isTex1 && !omit3Pins && pinBorderCircTextures5Pins2.ContainsKey(pinsPerSide)) return pinBorderCircTextures5Pins2[pinsPerSide];
+                if (isTex1 && omit3Pins && pinBorderCircTextures3Pins1.TryGetValue(pinsPerSide, out Texture2D t1))
+                    return t1;
+                if (isTex1 && !omit3Pins && pinBorderCircTextures5Pins1.TryGetValue(pinsPerSide, out Texture2D t2))
+                    return t2;
+                if (!isTex1 && omit3Pins && pinBorderCircTextures3Pins2.TryGetValue(pinsPerSide, out Texture2D t3))
+                    return t3;
+                if (!isTex1 && !omit3Pins && pinBorderCircTextures5Pins2.TryGetValue(pinsPerSide, out Texture2D t4))
+                    return t4;
             }
 
             // Create Texture
@@ -168,13 +180,18 @@ namespace AS2.Visuals
             // Metadata
             Vector2Int texCenterPixel = new Vector2Int(tex_width / 2, tex_height / 2);
 
+            // Get the pixel data for faster reading and writing
+            Color[] texPixels = tex.GetPixels();
+            Color[] pinPixels = pinTexture.GetPixels();
+
             // Make Tex Transparent
             Color colorTransparent = new Color(0f, 0f, 0f, 0f);
-            for (int x = 0; x < tex_width; x++)
+            for (int y = 0; y < tex_height; y++)
             {
-                for (int y = 0; y < tex_height; y++)
+                int yy = y * tex_width;
+                for (int x = 0; x < tex_width; x++)
                 {
-                    tex.SetPixel(x, y, colorTransparent);
+                    texPixels[x + yy] = colorTransparent;
                 }
             }
 
@@ -229,11 +246,12 @@ namespace AS2.Visuals
             }
 
             // Now add the pins to the texture
-            for (int x = 0; x < pin_tex_width; x++)
+            for (int y = 0; y < pin_tex_height; y++)
             {
-                for (int y = 0; y < pin_tex_height; y++)
+                int yy = y * pin_tex_width;
+                for (int x = 0; x < pin_tex_width; x++)
                 {
-                    Color pinTexturePixel = pinTexture.GetPixel(x, y);
+                    Color pinTexturePixel = pinPixels[x + yy];
                     if (pinTexturePixel.a > 0.1f)
                     {
                         foreach (Vector2Int startPos in pinStartPositions)
@@ -241,13 +259,14 @@ namespace AS2.Visuals
                             int texPos_x = startPos.x + x;
                             int texPos_y = startPos.y + y;
                             if (texPos_x >= 0 && texPos_x < tex_width && texPos_y >= 0 && texPos_y < tex_height)
-                                tex.SetPixel(texPos_x, texPos_y, pinTexturePixel);
+                                texPixels[texPos_x + texPos_y * tex_width] = pinTexturePixel;
                         }
                     }
                 }
             }
 
             // Apply
+            tex.SetPixels(texPixels);
             tex.Apply();
 
             // Add Texture to Data
@@ -326,19 +345,25 @@ namespace AS2.Visuals
             // Metadata
             Vector2Int texCenterPixel = new Vector2Int(tex_width / 2, tex_height / 2);
 
+            // Get the pixel data for faster reading and writing
+            Color[] texColors = tex.GetPixels();
+            Color[] hexColors = viewType == ViewType.Hexagonal ? hexagonTexture.GetPixels() : hexagonCircTexture.GetPixels();
+            Color[] pinColors = pinTexture.GetPixels();
+
             // Fill Tex with Hexagon/HexagonCirc Tex
-            for (int x = 0; x < tex_width; x++)
+            for (int y = 0; y < tex_height; y++)
             {
-                for (int y = 0; y < tex_height; y++)
+                int yy = y * tex_width;
+                for (int x = 0; x < tex_width; x++)
                 {
-                    Color pixel = viewType == ViewType.Hexagonal ? hexagonTexture.GetPixel(x, y) : hexagonCircTexture.GetPixel(x, y);
+                    Color pixel = hexColors[x + yy];
 
                     // Replace black border with custom color
                     float alpha = pixel.a;
                     Color gray = ColorData.particleBorderColor;
                     pixel = (1.0f - pixel.grayscale) * gray + pixel.grayscale * pixel;
                     pixel.a = alpha;
-                    tex.SetPixel(x, y, pixel);
+                    texColors[x + yy] = pixel;
                 }
             }
 
@@ -386,11 +411,13 @@ namespace AS2.Visuals
             }
 
             // Now add the pins to the texture
-            for (int x = 0; x < pin_tex_width; x++)
+            for (int y = 0; y < pin_tex_height; y++)
             {
-                for (int y = 0; y < pin_tex_height; y++)
+                int yy = y * pin_tex_width;
+                for (int x = 0; x < pin_tex_width; x++)
                 {
-                    Color colorPin = pinTexture.GetPixel(x, y);
+                    //Color colorPin = pinTexture.GetPixel(x, y);
+                    Color colorPin = pinColors[x + yy];
                     foreach (Vector2Int startPos in pinStartPositions)
                     {
                         int texPos_x = startPos.x + x;
@@ -399,17 +426,18 @@ namespace AS2.Visuals
                         {
                             // Merge Textures (based on overlay alpha)
                             // Get color to merge with
-                            Color colorBase = tex.GetPixel(texPos_x, texPos_y);
+                            Color colorBase = texColors[texPos_x + texPos_y * tex_width];
                             // Calculate final color (interpolate between colors)
                             Color colorNew = new Color(Mathf.Lerp(colorBase.r, colorPin.r, colorPin.a), Mathf.Lerp(colorBase.g, colorPin.g, colorPin.a), Mathf.Lerp(colorBase.b, colorPin.b, colorPin.a), colorBase.a + (1f - colorBase.a) * colorPin.a);
                             // Set color
-                            tex.SetPixel(texPos_x, texPos_y, colorNew);
+                            texColors[texPos_x + texPos_y * tex_width] = colorNew;
                         }
                     }
                 }
             }
 
             // Apply
+            tex.SetPixels(texColors);
             tex.Apply();
 
             // Add Texture to Data

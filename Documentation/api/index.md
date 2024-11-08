@@ -11,8 +11,8 @@ For algorithm developers, the most important classes are:
 
 
 > [!NOTE]
-> This generated documentation contains only comments for `public` classes and methods.
-> The source files may contain more information than what is visible here.
+> This generated documentation is built from the special doc comments for classes and their members.
+> The source files may contain more information in additional comments than what is visible here.
 
 
 

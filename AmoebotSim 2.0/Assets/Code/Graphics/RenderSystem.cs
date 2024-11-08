@@ -140,7 +140,7 @@ namespace AS2.Visuals
         /// <summary>
         /// The global scaling factor for particles.
         /// </summary>
-        public static float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");
+        public static readonly float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");
 
         // Dynamic Params _____
         /// <summary>

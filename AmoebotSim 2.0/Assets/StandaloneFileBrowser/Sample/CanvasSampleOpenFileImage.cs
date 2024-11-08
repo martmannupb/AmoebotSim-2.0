@@ -7,6 +7,8 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using SFB;
 
+/*
+
 [RequireComponent(typeof(Button))]
 public class CanvasSampleOpenFileImage : MonoBehaviour, IPointerDownHandler {
     public RawImage output;
@@ -51,3 +53,5 @@ public class CanvasSampleOpenFileImage : MonoBehaviour, IPointerDownHandler {
         output.texture = loader.texture;
     }
 }
+
+*/
