@@ -230,7 +230,7 @@ namespace AS2.Subroutines.PASC
                     firstSuccDir = dir;
                 if (t == NbrType.NEIGHBOR && firstNbrDir == Direction.NONE)
                     firstNbrDir = dir;
-                
+
                 // Determine which pins to add
                 int pin1 = pin1Orig;
                 int pin2 = pin2Orig;

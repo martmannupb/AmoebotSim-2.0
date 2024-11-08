@@ -5935,6 +5935,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6363829623090433620, guid: 7d13bad9a2083de4ca85dda499831c7c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6363829623161599938, guid: 7d13bad9a2083de4ca85dda499831c7c, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -5961,6 +5965,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6363829623815027858, guid: 7d13bad9a2083de4ca85dda499831c7c, type: 3}
       propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6363829623815027858, guid: 7d13bad9a2083de4ca85dda499831c7c, type: 3}
+      propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -11078,7 +11086,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c15908e87a2379544be2285b07af258f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  message: Take screenshot (Shift + V; Press H to toggle UI)
+  message: Take screenshot (Shift + V; Press Shift + H to toggle UI)
 --- !u!1 &669458143
 GameObject:
   m_ObjectHideFlags: 0
@@ -13420,7 +13428,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1496484896}
   m_Direction: 2
   m_Value: 0.012048192
-  m_Size: 0.9999946
+  m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
