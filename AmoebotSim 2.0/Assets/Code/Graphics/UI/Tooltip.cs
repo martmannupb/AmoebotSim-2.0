@@ -15,7 +15,8 @@ namespace AS2.UI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            TooltipHandler.Instance.Open(message);
+            if (message is not null && message.Length > 0)
+                TooltipHandler.Instance.Open(message);
         }
 
         public void OnPointerExit(PointerEventData eventData)

@@ -115,7 +115,7 @@ From their local views, they are pushing their neighbors away while expanding th
 
 > [!NOTE]
 > As of version 1.5 of the simulation environment, an [object](~/model_ref/objects.md) can also become the anchor of the system.
-> Marking the anchor object in the UI works similarly by selecting the object and clikcing the small anchor button.
+> Marking the anchor object in the UI works similarly by selecting the object and clicking the small anchor button.
 > Particles neighboring an object also have the ability to turn the object into the anchor programmatically.
 
 

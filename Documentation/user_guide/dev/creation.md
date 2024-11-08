@@ -58,6 +58,7 @@ The first two lines of the file include the [`AS2.Sim`][10] and the `UnityEngine
 [`AS2.Sim`][10] contains classes and methods belonging to the algorithm and simulation API that are necessary for implementing an Amoebot algorithm, like the [`ParticleAlgorithm`][1] class.
 The `UnityEngine` namespace provides the Unity Editor logging system (accessed using `Debug.Log`) and random number generation (via `Random.Range`, for example).
 See [Advanced Features](advanced.md) for details.
+The third line includes the static [`Constants`][12] class, giving access to some constant values helping to make the code easier to read.
 
 The rest of the code is contained in a namespace called `AS2.Algos.<YourAlgoBaseName>`.
 Every Amoebot algorithm should be contained in its own namespace within `AS2.Algos` to separate it from the other algorithms.
@@ -209,3 +210,4 @@ The [Implementation Walkthrough](demo.md) provides an example for how this syste
 [9]: xref:AS2.Sim.ParticleSystem
 [10]: xref:AS2.Sim
 [11]: xref:AS2
+[12]: xref:AS2.Constants

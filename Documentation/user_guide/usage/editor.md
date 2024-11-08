@@ -3,6 +3,9 @@
 Since AmoebotSim 2.0 is developed with Unity, you will need a basic understanding of the Unity Editor to use it.
 There are much more in-depth tutorials on the [official Unity tutorial websites](https://learn.unity.com/tutorials), but the following short overview should suffice for most use cases.
 
+> [!NOTE]
+> The screenshots on the User Guide pages were taken in an older Unity version. The UI layout in newer versions may be slightly different.
+
 
 ## The Editor Interface
 

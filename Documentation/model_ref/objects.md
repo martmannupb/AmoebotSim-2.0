@@ -91,7 +91,7 @@ It is not possible to specify which bonds of an object are released; it will alw
 [2]: xref:AS2.InitializationMethod.CreateObject(Vector2Int,System.Int32)
 [3]: xref:AS2.Sim.ParticleObject
 [4]: xref:AS2.Sim.ParticleObject.AddPosition(Vector2Int)
-[5]: xref:AS2.InitializationMethod.AddObjectToSystem(ParticleObject)
+[5]: xref:AS2.InitializationMethod.AddObjectToSystem(AS2.Sim.ParticleObject)
 [6]: xref:AS2.Sim.ParticleObject.MovePosition(Vector2Int)
 [7]: xref:AS2.Sim.ParticleObject.MoveTo(Vector2Int)
 [8]: xref:AS2.Sim.ParticleAlgorithm.HasNeighborAt(AS2.Direction,System.Boolean)

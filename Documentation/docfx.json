@@ -15,7 +15,9 @@
             "disableGitFeatures": false,
             //"disableDefaultFilter": true,
             "filter": "filterConfig.yml",
-            "globalNamespaceId": "Global"
+            "globalNamespaceId": "Global",
+            "allowCompilationErrors": true,
+            "includePrivateMembers": true
         }
     ],
     "build": {
@@ -79,7 +81,7 @@
         "dest": "_site",
         "globalMetadata": {
             "_appTitle": "AmoebotSim 2.0",
-            "_appFooter": "AmoebotSim 2.0 Documentation v1.0",
+            "_appFooter": "AmoebotSim 2.0 Documentation v1.1",
             "_enableSearch": true
         },
         "globalMetadataFiles": [],

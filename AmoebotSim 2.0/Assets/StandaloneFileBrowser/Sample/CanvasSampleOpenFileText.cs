@@ -7,6 +7,8 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using SFB;
 
+/*
+
 [RequireComponent(typeof(Button))]
 public class CanvasSampleOpenFileText : MonoBehaviour, IPointerDownHandler {
     public Text output;
@@ -51,3 +53,5 @@ public class CanvasSampleOpenFileText : MonoBehaviour, IPointerDownHandler {
         output.text = loader.text;
     }
 }
+
+*/

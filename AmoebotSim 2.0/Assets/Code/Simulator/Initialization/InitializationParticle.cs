@@ -289,6 +289,11 @@ namespace AS2.Sim
             return system.SetAnchor(this);
         }
 
+        public string AlgorithmName()
+        {
+            return system.sim.uiHandler.initializationUI.GetSelectedAlgorithmName();
+        }
+
         // Added by Tobias (put it where you like) ____________________________
 
         public IParticleGraphicsAdapter GetGraphicsAdapter()

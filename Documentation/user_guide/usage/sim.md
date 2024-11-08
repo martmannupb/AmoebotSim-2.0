@@ -115,7 +115,7 @@ Once the collision check is disabled, the simulation can proceed and will "forge
 
 The Settings Panel is opened by pressing the Top Bar button with the gear icon, which is the second-last button in the Top Bar.
 It will appear on the right side of the UI, where the Initialization Panel is in Init Mode.
-The panel contains some advanced camera controls and visualization options.
+The panel contains some advanced camera controls, visualization options and other settings.
 
 ### Camera Controls
 
@@ -164,19 +164,38 @@ When the application is built and run as a standalone outside the Unity Editor, 
 It is recommended to run the application in fullscreen mode.
 This setting has no effect when the simulator runs in the Unity Editor.
 
+### Other
+
+**Tooltips**  
+This setting toggles the tooltip feature.
+While tooltips are enabled, placing the cursor over a button and keeping it still for a short time will display a helpful tooltip.
+
+**Beep Failure Prob.**  
+Here, you can set the probability of beep failures (TODO: Reference).
+The value can be changed at any time but it will not have an effect while replaying already simulated rounds.
+
+**Save Settings**  
+Press this button to store the current settings in the [configuration file](config.md).
+
 
 <img src="~/images/particle_panel_sim.png" alt="Particle Panel (Simulation Mode)" title="Particle Panel (Simulation Mode)" width="200" align="right"/>
 
 ## Particle Panel
 
 The Particle Panel is available by clicking a particle with the Selection tool activated, both in Simulation and Init Mode.
-The difference between the two modes is that the panel now displays the [*particle attributes*](~/model_ref/attrs.md) instead of the particle's initialization parameters.
+The difference between the two modes is that the panel now displays the [*particle attributes*](~/model_ref/attrs.md) instead of the particle's initialization parameters, and it shows the algorithm's status info buttons (see below).
 Note that although the same algorithm as in the Init Mode example is selected (Line Formation), the Particle Panel displays different content.
 
 The only content that is displayed in both modes are the chirality and compass direction, which are neither initialization parameters nor particle attributes.
 In Simulation Mode, their values cannot be changed anymore.
 The attribute values as well as the Anchor state (the little button left of the "Particle" text) can only be edited when the simulation state is in the latest round of the history.
 If you want to change a particle's state in an earlier round, you will need to cut off the rest of the history.
+
+Above the attributes, you can now find the *status info buttons* of the algorithm.
+Pressing these buttons will run some method defined by the current algorithm that usually displays some additional information, like the spanning tree in the line formation algorithm.
+The result may depend on the currently selected particle.
+If the toggle next to a status info button is active, the corresponding method will be called automatically whenever the round changes.
+You can read more about status info methods on their [model reference page](~/model_ref/status_info.md).
 
 
 ## Hotkeys

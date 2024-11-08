@@ -19,7 +19,8 @@ namespace AS2
         /// </summary>
         private static readonly string template =
     "using AS2.Sim;\n" +
-    "using UnityEngine;\n\n" +
+    "using UnityEngine;\n" +
+    "using static AS2.Constants;\n\n" +
     "namespace {0}\n{{\n\n" +
     "    public class {1} : ParticleAlgorithm\n    {{\n" +
 

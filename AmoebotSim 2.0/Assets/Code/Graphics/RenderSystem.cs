@@ -82,7 +82,13 @@ namespace AS2.Visuals
         /// Fraction of the partition set pin that should be colored
         /// when the partition set is a beep or message origin.
         /// </summary>
-        public const float const_circuitPinBeepSizePercentage = 0.5f;
+        public const float const_circuitPinBeepOriginSizePercentage = 0.5f;
+        /// <summary>
+        /// Fraction of the partition set pin that should be colored
+        /// when the partition set has received a beep or has suffered
+        /// a failure.
+        /// </summary>
+        public const float const_circuitPinBeepHighlightSizePercentage = 0.75f;
         /// <summary>
         /// Width of bond lines in hexagonal view modes.
         /// </summary>
@@ -127,13 +133,14 @@ namespace AS2.Visuals
         public static readonly int renderQueue_circuitBeeps = 2870;
         public static readonly int renderQueue_pins = 2880;
         public static readonly int renderQueue_pinBeeps = 2890;
+        public static readonly int renderQueue_pinFault = 2895;
         public static readonly int renderQueue_overlays = 2900;
 
         // Global Data
         /// <summary>
         /// The global scaling factor for particles.
         /// </summary>
-        public static float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");
+        public static readonly float global_particleScale = MaterialDatabase.material_hexagonal_particleCombined.GetFloat("_Scale");
 
         // Dynamic Params _____
         /// <summary>
@@ -160,14 +167,15 @@ namespace AS2.Visuals
         /// <summary>
         /// Determines whether the outer ring should be drawn
         /// around particles in the graph view mode. Can be
-        /// set in the Settings Panel.
+        /// set in the Settings Panel and the configuration file.
         /// </summary>
-        public static bool flag_showCircuitViewOuterRing = true;
+        public static bool flag_showCircuitViewOuterRing = Config.ConfigData.settingsMenu.drawParticleRing;
         /// <summary>
         /// Determines whether circuit lines between particles
-        /// should have a border. Can be set in the Settings Panel.
+        /// should have a border. Can be set in the Settings Panel
+        /// and the configuration file.
         /// </summary>
-        public static bool flag_circuitBorderActive = false;
+        public static bool flag_circuitBorderActive = Config.ConfigData.settingsMenu.drawCircuitBorder;
 
         // Dynamic Data _____
         /// <summary>
@@ -227,9 +235,10 @@ namespace AS2.Visuals
         public static bool data_circuitBeepRepeatOn = false;
         /// <summary>
         /// Determines whether the movement animations should
-        /// be played. Can be set in the Settings Panel.
+        /// be played. Can be set in the Settings Panel and the
+        /// configuration file.
         /// </summary>
-        public static bool animationsOn = true;
+        public static bool animationsOn = Config.ConfigData.settingsMenu.movementAnimationsOn;
 
         /// <summary>
         /// The time at which the current movement animation

@@ -262,6 +262,23 @@ namespace AS2.Sim
 
         private CollisionChecker.DebugLine[] collisionDebugLines;
 
+        private float beepFailureProb = 0f;
+        /// <summary>
+        /// The probability of a beep not being received on
+        /// each partition set of a particle.
+        /// <para>
+        /// Value is always clamped between 0 and 1.
+        /// </para>
+        /// </summary>
+        public float BeepFailureProb
+        {
+            get { return beepFailureProb; }
+            set
+            {
+                beepFailureProb = Mathf.Clamp01(value);
+            }
+        }
+
 
         /*
          * Initialization mode data structures
@@ -299,7 +316,7 @@ namespace AS2.Sim
         /// <summary>
         /// The name of the selected algorithm in initialization mode.
         /// </summary>
-        private string selectedAlgorithm = "Line Formation";
+        private string selectedAlgorithm = AS2.Algos.LineFormation.LineFormationParticleSync.Name;
 
         /// <summary>
         /// The name of the currently selected algorithm in initialization mode.
@@ -736,6 +753,9 @@ namespace AS2.Sim
                 Log.Debug("Simulation finished.");
                 AmoebotSimulator.instance.PauseSim();
             }
+
+            // Call the automatic status info methods
+            CallAutomaticStatusInfoMethods();
         }
 
         /// <summary>
@@ -2742,12 +2762,23 @@ namespace AS2.Sim
 
                     Circuit circ = circuits[ps.circuit];
 
+                    // If beep failure is enabled: Fail to receive beep and message
+                    // unless they were sent by the particle itself
+                    bool failure = p.HasPsetFailure(ps.Id);
+
                     if (sendBeepsAndMessages)
                     {
-                        if (circ.HasBeep())
+                        // Determine whether a failure occurs
+                        failure = beepFailureProb > 0f && Random.Range(0f, 1f) <= beepFailureProb;
+                        if (failure)
+                            p.LogPsetFailure(ps.Id);
+
+                        // Deliver beeps and messages if no failure has occurred
+                        if (circ.HasBeep() && !failure)
                             p.ReceiveBeep(ps.Id);
+
                         Message msg = circ.GetMessage();
-                        if (msg != null)
+                        if (msg != null && !failure)
                             p.ReceiveMessage(ps.Id, msg);
                     }
 
@@ -2759,9 +2790,9 @@ namespace AS2.Sim
                         ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                         pset.UpdatePSetData(
                             circ.GetColor(),
-                            // TODO: Visualize messages differently?
                             circ.HasBeep() || circ.GetMessage() != null,
                             p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
+                            failure,
                             new ParticlePinGraphicState.PinDef[] { new ParticlePinGraphicState.PinDef(pinDir.ToInt(), pin.globalEdgeOffset, pin.head) });
                         p.gCircuit.singletonSets.Add(pset);
                     }
@@ -2782,9 +2813,9 @@ namespace AS2.Sim
                         ParticlePinGraphicState.PSetData pset = ParticlePinGraphicState.PSetData.PoolCreate();
                         pset.UpdatePSetData(
                             circ.GetColor(),
-                            // TODO: Visualize messages differently?
                             circ.HasBeep() || circ.GetMessage() != null,
                             p.HasPlannedBeep(ps.Id) || p.HasPlannedMessage(ps.Id),
+                            failure,
                             pins);
                         // Set manual coordinates (angle must be converted from East to North)
                         if (manualPositionHead)
@@ -2938,6 +2969,30 @@ namespace AS2.Sim
             }
             renderSystem.ParticleMovementOver();
             renderSystem.CircuitCalculationOver();
+        }
+
+        /// <summary>
+        /// Calls all automatic status info methods of the currently
+        /// selected algorithm. Only works in Simulation Mode.
+        /// </summary>
+        private void CallAutomaticStatusInfoMethods()
+        {
+            if (inInitializationState)
+                return;
+
+            // Find the current algorithm
+            if (particles.Count == 0)
+                return;
+            string algo = particles[0].AlgorithmName();
+            // Find the selected particle if there is one
+            Particle selected = null;
+            if (sim.uiHandler.particleUI.IsOpen())
+                selected = (Particle)sim.uiHandler.particleUI.GetShownParticle();
+            // Get all status info methods and call the ones that should be called automatically
+            StatusInfoAttribute[] attrs = AlgorithmManager.Instance.GetStatusInfoMethods(algo);
+            for (int i = 0; i < attrs.Length; i++)
+                if (attrs[i].autocall)
+                    AlgorithmManager.Instance.CallStatusInfoMethod(algo, i, this, selected);
         }
 
         #endregion
@@ -4052,6 +4107,8 @@ namespace AS2.Sim
                 anchorIdxHistory.SetMarkerToRound(round);
                 anchorIsObjectHistory.SetMarkerToRound(round);
                 UpdateAfterStep();
+
+                CallAutomaticStatusInfoMethods();
             }
         }
 
@@ -4095,6 +4152,8 @@ namespace AS2.Sim
                 anchorIdxHistory.StepBack();
                 anchorIsObjectHistory.StepBack();
                 UpdateAfterStep();
+
+                CallAutomaticStatusInfoMethods();
             }
         }
 
@@ -4135,6 +4194,7 @@ namespace AS2.Sim
                 anchorIdxHistory.StepForward();
                 anchorIsObjectHistory.StepForward();
                 UpdateAfterStep(true, false, false);
+                CallAutomaticStatusInfoMethods();
             }
         }
 
@@ -4176,6 +4236,8 @@ namespace AS2.Sim
                 // Draw collision debug lines
                 if (collisionCheckEnabled && inCollisionState)
                     CollisionChecker.DrawDebugLines(collisionDebugLines);
+
+                CallAutomaticStatusInfoMethods();
             }
         }
 
@@ -4732,6 +4794,9 @@ namespace AS2.Sim
             {
                 throw new SimulatorStateException("Unknown algorithm selected: '" + algoName + "'");
             }
+
+            // Clear the line drawer to avoid showing lines created by other generation algorithm
+            AS2.UI.LineDrawer.Instance.Clear();
 
             selectedAlgorithm = algoName;
             ResetInit();

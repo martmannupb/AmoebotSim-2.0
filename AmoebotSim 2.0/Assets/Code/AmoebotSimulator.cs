@@ -56,7 +56,7 @@ namespace AS2
         void Start()
         {
             // Init Renderer + Particle System
-            renderSystem = new RenderSystem(this, FindObjectOfType<InputController>());
+            renderSystem = new RenderSystem(this, FindAnyObjectByType<InputController>());
             system = new AS2.Sim.ParticleSystem(this, renderSystem);
 
             // Register UI

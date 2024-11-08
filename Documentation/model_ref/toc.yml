@@ -1,5 +1,7 @@
 - name: General
   href: general.md
+- name: Neighbor Discovery
+  href: neighbors.md
 - name: Round Simulation
   href: rounds.md
 - name: Directions and Compass
@@ -18,3 +20,5 @@
   href: objects.md
 - name: Collisions and Line Drawer
   href: collisions.md
+- name: Status Info Methods
+  href: status_info.md

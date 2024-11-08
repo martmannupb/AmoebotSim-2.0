@@ -259,19 +259,19 @@ namespace AS2.Algos.CollisionTestAlgo2
 
             // Visualization of the movement
             float displayTime = 5f;
-            CollisionLineDrawer.Instance.Clear();
+            LineDrawer.Instance.Clear();
             if (expansionDir1 != Direction.NONE)
             {
                 if (handover1)
                 {
                     Vector2Int pull1 = new Vector2Int(0, -2);
                     Vector2Int pull2 = new Vector2Int(0, -1);
-                    CollisionLineDrawer.Instance.AddLine(pull1, pull2, Color.green);
-                    CollisionLineDrawer.Instance.AddLine(pull2, p1.Head(), Color.green);
+                    LineDrawer.Instance.AddLine(pull1, pull2, Color.green);
+                    LineDrawer.Instance.AddLine(pull2, p1.Head(), Color.green);
                 }
                 else
                 {
-                    CollisionLineDrawer.Instance.AddLine(Vector2Int.zero, ParticleSystem_Utils.DirectionToVector(expansionDir1), Color.green);
+                    LineDrawer.Instance.AddLine(Vector2Int.zero, ParticleSystem_Utils.DirectionToVector(expansionDir1), Color.green);
                 }
             }
 
@@ -282,9 +282,9 @@ namespace AS2.Algos.CollisionTestAlgo2
                 Vector2Int pos3 = new Vector2Int(offsetX, offsetY + 1) + ParticleSystem_Utils.DirectionToVector(expansionDir2.Opposite());
                 Vector2Int offset = new Vector2Int(movementX, movementY);
 
-                CollisionLineDrawer.Instance.AddLine(pos1, pos1 + offset, Color.blue, true);
-                CollisionLineDrawer.Instance.AddLine(pos2, pos2 + offset, Color.blue, true);
-                CollisionLineDrawer.Instance.AddLine(pos3, pos3 + offset, Color.blue, true);
+                LineDrawer.Instance.AddLine(pos1, pos1 + offset, Color.blue, true);
+                LineDrawer.Instance.AddLine(pos2, pos2 + offset, Color.blue, true);
+                LineDrawer.Instance.AddLine(pos3, pos3 + offset, Color.blue, true);
             }
             else
             {
@@ -297,11 +297,11 @@ namespace AS2.Algos.CollisionTestAlgo2
                     new Vector2Int(offsetX + movementX, offsetY + movementY) + ParticleSystem_Utils.DirectionToVector(expansionDir2)
                     : part2Start2;
 
-                CollisionLineDrawer.Instance.AddLine(part2Start1, part2Start2, Color.blue, true);
-                CollisionLineDrawer.Instance.AddLine(part2End1, part2End2, Color.blue, true);
+                LineDrawer.Instance.AddLine(part2Start1, part2Start2, Color.blue, true);
+                LineDrawer.Instance.AddLine(part2End1, part2End2, Color.blue, true);
             }
 
-            CollisionLineDrawer.Instance.SetTimer(displayTime);
+            LineDrawer.Instance.SetTimer(displayTime);
         }
     }
 
