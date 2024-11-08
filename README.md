@@ -1,6 +1,6 @@
 # AmoebotSim 2.0
 
-This repo is designed to contain the successor simulation environment of the AmoebotSim.
-The environment should be able to handle the reconfigurable circuit extension for the amoebot model.
+This repository contains the successor simulation environment of AmoebotSim.
+The new environment is able to handle the *reconfigurable circuit* and *joint movement* extensions of the amoebot model.
 
-The project uses Unity version 2021.3.3f1.
+The project uses Unity 6.
