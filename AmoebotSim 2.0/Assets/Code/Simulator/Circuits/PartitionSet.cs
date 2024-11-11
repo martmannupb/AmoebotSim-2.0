@@ -242,22 +242,22 @@ namespace AS2.Sim
         /// <summary>
         /// Checks whether this partition set has received a beep in
         /// the last round, if the pin configuration it belongs to
-        /// is the current one.
+        /// is the previous one.
         /// </summary>
         /// <returns><c>true</c> if and only if this partition set has
         /// received a beep in the last round.</returns>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the current
+        /// Thrown if this partition set does not belong to the previous
         /// pin configuration.
         /// </exception>
         public abstract bool ReceivedBeep();
 
         /// <summary>
         /// Sends a beep on this partition set if the pin configuration
-        /// it belongs to is the planned one.
+        /// it belongs to is the next one.
         /// </summary>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the planned
+        /// Thrown if this partition set does not belong to the next
         /// pin configuration.
         /// </exception>
         public abstract void SendBeep();
@@ -265,12 +265,12 @@ namespace AS2.Sim
         /// <summary>
         /// Checks whether this partition set has received a message
         /// in the last round, if the pin configuration it belongs to
-        /// is the current one.
+        /// is the previous one.
         /// </summary>
         /// <returns><c>true</c> if and only if this partition set has
         /// received a message in the last round.</returns>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the current
+        /// Thrown if this partition set does not belong to the previous
         /// pin configuration.
         /// </exception>
         public abstract bool HasReceivedMessage();
@@ -278,19 +278,19 @@ namespace AS2.Sim
         /// <summary>
         /// Returns the message this partition set has received in the
         /// last round, if it has received one and it belongs to the
-        /// current pin configuration.
+        /// previous pin configuration.
         /// </summary>
         /// <returns>The message received by this partition set in the
         /// last round, if it exists, otherwise <c>null</c>.</returns>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the current
+        /// Thrown if this partition set does not belong to the previous
         /// pin configuration.
         /// </exception>
         public abstract Message GetReceivedMessage();
 
         /// <summary>
         /// Sends a message on this partition set if the pin configuration
-        /// it belongs to is the planned one.
+        /// it belongs to is the next one.
         /// </summary>
         /// <para>
         /// Note that a copy of the given <see cref="Message"/> instance
@@ -299,7 +299,7 @@ namespace AS2.Sim
         /// </para>
         /// <param name="msg">The message to be sent.</param>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the planned
+        /// Thrown if this partition set does not belong to the next
         /// pin configuration.
         /// </exception>
         public abstract void SendMessage(Message msg);

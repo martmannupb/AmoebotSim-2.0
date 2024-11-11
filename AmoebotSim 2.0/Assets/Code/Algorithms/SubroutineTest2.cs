@@ -184,7 +184,7 @@ namespace AS2.Algos.SubroutineTest2
             //        if (numBoundaries > 0)
             //        {
             //            SetupPinConfiguration(pc);
-            //            SetPlannedPinConfiguration(pc);
+            //            SetNextPinConfiguration(pc);
             //        }
             //        UpdateColor();
             //        return;
@@ -194,7 +194,7 @@ namespace AS2.Algos.SubroutineTest2
             //    if (numBoundaries > 0)
             //    {
             //        SetupPinConfiguration(pc);
-            //        SetPlannedPinConfiguration(pc);
+            //        SetNextPinConfiguration(pc);
 
             //        for (int i = 0; i < numBoundaries; i++)
             //            subLEs[i].ActivateSend();
@@ -215,7 +215,7 @@ namespace AS2.Algos.SubroutineTest2
             //    PinConfiguration pc = GetCurrentPinConfiguration();
             //    pc.SetToGlobal(0);
             //    pc.ResetPartitionSetPlacement();
-            //    SetPlannedPinConfiguration(pc);
+            //    SetNextPinConfiguration(pc);
 
             //    if (!leFinished)
             //        pc.SendBeepOnPartitionSet(0);

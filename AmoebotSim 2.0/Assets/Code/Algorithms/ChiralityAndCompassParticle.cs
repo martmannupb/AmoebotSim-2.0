@@ -796,7 +796,7 @@ namespace AS2.Algos.ChiralityCompass
                     SetMainColor(compNoCandColor[realCompassDir.GetCurrentValue().ToInt()]);
                 }
             }
-            //SetPlannedPinConfiguration(pc);
+            //SetNextPinConfiguration(pc);
         }
     }
 

@@ -86,6 +86,31 @@ namespace AS2.Sim
             get { return !head; }
         }
 
+        public override bool ReceivedBeep()
+        {
+            return partitionSet.ReceivedBeep();
+        }
+
+        public override void SendBeep()
+        {
+            partitionSet.pinConfig.SendBeepOnPin(id);
+        }
+
+        public override bool HasReceivedMessage()
+        {
+            return partitionSet.HasReceivedMessage();
+        }
+
+        public override Message GetReceivedMessage()
+        {
+            return partitionSet.GetReceivedMessage();
+        }
+
+        public override void SendMessage(Message msg)
+        {
+            partitionSet.pinConfig.SendMessageOnPin(id, msg);
+        }
+
 
 
         // <<<FOR DEBUGGING>>>

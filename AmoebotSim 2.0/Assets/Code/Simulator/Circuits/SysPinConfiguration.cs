@@ -57,6 +57,18 @@ namespace AS2.Sim
         /// </summary>
         public bool isPlanned = false;  // If true, allow sending data
 
+        /// <summary>
+        /// Whether this is the previous pin configuration. This is the case
+        /// for the duration of one round unless a movement is performed, in
+        /// which case a singleton replaces this configuration.
+        /// </summary>
+        public bool isPrev = false;
+        /// <summary>
+        /// Whether this is the next pin configuration. This is the case during
+        /// one beep activation.
+        /// </summary>
+        public bool isNext = false;
+
         // Visualization info
         /// <summary>
         /// The selected partition set placement mode in the particle's head.
@@ -148,6 +160,28 @@ namespace AS2.Sim
             isCurrent = false;
             isPlanned = false;
         }
+
+        /// <summary>
+        /// Computes the ID of the pin on the specified edge with the
+        /// given offset.
+        /// <para>
+        /// The formula for the pin ID is <c>label * <paramref name="pinsPerEdge"/> +
+        /// <paramref name="offset"/></c>, where <c>label</c> is computed
+        /// using <paramref name="direction"/>, <paramref name="headDirection"/> and
+        /// <paramref name="head"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="direction">The local direction of the edge.</param>
+        /// <param name="offset">The edge offset of the pin.</param>
+        /// <param name="head">If the pin configuration represents the
+        /// expanded state, this flag indicates whether the edge belongs to
+        /// the particle's head or not.</param>
+        /// <returns>The ID of the pin in the location specified by an edge
+        /// and an edge offset.</returns>
+        //public static int GetPinId(Direction direction, int offset, int pinsPerEdge, Direction headDirection = Direction.NONE, bool head = true)
+        //{
+        //    return ParticleSystem_Utils.GetLabelInDir(direction, headDirection, head) * pinsPerEdge + offset;
+        //}
 
         /// <summary>
         /// Computes the ID of the pin on the specified edge with the
@@ -566,49 +600,153 @@ namespace AS2.Sim
             MakePartitionSet(pinIds, partitionSet.Id);
         }
 
-        public override bool ReceivedBeepOnPartitionSet(int partitionSetIndex)
+        /// <summary>
+        /// Checks whether the particle has received a beep on the given partition set.
+        /// Only works if this pin configuration is the previous one.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the particle has received a beep on the
+        /// partition set with ID <paramref name="partitionSetID"/> and this is the previous
+        /// pin configuration.</returns>
+        /// <exception cref="System.InvalidOperationException">Thrown if this is not the
+        /// previous pin configuration.</exception>
+        public bool ReceivedBeepOnPartitionSet(int partitionSetID)
         {
-            if (!isCurrent)
+            if (!isPrev)
             {
-                throw new InvalidOperationException("Cannot check for received beeps in non-current pin configuration.");
+                throw new InvalidOperationException("Can only check for received beeps in the previous pin configuration.");
             }
-            return particle.HasReceivedBeep(partitionSetIndex);
+            return particle.HasReceivedBeep(partitionSetID);
         }
 
-        public override void SendBeepOnPartitionSet(int partitionSetIndex)
+        /// <summary>
+        /// Sends a beep on the specified partition set, if this is the next pin
+        /// configuration.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set on which
+        /// to send the beep.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the next one.
+        /// </exception>
+        public void SendBeepOnPartitionSet(int partitionSetID)
         {
-            if (!isPlanned)
+            if (!isNext)
             {
-                throw new InvalidOperationException("Cannot send beeps in non-planned pin configuration.");
+                throw new InvalidOperationException("Can only send beeps on the next pin configuration.");
             }
-            particle.PlanBeep(partitionSetIndex, this);
+            particle.PlanBeepOnPartitionSet(partitionSetID);
         }
 
-        public override bool ReceivedMessageOnPartitionSet(int partitionSetIndex)
+        /// <summary>
+        /// Sends a beep on the specified pin, if this is the next pin
+        /// configuration.
+        /// </summary>
+        /// <param name="pinID">The ID of the pin on which
+        /// to send the beep.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the next one.
+        /// </exception>
+        public void SendBeepOnPin(int pinID)
         {
-            if (!isCurrent)
+            if (!isNext)
             {
-                throw new InvalidOperationException("Cannot check for received messages in non-current pin configuration.");
+                throw new InvalidOperationException("Can only send beeps on the next pin configuration.");
             }
-            return particle.HasReceivedMessage(partitionSetIndex);
+            particle.PlanBeepOnPin(pinID);
         }
 
-        public override Message GetReceivedMessageOfPartitionSet(int partitionSetIndex)
+        /// <summary>
+        /// Checks whether the particle has received a message on the given partition set.
+        /// Only works if this pin configuration is the previous one.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the particle has received a message on the
+        /// partition set with ID <paramref name="partitionSetID"/> and this is the previous
+        /// pin configuration.</returns>
+        /// <exception cref="System.InvalidOperationException">Thrown if this is not the
+        /// previous pin configuration.</exception>
+        public bool ReceivedMessageOnPartitionSet(int partitionSetID)
         {
-            if (!isCurrent)
+            if (!isPrev)
             {
-                throw new InvalidOperationException("Cannot get received messages from non-current pin configuration.");
+                throw new InvalidOperationException("Can only check for received messages in the previous pin configuration.");
             }
-            return particle.GetReceivedMessage(partitionSetIndex);
+            return particle.HasReceivedMessage(partitionSetID);
         }
 
-        public override void SendMessageOnPartitionSet(int partitionSetIndex, Message msg)
+        /// <summary>
+        /// Returns the message received by the specified partition set, if it has
+        /// received a message and this pin configuration is the previous one.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to get the
+        /// message from.</param>
+        /// <returns>A <see cref="Message"/> instance received by the partition set
+        /// with ID <paramref name="partitionSetID"/>, if it has received one,
+        /// otherwise <c>null</c>.</returns>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the previous one.
+        /// </exception>
+        public Message GetReceivedMessageOfPartitionSet(int partitionSetID)
         {
-            if (!isPlanned)
+            if (!isPrev)
+            {
+                throw new InvalidOperationException("Can only get received messages from the previous pin configuration.");
+            }
+            return particle.GetReceivedMessage(partitionSetID);
+        }
+
+        /// <summary>
+        /// Sends the given message on the specified partition set, if this pin
+        /// configuration is the next one.
+        /// <para>
+        /// Note that a copy of the given <see cref="Message"/> instance
+        /// <paramref name="msg"/> is sent. Altering the instance after calling
+        /// this method has no effect on the sent message.
+        /// </para>
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set on which
+        /// to send the message.</param>
+        /// <param name="msg">The message to be sent.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the next one.
+        /// </exception>
+        public void SendMessageOnPartitionSet(int partitionSetID, Message msg)
+        {
+            if (!isNext)
             {
                 throw new InvalidOperationException("Cannot send messages in non-planned pin configuration.");
             }
-            particle.PlanMessage(partitionSetIndex, msg != null ? msg.Copy() : null, this);
+            if (msg != null)
+            {
+                particle.PlanMessageOnPartitionSet(partitionSetID, msg.Copy());
+            }
+        }
+
+        /// <summary>
+        /// Sends the given message on the specified pin, if this pin
+        /// configuration is the next one.
+        /// <para>
+        /// Note that a copy of the given <see cref="Message"/> instance
+        /// <paramref name="msg"/> is sent. Altering the instance after calling
+        /// this method has no effect on the sent message.
+        /// </para>
+        /// </summary>
+        /// <param name="pinID">The ID of the pin on which
+        /// to send the message.</param>
+        /// <param name="msg">The message to be sent.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the next one.
+        /// </exception>
+        public void SendMessageOnPin(int pinID, Message msg)
+        {
+            if (!isNext)
+            {
+                throw new InvalidOperationException("Cannot send messages in non-planned pin configuration.");
+            }
+            if (msg != null)
+            {
+                particle.PlanMessageOnPin(pinID, msg.Copy());
+            }
         }
 
         public override void SetPartitionSetColor(int partitionSetIndex, Color color)

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static AS2.Algos.LineFormation.MyMessage;
 
 namespace AS2.Sim
 {
@@ -545,10 +547,12 @@ namespace AS2.Sim
         /// </summary>
         /// <returns>A copy of the pin configuration at the
         /// beginning of the current round.</returns>
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To read received beeps and messages, call the methods directly in the algorithm code or use GetPrevPinConfiguration. To get a pin configuration that can be modified for the next round, use GetNextPinConfiguration.")]
         public PinConfiguration GetCurrentPinConfiguration()
         {
-            CheckActive("Pin configurations cannot be obtained from other particles.");
-            return particle.GetCurrentPinConfiguration();
+            //CheckActive("Pin configurations cannot be obtained from other particles.");
+            //return particle.GetCurrentPinConfiguration();
+            return GetPrevPinConfiguration();
         }
 
         /// <summary>
@@ -558,12 +562,14 @@ namespace AS2.Sim
         /// </summary>
         /// <returns>The current pin configuration, already planned
         /// for the next round.</returns>
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To read received beeps and messages, call the methods directly in the algorithm code or use GetPrevPinConfiguration. To get a pin configuration that can be modified for the next round, use GetNextPinConfiguration.")]
         public PinConfiguration GetCurrentPCAsPlanned()
         {
-            CheckActive("Pin configurations cannot be obtained from other particles.");
-            SysPinConfiguration pc = particle.GetCurrentPinConfiguration();
-            SetPlannedPinConfiguration(pc);
-            return pc;
+            //CheckActive("Pin configurations cannot be obtained from other particles.");
+            //SysPinConfiguration pc = particle.GetCurrentPinConfiguration();
+            //SetPlannedPinConfiguration(pc);
+            //return pc;
+            return GetNextPinConfiguration();
         }
 
         /// <summary>
@@ -575,10 +581,9 @@ namespace AS2.Sim
         /// a contraction movement in this round.
         /// </para>
         /// <para>
-        /// See also <seealso cref="GetCurrentPinConfiguration"/>,
+        /// <seealso cref="GetNextPinConfiguration"/>,
         /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
-        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
-        /// <seealso cref="GetPlannedPinConfiguration"/>.
+        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>.
         /// </para>
         /// </summary>
         /// <returns>A new singleton pin configuration for the
@@ -599,10 +604,9 @@ namespace AS2.Sim
         /// after the movement is <paramref name="headDirection"/>.
         /// </para>
         /// <para>
-        /// See also <seealso cref="GetCurrentPinConfiguration"/>,
+        /// See also <seealso cref="GetNextPinConfiguration"/>,
         /// <seealso cref="GetContractedPinConfiguration"/>,
-        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
-        /// <seealso cref="GetPlannedPinConfiguration"/>.
+        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>.
         /// </para>
         /// </summary>
         /// <param name="headDirection">The head direction defining the
@@ -641,7 +645,7 @@ namespace AS2.Sim
             {
                 return;
             }
-            particle.SetPlannedPinConfiguration((SysPinConfiguration)pinConfiguration);
+            particle.SetNextPinConfiguration((SysPinConfiguration)pinConfiguration);
         }
 
         /// <summary>
@@ -652,11 +656,245 @@ namespace AS2.Sim
         /// </summary>
         /// <returns>The pin configuration planned to be applied at the end of
         /// the current round. <c>null</c> if no configuration was planned yet.</returns>
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To send beeps and messages, call the methods directly in the algorithm code or use GetNextPinConfiguration.")]
         public PinConfiguration GetPlannedPinConfiguration()
         {
-            CheckActive("Predicted state information is not available for other particles.");
-            return particle.GetPlannedPinConfiguration();
+            //CheckActive("Predicted state information is not available for other particles.");
+            //return particle.GetPlannedPinConfiguration();
+            return GetNextPinConfiguration();
         }
+
+
+
+
+
+        /// <summary>
+        /// Returns the pin configuration from the beginning of the round.
+        /// <para>
+        /// This object can be used for reading beeps and messages that
+        /// were received.
+        /// To modify the next pin configuration, use a blank template or
+        /// the default next configuration, which is a copy of the previous
+        /// one if no movement was performed and a singleton configuration
+        /// otherwise.
+        /// </para>
+        /// <para>
+        /// See also <seealso cref="GetContractedPinConfiguration"/>,
+        /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
+        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
+        /// <seealso cref="GetNextPinConfiguration"/>.
+        /// </para>
+        /// </summary>
+        /// <returns>The pin configuration from the
+        /// beginning of the current round.</returns>
+        public PinConfiguration GetPrevPinConfiguration()
+        {
+            CheckActive("Pin configurations cannot be obtained from other particles.");
+            return particle.PrevPinConfig;
+        }
+
+        /// <summary>
+        /// Returns the pin configuration to be set at the end of the round.
+        /// <para>
+        /// This object can be modified and used to schedule beeps and messages.
+        /// By default, this is a copy of the previous pin configuration if no
+        /// movement was performed and a singleton configuration otherwise.
+        /// </para>
+        /// <para>
+        /// See also <seealso cref="GetContractedPinConfiguration"/>,
+        /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
+        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
+        /// <seealso cref="GetPrevPinConfiguration"/>.
+        /// </para>
+        /// </summary>
+        /// <returns>The pin configuration to be set at the end of
+        /// the current round.</returns>
+        public PinConfiguration GetNextPinConfiguration()
+        {
+            CheckActive("Pin configurations cannot be obtained from other particles.");
+            if (!CheckBeep("Cannot modify pin configuration during move phase.", true))
+            {
+                return null;
+            }
+            return particle.NextPinConfig;
+        }
+
+
+
+
+
+
+        /// <summary>
+        /// Checks whether the specified partition set has received a beep in the
+        /// last round.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the partition set with ID
+        /// <paramref name="partitionSetID"/> has received a beep.</returns>
+        public bool ReceivedBeepOnPartitionSet(int partitionSetID)
+        {
+            CheckActive("Received beep information is not available for other particles.");
+            return particle.HasReceivedBeep(partitionSetID);
+        }
+
+        /// <summary>
+        /// Checks whether the specified pin has received a beep in the last round.
+        /// </summary>
+        /// <param name="direction">The direction of the edge containing the pin.</param>
+        /// <param name="offset">The pin offset on the specified edge. Must be in
+        /// the range <c>0,...,<see cref="PinsPerEdge"/>-1</c>.</param>
+        /// <param name="head">If the particle is expanded, use this flag to indicate
+        /// whether the edge belongs to the particle's head or not.</param>
+        public bool ReceivedBeepOnPin(Direction direction, int offset, bool head = true)
+        {
+            CheckActive("Received beep information is not available for other particles.");
+            SysPinConfiguration pc = particle.PrevPinConfig;
+            int pset = pc.GetPinAt(direction, offset, head).PartitionSet.Id;
+            return particle.HasReceivedBeep(pset);
+        }
+
+        /// <summary>
+        /// Sends a beep on the specified partition set.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set on which
+        /// to send the beep.</param>
+        public void SendBeepOnPartitionSet(int partitionSetID)
+        {
+            CheckActive("Cannot send beeps on other particles.");
+            CheckBeep("Can only send beep in beep activation.", true);
+            particle.PlanBeepOnPartitionSet(partitionSetID);
+        }
+
+        /// <summary>
+        /// Sends a beep on the specified pin.
+        /// </summary>
+        /// <param name="direction">The direction of the edge containing the pin.</param>
+        /// <param name="offset">The pin offset on the specified edge. Must be in
+        /// the range <c>0,...,<see cref="PinsPerEdge"/>-1</c>.</param>
+        /// <param name="head">If the particle is expanded, use this flag to indicate
+        /// whether the edge belongs to the particle's head or not.</param>
+        public void SendBeepOnPin(Direction direction, int offset, bool head = true)
+        {
+            CheckActive("Cannot send beeps on other particles.");
+            CheckBeep("Can only send beep in beep activation.", true);
+            int id = SysPinConfiguration.GetPinId(direction, offset, PinsPerEdge, HeadDirection(), head);
+            particle.PlanBeepOnPin(id);
+        }
+
+        /// <summary>
+        /// Checks whether the specified partition set has received a message in
+        /// the last round.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the partition set with ID
+        /// <paramref name="partitionSetID"/> has received a message.</returns>
+        public bool ReceivedMessageOnPartitionSet(int partitionSetID)
+        {
+            CheckActive("Received message information is not available for other particles.");
+            return particle.HasReceivedMessage(partitionSetID);
+        }
+
+        /// <summary>
+        /// Checks whether the specified pin has received a message in
+        /// the last round.
+        /// <param name="direction">The direction of the edge containing the pin.</param>
+        /// <param name="offset">The pin offset on the specified edge. Must be in
+        /// the range <c>0,...,<see cref="PinsPerEdge"/>-1</c>.</param>
+        /// <param name="head">If the particle is expanded, use this flag to indicate
+        /// whether the edge belongs to the particle's head or not.</param>
+        /// <returns><c>true</c> if and only if the specified pin has received a message.</returns>
+        public bool ReceivedMessageOnPin(Direction direction, int offset, bool head = true)
+        {
+            CheckActive("Received message information is not available for other particles.");
+            SysPinConfiguration pc = particle.PrevPinConfig;
+            int pset = pc.GetPinAt(direction, offset, head).PartitionSet.Id;
+            return particle.HasReceivedMessage(pset);
+        }
+
+        /// <summary>
+        /// Returns the message received by the specified partition set, if it has
+        /// received a message.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to get the
+        /// message from.</param>
+        /// <returns>A <see cref="Message"/> instance received by the partition set
+        /// with ID <paramref name="partitionSetID"/>, if it has received one,
+        /// otherwise <c>null</c>.</returns>
+        public Message GetReceivedMessageOfPartitionSet(int partitionSetID)
+        {
+            CheckActive("Received message information is not available for other particles.");
+            return particle.GetReceivedMessage(partitionSetID);
+        }
+
+        /// <summary>
+        /// Returns the message received by the specified pin, if it has
+        /// received a message.
+        /// </summary>
+        /// <param name="direction">The direction of the edge containing the pin.</param>
+        /// <param name="offset">The pin offset on the specified edge. Must be in
+        /// the range <c>0,...,<see cref="PinsPerEdge"/>-1</c>.</param>
+        /// <param name="head">If the particle is expanded, use this flag to indicate
+        /// whether the edge belongs to the particle's head or not.</param>
+        /// <returns>A <see cref="Message"/> instance received by the partition set
+        /// with ID <paramref name="partitionSetID"/>, if it has received one,
+        /// otherwise <c>null</c>.</returns>
+        public Message GetReceivedMessageOfPin(Direction direction, int offset, bool head = true)
+        {
+            CheckActive("Received message information is not available for other particles.");
+            SysPinConfiguration pc = particle.PrevPinConfig;
+            int pset = pc.GetPinAt(direction, offset, head).PartitionSet.Id;
+            return particle.GetReceivedMessage(pset);
+        }
+
+        /// <summary>
+        /// Sends the given message on the specified partition set.
+        /// <para>
+        /// Note that a copy of the given <see cref="Message"/> instance
+        /// <paramref name="msg"/> is sent. Altering the instance after calling
+        /// this method has no effect on the sent message.
+        /// </para>
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set on which
+        /// to send the message.</param>
+        /// <param name="msg">The message to be sent.</param>
+        public void SendMessageOnPartitionSet(int partitionSetID, Message msg)
+        {
+            CheckActive("Cannot send messages on other particles.");
+            CheckBeep("Can only send message in beep activation.", true);
+            if (msg != null)
+            {
+                particle.PlanMessageOnPartitionSet(partitionSetID, msg.Copy());
+            }
+        }
+
+        /// <summary>
+        /// Sends the given message on the specified pin.
+        /// <para>
+        /// Note that a copy of the given <see cref="Message"/> instance
+        /// <paramref name="msg"/> is sent. Altering the instance after calling
+        /// this method has no effect on the sent message.
+        /// </para>
+        /// </summary>
+        /// <param name="direction">The direction of the edge containing the pin.</param>
+        /// <param name="offset">The pin offset on the specified edge. Must be in
+        /// the range <c>0,...,<see cref="PinsPerEdge"/>-1</c>.</param>
+        /// <param name="msg">The message to be sent.</param>
+        /// <param name="head">If the particle is expanded, use this flag to indicate
+        /// whether the edge belongs to the particle's head or not.</param>
+        public void SendMessageOnPin(Direction direction, int offset, Message msg, bool head = true)
+        {
+            CheckActive("Cannot send messages on other particles.");
+            CheckBeep("Can only send message in beep activation.", true);
+            if (msg != null)
+            {
+                int id = SysPinConfiguration.GetPinId(direction, offset, PinsPerEdge, HeadDirection(), head);
+                particle.PlanMessageOnPin(id, msg.Copy());
+            }
+        }
+
+
+
+
 
 
         /*
