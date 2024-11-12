@@ -767,6 +767,7 @@ namespace AS2.Sim
         /// the range <c>0,...,<see cref="PinsPerEdge"/>-1</c>.</param>
         /// <param name="head">If the particle is expanded, use this flag to indicate
         /// whether the edge belongs to the particle's head or not.</param>
+        /// <returns><c>true</c> if and only if the specified pin has received a beep.</returns>
         public bool ReceivedBeepOnPin(Direction direction, int offset, bool head = true)
         {
             CheckActive("Received beep information is not available for other particles.");

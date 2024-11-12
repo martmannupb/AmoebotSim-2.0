@@ -40,7 +40,7 @@ The model does not contain any assumption or restriction on the number of partit
 We use this feature of the model to implement partition sets in the simulator:
 Note that the maximum number of non-empty partition sets is equal to the total number of pins (i.e., one pin in each partition set).
 Thus, a contracted particle needs at most $6k$ partition sets and an expanded particle will need at most $10k$ partition sets.
-In our approach, we simply give a particle the maximum number of partition set objects it requires.
+In our approach, we simply give a particle the maximum number of partition set objects it may require.
 The particle cannot add or remove partition sets manually, the number only changes when the particle expands or contracts.
 All it can do is assign its pins to the partition sets: Every pin belongs to exactly one of the partition sets at any time.
 If the particle has $m$ partition sets, the sets are identified by the indices $0,\ldots,m-1$.
@@ -67,7 +67,7 @@ If two partition sets of neighboring particles contain a pair of connected pins,
 A maximal set of connected partition sets is called a *circuit*.
 We say that a particle is *on the circuit* if one of its partition sets is contained in the circuit.
 If any particle on the circuit sends a beep on a partition set in the circuit, all partition sets in the circuit will receive a beep.
-Note that a circuit can contain multiple partition sets of the same particle, causing them to behave as if they were merged.
+Note that a circuit can contain multiple partition sets of the same particle, causing them to behave as if they were one set.
 If a circuit contains at least one partition set of each particle, i.e., all particles are on the circuit, we call it a *global circuit*.
 An easy way to establish a global circuit is to give each particle a global pin configuration.
 
@@ -98,9 +98,9 @@ For expanded particles, a third parameter is necessary to distinguish between th
 
 ### Reading Pin Configurations
 
-The [`GetCurrentPinConfiguration`][4] method returns the pin configuration from the beginning of the current phase.
-If the particle has received any beeps or [Messages](messages.md) in the previous beep phase, they can be read using the returned [`PinConfiguration`][1] instance.
-To check for received beeps, the [`ReceivedBeepOnPartitionSet`][26] method can be called on the [`PinConfiguration`][1] instance, giving the partition set ID as parameter, or the [`ReceivedBeep`][27] method can be called directly on a [`PartitionSet`][3] instance.
+The [`GetCurrPinConfiguration`][4] method returns the pin configuration from the beginning of the current phase.
+If the particle has received any beeps or [Messages](messages.md) in the previous beep phase, they can be read using the returned [`PinConfiguration`][1] instance or directly in the algorithm code, without the instance.
+To check for received beeps, the [`ReceivedBeepOnPartitionSet`][26] and [`ReceivedBeepOnPin`][30] methods can be called, giving the partition set ID or pin location as parameter, or the [`ReceivedBeep`][27] method can be called directly on a [`PartitionSet`][3] or [`Pin`][2] instance.
 Similar methods exist to check for messages.
 
 As outlined in the [Round Simulation reference](rounds.md), this will always work in the movement phase.
@@ -113,9 +113,12 @@ The ability to still read the received information is a convenience functionalit
 ### Changing Pin Configurations and Sending Beeps
 
 A particle can change its pin configuration in the beep phase.
-To do so, it needs to call [`SetPlannedPinConfiguration(PinConfiguration pc)`][5], which will update the pin configuration to `pc` at the end of the phase, before using it to send beeps and messages.
+To do so, it modifies the [`PinConfiguration`][1] instance defining the next configuration.
+This instance can be obtained by calling the [`GetNextPinConfiguration`][29] method, after which it can be modified freely.
+Another way to change it is to call [`SetNextPinConfiguration(PinConfiguration pc)`][5], which will overwrite the next pin configuration to `pc`.
 The [`PinConfiguration`][1] instance `pc` must match the particle's expansion state.
 This instance can either be the current pin configuration or a new one created using [`Get<Contracted|Expanded>PinConfiguration`][6].
+
 Any [`PinConfiguration`][1] instance can be modified in several ways:
 - [`SetToGlobal(int id)`][7] collects all pins in the partition set with ID `id`
 - [`SetStarConfig(int offset, int id)`][8] collects all pins with edge index `offset` in the partition set with ID `id`.
@@ -124,15 +127,16 @@ Any [`PinConfiguration`][1] instance can be modified in several ways:
 - [`MakePartitionSet(int[] pinIds, int id)`][9] puts the pins specified by the `pinIds` array into the partition set with ID `id`.
 	This method can be used to create any desired partition set.
 
-Modifications made after [`SetPlannedPinConfiguration`][5] has been called have no effect.
+Note that [`SetNextPinConfiguration`][5] replaces the pin configuration planned for the next round, so the instance obtained by [`GetNextPinConfiguration`][29] is useless afterwards.
 
-After a [`PinConfiguration`][1] instance `pc` has been committed using [`SetPlannedPinConfiguration(pc)`][5], it can be used to send beeps and messages.
-Simply call [`pc.SendBeepOnPartitionSet(int id)`][10] to send a beep on the partition set with ID `id` and [`pc.SendMessageOnPartitionSet(int id, Message msg)`][11] to send the message `msg` (Refer to the [Message reference page](messages.md) for more information).
+Call [`SendBeepOnPartitionSet(int id)`][10] to send a beep on the partition set with ID `id` and [`SendBeepOnPin(Direction d, int offset)`][31] to send a beep on the pin at the given position.
+Similarly to reading received beeps, you can send beeps by calling the corresponding methods directly on the [`PartitionSet`][3] or [`Pin`][2] instances contained in the next [`PinConfiguration`][1].
+The same works for messages.
 
 For example, the following code shows how to set up any of the three pin configurations shown in the second figure above (assuming compass direction E and counter-clockwise chirality):
 ```csharp
 public override void ActivateBeep() {
-    PinConfiguration pc = GetCurrentPinConfiguration();  // Gets the current pin configuration object
+    PinConfiguration pc = GetCurrPinConfiguration();  // Gets the current pin configuration object
 
     // ----- Setup the first (singleton) pin configuration -----
     pc.SetToSingleton();
@@ -168,9 +172,6 @@ public override void ActivateBeep() {
 
     // ----- Setup the third (global) pin configuration in partition set 0 -----
     pc.SetToGlobal(0);
-
-    // Apply the new pin configuration (important!)
-    SetPlannedPinConfiguration(pc);
 }
 ```
 
@@ -179,8 +180,8 @@ public override void ActivateBeep() {
 ## Additional Features
 
 Particles can set the color of a partition set to influence the display color of the circuit containing that partition set.
-The method [`pc.SetPartitionSetColor(int id, Color color)`][12] can be called on any [`PinConfiguration`][1] instance `pc` to set the color of its partition set with ID `id`.
-The pin configuration must be set as the planned pin configuration, otherwise the color override will not work.
+The method [`pc.SetPartitionSetColor(int id, Color color)`][12] can be called on a [`PinConfiguration`][1] instance `pc` to set the color of its partition set with ID `id`.
+The pin configuration must be the next pin configuration, otherwise the color override will not be visible.
 A circuit will take the color of the first colored partition set that is encountered while computing the circuits.
 If no colored partition sets are encountered, the circuit will get a color from the circuit color pool (found in [`ColorData`][13]).
 
@@ -210,7 +211,7 @@ Pin configurations can also be stored in [particle attributes](attrs.md).
 The special type of attribute for this purpose is created by the [`CreateAttributePinConfiguration`][14] method, which accepts `null` as an initial value.
 Attributes of this type are not displayed in the UI and cannot be accessed by other particles.
 Their only purpose is to save complex pin configurations so that they can be reused later without having to construct them again.
-Note that stored pin configurations cannot be used to read beeps or messages.
+Note that stored pin configurations cannot be used to read beeps and messages.
 
 The simulator additionally provides a *beep failure* feature.
 If you set the beep failure probability $p$ to a non-zero value in the configuration file or the Settings Panel, the simulator will randomly cause failures on partition sets, causing a partition set to not receive any beeps or messages for one round with probability $p$.
@@ -221,14 +222,14 @@ This feature is explained on the [Amoebot Model page](~/amoebot_model/circuits.m
 [1]: xref:AS2.Sim.PinConfiguration
 [2]: xref:AS2.Sim.Pin
 [3]: xref:AS2.Sim.PartitionSet
-[4]: xref:AS2.Sim.ParticleAlgorithm.GetCurrentPinConfiguration
-[5]: xref:AS2.Sim.ParticleAlgorithm.SetPlannedPinConfiguration(AS2.Sim.PinConfiguration)
+[4]: xref:AS2.Sim.ParticleAlgorithm.GetCurrPinConfiguration
+[5]: xref:AS2.Sim.ParticleAlgorithm.SetNextPinConfiguration(AS2.Sim.PinConfiguration)
 [6]: xref:AS2.Sim.ParticleAlgorithm.GetContractedPinConfiguration
 [7]: xref:AS2.Sim.PinConfiguration.SetToGlobal(System.Int32)
 [8]: xref:AS2.Sim.PinConfiguration.SetStarConfig(System.Int32,System.Int32)
 [9]: xref:AS2.Sim.PinConfiguration.MakePartitionSet(System.Int32[],System.Int32)
-[10]: xref:AS2.Sim.PinConfiguration.SendBeepOnPartitionSet(System.Int32)
-[11]: xref:AS2.Sim.PinConfiguration.SendMessageOnPartitionSet(System.Int32,AS2.Sim.Message)
+[10]: xref:AS2.Sim.ParticleAlgorithm.SendBeepOnPartitionSet(System.Int32)
+[11]: xref:AS2.Sim.ParticleAlgorithm.SendMessageOnPartitionSet(System.Int32,AS2.Sim.Message)
 [12]: xref:AS2.Sim.PinConfiguration.SetPartitionSetColor(System.Int32,Color)
 [13]: xref:AS2.ColorData
 [14]: xref:AS2.Sim.ParticleAlgorithm.CreateAttributePinConfiguration(System.String,AS2.Sim.PinConfiguration)
@@ -246,3 +247,6 @@ This feature is explained on the [Amoebot Model page](~/amoebot_model/circuits.m
 [26]: xref:AS2.Sim.PinConfiguration.ReceivedBeepOnPartitionSet(System.Int32)
 [27]: xref:AS2.Sim.PartitionSet.ReceivedBeep
 [28]: xref:AS2.Sim.PinConfiguration.SetPartitionSetDrawHandle(System.Int32,System.Boolean)
+[29]: xref:AS2.Sim.ParticleAlgorithm.GetNextPinConfiguration
+[30]: xref:AS2.Sim.ParticleAlgorithm.ReceivedBeepOnPin(AS2.Direction,System.Int32,System.Boolean)
+[31]: xref:AS2.Sim.ParticleAlgorithm.SendBeepOnPin(AS2.Direction,System.Int32,System.Boolean)

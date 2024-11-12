@@ -1075,7 +1075,7 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Updates the previous pin configuration to the next one for
+        /// Updates the current pin configuration to the next one for
         /// this round. Also transfers the beeps and messages scheduled
         /// on pins to the corresponding partition sets and resets them
         /// and resets the received beeps and messages.

@@ -234,9 +234,8 @@ Thus, setting up the circuit is as simple as calling this method in every beep a
 ```csharp
 public override void ActivateBeep()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
-    pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
-    SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
+    PinConfiguration pc = GetNextPinConfiguration(); // Get the PinConfiguration instance defining the connections for the next round
+    pc.SetToGlobal(0);                               // Collect all pins in partition set 0
 
     ...
 }
@@ -250,16 +249,15 @@ Now, the leader can use its partition set $0$ to send a beep if it decides to mo
 ```csharp
 public override void ActivateBeep()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
-    pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
-    SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
+    PinConfiguration pc = GetNextPinConfiguration(); // Get the PinConfiguration instance for next round
+    pc.SetToGlobal(0);                               // Collect all pins in partition set 0
 
     if (isLeader)  // Only the leader should run this code
     {
         if (Random.Range(0.0f, 1.0f) < 0.5f)
         {
             // Decided to move => Send a beep on the global circuit
-            pc.SendBeepOnPartitionSet(0);
+            SendBeepOnPartitionSet(0);
         }
     }
 }
@@ -281,8 +279,7 @@ Thus, we have to check for received beeps in the movement activation method:
 ```csharp
 public override void ActivateMove()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration();
-    if (pc.ReceivedBeepOnPartitionSet(0))
+    if (ReceivedBeepOnPartitionSet(0))
     {
         // Received a beep => Perform movement
     }
@@ -299,8 +296,7 @@ Using these methods to perform our desired movements is straightforward:
 ```csharp
 public override void ActivateMove()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration();
-    if (pc.ReceivedBeepOnPartitionSet(0))
+    if (ReceivedBeepOnPartitionSet(0))
     {
         // Received a beep => Perform movement
         if (IsContracted())  // Expand East if contracted
@@ -358,8 +354,7 @@ namespace AS2.Algos.Demo
         // The movement activation method
         public override void ActivateMove()
         {
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            if (pc.ReceivedBeepOnPartitionSet(0))
+            if (ReceivedBeepOnPartitionSet(0))
             {
                 // Received a beep => Perform movement
                 if (IsContracted())  // Expand East if contracted
@@ -372,16 +367,15 @@ namespace AS2.Algos.Demo
         // The beep activation method
         public override void ActivateBeep()
         {
-            PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
-            pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
-            SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
+            PinConfiguration pc = GetNextPinConfiguration(); // Get the PinConfiguration instance for next round
+            pc.SetToGlobal(0);                               // Collect all pins in partition set 0
 
             if (isLeader)  // Only the leader should run this code
             {
                 if (Random.Range(0.0f, 1.0f) < 0.5f)
                 {
                     // Decided to move => Send a beep on the global circuit
-                    pc.SendBeepOnPartitionSet(0);
+                    SendBeepOnPartitionSet(0);
                 }
             }
         }
