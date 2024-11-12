@@ -77,9 +77,8 @@ namespace AS2.Algos.LeaderElection
             // Set global circuit and start with phase 1 in the first round
             if (firstActivation)
             {
-                PinConfiguration pc = GetCurrentPinConfiguration();
+                PinConfiguration pc = GetNextPinConfiguration();
                 pc.SetToGlobal(0);  // Make partition set 0 hold all pins
-                SetPlannedPinConfiguration(pc);
                 pc.SetPartitionSetColor(0, new Color(0.75f, 0.75f, 0.75f));
                 firstActivation.SetValue(false);
 
@@ -87,13 +86,13 @@ namespace AS2.Algos.LeaderElection
                 // Beep if we have tossed heads
                 if (TossCoin())
                 {
-                    pc.SendBeepOnPartitionSet(0);
+                    SendBeepOnPartitionSet(0);
                 }
                 round.SetValue(1);
                 return;
             }
 
-            bool receivedBeep = GetCurrentPinConfiguration().ReceivedBeepOnPartitionSet(0);
+            bool receivedBeep = ReceivedBeepOnPartitionSet(0);
 
             // Even round: Decision and start of next iteration
             if (round % 2 == 0)
@@ -236,8 +235,7 @@ namespace AS2.Algos.LeaderElection
 
         private void SendBeep()
         {
-            PinConfiguration pc = GetCurrentPCAsPlanned();
-            pc.SendBeepOnPartitionSet(0);
+            SendBeepOnPartitionSet(0);
         }
     }
 

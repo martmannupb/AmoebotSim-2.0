@@ -39,8 +39,8 @@ namespace AS2.Subroutines.PASC
     /// <see cref="SetupPC(PinConfiguration)"/> to make each particle establish its
     /// partition sets. This does not plan the pin configuration yet, in the case
     /// that other changes are required. You can then call <see cref="ActivateSend"/>
-    /// (after planning the pin configuration) to send the beeps. This is only necessary
-    /// for the leader particle.<br/>
+    /// (after planning the pin configuration if necessary) to send the beeps. This is
+    /// only necessary for the leader particle.<br/>
     /// In the next round, you have to call <see cref="ActivateReceive"/> before changing
     /// the pin configuration so that the received beeps can be processed. After this call,
     /// you can read the received bit and check if the particle became passive in
@@ -163,8 +163,8 @@ namespace AS2.Subroutines.PASC
 
         /// <summary>
         /// Sets up the primary and secondary partition sets
-        /// for this particle. The pin configuration is not
-        /// planned by this method.
+        /// for this particle. The next pin configuration is not
+        /// set to another object by this method.
         /// </summary>
         /// <param name="pc">The pin configuration to be modified.
         /// This will only modify the pins and partition sets
@@ -196,9 +196,7 @@ namespace AS2.Subroutines.PASC
                 if (isActive.GetCurrentValue())
                 {
                     // Switch the two sets if we are active
-                    int tmp = pSetPrimary;
-                    pSetPrimary = pSetSecondary;
-                    pSetSecondary = tmp;
+                    (pSetSecondary, pSetPrimary) = (pSetPrimary, pSetSecondary);
                 }
                 Direction predDir = DirectionHelpers.Cardinal(predPrimaryPin.GetCurrentValue() / algo.PinsPerEdge);
                 pc.MakePartitionSet(new int[] { pc.GetPinAt(predDir, predPrimaryPin.GetCurrentValue() % algo.PinsPerEdge).Id }, pSetPrimary);
@@ -214,9 +212,7 @@ namespace AS2.Subroutines.PASC
                 if (isActive.GetCurrentValue())
                 {
                     // Switch the pins if we are active
-                    int tmp = predPinPrimary;
-                    predPinPrimary = predPinSecondary;
-                    predPinSecondary = tmp;
+                    (predPinSecondary, predPinPrimary) = (predPinPrimary, predPinSecondary);
                 }
                 pc.MakePartitionSet(new int[] { predPinPrimary, pc.GetPinAt(succDir, succPrimaryPin.GetCurrentValue() % algo.PinsPerEdge).Id }, primaryPSetID.GetCurrentValue());
                 pc.MakePartitionSet(new int[] { predPinSecondary, pc.GetPinAt(succDir, succSecondaryPin.GetCurrentValue() % algo.PinsPerEdge).Id }, secondaryPSetID.GetCurrentValue());
@@ -256,9 +252,8 @@ namespace AS2.Subroutines.PASC
                 becamePassive.SetValue(false);
 
             // Check where we have received a beep
-            PinConfiguration pc = algo.GetCurrentPinConfiguration();
-            bool beepOnPrimary = pc.ReceivedBeepOnPartitionSet(primaryPSetID.GetCurrentValue());
-            bool beepOnSecondary = pc.ReceivedBeepOnPartitionSet(secondaryPSetID.GetCurrentValue());
+            bool beepOnPrimary = algo.ReceivedBeepOnPartitionSet(primaryPSetID.GetCurrentValue());
+            bool beepOnSecondary = algo.ReceivedBeepOnPartitionSet(secondaryPSetID.GetCurrentValue());
 
             if (!beepOnPrimary && !beepOnSecondary)
             {
@@ -297,8 +292,7 @@ namespace AS2.Subroutines.PASC
             // Leader sends beep on primary partition set
             if (IsLeader())
             {
-                PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                pc.SendBeepOnPartitionSet(primaryPSetID.GetCurrentValue());
+                algo.SendBeepOnPartitionSet(primaryPSetID.GetCurrentValue());
             }
         }
 
@@ -314,9 +308,8 @@ namespace AS2.Subroutines.PASC
         {
             if (isActive.GetCurrentValue() && !IsLeader())
             {
-                PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                pc.SendBeepOnPartitionSet(primaryPSetID.GetCurrentValue());
-                pc.SendBeepOnPartitionSet(secondaryPSetID.GetCurrentValue());
+                algo.SendBeepOnPartitionSet(primaryPSetID.GetCurrentValue());
+                algo.SendBeepOnPartitionSet(secondaryPSetID.GetCurrentValue());
             }
         }
 
@@ -330,8 +323,7 @@ namespace AS2.Subroutines.PASC
         /// </summary>
         public void ReceiveCutoffBeep()
         {
-            PinConfiguration pc = algo.GetCurrentPinConfiguration();
-            lastBitIs1.SetValue(pc.ReceivedBeepOnPartitionSet(primaryPSetID.GetCurrentValue()));
+            lastBitIs1.SetValue(algo.ReceivedBeepOnPartitionSet(primaryPSetID.GetCurrentValue()));
         }
 
         /// <summary>

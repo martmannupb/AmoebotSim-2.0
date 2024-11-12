@@ -34,24 +34,19 @@ namespace AS2.Subroutines.BinaryOps
     ///     The chain start should have no predecessor and the end should have no successor.
     /// </item>
     /// <item>
-    ///     Create a pin configuration and call <see cref="SetupPinConfig(PinConfiguration)"/>, then
-    ///     call <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/> to commit the
-    ///     pin configuration changes.
+    ///     Call <see cref="SetupPinConfig(PinConfiguration)"/> to modify the pin configuration.
     /// </item>
     /// <item>
     ///     Call <see cref="ActivateSend"/> in the same round to start the procedure.
     /// </item>
     /// <item>
-    ///     After this, call <see cref="ActivateReceive"/>, <see cref="SetupPinConfig(PinConfiguration)"/>,
-    ///     <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/> and
-    ///     <see cref="ActivateSend"/> in this order in every round.
+    ///     After this, call <see cref="ActivateReceive"/>, <see cref="SetupPinConfig(PinConfiguration)"/>
+    ///     and <see cref="ActivateSend"/> in this order in every round.
     /// </item>
     /// <item>
     ///     The procedure can be paused after each <see cref="ActivateReceive"/> call and resumed by
     ///     continuing with <see cref="SetupPinConfig(PinConfiguration)"/> in some future round.
     /// </item>
-    /// 
-    /// 
     /// <item>
     ///     Call <see cref="IsFinished"/> after <see cref="ActivateReceive"/> to check whether the
     ///     procedure is finished. The result is thereafter available through one of the interface
@@ -152,8 +147,7 @@ namespace AS2.Subroutines.BinaryOps
         /// <summary>
         /// Sets up the required circuits for the next step in the given
         /// pin configuration. This must be called after <see cref="ActivateReceive"/>
-        /// and before <see cref="ActivateSend"/>. The given pin configuration
-        /// will not be planned by this method.
+        /// and before <see cref="ActivateSend"/>.
         /// </summary>
         /// <param name="pc">The pin configuration to set up. Partition set IDs will
         /// always equal one of the IDs of the contained pins.</param>
@@ -177,8 +171,7 @@ namespace AS2.Subroutines.BinaryOps
         /// <summary>
         /// Activation during <see cref="ParticleAlgorithm.ActivateBeep"/> to send the
         /// beeps required for this step. Must be called after <see cref="ActivateReceive"/>
-        /// and <see cref="SetupPinConfig(PinConfiguration)"/> and after the pin configuration
-        /// has been planned.
+        /// and <see cref="SetupPinConfig(PinConfiguration)"/>.
         /// </summary>
         public void ActivateSend()
         {

@@ -367,27 +367,27 @@ namespace AS2.Sim
 
         public override bool ReceivedBeep()
         {
-            return pinConfig.ReceivedBeepOnPartitionSet(id);
+            return pinConfig.ReceivedBeepOnPSet(id);
         }
 
         public override void SendBeep()
         {
-            pinConfig.SendBeepOnPartitionSet(id);
+            pinConfig.SendBeepOnPSet(id);
         }
 
         public override bool HasReceivedMessage()
         {
-            return pinConfig.ReceivedMessageOnPartitionSet(id);
+            return pinConfig.ReceivedMessageOnPSet(id);
         }
 
         public override Message GetReceivedMessage()
         {
-            return pinConfig.GetReceivedMessageOfPartitionSet(id);
+            return pinConfig.GetReceivedMessageOfPSet(id);
         }
 
         public override void SendMessage(Message msg)
         {
-            pinConfig.SendMessageOnPartitionSet(id, msg);
+            pinConfig.SendMessageOnPSet(id, msg);
         }
 
         public override void SetColor(Color color)

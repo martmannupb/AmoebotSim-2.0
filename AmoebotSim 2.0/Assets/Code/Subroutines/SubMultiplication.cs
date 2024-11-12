@@ -33,17 +33,14 @@ namespace AS2.Subroutines.BinaryOps
     ///     and the two directions. The start should have no predecessor and the end should have no successor.
     /// </item>
     /// <item>
-    ///     Create a pin configuration and call <see cref="SetupPinConfig(PinConfiguration)"/>, then
-    ///     call <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/> to commit the
-    ///     pin configuration changes.
+    ///     Call <see cref="SetupPinConfig(PinConfiguration)"/> to modify the pin configuration.
     /// </item>
     /// <item>
     ///     Call <see cref="ActivateSend"/> in the same round to start the procedure.
     /// </item>
     /// <item>
     ///     After this, call <see cref="ActivateReceive"/>, <see cref="SetupPinConfig(PinConfiguration)"/>,
-    ///     <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/> and
-    ///     <see cref="ActivateSend"/> in this order in every round.
+    ///     and <see cref="ActivateSend"/> in this order in every round.
     /// </item>
     /// <item>
     ///     The procedure can be paused after each <see cref="ActivateReceive"/> call and resumed by
@@ -169,7 +166,7 @@ namespace AS2.Subroutines.BinaryOps
         public void ActivateReceive()
         {
             int round = Round();
-            PinConfiguration pc = algo.GetCurrentPinConfiguration();
+            PinConfiguration pc = algo.GetPrevPinConfiguration();
             Direction predDir = PredDir();
             Direction succDir = SuccDir();
             int pSet1 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 0, algo.PinsPerEdge);
@@ -177,13 +174,13 @@ namespace AS2.Subroutines.BinaryOps
             if (round == 0)
             {
                 // Receive token beep
-                if (predDir != Direction.NONE && pc.GetPinAt(predDir, 0).PartitionSet.ReceivedBeep())
+                if (predDir != Direction.NONE && pc.GetPinAt(predDir, 0).ReceivedBeep())
                 {
                     SetStateBit(bit_Token, true);
                 }
 
                 // Receive overflow beep
-                if (pc.ReceivedBeepOnPartitionSet(pSet2))
+                if (algo.ReceivedBeepOnPartitionSet(pSet2))
                 {
                     SetStateBit(bit_Overflow, true);
                 }
@@ -191,11 +188,11 @@ namespace AS2.Subroutines.BinaryOps
             else if (round == 1)
             {
                 // Check if there was a beep on circuit 2
-                if (pc.ReceivedBeepOnPartitionSet(pSet2))
+                if (algo.ReceivedBeepOnPartitionSet(pSet2))
                 {
                     // Start the iteration
                     // Check if we have to add
-                    if (pc.ReceivedBeepOnPartitionSet(pSet1))
+                    if (algo.ReceivedBeepOnPartitionSet(pSet1))
                     {
                         SetStateBit(bit_Add, true);
 
@@ -219,8 +216,8 @@ namespace AS2.Subroutines.BinaryOps
                 bool beepB = false;
                 if (predDir != Direction.NONE)
                 {
-                    beepCarry = pc.GetPinAt(predDir, 0).PartitionSet.ReceivedBeep();
-                    beepB = pc.GetPinAt(predDir, 1).PartitionSet.ReceivedBeep();
+                    beepCarry = pc.GetPinAt(predDir, 0).ReceivedBeep();
+                    beepB = pc.GetPinAt(predDir, 1).ReceivedBeep();
 
                     if (beepCarry && GetStateBit(bit_B) ^ GetStateBit(bit_C) && SuccDir() == Direction.NONE)
                     {
@@ -246,8 +243,7 @@ namespace AS2.Subroutines.BinaryOps
         /// <summary>
         /// Sets up the required circuits for the next step in the given
         /// pin configuration. This must be called after <see cref="ActivateReceive"/>
-        /// and before <see cref="ActivateSend"/>. The given pin configuration
-        /// will not be planned by this method.
+        /// and before <see cref="ActivateSend"/>.
         /// </summary>
         /// <param name="pc">The pin configuration to set up. Partition set IDs will
         /// always equal one of the IDs of the contained pins.</param>
@@ -283,8 +279,7 @@ namespace AS2.Subroutines.BinaryOps
         /// <summary>
         /// Activation during <see cref="ParticleAlgorithm.ActivateBeep"/> to send the
         /// beeps required for this step. Must be called after <see cref="ActivateReceive"/>
-        /// and <see cref="SetupPinConfig(PinConfiguration)"/> and after the pin configuration
-        /// has been planned.
+        /// and <see cref="SetupPinConfig(PinConfiguration)"/>.
         /// </summary>
         public void ActivateSend()
         {
@@ -294,34 +289,34 @@ namespace AS2.Subroutines.BinaryOps
                 // If we have the token: Beep on second circuit and send a's bit on first circuit
                 if (GetStateBit(bit_Token))
                 {
-                    PinConfiguration pc = GetPlannedPC();
+                    PinConfiguration pc = algo.GetNextPinConfiguration();
 
                     Direction predDir = PredDir();
                     Direction succDir = SuccDir();
                     int pSet1 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 0, algo.PinsPerEdge);
                     int pSet2 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 1, algo.PinsPerEdge);
-                    pc.SendBeepOnPartitionSet(pSet2);
+                    algo.SendBeepOnPartitionSet(pSet2);
                     if (GetStateBit(bit_A))
-                        pc.SendBeepOnPartitionSet(pSet1);
+                        algo.SendBeepOnPartitionSet(pSet1);
                 }
                 SetRound(1);
             }
             else if (round == 1)
             {
-                PinConfiguration pc = GetPlannedPC();
+                PinConfiguration pc = algo.GetNextPinConfiguration();
                 Direction succDir = SuccDir();
                 if (succDir != Direction.NONE)
                 {
                     // Beep for carry bit on circuit 1
                     if (GetStateBit(bit_Add) && GetStateBit(bit_B) && GetStateBit(bit_C))
                     {
-                        pc.GetPinAt(succDir, algo.PinsPerEdge - 1).PartitionSet.SendBeep();
+                        pc.GetPinAt(succDir, algo.PinsPerEdge - 1).SendBeep();
                     }
 
                     // Transmit bit of b
                     if (GetStateBit(bit_B))
                     {
-                        pc.GetPinAt(succDir, algo.PinsPerEdge - 2).PartitionSet.SendBeep();
+                        pc.GetPinAt(succDir, algo.PinsPerEdge - 2).SendBeep();
                     }
                 }
                 else
@@ -349,18 +344,18 @@ namespace AS2.Subroutines.BinaryOps
 
                     if (!GetStateBit(bit_MSB_A))
                     {
-                        PinConfiguration pc = GetPlannedPC();
+                        PinConfiguration pc = algo.GetNextPinConfiguration();
                         Direction succDir = SuccDir();
-                        pc.GetPinAt(succDir, algo.PinsPerEdge - 1).PartitionSet.SendBeep();
+                        pc.GetPinAt(succDir, algo.PinsPerEdge - 1).SendBeep();
                     }
                 }
 
                 // Overflow signal sent on circuit 2
                 if (GetStateBit(bit_Overflow))
                 {
-                    PinConfiguration pc = GetPlannedPC();
+                    PinConfiguration pc = algo.GetNextPinConfiguration();
                     int pSet2 = BinOpUtils.GetChainPSetID(pc, PredDir(), SuccDir(), 1, algo.PinsPerEdge);
-                    pc.SendBeepOnPartitionSet(pSet2);
+                    algo.SendBeepOnPartitionSet(pSet2);
                 }
                 SetRound(0);
             }
@@ -478,21 +473,6 @@ namespace AS2.Subroutines.BinaryOps
         private void SetRound(int round)
         {
             state.SetValue((state.GetCurrentValue() & ~3 | round));
-        }
-
-        /// <summary>
-        /// Wrapper for getting the planned pin configuration and
-        /// throwing an exception if there is none.
-        /// </summary>
-        /// <returns>The currently planned pin configuration.</returns>
-        private PinConfiguration GetPlannedPC()
-        {
-            PinConfiguration pc = algo.GetPlannedPinConfiguration();
-            if (pc is null)
-            {
-                throw new InvalidActionException(particle, "Amoebot has no planned pin configuration");
-            }
-            return pc;
         }
     }
 

@@ -112,12 +112,11 @@ namespace AS2.Algos.SubroutineTest
                 }
 
                 // Setup pin configuration
-                PinConfiguration pc = GetCurrentPinConfiguration();
+                PinConfiguration pc = GetNextPinConfiguration();
                 if (numBoundaries.GetCurrentValue() > 0)
                     SetupPinConfiguration(pc);
                 else
                     pc.SetToGlobal(0);
-                SetPlannedPinConfiguration(pc);
 
                 // Initialize and activate leader election subroutines
                 for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
@@ -136,15 +135,14 @@ namespace AS2.Algos.SubroutineTest
             if (round == 0)
             {
                 // Listen for beep on global circuit
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                if (!pc.ReceivedBeepOnPartitionSet(0))
+                if (!ReceivedBeepOnPartitionSet(0))
                 {
                     // Received no beep, that means everybody is finished
                     finished.SetValue(true);
                     if (numBoundaries > 0)
                     {
+                        PinConfiguration pc = GetNextPinConfiguration();
                         SetupPinConfiguration(pc);
-                        SetPlannedPinConfiguration(pc);
                     }
                     UpdateColor();
                     return;
@@ -153,8 +151,8 @@ namespace AS2.Algos.SubroutineTest
                 // Not finished, continue by sending beeps
                 if (numBoundaries > 0)
                 {
+                    PinConfiguration pc = GetNextPinConfiguration();
                     SetupPinConfiguration(pc);
-                    SetPlannedPinConfiguration(pc);
 
                     for (int i = 0; i < numBoundaries; i++)
                         subLEs[i].ActivateSend();
@@ -172,13 +170,12 @@ namespace AS2.Algos.SubroutineTest
                 }
 
                 // Send beep on global circuit if we are not finished yet
-                PinConfiguration pc = GetCurrentPinConfiguration();
+                PinConfiguration pc = GetNextPinConfiguration();
                 pc.SetToGlobal(0);
                 pc.ResetPartitionSetPlacement();
-                SetPlannedPinConfiguration(pc);
 
                 if (!leFinished)
-                    pc.SendBeepOnPartitionSet(0);
+                    SendBeepOnPartitionSet(0);
             }
             else
             {

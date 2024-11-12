@@ -60,11 +60,11 @@ namespace AS2.Algos.BeepFailureTest
         // The beep activation method
         public override void ActivateBeep()
         {
-            PinConfiguration pc = GetCurrentPinConfiguration();
 
             if (firstRound)
             {
                 // Build pin configuration
+                PinConfiguration pc = GetNextPinConfiguration();
                 // Partition set i constructs circuit on which
                 // beeps are sent in direction i
                 for (int i = 0; i < 6; i++)
@@ -106,7 +106,7 @@ namespace AS2.Algos.BeepFailureTest
                 // If one beep was not received, change color to red
                 bool receivedBeeps = true;
                 for (int i = 0; i < 6; i++)
-                    if (!pc.ReceivedBeepOnPartitionSet(i))
+                    if (!ReceivedBeepOnPartitionSet(i))
                     {
                         receivedBeeps = false;
                         break;
@@ -116,15 +116,13 @@ namespace AS2.Algos.BeepFailureTest
                 else
                     SetMainColor(Color.gray);
             }
-
-            SetPlannedPinConfiguration(pc);
-
+            
             // Boundary particles send beeps in the opposite direction of the empty neighbors
             for (int i = 0; i < 6; i++)
             {
                 Direction d = DirectionHelpers.Cardinal(i);
                 if (!HasNeighborAt(d.Opposite()))
-                    pc.SendBeepOnPartitionSet(i);
+                    SendBeepOnPartitionSet(i);
             }
         }
     }

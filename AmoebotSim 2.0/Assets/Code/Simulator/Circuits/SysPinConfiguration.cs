@@ -153,35 +153,14 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Resets current and planned flags to <c>false</c>.
+        /// Resets current, planned and prev flags to <c>false</c>.
         /// </summary>
         private void UpdateFlagsAfterChange()
         {
             isCurrent = false;
             isPlanned = false;
+            isPrev = false;
         }
-
-        /// <summary>
-        /// Computes the ID of the pin on the specified edge with the
-        /// given offset.
-        /// <para>
-        /// The formula for the pin ID is <c>label * <paramref name="pinsPerEdge"/> +
-        /// <paramref name="offset"/></c>, where <c>label</c> is computed
-        /// using <paramref name="direction"/>, <paramref name="headDirection"/> and
-        /// <paramref name="head"/>.
-        /// </para>
-        /// </summary>
-        /// <param name="direction">The local direction of the edge.</param>
-        /// <param name="offset">The edge offset of the pin.</param>
-        /// <param name="head">If the pin configuration represents the
-        /// expanded state, this flag indicates whether the edge belongs to
-        /// the particle's head or not.</param>
-        /// <returns>The ID of the pin in the location specified by an edge
-        /// and an edge offset.</returns>
-        //public static int GetPinId(Direction direction, int offset, int pinsPerEdge, Direction headDirection = Direction.NONE, bool head = true)
-        //{
-        //    return ParticleSystem_Utils.GetLabelInDir(direction, headDirection, head) * pinsPerEdge + offset;
-        //}
 
         /// <summary>
         /// Computes the ID of the pin on the specified edge with the
@@ -610,7 +589,7 @@ namespace AS2.Sim
         /// pin configuration.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown if this is not the
         /// previous pin configuration.</exception>
-        public bool ReceivedBeepOnPartitionSet(int partitionSetID)
+        public bool ReceivedBeepOnPSet(int partitionSetID)
         {
             if (!isPrev)
             {
@@ -628,7 +607,7 @@ namespace AS2.Sim
         /// <exception cref="System.InvalidOperationException">
         /// Thrown if this pin configuration is not the next one.
         /// </exception>
-        public void SendBeepOnPartitionSet(int partitionSetID)
+        public void SendBeepOnPSet(int partitionSetID)
         {
             if (!isNext)
             {
@@ -665,7 +644,7 @@ namespace AS2.Sim
         /// pin configuration.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown if this is not the
         /// previous pin configuration.</exception>
-        public bool ReceivedMessageOnPartitionSet(int partitionSetID)
+        public bool ReceivedMessageOnPSet(int partitionSetID)
         {
             if (!isPrev)
             {
@@ -686,7 +665,7 @@ namespace AS2.Sim
         /// <exception cref="System.InvalidOperationException">
         /// Thrown if this pin configuration is not the previous one.
         /// </exception>
-        public Message GetReceivedMessageOfPartitionSet(int partitionSetID)
+        public Message GetReceivedMessageOfPSet(int partitionSetID)
         {
             if (!isPrev)
             {
@@ -710,7 +689,7 @@ namespace AS2.Sim
         /// <exception cref="System.InvalidOperationException">
         /// Thrown if this pin configuration is not the next one.
         /// </exception>
-        public void SendMessageOnPartitionSet(int partitionSetID, Message msg)
+        public void SendMessageOnPSet(int partitionSetID, Message msg)
         {
             if (!isNext)
             {

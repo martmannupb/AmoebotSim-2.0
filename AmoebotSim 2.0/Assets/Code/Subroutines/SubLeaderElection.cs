@@ -149,8 +149,7 @@ namespace AS2.Subroutines.LeaderElection
             if (finished.GetCurrentValue() || round.GetCurrentValue() == -1)
                 return;
 
-            PinConfiguration pc = algo.GetCurrentPinConfiguration();
-            bool receivedBeep = pc.ReceivedBeepOnPartitionSet(partitionSetId.GetCurrentValue());
+            bool receivedBeep = algo.ReceivedBeepOnPartitionSet(partitionSetId.GetCurrentValue());
 
             if (round.GetCurrentValue() % 2 == 0)
             {
@@ -217,7 +216,7 @@ namespace AS2.Subroutines.LeaderElection
 
         /// <summary>
         /// The second half of the beep activation. Must be
-        /// called only when the correct pin configuration has
+        /// called when the correct pin configuration has
         /// been established. The beeps sent by this method
         /// must be received by the next call of <see cref="ActivateReceive"/>.
         /// </summary>
@@ -226,16 +225,12 @@ namespace AS2.Subroutines.LeaderElection
             if (finished.GetCurrentValue())
                 return;
 
-            PinConfiguration pc = algo.GetPlannedPinConfiguration();
-            if (pc == null)
-                pc = algo.GetCurrentPCAsPlanned();
-
             if (round.GetCurrentValue() == -1)
             {
                 // First round: Candidates toss coin and send a beep
                 if (isLeaderCandidate.GetCurrentValue() && TossCoin())
                 {
-                    pc.SendBeepOnPartitionSet(partitionSetId.GetCurrentValue());
+                    algo.SendBeepOnPartitionSet(partitionSetId.GetCurrentValue());
                 }
 
                 // This is a stand-in for round 0, so we continue with round 1
@@ -254,7 +249,7 @@ namespace AS2.Subroutines.LeaderElection
                     if (round.GetCurrentValue() == 0 && isLeaderCandidate.GetCurrentValue()
                         || round.GetCurrentValue() == 2 && isPhase2Candidate.GetCurrentValue())
                     {
-                        pc.SendBeepOnPartitionSet(partitionSetId.GetCurrentValue());
+                        algo.SendBeepOnPartitionSet(partitionSetId.GetCurrentValue());
                     }
                 }
 
@@ -274,7 +269,7 @@ namespace AS2.Subroutines.LeaderElection
                     if (round.GetCurrentValue() == 1 && isLeaderCandidate.GetCurrentValue()
                         || round.GetCurrentValue() == 3 && isPhase2Candidate.GetCurrentValue())
                     {
-                        pc.SendBeepOnPartitionSet(partitionSetId.GetCurrentValue());
+                        algo.SendBeepOnPartitionSet(partitionSetId.GetCurrentValue());
                     }
                 }
 

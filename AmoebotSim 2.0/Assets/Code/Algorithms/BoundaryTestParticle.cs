@@ -322,7 +322,7 @@ namespace AS2.Algos.BoundaryTest
             numBoundaries.SetValue(regionIdx);
 
             // Now setup the pin configuration based on the result
-            PinConfiguration pc = GetCurrentPinConfiguration();
+            PinConfiguration pc = GetPrevPinConfiguration();
 
             // If we have no boundaries, we are an inner particle
             // Simply establish the global circuit
@@ -338,7 +338,7 @@ namespace AS2.Algos.BoundaryTest
                 SetupBoundaryCircuit(ref pc);
             }
 
-            SetPlannedPinConfiguration(pc);
+            SetPlannedPinConfiguration(pc); // This is necessary because pc might be a different object
 
             // Initialize and start first phase of leader election
             for (int boundary = 0; boundary < numBoundaries.GetCurrentValue(); boundary++)
@@ -348,7 +348,7 @@ namespace AS2.Algos.BoundaryTest
                 // Toss coin and send beep if we got HEADS
                 if (TossCoin(boundary))
                 {
-                    pc.SendBeepOnPartitionSet(boundary);
+                    SendBeepOnPartitionSet(boundary);
                 }
             }
 
@@ -361,8 +361,8 @@ namespace AS2.Algos.BoundaryTest
         private void LE1Activate0()
         {
             // Receive termination beep on global circuit
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            bool rcvGlobalBeep = pc.ReceivedBeepOnPartitionSet(0);
+            PinConfiguration pc = GetPrevPinConfiguration();
+            bool rcvGlobalBeep = ReceivedBeepOnPartitionSet(0);
             // First setup boundary circuit again (partition set ID = boundary index)
             SetupBoundaryCircuit(ref pc);
             SetPlannedPinConfiguration(pc);
@@ -376,7 +376,7 @@ namespace AS2.Algos.BoundaryTest
 
             // Every candidate has to toss a coin again and beep if the result is HEADS
             // If we are starting Phase 2, make every boundary particle a Phase 2 candidate
-            StartLERound(pc, !rcvGlobalBeep);
+            StartLERound(!rcvGlobalBeep);
 
             round.SetValue(1);
         }
@@ -391,11 +391,11 @@ namespace AS2.Algos.BoundaryTest
         private void LE1Activate2()
         {
             // Receive TAILS beep on each boundary
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            bool beepOnGlobal = LEReceiveTails(pc);
+            PinConfiguration pc = GetPrevPinConfiguration();
+            bool beepOnGlobal = LEReceiveTails();
 
             // Establish global circuit and beep if we are not finished yet
-            SetGlobalCircuitAndBeep(pc, beepOnGlobal);
+            SetGlobalCircuitAndBeep(beepOnGlobal);
 
             round.SetValue(0);
         }
@@ -403,8 +403,7 @@ namespace AS2.Algos.BoundaryTest
         private void LE2Activate0()
         {
             // Receive termination beep on global circuit
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            bool rcvGlobalBeep = pc.ReceivedBeepOnPartitionSet(0);
+            bool rcvGlobalBeep = ReceivedBeepOnPartitionSet(0);
 
             // If nobody beeped, check if we have to start the next iteration
             bool nextIteration = false;
@@ -427,14 +426,13 @@ namespace AS2.Algos.BoundaryTest
                     isActive[boundary].SetValue(true);
                 }
                 // Setup the pin configuration
-                SetPASCPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
+                SetPASCPinConfig();
 
                 // If we are the leader of the boundary: Beep on primary partition set
                 for (int boundary = 0; boundary < numBoundaries; boundary++)
                 {
                     if (isCandidate[boundary])
-                        pc.SendBeepOnPartitionSet(boundary * 2);
+                        SendBeepOnPartitionSet(boundary * 2);
                 }
 
                 round.SetValue(1);
@@ -444,11 +442,12 @@ namespace AS2.Algos.BoundaryTest
             // Did not proceed to Sum Computation, so carry on or start next iteration
             // Have to continue or start next iteration
             // First setup boundary circuit again (partition set ID = boundary index)
+            PinConfiguration pc = GetNextPinConfiguration();
             SetupBoundaryCircuit(ref pc);
             SetPlannedPinConfiguration(pc);
             // Every candidate has to toss a coin again and beep if the result is HEADS
             // If we start a new iteration, become a Phase 2 candidate again
-            StartLERound(pc, nextIteration);
+            StartLERound(nextIteration);
 
             round.SetValue(1);
         }
@@ -463,12 +462,10 @@ namespace AS2.Algos.BoundaryTest
         private void LE2Activate2()
         {
             // Receive TAILS beep on each boundary
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            LEReceiveTails(pc);
+            LEReceiveTails();
 
             // Phase 2 candidates toss coins and send beep on HEADS
-            SetPlannedPinConfiguration(pc);
-            StartLERound(pc, false, true);
+            StartLERound(false, true);
 
             round.SetValue(3);
         }
@@ -482,11 +479,10 @@ namespace AS2.Algos.BoundaryTest
         private void LE2Activate4()
         {
             // Receive TAILS beep on each boundary
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            bool beepOnGlobal = LEReceiveTails(pc, true);
+            bool beepOnGlobal = LEReceiveTails(true);
 
             // Establish global circuit and beep if we are not finished yet
-            SetGlobalCircuitAndBeep(pc, beepOnGlobal);
+            SetGlobalCircuitAndBeep(beepOnGlobal);
 
             round.SetValue(0);
         }
@@ -494,7 +490,7 @@ namespace AS2.Algos.BoundaryTest
         // Makes each candidate or Phase 2 candidate toss a coin and send a
         // beep on the corresponding partition set if it tossed HEADS. Also
         // makes every boundary particle a Phase 2 candidate if required.
-        private void StartLERound(PinConfiguration pc, bool becomePhase2Cand = false, bool isPhase2Cand = false)
+        private void StartLERound(bool becomePhase2Cand = false, bool isPhase2Cand = false)
         {
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
@@ -502,7 +498,7 @@ namespace AS2.Algos.BoundaryTest
                 {
                     if (TossCoin(boundary))
                     {
-                        pc.SendBeepOnPartitionSet(boundary);
+                        SendBeepOnPartitionSet(boundary);
                     }
                 }
 
@@ -519,18 +515,16 @@ namespace AS2.Algos.BoundaryTest
         private void LEActivate1(bool phase2 = false)
         {
             // Receive HEADS beep on each boundary
-            PinConfiguration pc = GetCurrentPinConfiguration();
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
-                if (pc.ReceivedBeepOnPartitionSet(boundary))
+                if (ReceivedBeepOnPartitionSet(boundary))
                 {
                     receivedHeadsBeep[boundary].SetValue(true);
                 }
                 // Send beep if we are a candidate and have tossed TAILS
                 if (!heads[boundary] && (!phase2 && isCandidate[boundary] || phase2 && isPhase2Candidate[boundary]))
                 {
-                    SetPlannedPinConfiguration(pc);
-                    pc.SendBeepOnPartitionSet(boundary);
+                    SendBeepOnPartitionSet(boundary);
                 }
             }
         }
@@ -540,12 +534,12 @@ namespace AS2.Algos.BoundaryTest
         // resets the HEADS storage and returns true if HEADS and TAILS
         // were received on any boundary. Can be used by Phase 1 and
         // Phase 2 candidates
-        private bool LEReceiveTails(PinConfiguration pc, bool phase2 = false)
+        private bool LEReceiveTails(bool phase2 = false)
         {
             bool rcvHeadsAndTails = false;
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
-                bool rcvTails = pc.ReceivedBeepOnPartitionSet(boundary);
+                bool rcvTails = ReceivedBeepOnPartitionSet(boundary);
                 // If both HEADS and TAILS were received: Phase is not finished yet
                 // Candidate with TAILS must retire and beep must be sent
                 if (receivedHeadsBeep[boundary] && rcvTails)
@@ -578,23 +572,21 @@ namespace AS2.Algos.BoundaryTest
         private void SCActivate0()
         {
             // Receive global termination beep (no beep = we are finished)
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            if (!pc.ReceivedBeepOnPartitionSet(0))
+            if (!ReceivedBeepOnPartitionSet(0))
             {
                 terminated.SetValue(true);
                 return;
             }
 
             // No termination yet: Continue with next iteration
-            SetPASCPinConfig(pc);
-            SetPlannedPinConfiguration(pc);
+            SetPASCPinConfig();
 
             // Leader particles send beep on primary partition sets
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
                 if (isCandidate[boundary])
                 {
-                    pc.SendBeepOnPartitionSet(boundary * 2);
+                    SendBeepOnPartitionSet(boundary * 2);
                 }
             }
 
@@ -606,14 +598,12 @@ namespace AS2.Algos.BoundaryTest
             // Active particles listen for beep on secondary circuit
             // If they receive a beep, they send an echo and remember
             // to become passive in this iteration
-            PinConfiguration pc = GetCurrentPinConfiguration();
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
                 if (scMode[boundary] != SCMode.COMPUTE) continue;
-                if (isActive[boundary] && pc.ReceivedBeepOnPartitionSet(boundary * 2 + 1))
+                if (isActive[boundary] && ReceivedBeepOnPartitionSet(boundary * 2 + 1))
                 {
-                    SetPlannedPinConfiguration(pc);
-                    pc.SendBeepOnPartitionSet(boundary * 2 + 1);
+                    SendBeepOnPartitionSet(boundary * 2 + 1);
                     becomePassive[boundary].SetValue(true);
                 }
             }
@@ -630,18 +620,11 @@ namespace AS2.Algos.BoundaryTest
             // If no beep was sent, the leader has the final result and will
             // start transmitting it now
 
-            // TODO: This way of planning the new pin configuration and sending beeps is not very nice
-            //  Maybe the API will need a better alternative that allows changing the configuration even
-            //  after beeps and messages have been scheduled
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            PinConfiguration planned = GetCurrentPinConfiguration();
-            // Collect partition sets on which to send beep
-            List<int> beepPSs = new List<int>();
-
+            PinConfiguration planned = GetNextPinConfiguration();
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
                 if (scMode[boundary] != SCMode.COMPUTE) continue;
-                bool rcvEcho = pc.ReceivedBeepOnPartitionSet(boundary * 2) || pc.ReceivedBeepOnPartitionSet(boundary * 2 + 1);
+                bool rcvEcho = ReceivedBeepOnPartitionSet(boundary * 2) || ReceivedBeepOnPartitionSet(boundary * 2 + 1);
                 if (rcvEcho)
                 {
                     // Active particles becoming passive setup pin configuration for
@@ -660,7 +643,7 @@ namespace AS2.Algos.BoundaryTest
                         // Send beep if current angle value is 1
                         if (boundaryAngles[boundary] == 1)
                         {
-                            beepPSs.Add(boundary * 2);
+                            SendBeepOnPartitionSet(boundary * 2);
                         }
                     }
                 }
@@ -680,7 +663,7 @@ namespace AS2.Algos.BoundaryTest
                         // Send beep if final angle result is 1
                         if (boundaryAngles[boundary] == 1)
                         {
-                            beepPSs.Add(boundary * 2);
+                            SendBeepOnPartitionSet(boundary * 2);
                         }
                     }
                     else
@@ -690,9 +673,6 @@ namespace AS2.Algos.BoundaryTest
                     }
                 }
             }
-            SetPlannedPinConfiguration(planned);
-            foreach (int psIdx in beepPSs)
-                planned.SendBeepOnPartitionSet(psIdx);
 
             round.SetValue(3);
         }
@@ -702,7 +682,6 @@ namespace AS2.Algos.BoundaryTest
             // In COMPUTE phase: Active boundary particles send and receive
             // partial sums on primary partition set
             // In FINAL phase: All boundary particles listen for final result
-            PinConfiguration pc = GetCurrentPinConfiguration();
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
                 if (scMode[boundary] == SCMode.WAIT) continue;
@@ -712,15 +691,14 @@ namespace AS2.Algos.BoundaryTest
                     {
                         // Particles that stay active listen for beeps,
                         // particles that will become passive send them
-                        if (!becomePassive[boundary] && pc.ReceivedBeepOnPartitionSet(boundary * 2))
+                        if (!becomePassive[boundary] && ReceivedBeepOnPartitionSet(boundary * 2))
                         {
                             // Update partial sum mod 5 (round 3 receives angle 1, round 4 receives angle 2, etc.)
                             boundaryAngles[boundary].SetValue((boundaryAngles[boundary] + round - 2) % 5);
                         }
                         else if (becomePassive[boundary] && boundaryAngles[boundary] == round - 1)
                         {
-                            SetPlannedPinConfiguration(pc);
-                            pc.SendBeepOnPartitionSet(boundary * 2);
+                            SendBeepOnPartitionSet(boundary * 2);
                         }
                     }
                 }
@@ -730,10 +708,9 @@ namespace AS2.Algos.BoundaryTest
                     // Leader sends final result, other particles listen
                     if (isCandidate[boundary] && boundaryAngles[boundary] == round - 1)
                     {
-                        SetPlannedPinConfiguration(pc);
-                        pc.SendBeepOnPartitionSet(boundary * 2);
+                        SendBeepOnPartitionSet(boundary * 2);
                     }
-                    else if (!isCandidate[boundary] && pc.ReceivedBeepOnPartitionSet(boundary * 2))
+                    else if (!isCandidate[boundary] && ReceivedBeepOnPartitionSet(boundary * 2))
                     {
                         boundaryAngles[boundary].SetValue(round - 2);
                     }
@@ -746,7 +723,7 @@ namespace AS2.Algos.BoundaryTest
         private void SCActivate6()
         {
             // Receive angle value 4 if we are computing or receiving the final result
-            PinConfiguration pc = GetCurrentPinConfiguration();
+            //PinConfiguration pc = GetCurrentPinConfiguration();
             bool beepOnGlobal = false;
             for (int boundary = 0; boundary < numBoundaries; boundary++)
             {
@@ -757,7 +734,7 @@ namespace AS2.Algos.BoundaryTest
                     if (isActive[boundary])
                     {
                         // Particles that stay active listen for beeps
-                        if (!becomePassive[boundary] && pc.ReceivedBeepOnPartitionSet(boundary * 2))
+                        if (!becomePassive[boundary] && ReceivedBeepOnPartitionSet(boundary * 2))
                         {
                             // Update partial sum mod 5 (round 6 receives angle 4)
                             boundaryAngles[boundary].SetValue((boundaryAngles[boundary] + 4) % 5);
@@ -774,7 +751,7 @@ namespace AS2.Algos.BoundaryTest
                 {
                     // SC mode is FINAL
                     // Receive final bit of result
-                    if (pc.ReceivedBeepOnPartitionSet(boundary * 2))
+                    if (ReceivedBeepOnPartitionSet(boundary * 2))
                     {
                         boundaryAngles[boundary].SetValue(4);
                     }
@@ -785,11 +762,11 @@ namespace AS2.Algos.BoundaryTest
             // Establish global circuit and beep if we are not done yet
             if (numBoundaries > 0)
             {
+                PinConfiguration pc = GetNextPinConfiguration();
                 pc.SetToGlobal();
                 pc.ResetPartitionSetPlacement();
-                SetPlannedPinConfiguration(pc);
                 if (beepOnGlobal)
-                    pc.SendBeepOnPartitionSet(0);
+                    SendBeepOnPartitionSet(0);
             }
 
             round.SetValue(0);
@@ -839,11 +816,12 @@ namespace AS2.Algos.BoundaryTest
         // primary partition set and the partition set with ID 2*i + 1 is the secondary
         // partition set. The primary partition set is always connected to the successor
         // on the pin that is closest to the empty region.
-        private void SetPASCPinConfig(PinConfiguration pc)
+        private void SetPASCPinConfig()
         {
             if (numBoundaries == 0)
                 return;
 
+            PinConfiguration pc = GetNextPinConfiguration();
             pc.SetToSingleton();
             pc.ResetPartitionSetPlacement();
             for (int boundary = 0; boundary < numBoundaries; boundary++)
@@ -920,16 +898,16 @@ namespace AS2.Algos.BoundaryTest
         // Sets the given PinConfiguration to the global configuration,
         // makes it the planned one, and sends a beep if specified.
         // Only affects particles with at least one boundary.
-        private void SetGlobalCircuitAndBeep(PinConfiguration pc, bool beep)
+        private void SetGlobalCircuitAndBeep(bool beep)
         {
             if (numBoundaries > 0)
             {
+                PinConfiguration pc = GetNextPinConfiguration();
                 pc.SetToGlobal();
                 pc.ResetPartitionSetPlacement();
-                SetPlannedPinConfiguration(pc);
                 if (beep)
                 {
-                    pc.SendBeepOnPartitionSet(0);
+                    SendBeepOnPartitionSet(0);
                 }
             }
         }

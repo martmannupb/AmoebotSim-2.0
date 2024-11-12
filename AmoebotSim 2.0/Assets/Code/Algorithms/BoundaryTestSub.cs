@@ -75,15 +75,32 @@ namespace AS2.Algos.BoundaryTestSub
 
                         if (boundaryTest.IsFinished())
                         {
+                            bool isLeader = false;
+                            int nBoundaries = boundaryTest.NumBoundaries();
+                            for (int i = 0; i < nBoundaries; i++)
+                            {
+                                if (boundaryTest.IsBoundaryLeader(i))
+                                {
+                                    isLeader = true;
+                                    break;
+                                }
+                            }
                             if (boundaryTest.OnOuterBoundary())
                             {
                                 if (boundaryTest.IsOuterBoundaryLeader())
                                     SetMainColor(ColorData.Particle_Green);
+                                else if (isLeader)
+                                    SetMainColor(ColorData.Particle_Red);
                                 else
                                     SetMainColor(ColorData.Particle_Aqua);
                             }
                             else if (boundaryTest.OnInnerBoundary())
-                                SetMainColor(ColorData.Particle_Orange);
+                            {
+                                if (isLeader)
+                                    SetMainColor(ColorData.Particle_Red);
+                                else
+                                    SetMainColor(ColorData.Particle_Orange);
+                            }
                             else
                                 SetMainColor(ColorData.Particle_Black);
 

@@ -824,28 +824,22 @@ namespace AS2.Sim
         /// the particle at the end of the round.
         /// </para>
         /// <para>
-        /// After setting it to be the planned configuration, it
+        /// After setting it to be the next configuration, it
         /// can be used to send beeps and messages. This ability
         /// expires if another pin configuration is set as the
         /// next one.
         /// </para>
         /// </summary>
-        /// <param name="pc">The new pin configuration. Must not be
-        /// the previous pin configuration instance (this should
-        /// never be necessary because the next pin configuration is
-        /// by default a copy of the previous one).</param>
+        /// <param name="pc">The new pin configuration.</param>
         public void SetNextPinConfiguration(SysPinConfiguration pc)
         {
             if (pc.HeadDirection != exp_expansionDir)
             {
                 throw new AS2.Sim.InvalidActionException("Head direction of next pin configuration (" + pc.HeadDirection + ") does not match expansion state (" + exp_expansionDir + ").");
             }
-            if (pc.isPrev)
+            if (pc.isPrev || !pc.isNext)
             {
-                throw new AS2.Sim.InvalidActionException("Cannot set previous pin configuration object as the next one.");
-            }
-            if (!pc.isNext)
-            {
+                pc.isPrev = false;
                 // Deregister current next pin config
                 nextPinConfig.isNext = false;
                 nextPinConfig = pc;
@@ -853,16 +847,16 @@ namespace AS2.Sim
             }
 
 
-            if (!pc.isPlanned)
-            {
-                if (hasPlannedBeeps)
-                {
-                    Debug.LogWarning("Setting planned pin configuration after sending data erases the sent data.");
-                    ResetPlannedBeepsAndMessages();
-                }
-            }
-            plannedPinConfiguration = pc.Copy();
-            pc.isPlanned = true;
+            //if (!pc.isPlanned)
+            //{
+            //    if (hasPlannedBeeps)
+            //    {
+            //        Debug.LogWarning("Setting planned pin configuration after sending data erases the sent data.");
+            //        ResetPlannedBeepsAndMessages();
+            //    }
+            //}
+            //plannedPinConfiguration = pc.Copy();
+            //pc.isPlanned = true;
         }
 
         /// <summary>
@@ -1971,6 +1965,10 @@ namespace AS2.Sim
             }
 
             pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
+            prevPinConfig = pinConfigurationHistory.GetMarkedValue(this);
+            prevPinConfig.isPrev = true;
+            nextPinConfig = prevPinConfig.Copy();
+            nextPinConfig.isNext = true;
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
             {
                 receivedBeeps[i] = receivedBeepsHistory[i].GetMarkedValue();
@@ -2183,12 +2181,19 @@ namespace AS2.Sim
 
             pinConfigurationHistory = new ValueHistoryPinConfiguration(data.pinConfigurationHistory);
             pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
+            prevPinConfig = pinConfigurationHistory.GetMarkedValue(this);
+            prevPinConfig.isPrev = true;
+            nextPinConfig = prevPinConfig.Copy();
+            nextPinConfig.isNext = true;
 
             receivedBeeps = new BitArray(maxNumPins);
             receivedMessages = new Message[maxNumPins];
             plannedBeeps = new BitArray(maxNumPins);
             plannedMessages = new Message[maxNumPins];
             psetFailures = new BitArray(maxNumPins);
+
+            plannedBeepsByPin = new HashSet<int>();
+            plannedMessagesByPin = new Dictionary<int, Message>();
 
             receivedBeepsHistory = new ValueHistory<bool>[maxNumPins];
             receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];

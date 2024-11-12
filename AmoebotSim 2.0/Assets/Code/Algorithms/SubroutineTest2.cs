@@ -100,7 +100,7 @@ namespace AS2.Algos.SubroutineTest2
             if (finished)
                 return;
 
-            PinConfiguration pc = GetCurrentPinConfiguration();
+            PinConfiguration pc = GetNextPinConfiguration();
 
             // Initialization in very first round
             if (round == -1)
@@ -118,7 +118,6 @@ namespace AS2.Algos.SubroutineTest2
                     SetupPinConfiguration(pc);
                 else
                     pc.SetToGlobal(0);
-                SetPlannedPinConfiguration(pc);
 
                 // Initialize and activate leader election subroutines
                 for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
@@ -150,7 +149,6 @@ namespace AS2.Algos.SubroutineTest2
                 if (numBoundaries > 0)
                 {
                     SetupPinConfiguration(pc);
-                    SetPlannedPinConfiguration(pc);
                 }
                 UpdateColor();
                 return;
@@ -164,73 +162,13 @@ namespace AS2.Algos.SubroutineTest2
             }
             else if (numBoundaries > 0)
                 SetupPinConfiguration(pc);
-            SetPlannedPinConfiguration(pc);
 
             // Activate
             subLEs[0].ActivateSend();
             for (int i = 1; i < numBoundaries; i++)
                 subLEs[i].ActivateSend();
 
-            //// During the computation
-            //// Establish global circuit and send beep if we are not finished every 4 rounds
-            //if (round == 0)
-            //{
-            //    // Listen for beep on global circuit
-            //    PinConfiguration pc = GetCurrentPinConfiguration();
-            //    if (!pc.ReceivedBeepOnPartitionSet(0))
-            //    {
-            //        // Received no beep, that means everybody is finished
-            //        finished.SetValue(true);
-            //        if (numBoundaries > 0)
-            //        {
-            //            SetupPinConfiguration(pc);
-            //            SetNextPinConfiguration(pc);
-            //        }
-            //        UpdateColor();
-            //        return;
-            //    }
-
-            //    // Not finished, continue by sending beeps
-            //    if (numBoundaries > 0)
-            //    {
-            //        SetupPinConfiguration(pc);
-            //        SetNextPinConfiguration(pc);
-
-            //        for (int i = 0; i < numBoundaries; i++)
-            //            subLEs[i].ActivateSend();
-            //    }
-            //}
-            //else if (round == 3)
-            //{
-            //    // Activate receive
-            //    bool leFinished = true;
-            //    for (int i = 0; i < numBoundaries; i++)
-            //    {
-            //        subLEs[i].ActivateReceive();
-            //        if (!subLEs[i].IsFinished())
-            //            leFinished = false;
-            //    }
-
-            //    // Send beep on global circuit if we are not finished yet
-            //    PinConfiguration pc = GetCurrentPinConfiguration();
-            //    pc.SetToGlobal(0);
-            //    pc.ResetPartitionSetPlacement();
-            //    SetNextPinConfiguration(pc);
-
-            //    if (!leFinished)
-            //        pc.SendBeepOnPartitionSet(0);
-            //}
-            //else
-            //{
-            //    // Normal computation round
-            //    for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
-            //    {
-            //        subLEs[i].ActivateBeep();
-            //    }
-            //}
-
             UpdateColor();
-            //round.SetValue((round + 1) % 4);
         }
 
         /// <summary>

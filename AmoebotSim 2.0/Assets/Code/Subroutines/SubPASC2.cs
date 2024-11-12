@@ -39,9 +39,8 @@ namespace AS2.Subroutines.PASC
     /// <para>
     /// Usage:<br/>
     /// After initializing the subroutine, call <see cref="SetupPC(PinConfiguration, List{Direction})"/>
-    /// to make each amoebot establish its partition sets. This does not plan the pin
-    /// configuration yet, in the case that other changes are required. You can then call
-    /// <see cref="ActivateSend"/> (after planning the pin configuration) to send the beeps.
+    /// to make each amoebot establish its partition sets. This does not change the next pin
+    /// configuration object. You can then call <see cref="ActivateSend"/> to send the beeps.
     /// This is only necessary for the leader amoebots (but it is no problem to call it
     /// on all amoebots).<br/>
     /// In the next round, you have to call <see cref="ActivateReceive"/> before changing
@@ -63,11 +62,10 @@ namespace AS2.Subroutines.PASC
     /// significant bit than the number of PASC iterations), you can perform a cutoff to
     /// save a few rounds as follows:<br/>
     /// Instead of calling <see cref="SetupPC(PinConfiguration, List{Direction})"/>, call
-    /// <see cref="SetupCutoffCircuit(PinConfiguration, List{Direction})"/> and plan the
-    /// resulting pin configuration. This will setup a circuit where all active non-leader
-    /// amoebots disconnect their predecessors. After planning the pin configuration, call
-    /// <see cref="SendCutoffBeep"/> instead of <see cref="ActivateSend"/> (but call
-    /// it on all amoebots, not just the leader). This will make the active non-leader
+    /// <see cref="SetupCutoffCircuit(PinConfiguration, List{Direction})"/>. This will
+    /// setup a circuit where all active non-leader amoebots disconnect their predecessors.
+    /// Then, call <see cref="SendCutoffBeep"/> instead of <see cref="ActivateSend"/> (but
+    /// call it on all amoebots, not just the leader). This will make the active non-leader
     /// amoebots send a beep to their successor on both circuits, causing all amoebots
     /// after the first active non-leader amoebot to receive a beep. These are exactly
     /// the amoebots that will receive at least one 1-bit in the future PASC iterations,
@@ -177,8 +175,8 @@ namespace AS2.Subroutines.PASC
 
         /// <summary>
         /// Sets up the primary and secondary partition sets
-        /// for this amoebot. The pin configuration is not
-        /// planned by this method.
+        /// for this amoebot. The next pin configuration is not
+        /// set to a new object by this method.
         /// </summary>
         /// <param name="pc">The pin configuration to be modified.
         /// This will only modify the pins and partition sets
@@ -330,9 +328,8 @@ namespace AS2.Subroutines.PASC
                 Passive = false;
 
             // Check where we have received a beep
-            PinConfiguration pc = algo.GetCurrentPinConfiguration();
-            bool beepOnPrimary = pc.ReceivedBeepOnPartitionSet(PSet1);
-            bool beepOnSecondary = pc.ReceivedBeepOnPartitionSet(PSet2);
+            bool beepOnPrimary = algo.ReceivedBeepOnPartitionSet(PSet1);
+            bool beepOnSecondary = algo.ReceivedBeepOnPartitionSet(PSet2);
 
             if (!beepOnPrimary && !beepOnSecondary)
             {
@@ -363,16 +360,14 @@ namespace AS2.Subroutines.PASC
         /// <summary>
         /// Causes the leader of the PASC structure to send the
         /// beep that deactivates half of the active participants.
-        /// Must only be called after the final pin configuration
-        /// has been planned.
+        /// Must be called after the pin configuration has been set up.
         /// </summary>
         public void ActivateSend()
         {
             // Leader sends beep on primary partition set
             if (Leader)
             {
-                PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                pc.SendBeepOnPartitionSet(PSet1);
+                algo.SendBeepOnPartitionSet(PSet1);
             }
         }
 
@@ -382,30 +377,27 @@ namespace AS2.Subroutines.PASC
         /// receive at least one 1-bit in a future PASC iteration.
         /// Must only be called after the final pin configuration
         /// setup by <see cref="SetupCutoffCircuit(PinConfiguration, List{Direction})"/>
-        /// has been planned.
+        /// has been done.
         /// </summary>
         public void SendCutoffBeep()
         {
             if (Active && !Leader)
             {
-                PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                pc.SendBeepOnPartitionSet(PSet1);
-                pc.SendBeepOnPartitionSet(PSet2);
+                algo.SendBeepOnPartitionSet(PSet1);
+                algo.SendBeepOnPartitionSet(PSet2);
             }
         }
 
         /// <summary>
         /// Processes the received cutoff beep that was sent in
         /// the last round. Must be called in the next round
-        /// after sending the cutoff beep and before the current
-        /// pin configuration changes. Afterwards,
+        /// after sending the cutoff beep. Afterwards,
         /// <see cref="GetReceivedBit"/> will be <c>1</c> if and
         /// only if we received the cutoff beep.
         /// </summary>
         public void ReceiveCutoffBeep()
         {
-            PinConfiguration pc = algo.GetCurrentPinConfiguration();
-            ReceivedBit = pc.ReceivedBeepOnPartitionSet(PSet1);
+            ReceivedBit = algo.ReceivedBeepOnPartitionSet(PSet1);
         }
 
         /// <summary>

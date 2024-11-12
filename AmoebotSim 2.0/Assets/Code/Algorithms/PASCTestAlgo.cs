@@ -64,7 +64,6 @@ namespace AS2.Algos.PASCTestAlgo
         // The beep activation method
         public override void ActivateBeep()
         {
-            PinConfiguration pc = GetCurrentPinConfiguration();
 
             if (firstRound)
             {
@@ -83,9 +82,9 @@ namespace AS2.Algos.PASCTestAlgo
                 dist2.SetValue(dist2 + pasc2.GetReceivedBit().ToString());
             }
 
+            PinConfiguration pc = GetNextPinConfiguration();
             pasc1.SetupPC(pc);
             pasc2.SetupPC(pc);
-            SetPlannedPinConfiguration(pc);
             pasc1.ActivateSend();
             pasc2.ActivateSend();
         }

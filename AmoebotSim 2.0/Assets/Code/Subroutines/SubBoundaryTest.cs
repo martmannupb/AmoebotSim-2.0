@@ -18,7 +18,7 @@ namespace AS2.Subroutines.BoundaryTest
     /// </item>
     /// <item>
     ///     Run <see cref="SetupPC(PinConfiguration)"/>, then <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/>
-    ///     and <see cref="ActivateSend"/> to start the procedure.
+    ///     (if necessary) and <see cref="ActivateSend"/> to start the procedure.
     /// </item>
     /// <item>
     ///     In the round immediately following a <see cref="ActivateSend"/> call, <see cref="ActivateReceive"/>
@@ -311,10 +311,9 @@ namespace AS2.Subroutines.BoundaryTest
                         // have beeped and they have tossed TAILS
                         if (boundaryCandidate.GetCurrentOr())
                         {
-                            PinConfiguration pc = algo.GetCurrentPinConfiguration();
                             for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
                             {
-                                if (boundaryCandidate.GetCurrentValue(i) && !coinTossHeads.GetCurrentValue(i) && pc.ReceivedBeepOnPartitionSet(2 * i) && pc.ReceivedBeepOnPartitionSet(2 * i + 1))
+                                if (boundaryCandidate.GetCurrentValue(i) && !coinTossHeads.GetCurrentValue(i) && algo.ReceivedBeepOnPartitionSet(2 * i) && algo.ReceivedBeepOnPartitionSet(2 * i + 1))
                                 {
                                     boundaryCandidate.SetValue(i, false);
                                 }
@@ -326,8 +325,7 @@ namespace AS2.Subroutines.BoundaryTest
                 case 1:
                     {
                         // Receive beeps on both global circuit
-                        PinConfiguration pc = algo.GetCurrentPinConfiguration();
-                        if (pc.ReceivedBeepOnPartitionSet(0) && pc.ReceivedBeepOnPartitionSet(1))
+                        if (algo.ReceivedBeepOnPartitionSet(0) && algo.ReceivedBeepOnPartitionSet(1))
                         {
                             // Helper candidates that tossed TAILS revoke candidacy
                             if (auxCandidate.GetCurrentValue() && !coinTossHeads.GetCurrentValue(0))
@@ -373,8 +371,7 @@ namespace AS2.Subroutines.BoundaryTest
                 case 3:
                     {
                         // Listen for global circuit beep telling us that we have to continue
-                        PinConfiguration pc = algo.GetCurrentPinConfiguration();
-                        if (pc.ReceivedBeepOnPartitionSet(0))
+                        if (algo.ReceivedBeepOnPartitionSet(0))
                         {
                             // Continue angle computation
                             round.SetValue(r + 1);
@@ -392,14 +389,14 @@ namespace AS2.Subroutines.BoundaryTest
                         // Active amoebots receive on both successor circuits
                         // Round 4: Existence and first bit of successor
                         // Round 5: Remaining two bits of successor
-                        PinConfiguration pc = algo.GetCurrentPinConfiguration();
+                        PinConfiguration pc = algo.GetPrevPinConfiguration();
                         for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
                         {
                             if (pasc[i].IsActive())
                             {
                                 Direction succ = boundaryDirs[2 * i + 1].GetCurrentValue();
-                                bool beep1 = pc.GetPinAt(succ, algo.PinsPerEdge - 1).PartitionSet.ReceivedBeep();
-                                bool beep2 = pc.GetPinAt(succ, algo.PinsPerEdge - 2).PartitionSet.ReceivedBeep();
+                                bool beep1 = pc.GetPinAt(succ, algo.PinsPerEdge - 1).ReceivedBeep();
+                                bool beep2 = pc.GetPinAt(succ, algo.PinsPerEdge - 2).ReceivedBeep();
                                 if (r == 4)
                                 {
                                     if (beep1)
@@ -432,16 +429,14 @@ namespace AS2.Subroutines.BoundaryTest
                     break;
                 case 6:
                     {
-                        PinConfiguration pc = algo.GetCurrentPinConfiguration();
-
                         // Boundary circuit beep tells us that we are on the outer boundary
                         for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
                         {
-                            innerBoundary.SetValue(i, !pc.ReceivedBeepOnPartitionSet(2 * i));
+                            innerBoundary.SetValue(i, !algo.ReceivedBeepOnPartitionSet(2 * i));
                         }
 
                         // Global circuit beep tells us whether an inner boundary exists
-                        innerBoundaryExists.SetValue(pc.ReceivedBeepOnPartitionSet(6));
+                        innerBoundaryExists.SetValue(algo.ReceivedBeepOnPartitionSet(6));
                         
                         finished.SetValue(true);
                     }
@@ -452,8 +447,8 @@ namespace AS2.Subroutines.BoundaryTest
 
         /// <summary>
         /// Sets up the pin configuration required for the
-        /// <see cref="ActivateSend"/> call. The pin configuration
-        /// is not planned by this method.
+        /// <see cref="ActivateSend"/> call. The next pin configuration
+        /// is not set to another object by this method.
         /// </summary>
         /// <param name="pc">The pin configuration to modify.</param>
         public void SetupPC(PinConfiguration pc)
@@ -522,13 +517,12 @@ namespace AS2.Subroutines.BoundaryTest
                         // Leader candidates flip coin and beep
                         if (boundaryCandidate.GetCurrentOr())
                         {
-                            PinConfiguration pc = algo.GetPlannedPinConfiguration();
                             for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
                             {
                                 if (boundaryCandidate.GetCurrentValue(i))
                                 {
                                     bool heads = Random.Range(0f, 1f) < 0.5f;
-                                    pc.SendBeepOnPartitionSet(heads ? 2 * i : 2 * i + 1);
+                                    algo.SendBeepOnPartitionSet(heads ? 2 * i : 2 * i + 1);
                                     coinTossHeads.SetValue(i, heads);
                                 }
                             }
@@ -540,9 +534,8 @@ namespace AS2.Subroutines.BoundaryTest
                         // Helper candidates flip coin and beep on global circuit
                         if (auxCandidate.GetCurrentValue())
                         {
-                            PinConfiguration pc = algo.GetPlannedPinConfiguration();
                             bool heads = Random.Range(0f, 1f) < 0.5f;
-                            pc.SendBeepOnPartitionSet(heads ? 0 : 1);
+                            algo.SendBeepOnPartitionSet(heads ? 0 : 1);
                             coinTossHeads.SetValue(0, heads);
                         }
                     }
@@ -561,8 +554,7 @@ namespace AS2.Subroutines.BoundaryTest
                         {
                             if (pasc[i].BecamePassive())
                             {
-                                PinConfiguration pc = algo.GetPlannedPinConfiguration();
-                                pc.SendBeepOnPartitionSet(0);
+                                algo.SendBeepOnPartitionSet(0);
                                 break;
                             }
                         }
@@ -573,7 +565,7 @@ namespace AS2.Subroutines.BoundaryTest
                     {
                         // PASC instances that became passive send existence beep and angle bits to predecessor
                         // Existence and first bit in round 4, remaining bits in round 5
-                        PinConfiguration pc = algo.GetPlannedPinConfiguration();
+                        PinConfiguration pc = algo.GetNextPinConfiguration();
                         for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
                         {
                             if (pasc[i].BecamePassive())
@@ -581,19 +573,19 @@ namespace AS2.Subroutines.BoundaryTest
                                 Direction pred = boundaryDirs[2 * i].GetCurrentValue();
                                 if (r == 4)
                                 {
-                                    pc.GetPinAt(pred, 0).PartitionSet.SendBeep();
+                                    pc.GetPinAt(pred, 0).SendBeep();
                                     // Beep on second circuit if our angle is 4
                                     if (angles[i].GetCurrentValue() == 4)
-                                        pc.GetPinAt(pred, 1).PartitionSet.SendBeep();
+                                        pc.GetPinAt(pred, 1).SendBeep();
                                 }
                                 else
                                 {
                                     // Send lower bit on first circuit, higher bit on second
                                     int angle = angles[i].GetCurrentValue();
                                     if (angle % 2 == 1)
-                                        pc.GetPinAt(pred, 0).PartitionSet.SendBeep();
+                                        pc.GetPinAt(pred, 0).SendBeep();
                                     if (angle > 1 && angle < 4)
-                                        pc.GetPinAt(pred, 1).PartitionSet.SendBeep();
+                                        pc.GetPinAt(pred, 1).SendBeep();
                                 }
                             }
                         }
@@ -601,7 +593,6 @@ namespace AS2.Subroutines.BoundaryTest
                     break;
                 case 6:
                     {
-                        PinConfiguration pc = algo.GetPlannedPinConfiguration();
                         // Leader of outer boundary sends beep on boundary circuit
                         // Other leaders send beep on global circuit
                         for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
@@ -609,9 +600,9 @@ namespace AS2.Subroutines.BoundaryTest
                             if (boundaryCandidate.GetCurrentValue(i))
                             {
                                 if (angles[i].GetCurrentValue() == 1)
-                                    pc.SendBeepOnPartitionSet(2 * i);
+                                    algo.SendBeepOnPartitionSet(2 * i);
                                 else
-                                    pc.SendBeepOnPartitionSet(6);
+                                    algo.SendBeepOnPartitionSet(6);
                             }
                         }
                     }

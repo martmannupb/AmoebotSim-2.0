@@ -187,12 +187,10 @@ namespace AS2.Subroutines.LeaderElectionSync
             if (finished.GetCurrentValue() || round.GetCurrentValue() == -1)
                 return;
 
-            PinConfiguration pc = algo.GetCurrentPinConfiguration();
-
             if (round.GetCurrentValue() == 0)
             {
                 // Check if we have received a synchronization beep
-                bool receivedBeep = pc.ReceivedBeepOnPartitionSet(partitionSetSync.GetCurrentValue());
+                bool receivedBeep = algo.ReceivedBeepOnPartitionSet(partitionSetSync.GetCurrentValue());
 
                 // Move on to the next phase if no beep was received
                 if (!receivedBeep)
@@ -226,99 +224,11 @@ namespace AS2.Subroutines.LeaderElectionSync
                         TossCoin();
                 }
             }
-            //else if (round.GetCurrentValue() % 2 == 0)
-            //{
-            //    // Other even round (2 or 4)
-            //    beepFromTails.SetValue(pc.ReceivedBeepOnPartitionSet(partitionSetElect.GetCurrentValue()));
-
-            //    // Check if we have tossed TAILS and received a HEADS beep
-            //    if (!heads.GetCurrentValue() && beepFromHeads.GetCurrentValue())
-            //    {
-            //        // We have to withdraw our candidacy in this case
-            //        // Proper candidates withdraw after round 0,1
-            //        if (round.GetCurrentValue() == 2)
-            //        {
-            //            if (isLeaderCandidate.GetCurrentValue())
-            //                isLeaderCandidate.SetValue(false);
-            //        }
-            //        // Phase 2 candidates withdraw in round 4
-            //        else if (isPhase2Candidate.GetCurrentValue())
-            //            isPhase2Candidate.SetValue(false);
-            //    }
-
-            //    // Toss a coin if we are a candidate in the correct phase and round
-            //    if (!firstPhase.GetCurrentValue() && round.GetCurrentValue() == 2 && isPhase2Candidate.GetCurrentValue())
-            //        TossCoin();
-            //}
             else
             {
                 // Rounds 1 and 2: Receive HEADS beep
-                beepFromHeads.SetValue(pc.ReceivedBeepOnPartitionSet(partitionSetElect.GetCurrentValue()));
+                beepFromHeads.SetValue(algo.ReceivedBeepOnPartitionSet(partitionSetElect.GetCurrentValue()));
             }
-
-
-
-
-
-
-            //if (round.GetCurrentValue() % 2 == 0)
-            //{
-            //    // Even round: Receive TAILS beep and decide what should be done next
-            //    beepFromTails.SetValue(receivedBeep);
-
-            //    // In round 0, we switch phases or terminate
-            //    // If one of the two coin toss results did not occur: Terminate
-            //    if (round.GetCurrentValue() == 0 && (!beepFromHeads.GetCurrentValue() || !beepFromTails.GetCurrentValue()))
-            //    {
-            //        // Either start an iteration of phase 2 or terminate completely
-            //        if (firstPhase.GetCurrentValue() && kappa.GetCurrentValue() > 0 || repetitions.GetCurrentValue() < kappa.GetCurrentValue())
-            //        {
-            //            // We need to start an iteration of phase 2
-            //            firstPhase.SetValue(false);
-            //            repetitions.SetValue(repetitions.GetCurrentValue() + 1);
-            //            isPhase2Candidate.SetValue(true);
-
-            //            // Only proper candidates toss a coin here
-            //            if (isLeaderCandidate.GetCurrentValue())
-            //                TossCoin();
-            //        }
-            //        else
-            //        {
-            //            // This was the last iteration
-            //            finished.SetValue(true);
-            //            if (controlColor.GetCurrentValue())
-            //                UpdateColor();
-            //            return;
-            //        }
-            //    }
-            //    // Not round 0 or we received both kinds of beeps
-            //    else
-            //    {
-            //        // Check if we have tossed TAILS and received a HEADS beep
-            //        if (!heads.GetCurrentValue() && beepFromHeads.GetCurrentValue())
-            //        {
-            //            // We have to withdraw our candidacy in this case
-            //            // Proper candidates withdraw in first phase or after round 0,1
-            //            if (firstPhase.GetCurrentValue() || round.GetCurrentValue() == 2)
-            //            {
-            //                if (isLeaderCandidate.GetCurrentValue())
-            //                    isLeaderCandidate.SetValue(false);
-            //            }
-            //            else if (isPhase2Candidate.GetCurrentValue())
-            //                isPhase2Candidate.SetValue(false);
-            //        }
-                    
-            //        // Toss a coin if we are a candidate in the correct round
-            //        if (round.GetCurrentValue() == 0 && isLeaderCandidate.GetCurrentValue()
-            //            || round.GetCurrentValue() == 2 && isPhase2Candidate.GetCurrentValue())
-            //            TossCoin();
-            //    }
-            //}
-            //else
-            //{
-            //    // Odd round: Receive HEADS beep
-            //    beepFromHeads.SetValue(receivedBeep);
-            //}
 
             if (controlColor.GetCurrentValue())
                 UpdateColor();
@@ -336,15 +246,11 @@ namespace AS2.Subroutines.LeaderElectionSync
             if (finished.GetCurrentValue())
                 return;
 
-            PinConfiguration pc = algo.GetPlannedPinConfiguration();
-            if (pc == null)
-                pc = algo.GetCurrentPCAsPlanned();
-
             if (round.GetCurrentValue() == -1)
             {
                 // First round: Candidates toss coin and send a beep on the election circuit
                 if (isLeaderCandidate.GetCurrentValue() && TossCoin())
-                    pc.SendBeepOnPartitionSet(partitionSetElect.GetCurrentValue());
+                    algo.SendBeepOnPartitionSet(partitionSetElect.GetCurrentValue());
 
                 // This is a stand-in for round 0, so we continue with round 1
                 round.SetValue(1);
@@ -357,12 +263,7 @@ namespace AS2.Subroutines.LeaderElectionSync
             {
                 // If we are a candidate and have tossed HEADS, we send a beep
                 if (heads.GetCurrentValue() && isLeaderCandidate.GetCurrentValue())
-                    pc.SendBeepOnPartitionSet(partitionSetElect.GetCurrentValue());
-
-                //// If we have received both results and are in the first phase, we send a
-                //// continuation beep in round 2
-                //if (firstPhase.GetCurrentValue() && round.GetCurrentValue() == 2 && beepFromHeads.GetCurrentValue() && beepFromTails.GetCurrentValue())
-                //    pc.SendBeepOnPartitionSet(partitionSetSync.GetCurrentValue());
+                    algo.SendBeepOnPartitionSet(partitionSetElect.GetCurrentValue());
 
                 // Also reset HEADS beep flag
                 beepFromHeads.SetValue(false);
@@ -370,20 +271,6 @@ namespace AS2.Subroutines.LeaderElectionSync
                 // Increment counter
                 round.SetValue(round.GetCurrentValue() + 1);
             }
-            //else if (round.GetCurrentValue() == 4)
-            //{
-            //    // If we have received both a HEADS and a TAILS beep,
-            //    // we send a beep on the synchronization circuit
-            //    if (beepFromHeads.GetCurrentValue() && beepFromTails.GetCurrentValue())
-            //        pc.SendBeepOnPartitionSet(partitionSetSync.GetCurrentValue());
-
-            //    // Reset both beep flags
-            //    beepFromHeads.SetValue(false);
-            //    beepFromTails.SetValue(false);
-
-            //    // Reset counter
-            //    round.SetValue(0);
-            //}
             else
             {
                 // Rounds 1 and 2
@@ -399,14 +286,14 @@ namespace AS2.Subroutines.LeaderElectionSync
                         // Send a beep on the synchronization circuit
                         // if we are still in the first phase
                         if (firstPhase.GetCurrentValue())
-                            pc.SendBeepOnPartitionSet(partitionSetSync.GetCurrentValue());
+                            algo.SendBeepOnPartitionSet(partitionSetSync.GetCurrentValue());
                     }
                     else if (round.GetCurrentValue() == 2 && isPhase2Candidate.GetCurrentValue())
                     {
                         isPhase2Candidate.SetValue(false);
 
                         // Send a beep on the synchronization circuit
-                        pc.SendBeepOnPartitionSet(partitionSetSync.GetCurrentValue());
+                        algo.SendBeepOnPartitionSet(partitionSetSync.GetCurrentValue());
                     }
                 }
 
@@ -418,7 +305,7 @@ namespace AS2.Subroutines.LeaderElectionSync
                 if (!firstPhase.GetCurrentValue() && round.GetCurrentValue() == 1 && isPhase2Candidate.GetCurrentValue())
                 {
                     if (TossCoin())
-                        pc.SendBeepOnPartitionSet(partitionSetElect.GetCurrentValue());
+                        algo.SendBeepOnPartitionSet(partitionSetElect.GetCurrentValue());
                 }
 
                 // Increment counter
@@ -427,52 +314,6 @@ namespace AS2.Subroutines.LeaderElectionSync
                 else
                     round.SetValue((round.GetCurrentValue() + 1) % 3);
             }
-
-
-
-
-
-
-
-            //if (round.GetCurrentValue() % 2 == 0)
-            //{
-            //    // Even round
-            //    // If we are a candidate and have tossed HEADS, we send a beep
-            //    if (heads.GetCurrentValue())
-            //    {
-            //        if (round.GetCurrentValue() == 0 && isLeaderCandidate.GetCurrentValue()
-            //            || round.GetCurrentValue() == 2 && isPhase2Candidate.GetCurrentValue())
-            //        {
-            //            pc.SendBeepOnPartitionSet(partitionSetElect.GetCurrentValue());
-            //        }
-            //    }
-
-            //    // Also reset both beep flags
-            //    beepFromHeads.SetValue(false);
-            //    beepFromTails.SetValue(false);
-
-            //    // Increment counter
-            //    round.SetValue(round.GetCurrentValue() + 1);
-            //}
-            //else
-            //{
-            //    // Odd round
-            //    // If we are a candidate and have tossed TAILS, we send a beep
-            //    if (!heads.GetCurrentValue())
-            //    {
-            //        if (round.GetCurrentValue() == 1 && isLeaderCandidate.GetCurrentValue()
-            //            || round.GetCurrentValue() == 3 && isPhase2Candidate.GetCurrentValue())
-            //        {
-            //            pc.SendBeepOnPartitionSet(partitionSetElect.GetCurrentValue());
-            //        }
-            //    }
-
-            //    // Increment counter
-            //    if (firstPhase.GetCurrentValue() || round.GetCurrentValue() == 3)
-            //        round.SetValue(0);
-            //    else
-            //        round.SetValue(2);
-            //}
 
             if (controlColor.GetCurrentValue())
                 UpdateColor();

@@ -29,8 +29,7 @@ namespace AS2.Subroutines.LeaderElectionFast
     ///     for the whole duration of the leader election.
     /// </item>
     /// <item>
-    ///     Call <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/>
-    ///     and <see cref="ActivateSend"/> to send the beeps and then call
+    ///     Call <see cref="ActivateSend"/> to send the beeps and then call
     ///     <see cref="ActivateReceive"/> in the next round to receive the beeps. Then repeat
     ///     this until the procedure is finished.
     /// </item>
@@ -108,12 +107,10 @@ namespace AS2.Subroutines.LeaderElectionFast
         /// </summary>
         public void ActivateReceive()
         {
-            PinConfiguration pc = algo.GetCurrentPinConfiguration();
-
-            bool h1 = pc.ReceivedBeepOnPartitionSet(0);
-            bool t1 = pc.ReceivedBeepOnPartitionSet(1);
-            bool h2 = pc.ReceivedBeepOnPartitionSet(2);
-            bool t2 = pc.ReceivedBeepOnPartitionSet(3);
+            bool h1 = algo.ReceivedBeepOnPartitionSet(0);
+            bool t1 = algo.ReceivedBeepOnPartitionSet(1);
+            bool h2 = algo.ReceivedBeepOnPartitionSet(2);
+            bool t2 = algo.ReceivedBeepOnPartitionSet(3);
 
             // Problem: Nobody sent a beep -> Terminate and send error log
             if (!h1 && !t1 || !h2 && !t2)
@@ -184,8 +181,8 @@ namespace AS2.Subroutines.LeaderElectionFast
         /// Second half of the subroutine activation. Sends beeps to
         /// be received by <see cref="ActivateReceive"/> in the next
         /// round. The required pin configuration must have been set
-        /// up by <see cref="SetupPC(PinConfiguration)"/> in some
-        /// previous round and it must already be planned in this round.
+        /// up by <see cref="SetupPC(PinConfiguration)"/> (not necessarily
+        /// in this round).
         /// </summary>
         public void ActivateSend()
         {
@@ -194,16 +191,14 @@ namespace AS2.Subroutines.LeaderElectionFast
             if (!c1 && !c2)
                 return;
 
-            PinConfiguration pc = algo.GetPlannedPinConfiguration();
-
             // Toss coin(s) and send result on global circuit(s)
             if (c1)
             {
                 bool head = Random.Range(0f, 1f) < 0.5f;
                 if (head)
-                    pc.SendBeepOnPartitionSet(0);
+                    algo.SendBeepOnPartitionSet(0);
                 else
-                    pc.SendBeepOnPartitionSet(1);
+                    algo.SendBeepOnPartitionSet(1);
                 head1.SetValue(head);
             }
 
@@ -211,9 +206,9 @@ namespace AS2.Subroutines.LeaderElectionFast
             {
                 bool head = Random.Range(0f, 1f) < 0.5f;
                 if (head)
-                    pc.SendBeepOnPartitionSet(2);
+                    algo.SendBeepOnPartitionSet(2);
                 else
-                    pc.SendBeepOnPartitionSet(3);
+                    algo.SendBeepOnPartitionSet(3);
                 head2.SetValue(head);
             }
         }

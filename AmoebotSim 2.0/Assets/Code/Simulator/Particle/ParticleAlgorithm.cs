@@ -669,14 +669,13 @@ namespace AS2.Sim
 
 
         /// <summary>
-        /// Returns the pin configuration from the beginning of the round.
+        /// Returns a copy of the pin configuration from the beginning of
+        /// the round.
         /// <para>
         /// This object can be used for reading beeps and messages that
-        /// were received.
-        /// To modify the next pin configuration, use a blank template or
-        /// the default next configuration, which is a copy of the previous
-        /// one if no movement was performed and a singleton configuration
-        /// otherwise.
+        /// were received. It can also be modified and set as the next
+        /// pin configuration. After the first modification, it cannot be
+        /// used for reading beeps and messages anymore.
         /// </para>
         /// <para>
         /// See also <seealso cref="GetContractedPinConfiguration"/>,
@@ -685,12 +684,14 @@ namespace AS2.Sim
         /// <seealso cref="GetNextPinConfiguration"/>.
         /// </para>
         /// </summary>
-        /// <returns>The pin configuration from the
+        /// <returns>A copy of the pin configuration from the
         /// beginning of the current round.</returns>
         public PinConfiguration GetPrevPinConfiguration()
         {
             CheckActive("Pin configurations cannot be obtained from other particles.");
-            return particle.PrevPinConfig;
+            SysPinConfiguration pc = particle.PrevPinConfig.Copy();
+            pc.isPrev = true;
+            return pc;
         }
 
         /// <summary>

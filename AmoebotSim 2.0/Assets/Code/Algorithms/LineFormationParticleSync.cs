@@ -255,11 +255,10 @@ namespace AS2.Algos.LineFormation
             {
                 // Local part of the line is complete
                 // Send a beep every 2 rounds and finish if a beep is sent in between
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                PartitionSet ps = pc.GetPinAt(constructionDir, 0).PartitionSet;
+                PinConfiguration pc = GetPrevPinConfiguration();
                 if (!beepInLastRound)
                 {
-                    if (ps.ReceivedBeep())
+                    if (ReceivedBeepOnPin(constructionDir, 0))
                     {
                         // Received beep although we did not send it: Line is complete
                         state.SetValue(LFState.FINISHED);
@@ -267,8 +266,7 @@ namespace AS2.Algos.LineFormation
                     }
                     else
                     {
-                        SetPlannedPinConfiguration(pc);
-                        ps.SendBeep();
+                        SendBeepOnPin(constructionDir, 0);
                         beepInLastRound.SetValue(true);
                     }
                 }
@@ -327,11 +325,11 @@ namespace AS2.Algos.LineFormation
                 if (nbr == null)
                 {
                     // Special case: We are almost at the end of the line
-                    PinConfiguration pc = GetCurrentPinConfiguration();
+                    PinConfiguration pc = GetPrevPinConfiguration();
                     if (moveDirResult == 1)
                     {
                         // We are on the left side, wait for beep from INLINE or LEADER particle
-                        if (!pc.GetPinAt(md.Rotate60(-1), 0).PartitionSet.ReceivedBeep())
+                        if (!pc.GetPinAt(md.Rotate60(-1), 0).ReceivedBeep())
                         {
                             return;
                         }
@@ -339,14 +337,14 @@ namespace AS2.Algos.LineFormation
                     else if (moveDirResult == 2)
                     {
                         // We are on the right side, wait for beep from INLINE or LEADER particle
-                        if (!pc.GetPinAt(md.Rotate60(1), 0).PartitionSet.ReceivedBeep())
+                        if (!pc.GetPinAt(md.Rotate60(1), 0).ReceivedBeep())
                         {
                             return;
                         }
                     }
                     if (moveDirResult == 1 || moveDirResult == 2)
                     {
-                        MyMessage msg = (MyMessage)pc.GetPinAt(moveDirResult == 1 ? md.Rotate60(-1) : md.Rotate60(1), 0).PartitionSet.GetReceivedMessage();
+                        MyMessage msg = (MyMessage)pc.GetPinAt(moveDirResult == 1 ? md.Rotate60(-1) : md.Rotate60(1), 0).GetReceivedMessage();
                         Debug.Log("ALLOWED TO MOVE FROM " + msg.dir);
                     }
 
@@ -417,10 +415,9 @@ namespace AS2.Algos.LineFormation
                 // If we have scheduled a beep for a pull: Send the beep now
                 if (handoverBeepDirection != Direction.NONE)
                 {
-                    PinConfiguration pc = GetCurrentPinConfiguration();
+                    PinConfiguration pc = GetNextPinConfiguration();
                     // Current pin config is still singleton
-                    SetPlannedPinConfiguration(pc);
-                    pc.GetPinAt(handoverBeepDirection, 0, false).PartitionSet.SendBeep();
+                    pc.GetPinAt(handoverBeepDirection, 0, false).SendBeep();
                     // Reset the handover direction
                     handoverBeepDirection.SetValue(Direction.NONE);
                 }
@@ -451,11 +448,10 @@ namespace AS2.Algos.LineFormation
                 if (nbr == null)
                 {
                     // Special case: We are almost at the end of the line
-                    PinConfiguration pc = GetCurrentPinConfiguration();
                     if (moveDirResult == 1)
                     {
                         // We are on the left side, wait for beep from INLINE or LEADER particle
-                        if (!pc.GetPinAt(md.Rotate60(-1), 0).PartitionSet.ReceivedBeep())
+                        if (!ReceivedBeepOnPin(md.Rotate60(-1), 0))
                         {
                             return;
                         }
@@ -463,14 +459,14 @@ namespace AS2.Algos.LineFormation
                     else if (moveDirResult == 2)
                     {
                         // We are on the right side, wait for beep from INLINE or LEADER particle
-                        if (!pc.GetPinAt(md.Rotate60(1), 0).PartitionSet.ReceivedBeep())
+                        if (!ReceivedBeepOnPin(md.Rotate60(1), 0))
                         {
                             return;
                         }
                     }
                     if (moveDirResult == 1 || moveDirResult == 2)
                     {
-                        MyMessage msg = (MyMessage)pc.GetPinAt(moveDirResult == 1 ? md.Rotate60(-1) : md.Rotate60(1), 0).PartitionSet.GetReceivedMessage();
+                        MyMessage msg = (MyMessage)GetReceivedMessageOfPin(moveDirResult == 1 ? md.Rotate60(-1) : md.Rotate60(1), 0);
                         Debug.Log("ALLOWED TO MOVE FROM " + msg.dir);
                     }
 
@@ -541,10 +537,8 @@ namespace AS2.Algos.LineFormation
                 // If we have scheduled a beep for a pull: Send the beep now
                 if (handoverBeepDirection != Direction.NONE)
                 {
-                    PinConfiguration pc = GetCurrentPinConfiguration();
                     // Current pin config is still singleton
-                    SetPlannedPinConfiguration(pc);
-                    pc.GetPinAt(handoverBeepDirection, 0, false).PartitionSet.SendBeep();
+                    SendBeepOnPin(handoverBeepDirection, 0, false);
                     // Reset the handover direction
                     handoverBeepDirection.SetValue(Direction.NONE);
                 }
@@ -556,8 +550,7 @@ namespace AS2.Algos.LineFormation
             if (IsContracted())
             {
                 // Contracted FLWR must wait for followed particle to send beep
-                PinConfiguration pc = GetCurrentPinConfiguration();
-                if (pc.GetPinAt(followDir, 0).PartitionSet.ReceivedBeep())
+                if (ReceivedBeepOnPin(followDir, 0))
                 {
                     PushHandover(followDir);
                     // Also update the follow direction
@@ -595,7 +588,7 @@ namespace AS2.Algos.LineFormation
                 return;
             }
 
-            PinConfiguration pc = GetCurrentPinConfiguration();
+            PinConfiguration pc = GetPrevPinConfiguration();
             PartitionSet ps = pc.GetPinAt(constructionDir.GetValue().Opposite(), 0).PartitionSet;
             if (!localLineComplete)
             {
@@ -800,7 +793,6 @@ namespace AS2.Algos.LineFormation
         /// handover due to a beep on the corresponding edge.</returns>
         private bool PullIfSentBeep()
         {
-            PinConfiguration pc = GetCurrentPinConfiguration();
             for (int d = 0; d < 6; d++)
             {
                 Direction direction = DirectionHelpers.Cardinal(d);
@@ -808,7 +800,7 @@ namespace AS2.Algos.LineFormation
                 {
                     continue;
                 }
-                if (pc.GetPinAt(direction, 0, false).PartitionSet.ReceivedBeep())
+                if (ReceivedBeepOnPin(direction, 0, false))
                 {
                     LineFormationParticleSync nbr = GetNeighborAt(direction, false) as LineFormationParticleSync;
                     // Should never be null
@@ -883,17 +875,15 @@ namespace AS2.Algos.LineFormation
                 return nbr.state == LFState.INLINE;
             }
             // Now check the two candidate positions for waiting ROOTs
-            PinConfiguration pc = GetCurrentPinConfiguration();
             foreach (Direction candidateDir in new Direction[] { cd.Rotate60(1), cd.Rotate60(-1) })
             {
                 nbr = GetNeighborAt(candidateDir) as LineFormationParticleSync;
                 if (nbr != null && nbr.state == LFState.ROOT && nbr.IsContracted())
                 {
                     // Found a waiting ROOT: Send beep
-                    SetPlannedPinConfiguration(pc);
-                    pc.GetPinAt(candidateDir, 0).PartitionSet.SendBeep();
+                    SendBeepOnPin(candidateDir, 0);
                     MyMessage msg = new MyMessage(candidateDir == cd.Rotate60(1) ? MyMessage.Direction.LEFT : MyMessage.Direction.RIGHT);
-                    pc.GetPinAt(candidateDir, 0).PartitionSet.SendMessage(msg);
+                    SendMessageOnPin(candidateDir, 0, msg);
                     return true;
                 }
             }
