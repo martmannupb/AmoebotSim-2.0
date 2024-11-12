@@ -159,7 +159,7 @@ namespace AS2.Algos.BinOpTest
                     return;
                 }
 
-                PinConfiguration pc = GetPrevPinConfiguration();
+                PinConfiguration pc = GetCurrPinConfiguration();
                 binOps.SetupPinConfig(pc);
                 SetNextPinConfiguration(pc);
                 binOps.ActivateSend();

@@ -325,7 +325,7 @@ namespace AS2.Algos.ChiralityCompass
         private void Activate1()
         {
             // Receive neighbors' chirality or compass information
-            PinConfiguration pc = GetPrevPinConfiguration();
+            PinConfiguration pc = GetCurrPinConfiguration();
             bool haveNbrOutOfRegion = false;
             List<int> regionNbrs = new List<int>();
             for (int origDir = 0; origDir < 6; origDir++)

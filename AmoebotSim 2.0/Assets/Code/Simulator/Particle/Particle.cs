@@ -162,13 +162,13 @@ namespace AS2.Sim
         /// <summary>
         /// The pin configuration at the beginning of the round.
         /// </summary>
-        private SysPinConfiguration prevPinConfig;
+        private SysPinConfiguration currPinConfig;
         /// <summary>
         /// The pin configuration at the beginning of the round.
         /// </summary>
-        public SysPinConfiguration PrevPinConfig
+        public SysPinConfiguration CurrPinConfig
         {
-            get { return prevPinConfig; }
+            get { return currPinConfig; }
         }
         /// <summary>
         /// The pin configuration to be set at the end of the round.
@@ -524,11 +524,11 @@ namespace AS2.Sim
             // Initialize everything that depends on the number of pins
             int maxNumPins = algorithm.PinsPerEdge * 10;
             int currentRound = system.CurrentRound;
-            prevPinConfig = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
+            currPinConfig = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
             nextPinConfig = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
-            prevPinConfig.isPrev = true;
+            currPinConfig.isCurr = true;
             nextPinConfig.isNext = true;
-            pinConfigurationHistory = new ValueHistoryPinConfiguration(prevPinConfig, currentRound);
+            pinConfigurationHistory = new ValueHistoryPinConfiguration(currPinConfig, currentRound);
             receivedBeeps = new BitArray(maxNumPins);
             receivedMessages = new Message[maxNumPins];
             plannedBeeps = new BitArray(maxNumPins);
@@ -792,9 +792,9 @@ namespace AS2.Sim
             {
                 throw new AS2.Sim.InvalidActionException("Head direction of next pin configuration (" + pc.HeadDirection + ") does not match expansion state (" + exp_expansionDir + ").");
             }
-            if (pc.isPrev || !pc.isNext)
+            if (pc.isCurr || !pc.isNext)
             {
-                pc.isPrev = false;
+                pc.isCurr = false;
                 // Deregister current next pin config
                 nextPinConfig.isNext = false;
                 nextPinConfig = pc;
@@ -1082,15 +1082,15 @@ namespace AS2.Sim
         /// </summary>
         public void ApplyNextPinConfiguration()
         {
-            if (prevPinConfig != nextPinConfig)
+            if (currPinConfig != nextPinConfig)
             {
-                prevPinConfig = nextPinConfig;
-                prevPinConfig.isNext = false;
-                prevPinConfig.isPrev = true;
-                nextPinConfig = prevPinConfig.Copy();
-                nextPinConfig.isPrev = false;
+                currPinConfig = nextPinConfig;
+                currPinConfig.isNext = false;
+                currPinConfig.isCurr = true;
+                nextPinConfig = currPinConfig.Copy();
+                nextPinConfig.isCurr = false;
                 nextPinConfig.isNext = true;
-                pinConfigurationHistory.RecordValueInRound(prevPinConfig, system.CurrentRound);
+                pinConfigurationHistory.RecordValueInRound(currPinConfig, system.CurrentRound);
             }
             else
             {
@@ -1831,9 +1831,9 @@ namespace AS2.Sim
                 pos_head = pos_tail;
             }
 
-            prevPinConfig = pinConfigurationHistory.GetMarkedValue(this);
-            prevPinConfig.isPrev = true;
-            nextPinConfig = prevPinConfig.Copy();
+            currPinConfig = pinConfigurationHistory.GetMarkedValue(this);
+            currPinConfig.isCurr = true;
+            nextPinConfig = currPinConfig.Copy();
             nextPinConfig.isNext = true;
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
             {
@@ -2046,9 +2046,9 @@ namespace AS2.Sim
             // TODO: Check if saved data even matches the algorithm in terms of array sizes
 
             pinConfigurationHistory = new ValueHistoryPinConfiguration(data.pinConfigurationHistory);
-            prevPinConfig = pinConfigurationHistory.GetMarkedValue(this);
-            prevPinConfig.isPrev = true;
-            nextPinConfig = prevPinConfig.Copy();
+            currPinConfig = pinConfigurationHistory.GetMarkedValue(this);
+            currPinConfig.isCurr = true;
+            nextPinConfig = currPinConfig.Copy();
             nextPinConfig.isNext = true;
 
             receivedBeeps = new BitArray(maxNumPins);

@@ -425,7 +425,7 @@ namespace AS2.Sim
         /// <exception cref="System.InvalidOperationException">
         /// Thrown if this pin configuration is not the current one.
         /// </exception>
-        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetPrevPinConfiguration.")]
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetCurrPinConfiguration.")]
         public bool ReceivedBeepOnPartitionSet(int partitionSetIndex) { return false; }
 
         /// <summary>
@@ -450,7 +450,7 @@ namespace AS2.Sim
         /// <exception cref="System.InvalidOperationException">
         /// Thrown if this pin configuration is not the current one.
         /// </exception>
-        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetPrevPinConfiguration.")]
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetCurrPinConfiguration.")]
         public bool ReceivedMessageOnPartitionSet(int partitionSetIndex) { return false; }
 
         /// <summary>
@@ -465,7 +465,7 @@ namespace AS2.Sim
         /// <exception cref="System.InvalidOperationException">
         /// Thrown if this pin configuration is not the current one.
         /// </exception>
-        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetPrevPinConfiguration.")]
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetCurrPinConfiguration.")]
         public Message GetReceivedMessageOfPartitionSet(int partitionSetIndex) { return null; }
 
         /// <summary>

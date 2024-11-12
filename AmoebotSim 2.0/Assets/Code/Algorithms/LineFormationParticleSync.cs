@@ -255,7 +255,7 @@ namespace AS2.Algos.LineFormation
             {
                 // Local part of the line is complete
                 // Send a beep every 2 rounds and finish if a beep is sent in between
-                PinConfiguration pc = GetPrevPinConfiguration();
+                PinConfiguration pc = GetCurrPinConfiguration();
                 if (!beepInLastRound)
                 {
                     if (ReceivedBeepOnPin(constructionDir, 0))
@@ -325,7 +325,7 @@ namespace AS2.Algos.LineFormation
                 if (nbr == null)
                 {
                     // Special case: We are almost at the end of the line
-                    PinConfiguration pc = GetPrevPinConfiguration();
+                    PinConfiguration pc = GetCurrPinConfiguration();
                     if (moveDirResult == 1)
                     {
                         // We are on the left side, wait for beep from INLINE or LEADER particle
@@ -588,7 +588,7 @@ namespace AS2.Algos.LineFormation
                 return;
             }
 
-            PinConfiguration pc = GetPrevPinConfiguration();
+            PinConfiguration pc = GetCurrPinConfiguration();
             PartitionSet ps = pc.GetPinAt(constructionDir.GetValue().Opposite(), 0).PartitionSet;
             if (!localLineComplete)
             {

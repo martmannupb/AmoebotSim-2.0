@@ -322,7 +322,7 @@ namespace AS2.Algos.BoundaryTest
             numBoundaries.SetValue(regionIdx);
 
             // Now setup the pin configuration based on the result
-            PinConfiguration pc = GetPrevPinConfiguration();
+            PinConfiguration pc = GetCurrPinConfiguration();
 
             // If we have no boundaries, we are an inner particle
             // Simply establish the global circuit
@@ -361,7 +361,7 @@ namespace AS2.Algos.BoundaryTest
         private void LE1Activate0()
         {
             // Receive termination beep on global circuit
-            PinConfiguration pc = GetPrevPinConfiguration();
+            PinConfiguration pc = GetCurrPinConfiguration();
             bool rcvGlobalBeep = ReceivedBeepOnPartitionSet(0);
             // First setup boundary circuit again (partition set ID = boundary index)
             SetupBoundaryCircuit(ref pc);
@@ -391,7 +391,7 @@ namespace AS2.Algos.BoundaryTest
         private void LE1Activate2()
         {
             // Receive TAILS beep on each boundary
-            PinConfiguration pc = GetPrevPinConfiguration();
+            PinConfiguration pc = GetCurrPinConfiguration();
             bool beepOnGlobal = LEReceiveTails();
 
             // Establish global circuit and beep if we are not finished yet

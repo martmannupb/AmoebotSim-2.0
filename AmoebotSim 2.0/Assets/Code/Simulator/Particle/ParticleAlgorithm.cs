@@ -547,12 +547,12 @@ namespace AS2.Sim
         /// </summary>
         /// <returns>A copy of the pin configuration at the
         /// beginning of the current round.</returns>
-        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To read received beeps and messages, call the methods directly in the algorithm code or use GetPrevPinConfiguration. To get a pin configuration that can be modified for the next round, use GetNextPinConfiguration.")]
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To read received beeps and messages, call the methods directly in the algorithm code or use GetCurrPinConfiguration. To get a pin configuration that can be modified for the next round, use GetNextPinConfiguration.")]
         public PinConfiguration GetCurrentPinConfiguration()
         {
             //CheckActive("Pin configurations cannot be obtained from other particles.");
             //return particle.GetCurrentPinConfiguration();
-            return GetPrevPinConfiguration();
+            return GetCurrPinConfiguration();
         }
 
         /// <summary>
@@ -562,7 +562,7 @@ namespace AS2.Sim
         /// </summary>
         /// <returns>The current pin configuration, already planned
         /// for the next round.</returns>
-        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To read received beeps and messages, call the methods directly in the algorithm code or use GetPrevPinConfiguration. To get a pin configuration that can be modified for the next round, use GetNextPinConfiguration.")]
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To read received beeps and messages, call the methods directly in the algorithm code or use GetCurrPinConfiguration. To get a pin configuration that can be modified for the next round, use GetNextPinConfiguration.")]
         public PinConfiguration GetCurrentPCAsPlanned()
         {
             //CheckActive("Pin configurations cannot be obtained from other particles.");
@@ -712,11 +712,11 @@ namespace AS2.Sim
         /// </summary>
         /// <returns>A copy of the pin configuration from the
         /// beginning of the current round.</returns>
-        public PinConfiguration GetPrevPinConfiguration()
+        public PinConfiguration GetCurrPinConfiguration()
         {
             CheckActive("Pin configurations cannot be obtained from other particles.");
-            SysPinConfiguration pc = particle.PrevPinConfig.Copy();
-            pc.isPrev = true;
+            SysPinConfiguration pc = particle.CurrPinConfig.Copy();
+            pc.isCurr = true;
             return pc;
         }
 
@@ -724,14 +724,14 @@ namespace AS2.Sim
         /// Returns the pin configuration to be set at the end of the round.
         /// <para>
         /// This object can be modified and used to schedule beeps and messages.
-        /// By default, this is a copy of the previous pin configuration if no
+        /// By default, this is a copy of the current pin configuration if no
         /// movement was performed and a singleton configuration otherwise.
         /// </para>
         /// <para>
         /// See also <seealso cref="GetContractedPinConfiguration"/>,
         /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
         /// <seealso cref="SetNextPinConfiguration(PinConfiguration)"/>,
-        /// <seealso cref="GetPrevPinConfiguration"/>.
+        /// <seealso cref="GetCurrPinConfiguration"/>.
         /// </para>
         /// </summary>
         /// <returns>The pin configuration to be set at the end of
@@ -770,7 +770,7 @@ namespace AS2.Sim
         public bool ReceivedBeepOnPin(Direction direction, int offset, bool head = true)
         {
             CheckActive("Received beep information is not available for other particles.");
-            SysPinConfiguration pc = particle.PrevPinConfig;
+            SysPinConfiguration pc = particle.CurrPinConfig;
             int pset = pc.GetPinAt(direction, offset, head).PartitionSet.Id;
             return particle.HasReceivedBeep(pset);
         }
@@ -829,7 +829,7 @@ namespace AS2.Sim
         public bool ReceivedMessageOnPin(Direction direction, int offset, bool head = true)
         {
             CheckActive("Received message information is not available for other particles.");
-            SysPinConfiguration pc = particle.PrevPinConfig;
+            SysPinConfiguration pc = particle.CurrPinConfig;
             int pset = pc.GetPinAt(direction, offset, head).PartitionSet.Id;
             return particle.HasReceivedMessage(pset);
         }
@@ -864,7 +864,7 @@ namespace AS2.Sim
         public Message GetReceivedMessageOfPin(Direction direction, int offset, bool head = true)
         {
             CheckActive("Received message information is not available for other particles.");
-            SysPinConfiguration pc = particle.PrevPinConfig;
+            SysPinConfiguration pc = particle.CurrPinConfig;
             int pset = pc.GetPinAt(direction, offset, head).PartitionSet.Id;
             return particle.GetReceivedMessage(pset);
         }

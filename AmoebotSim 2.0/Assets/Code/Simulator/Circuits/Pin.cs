@@ -90,12 +90,12 @@ namespace AS2.Sim
         /// <summary>
         /// Checks whether this pin has received a beep in
         /// the last round, if the pin configuration it belongs to
-        /// is the previous one.
+        /// is the current one.
         /// </summary>
         /// <returns><c>true</c> if and only if this pin has
         /// received a beep in the last round.</returns>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this pin does not belong to the previous
+        /// Thrown if this pin does not belong to the current
         /// pin configuration.
         /// </exception>
         public abstract bool ReceivedBeep();
@@ -113,12 +113,12 @@ namespace AS2.Sim
         /// <summary>
         /// Checks whether this pin has received a message
         /// in the last round, if the pin configuration it belongs to
-        /// is the previous one.
+        /// is the current one.
         /// </summary>
         /// <returns><c>true</c> if and only if this pin has
         /// received a message in the last round.</returns>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this pin does not belong to the previous
+        /// Thrown if this pin does not belong to the current
         /// pin configuration.
         /// </exception>
         public abstract bool HasReceivedMessage();
@@ -126,12 +126,12 @@ namespace AS2.Sim
         /// <summary>
         /// Returns the message this pin has received in the
         /// last round, if it has received one and it belongs to the
-        /// previous pin configuration.
+        /// current pin configuration.
         /// </summary>
         /// <returns>The message received by this pin in the
         /// last round, if it exists, otherwise <c>null</c>.</returns>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this pin does not belong to the previous
+        /// Thrown if this pin does not belong to the current
         /// pin configuration.
         /// </exception>
         public abstract Message GetReceivedMessage();

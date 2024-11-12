@@ -144,7 +144,7 @@ namespace AS2.Subroutines.BinaryOps
         public void ActivateReceive()
         {
             int round = Round();
-            PinConfiguration pc = algo.GetPrevPinConfiguration();
+            PinConfiguration pc = algo.GetCurrPinConfiguration();
             Direction predDir = PredDir();
             Direction succDir = SuccDir();
             int pSet1 = BinOpUtils.GetChainPSetID(pc, predDir, succDir, 0, algo.PinsPerEdge);

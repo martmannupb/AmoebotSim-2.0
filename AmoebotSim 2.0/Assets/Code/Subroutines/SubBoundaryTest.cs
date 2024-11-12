@@ -389,7 +389,7 @@ namespace AS2.Subroutines.BoundaryTest
                         // Active amoebots receive on both successor circuits
                         // Round 4: Existence and first bit of successor
                         // Round 5: Remaining two bits of successor
-                        PinConfiguration pc = algo.GetPrevPinConfiguration();
+                        PinConfiguration pc = algo.GetCurrPinConfiguration();
                         for (int i = 0; i < numBoundaries.GetCurrentValue(); i++)
                         {
                             if (pasc[i].IsActive())

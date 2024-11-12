@@ -49,11 +49,11 @@ namespace AS2.Sim
 
         // State information for receiving and sending beeps and messages
         /// <summary>
-        /// Whether this is the previous pin configuration. This is the case
+        /// Whether this is the current pin configuration. This is the case
         /// for the duration of one round unless a movement is performed, in
         /// which case a singleton replaces this configuration.
         /// </summary>
-        public bool isPrev = false;
+        public bool isCurr = false;
         /// <summary>
         /// Whether this is the next pin configuration. This is the case during
         /// one beep activation.
@@ -144,11 +144,11 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Resets prev flag to <c>false</c> because the pin configuration was altered.
+        /// Resets curr flag to <c>false</c> because the pin configuration was altered.
         /// </summary>
         private void UpdateFlagsAfterChange()
         {
-            isPrev = false;
+            isCurr = false;
         }
 
         /// <summary>
@@ -281,7 +281,7 @@ namespace AS2.Sim
         /// the same.
         /// </para>
         /// <para>
-        /// The <see cref="isPrev"/> and <see cref="isNext"/> flags are not copied.
+        /// The <see cref="isCurr"/> and <see cref="isNext"/> flags are not copied.
         /// </para>
         /// </summary>
         /// <returns>A copy of this pin configuration.</returns>
@@ -571,19 +571,19 @@ namespace AS2.Sim
 
         /// <summary>
         /// Checks whether the particle has received a beep on the given partition set.
-        /// Only works if this pin configuration is the previous one.
+        /// Only works if this pin configuration is the current one.
         /// </summary>
         /// <param name="partitionSetID">The ID of the partition set to check.</param>
         /// <returns><c>true</c> if and only if the particle has received a beep on the
-        /// partition set with ID <paramref name="partitionSetID"/> and this is the previous
+        /// partition set with ID <paramref name="partitionSetID"/> and this is the current
         /// pin configuration.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown if this is not the
-        /// previous pin configuration.</exception>
+        /// current pin configuration.</exception>
         public bool ReceivedBeepOnPSet(int partitionSetID)
         {
-            if (!isPrev)
+            if (!isCurr)
             {
-                throw new InvalidOperationException("Can only check for received beeps in the previous pin configuration.");
+                throw new InvalidOperationException("Can only check for received beeps in the current pin configuration.");
             }
             return particle.HasReceivedBeep(partitionSetID);
         }
@@ -626,26 +626,26 @@ namespace AS2.Sim
 
         /// <summary>
         /// Checks whether the particle has received a message on the given partition set.
-        /// Only works if this pin configuration is the previous one.
+        /// Only works if this pin configuration is the current one.
         /// </summary>
         /// <param name="partitionSetID">The ID of the partition set to check.</param>
         /// <returns><c>true</c> if and only if the particle has received a message on the
-        /// partition set with ID <paramref name="partitionSetID"/> and this is the previous
+        /// partition set with ID <paramref name="partitionSetID"/> and this is the current
         /// pin configuration.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown if this is not the
-        /// previous pin configuration.</exception>
+        /// current pin configuration.</exception>
         public bool ReceivedMessageOnPSet(int partitionSetID)
         {
-            if (!isPrev)
+            if (!isCurr)
             {
-                throw new InvalidOperationException("Can only check for received messages in the previous pin configuration.");
+                throw new InvalidOperationException("Can only check for received messages in the current pin configuration.");
             }
             return particle.HasReceivedMessage(partitionSetID);
         }
 
         /// <summary>
         /// Returns the message received by the specified partition set, if it has
-        /// received a message and this pin configuration is the previous one.
+        /// received a message and this pin configuration is the current one.
         /// </summary>
         /// <param name="partitionSetID">The ID of the partition set to get the
         /// message from.</param>
@@ -653,13 +653,13 @@ namespace AS2.Sim
         /// with ID <paramref name="partitionSetID"/>, if it has received one,
         /// otherwise <c>null</c>.</returns>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this pin configuration is not the previous one.
+        /// Thrown if this pin configuration is not the current one.
         /// </exception>
         public Message GetReceivedMessageOfPSet(int partitionSetID)
         {
-            if (!isPrev)
+            if (!isCurr)
             {
-                throw new InvalidOperationException("Can only get received messages from the previous pin configuration.");
+                throw new InvalidOperationException("Can only get received messages from the current pin configuration.");
             }
             return particle.GetReceivedMessage(partitionSetID);
         }
