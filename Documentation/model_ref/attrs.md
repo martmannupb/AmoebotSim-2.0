@@ -35,7 +35,7 @@ Similarly, particle attributes enable the saving and loading of simulation state
 This feature may also break if any non-API state representation is used since that part of the state will not be saved or loaded.
 
 > [!WARNING]
-> The state of a particle should be exclusively defined by attributes and other API fields like the particle's color.
+> The state of a particle should be exclusively defined by attributes and other API fields like the particle's color or [subroutines](subroutines.md).
 > Other means of state representation like simple member variables, static members etc. *should not be used* unless you know exactly what you are doing.
 
 Finally, particle attributes provide special access functionality to ensure that particles can work with their own attributes easily while other particles cannot see the changed attribute values in the same round.
