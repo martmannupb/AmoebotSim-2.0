@@ -35,11 +35,26 @@ namespace AS2.Algos.ExpandedCircuitTest
 
         public override void ActivateBeep()
         {
+            for (int i = 0; i < 5; i++)
+            {
+                if (ReceivedBeepOnPartitionSet(i))
+                {
+                    Log.Entry("Received beep on partition set " + i + " (MOVE)");
+                }
+            }
+
             SetRandomPC(IsExpanded());
         }
 
         public override void ActivateMove()
         {
+            for (int i = 0; i < 5; i++)
+            {
+                if (ReceivedBeepOnPartitionSet(i))
+                {
+                    Log.Entry("Received beep on partition set " + i + " (MOVE)");
+                }
+            }
             UseAutomaticBonds();
 
             if (IsExpanded())

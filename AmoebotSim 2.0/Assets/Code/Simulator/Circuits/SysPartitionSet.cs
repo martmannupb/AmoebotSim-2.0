@@ -394,28 +394,12 @@ namespace AS2.Sim
         {
             this.color = color;
             colorOverride = true;
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (pinConfig.isPlanned)
-            {
-                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
-                planned.partitionSets[id].color = color;
-                planned.partitionSets[id].colorOverride = colorOverride;
-            }
         }
 
         public override void ResetColor()
         {
             color = Color.black;
             colorOverride = false;
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (pinConfig.isPlanned)
-            {
-                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
-                planned.partitionSets[id].color = Color.black;
-                planned.partitionSets[id].colorOverride = false;
-            }
         }
 
         public override void SetPosition(Vector2 polarCoords, bool head = true)
@@ -429,17 +413,6 @@ namespace AS2.Sim
                 positionTail = polarCoords;
 
             pinConfig.SetPSPlacementMode(PSPlacementMode.MANUAL, head);
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (pinConfig.isPlanned)
-            {
-                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
-                if (head)
-                    planned.partitionSets[id].positionHead = polarCoords;
-                else
-                    planned.partitionSets[id].positionTail = polarCoords;
-            }
         }
 
         public override void SetDrawHandle(bool drawHandle)

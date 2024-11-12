@@ -65,8 +65,8 @@ namespace AS2.Sim
                 SysPinConfiguration copy = (value as SysPinConfiguration).Copy();
                 if (copy != null)
                 {
-                    copy.isCurrent = false;
-                    copy.isPlanned = false;
+                    copy.isPrev = false;
+                    copy.isNext = false;
                 }
                 intermediateVal = copy;
             }

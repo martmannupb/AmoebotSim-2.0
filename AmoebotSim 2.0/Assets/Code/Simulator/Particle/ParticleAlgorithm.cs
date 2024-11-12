@@ -664,10 +664,6 @@ namespace AS2.Sim
             return GetNextPinConfiguration();
         }
 
-
-
-
-
         /// <summary>
         /// Returns a copy of the pin configuration from the beginning of
         /// the round.
@@ -719,11 +715,6 @@ namespace AS2.Sim
             }
             return particle.NextPinConfig;
         }
-
-
-
-
-
 
         /// <summary>
         /// Checks whether the specified partition set has received a beep in the
@@ -892,9 +883,6 @@ namespace AS2.Sim
                 particle.PlanMessageOnPin(id, msg.Copy());
             }
         }
-
-
-
 
 
 

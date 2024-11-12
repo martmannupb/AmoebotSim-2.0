@@ -49,15 +49,6 @@ namespace AS2.Sim
 
         // State information for receiving and sending beeps and messages
         /// <summary>
-        /// Indicates whether this is the current pin configuration.
-        /// </summary>
-        public bool isCurrent = false;  // If true, give access to received data
-        /// <summary>
-        /// Indicates whether this is the planned pin configuration.
-        /// </summary>
-        public bool isPlanned = false;  // If true, allow sending data
-
-        /// <summary>
         /// Whether this is the previous pin configuration. This is the case
         /// for the duration of one round unless a movement is performed, in
         /// which case a singleton replaces this configuration.
@@ -153,12 +144,10 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Resets current, planned and prev flags to <c>false</c>.
+        /// Resets prev flag to <c>false</c> because the pin configuration was altered.
         /// </summary>
         private void UpdateFlagsAfterChange()
         {
-            isCurrent = false;
-            isPlanned = false;
             isPrev = false;
         }
 
@@ -291,6 +280,9 @@ namespace AS2.Sim
         /// because the reference to the containing <see cref="Particle"/> stays
         /// the same.
         /// </para>
+        /// <para>
+        /// The <see cref="isPrev"/> and <see cref="isNext"/> flags are not copied.
+        /// </para>
         /// </summary>
         /// <returns>A copy of this pin configuration.</returns>
         public SysPinConfiguration Copy()
@@ -317,8 +309,6 @@ namespace AS2.Sim
                 spCopy.positionTail = spMine.positionTail;
                 spCopy.drawSingletonHandle = spMine.drawSingletonHandle;
             }
-            copy.isCurrent = isCurrent;
-            copy.isPlanned = isPlanned;
             return copy;
         }
 
@@ -693,7 +683,7 @@ namespace AS2.Sim
         {
             if (!isNext)
             {
-                throw new InvalidOperationException("Cannot send messages in non-planned pin configuration.");
+                throw new InvalidOperationException("Cannot send messages in non-next pin configuration.");
             }
             if (msg != null)
             {
@@ -720,7 +710,7 @@ namespace AS2.Sim
         {
             if (!isNext)
             {
-                throw new InvalidOperationException("Cannot send messages in non-planned pin configuration.");
+                throw new InvalidOperationException("Cannot send messages in non-next pin configuration.");
             }
             if (msg != null)
             {
@@ -731,29 +721,11 @@ namespace AS2.Sim
         public override void SetPartitionSetColor(int partitionSetIndex, Color color)
         {
             partitionSets[partitionSetIndex].SetColor(color);
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.SetPartitionSetColor(partitionSetIndex, color);
-            }
         }
 
         public override void ResetPartitionSetColor(int partitionSetIndex)
         {
             partitionSets[partitionSetIndex].ResetColor();
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.ResetPartitionSetColor(partitionSetIndex);
-            }
         }
 
         public override void ResetAllPartitionSetColors()
@@ -762,29 +734,11 @@ namespace AS2.Sim
             {
                 sp.ResetColor();
             }
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.ResetAllPartitionSetColors();
-            }
         }
 
         public override void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true)
         {
             partitionSets[partitionSetIndex].SetPosition(polarCoords, head);
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.SetPartitionSetPosition(partitionSetIndex, polarCoords, head);
-            }
         }
 
         public override void SetPSPlacementMode(PSPlacementMode mode, bool head = true)
@@ -793,15 +747,6 @@ namespace AS2.Sim
                 placementModeHead = mode;
             else
                 placementModeTail = mode;
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.SetPSPlacementMode(mode, head);
-            }
         }
 
         public override void SetLineRotation(float angle, bool head = true)
@@ -818,15 +763,6 @@ namespace AS2.Sim
                 lineRotationTail = angleLocal;
                 placementModeTail = PSPlacementMode.LINE_ROTATED;
             }
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.SetLineRotation(angle, head);
-            }
         }
 
         public override void ResetPartitionSetPlacement(bool head = true)
@@ -839,15 +775,6 @@ namespace AS2.Sim
                 placementModeHead = PSPlacementMode.NONE;
             else
                 placementModeTail = PSPlacementMode.NONE;
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.ResetPartitionSetPlacement(head);
-            }
         }
 
         public override void SetPartitionSetDrawHandle(int partitionSetIndex, bool drawHandle)
