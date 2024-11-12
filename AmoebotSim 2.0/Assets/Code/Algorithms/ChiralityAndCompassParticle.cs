@@ -296,7 +296,7 @@ namespace AS2.Algos.ChiralityCompass
         {
             // Send chirality or compass information to all of our neighbors using singleton configuration
             PinConfiguration pc = GetContractedPinConfiguration();
-            SetPlannedPinConfiguration(pc);
+            SetNextPinConfiguration(pc);
 
             for (int origDir = 0; origDir < 6; origDir++)
             {
@@ -391,7 +391,7 @@ namespace AS2.Algos.ChiralityCompass
                     pinIds[2 * i + 1] = pc.GetPinAt(d, 1).Id;
                 }
                 pc.MakePartitionSet(pinIds, 0);
-                SetPlannedPinConfiguration(pc);
+                SetNextPinConfiguration(pc);
 
                 if (haveNbrOutOfRegion)
                 {

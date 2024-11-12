@@ -600,7 +600,7 @@ namespace AS2.Algos.LineFormation
                     SetMainColor(ColorData.Particle_Purple);     // FOR DEBUGGING (should be visible by circuits alone later)
                                                                  // Connect the two pins in direction of the line
                     ps.AddPin(pc.GetPinAt(constructionDir, 0));
-                    SetPlannedPinConfiguration(pc);
+                    SetNextPinConfiguration(pc);
                     // LEADER has beeped in the last round, so the flag must be reset to false
                     beepInLastRound.SetValue(false);
                 }
@@ -614,7 +614,7 @@ namespace AS2.Algos.LineFormation
                     // If we are at the end of the line: Send reply beep
                     if (!HasNeighborAt(constructionDir))
                     {
-                        SetPlannedPinConfiguration(pc);
+                        SetNextPinConfiguration(pc);
                         ps.SendBeep();
                     }
                 }

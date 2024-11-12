@@ -338,7 +338,7 @@ namespace AS2.Algos.BoundaryTest
                 SetupBoundaryCircuit(ref pc);
             }
 
-            SetPlannedPinConfiguration(pc); // This is necessary because pc might be a different object
+            SetNextPinConfiguration(pc); // This is necessary because pc might be a different object
 
             // Initialize and start first phase of leader election
             for (int boundary = 0; boundary < numBoundaries.GetCurrentValue(); boundary++)
@@ -365,7 +365,7 @@ namespace AS2.Algos.BoundaryTest
             bool rcvGlobalBeep = ReceivedBeepOnPartitionSet(0);
             // First setup boundary circuit again (partition set ID = boundary index)
             SetupBoundaryCircuit(ref pc);
-            SetPlannedPinConfiguration(pc);
+            SetNextPinConfiguration(pc);
 
             // if nobody beeped, continue to Phase 2
             if (!rcvGlobalBeep)
@@ -444,7 +444,7 @@ namespace AS2.Algos.BoundaryTest
             // First setup boundary circuit again (partition set ID = boundary index)
             PinConfiguration pc = GetNextPinConfiguration();
             SetupBoundaryCircuit(ref pc);
-            SetPlannedPinConfiguration(pc);
+            SetNextPinConfiguration(pc);
             // Every candidate has to toss a coin again and beep if the result is HEADS
             // If we start a new iteration, become a Phase 2 candidate again
             StartLERound(nextIteration);

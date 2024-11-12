@@ -64,7 +64,7 @@ namespace AS2.Algos.BoundaryTestSub
 
                         PinConfiguration pc = GetContractedPinConfiguration();
                         boundaryTest.SetupPC(pc);
-                        SetPlannedPinConfiguration(pc);
+                        SetNextPinConfiguration(pc);
                         boundaryTest.ActivateSend();
                         round.SetValue(round + 1);
                     }
@@ -104,14 +104,14 @@ namespace AS2.Algos.BoundaryTestSub
                             else
                                 SetMainColor(ColorData.Particle_Black);
 
-                            SetPlannedPinConfiguration(GetContractedPinConfiguration());
+                            SetNextPinConfiguration(GetContractedPinConfiguration());
                             round.SetValue(round + 1);
                             break;
                         }
 
                         PinConfiguration pc = GetContractedPinConfiguration();
                         boundaryTest.SetupPC(pc);
-                        SetPlannedPinConfiguration(pc);
+                        SetNextPinConfiguration(pc);
                         boundaryTest.ActivateSend();
                     }
                     break;

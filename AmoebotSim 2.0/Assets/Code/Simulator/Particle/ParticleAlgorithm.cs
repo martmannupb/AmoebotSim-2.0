@@ -541,7 +541,7 @@ namespace AS2.Sim
         /// <para>
         /// See also <seealso cref="GetContractedPinConfiguration"/>,
         /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
-        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
+        /// <seealso cref="SetNextPinConfiguration(PinConfiguration)"/>,
         /// <seealso cref="GetPlannedPinConfiguration"/>.
         /// </para>
         /// </summary>
@@ -567,7 +567,7 @@ namespace AS2.Sim
         {
             //CheckActive("Pin configurations cannot be obtained from other particles.");
             //SysPinConfiguration pc = particle.GetCurrentPinConfiguration();
-            //SetPlannedPinConfiguration(pc);
+            //SetNextPinConfiguration(pc);
             //return pc;
             return GetNextPinConfiguration();
         }
@@ -583,7 +583,7 @@ namespace AS2.Sim
         /// <para>
         /// <seealso cref="GetNextPinConfiguration"/>,
         /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
-        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>.
+        /// <seealso cref="SetNextPinConfiguration(PinConfiguration)"/>.
         /// </para>
         /// </summary>
         /// <returns>A new singleton pin configuration for the
@@ -606,7 +606,7 @@ namespace AS2.Sim
         /// <para>
         /// See also <seealso cref="GetNextPinConfiguration"/>,
         /// <seealso cref="GetContractedPinConfiguration"/>,
-        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>.
+        /// <seealso cref="SetNextPinConfiguration(PinConfiguration)"/>.
         /// </para>
         /// </summary>
         /// <param name="headDirection">The head direction defining the
@@ -638,6 +638,7 @@ namespace AS2.Sim
         /// </summary>
         /// <param name="pinConfiguration">The pin configuration to be applied
         /// at the end of the current round.</param>
+        [Obsolete("This method is part of the old pin configuration system. To overwrite the next pin configuration, call SetNextPinConfiguration.")]
         public void SetPlannedPinConfiguration(PinConfiguration pinConfiguration)
         {
             CheckActive("Cannot set pin configuration of other particles.");
@@ -649,8 +650,37 @@ namespace AS2.Sim
         }
 
         /// <summary>
+        /// Sets the pin configuration that should be applied to the particle
+        /// at the end of this round. Only works in <see cref="ActivateBeep"/>.
+        /// <para>
+        /// The expansion state of the pin configuration must match the
+        /// expansion state of the particle, i.e., if the particle is contracted,
+        /// the pin configuration must be made for the contracted state, and if
+        /// the particle is expanded, the pin configuration must match the
+        /// corresponding head direction.
+        /// </para>
+        /// <para>
+        /// If no pin configuration is set in the same round in which a
+        /// movement is performed, the pin configuration defaults to the
+        /// singleton pattern. If no movement and no new pin configuration
+        /// are planned, the configuration is left unchanged.
+        /// </para>
+        /// </summary>
+        /// <param name="pinConfiguration">The pin configuration to be applied
+        /// at the end of the current round.</param>
+        public void SetNextPinConfiguration(PinConfiguration pinConfiguration)
+        {
+            CheckActive("Cannot set pin configuration of other particles.");
+            if (!CheckBeep("Cannot set pin configuration during move phase.", true))
+            {
+                return;
+            }
+            particle.SetNextPinConfiguration((SysPinConfiguration)pinConfiguration);
+        }
+
+        /// <summary>
         /// Returns the pin configuration set using
-        /// <see cref="SetPlannedPinConfiguration(PinConfiguration)"/> in
+        /// <see cref="SetNextPinConfiguration(PinConfiguration)"/> in
         /// this round. Always returns <c>null</c> when called in
         /// <see cref="ActivateMove"/>.
         /// </summary>
@@ -676,7 +706,7 @@ namespace AS2.Sim
         /// <para>
         /// See also <seealso cref="GetContractedPinConfiguration"/>,
         /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
-        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
+        /// <seealso cref="SetNextPinConfiguration(PinConfiguration)"/>,
         /// <seealso cref="GetNextPinConfiguration"/>.
         /// </para>
         /// </summary>
@@ -700,7 +730,7 @@ namespace AS2.Sim
         /// <para>
         /// See also <seealso cref="GetContractedPinConfiguration"/>,
         /// <seealso cref="GetExpandedPinConfiguration(Direction)"/>,
-        /// <seealso cref="SetPlannedPinConfiguration(PinConfiguration)"/>,
+        /// <seealso cref="SetNextPinConfiguration(PinConfiguration)"/>,
         /// <seealso cref="GetPrevPinConfiguration"/>.
         /// </para>
         /// </summary>
@@ -795,6 +825,7 @@ namespace AS2.Sim
         /// <param name="head">If the particle is expanded, use this flag to indicate
         /// whether the edge belongs to the particle's head or not.</param>
         /// <returns><c>true</c> if and only if the specified pin has received a message.</returns>
+        /// </summary>
         public bool ReceivedMessageOnPin(Direction direction, int offset, bool head = true)
         {
             CheckActive("Received message information is not available for other particles.");

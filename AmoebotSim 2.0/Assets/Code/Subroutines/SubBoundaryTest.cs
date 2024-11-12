@@ -17,7 +17,7 @@ namespace AS2.Subroutines.BoundaryTest
     ///     Initialize by calling <see cref="Init(bool)"/>. All amoebots must participate in the subroutine.
     /// </item>
     /// <item>
-    ///     Run <see cref="SetupPC(PinConfiguration)"/>, then <see cref="ParticleAlgorithm.SetPlannedPinConfiguration(PinConfiguration)"/>
+    ///     Run <see cref="SetupPC(PinConfiguration)"/>, then <see cref="ParticleAlgorithm.SetNextPinConfiguration(PinConfiguration)"/>
     ///     (if necessary) and <see cref="ActivateSend"/> to start the procedure.
     /// </item>
     /// <item>

@@ -105,7 +105,7 @@ namespace AS2.Algos.BinOpTest
                 binOps.Init(SubBinOps.Mode.MSB, a, pred.GetCurrentValue(), succ.GetCurrentValue());
                 PinConfiguration pc = GetContractedPinConfiguration();
                 binOps.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
+                SetNextPinConfiguration(pc);
                 binOps.ActivateSend();
 
                 round.SetValue(round + 1);
@@ -144,7 +144,7 @@ namespace AS2.Algos.BinOpTest
 
                 PinConfiguration pc = GetContractedPinConfiguration();
                 binOps.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
+                SetNextPinConfiguration(pc);
                 binOps.ActivateSend();
                 round.SetValue(round + 1);
             }
@@ -161,7 +161,7 @@ namespace AS2.Algos.BinOpTest
 
                 PinConfiguration pc = GetPrevPinConfiguration();
                 binOps.SetupPinConfig(pc);
-                SetPlannedPinConfiguration(pc);
+                SetNextPinConfiguration(pc);
                 binOps.ActivateSend();
             }
             else if (round == 2)
