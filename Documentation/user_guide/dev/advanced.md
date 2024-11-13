@@ -350,6 +350,7 @@ public override void ActivateMove()
 This concludes our extensions of the demo algorithm.
 You can read more about bonds and joint movements on the corresponding [reference page](~/model_ref/bonds_jm.md).
 There are still some features that have not been discussed yet and which you can read about on the other [reference pages](~/model_ref/home.md).
+In particular, if you want to develop larger algorithms that use whole other algorithms as primitives, [subroutines](~/model_ref/subroutines.md) can be very useful.
 
 
 
