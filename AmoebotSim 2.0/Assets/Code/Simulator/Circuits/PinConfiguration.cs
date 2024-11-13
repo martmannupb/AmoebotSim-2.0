@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace AS2.Sim
@@ -66,6 +67,28 @@ namespace AS2.Sim
         public abstract int NumPins
         {
             get;
+        }
+
+        /// <summary>
+        /// Helper to compute the ID of the pin on the specified edge with the
+        /// given offset.
+        /// <para>
+        /// The formula for the pin ID is <c>label * <paramref name="pinsPerEdge"/> +
+        /// <paramref name="offset"/></c>, where <c>label</c> is computed
+        /// using <paramref name="direction"/>, <paramref name="headDirection"/> and
+        /// <paramref name="head"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="direction">The local direction of the edge.</param>
+        /// <param name="offset">The edge offset of the pin.</param>
+        /// <param name="head">If the pin configuration represents the
+        /// expanded state, this flag indicates whether the edge belongs to
+        /// the particle's head or not.</param>
+        /// <returns>The ID of the pin in the location specified by an edge
+        /// and an edge offset.</returns>
+        public static int GetPinId(Direction direction, int offset, int pinsPerEdge, Direction headDirection = Direction.NONE, bool head = true)
+        {
+            return ParticleSystem_Utils.GetLabelInDir(direction, headDirection, head) * pinsPerEdge + offset;
         }
 
         /// <summary>
@@ -291,69 +314,6 @@ namespace AS2.Sim
         public abstract void MakePartitionSet(Pin[] pins, PartitionSet partitionSet);
 
         /// <summary>
-        /// Checks whether the specified partition set has received a beep in the
-        /// last round, if this pin configuration is the current one.
-        /// </summary>
-        /// <param name="partitionSetIndex">The ID of the partition set to check.</param>
-        /// <returns><c>true</c> if and only if the partition set with ID
-        /// <paramref name="partitionSetIndex"/> has received a beep.</returns>
-        /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this pin configuration is not the current one.
-        /// </exception>
-        public abstract bool ReceivedBeepOnPartitionSet(int partitionSetIndex);
-
-        /// <summary>
-        /// Sends a beep on the specified partition set, if this is the planned pin
-        /// configuration.
-        /// </summary>
-        /// <param name="partitionSetIndex">The ID of the partition set on which
-        /// to send the beep.</param>
-        /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this pin configuration is not the planned one.
-        /// </exception>
-        public abstract void SendBeepOnPartitionSet(int partitionSetIndex);
-
-        /// <summary>
-        /// Checks whether the specified partition set hat received a message in
-        /// the last round, if this pin configuration is the current one.
-        /// </summary>
-        /// <param name="partitionSetIndex">The ID of the partition set to check.</param>
-        /// <returns><c>true</c> if and only if the partition set with ID
-        /// <paramref name="partitionSetIndex"/> has received a message.</returns>
-        /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this pin configuration is not the current one.
-        /// </exception>
-        public abstract bool ReceivedMessageOnPartitionSet(int partitionSetIndex);
-
-        /// <summary>
-        /// Returns the message received by the specified partition set, if it has
-        /// received a message and this pin configuration is the current one.
-        /// </summary>
-        /// <param name="partitionSetIndex">The ID of the partition set to get the
-        /// message from.</param>
-        /// <returns>A <see cref="Message"/> instance received by the partition set
-        /// with ID <paramref name="partitionSetIndex"/>, if it has received one,
-        /// otherwise <c>null</c>.</returns>
-        /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this pin configuration is not the current one.
-        /// </exception>
-        public abstract Message GetReceivedMessageOfPartitionSet(int partitionSetIndex);
-
-        /// <summary>
-        /// Sends the given message on the specified partition set, if this pin
-        /// configuration is the planned one.
-        /// <para>
-        /// Note that a copy of the given <see cref="Message"/> instance
-        /// <paramref name="msg"/> is sent. Altering the instance after calling
-        /// this method has no effect on the sent message.
-        /// </para>
-        /// </summary>
-        /// <param name="partitionSetIndex">The ID of the partition set on which
-        /// to send the message.</param>
-        /// <param name="msg">The message to be sent.</param>
-        public abstract void SendMessageOnPartitionSet(int partitionSetIndex, Message msg);
-
-        /// <summary>
         /// Overrides the specified partition set's color. The circuit to which
         /// the partition set belongs will be displayed in this color unless it
         /// has been overridden by another partition set already.
@@ -451,6 +411,79 @@ namespace AS2.Sim
         /// <param name="head">Whether the flag should be reset in the
         /// particle's head or tail.</param>
         public abstract void ResetPartitionSetDrawHandle(bool head = true);
+
+
+        #region Deprecated methods
+
+        /// <summary>
+        /// Checks whether the specified partition set has received a beep in the
+        /// last round, if this pin configuration is the current one.
+        /// </summary>
+        /// <param name="partitionSetIndex">The ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the partition set with ID
+        /// <paramref name="partitionSetIndex"/> has received a beep.</returns>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the current one.
+        /// </exception>
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetCurrPinConfiguration.")]
+        public bool ReceivedBeepOnPartitionSet(int partitionSetIndex) { return false; }
+
+        /// <summary>
+        /// Sends a beep on the specified partition set, if this is the planned pin
+        /// configuration.
+        /// </summary>
+        /// <param name="partitionSetIndex">The ID of the partition set on which
+        /// to send the beep.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the planned one.
+        /// </exception>
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To send beeps and messages, call the methods directly in the algorithm code or use GetNextPinConfiguration.")]
+        public void SendBeepOnPartitionSet(int partitionSetIndex) { }
+
+        /// <summary>
+        /// Checks whether the specified partition set hat received a message in
+        /// the last round, if this pin configuration is the current one.
+        /// </summary>
+        /// <param name="partitionSetIndex">The ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the partition set with ID
+        /// <paramref name="partitionSetIndex"/> has received a message.</returns>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the current one.
+        /// </exception>
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetCurrPinConfiguration.")]
+        public bool ReceivedMessageOnPartitionSet(int partitionSetIndex) { return false; }
+
+        /// <summary>
+        /// Returns the message received by the specified partition set, if it has
+        /// received a message and this pin configuration is the current one.
+        /// </summary>
+        /// <param name="partitionSetIndex">The ID of the partition set to get the
+        /// message from.</param>
+        /// <returns>A <see cref="Message"/> instance received by the partition set
+        /// with ID <paramref name="partitionSetIndex"/>, if it has received one,
+        /// otherwise <c>null</c>.</returns>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the current one.
+        /// </exception>
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To receive beeps and messages, call the methods directly in the algorithm code or use GetCurrPinConfiguration.")]
+        public Message GetReceivedMessageOfPartitionSet(int partitionSetIndex) { return null; }
+
+        /// <summary>
+        /// Sends the given message on the specified partition set, if this pin
+        /// configuration is the planned one.
+        /// <para>
+        /// Note that a copy of the given <see cref="Message"/> instance
+        /// <paramref name="msg"/> is sent. Altering the instance after calling
+        /// this method has no effect on the sent message.
+        /// </para>
+        /// </summary>
+        /// <param name="partitionSetIndex">The ID of the partition set on which
+        /// to send the message.</param>
+        /// <param name="msg">The message to be sent.</param>
+        [Obsolete("This method is part of the old pin configuration system and does not work anymore. To send beeps and messages, call the methods directly in the algorithm code or use GetNextPinConfiguration.")]
+        public void SendMessageOnPartitionSet(int partitionSetIndex, Message msg) { }
+
+        #endregion
     }
 
 } // namespace AS2.Sim

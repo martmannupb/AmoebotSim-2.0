@@ -367,55 +367,39 @@ namespace AS2.Sim
 
         public override bool ReceivedBeep()
         {
-            return pinConfig.ReceivedBeepOnPartitionSet(id);
+            return pinConfig.ReceivedBeepOnPSet(id);
         }
 
         public override void SendBeep()
         {
-            pinConfig.SendBeepOnPartitionSet(id);
+            pinConfig.SendBeepOnPSet(id);
         }
 
         public override bool HasReceivedMessage()
         {
-            return pinConfig.ReceivedMessageOnPartitionSet(id);
+            return pinConfig.ReceivedMessageOnPSet(id);
         }
 
         public override Message GetReceivedMessage()
         {
-            return pinConfig.GetReceivedMessageOfPartitionSet(id);
+            return pinConfig.GetReceivedMessageOfPSet(id);
         }
 
         public override void SendMessage(Message msg)
         {
-            pinConfig.SendMessageOnPartitionSet(id, msg);
+            pinConfig.SendMessageOnPSet(id, msg);
         }
 
         public override void SetColor(Color color)
         {
             this.color = color;
             colorOverride = true;
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (pinConfig.isPlanned)
-            {
-                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
-                planned.partitionSets[id].color = color;
-                planned.partitionSets[id].colorOverride = colorOverride;
-            }
         }
 
         public override void ResetColor()
         {
             color = Color.black;
             colorOverride = false;
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (pinConfig.isPlanned)
-            {
-                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
-                planned.partitionSets[id].color = Color.black;
-                planned.partitionSets[id].colorOverride = false;
-            }
         }
 
         public override void SetPosition(Vector2 polarCoords, bool head = true)
@@ -429,17 +413,6 @@ namespace AS2.Sim
                 positionTail = polarCoords;
 
             pinConfig.SetPSPlacementMode(PSPlacementMode.MANUAL, head);
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (pinConfig.isPlanned)
-            {
-                SysPinConfiguration planned = pinConfig.particle.PlannedPinConfiguration;
-                if (head)
-                    planned.partitionSets[id].positionHead = polarCoords;
-                else
-                    planned.partitionSets[id].positionTail = polarCoords;
-            }
         }
 
         public override void SetDrawHandle(bool drawHandle)

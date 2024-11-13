@@ -160,16 +160,26 @@ namespace AS2.Sim
         private ValueHistoryPinConfiguration pinConfigurationHistory;
 
         /// <summary>
-        /// The current pin configuration.
+        /// The pin configuration at the beginning of the round.
         /// </summary>
-        private SysPinConfiguration pinConfiguration;
+        private SysPinConfiguration currPinConfig;
         /// <summary>
-        /// The current pin configuration.
+        /// The pin configuration at the beginning of the round.
         /// </summary>
-        public SysPinConfiguration PinConfiguration
+        public SysPinConfiguration CurrPinConfig
         {
-            get { return pinConfiguration; }
-            private set { pinConfiguration = value; }
+            get { return currPinConfig; }
+        }
+        /// <summary>
+        /// The pin configuration to be set at the end of the round.
+        /// </summary>
+        private SysPinConfiguration nextPinConfig;
+        /// <summary>
+        /// The pin configuration to be set at the end of the round.
+        /// </summary>
+        public SysPinConfiguration NextPinConfig
+        {
+            get { return nextPinConfig; }
         }
 
         // Beeps and messages
@@ -205,6 +215,12 @@ namespace AS2.Sim
         /// </summary>
         private ValueHistory<bool>[] plannedBeepsHistory;
         /// <summary>
+        /// The (local) pin indices on which beeps were planned during
+        /// an activation. Gets merged into <see cref="plannedBeeps"/>
+        /// at the end of each activation.
+        /// </summary>
+        private HashSet<int> plannedBeepsByPin;
+        /// <summary>
         /// Indicates whether the particle has planned sending any
         /// beeps in this round.
         /// </summary>
@@ -220,13 +236,19 @@ namespace AS2.Sim
         /// </summary>
         private ValueHistoryMessage[] plannedMessageHistory;
         /// <summary>
+        /// A dictionary of (local) pin indices and messages scheduled
+        /// on them. Gets merged into <see cref="plannedMessages"/> at
+        /// the end of each activation.
+        /// </summary>
+        private Dictionary<int, Message> plannedMessagesByPin;
+        /// <summary>
         /// Indicates whether the particle has planned sending any
         /// messages in this round.
         /// </summary>
         private bool hasPlannedMessages = false;
 
         /// <summary>
-        /// Flags indicating which partition sets of the planned pin
+        /// Flags indicating which partition sets of the next pin
         /// configuration have suffered a failure. Indices equal
         /// (local) partition set IDs.
         /// </summary>
@@ -407,21 +429,6 @@ namespace AS2.Sim
         public bool queuedForPinConfigProcessing = false;
 
         /// <summary>
-        /// Stores the pin configuration that is planned to be applied at the end
-        /// of the current round.
-        /// </summary>
-        public SysPinConfiguration PlannedPinConfiguration
-        {
-            get { return plannedPinConfiguration; }
-            set { plannedPinConfiguration = value; }
-        }
-        /// <summary>
-        /// The currently planned pin configuration to be applied at the end
-        /// of the round.
-        /// </summary>
-        private SysPinConfiguration plannedPinConfiguration;
-
-        /// <summary>
         /// Flag used to indicate that the particle is currently being activated.
         /// Causes the particle's attributes to behave differently for this particle
         /// than for others to enable the "snapshot" semantics.
@@ -431,8 +438,8 @@ namespace AS2.Sim
         /// <summary>
         /// Flag used to indicate that the particle's algorithm is currently
         /// running its constructor. If this is <c>false</c> while the
-        /// algorithm tries to create a new attribute, an exception will
-        /// be thrown.
+        /// algorithm tries to create a new attribute or subroutine, an exception
+        /// will be thrown.
         /// </summary>
         public bool inConstructor = false;
 
@@ -485,6 +492,9 @@ namespace AS2.Sim
             comDir = compassDir;
             this.chirality = chirality;
 
+            plannedBeepsByPin = new HashSet<int>();
+            plannedMessagesByPin = new Dictionary<int, Message>();
+
             activeBonds = new BitVector32(1023);    // All flags set to true
             activeBondHistory = new ValueHistory<int>(activeBonds.Data, currentRound);
             markedBonds = new BitVector32(0);       // All flags set to false
@@ -514,8 +524,11 @@ namespace AS2.Sim
             // Initialize everything that depends on the number of pins
             int maxNumPins = algorithm.PinsPerEdge * 10;
             int currentRound = system.CurrentRound;
-            pinConfiguration = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
-            pinConfigurationHistory = new ValueHistoryPinConfiguration(pinConfiguration, currentRound);
+            currPinConfig = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
+            nextPinConfig = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
+            currPinConfig.isCurr = true;
+            nextPinConfig.isNext = true;
+            pinConfigurationHistory = new ValueHistoryPinConfiguration(currPinConfig, currentRound);
             receivedBeeps = new BitArray(maxNumPins);
             receivedMessages = new Message[maxNumPins];
             plannedBeeps = new BitArray(maxNumPins);
@@ -759,22 +772,6 @@ namespace AS2.Sim
          */
 
         /// <summary>
-        /// Returns a copy of the current pin configuration.
-        /// <para>
-        /// This copy can be used to check which partition sets
-        /// have received beeps or messages in the last round.
-        /// </para>
-        /// </summary>
-        /// <returns>A copy of the pin configuration at the
-        /// start of the current round.</returns>
-        public SysPinConfiguration GetCurrentPinConfiguration()
-        {
-            SysPinConfiguration current = pinConfiguration.Copy();
-            current.isCurrent = true;
-            return current;
-        }
-
-        /// <summary>
         /// Sets the pin configuration to be applied at the end
         /// of the current round.
         /// <para>
@@ -782,50 +779,26 @@ namespace AS2.Sim
         /// the particle at the end of the round.
         /// </para>
         /// <para>
-        /// After setting it to be the planned configuration, it
-        /// can be used to send beeps and messages. If it is
-        /// altered, its ability to send data expires. Setting
-        /// the planned pin configuration to a different value
-        /// after sending beeps or messages nullifies the
-        /// previously sent data. Partition set colors and positions
-        /// can still be changed as long as the pin configuration
-        /// itself does not change.
+        /// After setting it to be the next configuration, it
+        /// can be used to send beeps and messages. This ability
+        /// expires if another pin configuration is set as the
+        /// next one.
         /// </para>
         /// </summary>
         /// <param name="pc">The new pin configuration.</param>
-        public void SetPlannedPinConfiguration(SysPinConfiguration pc)
+        public void SetNextPinConfiguration(SysPinConfiguration pc)
         {
-            if (!pc.isPlanned)
+            if (pc.HeadDirection != exp_expansionDir)
             {
-                if (hasPlannedBeeps)
-                {
-                    Debug.LogWarning("Setting planned pin configuration after sending data erases the sent data.");
-                    ResetPlannedBeepsAndMessages();
-                }
+                throw new AS2.Sim.InvalidActionException("Head direction of next pin configuration (" + pc.HeadDirection + ") does not match expansion state (" + exp_expansionDir + ").");
             }
-            plannedPinConfiguration = pc.Copy();
-            pc.isPlanned = true;
-        }
-
-        /// <summary>
-        /// Returns the currently planned pin configuration for
-        /// the end of the round. Equivalent to
-        /// <see cref="PlannedPinConfiguration"/>, but part of the
-        /// algorithm API.
-        /// </summary>
-        /// <returns>The pin configuration planned to be applied at
-        /// the end of the current round.</returns>
-        public SysPinConfiguration GetPlannedPinConfiguration()
-        {
-            if (!(plannedPinConfiguration is null))
+            if (pc.isCurr || !pc.isNext)
             {
-                SysPinConfiguration planned = plannedPinConfiguration.Copy();
-                planned.isPlanned = true;
-                return planned;
-            }
-            else
-            {
-                return null;
+                pc.isCurr = false;
+                // Deregister current next pin config
+                nextPinConfig.isNext = false;
+                nextPinConfig = pc;
+                pc.isNext = true;
             }
         }
 
@@ -1078,13 +1051,14 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Sets the current pin configuration to match the expansion state after
+        /// Sets the next pin configuration to match the expansion state after
         /// a movement, deleting all received beeps and messages.
         /// </summary>
         private void ResetPinConfigurationAfterMovement()
         {
-            plannedPinConfiguration = null;
-            ApplyPlannedPinConfiguration();
+            nextPinConfig = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
+
+            ApplyNextPinConfiguration();
         }
 
         /// <summary>
@@ -1101,41 +1075,45 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Updates the current pin configuration to the one that was
-        /// planned for this round. If no configuration was planned and
-        /// the particle has moved, the pins are reset to a singleton
-        /// pattern. Also resets the planned pin configuration to
-        /// <c>null</c> and resets the received beeps and messages.
+        /// Updates the current pin configuration to the next one for
+        /// this round. Also transfers the beeps and messages scheduled
+        /// on pins to the corresponding partition sets and resets them
+        /// and resets the received beeps and messages.
         /// </summary>
-        public void ApplyPlannedPinConfiguration()
+        public void ApplyNextPinConfiguration()
         {
-            SysPinConfiguration newPC = null;
-            if (!(plannedPinConfiguration is null))
+            if (currPinConfig != nextPinConfig)
             {
-                // Have a planned pin configuration, try to apply it
-                if (plannedPinConfiguration.HeadDirection != exp_expansionDir)
-                {
-                    throw new System.InvalidOperationException("Particle's planned pin configuration has head direction " + plannedPinConfiguration.HeadDirection + ", but particle's head direction is " + exp_expansionDir);
-                }
-                newPC = plannedPinConfiguration;
+                currPinConfig = nextPinConfig;
+                currPinConfig.isNext = false;
+                currPinConfig.isCurr = true;
+                nextPinConfig = currPinConfig.Copy();
+                nextPinConfig.isCurr = false;
+                nextPinConfig.isNext = true;
+                pinConfigurationHistory.RecordValueInRound(currPinConfig, system.CurrentRound);
             }
             else
             {
-                // Have no planned configuration, generate default one if necessary
-                if (pinConfiguration.HeadDirection != exp_expansionDir)
-                {
-                    // Have moved
-                    newPC = new SysPinConfiguration(this, algorithm.PinsPerEdge, exp_expansionDir);
-                }
+                // Nothing to do, pin configuration stays the same
             }
-            if (!(newPC is null))
+
+            // Transfer beeps and messages planned on pins
+            if (hasPlannedBeeps)
             {
-                pinConfigurationHistory.RecordValueInRound(newPC, system.CurrentRound);
-                pinConfiguration = newPC;
+                foreach (int pinID in plannedBeepsByPin)
+                {
+                    plannedBeeps[pinID] = true;
+                }
+                plannedBeepsByPin.Clear();
             }
-            pinConfiguration.isCurrent = true;
-            pinConfiguration.isPlanned = false;
-            plannedPinConfiguration = null;
+            if (hasPlannedMessages)
+            {
+                foreach (KeyValuePair<int, Message> kv in plannedMessagesByPin)
+                {
+                    plannedMessages[kv.Key] = kv.Value;
+                }
+                plannedMessagesByPin.Clear();
+            }
 
             ResetReceivedBeepsAndMessages();
         }
@@ -1338,20 +1316,23 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Sets the flag that the partition set of the planned
-        /// pin configuration with the given ID has received a beep.
+        /// Sets the flag that a beep should be sent on the given partition set.
         /// </summary>
-        /// <param name="idx">The ID of the planned partition set to
+        /// <param name="partitionSetID">The ID of the partition set to
         /// send the beep.</param>
-        /// <param name="pc">The pin configuration on which the send
-        /// call was made. Must equal the currently planned pin configuration.</param>
-        public void PlanBeep(int idx, SysPinConfiguration pc)
+        public void PlanBeepOnPartitionSet(int partitionSetID)
         {
-            if (pc is null || !pc.isPlanned || pc != plannedPinConfiguration)
-            {
-                throw new AlgorithmException(this, "Cannot send beeps in non-planned pin configuration.");
-            }
-            plannedBeeps[idx] = true;
+            plannedBeeps[partitionSetID] = true;
+            hasPlannedBeeps = true;
+        }
+
+        /// <summary>
+        /// Sets the flag that a beep should be sent on the given pin.
+        /// </summary>
+        /// <param name="pinID">The ID of the pin to send the beep.</param>
+        public void PlanBeepOnPin(int pinID)
+        {
+            plannedBeepsByPin.Add(pinID);
             hasPlannedBeeps = true;
         }
 
@@ -1359,18 +1340,23 @@ namespace AS2.Sim
         /// Stores the given message to be sent on the partition
         /// set with the given ID.
         /// </summary>
-        /// <param name="idx">The ID of the planned partition set to
+        /// <param name="partitionSetID">The ID of the partition set to
         /// send the message.</param>
         /// <param name="msg">The message to be sent.</param>
-        /// <param name="pc">The pin configuration on which the send
-        /// call was made. Must equal the currently planned pin configuration.</param>
-        public void PlanMessage(int idx, Message msg, SysPinConfiguration pc)
+        public void PlanMessageOnPartitionSet(int partitionSetID, Message msg)
         {
-            if (pc is null || !pc.isPlanned || pc != plannedPinConfiguration)
-            {
-                throw new AlgorithmException(this, "Cannot send messages in non-planned pin configuration.");
-            }
-            plannedMessages[idx] = msg;
+            plannedMessages[partitionSetID] = msg;
+            hasPlannedMessages = true;
+        }
+
+        /// <summary>
+        /// Stores the given message to be sent on the given pin.
+        /// </summary>
+        /// <param name="pinID">The ID of the pin to send the message.</param>
+        /// <param name="msg">The message to be sent.</param>
+        public void PlanMessageOnPin(int pinID, Message msg)
+        {
+            plannedMessagesByPin[pinID] = msg;
             hasPlannedMessages = true;
         }
 
@@ -1401,7 +1387,8 @@ namespace AS2.Sim
 
         /// <summary>
         /// Deletes all planned beeps and messages to prepare
-        /// for planning new ones in the next round.
+        /// for planning new ones in the next round. Also resets
+        /// partition set failures.
         /// </summary>
         public void ResetPlannedBeepsAndMessages()
         {
@@ -1844,7 +1831,10 @@ namespace AS2.Sim
                 pos_head = pos_tail;
             }
 
-            pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
+            currPinConfig = pinConfigurationHistory.GetMarkedValue(this);
+            currPinConfig.isCurr = true;
+            nextPinConfig = currPinConfig.Copy();
+            nextPinConfig.isNext = true;
             for (int i = 0; i < receivedBeepsHistory.Length; i++)
             {
                 receivedBeeps[i] = receivedBeepsHistory[i].GetMarkedValue();
@@ -2056,13 +2046,19 @@ namespace AS2.Sim
             // TODO: Check if saved data even matches the algorithm in terms of array sizes
 
             pinConfigurationHistory = new ValueHistoryPinConfiguration(data.pinConfigurationHistory);
-            pinConfiguration = pinConfigurationHistory.GetMarkedValue(this);
+            currPinConfig = pinConfigurationHistory.GetMarkedValue(this);
+            currPinConfig.isCurr = true;
+            nextPinConfig = currPinConfig.Copy();
+            nextPinConfig.isNext = true;
 
             receivedBeeps = new BitArray(maxNumPins);
             receivedMessages = new Message[maxNumPins];
             plannedBeeps = new BitArray(maxNumPins);
             plannedMessages = new Message[maxNumPins];
             psetFailures = new BitArray(maxNumPins);
+
+            plannedBeepsByPin = new HashSet<int>();
+            plannedMessagesByPin = new Dictionary<int, Message>();
 
             receivedBeepsHistory = new ValueHistory<bool>[maxNumPins];
             receivedMessagesHistory = new ValueHistoryMessage[maxNumPins];

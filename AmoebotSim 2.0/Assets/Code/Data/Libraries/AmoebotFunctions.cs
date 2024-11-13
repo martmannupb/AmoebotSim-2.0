@@ -49,6 +49,14 @@ namespace AS2
             rotation_0, rotation_60, rotation_120, rotation_180, rotation_240, rotation_300
         };
 
+        /// <summary>
+        /// The six unit grid vectors corresponding to the six cardinal directions
+        /// </summary>
+        public static readonly Vector2Int[] unitVectors = new Vector2Int[] {
+            new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(-1, 1),
+            new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(1, -1)
+        };
+
         // Caches for relative pin positions
         // List index is number of pins per side - 1, first array index
         // is direction, second array index is edge offset
@@ -314,23 +322,32 @@ namespace AS2
         /// <paramref name="dir"/>.</returns>
         public static Vector2Int GetNeighborPositionOffset(int dir)
         {
-            switch (dir)
+            if (dir >= 0 && dir < 6)
             {
-                case 0:
-                    return new Vector2Int(1, 0);
-                case 1:
-                    return new Vector2Int(0, 1);
-                case 2:
-                    return new Vector2Int(-1, 1);
-                case 3:
-                    return new Vector2Int(-1, 0);
-                case 4:
-                    return new Vector2Int(0, -1);
-                case 5:
-                    return new Vector2Int(1, -1);
-                default:
-                    return new Vector2Int(int.MaxValue, int.MaxValue);
+                return unitVectors[dir];
             }
+            return new Vector2Int(int.MaxValue, int.MaxValue);
+        }
+
+        /// <summary>
+        /// Rotates the given grid position around the origin
+        /// in counter-clockwise direction.
+        /// </summary>
+        /// <param name="vec">The grid position to be rotated.</param>
+        /// <param name="rotation">The number of 60 degree
+        /// counter-clockwise rotations around the origin.</param>
+        /// <returns>The rotated vector.</returns>
+        public static Vector2Int RotateVector(Vector2Int vec, int rotation)
+        {
+            int r = rotation % 6;
+            if (r < 0)
+                r += 6;
+            Vector2Int vx = unitVectors[r];
+            Vector2Int vy = unitVectors[(r + 1) % 6];
+            vx *= vec.x;
+            vy *= vec.y;
+
+            return vx + vy;
         }
 
         // Circuits ===============

@@ -31,8 +31,7 @@ We can add log messages to our demo algorithm to check if everything works as in
 ```csharp
 public override void ActivateMove()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration();
-    if (pc.ReceivedBeepOnPartitionSet(0))
+    if (ReceivedBeepOnPartitionSet(0))
     {
         // Received a beep => Perform movement
         Debug.Log("Received beep");
@@ -45,9 +44,8 @@ public override void ActivateMove()
 
 public override void ActivateBeep()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
-    pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
-    SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
+    PinConfiguration pc = GetNextPinConfiguration(); // Get the PinConfiguration instance for next round
+    pc.SetToGlobal(0);                               // Collect all pins in partition set 0
 
     if (isLeader)  // Only the leader should run this code
     {
@@ -55,7 +53,7 @@ public override void ActivateBeep()
         {
             // Decided to move => Send a beep on the global circuit
             Log.Debug("Leader decided to move");
-            pc.SendBeepOnPartitionSet(0);
+            SendBeepOnPartitionSet(0);
         }
     }
 }
@@ -197,9 +195,8 @@ It then has to create a Message object and send it on the global circuit:
 ```csharp
 public override void ActivateBeep()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration(); // Get a PinConfiguration instance
-    pc.SetToGlobal(0);                                  // Collect all pins in partition set 0
-    SetPlannedPinConfiguration(pc);                     // Commit to use this pin configuration
+    PinConfiguration pc = GetNextPinConfiguration(); // Get the PinConfiguration instance for next round
+    pc.SetToGlobal(0);                               // Collect all pins in partition set 0
 
     if (isLeader)  // Only the leader should run this code
     {
@@ -212,7 +209,7 @@ public override void ActivateBeep()
 
             // Send the direction using a Message
             DemoDirectionMsg msg = new DemoDirectionMsg(movementDirs[dirIdx]);
-            pc.SendMessageOnPartitionSet(0, msg);
+            SendMessageOnPartitionSet(0, msg);
         }
     }
 }
@@ -226,11 +223,10 @@ Because some more changes are necessary to make the algorithm work, we will stil
 ```csharp
 public override void ActivateMove()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration();
-    if (pc.ReceivedMessageOnPartitionSet(0))  // Check for received Message
+    if (ReceivedMessageOnPartitionSet(0))  // Check for received Message
     {
         // Received a Message => Read direction
-        Message msg = pc.GetReceivedMessageOfPartitionSet(0);
+        Message msg = GetReceivedMessageOfPartitionSet(0);
         Direction moveDir = ((DemoDirectionMsg)msg).dir;  // Typecast to our Message type
         Debug.Log("Received Message with direction " + moveDir);
 
@@ -315,11 +311,10 @@ The final movement activation method looks like this:
 ```csharp
 public override void ActivateMove()
 {
-    PinConfiguration pc = GetCurrentPinConfiguration();
-    if (pc.ReceivedMessageOnPartitionSet(0))  // Check for received Message
+    if (ReceivedMessageOnPartitionSet(0))  // Check for received Message
     {
         // Received a Message => Read direction
-        Message msg = pc.GetReceivedMessageOfPartitionSet(0);
+        Message msg = GetReceivedMessageOfPartitionSet(0);
         Direction moveDir = ((DemoDirectionMsg)msg).dir;  // Typecast to our Message type
         Debug.Log("Received Message with direction " + moveDir);
 
@@ -355,6 +350,7 @@ public override void ActivateMove()
 This concludes our extensions of the demo algorithm.
 You can read more about bonds and joint movements on the corresponding [reference page](~/model_ref/bonds_jm.md).
 There are still some features that have not been discussed yet and which you can read about on the other [reference pages](~/model_ref/home.md).
+In particular, if you want to develop larger algorithms that use whole other algorithms as primitives, [subroutines](~/model_ref/subroutines.md) can be very useful.
 
 
 
@@ -369,6 +365,6 @@ There are still some features that have not been discussed yet and which you can
 [9]: xref:AS2.Sim.Message.Equals(AS2.Sim.Message)
 [10]: xref:AS2.Sim.Message.GreaterThan(AS2.Sim.Message)
 [11]: xref:AS2.Sim.ParticleAttribute`1
-[12]: xref:AS2.Sim.PinConfiguration.ReceivedMessageOnPartitionSet(System.Int32)
-[13]: xref:AS2.Sim.PinConfiguration.GetReceivedMessageOfPartitionSet(System.Int32)
+[12]: xref:AS2.Sim.ParticleAlgorithm.ReceivedMessageOnPartitionSet(System.Int32)
+[13]: xref:AS2.Sim.ParticleAlgorithm.GetReceivedMessageOfPartitionSet(System.Int32)
 [14]: xref:AS2.Sim.ParticleAlgorithm.HeadDirection

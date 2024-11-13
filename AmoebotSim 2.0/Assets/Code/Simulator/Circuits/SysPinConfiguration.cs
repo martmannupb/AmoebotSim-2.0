@@ -49,13 +49,16 @@ namespace AS2.Sim
 
         // State information for receiving and sending beeps and messages
         /// <summary>
-        /// Indicates whether this is the current pin configuration.
+        /// Whether this is the current pin configuration. This is the case
+        /// for the duration of one round unless a movement is performed, in
+        /// which case a singleton replaces this configuration.
         /// </summary>
-        public bool isCurrent = false;  // If true, give access to received data
+        public bool isCurr = false;
         /// <summary>
-        /// Indicates whether this is the planned pin configuration.
+        /// Whether this is the next pin configuration. This is the case during
+        /// one beep activation.
         /// </summary>
-        public bool isPlanned = false;  // If true, allow sending data
+        public bool isNext = false;
 
         // Visualization info
         /// <summary>
@@ -141,12 +144,11 @@ namespace AS2.Sim
         }
 
         /// <summary>
-        /// Resets current and planned flags to <c>false</c>.
+        /// Resets curr flag to <c>false</c> because the pin configuration was altered.
         /// </summary>
         private void UpdateFlagsAfterChange()
         {
-            isCurrent = false;
-            isPlanned = false;
+            isCurr = false;
         }
 
         /// <summary>
@@ -278,6 +280,9 @@ namespace AS2.Sim
         /// because the reference to the containing <see cref="Particle"/> stays
         /// the same.
         /// </para>
+        /// <para>
+        /// The <see cref="isCurr"/> and <see cref="isNext"/> flags are not copied.
+        /// </para>
         /// </summary>
         /// <returns>A copy of this pin configuration.</returns>
         public SysPinConfiguration Copy()
@@ -304,8 +309,6 @@ namespace AS2.Sim
                 spCopy.positionTail = spMine.positionTail;
                 spCopy.drawSingletonHandle = spMine.drawSingletonHandle;
             }
-            copy.isCurrent = isCurrent;
-            copy.isPlanned = isPlanned;
             return copy;
         }
 
@@ -566,77 +569,163 @@ namespace AS2.Sim
             MakePartitionSet(pinIds, partitionSet.Id);
         }
 
-        public override bool ReceivedBeepOnPartitionSet(int partitionSetIndex)
+        /// <summary>
+        /// Checks whether the particle has received a beep on the given partition set.
+        /// Only works if this pin configuration is the current one.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the particle has received a beep on the
+        /// partition set with ID <paramref name="partitionSetID"/> and this is the current
+        /// pin configuration.</returns>
+        /// <exception cref="System.InvalidOperationException">Thrown if this is not the
+        /// current pin configuration.</exception>
+        public bool ReceivedBeepOnPSet(int partitionSetID)
         {
-            if (!isCurrent)
+            if (!isCurr)
             {
-                throw new InvalidOperationException("Cannot check for received beeps in non-current pin configuration.");
+                throw new InvalidOperationException("Can only check for received beeps in the current pin configuration.");
             }
-            return particle.HasReceivedBeep(partitionSetIndex);
+            return particle.HasReceivedBeep(partitionSetID);
         }
 
-        public override void SendBeepOnPartitionSet(int partitionSetIndex)
+        /// <summary>
+        /// Sends a beep on the specified partition set, if this is the next pin
+        /// configuration.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set on which
+        /// to send the beep.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the next one.
+        /// </exception>
+        public void SendBeepOnPSet(int partitionSetID)
         {
-            if (!isPlanned)
+            if (!isNext)
             {
-                throw new InvalidOperationException("Cannot send beeps in non-planned pin configuration.");
+                throw new InvalidOperationException("Can only send beeps on the next pin configuration.");
             }
-            particle.PlanBeep(partitionSetIndex, this);
+            particle.PlanBeepOnPartitionSet(partitionSetID);
         }
 
-        public override bool ReceivedMessageOnPartitionSet(int partitionSetIndex)
+        /// <summary>
+        /// Sends a beep on the specified pin, if this is the next pin
+        /// configuration.
+        /// </summary>
+        /// <param name="pinID">The ID of the pin on which
+        /// to send the beep.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the next one.
+        /// </exception>
+        public void SendBeepOnPin(int pinID)
         {
-            if (!isCurrent)
+            if (!isNext)
             {
-                throw new InvalidOperationException("Cannot check for received messages in non-current pin configuration.");
+                throw new InvalidOperationException("Can only send beeps on the next pin configuration.");
             }
-            return particle.HasReceivedMessage(partitionSetIndex);
+            particle.PlanBeepOnPin(pinID);
         }
 
-        public override Message GetReceivedMessageOfPartitionSet(int partitionSetIndex)
+        /// <summary>
+        /// Checks whether the particle has received a message on the given partition set.
+        /// Only works if this pin configuration is the current one.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to check.</param>
+        /// <returns><c>true</c> if and only if the particle has received a message on the
+        /// partition set with ID <paramref name="partitionSetID"/> and this is the current
+        /// pin configuration.</returns>
+        /// <exception cref="System.InvalidOperationException">Thrown if this is not the
+        /// current pin configuration.</exception>
+        public bool ReceivedMessageOnPSet(int partitionSetID)
         {
-            if (!isCurrent)
+            if (!isCurr)
             {
-                throw new InvalidOperationException("Cannot get received messages from non-current pin configuration.");
+                throw new InvalidOperationException("Can only check for received messages in the current pin configuration.");
             }
-            return particle.GetReceivedMessage(partitionSetIndex);
+            return particle.HasReceivedMessage(partitionSetID);
         }
 
-        public override void SendMessageOnPartitionSet(int partitionSetIndex, Message msg)
+        /// <summary>
+        /// Returns the message received by the specified partition set, if it has
+        /// received a message and this pin configuration is the current one.
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set to get the
+        /// message from.</param>
+        /// <returns>A <see cref="Message"/> instance received by the partition set
+        /// with ID <paramref name="partitionSetID"/>, if it has received one,
+        /// otherwise <c>null</c>.</returns>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the current one.
+        /// </exception>
+        public Message GetReceivedMessageOfPSet(int partitionSetID)
         {
-            if (!isPlanned)
+            if (!isCurr)
             {
-                throw new InvalidOperationException("Cannot send messages in non-planned pin configuration.");
+                throw new InvalidOperationException("Can only get received messages from the current pin configuration.");
             }
-            particle.PlanMessage(partitionSetIndex, msg != null ? msg.Copy() : null, this);
+            return particle.GetReceivedMessage(partitionSetID);
+        }
+
+        /// <summary>
+        /// Sends the given message on the specified partition set, if this pin
+        /// configuration is the next one.
+        /// <para>
+        /// Note that a copy of the given <see cref="Message"/> instance
+        /// <paramref name="msg"/> is sent. Altering the instance after calling
+        /// this method has no effect on the sent message.
+        /// </para>
+        /// </summary>
+        /// <param name="partitionSetID">The ID of the partition set on which
+        /// to send the message.</param>
+        /// <param name="msg">The message to be sent.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the next one.
+        /// </exception>
+        public void SendMessageOnPSet(int partitionSetID, Message msg)
+        {
+            if (!isNext)
+            {
+                throw new InvalidOperationException("Cannot send messages in non-next pin configuration.");
+            }
+            if (msg != null)
+            {
+                particle.PlanMessageOnPartitionSet(partitionSetID, msg.Copy());
+            }
+        }
+
+        /// <summary>
+        /// Sends the given message on the specified pin, if this pin
+        /// configuration is the next one.
+        /// <para>
+        /// Note that a copy of the given <see cref="Message"/> instance
+        /// <paramref name="msg"/> is sent. Altering the instance after calling
+        /// this method has no effect on the sent message.
+        /// </para>
+        /// </summary>
+        /// <param name="pinID">The ID of the pin on which
+        /// to send the message.</param>
+        /// <param name="msg">The message to be sent.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin configuration is not the next one.
+        /// </exception>
+        public void SendMessageOnPin(int pinID, Message msg)
+        {
+            if (!isNext)
+            {
+                throw new InvalidOperationException("Cannot send messages in non-next pin configuration.");
+            }
+            if (msg != null)
+            {
+                particle.PlanMessageOnPin(pinID, msg.Copy());
+            }
         }
 
         public override void SetPartitionSetColor(int partitionSetIndex, Color color)
         {
             partitionSets[partitionSetIndex].SetColor(color);
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.SetPartitionSetColor(partitionSetIndex, color);
-            }
         }
 
         public override void ResetPartitionSetColor(int partitionSetIndex)
         {
             partitionSets[partitionSetIndex].ResetColor();
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.ResetPartitionSetColor(partitionSetIndex);
-            }
         }
 
         public override void ResetAllPartitionSetColors()
@@ -645,29 +734,11 @@ namespace AS2.Sim
             {
                 sp.ResetColor();
             }
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.ResetAllPartitionSetColors();
-            }
         }
 
         public override void SetPartitionSetPosition(int partitionSetIndex, Vector2 polarCoords, bool head = true)
         {
             partitionSets[partitionSetIndex].SetPosition(polarCoords, head);
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.SetPartitionSetPosition(partitionSetIndex, polarCoords, head);
-            }
         }
 
         public override void SetPSPlacementMode(PSPlacementMode mode, bool head = true)
@@ -676,15 +747,6 @@ namespace AS2.Sim
                 placementModeHead = mode;
             else
                 placementModeTail = mode;
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.SetPSPlacementMode(mode, head);
-            }
         }
 
         public override void SetLineRotation(float angle, bool head = true)
@@ -701,15 +763,6 @@ namespace AS2.Sim
                 lineRotationTail = angleLocal;
                 placementModeTail = PSPlacementMode.LINE_ROTATED;
             }
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.SetLineRotation(angle, head);
-            }
         }
 
         public override void ResetPartitionSetPlacement(bool head = true)
@@ -722,15 +775,6 @@ namespace AS2.Sim
                 placementModeHead = PSPlacementMode.NONE;
             else
                 placementModeTail = PSPlacementMode.NONE;
-
-            // If the pin configuration is marked as planned, apply the same change
-            // to the particle's planned PC
-            if (isPlanned)
-            {
-                SysPinConfiguration planned = particle.PlannedPinConfiguration;
-                if (planned != this)
-                    planned.ResetPartitionSetPlacement(head);
-            }
         }
 
         public override void SetPartitionSetDrawHandle(int partitionSetIndex, bool drawHandle)

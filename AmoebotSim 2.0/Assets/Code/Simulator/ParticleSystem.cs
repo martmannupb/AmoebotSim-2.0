@@ -986,7 +986,7 @@ namespace AS2.Sim
         {
             foreach (Particle p in particles)
             {
-                p.ApplyPlannedPinConfiguration();
+                p.ApplyNextPinConfiguration();
             }
         }
 
@@ -2642,7 +2642,7 @@ namespace AS2.Sim
                     }
 
                     // Have found all neighbors, now determine circuits into which the partition sets belong
-                    foreach (SysPartitionSet ps in p.PinConfiguration.partitionSets)
+                    foreach (SysPartitionSet ps in p.CurrPinConfig.partitionSets)
                     {
                         if (ps.IsEmpty())
                         {
@@ -2665,7 +2665,7 @@ namespace AS2.Sim
                                 // Find the neighbor's corresponding pin
                                 int nbrPinLabel = nbrLabels[pinLabel];
                                 int nbrPinId = nbrPinLabel * pinsPerEdge + pinsPerEdge - 1 - pinOffset;
-                                SysPin nbrPin = nbrParts[pinLabel].PinConfiguration.pinsGlobal[nbrPinId];
+                                SysPin nbrPin = nbrParts[pinLabel].CurrPinConfig.pinsGlobal[nbrPinId];
                                 // If we have not found a circuit yet, add our partition set to the circuit
                                 if (!foundCircuit)
                                 {
@@ -2715,16 +2715,16 @@ namespace AS2.Sim
             foreach (Particle p in particles)
             {
                 // Set partition set placement mode
-                if (p.PinConfiguration.placementModeHead != PSPlacementMode.NONE)
+                if (p.CurrPinConfig.placementModeHead != PSPlacementMode.NONE)
                 {
-                    switch (p.PinConfiguration.placementModeHead)
+                    switch (p.CurrPinConfig.placementModeHead)
                     {
                         case PSPlacementMode.LINE:
                             p.gCircuit.CodePositionOverride_AutomaticLine(true);
                             break;
                         case PSPlacementMode.LINE_ROTATED:
                             // Rotation 0 means East in pin configuration API but North in graphics API
-                            p.gCircuit.CodePositionOverride_LineRotated(p.PinConfiguration.lineRotationHead - 90f, true);
+                            p.gCircuit.CodePositionOverride_LineRotated(p.CurrPinConfig.lineRotationHead - 90f, true);
                             break;
                         case PSPlacementMode.LLOYD:
                             p.gCircuit.CodePositionOverride_Automatic(true);
@@ -2734,16 +2734,16 @@ namespace AS2.Sim
                             break;
                     }
                 }
-                if (p.IsExpanded() && p.PinConfiguration.placementModeTail != PSPlacementMode.NONE)
+                if (p.IsExpanded() && p.CurrPinConfig.placementModeTail != PSPlacementMode.NONE)
                 {
-                    switch (p.PinConfiguration.placementModeTail)
+                    switch (p.CurrPinConfig.placementModeTail)
                     {
                         case PSPlacementMode.LINE:
                             p.gCircuit.CodePositionOverride_AutomaticLine(false);
                             break;
                         case PSPlacementMode.LINE_ROTATED:
                             // Rotation 0 means East in pin configuration API but North in graphics API
-                            p.gCircuit.CodePositionOverride_LineRotated(p.PinConfiguration.lineRotationTail - 90f, false);
+                            p.gCircuit.CodePositionOverride_LineRotated(p.CurrPinConfig.lineRotationTail - 90f, false);
                             break;
                         case PSPlacementMode.LLOYD:
                             p.gCircuit.CodePositionOverride_Automatic(false);
@@ -2753,10 +2753,10 @@ namespace AS2.Sim
                             break;
                     }
                 }
-                bool manualPositionHead = p.PinConfiguration.placementModeHead == PSPlacementMode.MANUAL;
-                bool manualPositionTail = p.IsExpanded() && p.PinConfiguration.placementModeTail == PSPlacementMode.MANUAL;
+                bool manualPositionHead = p.CurrPinConfig.placementModeHead == PSPlacementMode.MANUAL;
+                bool manualPositionTail = p.IsExpanded() && p.CurrPinConfig.placementModeTail == PSPlacementMode.MANUAL;
                 // Compute each partition set
-                foreach (SysPartitionSet ps in p.PinConfiguration.partitionSets)
+                foreach (SysPartitionSet ps in p.CurrPinConfig.partitionSets)
                 {
                     if (ps.IsEmpty()) continue;
 

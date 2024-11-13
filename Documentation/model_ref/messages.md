@@ -93,10 +93,14 @@ public class IntMessage : Message
     public override bool GreaterThan(Message other)
     {
         IntMessage otherMsg = other as IntMessage;
-        return otherMsg == null && val > otherMsg.val;
+        return otherMsg != null && val > otherMsg.val;
     }
 }
 ```
+
+> [!NOTE]
+> If you have multiple types of messages, the total ordering must include all of them.
+> Thus, the [`GreaterThan`][4] method must account for the other message types as well.
 
 
 [1]: xref:AS2.Sim.Message

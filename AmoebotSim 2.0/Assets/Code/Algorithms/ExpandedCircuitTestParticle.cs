@@ -81,7 +81,7 @@ namespace AS2.Algos.ExpandedCircuitTest
                 SetPlacement(pc, placementTail, false);
             }
 
-            SetPlannedPinConfiguration(pc);
+            SetNextPinConfiguration(pc);
             BeepRandom(pc);
         }
 

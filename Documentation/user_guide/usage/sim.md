@@ -209,7 +209,7 @@ Right Ctrl + (Arrow Keys or WASD)    | Camera Movement
 Space                                | Play/Pause
 PageUp or (Shift + Right Arrow Key)  | Step Forward
 PageDown or (Shift + Left Arrow Key) | Step Back
-H                                    | Hide/Show UI
+Shift + H                            | Hide/Show UI
 Shift + C                            | Center Camera
 Shift + F                            | Frame whole system
 Shift + V                            | Take Screenshot

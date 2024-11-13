@@ -16,9 +16,11 @@
   href: messages.md
 - name: Bonds and Joint Movements
   href: bonds_jm.md
+- name: Subroutines
+  href: subroutines.md
+- name: Status Info Methods
+  href: status_info.md
 - name: Objects
   href: objects.md
 - name: Collisions and Line Drawer
   href: collisions.md
-- name: Status Info Methods
-  href: status_info.md

@@ -296,7 +296,7 @@ namespace AS2.Algos.ChiralityCompass
         {
             // Send chirality or compass information to all of our neighbors using singleton configuration
             PinConfiguration pc = GetContractedPinConfiguration();
-            SetPlannedPinConfiguration(pc);
+            SetNextPinConfiguration(pc);
 
             for (int origDir = 0; origDir < 6; origDir++)
             {
@@ -307,14 +307,14 @@ namespace AS2.Algos.ChiralityCompass
                 if (chiralityAgreementPhase)
                 {
                     // Beep on the pin with offset 0
-                    pc.GetPinAt(dir, reverseChirality ? 1 : 0).PartitionSet.SendBeep();
+                    pc.GetPinAt(dir, reverseChirality ? 1 : 0).SendBeep();
                 }
                 else
                 {
                     // Send message with my edge direction on pin 0
                     Direction d = ToNewDir(dir);
                     DirectionMessage msg = new DirectionMessage(d);
-                    pc.GetPinAt(dir, reverseChirality ? 1 : 0).PartitionSet.SendMessage(msg);
+                    pc.GetPinAt(dir, reverseChirality ? 1 : 0).SendMessage(msg);
                 }
             }
 
@@ -325,7 +325,7 @@ namespace AS2.Algos.ChiralityCompass
         private void Activate1()
         {
             // Receive neighbors' chirality or compass information
-            PinConfiguration pc = GetCurrentPinConfiguration();
+            PinConfiguration pc = GetCurrPinConfiguration();
             bool haveNbrOutOfRegion = false;
             List<int> regionNbrs = new List<int>();
             for (int origDir = 0; origDir < 6; origDir++)
@@ -337,7 +337,7 @@ namespace AS2.Algos.ChiralityCompass
                 if (chiralityAgreementPhase)
                 {
                     // If neighbor beeped on pin 1, then we share chirality, otherwise we don't
-                    if (pc.GetPinAt(dir, reverseChirality ? 0 : 1).PartitionSet.ReceivedBeep())
+                    if (pc.GetPinAt(dir, reverseChirality ? 0 : 1).ReceivedBeep())
                     {
                         // Share chirality, remember this neighbor as regional neighbor
                         regionNbrs.Add(origDir);
@@ -352,7 +352,7 @@ namespace AS2.Algos.ChiralityCompass
                 {
                     // Receive message on pin 1 (must have one) and read compass direction
                     Direction myDir = ToNewDir(dir);
-                    DirectionMessage msg = pc.GetPinAt(dir, reverseChirality ? 0 : 1).PartitionSet.GetReceivedMessage() as DirectionMessage;
+                    DirectionMessage msg = pc.GetPinAt(dir, reverseChirality ? 0 : 1).GetReceivedMessage() as DirectionMessage;
                     if (msg == null)
                     {
                         Debug.LogError("Did not receive direction message from neighbor in direction " + dir);
@@ -391,11 +391,11 @@ namespace AS2.Algos.ChiralityCompass
                     pinIds[2 * i + 1] = pc.GetPinAt(d, 1).Id;
                 }
                 pc.MakePartitionSet(pinIds, 0);
-                SetPlannedPinConfiguration(pc);
+                SetNextPinConfiguration(pc);
 
                 if (haveNbrOutOfRegion)
                 {
-                    pc.SendBeepOnPartitionSet(0);
+                    SendBeepOnPartitionSet(0);
                 }
             }
             else
@@ -410,8 +410,7 @@ namespace AS2.Algos.ChiralityCompass
         private void Activate2()
         {
             // Receive regional circuit's beep for neighbor existence
-            PinConfiguration pc = GetCurrentPinConfiguration();
-            bool neighborsExist = !hasRegionalCircuit || pc.ReceivedBeepOnPartitionSet(0);
+            bool neighborsExist = !hasRegionalCircuit || ReceivedBeepOnPartitionSet(0);
 
             // If no neighbors exist: Move on to next phase or terminate
             if (!neighborsExist)
@@ -432,13 +431,9 @@ namespace AS2.Algos.ChiralityCompass
             }
 
             // Phase is not over yet: candidates toss coins and beep on regional circuit if HEADS is tossed
-            if (isCandidate)
+            if (isCandidate && TossCoin())
             {
-                if (TossCoin())
-                {
-                    SetPlannedPinConfiguration(pc);
-                    pc.SendBeepOnPartitionSet(0);
-                }
+                SendBeepOnPartitionSet(0);
             }
 
             // Proceed with round 3
@@ -449,15 +444,13 @@ namespace AS2.Algos.ChiralityCompass
         {
             if (hasRegionalCircuit)
             {
-                PinConfiguration pc = GetCurrentPinConfiguration();
                 // Check if HEADS candidates have sent on the regional circuit
-                beepedForHeads.SetValue(pc.ReceivedBeepOnPartitionSet(0));
+                beepedForHeads.SetValue(ReceivedBeepOnPartitionSet(0));
 
                 // Candidates with TAILS send beep on regional circuit
                 if (isCandidate && !heads)
                 {
-                    SetPlannedPinConfiguration(pc);
-                    pc.SendBeepOnPartitionSet(0);
+                    SendBeepOnPartitionSet(0);
                 }
             }
 
@@ -469,10 +462,8 @@ namespace AS2.Algos.ChiralityCompass
         {
             if (hasRegionalCircuit)
             {
-                PinConfiguration pc = GetCurrentPinConfiguration();
-
                 // Receive TAILS beep
-                bool hasTailsBeep = pc.ReceivedBeepOnPartitionSet(0);
+                bool hasTailsBeep = ReceivedBeepOnPartitionSet(0);
 
                 // Compute coin toss result
                 // The attribute is public so neighbor particles can read it in the next round
@@ -517,8 +508,6 @@ namespace AS2.Algos.ChiralityCompass
             {
                 if (hasRegionalCircuit)
                 {
-                    PinConfiguration pc = GetCurrentPinConfiguration();
-
                     if (chiralityAgreementPhase)
                     {
                         // If any neighbor has a different coin toss result, send beep
@@ -529,8 +518,7 @@ namespace AS2.Algos.ChiralityCompass
                             ChiralityAndCompassParticle nbr = GetNeighborAt(DirectionHelpers.Cardinal(i)) as ChiralityAndCompassParticle;
                             if (nbr.coinTossResult != coinTossResult.GetCurrentValue())
                             {
-                                SetPlannedPinConfiguration(pc);
-                                pc.SendBeepOnPartitionSet(0);
+                                SendBeepOnPartitionSet(0);
                                 break;
                             }
                         }
@@ -564,8 +552,7 @@ namespace AS2.Algos.ChiralityCompass
                     // Check for beep on regional circuit or check all neighbors if there is no regional circuit
                     if (hasRegionalCircuit)
                     {
-                        PinConfiguration pc = GetCurrentPinConfiguration();
-                        mergeIntoOtherRegion = pc.ReceivedBeepOnPartitionSet(0);
+                        mergeIntoOtherRegion = ReceivedBeepOnPartitionSet(0);
                     }
                     else
                     {
@@ -718,9 +705,8 @@ namespace AS2.Algos.ChiralityCompass
 
         private void CompassAlignmentUpdateMergeBeep(int offset)
         {
-            PinConfiguration pc = GetCurrentPinConfiguration();
             // Read value from previous round if offset is large enough and no merge offset was selected yet
-            if (offset > 1 && mergeOffset.GetCurrentValue() == -1 && pc.ReceivedBeepOnPartitionSet(0))
+            if (offset > 1 && mergeOffset.GetCurrentValue() == -1 && ReceivedBeepOnPartitionSet(0))
             {
                 mergeOffset.SetValue(offset - 1);
             }
@@ -736,8 +722,7 @@ namespace AS2.Algos.ChiralityCompass
                     if (nbr.coinTossResult != CoinTossResult.TAILS)
                     {
                         // This neighbor has a matching coin toss result and offset
-                        SetPlannedPinConfiguration(pc);
-                        pc.SendBeepOnPartitionSet(0);
+                        SendBeepOnPartitionSet(0);
                     }
                 }
             }
@@ -746,12 +731,7 @@ namespace AS2.Algos.ChiralityCompass
         // Only for visualization, uses global data
         private void SetColor()
         {
-            PinConfiguration pc = GetPlannedPinConfiguration();
-            if (pc is null)
-            {
-                pc = GetCurrentPinConfiguration();
-                SetPlannedPinConfiguration(pc);
-            }
+            PinConfiguration pc = GetNextPinConfiguration();
             bool hasRegion = hasRegionalCircuit.GetCurrentValue();
             if (chiralityAgreementPhase.GetCurrentValue())
             {
@@ -796,7 +776,7 @@ namespace AS2.Algos.ChiralityCompass
                     SetMainColor(compNoCandColor[realCompassDir.GetCurrentValue().ToInt()]);
                 }
             }
-            //SetPlannedPinConfiguration(pc);
+            //SetNextPinConfiguration(pc);
         }
     }
 

@@ -86,6 +86,71 @@ namespace AS2.Sim
         {
             get;
         }
+
+        /// <summary>
+        /// Checks whether this pin has received a beep in
+        /// the last round, if the pin configuration it belongs to
+        /// is the current one.
+        /// </summary>
+        /// <returns><c>true</c> if and only if this pin has
+        /// received a beep in the last round.</returns>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin does not belong to the current
+        /// pin configuration.
+        /// </exception>
+        public abstract bool ReceivedBeep();
+
+        /// <summary>
+        /// Sends a beep on this pin if the pin configuration
+        /// it belongs to is the next one.
+        /// </summary>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin does not belong to the next
+        /// pin configuration.
+        /// </exception>
+        public abstract void SendBeep();
+
+        /// <summary>
+        /// Checks whether this pin has received a message
+        /// in the last round, if the pin configuration it belongs to
+        /// is the current one.
+        /// </summary>
+        /// <returns><c>true</c> if and only if this pin has
+        /// received a message in the last round.</returns>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin does not belong to the current
+        /// pin configuration.
+        /// </exception>
+        public abstract bool HasReceivedMessage();
+
+        /// <summary>
+        /// Returns the message this pin has received in the
+        /// last round, if it has received one and it belongs to the
+        /// current pin configuration.
+        /// </summary>
+        /// <returns>The message received by this pin in the
+        /// last round, if it exists, otherwise <c>null</c>.</returns>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin does not belong to the current
+        /// pin configuration.
+        /// </exception>
+        public abstract Message GetReceivedMessage();
+
+        /// <summary>
+        /// Sends a message on this pin if the pin configuration
+        /// it belongs to is the next one.
+        /// </summary>
+        /// <para>
+        /// Note that a copy of the given <see cref="Message"/> instance
+        /// <paramref name="msg"/> is sent. Altering the instance after calling
+        /// this method has no effect on the sent message.
+        /// </para>
+        /// <param name="msg">The message to be sent.</param>
+        /// <exception cref="System.InvalidOperationException">
+        /// Thrown if this pin does not belong to the next
+        /// pin configuration.
+        /// </exception>
+        public abstract void SendMessage(Message msg);
     }
 
 } // namespace AS2.Sim

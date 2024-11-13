@@ -171,10 +171,10 @@ All of this information is computed in `SetupPinGraphicState()` between the move
 
 Like the movement phase, the beep phase starts with the particle activations.
 The `ActivateParticlesBeep()` method simply calls [`ActivateBeep()`][12] on all particles and handles some exceptions that might occur by turning them into the appropriate exception types and rethrowing them.
-In their activations, particles can set a new planned pin configuration and schedule beeps and messages.
+In their activations, particles can plan a new pin configuration and schedule beeps and messages.
 Processing these scheduled actions is the main task of the beep phase simulation.
 
-The [`ApplyNewPinConfigurations()`][13] method calls [`ApplyPlannedPinConfiguration()`][14] on all particles.
+The [`ApplyNewPinConfigurations()`][13] method calls [`ApplyNextPinConfiguration()`][14] on all particles.
 This causes the particles to update their pin configurations if they have planned a new configuration.
 If no pin configuration was planned by a particle, it retains the configuration it had after the movement phase, which is either the configuration from before the movement phase (in case no movement was made) or a default configuration matching the current expansion state.
 
@@ -244,7 +244,7 @@ This is done by the `UpdateAllParticleVisuals(...)` method, which calls the vari
 The same method is also called to push updates after changing the current round.
 
 Next, the `CleanupAfterRound()` method is called to reset all helper data in the particles, like flags, scheduled actions and temporary graphics info.
-This is important because it ensures that before each round simulation or similar simulation state udpate, all of this helper data is in the same default state and ready to be used.
+This is important because it ensures that before each round simulation or similar simulation state udpate, all of this helper data is in the same default state and ready to be used again.
 
 The last step of a round simulation is checking whether the algorithm has finished.
 This is checked by the `HasSimulationFinished()` method, which calls [`IsFinished()`][22] on all particles and returns `true` if every particle in the system returns `true`.
@@ -301,7 +301,7 @@ For this purpose, the particle attribute classes have an [`intermediateVal`][27]
 [11]: xref:AS2.Visuals.ParticlePinGraphicState
 [12]: xref:AS2.Sim.ParticleAlgorithm.ActivateBeep
 [13]: xref:AS2.Sim.ParticleSystem.ApplyNewPinConfigurations
-[14]: xref:AS2.Sim.Particle.ApplyPlannedPinConfiguration
+[14]: xref:AS2.Sim.Particle.ApplyNextPinConfiguration
 [15]: xref:AS2.Sim.Circuit
 [16]: xref:AS2.Sim.SysPartitionSet
 [17]: xref:AS2.Sim.Message.GreaterThan(AS2.Sim.Message)

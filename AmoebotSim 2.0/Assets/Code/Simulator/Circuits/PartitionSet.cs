@@ -254,10 +254,10 @@ namespace AS2.Sim
 
         /// <summary>
         /// Sends a beep on this partition set if the pin configuration
-        /// it belongs to is the planned one.
+        /// it belongs to is the next one.
         /// </summary>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the planned
+        /// Thrown if this partition set does not belong to the next
         /// pin configuration.
         /// </exception>
         public abstract void SendBeep();
@@ -290,7 +290,7 @@ namespace AS2.Sim
 
         /// <summary>
         /// Sends a message on this partition set if the pin configuration
-        /// it belongs to is the planned one.
+        /// it belongs to is the next one.
         /// </summary>
         /// <para>
         /// Note that a copy of the given <see cref="Message"/> instance
@@ -299,7 +299,7 @@ namespace AS2.Sim
         /// </para>
         /// <param name="msg">The message to be sent.</param>
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if this partition set does not belong to the planned
+        /// Thrown if this partition set does not belong to the next
         /// pin configuration.
         /// </exception>
         public abstract void SendMessage(Message msg);
