@@ -12,26 +12,38 @@ namespace AS2.Algos.Exercise
     // You are given a line of n >= 2 amoebots on the West-East axis, where n is
     // chosen randomly and the amoebots have a common compass orientation aligned
     // with the grid axes. The amoebots should run the PASC algorithm to determine
-    // the floor(n / 2) easternmost amoebots and make them expand. After that,
-    // the algorithm should terminate so that the simulation stops.
+    // the floor(n / 2) easternmost amoebots and make them expand in the East
+    // direction. After that, the algorithm should terminate so that the simulation
+    // stops (implement IsFinished() for this).
     // You may not use any existing subroutines.
+    // To check your solution, the amoebots that should expand are initially colored
+    // green and the others are colored red.
     // 
     // Hints:
     // - First, think about the given amoebot structure: You will need to identify a
-    //   start point for the PASC chain (how can it identify itself?) and a direction
-    //   in which the PASC algorithm is oriented.
+    //   start point for the PASC chain (how can it identify itself?) and fix a
+    //   direction in which the PASC algorithm is oriented.
     // - How many partition sets does each amoebot need? How does it connect them
     //   to its predecessor/successor based on its own current state?
+    // - Use amoebot colors to visualize which amoebots are still active and which are
+    //   not (call e.g. SetMainColor(ColorData.Particle_Blue) when becoming passive).
     // - The amoebots need to find out when the PASC algorithm is finished. Which
     //   amoebots know that the algorithm is NOT yet finished? And how can they inform
     //   the other amoebots? (You may need to switch back and forth between running the
     //   PASC algorithm and checking whether it is finished)
     // - If you implement the PASC algorithm correctly, each amoebot will receive
     //   its own "index" i on the chain (0, 1, ..., n-1) in binary, as a sequence of
-    //   bits. Try to let each amoebot compare its index i to floor((n-1) / 2).
-    //   For which comparison result should the amoebot expand
-    //   (i > / >= / < / <= floor((n-1) / 2))? Draw a few small examples for even
-    //   and odd n on paper. It is less complicated than you might think!
+    //   bits from the lowest to the highest value.
+    // - Try to let each amoebot compare its index i to floor((n-1) / 2). How do you
+    //   compare two numbers when they are given as bit sequences? For which comparison
+    //   result should the amoebot expand (i > / >= / < / <= floor((n-1) / 2))? Draw a
+    //   few small examples for even and odd n on paper. It is less complicated than you
+    //   might think!
+    // - Compare i to n-1 first and then figure out how to obtain the bit sequence of
+    //   floor((n-1) / 2).
+    // - If you use the 2 available pins efficiently, you will not have to add a third
+    //   round/mode to the iteration. One mode for the PASC beeps and one mode for other
+    //   beeps is sufficient.
 
     public class ExerciseParticle : ParticleAlgorithm
     {
@@ -50,9 +62,6 @@ namespace AS2.Algos.Exercise
         public ExerciseParticle(Particle p) : base(p)
         {
             // <INITIALIZE YOUR ATTRIBUTES HERE>
-
-            // Also, set the default initial color
-            SetMainColor(ColorData.Particle_Blue);
         }
 
         // Implement this method if the algorithm terminates at some point
@@ -74,6 +83,15 @@ namespace AS2.Algos.Exercise
         {
             // <IMPLEMENT YOUR COMMUNICATION CODE HERE>
         }
+
+        // <DO NOT MODIFY THIS>
+        public void Init(bool expand = false)
+        {
+            if (expand)
+                SetMainColor(ColorData.Particle_Green);
+            else
+                SetMainColor(ColorData.Particle_Red);
+        }
     }
 
 
@@ -86,10 +104,17 @@ namespace AS2.Algos.Exercise
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
-        public void Generate(/* Parameters with default values */)
+        public void Generate(int maxAmoebots = 50)
         {
-            int n = Random.Range(2, 51);
-            PlaceParallelogram(Vector2Int.zero, Direction.E, n);
+            maxAmoebots = Mathf.Max(maxAmoebots, 2);
+            int n = Random.Range(2, maxAmoebots + 1);
+            int border = n - Mathf.FloorToInt(n / 2);
+            for (int i = 0; i < n; i++)
+            {
+                InitializationParticle ip = AddParticle(new Vector2Int(i, 0));
+                if (i >= border)
+                    ip.SetAttribute("expand", true);
+            }
         }
     }
 
