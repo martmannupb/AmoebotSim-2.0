@@ -29,6 +29,8 @@ The *Game View* shows the graphical output of the simulator and allows the user 
 The window will automatically switch to the Game View when the Play button (directly above the window) is pressed.
 The toolbar at the top of the Game View allows you to emulate a screen size and resolution other than that of your screen.
 We recommend using the "Full HD (1920x1080)" setting to ensure that all UI elements are visible.
+You can also enable "VSync" to stop the simulator from unnecessarily rendering more frames than your monitor can display.
+If you have configured a screen resolution scaling in your operating system, you may have to uncheck "Low Resolution Aspect Ratios" in the dropdown menu and bring the "Scale" slider to 1 to improve the output quality.
 
 ![Editor Game View](~/images/editor_game_view.png "Game View with Full HD resolution")
 

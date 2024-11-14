@@ -41,8 +41,19 @@ The Unity Hub is an application that manages your Unity installs and projects.
 
 ### Troubleshooting
 
+- If the module selection window does not open when installing the Editor, you can add modules later on:
+	- In the "Installs" tab of the Unity Hub, find your installed Editor version and click on the gear icon
+	- Then select "Add modules" and select the modules that are still missing
+- If some of the modules are not installed successfully (such as Visual Studio):
+	- Close Unity Hub (make sure to quit the application completely, it may remain in the system tray if you only close the window)
+	- Launch Unity Hub as administrator
+	- If the Editor installation failed, follow the instructions in [step 2](#install-editor)
+	- If the Editor was installed already but some modules are missing, follow the above instructions for adding modules to an existing install
+- If Visual Studio still cannot be installed via modules, you can also install it manually
+	- Make sure to select the "Game development with Unity" Workload in the installer
+	- You may have to configure Unity to use Visual Studio as default editor manually (see [simulator setup](sim.md))
 - If the simulation environment does not work for the latest Unity version, you can download version **6000.0.25f1** from the [download archive][5]
-- The "Install" button will open the Unity Hub, after which you can proceed as described [above](#install-editor)
+	- The "Install" button will open the Unity Hub, after which you can proceed as described [above](#install-editor)
 
 When Unity has been installed successfully, you can move on to [setting up the simulator](sim.md).
 
