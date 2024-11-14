@@ -2,7 +2,7 @@ using AS2.Sim;
 using UnityEngine;
 using static AS2.Constants;
 
-namespace AS2.Algos.Workshop1
+namespace AS2.Algos.Workshop
 {
 
     // WORKSHOP - EXERCISE 1
@@ -44,22 +44,22 @@ namespace AS2.Algos.Workshop1
     //             The leader beeps in the round corresponding to the chosen direction. For this, you will need
     //             a new counter attribute that counts the number of elapsed rounds.
 
-    public class Workshop1Particle : ParticleAlgorithm
+    public class WorkshopParticle : ParticleAlgorithm
     {
         // Specify the number of pins (may be 0)
         public override int PinsPerEdge => 1;
 
         // This is the display name of the algorithm (must be unique)
-        public static new string Name => "Workshop 1";
+        public static new string Name => "Workshop";
 
         // If the algorithm has a special generation method, specify its full name here
-        public static new string GenerationMethod => typeof(Workshop1ParticleInitializer).FullName;
+        public static new string GenerationMethod => typeof(WorkshopParticleInitializer).FullName;
 
         // Declare attributes here
         private ParticleAttribute<bool> isLeader;
         // <ADD YOUR ATTRIBUTES HERE>
 
-        public Workshop1Particle(Particle p) : base(p)
+        public WorkshopParticle(Particle p) : base(p)
         {
             // Initialize the attributes here
             isLeader = CreateAttributeBool("Leader", false);
@@ -103,9 +103,9 @@ namespace AS2.Algos.Workshop1
 
     // Use this to implement a generation method for this algorithm
     // Its class name must be specified as the algorithm's GenerationMethod
-    public class Workshop1ParticleInitializer : InitializationMethod
+    public class WorkshopParticleInitializer : InitializationMethod
     {
-        public Workshop1ParticleInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
+        public WorkshopParticleInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
         // This method implements the system generation
         // Its parameters will be shown in the UI and they must have default values
@@ -120,4 +120,4 @@ namespace AS2.Algos.Workshop1
         }
     }
 
-} // namespace AS2.Algos.Workshop1
+} // namespace AS2.Algos.Workshop

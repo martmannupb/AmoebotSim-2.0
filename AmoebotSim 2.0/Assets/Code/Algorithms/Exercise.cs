@@ -2,24 +2,24 @@ using AS2.Sim;
 using UnityEngine;
 using static AS2.Constants;
 
-namespace AS2.Algos.Workshop2
+namespace AS2.Algos.Exercise
 {
 
-    public class Workshop2Particle : ParticleAlgorithm
+    public class ExerciseParticle : ParticleAlgorithm
     {
         // This is the display name of the algorithm (must be unique)
-        public static new string Name => "Workshop 2";
+        public static new string Name => "Exercise";
 
         // Specify the number of pins (may be 0)
         public override int PinsPerEdge => 2;
 
         // If the algorithm has a special generation method, specify its full name here
-        //public static new string GenerationMethod => typeof(Workshop2Initializer).FullName;
+        //public static new string GenerationMethod => typeof(ExerciseInitializer).FullName;
 
         // Declare attributes here
         // ...
 
-        public Workshop2Particle(Particle p) : base(p)
+        public ExerciseParticle(Particle p) : base(p)
         {
             // Initialize the attributes here
             // Also, set the default initial color
@@ -55,9 +55,9 @@ namespace AS2.Algos.Workshop2
 
     // Use this to implement a generation method for this algorithm
     // Its class name must be specified as the algorithm's GenerationMethod
-    //public class Workshop2Initializer : InitializationMethod
+    //public class ExerciseInitializer : InitializationMethod
     //{
-    //    public Workshop2Initializer(AS2.Sim.ParticleSystem system) : base(system) { }
+    //    public ExerciseInitializer(AS2.Sim.ParticleSystem system) : base(system) { }
 
     //    // This method implements the system generation
     //    // Its parameters will be shown in the UI and they must have default values
@@ -67,4 +67,4 @@ namespace AS2.Algos.Workshop2
     //    }
     //}
 
-} // namespace AS2.Algos.Workshop2
+} // namespace AS2.Algos.Exercise
