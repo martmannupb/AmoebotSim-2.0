@@ -33,12 +33,14 @@ namespace AS2.Algos.Workshop
     
     // (d) (challenge)
     // Introduce new movement directions to make the end of the line move far away from its initial position.
+    // The amoebots should be able to expand in directions NNE, SSE, NNW and SSW and modify their bonds such
+    // that only the anchor (left end of the line) stays on the original line.
     // Hints:
     // - Try doing directions NNE and SSE first. They require less attention to bonds.
     // - When adding directions NNW and SSW, draw a picture to find out which bonds need to be released
     //   (or read further on in the User Guide).
     // - Choose one of these recommended solutions:
-    //   Option 1: Define a new Message type that stores the selected movement direction
+    //   Option 1: Define a new Message type that stores the selected movement direction.
     //             The leader then sends the message for expansion and a simple beep for contraction.
     //   Option 2: Spread the communication over several rounds, reserving one round for each possible direction.
     //             The leader beeps in the round corresponding to the chosen direction. For this, you will need
