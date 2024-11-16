@@ -42,8 +42,8 @@ namespace AS2.Algos.Exercise
     // - Compare i to n-1 first and then figure out how to obtain the bit sequence of
     //   floor((n-1) / 2).
     // - If you use the 2 available pins efficiently, you will not have to add a third
-    //   round/mode to the iteration. One mode for the PASC beeps and one mode for other
-    //   beeps is sufficient.
+    //   round to the PASC iterations. One mode for the main PASC beeps and one mode for
+    //   termination and other beeps is sufficient.
 
     public class ExerciseParticle : ParticleAlgorithm
     {
