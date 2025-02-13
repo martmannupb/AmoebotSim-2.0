@@ -6,9 +6,9 @@ After [installing Unity](unity.md), you can setup the simulator project.
 
 ### 1. Import the Project
 
-- Clone the repository (https://git.cs.uni-paderborn.de/martmann/amoebotsim2.0) into a new folder
+- Clone the repository (https://github.com/martmannupb/AmoebotSim-2.0) into a new folder
 	- **Using the command line:**
-		- Run `git clone https://git.cs.uni-paderborn.de/martmann/amoebotsim2.0`
+		- Run `git clone https://github.com/martmannupb/AmoebotSim-2.0`
 		- If you get the error message `warning: remote HEAD refers to nonexistent ref, unable to checkout.` or the repository is empty:
 			- Navigate into the cloned repository (this may now only contain the `.git/` directory)
 			- Run `git checkout master`
@@ -16,7 +16,7 @@ After [installing Unity](unity.md), you can setup the simulator project.
 	- **Using Visual Studio:**
 		- Open a new instance of Visual Studio and select "Clone a repository"
 			<img src="~/images/vs_clone_repo.png" alt="Clone a repository in Visual Studio" title="Clone a repository in Visual Studio" width="300"/>
-		- Enter the link `https://git.cs.uni-paderborn.de/martmann/amoebotsim2.0` and choose a location for the repository, then click "Clone"
+		- Enter the link `https://github.com/martmannupb/AmoebotSim-2.0` and choose a location for the repository, then click "Clone"
 		- Visual Studio should now clone the repository and display the git window
 			<img src="~/images/vs_git.png" alt="The Git window of Visual Studio" title="The Git window of Visual Studio" width="300"/>
 		- Open the repository in your file browser and check if it contains the `AmoebotSim 2.0/` directory
@@ -33,6 +33,10 @@ After [installing Unity](unity.md), you can setup the simulator project.
 	> [!NOTE]
 	> When opening the project for the first time, Unity may display error messages due to Assemblies not being loaded.
 	> These errors should disappear after closing the Unity Editor and opening the project again.
+	>
+	> A warning "Missing Editor Version" may be displayed if your Unity Editor version does not exactly match the project's version.
+	> You can select your installed Editor and open the project with this version.
+	> Should you face more issues with your version, visit the [download archive](https://unity.com/releases/editor/archive) and download the matching version **6000.0.25f1**.
 
 ### 2. Test the Project
 - When the project has finished loading, you should see the Unity Editor interface:
@@ -64,6 +68,6 @@ Whenever you save your changes, the Unity project is compiled automatically and 
 
 ### Next Steps
 
-If you want to learn more about the Amoebot model and the particular version of the model implemented by the simulator, visit the [Amoebot Model](../amoebot_model/home.md) pages.
+If you want to learn more about the amoebot model and the particular version of the model implemented by the simulator, visit the [Amoebot Model](../amoebot_model/home.md) pages.
 
-To learn how to implement your own Amoebot algorithms, read the [User Guide](../user_guide/home.md).
+To learn how to implement your own amoebot algorithms, read the [User Guide](../user_guide/home.md).

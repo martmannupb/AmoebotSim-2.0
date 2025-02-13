@@ -1,7 +1,7 @@
 # Amoebot Model
 
-On these pages, we explain the theoretical foundations of the Amoebot model.
-This includes the basic geometric Amoebot model as well as the more recent extensions of the model like reconfigurable circuits and joint movements, which are also supported by AmoebotSim 2.0.
+On these pages, we explain the theoretical foundations of the amoebot model.
+This includes the basic geometric amoebot model and the more recent extensions of the model, *reconfigurable circuits* and *joint movements*, which are also supported by the simulator.
 
 
 1. [Geometric Amoebot Model](basics.md)

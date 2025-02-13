@@ -58,8 +58,8 @@ public override void ActivateBeep()
     }
 }
 ```
-Now, whenever the leader decides to perform a movement, the message "Leader decided to move" will be logged and displayed in the UI, and "Received beep" will be printed to the Console by every particle receiving a beep on the global circuit.
-Note that the "Received beep" message will be logged once for each particle, so it makes sense to use Unity's log here so that these entries can be collapsed.
+Now, whenever the leader decides to perform a movement, the message "Leader decided to move" will be logged and displayed in the UI, and "Received beep" will be printed to the Console by every amoebot receiving a beep on the global circuit.
+Note that the "Received beep" message will be logged once for each amoebot, so it makes sense to use Unity's log here so that these entries can be collapsed.
 Adding log messages is especially useful for implementing an algorithm incrementally (print a log message instead of performing the next step) or finding the cause of unintended behavior (trace down the section of code that is executed).
 
 
@@ -73,10 +73,10 @@ Custom Message types can be implemented as subclasses of the [`Message`][6] clas
 Please refer to the [reference page](~/model_ref/messages.md) for more details.
 
 We will demonstrate how custom Messages are used by adding new movement directions to our demo algorithm:
-The particles should be able to expand to the North-North East and South-South East directions in addition to the East direction.
+The amoebots should be able to expand to the North-North East and South-South East directions in addition to the East direction.
 The leader will pick one of the available directions at random if it decides that a movement should be performed.
 To accomplish this, we must solve two problems:
-- Telling all particles which direction was chosen
+- Telling all amoebots which direction was chosen
 - Ensuring that the movements are performed correctly
 
 To solve the first problem, we will send the chosen movement direction using a custom Message type.
@@ -187,7 +187,7 @@ public class DemoParticle : ParticleAlgorithm
     ...
 }
 ```
-This is *not* a state attribute of the particles because it is not a [`ParticleAttribute`][11].
+This is *not* a state attribute of the amoebots because it is not a [`ParticleAttribute`][11].
 Constants and hyper-parameters like this should always be `static` and `readonly`.
 
 When the leader decides that a movement should be performed, it can simply determine a random index in the array.
@@ -214,7 +214,7 @@ public override void ActivateBeep()
     }
 }
 ```
-Note that the leader will choose a direction even if the particles are expanded, in which case they should still just contract into their tail and the chosen direction will be ignored.
+Note that the leader will choose a direction even if the amoebots are expanded, in which case they should still just contract into their tail and the chosen direction will be ignored.
 
 
 We can check whether we have received a Message on a partition set using the [`ReceivedMessageOnPartitionSet`][12] method.
@@ -239,24 +239,24 @@ public override void ActivateMove()
 }
 ```
 Because [`GetReceivedMessageOfPartitionSet`][13] returns the base type [`Message`][6], we need to cast it to our own Message type `DemoDirectionMsg` to access the stored direction.
-If we run this algorithm now, the behavior will be the same as before, but the log output should indicate that the leader chooses a movement direction and sends it to all particles.
+If we run this algorithm now, the behavior will be the same as before, but the log output should indicate that the leader chooses a movement direction and sends it to all amoebots.
 
 
 ## Marking and Releasing Bonds
 
-Now that all particles know the movement direction, we can implement the actual movements.
+Now that all amoebots know the movement direction, we can implement the actual movements.
 Depending on the movement direction, the bonds may have to be set up differently.
 For the East direction, we already know that the movements are fine without changing any bonds.
 However, if we replace the fixed movement direction by North-North East, we get the following result:
 
 ![North-North East movement without changing bonds](~/images/adv_nne_wrong.png "North-North East movement without changing bonds")
 
-Depending on the use case, this might be exactly what we want, but for this example, we want the particles to push each other and perform a proper joint movement in which the distance traveled by the easternmost particle increases with the number of particles in the line.
-The reason why this is not already happening is that the bonds are not marked by the expanding particles.
-As we can see in the image above, the bonds (indicated by the thick red connections) always connect the tails of two particles.
-This means that there is no relative movement between any two particles in the system, the particles hold each other in place instead.
+Depending on the use case, this might be exactly what we want, but for this example, we want the amoebots to push each other and perform a proper joint movement in which the distance traveled by the easternmost amoebot increases with the number of amoebots in the line.
+The reason why this is not already happening is that the bonds are not marked by the expanding amoebots.
+As we can see in the image above, the bonds (indicated by the thick red connections) always connect the tails of two amoebots.
+This means that there is no relative movement between any two amoebots in the structure, the amoebots hold each other in place instead.
 
-To change this, each expanding particle has to mark its Eastern bond, which will cause it to push the Eastern neighbor particle and thereby create a relative movement:
+To change this, each expanding amoebot has to mark its Eastern bond, which will cause it to push the Eastern neighbor amoebot and thereby create a relative movement:
 ```csharp
 public override void ActivateMove()
 {
@@ -275,11 +275,11 @@ The resulting behavior is the joint movement we wanted:
 
 ![North-North East movement with marked East bond](~/images/adv_nne_right.png "North-North East movement with marked East bond")
 
-The Eastern bond of each particle has moved with its head while the Western bond has stayed at the tail, creating a chain of particles pushing each other North-North East.
+The Eastern bond of each amoebot has moved with its head while the Western bond has stayed at the tail, creating a chain of amoebots pushing each other North-North East.
 
 ### Releasing Bonds
 
-The contraction movements for all current movement directions cause no problems because each particle is only connected to each neighbor by a single bond and because the bonds are on opposite sides of the particle.
+The contraction movements for all current movement directions cause no problems because each amoebot is only connected to each neighbor by a single bond and because the bonds are on opposite sides of the amoebot.
 To demonstrate a case in which bonds have to be released to allow a movement, we will add two additional movement directions: North-North West and South-South West.
 First, we add the new directions to the array of allowed directions:
 ```csharp
@@ -289,12 +289,12 @@ public class DemoParticle : ParticleAlgorithm
     ...
 }
 ```
-If we run the algorithm now, the particles will expand into the new directions correctly, but when they should contract, an error message is logged, saying "Expanded particle with three bonds to expanded neighbor tries to contract." (or something similar).
+If we run the algorithm now, the amoebots will expand into the new directions correctly, but when they should contract, an error message is logged, saying "Expanded particle with three bonds to expanded neighbor tries to contract." (or something similar).
 This is because at the beginning of a round, all possible bonds are active, and after a movement in direction North-North West or South-South West, there will be three bonds between two expanded neighbors:
 
 <img src="~/images/adv_nnw_bonds.png" alt="Bonds after North-North West movement" title="Bonds after North-North West movement" width="300"/>
 
-There is no way in which all of these bonds could behave consistently when any of the particles contract.
+There is no way in which all of these bonds could behave consistently when any of the amoebots contract.
 To fix this, we need to figure out which bonds must be released such that a contraction will lead back to the original line structure.
 In this case, the orientation of the bonds is helpful: Originally, all bonds are oriented horizontally, i.e., the bonds are parallel to the West-East axis.
 Because bonds can only rotate in handover movements (which we do not have here), we must keep the horizontal bonds and release all non-horizontal bonds:
@@ -305,8 +305,8 @@ The green bonds must be kept and the red ones must be released.
 For the South-South West direction, the situation is very similar, but the bonds to be released are oriented on a different axis.
 
 To fix the error, we release the bonds in these directions, depending on the current expansion direction.
-The [`HeadDirection`][14] method returns the (local) direction of the particle's head relative to its tail.
-Because all particles have the same chirality and compass orientation, we can use this direction to determine which bonds have to be released.
+The [`HeadDirection`][14] method returns the (local) direction of the amoebot's head relative to its tail.
+Because all amoebots have the same chirality and compass orientation, we can use this direction to determine which bonds have to be released.
 The final movement activation method looks like this:
 ```csharp
 public override void ActivateMove()

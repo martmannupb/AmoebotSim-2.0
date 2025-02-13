@@ -1,6 +1,9 @@
 # AmoebotSim 2.0
 
-This repository contains the successor simulation environment of AmoebotSim.
-The new environment is able to handle the *reconfigurable circuit* and *joint movement* extensions of the amoebot model.
+A visual simulation environment for the geometric amoebot model of programmable matter, focusing on the model's *reconfigurable circuit* and *joint movement* extensions.
+Developed at the [Theory of Distributed Systems](https://cs.uni-paderborn.de/en/ti) group at Paderborn University.
 
-The project uses Unity 6.
+Please refer to the documentation for instructions on how to install and use the simulator.
+An offline version of the documentation is available [here](Documentation/docs.zip).
+
+The project uses [Unity](https://unity.com/) version 6.

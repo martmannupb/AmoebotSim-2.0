@@ -19,8 +19,8 @@ These configuration options define the initial values of those settings.
 They will be modified if the "Save Settings" button is pressed in the Settings Panel.
 
 The second part is labeled "Additional Configuration" and contains data that is not available in the Settings Panel.
-Here, you will find mostly visualization options like the color of the hexagonal particle border and the colors of beep highlights.
-You can also edit the available colors for circuits and define a custom set of colors available when implementing an Amoebot algorithm.
+Here, you will find mostly visualization options like the color of the hexagonal amoebot border and the colors of beep highlights.
+You can also edit the available colors for circuits and define a custom set of colors available when implementing an amoebot algorithm.
 
 
 ## Modifying the Available Options

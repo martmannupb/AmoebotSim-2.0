@@ -2,7 +2,7 @@
 
 ## Installing Unity
 
-The simulation environment is developed for **Unity 6** (latest tested version is 6000.0.25f1).
+The simulation environment is developed for **Unity 6** (the latest tested version is 6000.0.25f1).
 All later LTS versions of Unity 6 should work as well.
 
 To install this version, you can follow the instructions on the [Unity download page][1].
