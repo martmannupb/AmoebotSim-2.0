@@ -9,3 +9,10 @@ Please refer to the documentation for instructions on how to install and use the
 A static version of the documentation is archived in [`Documents/docs.zip`](Documentation/docs.zip).
 
 The project uses [Unity](https://unity.com/) version 6.
+
+
+## Licensing
+
+AmoebotSim 2.0 is licensed under the MIT License, see file [`LICENSE`](LICENSE).
+
+It includes the [`Unity Standalone File Browser`](https://github.com/gkngkc/UnityStandaloneFileBrowser) (copyright (c) 2017 Gökhan Gökçe), which can be found in [`AmoebotSim 2.0/Assets/StandaloneFileBrowser`](AmoebotSim 2.0/Assets/StandaloneFileBrowser), including its own MIT license.
