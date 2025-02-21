@@ -1,12 +1,16 @@
-﻿using UnityEngine;
+// This file belongs to the AmoebotSim 2.0 project, a simulator for the
+// geometric amoebot model with reconfigurable circuits and joint movements.
+//
+// Copyright (c) 2025 AmoebotSim 2.0 Authors.
+//
+// Licensed under the MIT License. See LICENSE file in the root directory for details.
+
+
+using UnityEngine;
 using System.Collections;
 
 namespace AS2.UI
 {
-
-    // Copyright ©
-    // Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
-    // Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
 
     /// <summary>
     /// Takes the raw input from the InputControllers and converts them into suitable actions that are passed to the InputManager.

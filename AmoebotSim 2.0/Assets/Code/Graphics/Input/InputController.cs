@@ -1,14 +1,18 @@
-﻿using System.Collections;
+// This file belongs to the AmoebotSim 2.0 project, a simulator for the
+// geometric amoebot model with reconfigurable circuits and joint movements.
+//
+// Copyright (c) 2025 AmoebotSim 2.0 Authors.
+//
+// Licensed under the MIT License. See LICENSE file in the root directory for details.
+
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace AS2.UI
 {
-
-    // Copyright ©
-    // Part of the personal code library of Tobias Maurer (tobias.maurer.it@web.de).
-    // Usage by any current or previous members the University of paderborn and projects associated with the University or programmable matter is permitted.
 
     /// <summary>
     /// Reads in the inputs from the mouse and passes them to the InputHandler.
