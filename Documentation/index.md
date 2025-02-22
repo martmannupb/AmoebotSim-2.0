@@ -40,7 +40,7 @@ The simulator was designed and implemented by Tobias Maurer (rendering and GUI) 
 
 If you use AmoebotSim 2.0 for your research, please cite the project as follows:
 
-> Matthias Artmann, Andreas Padalkin, Daniel Warner. "AmoebotSim 2.0: A Visual Simulation Environment for the Amoebot Model with Reconfigurable Circuits and Joint Movements", available online at https://github.com/martmannupb/AmoebotSim-2.0, 2025.
+> Matthias Artmann, Tobias Maurer, Andreas Padalkin, Daniel Warner. "AmoebotSim 2.0: A Visual Simulation Environment for the Amoebot Model with Reconfigurable Circuits and Joint Movements", available online at https://github.com/martmannupb/AmoebotSim-2.0, 2025.
 
 
 
