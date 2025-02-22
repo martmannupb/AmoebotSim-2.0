@@ -36,8 +36,25 @@ The simulator was designed and implemented by Tobias Maurer (rendering and GUI) 
 
 
 
+## Citation
+
+If you use AmoebotSim 2.0 for your research, please cite the project as follows:
+
+> Matthias Artmann, Andreas Padalkin, Daniel Warner. "AmoebotSim 2.0: A Visual Simulation Environment for the Amoebot Model with Reconfigurable Circuits and Joint Movements", available online at https://github.com/martmannupb/AmoebotSim-2.0, 2025.
+
+
+
+## Contact
+
+If you'd like to get into contact with us, feel free to send an E-Mail to matthias.artmann@uni-paderborn.de.
+To learn more about our research on programmable matter, visit our [University homepage][6].
+
+
+
+
 [1]: https://dl.acm.org/doi/10.1145/2612669.2612712
 [2]: https://arxiv.org/abs/2105.05071v1
 [3]: https://cs.uni-paderborn.de/en/ti
 [4]: https://www.uni-paderborn.de/en/
 [5]: https://arxiv.org/abs/2305.06146
+[6]: https://cs.uni-paderborn.de/en/ti/forschung/forschungsprojekte/programmable-matter
