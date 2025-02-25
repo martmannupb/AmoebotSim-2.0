@@ -39,7 +39,7 @@ If you have configured a screen resolution scaling in your operating system, you
 
 This window displays a file explorer or a console window that lists log messages and exception notifications.
 The Project window displays the content of the `Assets` folder by default.
-For users, the `Assets/Code` folder is the most relevant as it contains the source code of the simulator and all Amoebot algorithms.
+For users, the `Assets/Code` folder is the most relevant as it contains the source code of the simulator and all amoebot algorithms.
 Double-clicking on any C# file in this directory will open the file in your installed IDE.
 
 

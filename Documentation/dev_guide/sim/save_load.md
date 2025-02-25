@@ -1,6 +1,6 @@
 # Developer Guide: Save and Load
 
-Being able to save a simulation state and run it later with an updated algorithm can be a very useful feature for developing Amoebot algorithms.
+Being able to save a simulation state and run it later with an updated algorithm can be a very useful feature for developing amoebot algorithms.
 AmoebotSim 2.0 provides two different ways of saving and loading states:
 In Initialization Mode, you can save the current system configuration, including all particle parameters, and load any saved configuration to easily reuse it for multiple simulation runs.
 In Simulation Mode, you can even store the entire simulation history up to the current round, allowing you to review and replay scenarios in which problems occurred, for example.

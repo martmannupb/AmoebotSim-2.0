@@ -33,7 +33,7 @@ In Init Mode, there are several simple methods like [`SetSelectedAlgorithm(strin
 ## Simulation State
 
 The main task of the simulator is to represent the state of the particle system, both during initialization and during the actual simulation.
-In both modes, the system uses two simple data structures to store instances of a class that represents an Amoebot particle.
+In both modes, the system uses two simple data structures to store instances of a class that represents an amoebot particle.
 The first data structure is a list that stores all particles in the system and the second is a map using grid coordinates as keys and particles as values.
 Expanded particles occupy two grid nodes, so they appear twice in the map.
 

@@ -1,11 +1,11 @@
 # Model Reference: Neighbor Discovery
 
-One of the basic abilities of Amoebot particles is detecting neighbor particles and reading their states.
+One of the basic abilities of amoebot particles is detecting neighbor amoebots and reading their states.
 This page explains how this is done in algorithm code.
 
-The simplest way to check whether there is a neighbor particle in a specific position is the [`HasNeighborAt(Direction d, bool head)`][1] method.
-Given the direction and an optional head or tail flag specifying an adjacent position, this method will return `true` if there is a particle at that position.
-In addition to just finding neighbors, a particle can also read its neighbors' state attributes.
+The simplest way to check whether there is a neighbor amoebot in a specific position is the [`HasNeighborAt(Direction d, bool head)`][1] method.
+Given the direction and an optional head or tail flag specifying an adjacent position, this method will return `true` if there is an amoebot at that position.
+In addition to just finding neighbors, an amoebot can also read its neighbors' state attributes.
 For this, you first have to get a reference to the neighbor using the [`GetNeighborAt(Direction d, bool head)`][2] method, and then you need to typecast the reference to the type of your algorithm class to access its attributes.
 For example:
 ```csharp
@@ -25,10 +25,10 @@ public class MyAlgorithm : ParticleAlgorithm {
     }
 }
 ```
-When reading a neighbor's attributes, only their values from the beginning of the current round are available, even if that particle changes the values in this round.
-In other words, you cannot call [`GetCurrentValue()`][10] on attributes of neighboring particles (see the [attributes reference page](attrs.md) for details).
+When reading a neighbor's attributes, only their values from the beginning of the current round are available, even if that amoebot changes the values in this round.
+In other words, you cannot call [`GetCurrentValue()`][10] on attributes of neighboring amoebots (see the [attributes reference page](attrs.md) for details).
 
-If the neighboring particle is expanded, it might be of interest whether the neighboring part is the particle's head or tail.
+If the neighboring amoebot is expanded, it might be of interest whether the neighboring part is the amoebot's head or tail.
 To find out, you can use the [`IsHeadAt(Direction dir, bool head)`][3] and [`IsTailAt(Direction dir, bool head)`][4] methods.
 These are especially helpful for planning handover movements.
 
@@ -43,13 +43,13 @@ All of the advanced neighbor discovery methods use this struct as return types.
 
 Here is a short overview of the advanced discovery methods (you can read more about them in the API documentation):
 - [`FindFirstNeighbor<T>(out Neighbor<T> nbr, Direction startDir, bool startAtHead, bool withChirality, int maxNumber)`][6]:  
-	This method searches neighbor positions starting at the location specified by `startDir` and `startAtHead`, and moving around the particle with or against its chirality.
+	This method searches neighbor positions starting at the location specified by `startDir` and `startAtHead`, and moving around the amoebot with or against its chirality.
 	If it encounters a neighbor while checking these positions, it returns this neighbor as the `nbr` output parameter and returns `true`.
 	The method only checks at most `maxNumber` positions.
 - [`FindFirstNeighborWithProperty<T>(System.Func<T, bool> prop, out Neighbor<T> nbr, Direction startDir, bool startAtHead, bool withChirality, int maxNumber)`][7]:  
 	If you want to find a neighbor with a specific property, you can use this method and specify the property using the `prop` parameter.
 	The property can be defined as a lambda expression, e.g., `(MyAlgorithm p) => { return p.myInt == 42; }`.
-	Calling the method with this expression will find the first particle whose `myInt` attribute has a value of `42`, using the same search method as the previous method.
+	Calling the method with this expression will find the first amoebot whose `myInt` attribute has a value of `42`, using the same search method as the previous method.
 - [`FindNeighbors<T>(Direction startDir, bool startAtHead, bool withChirality, int maxSearch, int maxReturn)`][8]:  
 	This method returns a list of all neighbors found while traversing the neighboring directions as before.
 	It will abort the search after checking `maxSearch` positions or finding `maxReturn` neighbors.

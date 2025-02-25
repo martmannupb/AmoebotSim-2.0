@@ -1,8 +1,8 @@
 # Model Reference: Status Info Methods
 
-For many algorithms, it may be useful to display more information than what can be visualized using particle colors and attribute overlays.
-Especially information that goes beyond the local scope of a single particle (like a whole spanning tree, for example) can be difficult to show using just the particles' own code.
-Additionally, it might be helpful to display a custom state summary for a specific particle that is selected through the UI.
+For many algorithms, it may be useful to display more information than what can be visualized using amoebot colors and attribute overlays.
+Especially information that goes beyond the local scope of a single amoebot (like a whole spanning tree, for example) can be difficult to show using just the amoebots' own code.
+Additionally, it might be helpful to display a custom state summary for a specific amoebot that is selected through the UI.
 The *status info method* feature provides a simple solution for all of these use cases, making your algorithms both easier to develop and easier to present and explain.
 
 
@@ -10,7 +10,7 @@ The *status info method* feature provides a simple solution for all of these use
 
 A status info method is a *static* method that has the following properties:
 - The method is defined by a [`ParticleAlgorithm`][1] subclass, i.e., it must belong to an algorithm
-- It must have exactly two parameters: A [`ParticleSystem`][2], providing access to the entire system of particles, and a [`Particle`][3] to access the currently selected particle (which will be `null` if no particle is selected)
+- It must have exactly two parameters: A [`ParticleSystem`][2], providing access to the entire structure of amoebots, and a [`Particle`][3] to access the currently selected amoebot (which will be `null` if no amoebot is selected)
 - It must be marked with the [`StatusInfoAttribute`][4] attribute so that the simulator recognizes the method and displays a button for it
 
 The following example shows the pattern for creating a status info method:
@@ -42,14 +42,14 @@ A status info method for which auto-calling is enabled will be called automatica
 The attribute parameter only defines the initial behavior, you can change it in the Particle Panel by clicking the toggle next to the button at any time.
 
 Inside the status info method, there are several ways to access and display information.
-The second parameter of the method is the currently selected particle.
-If no particle is selected, it will be `null`.
-To access the particle's attributes, you have to typecast its [`algorithm`][6] member to your algorithm class, as demonstrated in the code example above.
-The same method can be used to access any particle's attributes.
-The particles can be accessed using the [`ParticleSystem.particles`][7] list or, for example, the [`ParticleSystem.TryGetParticleAt(Vector2Int pos, out Particle p)`][8] method.
+The second parameter of the method is the currently selected amoebot.
+If no amoebot is selected, it will be `null`.
+To access the amoebot's attributes, you have to typecast its [`algorithm`][6] member to your algorithm class, as demonstrated in the code example above.
+The same method can be used to access any amoebot's attributes.
+The amoebots can be accessed using the [`ParticleSystem.particles`][7] list or, for example, the [`ParticleSystem.TryGetParticleAt(Vector2Int pos, out Particle p)`][8] method.
 
-You can use the [line drawer utility](collisions.md) to draw lines and arrows in the particle system.
-For more detailed information, you can use the [`Log`][5] system and print text messages with information on the whole system or only the selected particle.
+You can use the [line drawer utility](collisions.md) to draw lines and arrows in the amoebot structure.
+For more detailed information, you can use the [`Log`][5] system and print text messages with information on the whole structure or only the selected amoebot.
 
 
 

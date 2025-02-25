@@ -11,9 +11,9 @@ AmoebotSim 2.0 has three main components:
 ## The Simulator
 
 The [Simulator](sim/home.md) component handles all of the simulation logic.
-It maintains the current state as well as the state history of the particle system, executes the round simulation logic including validity checks, and it provides the API for developing Amoebot algorithms.
+It maintains the current state as well as the state history of the particle system, executes the round simulation logic including validity checks, and it provides the API for developing amoebot algorithms.
 
-It consists of a collection of classes representing the Amoebot particles and their properties, managed by a single instance of the [`ParticleSystem`][1] class.
+It consists of a collection of classes representing the amoebot particles and their properties, managed by a single instance of the [`ParticleSystem`][1] class.
 Every action performed by any particle is registered and executed by this instance.
 The class also provides the interface for the other components to access and modify the current simulation state.
 

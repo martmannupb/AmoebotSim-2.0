@@ -1,9 +1,9 @@
 # Simulator Usage: Simulation Mode
 
 Pressing the "Start" button in [Init Mode](init.md) leads you to the second main mode of the simulation environment, which is *Simulation Mode*.
-In Simulation Mode, the computation of the particle system that was set up in Init Mode is simulated in *rounds*, as explained on the [reference pages](~/model_ref/rounds.md).
-The state of the particle system can be inspected in every round, even if the simulation has already progressed further than the currently viewed round, thanks to the history feature.
-Additionally, particle states can be modified in the latest system state and the last simulated rounds can be deleted, providing a way to play out different scenarios based on manual input.
+In Simulation Mode, the computation of the amoebot structure that was set up in Init Mode is simulated in *rounds*, as explained on the [reference pages](~/model_ref/rounds.md).
+The state of the amoebot structure can be inspected in every round, even if the simulation has already progressed further than the currently viewed round, thanks to the history feature.
+Additionally, amoebot states can be modified in the latest system state and the last simulated rounds can be deleted, providing a way to play out different scenarios based on manual input.
 
 As mentioned in the [Init Mode guide](init.md), the UI in Simulation Mode is very similar to the Init Mode UI:
 ![Simulation Mode UI Overview](~/images/sim_mode_overview.png "Simulation Mode UI Overview")
@@ -53,13 +53,13 @@ The Settings button is explained further below.
 ### Tool Menu
 
 In the middle-left menu (the tool menu), the tools specific to Init Mode have disappeared and one new tool is visible.
-The Selection tool works just like in Init Mode: Clicking on a particle opens the Particle Panel and clicking anywhere else in the Central Area closes it again.
+The Selection tool works just like in Init Mode: Clicking on an amoebot opens the Particle Panel and clicking anywhere else in the Central Area closes it again.
 
 <img src="~/images/pset_move_tool.png" alt="Partition Set Move Tool" title="Partition Set Move Tool" width="400" align="right"/>
 
 The new tool is the Partition Set Move tool.
 In algorithms that use circuits with non-singleton partition sets, this tool can be used to temporarily move around partition sets with the mouse.
-Non-singleton and non-empty partition sets are visualized as small circles inside of the particles, with lines connecting the circle to the pins contained in the partition set.
+Non-singleton and non-empty partition sets are visualized as small circles inside of the amoebots, with lines connecting the circle to the pins contained in the partition set.
 These circles can be grabbed and dragged around using the left mouse button while the Partition Set Move tool is selected.
 However, changing the partition set placement mode (see below) or moving to a different round will discard all partition set movements made with this tool.
 For more information on partition sets, please refer to the corresponding [reference page](~/model_ref/pin_cfgs.md).
@@ -89,8 +89,8 @@ Afterwards, it uses a variant of [LLoyd's algorithm](https://en.wikipedia.org/wi
 The third mode is automatic circle placement.
 It is similar to disk placement but it distributes the partition sets directly on the circle instead of the area inside of the circle.
 Finally, the fourth mode is line placement.
-It simply distributes the partition sets evenly on a straight line in the center of the particle.
-The line is vertical in contracted particles and orthogonal to the expansion direction in expanded particles.
+It simply distributes the partition sets evenly on a straight line in the center of the amoebot.
+The line is vertical in contracted amoebots and orthogonal to the expansion direction in expanded amoebots.
 The algorithm shown above (Boundary Test) defines custom partition set positions, which is why the default mode placement differs from disk placement.
 
 The third and fourth button simply toggle the circuit and bond visualization on and off:
@@ -126,7 +126,7 @@ Moving the slider to the right rotates the camera counter-clockwise in 30 degree
 **Camera Pos. X** and **Camera Pos. Y**  
 These fields can be used to specify the coordinates of the center of the camera.
 The position is only updated when the `Apply` button below is clicked.
-When the camera is centered or framed around the particle system, the content of these fields is updated.
+When the camera is centered or framed around the amoebot structure, the content of these fields is updated.
 
 **Grid Coordinates**  
 If this toggle is enabled, the coordinates specified in the above fields are grid coordinates instead of world coordinates.
@@ -134,7 +134,7 @@ If this toggle is enabled, the coordinates specified in the above fields are gri
 **Camera Size**  
 This field is used to specify the camera's orthographic size, which corresponds to the zoom level.
 The value is applied to the camera when the `Apply` button is clicked.
-Its value is updated when the camera is framed around the particle system by pressing the button in the Top Bar.
+Its value is updated when the camera is framed around the amoebot structure by pressing the button in the Top Bar.
 
 **Apply**  
 This button applies the currently set camera position and zoom level to the camera.
@@ -143,21 +143,21 @@ This button applies the currently set camera position and zoom level to the came
 
 **Animations On/Off**  
 This setting toggles the movement animations on and off.
-Animations make the particle movements much easier to understand, but the simulation might run faster with animations turned off.
+Animations make the amoebot movements much easier to understand, but the simulation might run faster with animations turned off.
 
 **Compass Ov. Arrows**  
-This setting changes the visualization of compass directions in the particle overlay showing the compasses of all particles.
+This setting changes the visualization of compass directions in the amoebot overlay showing the compasses of all amoebots.
 When it is enabled, the compass directions are displayed as arrows.
 When it is disabled, the directions are represented by their textual names (like E, NNE, etc.) instead.
 
 **Circuit Border**  
-Toggles a thin black border for the circuit connections between particles.
+Toggles a thin black border for the circuit connections between amoebots.
 For some circuit colors, this makes the circuits much easier to see.
 The border is not visible if a beep is sent on the circuit.
 
 **Circular Ring**  
-This setting toggles the ring around the particles in graph view mode (see view modes above).
-Turning the rings off removes the color information from the particles but may be useful for creating screenshots with a particular style.
+This setting toggles the ring around the amoebots in graph view mode (see view modes above).
+Turning the rings off removes the color information from the amoebots but may be useful for creating screenshots with a particular style.
 
 **Fullscreen**  
 When the application is built and run as a standalone outside the Unity Editor, this setting can be used to toggle between fullscreen and windowed mode.
@@ -182,18 +182,18 @@ Press this button to store the current settings in the [configuration file](conf
 
 ## Particle Panel
 
-The Particle Panel is available by clicking a particle with the Selection tool activated, both in Simulation and Init Mode.
-The difference between the two modes is that the panel now displays the [*particle attributes*](~/model_ref/attrs.md) instead of the particle's initialization parameters, and it shows the algorithm's status info buttons (see below).
+The Particle Panel is available by clicking an amoebot with the Selection tool activated, both in Simulation and Init Mode.
+The difference between the two modes is that the panel now displays the [*particle attributes*](~/model_ref/attrs.md) instead of the amoebot's initialization parameters, and it shows the algorithm's status info buttons (see below).
 Note that although the same algorithm as in the Init Mode example is selected (Line Formation), the Particle Panel displays different content.
 
 The only content that is displayed in both modes are the chirality and compass direction, which are neither initialization parameters nor particle attributes.
 In Simulation Mode, their values cannot be changed anymore.
 The attribute values as well as the Anchor state (the little button left of the "Particle" text) can only be edited when the simulation state is in the latest round of the history.
-If you want to change a particle's state in an earlier round, you will need to cut off the rest of the history.
+If you want to change an amoebot's state in an earlier round, you will need to cut off the rest of the history.
 
 Above the attributes, you can now find the *status info buttons* of the algorithm.
 Pressing these buttons will run some method defined by the current algorithm that usually displays some additional information, like the spanning tree in the line formation algorithm.
-The result may depend on the currently selected particle.
+The result may depend on the currently selected amoebot.
 If the toggle next to a status info button is active, the corresponding method will be called automatically whenever the round changes.
 You can read more about status info methods on their [model reference page](~/model_ref/status_info.md).
 
@@ -211,7 +211,7 @@ PageUp or (Shift + Right Arrow Key)  | Step Forward
 PageDown or (Shift + Left Arrow Key) | Step Back
 Shift + H                            | Hide/Show UI
 Shift + C                            | Center Camera
-Shift + F                            | Frame whole system
+Shift + F                            | Frame whole structure
 Shift + V                            | Take Screenshot
 Shift + S                            | Save Simulation State
 Shift + O                            | Load Simulation State
@@ -223,7 +223,7 @@ You can read more about this class and the UI system implementation on the [Dev 
 
 ### Next Steps
 
-Continue by reading the [Algorithm Development](~/user_guide/dev/home.md) if you want to learn how Amoebot algorithms are implemented.
+Continue by reading the [Algorithm Development](~/user_guide/dev/home.md) if you want to learn how amoebot algorithms are implemented.
 
 
 

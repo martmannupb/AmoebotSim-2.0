@@ -1,6 +1,6 @@
 # Model Reference: Messages
 
-In the [Reconfigurable Circuits](~/amoebot_model/circuits.md) extension of the Amoebot model, circuits can be used to send beeps.
+In the [Reconfigurable Circuits](~/amoebot_model/circuits.md) extension of the amoebot model, circuits can be used to send beeps.
 A beep is a very simple form of communication because it only contains one bit of information.
 Here, we discuss how more complex information can be sent via circuits.
 
@@ -11,7 +11,7 @@ Here, we discuss how more complex information can be sent via circuits.
 Theoretically, information that can be encoded in $m$ bits can be sent in $m$ rounds by reserving one round for transmitting each bit as a beep (technically, $2m$ rounds are needed because beeps can only be sent in the beep rounds, not the movement rounds).
 It is possible to implement such a method by using a counter attribute and some other attributes to store the received information and the data that still has to be sent.
 But because this is tedious to implement and slows down the simulation, and since sending more complex data is a rather common requirement, the simulator provides an abstraction that allows the transmission of constant-size data packages, called *Messages*, in a single round.
-Messages do not only simplify the transmission of complex data, they also hide the coordination overhead that would be needed to organize communication over multiple rounds and to stay synchronized with particles that do not take part in the exchange.
+Messages do not only simplify the transmission of complex data, they also hide the coordination overhead that would be needed to organize communication over multiple rounds and to stay synchronized with amoebots that do not take part in the exchange.
 
 Since it would be easy to extend any Message to contain one more bit of information, we treat Messages and beeps independently.
 Thus, a circuit can transmit a Message and a beep simultaneously.
@@ -20,9 +20,9 @@ Thus, a circuit can transmit a Message and a beep simultaneously.
 
 With Messages, a new problem arises that does not occur for beeps.
 We need to define what happens when multiple different Messages are sent on the same circuit.
-For single beeps, this is well-defined: If any particle on a circuit sends a beep, all particles on that circuit will receive a beep.
+For single beeps, this is well-defined: If any amoebot on a circuit sends a beep, all amoebots on that circuit will receive a beep.
 If Messages are interpreted as bit strings, one could define the resulting Message to be the logical OR of all competing Messages.
-However, the result might not be a valid Message, or it could be an entirely different Message that was not sent by any particle individually.
+However, the result might not be a valid Message, or it could be an entirely different Message that was not sent by any amoebot individually.
 
 Because the number of possible Messages is finite, we can use a different method:
 By defining a total ordering of all possible Messages, the implicit bit encoding of the Messages can be changed such that it is always the "greatest" one of the sent Messages that comes through.
@@ -33,8 +33,8 @@ The total ordering, however, must be defined by the algorithm developer.
 
 The figure above illustrates how the total ordering works.
 For the 3 possible Message types, $A$, $B$ and $C$, we define the total ordering as $A > B > C$.
-If any particle sends the Message $A$, all particles on the circuit will receive Message $A$.
-Otherwise, they will receive $B$ if any particle has sent $B$, or $C$ if nobody sent $B$ but somebody sent $C$.
+If any amoebot sends the Message $A$, all amoebots on the circuit will receive Message $A$.
+Otherwise, they will receive $B$ if any amoebot has sent $B$, or $C$ if nobody sent $B$ but somebody sent $C$.
 Naturally, no Messages are received when none are sent.
 This happens independently and simultaneously with the beep transmission.
 

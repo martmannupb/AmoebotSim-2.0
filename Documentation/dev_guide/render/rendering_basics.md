@@ -18,7 +18,7 @@ If a ray does not hit any faces, the pixel will get a default background color, 
 
 ### 2D World and Camera
 
-Since the Amoebot model is two-dimensional, we do not need to use all of Unity's 3D rendering capabilities.
+Since the amoebot model is two-dimensional, we do not need to use all of Unity's 3D rendering capabilities.
 Instead, we use an *orthographic* camera, which means that the rays cast by this camera are parallel, causing objects to appear in the same size no matter how far away they are from the camera.
 Additionally, all meshes used by the simulator are perfectly flat, making the dynamic generation of meshes and the creation of shaders relatively simple.
 
