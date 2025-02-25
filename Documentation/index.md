@@ -49,6 +49,10 @@ If you use AmoebotSim 2.0 for your research, please cite the project as follows:
 If you'd like to get into contact with us, feel free to send an E-Mail to matthias.artmann@uni-paderborn.de.
 To learn more about our research on programmable matter, visit our [University homepage][6].
 
+---
+
+[Back to the repository.][7]
+
 
 
 
@@ -58,3 +62,4 @@ To learn more about our research on programmable matter, visit our [University h
 [4]: https://www.uni-paderborn.de/en/
 [5]: https://arxiv.org/abs/2305.06146
 [6]: https://cs.uni-paderborn.de/en/ti/forschung/forschungsprojekte/programmable-matter
+[7]: https://github.com/martmannupb/AmoebotSim-2.0
