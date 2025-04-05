@@ -15,13 +15,19 @@ The Unity Hub is an application that manages your Unity installs and projects.
 - For *Windows and Mac*: Download the correct installer from the [download page][1] and run it.
 - For *Linux*: Follow the instructions on the [Linux installation page][2].
 
-### <a name="install-editor"></a>2. Install Unity Editor and an IDE
+### 2. Get a Unity Account and License
 
-- Launch Unity Hub
-- Download and install Unity version **6**:
-	- Under the "Installs" tab, click the "Install Editor" button
-	- Unity 6 should be marked as recommended version
-- In the "Add modules" window, select the correct modules:
+- You will need to create a Unity profile and obtain a free license to proceed
+- When starting Unity Hub, you will be prompted to sign in or create an account
+- Follow the instructions and agree to the Editor Software Terms to activate a Personal license
+- [This support page][4] also shows these steps
+
+### <a name="install-editor"></a>3. Install Unity Editor and an IDE
+
+- The Unity Hub will prompt you to install an Editor. This is the Unity environment in which the simulator project must be opened.
+- If the recommended editor has major version **6**, it should be compatible with the simulator
+	- Otherwise, skip the installation and check the troubleshooting section to see how you can install the correct Editor version
+- In the "Add modules" window that appears during the installation, select the following modules:
 	- Under "Dev Tools", select Microsoft Visual Studio or another supported IDE that works on your platform
 	- Under "Platforms", select the Build Support option for your platform (Dedicated Server Build is not required)
 	- Also select "Documentation"
@@ -29,18 +35,20 @@ The Unity Hub is an application that manages your Unity installs and projects.
 	> [!NOTE]
 	> When installing Microsoft Visual Studio, you may be prompted to select "Workloads" to install. Please select the "Game development with Unity" Workload.
 
-### 3. Get a Unity License
 
-- It may be necessary that you create a Unity profile and obtain a license to proceed
-- You can do both from the Unity Hub, by clicking the profile button in the top-left corner and selecting "Manage licenses"  
-	<img src="~/images/unity_licenses.png" alt="Manage licenses" title="Manage licenses from Unity Hub" width="250"/>
-- If you are prompted to log in before managing your licenses, press the "Sign in" button
-	- This will redirect you to the Unity login page, where you can log into your Unity profile or register a new profile by creating a Unity ID
-- After signing in, you can press the "Add license" button in the Unity Hub and select "Get a free personal license" (see also [this support page][4])
-	- The free personal license grants access to all Unity features required to work with the simulator
+When Unity has been installed successfully, you can move on to [setting up the simulator](sim.md).
+
+---
 
 ### Troubleshooting
 
+- If activating the license is not prompted immediately when opening Unity Hub, this can be done by clicking the profile button in the top-left corner and selecting "Manage licenses"  
+	<img src="~/images/unity_licenses.png" alt="Manage licenses" title="Manage licenses from Unity Hub" width="250"/>
+- If the recommended Unity Editor's major version is not 6 or the simulation environment does not work in your installed Editor, you can skip the installation at first and download the correct version later
+	- Open the [download archive][5]
+	- Find the Unity Editor version **6000.0.25f1**. This is the currently supported version of the simulator
+	- The "Install" button will open the Unity Hub, after which you can proceed as described [above](#install-editor)
+	- Alternatively, in Unity Hub under the "Installs" tab, press "Install Editor" and select "Archive" or find the correct version under "Official releases"
 - If the module selection window does not open when installing the Editor, you can add modules later on:
 	- In the "Installs" tab of the Unity Hub, find your installed Editor version and click on the gear icon
 	- Then select "Add modules" and select the modules that are still missing
@@ -52,10 +60,7 @@ The Unity Hub is an application that manages your Unity installs and projects.
 - If Visual Studio still cannot be installed via modules, you can also install it manually
 	- Make sure to select the "Game development with Unity" Workload in the installer
 	- You may have to configure Unity to use Visual Studio as default editor manually (see [simulator setup](sim.md))
-- If the simulation environment does not work for the latest Unity version, you can download version **6000.0.25f1** from the [download archive][5]
-	- The "Install" button will open the Unity Hub, after which you can proceed as described [above](#install-editor)
 
-When Unity has been installed successfully, you can move on to [setting up the simulator](sim.md).
 
 [1]: https://unity.com/download
 [2]: https://docs.unity3d.com/hub/manual/InstallHub.html#install-hub-linux

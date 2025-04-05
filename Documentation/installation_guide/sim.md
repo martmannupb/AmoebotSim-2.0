@@ -50,10 +50,11 @@ After [installing Unity](unity.md), you can setup the simulator project.
 	- Under "Assets", open the `Scenes` folder and double-click the Scene called `Simulator`.
 		Discard any changes made to the initial Scene
 	- This usually only has to be done once when the project is opened for the first time
-- When the Scene has loaded, press the Play button in the middle of the top bar to run the simulator
+- When the Scene has loaded, press the Play button in the middle of the top bar to run the simulator (not the big play button at the bottom of the Scene View)
 	![Play Button Image](../images/play_button.png "Unity's Play button")
 - The simulator should now display an example algorithm
-- Click the Play button again to close the simulator
+	- You can press the Start button on the lower right of the UI and then the big play button at the bottom to run this algorithm
+- Press the small Play button at the top again to exit the simulator
 
 ### 3. Open the IDE
 
@@ -63,7 +64,7 @@ After [installing Unity](unity.md), you can setup the simulator project.
 	Now, double-clicking a script file should launch the correct IDE.
 
 You can now start editing the C# code in your IDE.
-Whenever you save your changes, the Unity project is compiled automatically and you can try out the simulator by pressing the Play button in the Editor.
+Whenever you save your changes and focus the Editor, the Unity project is compiled automatically and you can try out the simulator by pressing the Play button in the Editor.
 
 
 ### Next Steps
