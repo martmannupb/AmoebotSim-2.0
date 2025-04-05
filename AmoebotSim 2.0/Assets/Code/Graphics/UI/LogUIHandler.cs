@@ -38,7 +38,7 @@ namespace AS2.UI
 
         // Data
         public List<GameObject> logElementList = new List<GameObject>();
-        private int maxLogEntries = 30;
+        private int maxLogEntries = 100;
         private int logEntryID = 1;
         private int scrollToBottomInAmountOfFrames = 0;
 
@@ -83,6 +83,24 @@ namespace AS2.UI
                 }
             }
 
+            AddWelcomeMessage();
+
+            // Test
+            //AddLogEntry("This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
+            //    "This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
+            //    "This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
+            //    "\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test." +
+            //    "\nThis is a Test.\nThis is a Test.\nThis is a Test.\n", EntryType.Log, true);
+
+            // Hide Log
+            Hide();
+        }
+
+        /// <summary>
+        /// Adds the log entries making up the welcome message so that the log is not empty.
+        /// </summary>
+        private void AddWelcomeMessage()
+        {
             AddLogEntry("Welcome to AmoebotSim 2.0!", EntryType.Log, false, true);
             //AddLogEntry("=============================================================================================", EntryType.Log, false);
             AddLogEntry("University of Paderborn, Theory of Distributed Systems (Prof. Dr. Christian Scheideler)", EntryType.Log, false, true);
@@ -94,16 +112,6 @@ namespace AS2.UI
             AddLogEntry("                                                                                                                              U", EntryType.Log, false, true);
             AddLogEntry("", EntryType.Empty, false, true);
             AddLogEntry("Log  ========================================================================================", EntryType.Log, false, true);
-
-            // Test
-            //AddLogEntry("This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
-            //    "This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
-            //    "This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test.This is a Test." +
-            //    "\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test.\nThis is a Test." +
-            //    "\nThis is a Test.\nThis is a Test.\nThis is a Test.\n", EntryType.Log, true);
-
-            // Hide Log
-            Hide();
         }
 
         /// <summary>
@@ -208,6 +216,10 @@ namespace AS2.UI
                 timestampLastInteraction = Time.timeSinceLevelLoad;
                 Show(true, this.keepVisible);
             }
+
+            // Scroll to bottom any time an entry is added
+            if (scrollToBottomInAmountOfFrames < 0)
+                scrollToBottomInAmountOfFrames = 3;
         }
 
         /// <summary>
@@ -291,7 +303,7 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// The user pressed the expand log button. I guess this means the log should expand.
+        /// The user pressed the expand log button. Show the log panel.
         /// </summary>
         public void ButtonPressed_ExpandLog()
         {
@@ -300,13 +312,26 @@ namespace AS2.UI
         }
 
         /// <summary>
-        /// The user pressed the collapse log button. The log might disappear if you treated it nicely.
+        /// The user pressed the collapse log button. Hide the log panel.
         /// </summary>
         public void ButtonPressed_CollapseLog()
         {
             Hide();
         }
 
+        /// <summary>
+        /// The user pressed the clear log button. Delete all log entries.
+        /// </summary>
+        public void ButtonPressed_ClearLog()
+        {
+            foreach (GameObject go in logElementList)
+            {
+                Destroy(go);
+            }
+            logElementList.Clear();
+            Log.ClearLogHistory();
+            AddWelcomeMessage();
+        }
     }
 
 }

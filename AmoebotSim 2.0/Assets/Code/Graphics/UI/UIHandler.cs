@@ -494,7 +494,7 @@ namespace AS2.UI
             // Check if valid
             if (sim.running)
             {
-                Log.Error("Could not step back: Sim is running!");
+                Log.Error("Cannot step back while simulation is running.");
                 return;
             }
 
@@ -514,7 +514,7 @@ namespace AS2.UI
             // Check if valid
             if (sim.running)
             {
-                Log.Error("Could not step forward: Sim is running!");
+                Log.Error("Cannot step forward while simulation is running.");
                 return;
             }
 
@@ -582,7 +582,7 @@ namespace AS2.UI
             if (sim.running)
             {
                 // Error
-                Log.Error("Cannot cut round: System is still running.");
+                Log.Error("Cannot cut round while simulation is running.");
                 return;
             }
 
@@ -646,7 +646,7 @@ namespace AS2.UI
                 }
                 else
                 {
-                    Log.Error("Please pause the sim before loading an algorithm state!");
+                    Log.Error("Cannot load algorithm state while simulation is running.");
                 }
             }
             else
@@ -676,14 +676,14 @@ namespace AS2.UI
                     }
                     else
                     {
-                        Log.Error("Please pause the sim before saving the algorithm state!");
+                        Log.Error("Cannot save algorithm state while simulation is running.");
                     }
                 }
             }
             else
             {
                 // Init Mode open
-                Log.Entry("You need to execute an algorithm to save its state.\nGet out of init mode, mate!");
+                Log.Entry("Cannot save simulation state in Initialization Mode.");
             }
         }
 

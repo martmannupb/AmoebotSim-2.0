@@ -126,6 +126,14 @@ namespace AS2
         }
 
         /// <summary>
+        /// Clears the log's internal history.
+        /// </summary>
+        public static void ClearLogHistory()
+        {
+            logHistory.Clear();
+        }
+
+        /// <summary>
         /// Writes the log's history to the given file.
         /// </summary>
         /// <param name="path">The path to the file to which
