@@ -2,6 +2,8 @@
 
 [![Documentation](https://github.com/martmannupb/AmoebotSim-2.0/actions/workflows/build-docs.yml/badge.svg)](https://github.com/martmannupb/AmoebotSim-2.0/actions/workflows/build-docs.yml)
 
+![Banner image](Documentation/images/amoebotsim_header_circuits.png)
+
 A visual simulation environment for the geometric amoebot model of programmable matter, focusing on the model's *reconfigurable circuit* and *joint movement* extensions.
 Developed at the [Theory of Distributed Systems](https://cs.uni-paderborn.de/en/ti) group at Paderborn University.
 
