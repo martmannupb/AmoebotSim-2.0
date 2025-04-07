@@ -698,14 +698,14 @@ namespace AS2.Sim
                 {
                     SimulateJointMovements();
                     // Only perform collision check if it is enabled
-                    bool foundCollision = collisionCheckEnabled && CheckForCollision();
-
-                    if (foundCollision)
+                    if (collisionCheckEnabled && CheckForCollision())
                     {
                         inCollisionState = true;
                         collisionDebugLines = CollisionChecker.GetDebugLines();
                         AmoebotSimulator.instance.PauseSim();
                     }
+                    // Clear the created edge movements in any case
+                    ClearEdgeMovements();
                 }
                 else
                     // Compute bond information for the case with no movements
@@ -2384,20 +2384,28 @@ namespace AS2.Sim
 
             Debug.Log("Finished collision check in " + (Time.realtimeSinceStartup - tStart) + " s");
 
-            // Clear after processing edges and checking for collisions
-            foreach (EdgeMovement em in edgeMovements)
-            {
-                EdgeMovement.Release(em);
-            }
+            // Clear the local edge movements after processing edges and checking for collisions
+            // (The particle edge movements are cleared in any case outside this method)
             foreach (ParticleObject o in objects)
             {
                 foreach (EdgeMovement em in objectEdgeMovements[o])
                     EdgeMovement.Release(em);
             }
             objectEdgeMovements.Clear();
-            edgeMovements.Clear();
 
             return foundCollision;
+        }
+
+        /// <summary>
+        /// Releases all edge movements that were recorded for particles.
+        /// </summary>
+        private void ClearEdgeMovements()
+        {
+            foreach (EdgeMovement em in edgeMovements)
+            {
+                EdgeMovement.Release(em);
+            }
+            edgeMovements.Clear();
         }
 
         /// <summary>
