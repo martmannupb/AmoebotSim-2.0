@@ -29,6 +29,7 @@ namespace AS2.UI
         public GameObject go_elementParent;
         public GameObject go_expand;
         public ScrollRect scrollRect;
+        public Scrollbar scrollBar;
 
         // Colors
         public Color color_log;
@@ -256,6 +257,9 @@ namespace AS2.UI
         {
             scrollRect.verticalNormalizedPosition = 0f;
             scrollToBottomInAmountOfFrames = 0;
+            // Move the scroll bar all the way to the top and back to the bottom to force update (necessary after deleting the log)
+            scrollBar.value = 1;
+            scrollBar.value = 0;
         }
 
         /// <summary>
@@ -330,7 +334,12 @@ namespace AS2.UI
             }
             logElementList.Clear();
             Log.ClearLogHistory();
+            logEntryID = 1;
+            // Do not reset Unity log ID because the Unity log is not cleared by this
             AddWelcomeMessage();
+            // Then scroll to bottom after short delay
+            if (scrollToBottomInAmountOfFrames < 0)
+                scrollToBottomInAmountOfFrames = 3;
         }
     }
 
