@@ -409,6 +409,8 @@ namespace AS2.UI
         public void HideUI()
         {
             ui.SetActive(false);
+            // Prevent tooltips from appearing when the UI is hidden.
+            TooltipHandler.Instance.Close();
         }
 
         /// <summary>

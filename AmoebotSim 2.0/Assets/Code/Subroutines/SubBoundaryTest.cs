@@ -274,8 +274,13 @@ namespace AS2.Subroutines.BoundaryTest
                             Direction succ = DirectionHelpers.Cardinal(next);
                             boundaryDirs[2 * nBoundaries - 1].SetValue(succ);
                             // Remember the angle
-                            // Number of turns can be 0, 2, 3, 4, 5
-                            // We map this to 3, 4, 0, 1, 2
+                            // Number of turns can be 0, 2, 3, 4, 5 (clockwise, from predecessor to successor, boundary on the left-hand side)
+                            // We map this to 3, 4 (= -1 mod 5), 0, 1, 2
+                            // Distance 0 means we turn around => 3 clockwise turns
+                            // Distance 2 means we turn left once => -1 = 4 clockwise turns (mod 5)
+                            // Distance 3 means we do not turn => 0 clockwise turns
+                            // Distance 4 means we turn right once => 1 clockwise turn
+                            // Distance 5 means we turn right twice => 2 clockwise turns
                             int numTurns = (pred.DistanceTo(succ, true) / 2 + 3) % 6;
                             if (numTurns == 5)
                                 numTurns--;
