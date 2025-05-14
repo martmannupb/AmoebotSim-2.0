@@ -43,7 +43,8 @@ namespace AS2.UI
         private int logEntryID = 1;
         private int scrollToBottomInAmountOfFrames = 0;
 
-        // Timestamp
+        // Timestamp for closing log automatically after a few seconds
+        // (only if log was opened by a log message, not manually)
         private float timestampLastInteraction = 0f;
         private float timeVisibleInitial = 5f;
         private float timeVisible = 10f;
@@ -126,20 +127,17 @@ namespace AS2.UI
                 ScrollToBottom();
                 scrollToBottomInAmountOfFrames--;
             }
-            else scrollToBottomInAmountOfFrames--;
+            else if (scrollToBottomInAmountOfFrames >= 0)
+                scrollToBottomInAmountOfFrames--;
 
-            // Hide Timer
-            bool hide = timeVisibleInitial != 0f ? timestampLastInteraction + timeVisibleInitial < Time.timeSinceLevelLoad : timestampLastInteraction + timeVisible < Time.timeSinceLevelLoad;
-            // Disable log after a number of seconds (use settings to adjust)
-            if (hide)
+            // Hide Timer (if log is visible but should disappear after a few seconds)
+            if (go_log.activeSelf && !keepVisible)
             {
-                // Hide
-                if (keepVisible == false) Hide();
-            }
-            else
-            {
-                // Show
-                Show(false, this.keepVisible);
+                // Disable log after a number of seconds (use settings to adjust)
+                if (timeVisibleInitial != 0f ? timestampLastInteraction + timeVisibleInitial < Time.timeSinceLevelLoad : timestampLastInteraction + timeVisible < Time.timeSinceLevelLoad)
+                {
+                    Hide();
+                }
             }
         }
 
@@ -313,6 +311,8 @@ namespace AS2.UI
         {
             timestampLastInteraction = Time.timeSinceLevelLoad;
             Show(true, true);
+            // Prevent sticky tooltip
+            TooltipHandler.Instance.Close();
         }
 
         /// <summary>
@@ -321,6 +321,8 @@ namespace AS2.UI
         public void ButtonPressed_CollapseLog()
         {
             Hide();
+            // Prevent sticky tooltip
+            TooltipHandler.Instance.Close();
         }
 
         /// <summary>
