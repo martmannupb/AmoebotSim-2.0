@@ -1110,7 +1110,7 @@ namespace AS2.Sim
             {
                 foreach (int pinID in plannedBeepsByPin)
                 {
-                    plannedBeeps[pinID] = true;
+                    plannedBeeps[currPinConfig.GetPin(pinID).PartitionSet.Id] = true;
                 }
                 plannedBeepsByPin.Clear();
             }
@@ -1118,7 +1118,7 @@ namespace AS2.Sim
             {
                 foreach (KeyValuePair<int, Message> kv in plannedMessagesByPin)
                 {
-                    plannedMessages[kv.Key] = kv.Value;
+                    plannedMessages[currPinConfig.GetPin(kv.Key).PartitionSet.Id] = kv.Value;
                 }
                 plannedMessagesByPin.Clear();
             }
